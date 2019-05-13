@@ -1,0 +1,51 @@
+# This is a very simple Knative Service that writes the input request to its log.
+
+apiVersion: serving.knative.dev/v1alpha1
+kind: Service
+metadata:
+  name: pitometer-service
+  namespace: keptn
+spec:
+  runLatest:
+    configuration:
+      build:
+        apiVersion: build.knative.dev/v1alpha1
+        kind: Build
+        metadata:
+          name: service-builder
+          namespace: keptn
+        spec:
+          serviceAccountName: build-bot
+          source:
+            git:
+              url: https://github.com/keptn/pitometer-service.git
+              revision: master
+          template:
+            name: kaniko
+            arguments:
+              - name: IMAGE
+                value: docker-registry.keptn.svc.cluster.local:5000/keptn/pitometer-service:latest
+      revisionTemplate:
+        metadata:
+          annotations:
+            # Disable scale to zero with a minScale of 1.
+            autoscaling.knative.dev/minScale: "1"
+        spec:
+          container:
+            image: 10.47.247.99:5000/keptn/pitometer-service:latest
+---
+apiVersion: eventing.knative.dev/v1alpha1
+kind: Subscription
+metadata:
+  name: pitometer-service-tests-finished-subscription
+  namespace: keptn
+spec:
+  channel:
+    apiVersion: eventing.knative.dev/v1alpha1
+    kind: Channel
+    name: tests-finished
+  subscriber:
+    ref:
+      apiVersion: serving.knative.dev/v1alpha1
+      kind: Service
+      name: pitometer-service
