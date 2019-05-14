@@ -5,7 +5,7 @@ services:
 - docker
 before_install:
 - export TZ=Europe/Vienna
-- IMAGE=keptn/pitometer-service
+- IMAGE=keptn/dynatrace-service
 - REGISTRY_USER=bacherfl
 - VERSION="$(cat version | tr -d '[:space:]')"
 - DATE="$(date +'%Y%m%d.%H%M')"
