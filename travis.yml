@@ -6,7 +6,7 @@ services:
 before_install:
 - export TZ=Europe/Vienna
 - IMAGE=keptn/pitometer-service
-- REGISTRY_USER=jbraeuer
+- REGISTRY_USER=bacherfl
 - VERSION="$(cat version | tr -d '[:space:]')"
 - DATE="$(date +'%Y%m%d.%H%M')"
 - GIT_SHA="$(git rev-parse --short HEAD)"

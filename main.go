@@ -101,8 +101,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	if event.Type == "sh.keptn.events.deployment-finished" {
 		de := createDeploymentEvent(event)
-
 		sendDynatraceRequest(dtTenant, dtAPIToken, de, event)
+		// We need an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
+		ie := createInfoEvent(event)
+		ie.Title = "Start Running Tests: " + event.Data.Teststrategy
+		ie.Description = "Start Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
+		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event)
 	} else if event.Type == "sh.keptn.events.evaluation-done" {
 		ie := createInfoEvent(event)
 		if event.Data.EvaluationPassed {
@@ -117,8 +121,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		ie.Description = "keptn evaluation status: " + strconv.FormatBool(event.Data.EvaluationPassed)
 		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event)
+	} else if event.Type == "sh.keptn.events.tests-finished" {
+		ie := createInfoEvent(event)
+		ie.Title = "Stop Running Tests: " + event.Data.Teststrategy
+		ie.Description = "Stop Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
+		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event)
 	}
-	log.Println(event.Shkeptncontext)
 }
 
 func createAttachRules(event keptnEvent) dtAttachRules {
@@ -140,7 +148,7 @@ func createAttachRules(event keptnEvent) dtAttachRules {
 					dtTag{
 						Context: "CONTEXTLESS",
 						Key:     "environment",
-						Value:   event.Data.Stage,
+						Value:   event.Data.Project + "-" + event.Data.Stage,
 					},
 				},
 			},
@@ -182,7 +190,7 @@ func createDeploymentEvent(event keptnEvent) dtDeploymentEvent {
 
 	var de dtDeploymentEvent
 	de.EventType = "CUSTOM_DEPLOYMENT"
-	de.Source = "keptn"
+	de.Source = "keptn dynatrace-service"
 	de.DeploymentName = "Deploy " + event.Data.Service + " " + event.Data.Tag + " with strategy " + event.Data.Deploymentstrategy
 	de.DeploymentProject = event.Data.Project
 	de.DeploymentVersion = event.Data.Tag
