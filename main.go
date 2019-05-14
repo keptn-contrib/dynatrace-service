@@ -104,9 +104,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		sendDynatraceRequest(dtTenant, dtAPIToken, de, event)
 		// We need an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
 		ie := createInfoEvent(event)
-		ie.Title = "Start Running Tests: " + event.Data.Teststrategy
-		ie.Description = "Start Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
-		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event)
+		if event.Data.Teststrategy != "" {
+			ie.Title = "Start Running Tests: " + event.Data.Teststrategy
+			ie.Description = "Start Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
+			sendDynatraceRequest(dtTenant, dtAPIToken, ie, event)
+		}
 	} else if event.Type == "sh.keptn.events.evaluation-done" {
 		ie := createInfoEvent(event)
 		if event.Data.EvaluationPassed {
