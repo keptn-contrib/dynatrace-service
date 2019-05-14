@@ -112,7 +112,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	} else if event.Type == "sh.keptn.events.evaluation-done" {
 		ie := createInfoEvent(event)
 		if event.Data.EvaluationPassed {
-			ie.Title = "Promote Artifact from " + event.Data.Stage + "to next stage"
+			ie.Title = "Promote Artifact from " + event.Data.Stage + " to next stage"
 		} else if !event.Data.EvaluationPassed && event.Data.Deploymentstrategy == "blue_green_service" {
 			ie.Title = "Rollback Artifact (Switch Blue/Green) in " + event.Data.Stage
 		} else if !event.Data.EvaluationPassed && event.Data.Deploymentstrategy == "direct" {
