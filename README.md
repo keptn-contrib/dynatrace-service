@@ -22,8 +22,6 @@ Expected output:
 
 ```
 service.serving.knative.dev/dynatrace-service created
-subscription.eventing.knative.dev/dynatrace-subscription-new-artefact created
-subscription.eventing.knative.dev/dynatrace-subscription-configuration-changed created
 subscription.eventing.knative.dev/dynatrace-subscription-deployment-finished created
 subscription.eventing.knative.dev/dynatrace-subscription-tests-finished created
 subscription.eventing.knative.dev/dynatrace-subscription-evaluation-done created
@@ -39,11 +37,8 @@ dynatrace-service   dynatrace-service.keptn.x.x.x.x.xip.io   dynatrace-service-d
 
 ```
 $ kubectl get subscription -n keptn | grep dynatrace-subscription
-dynatrace-subscription-configuration-changed        True
 dynatrace-subscription-deployment-finished          True
 dynatrace-subscription-evaluation-done              True
-dynatrace-subscription-keptn                        True
-dynatrace-subscription-new-artefact                 True
 dynatrace-subscription-tests-finished               True
 $
 ```
