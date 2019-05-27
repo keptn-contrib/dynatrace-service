@@ -5,6 +5,8 @@ kind: Service
 metadata:
   name: dynatrace-service
   namespace: keptn
+  labels:
+    serving.knative.dev/visibility: cluster-local
 spec:
   runLatest:
     configuration:
