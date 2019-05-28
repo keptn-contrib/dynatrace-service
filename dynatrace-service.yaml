@@ -13,7 +13,7 @@ spec:
       revisionTemplate:
         spec:
           container:
-            image: keptn/dynatrace-service:0.1.0
+            image: keptn/dynatrace-service:0.1.1.latest
             env:
             - name: DT_API_TOKEN
               valueFrom:
