@@ -5,13 +5,15 @@ kind: Service
 metadata:
   name: dynatrace-service
   namespace: keptn
+  labels:
+    serving.knative.dev/visibility: cluster-local
 spec:
   runLatest:
     configuration:
       revisionTemplate:
         spec:
           container:
-            image: keptn/dynatrace-service:0.1.0
+            image: keptn/dynatrace-service:0.1.1
             env:
             - name: DT_API_TOKEN
               valueFrom:
