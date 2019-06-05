@@ -1,1 +1,5 @@
-dynatrace-service
+./dynatrace-service
+
+./deploy/manifests/dynatrace/gen/cr*
+
+creds_dt.json
