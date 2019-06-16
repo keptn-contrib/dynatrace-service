@@ -38,6 +38,12 @@ print_info "Applying auto tagging rules in Dynatrace."
 verify_install_step $? "Applying auto tagging rules in Dynatrace failed."
 print_info "Applying auto tagging rules in Dynatrace done."
 
+# Setup problem notification in Dynatrace
+print_info "Set up problem notification in Dynatrace."
+./setupProblemNotification.sh $DT_TENANT $DT_API_TOKEN
+verify_install_step $? "Setup of problem notification in Dynatrace failed."
+print_info "Setup of problem notification in Dynatrace done."
+
 # Create secrets to be used by dynatrace-service
 kubectl -n keptn create secret generic dynatrace --from-literal="DT_API_TOKEN=$DT_API_TOKEN" --from-literal="DT_TENANT=$DT_TENANT"
 verify_kubectl $? "Creating dynatrace secret for keptn services failed."
