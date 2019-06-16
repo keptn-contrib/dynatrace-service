@@ -1,0 +1,39 @@
+#!/bin/bash
+
+source ./utils.sh
+
+# API documentation - not detailed information yet. Please check your Dynatrace tenant Swagger API docs for more info
+# https://www.dynatrace.com/support/help/extend-dynatrace/dynatrace-api/configuration-api/
+
+DT_TENANT=$1
+DT_API_TOKEN=$2
+KEPTN_DNS=$3
+KEPTN_TOKEN=$4
+
+curl -X POST \
+  "https://$DT_TENANT/api/config/v1/notifications?Api-Token=$DT_API_TOKEN" \
+  -H 'accept: application/json; charset=utf-8' \
+  -H 'Content-Type: application/json; charset=utf-8' \
+  -d '{ 
+    "type": "WEBHOOK", 
+    "name": "keptn API test", 
+    "alertingProfile": "19b08d18-2ff8-4de1-bb33-127996597ab5", 
+    "active": true, 
+    "url": "https://event-broker-ext.keptn.'$KEPTN_DNS'/dynatrace", 
+    "acceptAnyCertificate": true, 
+    "headers": [ 
+      { "name": "Authorization", "value": "Bearer '$KEPTN_TOKEN'" },
+      { "name": "Content-Type", "value": "application/cloudevents+json" }
+    ],
+    "payload": "{\n    \"specversion\":\"0.2\",\n    \"type\":\"sh.keptn.events.problem\",\n    \"shkeptncontext\":\"{PID}\",\n    \"source\":\"dynatrace\",\n    \"id\":\"{PID}\",\n    \"time\":\"\",\n    \"datacontenttype\":\"application/json\",\n    \"data\": {\n        \"State\":\"{State}\",\n        \"ProblemID\":\"{ProblemID}\",\n        \"PID\":\"{PID}\",\n        \"ProblemTitle\":\"{ProblemTitle}\",\n        \"ProblemDetails\":{ProblemDetailsJSON},\n        \"ImpactedEntities\":{ImpactedEntities},\n        \"ImpactedEntity\":\"{ImpactedEntity}\"\n    }\n}\n" 
+
+    }'
+
+
+
+if [[ $? != '0' ]]; then
+  echo ""
+  print_error "Problem notification could not be created for Dynatrace tenant $DT_TENANT."
+  exit 1
+fi
+
