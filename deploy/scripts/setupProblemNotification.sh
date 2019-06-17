@@ -17,7 +17,7 @@ curl -X POST \
   -d '{ 
     "type": "WEBHOOK", 
     "name": "keptn API test", 
-    "alertingProfile": "19b08d18-2ff8-4de1-bb33-127996597ab5", 
+    "alertingProfile": "c21f969b-5f03-333d-83e0-4f8f136e7682", 
     "active": true, 
     "url": "https://event-broker-ext.keptn.'$KEPTN_DNS'/dynatrace", 
     "acceptAnyCertificate": true, 
