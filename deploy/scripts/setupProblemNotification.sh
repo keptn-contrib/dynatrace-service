@@ -19,7 +19,7 @@ curl -X POST \
     "name": "keptn remediation", 
     "alertingProfile": "c21f969b-5f03-333d-83e0-4f8f136e7682", 
     "active": true, 
-    "url": "https://event-broker-ext.keptn.'$KEPTN_DNS'/dynatrace", 
+    "url": "'$KEPTN_DNS'/dynatrace", 
     "acceptAnyCertificate": true, 
     "headers": [ 
       { "name": "Authorization", "value": "Bearer '$KEPTN_TOKEN'" },
