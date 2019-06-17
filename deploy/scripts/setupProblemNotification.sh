@@ -16,7 +16,7 @@ curl -X POST \
   -H 'Content-Type: application/json; charset=utf-8' \
   -d '{ 
     "type": "WEBHOOK", 
-    "name": "keptn API test", 
+    "name": "keptn remediation", 
     "alertingProfile": "c21f969b-5f03-333d-83e0-4f8f136e7682", 
     "active": true, 
     "url": "https://event-broker-ext.keptn.'$KEPTN_DNS'/dynatrace", 
