@@ -6,3 +6,4 @@
 ## Fixed Issues
 
 ## Known Limitations
+For OpenShift, the script to deploy the Dynatrace OneAgent Operator pins the OneAgent Operator to v0.3.1 instead of using the latest release version per default.
