@@ -7,7 +7,7 @@ DT_API_TOKEN=$(cat creds_dt.json | jq -r '.dynatraceApiToken')
 DT_PAAS_TOKEN=$(cat creds_dt.json | jq -r '.dynatracePaaSToken')
 
 # Deploy Dynatrace operator
-DT_OPERATOR_LATEST_RELEASE="0.3.1"
+DT_OPERATOR_LATEST_RELEASE="v0.3.1"
 print_info "Installing Dynatrace Operator $DT_OPERATOR_LATEST_RELEASE"
 
 oc adm new-project --node-selector="" dynatrace
