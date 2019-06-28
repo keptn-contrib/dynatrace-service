@@ -1,1 +1,10 @@
-dynatrace-service
+# Binary
+./dynatrace-service
+
+# Auto-generated files
+./deploy/manifests/dynatrace/gen/cr*
+
+# Creds files
+deploy/scripts/creds_dt.json
+deploy/scripts/*creds*.json
+creds_dt.json
