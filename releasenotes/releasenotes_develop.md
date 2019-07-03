@@ -1,8 +1,8 @@
 # Release Notes #.#.#
 
 ## New Features
-- Contains now the scripts to deploy the Dynatrace OneAgent Operator
 
 ## Fixed Issues
+- Fixed adherence to cloud events: Changed _datacontenttype_ to _contenttype_ [#405](https://github.com/keptn/keptn/issues/405)
 
 ## Known Limitations

@@ -14,14 +14,14 @@ import (
 )
 
 type keptnEvent struct {
-	Specversion     string `json:"specversion"`
-	Type            string `json:"type"`
-	Source          string `json:"source"`
-	ID              string `json:"id"`
-	Time            string `json:"time"`
-	Datacontenttype string `json:"datacontenttype"`
-	Shkeptncontext  string `json:"shkeptncontext"`
-	Data            struct {
+	Specversion    string `json:"specversion"`
+	Type           string `json:"type"`
+	Source         string `json:"source"`
+	ID             string `json:"id"`
+	Time           string `json:"time"`
+	Contenttype    string `json:"contenttype"`
+	Shkeptncontext string `json:"shkeptncontext"`
+	Data           struct {
 		Githuborg          string `json:"githuborg"`
 		Project            string `json:"project"`
 		Teststrategy       string `json:"teststrategy"`
