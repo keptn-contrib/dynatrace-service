@@ -1,73 +1,52 @@
-apiVersion: serving.knative.dev/v1alpha1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-service
+  namespace: keptn
+spec:
+  selector:
+    matchLabels:
+      run: dynatrace-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: dynatrace-service
+    spec:
+      containers:
+      - name: dynatrace-service
+        image: keptn/dynatrace-service:latest
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            memory: "32Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        env:
+        - name: DT_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: dynatrace
+              key: DT_API_TOKEN
+        - name: DT_TENANT
+          valueFrom:
+            secretKeyRef:
+              name: dynatrace
+              key: DT_TENANT
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: dynatrace-service
   namespace: keptn
   labels:
-    serving.knative.dev/visibility: cluster-local
+    run: dynatrace-service
 spec:
-  runLatest:
-    configuration:
-      revisionTemplate:
-        spec:
-          container:
-            image: keptn/dynatrace-service:latest
-            env:
-            - name: DT_API_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: dynatrace
-                  key: DT_API_TOKEN
-            - name: DT_TENANT
-              valueFrom:
-                secretKeyRef:
-                  name: dynatrace
-                  key: DT_TENANT
----
-apiVersion: eventing.knative.dev/v1alpha1
-kind: Subscription
-metadata:
-  name: dynatrace-service-deployment-finished-subscription
-  namespace: keptn
-spec:
-  channel:
-    apiVersion: eventing.knative.dev/v1alpha1
-    kind: Channel
-    name: deployment-finished
-  subscriber:
-    ref:
-      apiVersion: serving.knative.dev/v1alpha1
-      kind: Service
-      name: dynatrace-service
----
-apiVersion: eventing.knative.dev/v1alpha1
-kind: Subscription
-metadata:
-  name: dynatrace-service-tests-finished-subscription
-  namespace: keptn
-spec:
-  channel:
-    apiVersion: eventing.knative.dev/v1alpha1
-    kind: Channel
-    name: tests-finished
-  subscriber:
-    ref:
-      apiVersion: serving.knative.dev/v1alpha1
-      kind: Service
-      name: dynatrace-service
----
-apiVersion: eventing.knative.dev/v1alpha1
-kind: Subscription
-metadata:
-  name: dynatrace-service-evaluation-done-subscription
-  namespace: keptn
-spec:
-  channel:
-    apiVersion: eventing.knative.dev/v1alpha1
-    kind: Channel
-    name: evaluation-done
-  subscriber:
-    ref:
-      apiVersion: serving.knative.dev/v1alpha1
-      kind: Service
-      name: dynatrace-service
+  ports:
+  - port: 8080
+    protocol: TCP
+  selector:
+    run: dynatrace-service
