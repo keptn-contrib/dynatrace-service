@@ -7,7 +7,7 @@ DT_API_TOKEN=$(cat creds_dt.json | jq -r '.dynatraceApiToken')
 DT_PAAS_TOKEN=$(cat creds_dt.json | jq -r '.dynatracePaaSToken')
 
 # Deploy Dynatrace operator
-DT_OPERATOR_LATEST_RELEASE=$(curl -s https://api.github.com/repos/dynatrace/dynatrace-oneagent-operator/releases/latest | grep tag_name | cut -d '"' -f 4)
+DT_OPERATOR_LATEST_RELEASE="v0.3.1"
 print_info "Installing Dynatrace Operator $DT_OPERATOR_LATEST_RELEASE"
 
 oc adm new-project --node-selector="" dynatrace
@@ -15,7 +15,7 @@ verify_kubectl $? "Creating namespace dynatrace for oneagent operator failed."
 
 kubectl label namespace dynatrace istio-injection=disabled
 
-oc create -f https://raw.githubusercontent.com/Dynatrace/dynatrace-oneagent-operator/$DT_OPERATOR_LATEST_RELEASE/deploy/openshift.yaml
+oc create -f ../manifests/dynatrace/oneagent-operator-openshift.yaml
 verify_kubectl $? "Applying Dynatrace operator failed."
 wait_for_crds "oneagent"
 
