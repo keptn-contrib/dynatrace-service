@@ -1,7 +1,7 @@
 # Release Notes #.#.#
 
 ## New Features
-- Update of deployment scripts and manifests [#517](https://github.com/keptn/keptn/issues/517)
+- Change of deployment and service manifest from Knative to Kubernetes resources [#517](https://github.com/keptn/keptn/issues/517)
 - Pull operator image for openshift from quay.io [#470](https://github.com/keptn/keptn/issues/470)
 
 ## Fixed Issues
