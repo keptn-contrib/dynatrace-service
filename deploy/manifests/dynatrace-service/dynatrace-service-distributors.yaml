@@ -1,3 +1,4 @@
+---
 ## dynatrace-service: sh.keptn.events.deployment-finished
 apiVersion: apps/v1
 kind: Deployment
@@ -16,7 +17,7 @@ spec:
     spec:
       containers:
       - name: distributor
-        image: keptn/distributor:latest
+        image: keptn/distributor:0.1.0
         ports:
         - containerPort: 8080
         resources:
@@ -52,7 +53,7 @@ spec:
     spec:
       containers:
       - name: distributor
-        image: keptn/distributor:latest
+        image: keptn/distributor:0.1.0
         ports:
         - containerPort: 8080
         resources:
@@ -88,7 +89,7 @@ spec:
     spec:
       containers:
       - name: distributor
-        image: keptn/distributor:latest
+        image: keptn/distributor:0.1.0
         ports:
         - containerPort: 8080
         resources:
