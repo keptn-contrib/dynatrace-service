@@ -42,7 +42,7 @@ function deploy_dt {
 
     # Setup problem notification in Dynatrace
     print_info "Set up problem notification in Dynatrace."
-    KEPTN_DNS=https://$(kubectl get ksvc -n keptn event-broker-ext -o=yaml | yq r - status.domain)
+    KEPTN_DNS=https://event-broker-ext.keptn.$(kubectl get cm -n keptn keptn-domain -oyaml | yq - r data.app_domain)
     KEPTN_API_TOKEN=$(kubectl get secret keptn-api-token -n keptn -o=yaml | yq - r data.keptn-api-token | base64 --decode)
     ./setupProblemNotification.sh $DT_TENANT $DT_API_TOKEN $KEPTN_DNS $KEPTN_API_TOKEN
     verify_install_step $? "Setup of problem notification in Dynatrace failed."
@@ -56,4 +56,9 @@ function deploy_dt {
     print_info "Deploying dynatrace-service"
     kubectl apply -f ../manifests/dynatrace-service/dynatrace-service.yaml
     verify_kubectl $? "Deploying dynatrace-service failed."
+    wait_for_deployment_in_namespace "dynatrace-service" "keptn"
+
+    kubectl apply -f ../manifests/dynatrace-service/dynatrace-service-distributors.yaml
+    verify_kubectl $? "Deploying dynatrace-service failed."
+
 }
