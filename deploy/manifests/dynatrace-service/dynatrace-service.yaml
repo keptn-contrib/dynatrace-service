@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +16,7 @@ spec:
     spec:
       containers:
       - name: dynatrace-service
-        image: keptn/dynatrace-service:latest
+        image: keptn/dynatrace-service:0.2.0
         ports:
         - containerPort: 8080
         resources:
