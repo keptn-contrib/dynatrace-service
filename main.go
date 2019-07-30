@@ -10,7 +10,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/keptn/dynatrace-service/keptn"
+	keptnutils "github.com/keptn/go-utils/pkg/utils"
 )
 
 type keptnEvent struct {
@@ -88,26 +88,28 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error while parsing JSON payload: " + err.Error())
 		return
 	}
-	keptn.Info(event.Shkeptncontext, "Received new event of type "+event.Type)
+
+	logger := keptnutils.NewLogger(event.Shkeptncontext, event.ID, "dynatrace-service")
+	logger.Info("Received new event of type " + event.Type)
 
 	dtTenant := os.Getenv("DT_TENANT")
 	dtAPIToken := os.Getenv("DT_API_TOKEN")
 
 	if dtTenant == "" || dtAPIToken == "" {
-		keptn.Error(event.Shkeptncontext, "No Dynatrace credentials defined in cluster. Could not send event.")
+		logger.Error("No Dynatrace credentials defined in cluster. Could not send event.")
 		return
 	}
-	keptn.Info(event.Shkeptncontext, "Trying to send event to DT Tenant "+os.Getenv("DT_TENANT"))
+	logger.Info("Trying to send event to DT Tenant " + os.Getenv("DT_TENANT"))
 
 	if event.Type == "sh.keptn.events.deployment-finished" {
 		de := createDeploymentEvent(event)
-		sendDynatraceRequest(dtTenant, dtAPIToken, de, event)
+		sendDynatraceRequest(dtTenant, dtAPIToken, de, event, logger)
 		// We need an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
 		ie := createInfoEvent(event)
 		if event.Data.Teststrategy != "" {
 			ie.Title = "Start Running Tests: " + event.Data.Teststrategy
 			ie.Description = "Start Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
-			sendDynatraceRequest(dtTenant, dtAPIToken, ie, event)
+			sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
 		}
 	} else if event.Type == "sh.keptn.events.evaluation-done" {
 		ie := createInfoEvent(event)
@@ -118,16 +120,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		} else if !event.Data.EvaluationPassed && event.Data.Deploymentstrategy == "direct" {
 			ie.Title = "NOT PROMOTING Artifact from " + event.Data.Stage + " due to failed evaluation"
 		} else {
-			keptn.Error(event.Shkeptncontext, "No valid deployment strategy defined in keptn event.")
+			logger.Error("No valid deployment strategy defined in keptn event.")
 			return
 		}
 		ie.Description = "keptn evaluation status: " + strconv.FormatBool(event.Data.EvaluationPassed)
-		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event)
+		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
 	} else if event.Type == "sh.keptn.events.tests-finished" {
 		ie := createInfoEvent(event)
 		ie.Title = "Stop Running Tests: " + event.Data.Teststrategy
 		ie.Description = "Stop Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
-		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event)
+		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
 	}
 }
 
@@ -202,10 +204,10 @@ func createDeploymentEvent(event keptnEvent) dtDeploymentEvent {
 	return de
 }
 
-func sendDynatraceRequest(dtTenant string, dtAPIToken string, dtEvent interface{}, event keptnEvent) {
+func sendDynatraceRequest(dtTenant string, dtAPIToken string, dtEvent interface{}, event keptnEvent, logger *keptnutils.Logger) {
 	jsonString, err := json.Marshal(dtEvent)
 	if err != nil {
-		keptn.Error(event.Shkeptncontext, "Error while generating Dynatrace API Request payload.")
+		logger.Error("Error while generating Dynatrace API Request payload.")
 		return
 	}
 	url := "https://" + dtTenant + "/api/v1/events?Api-Token=" + dtAPIToken
@@ -216,14 +218,14 @@ func sendDynatraceRequest(dtTenant string, dtAPIToken string, dtEvent interface{
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		keptn.Error(event.Shkeptncontext, "Error while sending request to Dynatrace: "+err.Error())
+		logger.Error("Error while sending request to Dynatrace: " + err.Error())
 		return
 	}
 	defer resp.Body.Close()
 
-	keptn.Debug(event.Shkeptncontext, "Response Status:"+resp.Status)
+	logger.Debug("Response Status:" + resp.Status)
 	body, _ := ioutil.ReadAll(resp.Body)
-	keptn.Debug(event.Shkeptncontext, "Response Body:"+string(body))
+	logger.Debug("Response Body:" + string(body))
 }
 
 func main() {
