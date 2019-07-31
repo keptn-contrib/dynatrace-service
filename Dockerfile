@@ -20,5 +20,6 @@ RUN apk add --no-cache ca-certificates
 # Copy the binary to the production image from the builder stage.
 COPY --from=builder /go/src/github.com/keptn/dynatrace-service/dynatrace-service /dynatrace-service
 ADD MANIFEST /
+
 # Run the web service on container startup.
 CMD ["sh", "-c", "cat MANIFEST && /dynatrace-service"]
