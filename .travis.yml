@@ -15,6 +15,11 @@ before_install:
 - LAST_COMMIT="$(git log -1 --oneline)"
 - ./writeManifest.sh
 - cat MANIFEST
+
+install:
+- go get -u github.com/golang/dep/cmd/dep
+- dep ensure
+
 jobs:
   include:
   - stage: feature/bug
