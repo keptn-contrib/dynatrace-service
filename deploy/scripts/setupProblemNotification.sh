@@ -23,7 +23,7 @@ then
       "name": "keptn remediation", 
       "alertingProfile": "c21f969b-5f03-333d-83e0-4f8f136e7682", 
       "active": true, 
-      "url": "'$KEPTN_DNS'/dynatrace", 
+      "url": "'$KEPTN_DNS'/event", 
       "acceptAnyCertificate": true, 
       "headers": [ 
         { "name": "x-token", "value": "'$KEPTN_TOKEN'" },
