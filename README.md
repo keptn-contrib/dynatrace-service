@@ -18,9 +18,22 @@ The service is subscribed to the following keptn events:
     - Dynatrace SaaS tenant: `{your-environment-id}.live.dynatrace.com`
     - Dynatrace-managed tenant: `{your-domain}/e/{your-environment-id}`
 
-1. Execute the installation script `deployDynatrace.sh` in the `/deploy/scripts` folder:
+1. Execute the installation script depending on your platform.
+    - For AKS
     ```console
-    ./deployDynatrace.sh
+    ./deployDynatraceOnAKS.sh
+    ```
+    - For EKS
+    ```console
+    ./deployDynatraceOnEKS.sh
+    ```    
+    - For GKE
+    ```console
+    ./deployDynatraceOnGKE.sh
+    ```    
+    - For OpenShift
+    ```console
+    ./deployDynatraceOnGKE.sh
     ```
     When this script is finished, the Dynatrace OneAgent and the dynatrace-service are deployed in your cluster. Execute the following commands to verify the deployment of the dynatrace-service.
 
