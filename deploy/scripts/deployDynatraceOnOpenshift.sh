@@ -40,8 +40,8 @@ print_info "Applying auto tagging rules in Dynatrace done."
 
 # Setup problem notification in Dynatrace
 print_info "Set up problem notification in Dynatrace."
-KEPTN_DNS=https://api.keptn.$(kubectl get cm -n keptn keptn-domain -oyaml | yq - r data.app_domain)
-KEPTN_API_TOKEN=$(kubectl get secret keptn-api-token -n keptn -o=yaml | yq - r data.keptn-api-token | base64 --decode)
+KEPTN_DNS=https://api.keptn.$(kubectl get cm -n keptn keptn-domain -ojsonpath={.data.app_domain}) 
+KEPTN_API_TOKEN=$(kubectl get secret keptn-api-token -n keptn -ojsonpath={.data.keptn-api-token} | base64 --decode)
 ./setupProblemNotification.sh $DT_TENANT $DT_API_TOKEN $KEPTN_DNS $KEPTN_API_TOKEN
 verify_install_step $? "Setup of problem notification in Dynatrace failed."
 print_info "Setup of problem notification in Dynatrace done."
