@@ -23,10 +23,10 @@ then
       "name": "keptn remediation", 
       "alertingProfile": "c21f969b-5f03-333d-83e0-4f8f136e7682", 
       "active": true, 
-      "url": "'$KEPTN_DNS'/dynatrace", 
+      "url": "'$KEPTN_DNS'/event", 
       "acceptAnyCertificate": true, 
       "headers": [ 
-        { "name": "Authorization", "value": "Bearer '$KEPTN_TOKEN'" },
+        { "name": "x-token", "value": "'$KEPTN_TOKEN'" },
         { "name": "Content-Type", "value": "application/cloudevents+json" }
       ],
       "payload": "{\n    \"specversion\":\"0.2\",\n    \"type\":\"sh.keptn.events.problem\",\n    \"shkeptncontext\":\"{PID}\",\n    \"source\":\"dynatrace\",\n    \"id\":\"{PID}\",\n    \"time\":\"\",\n    \"contenttype\":\"application/json\",\n    \"data\": {\n        \"State\":\"{State}\",\n        \"ProblemID\":\"{ProblemID}\",\n        \"PID\":\"{PID}\",\n        \"ProblemTitle\":\"{ProblemTitle}\",\n        \"ProblemDetails\":{ProblemDetailsJSON},\n        \"ImpactedEntities\":{ImpactedEntities},\n        \"ImpactedEntity\":\"{ImpactedEntity}\"\n    }\n}\n" 

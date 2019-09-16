@@ -8,3 +8,5 @@
 deploy/scripts/creds_dt.json
 deploy/scripts/*creds*.json
 creds_dt.json
+
+vendor/*
