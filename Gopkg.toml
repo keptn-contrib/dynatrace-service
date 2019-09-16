@@ -31,4 +31,4 @@
 
 [[constraint]]
   name = "github.com/keptn/go-utils"
-  branch = "develop"
+  version = "0.2.0"
