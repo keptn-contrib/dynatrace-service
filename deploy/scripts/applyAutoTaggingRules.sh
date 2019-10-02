@@ -8,7 +8,6 @@ source ./utils.sh
 DT_TENANT=$1
 DT_API_TOKEN=$2
 
-
 DT_RULE_NAME=service
 # check if rule already exists in Dynatrace tenant
 export DT_ID=
@@ -32,9 +31,6 @@ then
     exit 1
   fi
 fi
-
-
-
 
 curl -f -X POST \
   "https://$DT_TENANT/api/config/v1/autoTags?api-token=$DT_API_TOKEN" \
@@ -73,7 +69,6 @@ if [[ $? != '0' ]]; then
   print_error "Tagging rule for service could not be created in tenant $DT_TENANT."
   exit 1
 fi
-
 
 DT_RULE_NAME=environment
 # check if rule already exists in Dynatrace tenant
