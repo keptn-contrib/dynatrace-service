@@ -29,9 +29,25 @@ rm -f ../manifests/dynatrace/gen/cr.yml
 curl -o ../manifests/dynatrace/cr.yml https://raw.githubusercontent.com/Dynatrace/dynatrace-oneagent-operator/$DT_OPERATOR_LATEST_RELEASE/deploy/cr.yaml
 cat ../manifests/dynatrace/cr.yml | sed 's~ENVIRONMENTID.live.dynatrace.com~'"$DT_TENANT"'~' >> ../manifests/dynatrace/gen/cr.yml
 
-sed -i -e '/env:/{r ../manifests/dynatrace/pks_environment_variables.yaml' -e 'd}' ../manifests/dynatrace/gen/cr.yml
+sed '/env:/a\
+PLACEHOLDER_LINE1' ../manifests/dynatrace/gen/cr.yml > ../manifests/dynatrace/gen/cr_01.yml
 
-kubectl apply -f ../manifests/dynatrace/gen/cr.yml
+sed '/PLACEHOLDER_LINE1/a\
+PLACEHOLDER_LINE2' ../manifests/dynatrace/gen/cr_01.yml > ../manifests/dynatrace/gen/cr_02.yml
+
+sed '/PLACEHOLDER_LINE2/a\
+PLACEHOLDER_LINE3' ../manifests/dynatrace/gen/cr_02.yml > ../manifests/dynatrace/gen/cr_03.yml
+
+sed '/PLACEHOLDER_LINE3/a\
+PLACEHOLDER_LINE4' ../manifests/dynatrace/gen/cr_03.yml > ../manifests/dynatrace/gen/cr_04.yml
+
+cat ../manifests/dynatrace/gen/cr_04.yml | sed 's~env:.*~env:~' > ../manifests/dynatrace/gen/cr_05.yml
+cat ../manifests/dynatrace/gen/cr_05.yml | sed 's/PLACEHOLDER_LINE1/   - name: ONEAGENT_ENABLE_VOLUME_STORAGE/' > ../manifests/dynatrace/gen/cr_06.yml
+cat ../manifests/dynatrace/gen/cr_06.yml | sed 's/PLACEHOLDER_LINE2/     value: "true"/' > ../manifests/dynatrace/gen/cr_07.yml
+cat ../manifests/dynatrace/gen/cr_07.yml | sed 's/PLACEHOLDER_LINE3/   - name: ONEAGENT_CONTAINER_STORAGE_PATH/' > ../manifests/dynatrace/gen/cr_08.yml
+cat ../manifests/dynatrace/gen/cr_08.yml | sed 's~PLACEHOLDER_LINE4~     value: /var/vcap/store~' > ../manifests/dynatrace/gen/cr_final.yml
+
+kubectl apply -f ../manifests/dynatrace/gen/cr_final.yml
 verify_kubectl $? "Deploying Dynatrace OneAgent failed."
 
 # Apply auto tagging rules in Dynatrace
