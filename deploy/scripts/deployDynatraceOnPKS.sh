@@ -29,8 +29,7 @@ rm -f ../manifests/dynatrace/gen/cr.yml
 curl -o ../manifests/dynatrace/cr.yml https://raw.githubusercontent.com/Dynatrace/dynatrace-oneagent-operator/$DT_OPERATOR_LATEST_RELEASE/deploy/cr.yaml
 cat ../manifests/dynatrace/cr.yml | sed 's~ENVIRONMENTID.live.dynatrace.com~'"$DT_TENANT"'~' >> ../manifests/dynatrace/gen/cr.yml
 
-PKS_ENVS='env:\n   - name: ONEAGENT_ENABLE_VOLUME_STORAGE\n     value: "true"\n   - name: ONEAGENT_CONTAINER_STORAGE_PATH\n     value: /var/vcap/store'
-cat ../manifests/dynatrace/cr.yml | sed 's~env:.*~'"$PKS_ENVS"'~' >> ../manifests/dynatrace/gen/cr.yml
+sed -i -e '/env:/{r ../manifests/dynatrace/pks_environment_variables.yaml' -e 'd}' ../manifests/dynatrace/gen/cr.yml
 
 kubectl apply -f ../manifests/dynatrace/gen/cr.yml
 verify_kubectl $? "Deploying Dynatrace OneAgent failed."
