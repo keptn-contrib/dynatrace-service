@@ -1,0 +1,5 @@
+env:
+ - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+   value: "true"
+ - name: ONEAGENT_CONTAINER_STORAGE_PATH
+   value: /var/vcap/store
