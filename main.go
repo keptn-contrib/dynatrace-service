@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 
+	keptnevents "github.com/keptn/go-utils/pkg/events"
 	keptnutils "github.com/keptn/go-utils/pkg/utils"
 )
 
@@ -101,7 +102,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	logger.Info("Trying to send event to DT Tenant " + os.Getenv("DT_TENANT"))
 
-	if event.Type == "sh.keptn.events.deployment-finished" {
+	if event.Type == keptnevents.DeploymentFinishedEventType {
 		de := createDeploymentEvent(event)
 		sendDynatraceRequest(dtTenant, dtAPIToken, de, event, logger)
 		// We need an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
@@ -111,7 +112,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			ie.Description = "Start Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
 			sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
 		}
-	} else if event.Type == "sh.keptn.events.evaluation-done" {
+	} else if event.Type == keptnevents.EvaluationDoneEventType {
 		ie := createInfoEvent(event)
 		if event.Data.EvaluationPassed {
 			ie.Title = "Promote Artifact from " + event.Data.Stage + " to next stage"
@@ -125,7 +126,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		ie.Description = "keptn evaluation status: " + strconv.FormatBool(event.Data.EvaluationPassed)
 		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
-	} else if event.Type == "sh.keptn.events.tests-finished" {
+	} else if event.Type == keptnevents.TestsFinishedEventType {
 		ie := createInfoEvent(event)
 		ie.Title = "Stop Running Tests: " + event.Data.Teststrategy
 		ie.Description = "Stop Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
