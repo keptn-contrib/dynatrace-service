@@ -1,6 +1,11 @@
 sudo: true
 dist: xenial
 language: go
+go:
+  - 1.12.x
+env:
+  global:
+    - GO111MODULE=on
 services:
 - docker
 before_install:
