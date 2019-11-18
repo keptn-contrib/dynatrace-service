@@ -23,12 +23,11 @@ type keptnEvent struct {
 	Contenttype    string `json:"contenttype"`
 	Shkeptncontext string `json:"shkeptncontext"`
 	Data           struct {
-		Githuborg          string `json:"githuborg"`
 		Project            string `json:"project"`
-		Teststrategy       string `json:"teststrategy"`
-		Deploymentstrategy string `json:"deploymentstrategy"`
 		Stage              string `json:"stage"`
 		Service            string `json:"service"`
+		Teststrategy       string `json:"teststrategy"`
+		Deploymentstrategy string `json:"deploymentstrategy"`
 		Image              string `json:"image"`
 		Tag                string `json:"tag"`
 		EvaluationPassed   bool   `json:evaluationpassed,omitempty`
@@ -51,15 +50,14 @@ type dtAttachRules struct {
 }
 
 type dtCustomProperties struct {
-	GitHubOrg          string `json:"GitHub Org"`
 	Project            string `json:"Project"`
-	TestStrategy       string `json:"Test strategy"`
-	DeploymentStrategy string `json:"Deployment strategy"`
 	Stage              string `json:"Stage"`
 	Service            string `json:"Service"`
+	TestStrategy       string `json:"Test strategy"`
+	DeploymentStrategy string `json:"Deployment strategy"`
 	Image              string `json:"Image"`
 	Tag                string `json:"Tag"`
-	KeptnContext       string `json:"keptn context"`
+	KeptnContext       string `json:"Keptn context"`
 }
 
 type dtDeploymentEvent struct {
@@ -100,18 +98,25 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		logger.Error("No Dynatrace credentials defined in cluster. Could not send event.")
 		return
 	}
-	logger.Info("Trying to send event to DT Tenant " + os.Getenv("DT_TENANT"))
+	logger.Info("Trying to send event to DT Tenant: " + os.Getenv("DT_TENANT"))
 
 	if event.Type == keptnevents.DeploymentFinishedEventType {
 		de := createDeploymentEvent(event)
 		sendDynatraceRequest(dtTenant, dtAPIToken, de, event, logger)
-		// We need an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
+
+		// TODO: an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
 		ie := createInfoEvent(event)
 		if event.Data.Teststrategy != "" {
 			ie.Title = "Start Running Tests: " + event.Data.Teststrategy
-			ie.Description = "Start Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
+			ie.Description = "Start running tests: " + event.Data.Teststrategy + " against " + event.Data.Service
 			sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
 		}
+	} else if event.Type == keptnevents.TestsFinishedEventType {
+		ie := createInfoEvent(event)
+		ie.Title = "Stop Running Tests: " + event.Data.Teststrategy
+		ie.Description = "Stop running tests: " + event.Data.Teststrategy + " against " + event.Data.Service
+		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
+
 	} else if event.Type == keptnevents.EvaluationDoneEventType {
 		ie := createInfoEvent(event)
 		if event.Data.EvaluationPassed {
@@ -124,12 +129,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			logger.Error("No valid deployment strategy defined in keptn event.")
 			return
 		}
-		ie.Description = "keptn evaluation status: " + strconv.FormatBool(event.Data.EvaluationPassed)
-		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
-	} else if event.Type == keptnevents.TestsFinishedEventType {
-		ie := createInfoEvent(event)
-		ie.Title = "Stop Running Tests: " + event.Data.Teststrategy
-		ie.Description = "Stop Running Tests: " + event.Data.Teststrategy + " against " + event.Data.Service
+		ie.Description = "Keptn evaluation status: " + strconv.FormatBool(event.Data.EvaluationPassed)
 		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
 	}
 }
@@ -141,19 +141,19 @@ func createAttachRules(event keptnEvent) dtAttachRules {
 				MeTypes: []string{"SERVICE"},
 				Tags: []dtTag{
 					dtTag{
-						Context: "ENVIRONMENT",
-						Key:     "application",
+						Context: "CONTEXTLESS",
+						Key:     "keptn_project",
 						Value:   event.Data.Project,
 					},
 					dtTag{
 						Context: "CONTEXTLESS",
-						Key:     "service",
-						Value:   event.Data.Service,
+						Key:     "keptn_stage",
+						Value:   event.Data.Stage,
 					},
 					dtTag{
 						Context: "CONTEXTLESS",
-						Key:     "environment",
-						Value:   event.Data.Project + "-" + event.Data.Stage,
+						Key:     "keptn_service",
+						Value:   event.Data.Service,
 					},
 				},
 			},
@@ -164,11 +164,10 @@ func createAttachRules(event keptnEvent) dtAttachRules {
 
 func createCustomProperties(event keptnEvent) dtCustomProperties {
 	var customProperties dtCustomProperties
-	customProperties.GitHubOrg = event.Data.Githuborg
 	customProperties.Project = event.Data.Project
-	customProperties.TestStrategy = event.Data.Teststrategy
 	customProperties.Stage = event.Data.Stage
 	customProperties.Service = event.Data.Service
+	customProperties.TestStrategy = event.Data.Teststrategy
 	customProperties.Image = event.Data.Image
 	customProperties.Tag = event.Data.Tag
 	customProperties.KeptnContext = event.Shkeptncontext
@@ -183,19 +182,18 @@ func createInfoEvent(event keptnEvent) dtInfoEvent {
 	ie.AttachRules = ar
 	ie.CustomProperties = customProperties
 	ie.EventType = "CUSTOM_INFO"
-	ie.Source = "keptn dynatrace-service"
+	ie.Source = "Keptn dynatrace-service"
 
 	return ie
 }
 
 func createDeploymentEvent(event keptnEvent) dtDeploymentEvent {
 	ar := createAttachRules(event)
-
 	customProperties := createCustomProperties(event)
 
 	var de dtDeploymentEvent
 	de.EventType = "CUSTOM_DEPLOYMENT"
-	de.Source = "keptn dynatrace-service"
+	de.Source = "Keptn dynatrace-service"
 	de.DeploymentName = "Deploy " + event.Data.Service + " " + event.Data.Tag + " with strategy " + event.Data.Deploymentstrategy
 	de.DeploymentProject = event.Data.Project
 	de.DeploymentVersion = event.Data.Tag
