@@ -10,3 +10,6 @@ deploy/scripts/*creds*.json
 creds_dt.json
 
 vendor/*
+
+# GoLand IDE
+.idea
