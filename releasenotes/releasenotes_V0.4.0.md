@@ -1,4 +1,4 @@
-# Release Notes 0.3.1
+# Release Notes 0.4.0
 
 ## New Features
 - Change auto-tagging rules to use CUSTOM_PROP [#1110](https://github.com/keptn/keptn/issues/1110)
