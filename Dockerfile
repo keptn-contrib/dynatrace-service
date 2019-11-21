@@ -2,21 +2,32 @@
 # This is based on Debian and sets the GOPATH to /go.
 # https://hub.docker.com/_/golang
 FROM golang:1.12 as builder
+ARG version=develop
+
+WORKDIR /go/src/github.com/keptn/dynatrace-service
+
+# Force the go compiler to use modules 
+ENV GO111MODULE=on
+ENV BUILDFLAGS=""
+
+# Copy `go.mod` for definitions and `go.sum` to invalidate the next layer
+# in case of a change in the dependencies
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download 
+
+ARG debugBuild
+
+# set buildflags for debug build
+RUN if [ ! -z "$debugBuild" ]; then export BUILDFLAGS='-gcflags "all=-N -l"'; fi  
 
 # Copy local code to the container image.
-WORKDIR /go/src/github.com/keptn/dynatrace-service
 COPY . .
 
-ARG DEP_VERSION=0.5.3
-RUN curl -L -s https://github.com/golang/dep/releases/download/v$DEP_VERSION/dep-linux-amd64 -o ./dep && \
-  chmod +x ./dep && \
-  ./dep ensure
-
-
 # Build the command inside the container.
-# (You may fetch or manage dependencies here,
-# either manually or with a tool like "godep".)
-RUN CGO_ENABLED=0 GOOS=linux go build -v -o dynatrace-service
+# (You may fetch or manage dependencies here, either manually or with a tool like "godep".)
+RUN CGO_ENABLED=0 GOOS=linux go build $BUILDFLAGS -v -o dynatrace-service
 
 # Use a Docker multi-stage build to create a lean production image.
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
