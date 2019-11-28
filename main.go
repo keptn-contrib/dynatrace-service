@@ -2,37 +2,22 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/cloudevents/sdk-go/pkg/cloudevents/client"
+	"github.com/kelseyhightower/envconfig"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
+	"github.com/cloudevents/sdk-go/pkg/cloudevents"
+	cloudeventshttp "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http"
 	keptnevents "github.com/keptn/go-utils/pkg/events"
 	keptnutils "github.com/keptn/go-utils/pkg/utils"
 )
-
-type keptnEvent struct {
-	Specversion    string `json:"specversion"`
-	Type           string `json:"type"`
-	Source         string `json:"source"`
-	ID             string `json:"id"`
-	Time           string `json:"time"`
-	Contenttype    string `json:"contenttype"`
-	Shkeptncontext string `json:"shkeptncontext"`
-	Data           struct {
-		Project            string `json:"project"`
-		Stage              string `json:"stage"`
-		Service            string `json:"service"`
-		Teststrategy       string `json:"teststrategy"`
-		Deploymentstrategy string `json:"deploymentstrategy"`
-		Image              string `json:"image"`
-		Tag                string `json:"tag"`
-		EvaluationPassed   bool   `json:evaluationpassed,omitempty`
-	} `json:"data"`
-}
 
 type dtTag struct {
 	Context string `json:"context"`
@@ -79,62 +64,7 @@ type dtInfoEvent struct {
 	Title            string             `json:"title"`
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	decoder := json.NewDecoder(r.Body)
-	var event keptnEvent
-	err := decoder.Decode(&event)
-	if err != nil {
-		fmt.Println("Error while parsing JSON payload: " + err.Error())
-		return
-	}
-
-	logger := keptnutils.NewLogger(event.Shkeptncontext, event.ID, "dynatrace-service")
-	logger.Info("Received new event of type " + event.Type)
-
-	dtTenant := os.Getenv("DT_TENANT")
-	dtAPIToken := os.Getenv("DT_API_TOKEN")
-
-	if dtTenant == "" || dtAPIToken == "" {
-		logger.Error("No Dynatrace credentials defined in cluster. Could not send event.")
-		return
-	}
-	logger.Info("Trying to send event to DT Tenant: " + os.Getenv("DT_TENANT"))
-
-	if event.Type == keptnevents.DeploymentFinishedEventType {
-		de := createDeploymentEvent(event)
-		sendDynatraceRequest(dtTenant, dtAPIToken, de, event, logger)
-
-		// TODO: an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
-		ie := createInfoEvent(event)
-		if event.Data.Teststrategy != "" {
-			ie.Title = "Start Running Tests: " + event.Data.Teststrategy
-			ie.Description = "Start running tests: " + event.Data.Teststrategy + " against " + event.Data.Service
-			sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
-		}
-	} else if event.Type == keptnevents.TestsFinishedEventType {
-		ie := createInfoEvent(event)
-		ie.Title = "Stop Running Tests: " + event.Data.Teststrategy
-		ie.Description = "Stop running tests: " + event.Data.Teststrategy + " against " + event.Data.Service
-		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
-
-	} else if event.Type == keptnevents.EvaluationDoneEventType {
-		ie := createInfoEvent(event)
-		if event.Data.EvaluationPassed {
-			ie.Title = "Promote Artifact from " + event.Data.Stage + " to next stage"
-		} else if !event.Data.EvaluationPassed && event.Data.Deploymentstrategy == "blue_green_service" {
-			ie.Title = "Rollback Artifact (Switch Blue/Green) in " + event.Data.Stage
-		} else if !event.Data.EvaluationPassed && event.Data.Deploymentstrategy == "direct" {
-			ie.Title = "NOT PROMOTING Artifact from " + event.Data.Stage + " due to failed evaluation"
-		} else {
-			logger.Error("No valid deployment strategy defined in keptn event.")
-			return
-		}
-		ie.Description = "Keptn evaluation status: " + strconv.FormatBool(event.Data.EvaluationPassed)
-		sendDynatraceRequest(dtTenant, dtAPIToken, ie, event, logger)
-	}
-}
-
-func createAttachRules(event keptnEvent) dtAttachRules {
+func createAttachRules(project string, stage string, service string) dtAttachRules {
 	ar := dtAttachRules{
 		TagRule: []dtTagRule{
 			dtTagRule{
@@ -143,17 +73,17 @@ func createAttachRules(event keptnEvent) dtAttachRules {
 					dtTag{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_project",
-						Value:   event.Data.Project,
+						Value:   project,
 					},
 					dtTag{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_stage",
-						Value:   event.Data.Stage,
+						Value:   stage,
 					},
 					dtTag{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_service",
-						Value:   event.Data.Service,
+						Value:   service,
 					},
 				},
 			},
@@ -162,21 +92,21 @@ func createAttachRules(event keptnEvent) dtAttachRules {
 	return ar
 }
 
-func createCustomProperties(event keptnEvent) dtCustomProperties {
+func createCustomProperties(project string, stage string, service string, testStrategy string, image string, tag string, keptnContext string) dtCustomProperties {
 	var customProperties dtCustomProperties
-	customProperties.Project = event.Data.Project
-	customProperties.Stage = event.Data.Stage
-	customProperties.Service = event.Data.Service
-	customProperties.TestStrategy = event.Data.Teststrategy
-	customProperties.Image = event.Data.Image
-	customProperties.Tag = event.Data.Tag
-	customProperties.KeptnContext = event.Shkeptncontext
+	customProperties.Project = project
+	customProperties.Stage = stage
+	customProperties.Service = service
+	customProperties.TestStrategy = testStrategy
+	customProperties.Image = image
+	customProperties.Tag = tag
+	customProperties.KeptnContext = keptnContext
 	return customProperties
 }
 
-func createInfoEvent(event keptnEvent) dtInfoEvent {
-	ar := createAttachRules(event)
-	customProperties := createCustomProperties(event)
+func createInfoEvent(project string, stage string, service string, testStrategy string, image string, tag string, keptnContext string) dtInfoEvent {
+	ar := createAttachRules(project, stage, service)
+	customProperties := createCustomProperties(project, stage, service, testStrategy, image, tag, keptnContext)
 
 	var ie dtInfoEvent
 	ie.AttachRules = ar
@@ -187,23 +117,23 @@ func createInfoEvent(event keptnEvent) dtInfoEvent {
 	return ie
 }
 
-func createDeploymentEvent(event keptnEvent) dtDeploymentEvent {
-	ar := createAttachRules(event)
-	customProperties := createCustomProperties(event)
+func createDeploymentEvent(event *keptnevents.DeploymentFinishedEventData, keptnContext string) dtDeploymentEvent {
+	ar := createAttachRules(event.Project, event.Stage, event.Service)
+	customProperties := createCustomProperties(event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, keptnContext)
 
 	var de dtDeploymentEvent
 	de.EventType = "CUSTOM_DEPLOYMENT"
 	de.Source = "Keptn dynatrace-service"
-	de.DeploymentName = "Deploy " + event.Data.Service + " " + event.Data.Tag + " with strategy " + event.Data.Deploymentstrategy
-	de.DeploymentProject = event.Data.Project
-	de.DeploymentVersion = event.Data.Tag
+	de.DeploymentName = "Deploy " + event.Service + " " + event.Tag + " with strategy " + event.DeploymentStrategy
+	de.DeploymentProject = event.Project
+	de.DeploymentVersion = event.Tag
 	de.AttachRules = ar
 	de.CustomProperties = customProperties
 
 	return de
 }
 
-func sendDynatraceRequest(dtTenant string, dtAPIToken string, dtEvent interface{}, event keptnEvent, logger *keptnutils.Logger) {
+func sendDynatraceRequest(dtTenant string, dtAPIToken string, dtEvent interface{}, logger *keptnutils.Logger) {
 	jsonString, err := json.Marshal(dtEvent)
 	if err != nil {
 		logger.Error("Error while generating Dynatrace API Request payload.")
@@ -227,15 +157,108 @@ func sendDynatraceRequest(dtTenant string, dtAPIToken string, dtEvent interface{
 	logger.Debug("Response Body:" + string(body))
 }
 
+type envConfig struct {
+	// Port on which to listen for cloudevents
+	Port int    `envconfig:"RCV_PORT" default:"8080"`
+	Path string `envconfig:"RCV_PATH" default:"/"`
+}
+
 func main() {
-	log.Print("Dynatrace service started.")
+	var env envConfig
+	if err := envconfig.Process("", &env); err != nil {
+		log.Fatalf("Failed to process env var: %s", err)
+	}
+	os.Exit(_main(os.Args[1:], env))
+}
 
-	http.HandleFunc("/", handler)
+func _main(args []string, env envConfig) int {
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	ctx := context.Background()
+
+	t, err := cloudeventshttp.New(
+		cloudeventshttp.WithPort(env.Port),
+		cloudeventshttp.WithPath(env.Path),
+	)
+
+	if err != nil {
+		log.Fatalf("failed to create transport, %v", err)
+	}
+	c, err := client.New(t)
+	if err != nil {
+		log.Fatalf("failed to create client, %v", err)
 	}
 
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+	log.Fatalf("failed to start receiver: %s", c.StartReceiver(ctx, gotEvent))
+
+	return 0
+}
+
+func gotEvent(ctx context.Context, event cloudevents.Event) error {
+	var shkeptncontext string
+	_ = event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
+
+	logger := keptnutils.NewLogger(shkeptncontext, event.Context.GetID(), "dynatrace-service")
+
+	logger.Info("Received new event of type " + event.Type())
+
+	dtTenant := os.Getenv("DT_TENANT")
+	dtAPIToken := os.Getenv("DT_API_TOKEN")
+
+	if dtTenant == "" || dtAPIToken == "" {
+		logger.Error("No Dynatrace credentials defined in cluster. Could not send event.")
+		return errors.New("no Dynatrace credentials defined in cluster")
+	}
+	logger.Info("Trying to send event to DT Tenant: " + os.Getenv("DT_TENANT"))
+
+	if event.Type() == keptnevents.DeploymentFinishedEventType {
+		dfData := &keptnevents.DeploymentFinishedEventData{}
+		err := event.DataAs(dfData)
+		if err != nil {
+			logger.Error("Could not parse event payload: " + err.Error())
+			return err
+		}
+		de := createDeploymentEvent(dfData, shkeptncontext)
+		sendDynatraceRequest(dtTenant, dtAPIToken, de, logger)
+
+		// TODO: an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
+		ie := createInfoEvent(dfData.Project, dfData.Stage, dfData.Service, dfData.TestStrategy, dfData.Image, dfData.Tag, shkeptncontext)
+		if dfData.TestStrategy != "" {
+			ie.Title = "Start Running Tests: " + dfData.TestStrategy
+			ie.Description = "Start running tests: " + dfData.TestStrategy + " against " + dfData.Service
+			sendDynatraceRequest(dtTenant, dtAPIToken, ie, logger)
+		}
+	} else if event.Type() == keptnevents.TestsFinishedEventType {
+		tfData := &keptnevents.TestsFinishedEventData{}
+		err := event.DataAs(tfData)
+		if err != nil {
+			logger.Error("Could not parse event payload: " + err.Error())
+			return err
+		}
+		ie := createInfoEvent(tfData.Project, tfData.Stage, tfData.Service, tfData.TestStrategy, "", "", shkeptncontext)
+		ie.Title = "Stop Running Tests: " + tfData.TestStrategy
+		ie.Description = "Stop running tests: " + tfData.TestStrategy + " against " + tfData.Service
+		sendDynatraceRequest(dtTenant, dtAPIToken, ie, logger)
+
+	} else if event.Type() == keptnevents.EvaluationDoneEventType {
+		edData := &keptnevents.EvaluationDoneEventData{}
+		err := event.DataAs(edData)
+		if err != nil {
+			fmt.Println("Error while parsing JSON payload: " + err.Error())
+			return err
+		}
+		ie := createInfoEvent(edData.Project, edData.Stage, edData.Service, edData.TestStrategy, "", "", shkeptncontext)
+		if edData.EvaluationDetails.Result == "pass" || edData.EvaluationDetails.Result == "warning" {
+			ie.Title = "Promote Artifact from " + edData.Stage + " to next stage"
+		} else if edData.EvaluationDetails.Result == "fail" && edData.DeploymentStrategy == "blue_green_service" {
+			ie.Title = "Rollback Artifact (Switch Blue/Green) in " + edData.Stage
+		} else if edData.EvaluationDetails.Result == "fail" && edData.DeploymentStrategy == "direct" {
+			ie.Title = "NOT PROMOTING Artifact from " + edData.Stage + " due to failed evaluation"
+		} else {
+			logger.Error("No valid deployment strategy defined in keptn event.")
+			return nil
+		}
+		ie.Description = "Keptn evaluation status: " + edData.EvaluationDetails.Result
+		sendDynatraceRequest(dtTenant, dtAPIToken, ie, logger)
+	}
+	return nil
 }
