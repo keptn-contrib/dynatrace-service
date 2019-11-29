@@ -247,17 +247,17 @@ func gotEvent(ctx context.Context, event cloudevents.Event) error {
 			return err
 		}
 		ie := createInfoEvent(edData.Project, edData.Stage, edData.Service, edData.TestStrategy, "", "", shkeptncontext)
-		if edData.EvaluationDetails.Result == "pass" || edData.EvaluationDetails.Result == "warning" {
+		if edData.Result == "pass" || edData.Result == "warning" {
 			ie.Title = "Promote Artifact from " + edData.Stage + " to next stage"
-		} else if edData.EvaluationDetails.Result == "fail" && edData.DeploymentStrategy == "blue_green_service" {
+		} else if edData.Result == "fail" && edData.DeploymentStrategy == "blue_green_service" {
 			ie.Title = "Rollback Artifact (Switch Blue/Green) in " + edData.Stage
-		} else if edData.EvaluationDetails.Result == "fail" && edData.DeploymentStrategy == "direct" {
+		} else if edData.Result == "fail" && edData.DeploymentStrategy == "direct" {
 			ie.Title = "NOT PROMOTING Artifact from " + edData.Stage + " due to failed evaluation"
 		} else {
 			logger.Error("No valid deployment strategy defined in keptn event.")
 			return nil
 		}
-		ie.Description = "Keptn evaluation status: " + edData.EvaluationDetails.Result
+		ie.Description = "Keptn evaluation status: " + edData.Result
 		sendDynatraceRequest(dtTenant, dtAPIToken, ie, logger)
 	}
 	return nil
