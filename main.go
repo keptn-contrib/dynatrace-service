@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/cloudevents/sdk-go/pkg/cloudevents/client"
-	"github.com/kelseyhightower/envconfig"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/cloudevents/sdk-go/pkg/cloudevents/client"
+	"github.com/kelseyhightower/envconfig"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	cloudeventshttp "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http"
@@ -258,6 +259,9 @@ func gotEvent(ctx context.Context, event cloudevents.Event) error {
 			return nil
 		}
 		ie.Description = "Keptn evaluation status: " + edData.Result
+		if edData.EvaluationDetails != nil {
+			ie.Description = ie.Description + "(" + fmt.Sprintf("%f", edData.EvaluationDetails.Score) + "/100)"
+		}
 		sendDynatraceRequest(dtTenant, dtAPIToken, ie, logger)
 	}
 	return nil
