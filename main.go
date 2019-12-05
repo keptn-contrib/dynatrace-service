@@ -260,7 +260,7 @@ func gotEvent(ctx context.Context, event cloudevents.Event) error {
 		}
 		ie.Description = "Keptn evaluation status: " + edData.Result
 		if edData.EvaluationDetails != nil {
-			ie.Description = ie.Description + "(" + fmt.Sprintf("%f", edData.EvaluationDetails.Score) + "/100)"
+			ie.Description = ie.Description + "(" + fmt.Sprintf("%.2f", edData.EvaluationDetails.Score) + "/100)"
 		}
 		sendDynatraceRequest(dtTenant, dtAPIToken, ie, logger)
 	}
