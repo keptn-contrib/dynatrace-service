@@ -20,7 +20,8 @@ before_install:
 - LAST_COMMIT="$(git log -1 --oneline)"
 - ./writeManifest.sh
 - cat MANIFEST
-
+# uncomment certain lines from Dockerfile that are for travis builds only
+- sed -i '/#travis-uncomment/s/^#travis-uncomment //g' Dockerfile
 jobs:
   include:
   - stage: feature/bug
