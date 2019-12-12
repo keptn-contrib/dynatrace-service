@@ -15,6 +15,8 @@ func NewEventHandler(event cloudevents.Event, logger *keptnutils.Logger) (Dynatr
 	switch event.Type() {
 	case keptnevents.ConfigureMonitoringEventType:
 		return &ConfigureMonitoringEventHandler{Logger: logger, Event: event}, nil
+	case keptnevents.InternalProjectCreateEventType:
+		return &CreateProjectEventHandler{Logger: logger, Event: event}, nil
 	default:
 		return &CDEventHandler{Logger: logger, Event: event}, nil
 	}

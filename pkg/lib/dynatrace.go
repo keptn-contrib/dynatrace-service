@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/keptn/go-utils/pkg/models"
+
 	"k8s.io/client-go/kubernetes"
 
 	v1 "k8s.io/api/core/v1"
@@ -50,6 +52,14 @@ type Rules struct {
 	Conditions       []Conditions `json:"conditions"`
 }
 
+type DTDashboardsResponse struct {
+	Dashboards []struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Owner string `json:"owner"`
+	} `json:"dashboards"`
+}
+
 type DTTagResponse struct {
 	Values []Values `json:"values"`
 }
@@ -79,8 +89,14 @@ type DynatraceHelper struct {
 	OperatorTag    string
 }
 
-func NewDynatraceHelper() *DynatraceHelper {
-	return &DynatraceHelper{}
+func NewDynatraceHelper() (*DynatraceHelper, error) {
+	dtHelper := &DynatraceHelper{}
+	dtCreds, err := dtHelper.GetDTCredentials()
+	if err != nil {
+		return nil, err
+	}
+	dtHelper.DynatraceCreds = dtCreds
+	return dtHelper, nil
 }
 
 func (dt *DynatraceHelper) EnsureDTIsInstalled() error {
@@ -94,13 +110,6 @@ func (dt *DynatraceHelper) EnsureDTIsInstalled() error {
 		return err
 	}
 	// check if DT Secret is available
-
-	dtCreds, err := dt.GetDTCredentials()
-	if err != nil {
-		return err
-	}
-	dt.DynatraceCreds = dtCreds
-
 	err = dt.deployDTOperator()
 	if err != nil {
 		return err
@@ -111,12 +120,6 @@ func (dt *DynatraceHelper) EnsureDTIsInstalled() error {
 }
 
 func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
-	dtCreds, err := dt.GetDTCredentials()
-	if err != nil {
-		return err
-	}
-	dt.DynatraceCreds = dtCreds
-
 	dt.Logger.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
 	// serviceRule := createAutoTaggingRule("keptn_service")
@@ -138,6 +141,121 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
 			dt.Logger.Error("Could not create auto tagging rule: " + err.Error())
 		}
 
+	}
+	return nil
+}
+
+func (dt *DynatraceHelper) CreateCalculatedMetrics(project string) error {
+	dt.Logger.Info("creating metric calc:service.topurlresponsetime" + project)
+	responseTimeMetric := CreateCalculatedMetric("calc:service.topurlresponsetime"+project, "Top URL Response Time", "RESPONSE_TIME", "MICRO_SECOND", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SUM")
+	responseTimeJSONPayload, _ := json.Marshal(&responseTimeMetric)
+	_, err := dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurlresponsetime"+project, "PUT", string(responseTimeJSONPayload))
+	if err != nil {
+		dt.Logger.Error("could not create calculated metric calc:service.topurlresponsetime" + project + ". " + err.Error())
+	}
+
+	dt.Logger.Info("creating metric calc:service.topurlservicecalls" + project)
+	topServiceCalls := CreateCalculatedMetric("calc:service.topurlservicecalls"+project, "Top URL Service Calls", "NON_DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
+	topServiceCallsJSONPayload, _ := json.Marshal(&topServiceCalls)
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurlservicecalls"+project, "PUT", string(topServiceCallsJSONPayload))
+	if err != nil {
+		dt.Logger.Error("could not create calculated metric calc:service.topurlservicecalls" + project + ". " + err.Error())
+	}
+
+	dt.Logger.Info("creating metric calc:service.topurldbcalls" + project)
+	topDBCalls := CreateCalculatedMetric("calc:service.topurldbcalls"+project, "Top URL DB Calls", "DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
+	topDBCallsJSONPayload, _ := json.Marshal(&topDBCalls)
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurldbcalls"+project, "PUT", string(topDBCallsJSONPayload))
+	if err != nil {
+		dt.Logger.Error("could not create calculated metric calc:service.topurldbcalls" + project + ". " + err.Error())
+	}
+
+	return nil
+}
+
+func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error {
+	dt.Logger.Info("creating metric calc:service.teststepresponsetime" + project)
+	responseTimeMetric := CreateCalculatedTestStepMetric("calc:service.teststepresponsetime"+project, "Test Step Response Time", "RESPONSE_TIME", "MICRO_SECOND", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SUM")
+	responseTimeJSONPayload, _ := json.Marshal(&responseTimeMetric)
+	_, err := dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepresponsetime"+project, "PUT", string(responseTimeJSONPayload))
+	if err != nil {
+		dt.Logger.Error("could not create calculated metric calc:service.teststepresponsetime" + project + ". " + err.Error())
+	}
+
+	dt.Logger.Info("creating metric calc:service.teststepservicecalls" + project)
+	topServiceCalls := CreateCalculatedTestStepMetric("calc:service.teststepservicecalls"+project, "Test Step Service Calls", "NON_DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
+	topServiceCallsJSONPayload, _ := json.Marshal(&topServiceCalls)
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepservicecalls"+project, "PUT", string(topServiceCallsJSONPayload))
+	if err != nil {
+		dt.Logger.Error("could not create calculated metric calc:service.teststepservicecalls" + project + ". " + err.Error())
+	}
+
+	dt.Logger.Info("creating metric calc:service.teststepdbcalls" + project)
+	topDBCalls := CreateCalculatedTestStepMetric("calc:service.teststepdbcalls"+project, "Test Step DB Calls", "DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
+	topDBCallsJSONPayload, _ := json.Marshal(&topDBCalls)
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepdbcalls"+project, "PUT", string(topDBCallsJSONPayload))
+	if err != nil {
+		dt.Logger.Error("could not create calculated metric calc:service.teststepdbcalls" + project + ". " + err.Error())
+	}
+
+	dt.Logger.Info("creating metric calc:service.teststepfailurerate" + project)
+	failureRate := CreateCalculatedTestStepMetric("calc:service.teststepfailurerate"+project, "Test Step DB Calls", "FAILURE_RATE", "PERCENT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "OF_INTEREST_RATIO")
+	failureRateJSONPayload, _ := json.Marshal(&failureRate)
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepfailurerate"+project, "PUT", string(failureRateJSONPayload))
+	if err != nil {
+		dt.Logger.Error("could not create calculated metric calc:service.teststepfailurerate" + project + ". " + err.Error())
+	}
+
+	return nil
+}
+
+func (dt *DynatraceHelper) CreateDashboard(project string, shipyard models.Shipyard, services []string) error {
+	keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
+	if err != nil {
+		dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
+	}
+
+	keptnDomain := keptnDomainCM.Data["app_domain"]
+
+	// first, check if dashboard for this project already exists and delete that
+	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "GET", "")
+	if err != nil {
+		dt.Logger.Error("Could not retrieve list of existing Dynatrace dashboards: " + err.Error())
+		return err
+	}
+
+	dtDashboardsResponse := &DTDashboardsResponse{}
+	err = json.Unmarshal([]byte(res), dtDashboardsResponse)
+
+	if err != nil {
+		dt.Logger.Error("Could not parse list of existing Dynatrace dashboards: " + err.Error())
+		return err
+	}
+
+	for _, dashboardItem := range dtDashboardsResponse.Dashboards {
+		if dashboardItem.Name == project+"@keptn: Digital Delivery & Operations Dashboard" {
+			res, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards/"+dashboardItem.ID, "DELETE", "")
+			if err != nil {
+				dt.Logger.Error("Could not delete previous dashboard for project " + project + ": " + err.Error())
+				return err
+			}
+		}
+	}
+
+	dt.Logger.Info("Creating Dashboard for project " + project)
+	dashboard, err := CreateDynatraceDashboard(project, shipyard, keptnDomain, services)
+	if err != nil {
+		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
+		return err
+	}
+
+	dashboardPayload, _ := json.Marshal(dashboard)
+
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", string(dashboardPayload))
+
+	if err != nil {
+		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
+		return err
 	}
 	return nil
 }
