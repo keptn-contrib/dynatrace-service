@@ -2,6 +2,8 @@ package event_handler
 
 import (
 	"encoding/base64"
+	"fmt"
+	"net/url"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	"github.com/ghodss/yaml"
@@ -21,7 +23,27 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
-	eh.Logger = keptnutils.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
+	loggingDone := make(chan bool)
+	connData := &keptnutils.ConnectionData{}
+
+	stdLogger := keptnutils.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
+
+	if err := eh.Event.DataAs(connData); err == nil &&
+		connData.EventContext.KeptnContext != nil && connData.EventContext.Token != nil {
+
+		ws, _, err := keptnutils.OpenWS(*connData, url.URL{
+			Scheme: "http",
+			Host:   "api.keptn:8080",
+		})
+		defer ws.Close()
+		if err != nil {
+			eh.Logger.Error(fmt.Sprintf("Opening websocket connection failed. %s", err.Error()))
+			return nil
+		}
+		combinedLogger := keptnutils.NewCombinedLogger(stdLogger, ws, shkeptncontext)
+		eh.Logger = combinedLogger
+		go closeLogger(loggingDone, combinedLogger, ws)
+	}
 
 	e := &keptnevents.ProjectCreateEventData{}
 	err := eh.Event.DataAs(e)
