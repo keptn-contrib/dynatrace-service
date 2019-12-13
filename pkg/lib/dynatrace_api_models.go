@@ -128,6 +128,157 @@ type Tiles struct {
 	Markdown                  string       `json:"markdown,omitempty"`
 }
 
+// MANAGEMENT ZONE TYPES
+type ManagementZone struct {
+	Name  string    `json:"name"`
+	Rules []MZRules `json:"rules"`
+}
+
+type MZKey struct {
+	Attribute string `json:"attribute"`
+}
+type MZValue struct {
+	Context string `json:"context"`
+	Key     string `json:"key"`
+	Value   string `json:"value"`
+}
+type MZComparisonInfo struct {
+	Type     string  `json:"type"`
+	Operator string  `json:"operator"`
+	Value    MZValue `json:"value"`
+	Negate   bool    `json:"negate"`
+}
+type MZConditions struct {
+	Key            MZKey            `json:"key"`
+	ComparisonInfo MZComparisonInfo `json:"comparisonInfo"`
+}
+type MZRules struct {
+	Type             string         `json:"type"`
+	Enabled          bool           `json:"enabled"`
+	PropagationTypes []string       `json:"propagationTypes"`
+	Conditions       []MZConditions `json:"conditions"`
+}
+
+// AUTO TAGGING
+type DTTaggingRule struct {
+	Name  string  `json:"name"`
+	Rules []Rules `json:"rules"`
+}
+type DynamicKey struct {
+	Source string `json:"source"`
+	Key    string `json:"key"`
+}
+type Key struct {
+	Attribute  string     `json:"attribute"`
+	DynamicKey DynamicKey `json:"dynamicKey"`
+	Type       string     `json:"type"`
+}
+type ComparisonInfo struct {
+	Type          string      `json:"type"`
+	Operator      string      `json:"operator"`
+	Value         interface{} `json:"value"`
+	Negate        bool        `json:"negate"`
+	CaseSensitive interface{} `json:"caseSensitive"`
+}
+type Conditions struct {
+	Key            Key            `json:"key"`
+	ComparisonInfo ComparisonInfo `json:"comparisonInfo"`
+}
+type Rules struct {
+	Type             string       `json:"type"`
+	Enabled          bool         `json:"enabled"`
+	ValueFormat      string       `json:"valueFormat"`
+	PropagationTypes []string     `json:"propagationTypes"`
+	Conditions       []Conditions `json:"conditions"`
+}
+
+type DTDashboardsResponse struct {
+	Dashboards []struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Owner string `json:"owner"`
+	} `json:"dashboards"`
+}
+
+func CreateManagementZoneForProject(project string) *ManagementZone {
+	managementZone := &ManagementZone{
+		Name: "Keptn: " + project,
+		Rules: []MZRules{
+			{
+				Type:             "SERVICE",
+				Enabled:          true,
+				PropagationTypes: []string{},
+				Conditions: []MZConditions{
+					{
+						Key: MZKey{
+							Attribute: "SERVICE_TAGS",
+						},
+						ComparisonInfo: MZComparisonInfo{
+							Type:     "TAG",
+							Operator: "EQUALS",
+							Value: MZValue{
+								Context: "CONTEXTLESS",
+								Key:     "keptn_project",
+								Value:   project,
+							},
+							Negate: false,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return managementZone
+}
+
+func CreateManagementZoneForStage(project string, stage string) *ManagementZone {
+	managementZone := &ManagementZone{
+		Name: "Keptn: " + project + " " + stage,
+		Rules: []MZRules{
+			{
+				Type:             "SERVICE",
+				Enabled:          true,
+				PropagationTypes: []string{},
+				Conditions: []MZConditions{
+					{
+						Key: MZKey{
+							Attribute: "SERVICE_TAGS",
+						},
+						ComparisonInfo: MZComparisonInfo{
+							Type:     "TAG",
+							Operator: "EQUALS",
+							Value: MZValue{
+								Context: "CONTEXTLESS",
+								Key:     "keptn_project",
+								Value:   project,
+							},
+							Negate: false,
+						},
+					},
+					{
+						Key: MZKey{
+							Attribute: "SERVICE_TAGS",
+						},
+						ComparisonInfo: MZComparisonInfo{
+							Type:     "TAG",
+							Operator: "EQUALS",
+							Value: MZValue{
+								Context: "CONTEXTLESS",
+								Key:     "keptn_stage",
+								Value:   stage,
+							},
+							Negate: false,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return managementZone
+}
+
 func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard, keptnDomain string, services []string) (*DynatraceDashboard, error) {
 	dtDashboard := &DynatraceDashboard{
 		DashboardMetadata: DashboardMetadata{

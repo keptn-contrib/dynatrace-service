@@ -2,7 +2,6 @@ package event_handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -19,37 +18,45 @@ import (
 )
 
 type ConfigureMonitoringEventHandler struct {
-	Logger   keptnutils.LoggerInterface
-	Event    cloudevents.Event
-	DTHelper *lib.DynatraceHelper
+	Logger           keptnutils.LoggerInterface
+	Event            cloudevents.Event
+	DTHelper         *lib.DynatraceHelper
+	IsCombinedLogger bool
+	WebSocket        *websocket.Conn
 }
 
 func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
-	loggingDone := make(chan bool)
-	connData := &keptnutils.ConnectionData{}
-
-	stdLogger := keptnutils.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
-
-	if err := eh.Event.DataAs(connData); err == nil &&
-		connData.EventContext.KeptnContext != nil && connData.EventContext.Token != nil {
-
-		ws, _, err := keptnutils.OpenWS(*connData, url.URL{
-			Scheme: "http",
-			Host:   "api.keptn:8080",
-		})
-		defer ws.Close()
+	// open WebSocket, if connection data is available
+	connData := keptnutils.ConnectionData{}
+	if err := eh.Event.DataAs(&connData); err != nil ||
+		connData.EventContext.KeptnContext == nil || connData.EventContext.Token == nil ||
+		*connData.EventContext.KeptnContext == "" || *connData.EventContext.Token == "" {
+		eh.Logger.Debug("No WebSocket connection data available")
+	} else {
+		apiServiceURL, err := url.Parse("ws://api.keptn.svc.cluster.local")
 		if err != nil {
-			eh.Logger.Error(fmt.Sprintf("Opening websocket connection failed. %s", err.Error()))
+			eh.Logger.Error(err.Error())
 			return nil
 		}
+		ws, _, err := keptnutils.OpenWS(connData, *apiServiceURL)
+		if err != nil {
+			eh.Logger.Error("Opening WebSocket connection failed:" + err.Error())
+			return nil
+		}
+		stdLogger := keptnutils.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
 		combinedLogger := keptnutils.NewCombinedLogger(stdLogger, ws, shkeptncontext)
 		eh.Logger = combinedLogger
-		go closeLogger(loggingDone, combinedLogger, ws)
+		eh.WebSocket = ws
 	}
 
+	go eh.configureMonitoring()
+	return nil
+}
+
+func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 	e := &keptnevents.ConfigureMonitoringEventData{}
 	err := eh.Event.DataAs(e)
 	if err != nil {
@@ -104,10 +111,22 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 			eh.Logger.Error("Could not create Dynatrace dashboard for project " + e.Project + ": " + err.Error())
 			return err
 		}
-	}
 
-	loggingDone <- true
+		err = eh.DTHelper.CreateManagementZones(e.Project, *shipyard)
+		if err != nil {
+			eh.Logger.Error("Could not create Management Zones for project " + e.Project + ": " + err.Error())
+			return err
+		}
+	}
+	eh.closeWebSocketConnection()
 	return nil
+}
+
+func (eh *ConfigureMonitoringEventHandler) closeWebSocketConnection() {
+	if eh.IsCombinedLogger {
+		eh.WebSocket.Close()
+		eh.Logger.(*keptnutils.CombinedLogger).Terminate()
+	}
 }
 
 func getServicesInProject(project string, shipyard models.Shipyard, addService string) ([]string, error) {
@@ -141,10 +160,4 @@ func getServicesInProject(project string, shipyard models.Shipyard, addService s
 	}
 	return services, nil
 
-}
-
-func closeLogger(loggingDone chan bool, combinedLogger *keptnutils.CombinedLogger, ws *websocket.Conn) {
-	<-loggingDone
-	combinedLogger.Terminate()
-	ws.Close()
 }

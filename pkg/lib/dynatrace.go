@@ -20,47 +20,7 @@ import (
 
 const DEFAULT_OPERATOR_VERSION = "v0.5.2"
 
-type DTTaggingRule struct {
-	Name  string  `json:"name"`
-	Rules []Rules `json:"rules"`
-}
-type DynamicKey struct {
-	Source string `json:"source"`
-	Key    string `json:"key"`
-}
-type Key struct {
-	Attribute  string     `json:"attribute"`
-	DynamicKey DynamicKey `json:"dynamicKey"`
-	Type       string     `json:"type"`
-}
-type ComparisonInfo struct {
-	Type          string      `json:"type"`
-	Operator      string      `json:"operator"`
-	Value         interface{} `json:"value"`
-	Negate        bool        `json:"negate"`
-	CaseSensitive interface{} `json:"caseSensitive"`
-}
-type Conditions struct {
-	Key            Key            `json:"key"`
-	ComparisonInfo ComparisonInfo `json:"comparisonInfo"`
-}
-type Rules struct {
-	Type             string       `json:"type"`
-	Enabled          bool         `json:"enabled"`
-	ValueFormat      string       `json:"valueFormat"`
-	PropagationTypes []string     `json:"propagationTypes"`
-	Conditions       []Conditions `json:"conditions"`
-}
-
-type DTDashboardsResponse struct {
-	Dashboards []struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Owner string `json:"owner"`
-	} `json:"dashboards"`
-}
-
-type DTTagResponse struct {
+type DTAPIListResponse struct {
 	Values []Values `json:"values"`
 }
 type Values struct {
@@ -126,7 +86,7 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
 
 	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", "")
 
-	existingDTRules := &DTTagResponse{}
+	existingDTRules := &DTAPIListResponse{}
 
 	err = json.Unmarshal([]byte(response), existingDTRules)
 	if err != nil {
@@ -218,6 +178,81 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard models.Shipy
 	keptnDomain := keptnDomainCM.Data["app_domain"]
 
 	// first, check if dashboard for this project already exists and delete that
+	err = dt.DeleteExistingDashboard(project)
+	if err != nil {
+		return err
+	}
+
+	dt.Logger.Info("Creating Dashboard for project " + project)
+	dashboard, err := CreateDynatraceDashboard(project, shipyard, keptnDomain, services)
+	if err != nil {
+		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
+		return err
+	}
+
+	dashboardPayload, _ := json.Marshal(dashboard)
+
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", string(dashboardPayload))
+
+	if err != nil {
+		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
+		return err
+	}
+	dt.Logger.Info("Dynatrace dashboard created successfully. You can view it here: https://" + dt.DynatraceCreds.Tenant + "/#dashboards")
+	return nil
+}
+
+func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard models.Shipyard) error {
+	// get existing management zones
+	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", "")
+	if err != nil {
+		dt.Logger.Error("Could not retrieve management zones: " + err.Error())
+	}
+	mzs := &DTAPIListResponse{}
+
+	err = json.Unmarshal([]byte(response), mzs)
+	if err != nil {
+		dt.Logger.Error("Could not parse management zones list: " + err.Error())
+	}
+
+	found := false
+	for _, mz := range mzs.Values {
+		if mz.Name == "Keptn: "+project {
+			found = true
+		}
+	}
+
+	if !found {
+		managementZone := CreateManagementZoneForProject(project)
+		mzPayload, _ := json.Marshal(managementZone)
+		_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", string(mzPayload))
+		if err != nil {
+			dt.Logger.Error("Could not create management zone: " + err.Error())
+		}
+	}
+
+	for _, stage := range shipyard.Stages {
+		found := false
+		for _, mz := range mzs.Values {
+			if mz.Name == "Keptn: "+project+" "+stage.Name {
+				found = true
+			}
+		}
+
+		if !found {
+			managementZone := CreateManagementZoneForStage(project, stage.Name)
+			mzPayload, _ := json.Marshal(managementZone)
+			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", string(mzPayload))
+			if err != nil {
+				dt.Logger.Error("Could not create management zone: " + err.Error())
+			}
+		}
+	}
+
+	return nil
+}
+
+func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
 	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "GET", "")
 	if err != nil {
 		dt.Logger.Error("Could not retrieve list of existing Dynatrace dashboards: " + err.Error())
@@ -241,23 +276,6 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard models.Shipy
 			}
 		}
 	}
-
-	dt.Logger.Info("Creating Dashboard for project " + project)
-	dashboard, err := CreateDynatraceDashboard(project, shipyard, keptnDomain, services)
-	if err != nil {
-		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
-		return err
-	}
-
-	dashboardPayload, _ := json.Marshal(dashboard)
-
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", string(dashboardPayload))
-
-	if err != nil {
-		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
-		return err
-	}
-	dt.Logger.Info("Dynatrace dashboard created successfully. You can view it here: https://" + dt.DynatraceCreds.Tenant + "/#dashboards")
 	return nil
 }
 
@@ -271,7 +289,7 @@ func (dt *DynatraceHelper) createDTTaggingRule(rule *DTTaggingRule) error {
 	return err
 }
 
-func (dt *DynatraceHelper) deleteExistingDTTaggingRule(ruleName string, existingRules *DTTagResponse) {
+func (dt *DynatraceHelper) deleteExistingDTTaggingRule(ruleName string, existingRules *DTAPIListResponse) {
 	dt.Logger.Info("Deleting rule " + ruleName)
 	for _, rule := range existingRules.Values {
 		if rule.Name == ruleName {

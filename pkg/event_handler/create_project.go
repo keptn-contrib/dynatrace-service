@@ -2,8 +2,6 @@ package event_handler
 
 import (
 	"encoding/base64"
-	"fmt"
-	"net/url"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	"github.com/ghodss/yaml"
@@ -22,28 +20,6 @@ type CreateProjectEventHandler struct {
 func (eh CreateProjectEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
-
-	loggingDone := make(chan bool)
-	connData := &keptnutils.ConnectionData{}
-
-	stdLogger := keptnutils.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
-
-	if err := eh.Event.DataAs(connData); err == nil &&
-		connData.EventContext.KeptnContext != nil && connData.EventContext.Token != nil {
-
-		ws, _, err := keptnutils.OpenWS(*connData, url.URL{
-			Scheme: "http",
-			Host:   "api.keptn:8080",
-		})
-		defer ws.Close()
-		if err != nil {
-			eh.Logger.Error(fmt.Sprintf("Opening websocket connection failed. %s", err.Error()))
-			return nil
-		}
-		combinedLogger := keptnutils.NewCombinedLogger(stdLogger, ws, shkeptncontext)
-		eh.Logger = combinedLogger
-		go closeLogger(loggingDone, combinedLogger, ws)
-	}
 
 	e := &keptnevents.ProjectCreateEventData{}
 	err := eh.Event.DataAs(e)
@@ -87,6 +63,16 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 	}
 
 	err = eh.DTHelper.CreateDashboard(e.Project, *shipyard, nil)
+	if err != nil {
+		eh.Logger.Error("Could not create Dynatrace dashboard for project " + e.Project + ": " + err.Error())
+		return err
+	}
+
+	err = eh.DTHelper.CreateManagementZones(e.Project, *shipyard)
+	if err != nil {
+		eh.Logger.Error("Could not create Management Zones for project " + e.Project + ": " + err.Error())
+		return err
+	}
 
 	return nil
 }
