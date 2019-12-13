@@ -50,13 +50,15 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 		combinedLogger := keptnutils.NewCombinedLogger(stdLogger, ws, shkeptncontext)
 		eh.Logger = combinedLogger
 		eh.WebSocket = ws
+		eh.IsCombinedLogger = true
 	}
-
-	go eh.configureMonitoring()
+	eh.configureMonitoring()
+	eh.closeWebSocketConnection()
 	return nil
 }
 
 func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
+	eh.Logger.Info("Configuring Dynatrace monitoring")
 	e := &keptnevents.ConfigureMonitoringEventData{}
 	err := eh.Event.DataAs(e)
 	if err != nil {
@@ -118,14 +120,14 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 			return err
 		}
 	}
-	eh.closeWebSocketConnection()
+	eh.Logger.Info("Dynatrace Monitoring setup done")
 	return nil
 }
 
 func (eh *ConfigureMonitoringEventHandler) closeWebSocketConnection() {
 	if eh.IsCombinedLogger {
-		eh.WebSocket.Close()
 		eh.Logger.(*keptnutils.CombinedLogger).Terminate()
+		eh.WebSocket.Close()
 	}
 }
 
