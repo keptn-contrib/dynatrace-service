@@ -90,6 +90,14 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 	}
 
 	err = eh.DTHelper.EnsureDTTaggingRulesAreSetUp()
+	if err != nil {
+		eh.Logger.Error("Could not set up tagging rules: " + err.Error())
+	}
+
+	err = eh.DTHelper.EnsureProblemNotificationsAreSetUp()
+	if err != nil {
+		eh.Logger.Error("Could not set up problem notification: " + err.Error())
+	}
 
 	if e.Project != "" {
 		resourceHandler := utils.NewResourceHandler("configuration-service:8080")

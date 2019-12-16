@@ -52,6 +52,16 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 	dtHelper.Logger = eh.Logger
 	eh.DTHelper = dtHelper
 
+	err = eh.DTHelper.EnsureDTTaggingRulesAreSetUp()
+	if err != nil {
+		eh.Logger.Error("Could not set up tagging rules: " + err.Error())
+	}
+
+	err = eh.DTHelper.EnsureProblemNotificationsAreSetUp()
+	if err != nil {
+		eh.Logger.Error("Could not set up problem notification: " + err.Error())
+	}
+
 	err = eh.DTHelper.CreateCalculatedMetrics(e.Project)
 	if err != nil {
 		eh.Logger.Error("Could not create calculated metrics: " + err.Error())

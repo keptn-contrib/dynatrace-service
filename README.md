@@ -6,76 +6,43 @@ The service is subscribed to the following keptn events:
 - sh.keptn.events.deployment-finished
 - sh.keptn.events.evaluation-done
 - sh.keptn.events.tests-finished
+- sh.keptn.internal.event.project.create
+- sh.keptn.event.monitoring.configure
 
 ## Installation of Dynatrace Service and Dynatrace OneAgent Operator
 
 1. Define your credentials by executing the following script:
     ```console
-    cd ./deploy/scripts
-    ./defineDynatraceCredentials.sh
+    kubectl -n keptn create secret generic dynatrace --from-literal="DT_API_TOKEN=<DT_API_TOKEN>" --from-literal="DT_TENANT=<DT_TENANT>" --from-literal="DT_PAAS_TOKEN=<DT_PAAS_TOKEN>"
     ```
-    When the  script asks for your Dynatrace tenant, please enter your tenant according to the appropriate pattern:
+    The $DT_TENANT has to be set according to the appropriate pattern:
     - Dynatrace SaaS tenant: `{your-environment-id}.live.dynatrace.com`
     - Dynatrace-managed tenant: `{your-domain}/e/{your-environment-id}`
 
-1. Execute the installation script depending on your platform.
-    - For AKS
-    ```console
-    ./deployDynatraceOnAKS.sh
-    ```
-    - For EKS
-    ```console
-    ./deployDynatraceOnEKS.sh
-    ```    
-    - For GKE
-    ```console
-    ./deployDynatraceOnGKE.sh
-    ```    
-    - For OpenShift
-    ```console
-    ./deployDynatraceOnGKE.sh
-    ```
-    When this script is finished, the Dynatrace OneAgent and the dynatrace-service are deployed in your cluster. Execute the following commands to verify the deployment of the dynatrace-service.
+1. Deploy the `dynatrace-service` using `kubectl apply`:
 
     ```console
-    kubectl get ksvc dynatrace-service -n keptn
+    kubectl apply -f deploy/manifests/dynatrace-service/dynatrace-service.yaml
     ```
+   
+    When the service is deployed, use the following command to let the `dynatrace-service` install Dynatrace on your cluster. If Dynatrace is already deployed, the current deployment of Dynatrace will not be modified.
 
     ```console
-    NAME                DOMAIN                                      LATESTCREATED             LATESTREADY               READY
-    dynatrace-service   dynatrace-service.keptn.svc.cluster.local   dynatrace-service-26sm4   dynatrace-service-26sm4   True
-    ```
-
-    ```console
-    kubectl get subscription -n keptn | grep dynatrace-subscription
-    ```
-
-    ```console
-    dynatrace-subscription-deployment-finished          True
-    dynatrace-subscription-evaluation-done              True
-    dynatrace-subscription-tests-finished               True
+    keptn configure monitoring dynatrace
     ```
 
   When the next event is sent to any of the keptn channels you see an event in Dynatrace for the correlating service:
 ![Dynatrace events](assets/events.png?raw=true "Dynatrace Events")
 
-## Installation of dynatrace-service only
+## Set up Dynatrace monitoring for already existing Keptn projects
 
-To use this service, you must have set up Dynatrace monitoring, as described in the [documentation](https://keptn.sh/docs/0.2.1/monitoring/dynatrace/).
-Afterwards, apply the `dynatrace-service.yaml` using `kubectl` to create the dynatrace-service and the subscriptions to the keptn channels.
+If you already have created a project using Keptn and would like to enable Dynatrace monitoring for that project afterwards, please execute the following command:
 
-```console
-kubectl apply -f ./deploy/manifests/dynatrace-service/dynatrace-service.yaml
-```
+    ```console
+    keptn configure monitoring dynatrace --project=<PROJECT_NAME>
+    ```
 
-```console
-service.serving.knative.dev/dynatrace-service created
-subscription.eventing.knative.dev/dynatrace-subscription-deployment-finished created
-subscription.eventing.knative.dev/dynatrace-subscription-tests-finished created
-subscription.eventing.knative.dev/dynatrace-subscription-evaluation-done created
-```
-
-## Uninstall of dynatrace-service only
+## Uninstall dynatrace-service
 
 To uninstall the dynatrace service and remove the subscriptions to keptn channels execute this command.
 

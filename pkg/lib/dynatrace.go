@@ -82,8 +82,6 @@ func (dt *DynatraceHelper) EnsureDTIsInstalled() error {
 func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
 	dt.Logger.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
-	// serviceRule := createAutoTaggingRule("keptn_service")
-
 	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", "")
 
 	existingDTRules := &DTAPIListResponse{}
@@ -101,6 +99,52 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
 			dt.Logger.Error("Could not create auto tagging rule: " + err.Error())
 		}
 
+	}
+	return nil
+}
+
+func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
+	dt.Logger.Info("Setting up problem notifications in Dynatrace Tenant")
+	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "GET", "")
+
+	existingNotifications := &DTAPIListResponse{}
+
+	err = json.Unmarshal([]byte(response), existingNotifications)
+	if err != nil {
+		dt.Logger.Info("No existing Dynatrace problem notifications rules found. Creating new notification.")
+	}
+
+	found := false
+	for _, notification := range existingNotifications.Values {
+		if notification.Name == "Keptn Problem Notification" {
+			found = true
+		}
+	}
+	if !found {
+		problemNotification := PROBLEM_NOTIFICATION_PAYLOAD
+		keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
+		if err != nil {
+			dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
+		}
+
+		keptnDomain := keptnDomainCM.Data["app_domain"]
+
+		problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", "https://api.keptn."+keptnDomain)
+
+		keptnSecret, err := dt.KubeApi.CoreV1().Secrets("keptn").Get("keptn-api-token", metav1.GetOptions{})
+		if err != nil {
+			dt.Logger.Error("Could not retrieve keptn-api-token: " + err.Error())
+		}
+
+		apiToken := keptnSecret.Data["keptn-api-token"]
+
+		problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", string(apiToken))
+
+		_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", problemNotification)
+		if err != nil {
+			dt.Logger.Error("could not set up problem notification: " + err.Error())
+			return err
+		}
 	}
 	return nil
 }
