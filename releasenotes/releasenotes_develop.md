@@ -6,3 +6,4 @@
 ## Fixed Issues
 
 ## Known Limitations
+- When using Container-Optimized OS (COS) based GKE clusters, the deployed OneAgent has to be updated after the installation of Dynatrace
