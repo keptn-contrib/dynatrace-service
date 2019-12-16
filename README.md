@@ -1,7 +1,12 @@
 # Dynatrace Service and Dynatrace OneAgent Operator
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-contrib/dynatrace-service)
+[![Build Status](https://travis-ci.org/keptn-contrib/dynatrace-service.svg?branch=master)](https://travis-ci.org/keptn-contrib/dynatrace-service)
+[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-contrib/dynatrace-service)](https://goreportcard.com/report/github.com/keptn-contrib/dynatrace-service)
 
-The dynatrace-service sends information about the current state of a pipeline run for a service to Dynatrace by sending events for the correlating detected service.
-The service is subscribed to the following keptn events:
+The *dynatrace-service* is a [Keptn](https://keptn.sh) service that sends information about the current state of a 
+ pipeline run for a service to Dynatrace by sending events for the correlating detected service. 
+ 
+The service is subscribed to the following Keptn CloudEvents:
 
 - sh.keptn.events.deployment-finished
 - sh.keptn.events.evaluation-done

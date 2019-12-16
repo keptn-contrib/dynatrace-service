@@ -1,62 +1,99 @@
 sudo: true
 dist: xenial
-language: go
+language: bash
+services:
+  - docker
 go:
   - 1.12.x
 env:
   global:
     - GO111MODULE=on
-services:
-- docker
+    - GOPROXY=https://proxy.golang.org
 before_install:
-- export TZ=Europe/Vienna
-- IMAGE=keptn/dynatrace-service
-- REGISTRY_USER=bacherfl
-- VERSION="$(cat version | tr -d '[:space:]')"
-- DATE="$(date +'%Y%m%d.%H%M')"
-- GIT_SHA="$(git rev-parse --short HEAD)"
-- echo "$REGISTRY_PASSWORD" | docker login --username $REGISTRY_USER --password-stdin
-- REPO_URL="$(git remote get-url --all origin)"
-- LAST_COMMIT="$(git log -1 --oneline)"
-- ./writeManifest.sh
-- cat MANIFEST
-# uncomment certain lines from Dockerfile that are for travis builds only
-- sed -i '/#travis-uncomment/s/^#travis-uncomment //g' Dockerfile
+  - export TZ=Europe/Vienna
+  - IMAGE=keptn/dynatrace-service
+  - REPO_URL="$(git remote get-url --all origin)"
+  # get the last tag
+  - GIT_LAST_TAG=$(git describe --tags $(git rev-list --tags) || echo "0.0.0")
+  - GIT_NUM_COMMITS_SINCE_LAST_TAG=$(git rev-list ${GIT_LAST_TAG}..HEAD --count || echo "trunk")
+  # get current branch name
+  - GIT_BRANCH_NAME=$(git branch | grep \* | cut -d ' ' -f2)
+  - BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then echo $TRAVIS_BRANCH; else echo $TRAVIS_PULL_REQUEST_BRANCH; fi)
+  - echo "TRAVIS_BRANCH=$TRAVIS_BRANCH, PR=$PR, BRANCH=$BRANCH"
+  - GIT_SHA=$(git rev-parse --short HEAD)
+  - GIT_BRANCH_AND_COMMIT=$(git describe --exact-match 2> /dev/null || echo "`git symbolic-ref HEAD 2> /dev/null | cut -b 12-`-`git log --pretty=format:\"%h\" -1`")
+  # find out if we are on a tag (= exact match)
+  # if not: use tag + number of commit + commit hash
+  - |
+    VERSION=$(git describe --exact-match)
+    if [ $? -ne 0 ]; then
+      VERSION="${GIT_LAST_TAG}-${GIT_BRANCH_NAME}-${GIT_NUM_COMMITS_SINCE_LAST_TAG}-${GIT_SHA}"
+    fi
+  - DATE="$(date +'%Y%m%d.%H%M')"
+  - ./writeManifest.sh
+  - cat MANIFEST
+  # uncomment certain lines from Dockerfile that are for travis builds only
+  - sed -i '/#travis-uncomment/s/^#travis-uncomment //g' Dockerfile
 jobs:
   include:
-  - stage: feature/bug
-    if: branch =~ ^feature.*$ OR branch =~ ^bug.*$ OR branch =~ ^hotfix.*$
-    script:
-    - echo $TRAVIS_BUILD_STAGE_NAME
-    - TYPE="$(echo $TRAVIS_BRANCH | cut -d'/' -f1)"
-    - NUMBER="$(echo $TRAVIS_BRANCH | cut -d'/' -f2)"
-    - docker build . -t "${IMAGE}:${GIT_SHA}"
-    - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${TYPE}.${NUMBER}.${DATE}"
-    - docker push "${IMAGE}:${GIT_SHA}"
-    - docker push "${IMAGE}:${TYPE}.${NUMBER}.${DATE}"
-  - stage: develop
-    if: branch = develop AND NOT type = pull_request
-    script:
-    - echo $TRAVIS_BUILD_STAGE_NAME
-    - docker build . -t "${IMAGE}:${GIT_SHA}"
-    - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${DATE}"
-    - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:latest"
-    - docker push "${IMAGE}:${GIT_SHA}"
-    - docker push "${IMAGE}:${DATE}"
-    - docker push "${IMAGE}:latest"
-  - stage: release-branch
-    if: branch =~ ^release.*$ AND NOT type = pull_request
-    script:
-    - echo $TRAVIS_BUILD_STAGE_NAME
-    - docker build . -t "${IMAGE}:${GIT_SHA}"
-    - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}.${DATE}"
-    - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}.latest"
-    - docker push "${IMAGE}:${GIT_SHA}"
-    - docker push "${IMAGE}:${VERSION}.${DATE}"
-    - docker push "${IMAGE}:${VERSION}.latest"
-  - stage: master
-    if: branch = master AND NOT type = pull_request
-    script:
-    - echo $TRAVIS_BUILD_STAGE_NAME
-    - docker build . -t "${IMAGE}:${VERSION}"
-    - docker push "${IMAGE}:${VERSION}"
+    - stage: codestyle
+      # Check Codestyle using go fmt
+      services: []
+      language: go
+      go:
+        - 1.12.x
+      # skip install
+      install: true
+      script:
+        - echo "Checking code style..."
+        - unformatted=$(gofmt -l .)
+        - |
+          if [ ! -z "$unformatted" ]; then
+            echo "Code Style Check failed for the following files: ${unformatted}".
+            echo "Please run: gofmt -w ."
+            echo "After that ammend your commit (e.g.: git add ${unformatted} && git commit --amend --no-edit) and force push the changes (git push -f)."
+            travis_terminate 1
+          fi
+
+    - stage: feature/bug/hotfix/patch
+      # build docker images for feature/bug/hotfix/patch branches
+      if: branch =~ ^feature.*$ OR branch =~ ^bug.*$ OR branch =~ ^hotfix.*$ OR branch =~ ^patch.*$
+      script:
+        - echo $TRAVIS_BUILD_STAGE_NAME
+        - TYPE="$(echo $TRAVIS_BRANCH | cut -d'/' -f1)"
+        - NUMBER="$(echo $TRAVIS_BRANCH | cut -d'/' -f2)"
+        - docker build . -t "${IMAGE}:${GIT_SHA}" || travis_terminate -1
+        - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${TYPE}.${NUMBER}.${DATE}"
+      after_success:
+        - echo "$REGISTRY_PASSWORD" | docker login --username $REGISTRY_USER --password-stdin
+        - docker push "${IMAGE}:${GIT_SHA}"
+        - docker push "${IMAGE}:${TYPE}.${NUMBER}.${DATE}"
+
+    - stage: master/develop
+      if:  (branch = develop or branch = master) AND NOT type = pull_request
+      script:
+        - echo $TRAVIS_BUILD_STAGE_NAME
+        - docker build . -t "${IMAGE}:${GIT_SHA}" || travis_terminate -1
+        - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${DATE}"
+        - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:latest"
+      after_success:
+        - echo "$REGISTRY_PASSWORD" | docker login --username $REGISTRY_USER --password-stdin
+        - docker push "${IMAGE}:${GIT_SHA}"
+        - docker push "${IMAGE}:${DATE}"
+        - docker push "${IMAGE}:latest"
+
+    - stage: release-branch
+      # build docker images for release branches
+      if: branch =~ ^release.*$ AND NOT type = pull_request
+      script:
+        # remove release- form branch name and overwrite the VERSION based on the branch name
+        - echo $BRANCH
+        - export VERSION=${BRANCH#"release-"}
+        - echo $TRAVIS_BUILD_STAGE_NAME - $VERSION
+        - docker build . -t "${IMAGE}:${GIT_SHA}" || travis_terminate -1
+        - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}.${DATE}"
+        - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}.latest"
+      after_success:
+        - echo "$REGISTRY_PASSWORD" | docker login --username $REGISTRY_USER --password-stdin
+        - docker images
+        - docker push "${IMAGE}"
