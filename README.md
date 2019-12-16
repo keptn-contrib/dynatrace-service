@@ -30,6 +30,21 @@ The service is subscribed to the following keptn events:
     ```console
     keptn configure monitoring dynatrace
     ```
+   
+ NOTE: If you're rolling out Dynatrace OneAgent to Container-Optimized OS(cos) based GKE clusters, you'll need to edit the `oneagent` Custom Resource in the `dynatrace` namespace and 
+ add the following entry to the `env` section in the custom resource.
+ 
+ First, edit the `OneAgent` Custom Resource:
+  ```console
+  kubectl edit oneagent -n dynatrace
+  ```
+ And then add this entry to the `env` section in the custom resource
+ 
+  ```console
+  env:
+    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+      value: "true"
+  ```
 
   When the next event is sent to any of the keptn channels you see an event in Dynatrace for the correlating service:
 ![Dynatrace events](assets/events.png?raw=true "Dynatrace Events")
