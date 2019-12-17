@@ -92,13 +92,15 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
 	}
 
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
-		dt.deleteExistingDTTaggingRule(ruleName, existingDTRules)
-		rule := createAutoTaggingRule(ruleName)
-		err = dt.createDTTaggingRule(rule)
-		if err != nil {
-			dt.Logger.Error("Could not create auto tagging rule: " + err.Error())
+		if !dt.taggingRuleExists(ruleName, existingDTRules) {
+			rule := createAutoTaggingRule(ruleName)
+			err = dt.createDTTaggingRule(rule)
+			if err != nil {
+				dt.Logger.Error("Could not create auto tagging rule: " + err.Error())
+			}
+		} else {
+			dt.Logger.Info("Tagging rule " + ruleName + " already exists")
 		}
-
 	}
 	return nil
 }
@@ -343,6 +345,15 @@ func (dt *DynatraceHelper) deleteExistingDTTaggingRule(ruleName string, existing
 			}
 		}
 	}
+}
+
+func (dt *DynatraceHelper) taggingRuleExists(ruleName string, existingRules *DTAPIListResponse) bool {
+	for _, rule := range existingRules.Values {
+		if rule.Name == ruleName {
+			return true
+		}
+	}
+	return false
 }
 
 func createAutoTaggingRule(ruleName string) *DTTaggingRule {
