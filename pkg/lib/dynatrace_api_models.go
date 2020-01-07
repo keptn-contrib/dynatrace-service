@@ -23,6 +23,8 @@ const PROBLEM_NOTIFICATION_PAYLOAD string = `{
 
       }`
 
+const DASHBOARD_STAGE_WIDTH int = 456
+
 // CALCULATED METRIC TYPES
 type CalculatedMetric struct {
 	TsmMetricKey        string                       `json:"tsmMetricKey"`
@@ -314,31 +316,16 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 		Tiles: []Tiles{},
 	}
 
-	addTileToDashboard(createMarkdownTile("## Operations\n[Open Keptns Bridge](https://bridge.keptn."+keptnDomain+"/?#/)"), dtDashboard, true)
-
-	// create stage service tiles
-	for _, stage := range shipyard.Stages {
-		addTileToDashboard(createHeaderTile(stage.Name), dtDashboard, true)
-		addTileToDashboard(createStageServicesTile(projectName, stage.Name), dtDashboard, false)
-		addTileToDashboard(createServiceThroughputTile(projectName, stage.Name), dtDashboard, false)
-		addTileToDashboard(createServiceErrorRateTile(projectName, stage.Name), dtDashboard, false)
-		addTileToDashboard(createServiceResponseTimeTile(projectName, stage.Name), dtDashboard, false)
-		/*
-			addTileToDashboard(createServiceTopAPICallsTile(projectName, stage.Name), dtDashboard, false)
-			addTileToDashboard(createServiceTestStepTopAPICallsTile(projectName, stage.Name), dtDashboard, false)
-
-		*/
-
-		if len(services) > 0 {
-			servicesMarkdown := "### Services: \n"
-			for _, service := range services {
-				servicesMarkdown = servicesMarkdown + "[" + service + "](http://" + service + "." + projectName + "-" + stage.Name + "." + keptnDomain + ")\n"
-			}
-			addTileToDashboard(createMarkdownTile(servicesMarkdown), dtDashboard, true)
-		}
+	infrastructureHeaderTile := createHeaderTile("Infrastructure")
+	infrastructureHeaderTile.Bounds = Bounds{
+		Top:    0,
+		Left:   0,
+		Width:  500,
+		Height: 38,
 	}
 
-	addTileToDashboard(createHeaderTile("Infrastructure"), dtDashboard, true)
+	dtDashboard.Tiles = append(dtDashboard.Tiles, infrastructureHeaderTile)
+
 	hostsTile := Tiles{
 		Name:       "",
 		TileType:   "HOSTS",
@@ -362,10 +349,114 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 		AssignedEntities:          nil,
 		ExcludeMaintenanceWindows: false,
 		Markdown:                  "",
+		Bounds: Bounds{
+			Top:    38,
+			Left:   0,
+			Width:  DASHBOARD_STAGE_WIDTH,
+			Height: 152,
+		},
 	}
+	dtDashboard.Tiles = append(dtDashboard.Tiles, hostsTile)
 
-	addTileToDashboard(hostsTile, dtDashboard, false)
-	addTileToDashboard(createHostCPULoadTile(), dtDashboard, false)
+	networkTile := Tiles{
+		Name:       "Network Status",
+		TileType:   "NETWORK_MEDIUM",
+		Configured: true,
+		TileFilter: TileFilter{
+			Timeframe:      nil,
+			ManagementZone: nil,
+		},
+		AssignedEntities: nil,
+		Bounds: Bounds{
+			Top:    38,
+			Left:   912,
+			Width:  DASHBOARD_STAGE_WIDTH,
+			Height: 152,
+		},
+	}
+	dtDashboard.Tiles = append(dtDashboard.Tiles, networkTile)
+
+	cpuLoadTile := createHostCPULoadTile()
+	cpuLoadTile.Bounds = Bounds{
+		Top:    38,
+		Left:   DASHBOARD_STAGE_WIDTH,
+		Width:  DASHBOARD_STAGE_WIDTH,
+		Height: 152,
+	}
+	dtDashboard.Tiles = append(dtDashboard.Tiles, cpuLoadTile)
+
+	bridgeTile := createMarkdownTile("## Operations\n[Open Keptns Bridge](https://bridge.keptn." + keptnDomain + "/?#/)")
+	bridgeTile.Bounds = Bounds{
+		Top:    190,
+		Left:   0,
+		Width:  912,
+		Height: 76,
+	}
+	dtDashboard.Tiles = append(dtDashboard.Tiles, bridgeTile)
+
+	// create stage service tiles
+	for index, stage := range shipyard.Stages {
+
+		headerTile := createHeaderTile(stage.Name)
+		headerTile.Bounds = Bounds{
+			Top:    266,
+			Left:   index * DASHBOARD_STAGE_WIDTH,
+			Width:  DASHBOARD_STAGE_WIDTH,
+			Height: 38,
+		}
+		dtDashboard.Tiles = append(dtDashboard.Tiles, headerTile)
+
+		servicesTile := createStageServicesTile(projectName, stage.Name)
+		servicesTile.Bounds = Bounds{
+			Top:    304,
+			Left:   index * DASHBOARD_STAGE_WIDTH,
+			Width:  DASHBOARD_STAGE_WIDTH,
+			Height: 152,
+		}
+		dtDashboard.Tiles = append(dtDashboard.Tiles, servicesTile)
+
+		throughputTile := createServiceThroughputTile(projectName, stage.Name)
+		throughputTile.Bounds = Bounds{
+			Top:    456,
+			Left:   index * DASHBOARD_STAGE_WIDTH,
+			Width:  DASHBOARD_STAGE_WIDTH,
+			Height: 152,
+		}
+		dtDashboard.Tiles = append(dtDashboard.Tiles, throughputTile)
+
+		errorRateTile := createServiceErrorRateTile(projectName, stage.Name)
+		errorRateTile.Bounds = Bounds{
+			Top:    608,
+			Left:   index * DASHBOARD_STAGE_WIDTH,
+			Width:  DASHBOARD_STAGE_WIDTH,
+			Height: 152,
+		}
+		dtDashboard.Tiles = append(dtDashboard.Tiles, errorRateTile)
+
+		responseTimeTile := createServiceResponseTimeTile(projectName, stage.Name)
+		responseTimeTile.Bounds = Bounds{
+			Top:    760,
+			Left:   index * DASHBOARD_STAGE_WIDTH,
+			Width:  DASHBOARD_STAGE_WIDTH,
+			Height: 152,
+		}
+		dtDashboard.Tiles = append(dtDashboard.Tiles, responseTimeTile)
+
+		if len(services) > 0 {
+			servicesMarkdown := "### Services: \n"
+			for _, service := range services {
+				servicesMarkdown = servicesMarkdown + "[" + service + "](http://" + service + "." + projectName + "-" + stage.Name + "." + keptnDomain + ")\n"
+			}
+			servicesMdTile := createMarkdownTile(servicesMarkdown)
+			servicesMdTile.Bounds = Bounds{
+				Top:    912,
+				Left:   index * DASHBOARD_STAGE_WIDTH,
+				Width:  DASHBOARD_STAGE_WIDTH,
+				Height: 1000,
+			}
+			dtDashboard.Tiles = append(dtDashboard.Tiles, servicesMdTile)
+		}
+	}
 
 	return dtDashboard, nil
 }
@@ -726,7 +817,7 @@ func createServiceThroughputTile(project string, stage string) Tiles {
 				},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
-				NonDatabaseService: EntityFilter{
+				Service: EntityFilter{
 					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
 				},
 			},
