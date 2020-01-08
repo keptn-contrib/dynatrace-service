@@ -65,6 +65,11 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		eh.Logger.Error("Could not map received event to datastructure: " + err.Error())
 	}
 
+	if dtProblemEvent.ProblemDetails.Status == "CLOSED" {
+		eh.Logger.Info("Received CLOSED problem")
+		return nil
+	}
+
 	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
 
 	splittedTags := strings.Split(dtProblemEvent.Tags, ",")
