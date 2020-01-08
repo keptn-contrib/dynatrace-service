@@ -27,6 +27,8 @@ spec:
             memory: "256Mi"
             cpu: "200m"
         env:
+        - name: EVENTBROKER
+          value: 'http://event-broker.keptn.svc.cluster.local/keptn'
         - name: PLATFORM
           value: kubernetes
         - name: DT_API_TOKEN
