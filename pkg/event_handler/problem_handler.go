@@ -115,7 +115,7 @@ func (eh ProblemEventHandler) HandleEvent() error {
 }
 
 func createAndSendCE(eventbroker string, problemData keptnevents.ProblemEventData, shkeptncontext string) error {
-	source, _ := url.Parse("prometheus")
+	source, _ := url.Parse("dynatrace")
 	contentType := "application/json"
 
 	endPoint, err := getServiceEndpoint(eventbroker)
