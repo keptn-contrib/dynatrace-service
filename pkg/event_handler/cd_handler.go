@@ -72,11 +72,24 @@ func (eh CDEventHandler) HandleEvent() error {
 		}
 		ie := createInfoEvent(edData.Project, edData.Stage, edData.Service, edData.TestStrategy, "", "", shkeptncontext)
 		if edData.Result == "pass" || edData.Result == "warning" {
-			ie.Title = "Promote Artifact from " + edData.Stage + " to next stage"
+			if edData.TestStrategy == "real-user" {
+				ie.Title = "Remediation action successful"
+			} else {
+				ie.Title = "Promote Artifact from " + edData.Stage + " to next stage"
+			}
+
 		} else if edData.Result == "fail" && edData.DeploymentStrategy == "blue_green_service" {
-			ie.Title = "Rollback Artifact (Switch Blue/Green) in " + edData.Stage
+			if edData.TestStrategy == "real-user" {
+				ie.Title = "Remediation action not successful"
+			} else {
+				ie.Title = "Rollback Artifact (Switch Blue/Green) in " + edData.Stage
+			}
 		} else if edData.Result == "fail" && edData.DeploymentStrategy == "direct" {
-			ie.Title = "NOT PROMOTING Artifact from " + edData.Stage + " due to failed evaluation"
+			if edData.TestStrategy == "real-user" {
+				ie.Title = "Remediation action not successful"
+			} else {
+				ie.Title = "NOT PROMOTING Artifact from " + edData.Stage + " due to failed evaluation"
+			}
 		} else {
 			eh.Logger.Error("No valid deployment strategy defined in keptn event.")
 			return nil

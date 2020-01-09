@@ -62,29 +62,29 @@ Content-Type: application/cloudevents+json
       }
     ],
     "ImpactedEntity": "Response time degradation on Web service ItemsController",
-    "PID": "3088340342325389746",
+    "PID": "-175196579159161496",
     "ProblemDetails": {
       "affectedCounts": {
         "APPLICATION": 0,
         "ENVIRONMENT": 0,
         "INFRASTRUCTURE": 0,
-        "SERVICE": 1
+        "SERVICE": 0
       },
       "commentCount": 0,
-      "displayName": "746",
-      "endTime": -1,
-      "hasRootCause": false,
-      "id": "3088340342325389746_1578471300000V2",
+      "displayName": "496",
+      "endTime": 1578562140000,
+      "hasRootCause": true,
+      "id": "-175196579159161496_1578561060000V2",
       "impactLevel": "SERVICE",
       "rankedEvents": [
         {
-          "affectedRequestsPerMinute": 69.8,
-          "endTime": -1,
+          "affectedRequestsPerMinute": 94.8,
+          "endTime": 1578562440000,
           "entityId": "SERVICE-1016B63497E3FEF6",
           "entityName": "ItemsController",
           "eventType": "SERVICE_RESPONSE_TIME_DEGRADED",
           "impactLevel": "SERVICE",
-          "isRootCause": false,
+          "isRootCause": true,
           "percentile": "50th",
           "referenceResponseTime50thPercentile": 0,
           "referenceResponseTime90thPercentile": 0,
@@ -94,22 +94,60 @@ Content-Type: application/cloudevents+json
             {
               "context": "RESPONSE_TIME_50TH_PERCENTILE",
               "unit": "MicroSecond (µs)",
-              "value": 138330304
+              "value": 1243911
             },
             {
               "context": "RESPONSE_TIME_90TH_PERCENTILE",
               "unit": "MicroSecond (µs)",
-              "value": 177199008
+              "value": 1355206.75
             }
           ],
           "severityLevel": "PERFORMANCE",
-          "startTime": 1578471300000,
-          "status": "OPEN",
+          "startTime": 1578561060000,
+          "status": "CLOSED",
+          "userDefined50thPercentileThreshold": 1000000,
+          "userDefined90thPercentileThreshold": 1000000
+        },
+        {
+          "affectedRequestsPerMinute": 94.8,
+          "endTime": 1578562440000,
+          "entityId": "SERVICE-1016B63497E3FEF6",
+          "entityName": "ItemsController",
+          "eventType": "SERVICE_RESPONSE_TIME_DEGRADED",
+          "impactLevel": "SERVICE",
+          "isRootCause": true,
+          "percentile": "50th",
+          "referenceResponseTime50thPercentile": 0,
+          "referenceResponseTime90thPercentile": 0,
+          "service": "ItemsController",
+          "serviceMethod": "addToCart",
+          "severities": [
+            {
+              "context": "RESPONSE_TIME_50TH_PERCENTILE",
+              "unit": "MicroSecond (µs)",
+              "value": 1243911
+            },
+            {
+              "context": "RESPONSE_TIME_90TH_PERCENTILE",
+              "unit": "MicroSecond (µs)",
+              "value": 1355206.75
+            }
+          ],
+          "severityLevel": "PERFORMANCE",
+          "startTime": 1578561060000,
+          "status": "CLOSED",
           "userDefined50thPercentileThreshold": 1000000,
           "userDefined90thPercentileThreshold": 1000000
         }
       ],
       "rankedImpacts": [
+        {
+          "entityId": "SERVICE-1016B63497E3FEF6",
+          "entityName": "ItemsController",
+          "eventType": "SERVICE_RESPONSE_TIME_DEGRADED",
+          "impactLevel": "SERVICE",
+          "severityLevel": "PERFORMANCE"
+        },
         {
           "entityId": "SERVICE-1016B63497E3FEF6",
           "entityName": "ItemsController",
@@ -122,31 +160,16 @@ Content-Type: application/cloudevents+json
         "APPLICATION": 0,
         "ENVIRONMENT": 0,
         "INFRASTRUCTURE": 0,
-        "SERVICE": 0
+        "SERVICE": 1
       },
       "severityLevel": "PERFORMANCE",
-      "startTime": 1578471300000,
-      "status": "OPEN",
+      "startTime": 1578561060000,
+      "status": "CLOSED",
       "tagsOfAffectedEntities": [
-        {
-          "context": "CONTEXTLESS",
-          "key": "keptn_deployment",
-          "value": "primary"
-        },
         {
           "context": "CONTEXTLESS",
           "key": "keptn_project",
           "value": "sockshop"
-        },
-        {
-          "context": "CONTEXTLESS",
-          "key": "keptn_stage",
-          "value": "production"
-        },
-        {
-          "context": "CONTEXTLESS",
-          "key": "environment",
-          "value": "sockshop-production"
         },
         {
           "context": "CONTEXTLESS",
@@ -155,22 +178,27 @@ Content-Type: application/cloudevents+json
         },
         {
           "context": "CONTEXTLESS",
-          "key": "app",
-          "value": "carts"
+          "key": "keptn_deployment",
+          "value": "primary"
+        },
+        {
+          "context": "CONTEXTLESS",
+          "key": "keptn_stage",
+          "value": "production"
         }
       ]
     },
-    "ProblemID": "746",
+    "ProblemID": "496",
     "ProblemTitle": "Response time degradation",
-    "State": "OPEN",
-    "Tags": "keptn_service:carts, keptn_deployment:primary, keptn_project:sockshop, environment:sockshop-production, keptn_stage:production, app:carts"
+    "State": "RESOLVED",
+    "Tags": "keptn_service:carts, keptn_deployment:primary, keptn_project:sockshop, keptn_stage:production"
   },
-  "id": "1b5932cf-50cf-4f4c-b488-ea836b02017a",
+  "id": "14946504-983b-438f-afaa-a7b53c847229",
   "source": "https://github.com/keptn/keptn/api",
   "specversion": "0.2",
-  "time": "2020-01-08T08:27:32.491Z",
+  "time": "2020-01-09T09:35:29.424Z",
   "type": "sh.keptn.events.problem",
-  "shkeptncontext": "22921959-eff4-45ff-a964-bea7cdac700c"
+  "shkeptncontext": "eafe17c2-9e6c-4c7e-8eeb-29c4d8433327"
 }
 
 
