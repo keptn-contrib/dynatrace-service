@@ -65,6 +65,7 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		eh.Logger.Error("Could not map received event to datastructure: " + err.Error())
 	}
 
+	// ignore problem events if they are closed
 	if dtProblemEvent.ProblemDetails.Status == "CLOSED" {
 		eh.Logger.Info("Received CLOSED problem")
 		return nil
@@ -95,7 +96,8 @@ func (eh ProblemEventHandler) HandleEvent() error {
 	}
 	newProblemData := keptnevents.ProblemEventData{
 		State:          "OPEN",
-		ProblemID:      "",
+		PID:            dtProblemEvent.PID,
+		ProblemID:      dtProblemEvent.ProblemID,
 		ProblemTitle:   dtProblemEvent.ProblemTitle,
 		ProblemDetails: json.RawMessage(problemDetailsString),
 		ImpactedEntity: dtProblemEvent.ImpactedEntity,
