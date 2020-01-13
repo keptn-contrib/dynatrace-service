@@ -29,6 +29,15 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
+	if eh.Event.Type() == keptnevents.ConfigureMonitoringEventType {
+		eventData := &keptnevents.ConfigureMonitoringEventData{}
+		if err := eh.Event.DataAs(eventData); err != nil {
+			return err
+		}
+		if eventData.Type != "dynatrace" {
+			return nil
+		}
+	}
 	// open WebSocket, if connection data is available
 	connData := keptnutils.ConnectionData{}
 	if err := eh.Event.DataAs(&connData); err != nil ||
