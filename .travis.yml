@@ -14,7 +14,7 @@ before_install:
   - IMAGE=keptn/dynatrace-service
   - REPO_URL="$(git remote get-url --all origin)"
   # get the last tag
-  - GIT_LAST_TAG=$(git describe --tags $(git rev-list --tags) || echo "0.0.0")
+  - GIT_LAST_TAG=$(git describe --tags $(git rev-list --tags --max-count=1) || echo "0.0.0")
   - GIT_NUM_COMMITS_SINCE_LAST_TAG=$(git rev-list ${GIT_LAST_TAG}..HEAD --count || echo "trunk")
   # get current branch name
   - GIT_BRANCH_NAME=$(git branch | grep \* | cut -d ' ' -f2)
@@ -29,7 +29,6 @@ before_install:
     if [ $? -ne 0 ]; then
       VERSION="${GIT_LAST_TAG}-${GIT_BRANCH_NAME}-${GIT_NUM_COMMITS_SINCE_LAST_TAG}-${GIT_SHA}"
     fi
-  - export VERSION
   - DATE="$(date +'%Y%m%d.%H%M')"
   - ./writeManifest.sh
   - cat MANIFEST
@@ -63,7 +62,6 @@ jobs:
         - echo $TRAVIS_BUILD_STAGE_NAME
         - TYPE="$(echo $TRAVIS_BRANCH | cut -d'/' -f1)"
         - NUMBER="$(echo $TRAVIS_BRANCH | cut -d'/' -f2)"
-        - echo $VERSION
         - docker build -t "${IMAGE}:${GIT_SHA}" --build-arg version=$VERSION . || travis_terminate -1
         - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${TYPE}.${NUMBER}.${DATE}"
       after_success:
