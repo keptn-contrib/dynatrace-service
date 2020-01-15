@@ -107,6 +107,13 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
 
 func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 	dt.Logger.Info("Setting up problem notifications in Dynatrace Tenant")
+
+	alertingProfileId, err := dt.setupAlertingProfile()
+	if err != nil {
+		dt.Logger.Error("could not set up problem notification: " + err.Error())
+		return err
+	}
+
 	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "GET", "")
 
 	existingNotifications := &DTAPIListResponse{}
@@ -142,6 +149,8 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 
 		problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", string(apiToken))
 
+		problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
+
 		_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", problemNotification)
 		if err != nil {
 			dt.Logger.Error("could not set up problem notification: " + err.Error())
@@ -149,6 +158,47 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 		}
 	}
 	return nil
+}
+
+func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
+	dt.Logger.Info("Checking Keptn alerting profile availability")
+	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "GET", "")
+
+	existingAlertingProfiles := &DTAPIListResponse{}
+
+	err = json.Unmarshal([]byte(response), existingAlertingProfiles)
+	if err != nil {
+		dt.Logger.Info("No existing alerting profiles found.")
+	}
+
+	for _, ap := range existingAlertingProfiles.Values {
+		if ap.Name == "Keptn" {
+			dt.Logger.Info("Keptn alerting profile available")
+			return ap.ID, nil
+		}
+	}
+
+	dt.Logger.Info("Creating Keptn alerting profile.")
+
+	alertingProfile := CreateKeptnAlertingProfile()
+
+	alertingProfilePayload, _ := json.Marshal(alertingProfile)
+
+	response, err = dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "POST", string(alertingProfilePayload))
+
+	if err != nil {
+		return "", err
+	}
+
+	createdItem := &Values{}
+
+	err = json.Unmarshal([]byte(response), createdItem)
+	if err != nil {
+		dt.Logger.Error("Could not create alerting profile: " + err.Error())
+		return "", err
+	}
+	dt.Logger.Info("Alerting profile created successfully.")
+	return createdItem.ID, nil
 }
 
 func (dt *DynatraceHelper) CreateCalculatedMetrics(project string) error {
@@ -394,7 +444,8 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Api-Token "+dt.DynatraceCreds.ApiToken)
-
+	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
+	dt.Logger.Info("Dynatrace Service version: " + os.Getenv("version"))
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {

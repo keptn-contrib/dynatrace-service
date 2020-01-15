@@ -7,6 +7,7 @@ build:
         dockerfile: Dockerfile
         buildArgs:
           debugBuild: true
+          version: develop
 deploy:
   kubectl:
     manifests:

@@ -62,7 +62,7 @@ jobs:
         - echo $TRAVIS_BUILD_STAGE_NAME
         - TYPE="$(echo $TRAVIS_BRANCH | cut -d'/' -f1)"
         - NUMBER="$(echo $TRAVIS_BRANCH | cut -d'/' -f2)"
-        - docker build . -t "${IMAGE}:${GIT_SHA}" || travis_terminate -1
+        - docker build . -t "${IMAGE}:${GIT_SHA}" --build-arg version=$VERSION || travis_terminate -1
         - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${TYPE}.${NUMBER}.${DATE}"
       after_success:
         - echo "$REGISTRY_PASSWORD" | docker login --username $REGISTRY_USER --password-stdin
@@ -73,7 +73,7 @@ jobs:
       if:  (branch = develop or branch = master) AND NOT type = pull_request
       script:
         - echo $TRAVIS_BUILD_STAGE_NAME
-        - docker build . -t "${IMAGE}:${GIT_SHA}" || travis_terminate -1
+        - docker build . -t "${IMAGE}:${GIT_SHA}" --build-arg version=$VERSION || travis_terminate -1
         - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${DATE}"
         - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:latest"
       after_success:
@@ -90,7 +90,7 @@ jobs:
         - echo $BRANCH
         - export VERSION=${BRANCH#"release-"}
         - echo $TRAVIS_BUILD_STAGE_NAME - $VERSION
-        - docker build . -t "${IMAGE}:${GIT_SHA}" || travis_terminate -1
+        - docker build . -t "${IMAGE}:${GIT_SHA}" --build-arg version=$VERSION || travis_terminate -1
         - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}.${DATE}"
         - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}.latest"
       after_success:
