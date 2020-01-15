@@ -11,7 +11,7 @@ import (
 const PROBLEM_NOTIFICATION_PAYLOAD string = `{ 
       "type": "WEBHOOK", 
       "name": "Keptn Problem Notification", 
-      "alertingProfile": "c21f969b-5f03-333d-83e0-4f8f136e7682", 
+      "alertingProfile": "$ALERTING_PROFILE_ID", 
       "active": true, 
       "url": "$KEPTN_DNS/v1/event", 
       "acceptAnyCertificate": true, 
@@ -24,6 +24,29 @@ const PROBLEM_NOTIFICATION_PAYLOAD string = `{
       }`
 
 const DASHBOARD_STAGE_WIDTH int = 456
+
+// ALERTING PROFILE TYPES
+type AlertingProfile struct {
+	Metadata         AlertingProfileMetadata `json:"metadata"`
+	ID               string                  `json:"id"`
+	DisplayName      string                  `json:"displayName"`
+	Rules            []AlertingProfileRules  `json:"rules"`
+	ManagementZoneID interface{}             `json:"managementZoneId"`
+	EventTypeFilters []string                `json:"eventTypeFilters"`
+}
+type AlertingProfileMetadata struct {
+	ConfigurationVersions []int  `json:"configurationVersions"`
+	ClusterVersion        string `json:"clusterVersion"`
+}
+type AlertingProfileTagFilter struct {
+	IncludeMode string   `json:"includeMode"`
+	TagFilters  []string `json:"tagFilters"`
+}
+type AlertingProfileRules struct {
+	SeverityLevel  string                   `json:"severityLevel"`
+	TagFilter      AlertingProfileTagFilter `json:"tagFilter"`
+	DelayInMinutes int                      `json:"delayInMinutes"`
+}
 
 // CALCULATED METRIC TYPES
 type CalculatedMetric struct {
@@ -217,6 +240,65 @@ type DTDashboardsResponse struct {
 		Name  string `json:"name"`
 		Owner string `json:"owner"`
 	} `json:"dashboards"`
+}
+
+func CreateKeptnAlertingProfile() *AlertingProfile {
+	return &AlertingProfile{
+		Metadata:    AlertingProfileMetadata{},
+		DisplayName: "Keptn",
+		Rules: []AlertingProfileRules{
+			{
+				SeverityLevel: "AVAILABILITY",
+				TagFilter: AlertingProfileTagFilter{
+					IncludeMode: "NONE",
+					TagFilters:  nil,
+				},
+				DelayInMinutes: 0,
+			},
+			{
+				SeverityLevel: "ERROR",
+				TagFilter: AlertingProfileTagFilter{
+					IncludeMode: "NONE",
+					TagFilters:  nil,
+				},
+				DelayInMinutes: 0,
+			},
+			{
+				SeverityLevel: "PERFORMANCE",
+				TagFilter: AlertingProfileTagFilter{
+					IncludeMode: "NONE",
+					TagFilters:  nil,
+				},
+				DelayInMinutes: 0,
+			},
+			{
+				SeverityLevel: "RESOURCE_CONTENTION",
+				TagFilter: AlertingProfileTagFilter{
+					IncludeMode: "NONE",
+					TagFilters:  nil,
+				},
+				DelayInMinutes: 0,
+			},
+			{
+				SeverityLevel: "CUSTOM_ALERT",
+				TagFilter: AlertingProfileTagFilter{
+					IncludeMode: "NONE",
+					TagFilters:  nil,
+				},
+				DelayInMinutes: 0,
+			},
+			{
+				SeverityLevel: "MONITORING_UNAVAILABLE",
+				TagFilter: AlertingProfileTagFilter{
+					IncludeMode: "NONE",
+					TagFilters:  nil,
+				},
+				DelayInMinutes: 0,
+			},
+		},
+		ManagementZoneID: nil,
+		EventTypeFilters: nil,
+	}
 }
 
 func CreateManagementZoneForProject(project string) *ManagementZone {

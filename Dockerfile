@@ -36,7 +36,9 @@ FROM alpine
 RUN apk add --no-cache ca-certificates
 
 ARG debugBuild
+ARG version
 
+ENV version $version
 # IF we are debugging, we need to install libc6-compat for delve to work on alpine based containers
 RUN if [ ! -z "$debugBuild" ]; then apk add --no-cache libc6-compat; fi
 
