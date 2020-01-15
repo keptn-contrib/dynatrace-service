@@ -29,6 +29,7 @@ before_install:
     if [ $? -ne 0 ]; then
       VERSION="${GIT_LAST_TAG}-${GIT_BRANCH_NAME}-${GIT_NUM_COMMITS_SINCE_LAST_TAG}-${GIT_SHA}"
     fi
+  - export VERSION
   - DATE="$(date +'%Y%m%d.%H%M')"
   - ./writeManifest.sh
   - cat MANIFEST
@@ -62,6 +63,7 @@ jobs:
         - echo $TRAVIS_BUILD_STAGE_NAME
         - TYPE="$(echo $TRAVIS_BRANCH | cut -d'/' -f1)"
         - NUMBER="$(echo $TRAVIS_BRANCH | cut -d'/' -f2)"
+        - echo $VERSION
         - docker build -t "${IMAGE}:${GIT_SHA}" --build-arg version=$VERSION . || travis_terminate -1
         - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${TYPE}.${NUMBER}.${DATE}"
       after_success:
