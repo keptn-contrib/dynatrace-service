@@ -445,14 +445,17 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Api-Token "+dt.DynatraceCreds.ApiToken)
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
-	dt.Logger.Info("Dynatrace Service version: " + os.Getenv("version"))
+	dt.Logger.Debug("Dynatrace Service version: " + os.Getenv("version"))
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		dt.Logger.Error("could not send Dynatrace API request: " + err.Error())
 		return "", err
 	}
-
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		dt.Logger.Error("Response Status:" + resp.Status)
+		return "", errors.New(resp.Status)
+	}
 	defer resp.Body.Close()
 	responseBody, _ := ioutil.ReadAll(resp.Body)
 	return string(responseBody), nil
