@@ -231,6 +231,10 @@ func sendDynatraceRequest(dtTenant string, dtAPIToken string, dtEvent interface{
 		logger.Error("Error while sending request to Dynatrace: " + err.Error())
 		return
 	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		logger.Error("Response Status:" + resp.Status)
+		return
+	}
 	defer resp.Body.Close()
 
 	logger.Debug("Response Status:" + resp.Status)
