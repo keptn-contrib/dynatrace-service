@@ -92,7 +92,7 @@ jobs:
         - echo $TRAVIS_BUILD_STAGE_NAME - $VERSION
         - docker build -t "${IMAGE}:${GIT_SHA}" --build-arg version=$VERSION . || travis_terminate -1
         - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}.${DATE}"
-        - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}.latest"
+        - docker tag "${IMAGE}:${GIT_SHA}" "${IMAGE}:${VERSION}"
       after_success:
         - echo "$REGISTRY_PASSWORD" | docker login --username $REGISTRY_USER --password-stdin
         - docker images
