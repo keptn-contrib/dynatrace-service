@@ -13,7 +13,6 @@ CLUSTERVERSION=$(curl -s https://$DT_TENANT/api/v1/config/clusterversion?api-tok
 
 # Check tenant is at least 1.169
 if ($(echo $CLUSTERVERSION | jq '. > 1.168'))
-if (( $(echo "$CLUSTERVERSION > 1.168" | bc -l) ))
 then
   curl -X POST \
     "https://$DT_TENANT/api/config/v1/notifications?Api-Token=$DT_API_TOKEN" \
