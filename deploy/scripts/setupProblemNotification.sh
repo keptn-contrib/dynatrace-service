@@ -12,6 +12,7 @@ KEPTN_TOKEN=$4
 CLUSTERVERSION=$(curl -s https://$DT_TENANT/api/v1/config/clusterversion?api-token=$DT_API_TOKEN | jq -r .version[0:5])
 
 # Check tenant is at least 1.169
+if ($(echo $CLUSTERVERSION | jq '. > 1.168'))
 if (( $(echo "$CLUSTERVERSION > 1.168" | bc -l) ))
 then
   curl -X POST \
