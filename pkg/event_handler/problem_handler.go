@@ -56,6 +56,7 @@ const eventbroker = "EVENTBROKER"
 
 func (eh ProblemEventHandler) HandleEvent() error {
 	var shkeptncontext string
+	// TODO: load all events with "type"==="sh.keptn.events.problem", search for same "ProblemID" and set same shkeptncontext if found
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 	dtProblemEvent := &DTProblemEvent{}
 	err := eh.Event.DataAs(dtProblemEvent)
@@ -63,12 +64,6 @@ func (eh ProblemEventHandler) HandleEvent() error {
 	if err != nil {
 		return err
 		eh.Logger.Error("Could not map received event to datastructure: " + err.Error())
-	}
-
-	// ignore problem events if they are closed
-	if dtProblemEvent.ProblemDetails.Status == "CLOSED" {
-		eh.Logger.Info("Received CLOSED problem")
-		return nil
 	}
 
 	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
@@ -95,7 +90,7 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		}
 	}
 	newProblemData := keptnevents.ProblemEventData{
-		State:          "OPEN",
+		State:          dtProblemEvent.ProblemDetails.Status,
 		PID:            dtProblemEvent.PID,
 		ProblemID:      dtProblemEvent.ProblemID,
 		ProblemTitle:   dtProblemEvent.ProblemTitle,
@@ -122,11 +117,13 @@ func createAndSendCE(eventbroker string, problemData keptnevents.ProblemEventDat
 
 	endPoint, err := getServiceEndpoint(eventbroker)
 
+	problemType := getProblemType(problemData)
+
 	ce := cloudevents.Event{
 		Context: cloudevents.EventContextV02{
 			ID:          uuid.New().String(),
 			Time:        &types.Timestamp{Time: time.Now()},
-			Type:        keptnevents.ProblemOpenEventType,
+			Type:        problemType,
 			Source:      types.URLRef{URL: *source},
 			ContentType: &contentType,
 			Extensions:  map[string]interface{}{"shkeptncontext": shkeptncontext},
@@ -165,4 +162,11 @@ func getServiceEndpoint(service string) (url.URL, error) {
 	}
 
 	return *url, nil
+}
+
+func getProblemType(problemData keptnevents.ProblemEventData) (string) {
+	if(problemData.State == "CLOSED")
+		return keptnevents.ProblemCloseEventType;
+	else
+		return keptnevents.ProblemOpenEventType;
 }
