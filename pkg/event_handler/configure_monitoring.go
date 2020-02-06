@@ -128,7 +128,7 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 		err = eh.DTHelper.CreateDashboard(e.Project, *shipyard, services)
 		if err != nil {
 			eh.Logger.Error("Could not create Dynatrace dashboard for project " + e.Project + ": " + err.Error())
-			return err
+			// do not return because there are no dependencies to the dashboard
 		}
 
 		err = eh.DTHelper.CreateManagementZones(e.Project, *shipyard)
