@@ -417,7 +417,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 			ManagementZone: nil,
 		},
 		FilterConfig: FilterConfig{
-			Type:        "HOST",
+			Type:        "MIXED",
 			CustomName:  "Hosts",
 			DefaultName: "Hosts",
 			ChartConfig: ChartConfig{
@@ -920,7 +920,7 @@ func createStageServicesTile(project string, stage string) Tiles {
 			ManagementZone: nil,
 		},
 		FilterConfig: FilterConfig{
-			Type:        "NON_DATABASE_SERVICE",
+			Type:        "MIXED",
 			CustomName:  "Services: " + stage,
 			DefaultName: "Services: " + stage,
 			ChartConfig: ChartConfig{
