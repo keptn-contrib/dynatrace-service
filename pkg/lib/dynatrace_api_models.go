@@ -1,7 +1,9 @@
 package lib
 
 import (
+	"errors"
 	"math"
+	"strings"
 
 	keptnmodels "github.com/keptn/go-utils/pkg/models"
 )
@@ -240,6 +242,180 @@ type DTDashboardsResponse struct {
 		Name  string `json:"name"`
 		Owner string `json:"owner"`
 	} `json:"dashboards"`
+}
+
+// CUSTOM METRIC EVENT
+type MetricEvent struct {
+	Metadata          MEMetadata        `json:"metadata"`
+	ID                string            `json:"id"`
+	MetricID          string            `json:"metricId"`
+	Name              string            `json:"name"`
+	Description       string            `json:"description"`
+	AggregationType   string            `json:"aggregationType"`
+	EventType         string            `json:"eventType"`
+	Severity          string            `json:"severity"`
+	AlertCondition    string            `json:"alertCondition"`
+	Samples           int               `json:"samples"`
+	ViolatingSamples  int               `json:"violatingSamples"`
+	DealertingSamples int               `json:"dealertingSamples"`
+	Threshold         float64           `json:"threshold"`
+	Enabled           bool              `json:"enabled"`
+	TagFilters        []METagFilter     `json:"tagFilters"`
+	AlertingScope     []MEAlertingScope `json:"alertingScope"`
+	Unit              string            `json:"unit"`
+}
+type MEMetadata struct {
+	ConfigurationVersions []int  `json:"configurationVersions"`
+	ClusterVersion        string `json:"clusterVersion"`
+}
+
+type METagFilter struct {
+	Context string `json:"context"`
+	Key     string `json:"key"`
+	Value   string `json:"value"`
+}
+type MEAlertingScope struct {
+	FilterType string      `json:"filterType"`
+	TagFilter  METagFilter `json:"tagFilter"`
+}
+
+var supportedAggregations = [...]string{"avg", "max", "min", "count", "sum", "value", "percentile"}
+
+func CreateKeptnMetricEvent(project string, stage string, service string, metric string, query string, condition string, threshold float64) (*MetricEvent, error) {
+
+	/*
+		need to map queries used by SLI-service to metric event definition.
+		example: builtin:service.response.time:merge(0):percentile(90)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)
+
+		1. split by '?' and get first part => builtin:service.response.time:merge(0):percentile(90)
+		2. split by ':' => builtin:service.response.time | merge(0) | percentile(90) => merge(0) is not needed
+		3. first part is the metricId and can be used for the Metric Event API => builtin:service.response.time
+		4. Aggregation is limited to: AVG, COUNT, MAX, MEDIAN, MIN, OF_INTEREST, OF_INTEREST_RATIO, OTHER, OTHER_RATIO, P90, SUM, VALUE
+	*/
+
+	if project == "" || stage == "" || service == "" || metric == "" || query == "" {
+		return nil, errors.New("missing input parameter values")
+	}
+
+	query = strings.TrimPrefix(query, "metricSelector=")
+	// 1. split by '?' and get first part => builtin:service.response.time:merge(0):percentile(90)
+	split := strings.Split(query, "?")
+
+	// 2. split by ':' => builtin:service.response.time | merge(0) | percentile(90) => merge(0) is not needed/supported by MetricEvent API
+	splittedQuery := strings.Split(split[0], ":")
+
+	if len(splittedQuery) < 2 {
+		return nil, errors.New("invalid metricId")
+	}
+	metricId := splittedQuery[0] + ":" + splittedQuery[1]
+	meAggregation := ""
+	for _, transformation := range splittedQuery {
+		isSupportedAggregation := false
+		for _, aggregationType := range supportedAggregations {
+			if strings.Contains(strings.ToLower(transformation), aggregationType) {
+				isSupportedAggregation = true
+			}
+		}
+
+		if isSupportedAggregation {
+			meAggregation = getMetricEventAggregation(transformation)
+
+			if meAggregation == "" {
+				return nil, errors.New("unsupported aggregation type: " + transformation)
+			}
+		}
+	}
+	if meAggregation == "" {
+		return nil, errors.New("no aggregation provided in query")
+	}
+
+	meAlertCondition := ""
+	if strings.Contains(condition, "+") || strings.Contains(condition, "-") || strings.Contains(condition, "%") {
+		return nil, errors.New("unsupported condition. only fixed thresholds are supported")
+	}
+
+	if strings.Contains(condition, ">") {
+		meAlertCondition = "BELOW"
+	} else if strings.Contains(condition, "<") {
+		meAlertCondition = "ABOVE"
+	} else {
+		return nil, errors.New("unsupported condition. only fixed thresholds are supported")
+	}
+
+	metricEvent := &MetricEvent{
+		Metadata:          MEMetadata{},
+		MetricID:          metricId,
+		Name:              "Keptn:" + project + ":" + stage + ":" + service + ":" + metric,
+		Description:       "The {metricname} value of {severity} was {alert_condition} your custom threshold of {threshold}.",
+		AggregationType:   meAggregation,
+		EventType:         "CUSTOM_ALERT",
+		Severity:          "CUSTOM_ALERT",
+		AlertCondition:    meAlertCondition,
+		Samples:           0,
+		ViolatingSamples:  3, // taken from default value of custom metric events
+		DealertingSamples: 5, // taken from default value of custom metric events
+		Threshold:         threshold,
+		Enabled:           true,
+		TagFilters:        nil, // not used anymore by MetricEvents API, replaced by AlertingScope
+		AlertingScope: []MEAlertingScope{
+			// LIMITATION: currently only a maximum of 3 tag filters is supported
+			{
+				FilterType: "TAG",
+				TagFilter: METagFilter{
+					Context: "CONTEXTLESS",
+					Key:     "keptn_project",
+					Value:   project,
+				},
+			},
+			{
+				FilterType: "TAG",
+				TagFilter: METagFilter{
+					Context: "CONTEXTLESS",
+					Key:     "keptn_stage",
+					Value:   stage,
+				},
+			},
+			{
+				FilterType: "TAG",
+				TagFilter: METagFilter{
+					Context: "CONTEXTLESS",
+					Key:     "keptn_service",
+					Value:   service,
+				},
+			},
+		},
+	}
+
+	return metricEvent, nil
+}
+
+func getMetricEventAggregation(metricAPIAgg string) string {
+	// LIMITATION: currently, only single aggregations are supported, so, e.g. not (min,max)
+	metricAPIAgg = strings.ToLower(metricAPIAgg)
+
+	if strings.Contains(metricAPIAgg, "percentile") {
+		// only MEDIAN and P90 are supported for MetricEvents
+		// => if the percentile in the query is >= 90, use P90, otherwise assume MEDIAN
+		if strings.Contains(metricAPIAgg, "(9") {
+			return "P90"
+		} else {
+			return "MEDIAN"
+		}
+	} else if strings.Contains(metricAPIAgg, "min") {
+		return "MIN"
+	} else if strings.Contains(metricAPIAgg, "max") {
+		return "MAX"
+	} else if strings.Contains(metricAPIAgg, "count") {
+		return "COUNT"
+	} else if strings.Contains(metricAPIAgg, "sum") {
+		return "SUM"
+	} else if strings.Contains(metricAPIAgg, "value") {
+		return "VALUE"
+	} else if strings.Contains(metricAPIAgg, "avg") {
+		return "AVG"
+	}
+
+	return ""
 }
 
 func CreateKeptnAlertingProfile() *AlertingProfile {
