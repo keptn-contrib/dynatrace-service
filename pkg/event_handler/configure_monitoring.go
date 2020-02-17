@@ -136,6 +136,15 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 			eh.Logger.Error("Could not create Management Zones for project " + e.Project + ": " + err.Error())
 			return err
 		}
+
+		// try to create metric events - if one fails, don't fail the whole setup
+		for _, stage := range shipyard.Stages {
+			if stage.RemediationStrategy == "automated" {
+				for _, service := range services {
+					_ = eh.DTHelper.CreateMetricEvents(e.Project, stage.Name, service)
+				}
+			}
+		}
 	}
 	eh.Logger.Info("Dynatrace Monitoring setup done")
 	return nil

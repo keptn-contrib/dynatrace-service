@@ -12,13 +12,25 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	v1 "k8s.io/api/core/v1"
-
 	keptnutils "github.com/keptn/go-utils/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const DEFAULT_OPERATOR_VERSION = "v0.5.2"
+const DefaultOperatorVersion = "v0.5.2"
+const sliResourceURI = "dynatrace/sli.yaml"
+const Throughput = "throughput"
+const ErrorRate = "error_rate"
+const ResponseTimeP50 = "response_time_p50"
+const ResponseTimeP90 = "response_time_p90"
+const ResponseTimeP95 = "response_time_p95"
+
+type criteriaObject struct {
+	Operator        string
+	Value           float64
+	CheckPercentage bool
+	IsComparison    bool
+	CheckIncrease   bool
+}
 
 type DTAPIListResponse struct {
 	Values []Values `json:"values"`
@@ -32,14 +44,6 @@ type DTCredentials struct {
 	Tenant    string `json:"DT_TENANT" yaml:"DT_TENANT"`
 	ApiToken  string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
 	PaaSToken string `json:"DT_PAAS_TOKEN" yaml:"DT_PAAS_TOKEN"`
-}
-
-type resourceKind struct {
-	Kind string `yaml:"kind"`
-}
-
-type dtOperatorReleaseInfo struct {
-	TagName string `json:"tag_name"`
 }
 
 type DynatraceHelper struct {
@@ -57,148 +61,6 @@ func NewDynatraceHelper() (*DynatraceHelper, error) {
 	}
 	dtHelper.DynatraceCreds = dtCreds
 	return dtHelper, nil
-}
-
-func (dt *DynatraceHelper) EnsureDTIsInstalled() error {
-	if dt.isDynatraceDeployed() {
-		dt.Logger.Info("Skipping Dynatrace installation because Dynatrace is already deployed in the cluster.")
-		return nil
-	}
-	// ensure that the namespace 'dynatrace' is available
-	err := dt.createOrUpdateDynatraceNamespace()
-	if err != nil {
-		return err
-	}
-	// check if DT Secret is available
-	err = dt.deployDTOperator()
-	if err != nil {
-		return err
-	}
-
-	err = dt.deployDynatrace()
-	return err
-}
-
-func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
-	dt.Logger.Info("Setting up auto-tagging rules in Dynatrace Tenant")
-
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", "")
-
-	existingDTRules := &DTAPIListResponse{}
-
-	err = json.Unmarshal([]byte(response), existingDTRules)
-	if err != nil {
-		dt.Logger.Info("No existing Dynatrace tagging rules found")
-	}
-
-	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
-		if !dt.taggingRuleExists(ruleName, existingDTRules) {
-			rule := createAutoTaggingRule(ruleName)
-			err = dt.createDTTaggingRule(rule)
-			if err != nil {
-				dt.Logger.Error("Could not create auto tagging rule: " + err.Error())
-			}
-		} else {
-			dt.Logger.Info("Tagging rule " + ruleName + " already exists")
-		}
-	}
-	return nil
-}
-
-func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
-	dt.Logger.Info("Setting up problem notifications in Dynatrace Tenant")
-
-	alertingProfileId, err := dt.setupAlertingProfile()
-	if err != nil {
-		dt.Logger.Error("could not set up problem notification: " + err.Error())
-		return err
-	}
-
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "GET", "")
-
-	existingNotifications := &DTAPIListResponse{}
-
-	err = json.Unmarshal([]byte(response), existingNotifications)
-	if err != nil {
-		dt.Logger.Info("No existing Dynatrace problem notifications rules found. Creating new notification.")
-	}
-
-	found := false
-	for _, notification := range existingNotifications.Values {
-		if notification.Name == "Keptn Problem Notification" {
-			found = true
-		}
-	}
-	if !found {
-		problemNotification := PROBLEM_NOTIFICATION_PAYLOAD
-		keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
-		if err != nil {
-			dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
-		}
-
-		keptnDomain := keptnDomainCM.Data["app_domain"]
-
-		problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", "https://api.keptn."+keptnDomain)
-
-		keptnSecret, err := dt.KubeApi.CoreV1().Secrets("keptn").Get("keptn-api-token", metav1.GetOptions{})
-		if err != nil {
-			dt.Logger.Error("Could not retrieve keptn-api-token: " + err.Error())
-		}
-
-		apiToken := keptnSecret.Data["keptn-api-token"]
-
-		problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", string(apiToken))
-
-		problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
-
-		_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", problemNotification)
-		if err != nil {
-			dt.Logger.Error("could not set up problem notification: " + err.Error())
-			return err
-		}
-	}
-	return nil
-}
-
-func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
-	dt.Logger.Info("Checking Keptn alerting profile availability")
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "GET", "")
-
-	existingAlertingProfiles := &DTAPIListResponse{}
-
-	err = json.Unmarshal([]byte(response), existingAlertingProfiles)
-	if err != nil {
-		dt.Logger.Info("No existing alerting profiles found.")
-	}
-
-	for _, ap := range existingAlertingProfiles.Values {
-		if ap.Name == "Keptn" {
-			dt.Logger.Info("Keptn alerting profile available")
-			return ap.ID, nil
-		}
-	}
-
-	dt.Logger.Info("Creating Keptn alerting profile.")
-
-	alertingProfile := CreateKeptnAlertingProfile()
-
-	alertingProfilePayload, _ := json.Marshal(alertingProfile)
-
-	response, err = dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "POST", string(alertingProfilePayload))
-
-	if err != nil {
-		return "", err
-	}
-
-	createdItem := &Values{}
-
-	err = json.Unmarshal([]byte(response), createdItem)
-	if err != nil {
-		dt.Logger.Error("Could not create alerting profile: " + err.Error())
-		return "", err
-	}
-	dt.Logger.Info("Alerting profile created successfully.")
-	return createdItem.ID, nil
 }
 
 func (dt *DynatraceHelper) CreateCalculatedMetrics(project string) error {
@@ -265,39 +127,6 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 	return nil
 }
 
-func (dt *DynatraceHelper) CreateDashboard(project string, shipyard models.Shipyard, services []string) error {
-	keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
-	if err != nil {
-		dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
-	}
-
-	keptnDomain := keptnDomainCM.Data["app_domain"]
-
-	// first, check if dashboard for this project already exists and delete that
-	err = dt.DeleteExistingDashboard(project)
-	if err != nil {
-		return err
-	}
-
-	dt.Logger.Info("Creating Dashboard for project " + project)
-	dashboard, err := CreateDynatraceDashboard(project, shipyard, keptnDomain, services)
-	if err != nil {
-		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
-		return err
-	}
-
-	dashboardPayload, _ := json.Marshal(dashboard)
-
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", string(dashboardPayload))
-
-	if err != nil {
-		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
-		return err
-	}
-	dt.Logger.Info("Dynatrace dashboard created successfully. You can view it here: https://" + dt.DynatraceCreds.Tenant + "/#dashboards")
-	return nil
-}
-
 func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard models.Shipyard) error {
 	// get existing management zones
 	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", "")
@@ -348,97 +177,6 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard models
 	return nil
 }
 
-func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
-	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "GET", "")
-	if err != nil {
-		dt.Logger.Error("Could not retrieve list of existing Dynatrace dashboards: " + err.Error())
-		return err
-	}
-
-	dtDashboardsResponse := &DTDashboardsResponse{}
-	err = json.Unmarshal([]byte(res), dtDashboardsResponse)
-
-	if err != nil {
-		dt.Logger.Error("Could not parse list of existing Dynatrace dashboards: " + err.Error())
-		return err
-	}
-
-	for _, dashboardItem := range dtDashboardsResponse.Dashboards {
-		if dashboardItem.Name == project+"@keptn: Digital Delivery & Operations Dashboard" {
-			res, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards/"+dashboardItem.ID, "DELETE", "")
-			if err != nil {
-				dt.Logger.Error("Could not delete previous dashboard for project " + project + ": " + err.Error())
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func (dt *DynatraceHelper) createDTTaggingRule(rule *DTTaggingRule) error {
-	dt.Logger.Info("Creating DT tagging rule: " + rule.Name)
-	payload, err := json.Marshal(rule)
-	if err != nil {
-		return err
-	}
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "POST", string(payload))
-	return err
-}
-
-func (dt *DynatraceHelper) deleteExistingDTTaggingRule(ruleName string, existingRules *DTAPIListResponse) {
-	dt.Logger.Info("Deleting rule " + ruleName)
-	for _, rule := range existingRules.Values {
-		if rule.Name == ruleName {
-			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags/"+rule.ID, "DELETE", "")
-			if err != nil {
-				dt.Logger.Info("Could not delete rule " + rule.ID + ": " + err.Error())
-			}
-		}
-	}
-}
-
-func (dt *DynatraceHelper) taggingRuleExists(ruleName string, existingRules *DTAPIListResponse) bool {
-	for _, rule := range existingRules.Values {
-		if rule.Name == ruleName {
-			return true
-		}
-	}
-	return false
-}
-
-func createAutoTaggingRule(ruleName string) *DTTaggingRule {
-	return &DTTaggingRule{
-		Name: ruleName,
-		Rules: []Rules{
-			{
-				Type:             "SERVICE",
-				Enabled:          true,
-				ValueFormat:      "{ProcessGroup:Environment:" + ruleName + "}",
-				PropagationTypes: []string{"SERVICE_TO_PROCESS_GROUP_LIKE"},
-				Conditions: []Conditions{
-					{
-						Key: Key{
-							Attribute: "PROCESS_GROUP_CUSTOM_METADATA",
-							DynamicKey: DynamicKey{
-								Source: "ENVIRONMENT",
-								Key:    ruleName,
-							},
-							Type: "PROCESS_CUSTOM_METADATA_KEY",
-						},
-						ComparisonInfo: ComparisonInfo{
-							Type:          "STRING",
-							Operator:      "EXISTS",
-							Value:         nil,
-							Negate:        false,
-							CaseSensitive: nil,
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
 func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string, body string) (string, error) {
 	req, err := http.NewRequest(method, "https://"+dt.DynatraceCreds.Tenant+apiPath, strings.NewReader(body))
 
@@ -452,119 +190,16 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 		dt.Logger.Error("could not send Dynatrace API request: " + err.Error())
 		return "", err
 	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		dt.Logger.Error("Response Status:" + resp.Status)
-		return "", errors.New(resp.Status)
-	}
+
 	defer resp.Body.Close()
 	responseBody, _ := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		dt.Logger.Error("Response Status:" + resp.Status)
+		return string(responseBody), errors.New(resp.Status)
+	}
+
 	return string(responseBody), nil
-}
-
-func (dt *DynatraceHelper) isDynatraceDeployed() bool {
-	_, err := dt.KubeApi.AppsV1().Deployments("dynatrace").Get("dynatrace-oneagent-operator", metav1.GetOptions{})
-	if err != nil {
-		return false
-	}
-	return true
-}
-
-func (dt *DynatraceHelper) deployDTOperator() error {
-	// get latest operator version
-	resp, err := http.Get("https://api.github.com/repos/dynatrace/dynatrace-oneagent-operator/releases/latest")
-	if err == nil {
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
-
-		operatorInfo := &dtOperatorReleaseInfo{}
-
-		err = json.Unmarshal(body, operatorInfo)
-
-		if err == nil {
-			dt.OperatorTag = operatorInfo.TagName
-		}
-	}
-	if dt.OperatorTag != "" {
-		dt.Logger.Info("Deploying Dynatrace operator " + dt.OperatorTag)
-	} else {
-		dt.Logger.Info("Could not fetch latest Dynatrace operator version. Using " + DEFAULT_OPERATOR_VERSION + " per default.")
-		dt.OperatorTag = DEFAULT_OPERATOR_VERSION
-	}
-
-	platform := os.Getenv("PLATFORM")
-
-	if platform == "" {
-		platform = "kubernetes"
-	}
-
-	operatorYaml, err := getHTTPResource("https://raw.githubusercontent.com/Dynatrace/dynatrace-oneagent-operator/" + dt.OperatorTag + "/deploy/" + platform + ".yaml")
-	if err != nil {
-		dt.Logger.Error("could not fetch operator config: " + err.Error())
-	}
-	if platform == "openshift" {
-		operatorYaml = strings.ReplaceAll(operatorYaml, "registry.connect.redhat.com", "quay.io")
-	}
-
-	operatorFileName := "operator.yaml"
-	err = writeFile(operatorFileName, operatorYaml)
-	if err != nil {
-		dt.Logger.Error("could not save operator config: " + err.Error())
-	}
-
-	if err != nil {
-		dt.Logger.Error("could not fetch Dynatrace operator config: " + err.Error())
-		return err
-	}
-
-	_, err = keptnutils.ExecuteCommand("kubectl", []string{"apply", "-f", operatorFileName})
-	if err != nil {
-		_ = deleteFile(operatorFileName)
-		return err
-	}
-
-	_ = deleteFile(operatorFileName)
-
-	return nil
-}
-
-func (dt *DynatraceHelper) deployDynatrace() error {
-	err := dt.createOrUpdateDTSecret()
-	if err != nil {
-		dt.Logger.Error("could not fetch Dynatrace CR: " + err.Error())
-		return err
-	}
-
-	resp, err := http.Get("https://raw.githubusercontent.com/Dynatrace/dynatrace-oneagent-operator/" + dt.OperatorTag + "/deploy/cr.yaml")
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		dt.Logger.Error("could not fetch Dynatrace CR: " + err.Error())
-		return err
-	}
-
-	dynatraceDeploymentYaml := strings.Replace(string(body), "ENVIRONMENTID.live.dynatrace.com", dt.DynatraceCreds.Tenant, -1)
-
-	dtYamlFileName := "dynatrace.yaml"
-	err = writeFile(dtYamlFileName, dynatraceDeploymentYaml)
-
-	if err != nil {
-		dt.Logger.Error("could not store dynatrace config yaml: " + err.Error())
-		return err
-	}
-
-	_, err = keptnutils.ExecuteCommand("kubectl", []string{"apply", "-f", dtYamlFileName})
-	if err != nil {
-		_ = deleteFile(dtYamlFileName)
-		return err
-	}
-
-	_ = deleteFile(dtYamlFileName)
-
-	return nil
 }
 
 func (dt *DynatraceHelper) GetDTCredentials() (*DTCredentials, error) {
@@ -589,48 +224,6 @@ func (dt *DynatraceHelper) GetDTCredentials() (*DTCredentials, error) {
 	dtCreds.PaaSToken = string(secret.Data["DT_PAAS_TOKEN"])
 
 	return dtCreds, nil
-}
-
-func (dt *DynatraceHelper) createOrUpdateDTSecret() error {
-	dtSecret := &v1.Secret{
-		TypeMeta: metav1.TypeMeta{},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "oneagent",
-			Namespace: "dynatrace",
-		},
-		Data: map[string][]byte{
-			"apiToken":  []byte(dt.DynatraceCreds.ApiToken),
-			"paasToken": []byte(dt.DynatraceCreds.PaaSToken),
-		},
-		StringData: nil,
-		Type:       "Opaque",
-	}
-
-	_, err := dt.KubeApi.CoreV1().Secrets("dynatrace").Create(dtSecret)
-	if err != nil {
-		_, err := dt.KubeApi.CoreV1().Secrets("dynatrace").Update(dtSecret)
-		return err
-	}
-	return nil
-}
-
-// CreateOrUpdateDynatraceNamespace creates or updates the Dynatrace namespace
-func (dt *DynatraceHelper) createOrUpdateDynatraceNamespace() error {
-	namespace := &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "dynatrace",
-		},
-	}
-
-	_, err := dt.KubeApi.CoreV1().Namespaces().Create(namespace)
-
-	if err != nil {
-		_, err = dt.KubeApi.CoreV1().Namespaces().Update(namespace)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func writeFile(fileName string, content string) error {

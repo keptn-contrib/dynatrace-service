@@ -247,7 +247,7 @@ type DTDashboardsResponse struct {
 // CUSTOM METRIC EVENT
 type MetricEvent struct {
 	Metadata          MEMetadata        `json:"metadata"`
-	ID                string            `json:"id"`
+	ID                string            `json:"id,omitempty"`
 	MetricID          string            `json:"metricId"`
 	Name              string            `json:"name"`
 	Description       string            `json:"description"`
@@ -262,7 +262,7 @@ type MetricEvent struct {
 	Enabled           bool              `json:"enabled"`
 	TagFilters        []METagFilter     `json:"tagFilters"`
 	AlertingScope     []MEAlertingScope `json:"alertingScope"`
-	Unit              string            `json:"unit"`
+	Unit              string            `json:"unit,omitempty"`
 }
 type MEMetadata struct {
 	ConfigurationVersions []int  `json:"configurationVersions"`
@@ -345,17 +345,17 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 	metricEvent := &MetricEvent{
 		Metadata:          MEMetadata{},
 		MetricID:          metricId,
-		Name:              "Keptn:" + project + ":" + stage + ":" + service + ":" + metric,
+		Name:              metric + " (Keptn." + project + "." + stage + "." + service + ")",
 		Description:       "The {metricname} value of {severity} was {alert_condition} your custom threshold of {threshold}.",
 		AggregationType:   meAggregation,
 		EventType:         "CUSTOM_ALERT",
 		Severity:          "CUSTOM_ALERT",
 		AlertCondition:    meAlertCondition,
-		Samples:           0,
+		Samples:           5, // taken from default value of custom metric events
 		ViolatingSamples:  3, // taken from default value of custom metric events
 		DealertingSamples: 5, // taken from default value of custom metric events
 		Threshold:         threshold,
-		Enabled:           true,
+		Enabled:           false,
 		TagFilters:        nil, // not used anymore by MetricEvents API, replaced by AlertingScope
 		AlertingScope: []MEAlertingScope{
 			// LIMITATION: currently only a maximum of 3 tag filters is supported
@@ -384,6 +384,11 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 				},
 			},
 		},
+	}
+
+	// LIMITATION: currently we do not have the possibility of specifying units => assume MILLI_SECONDS for response time metrics
+	if strings.Contains(metric, "time") {
+		metricEvent.Unit = "MILLI_SECOND"
 	}
 
 	return metricEvent, nil
