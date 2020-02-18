@@ -118,6 +118,12 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 			return err
 		}
 
+		err = eh.DTHelper.CreateManagementZones(e.Project, *shipyard)
+		if err != nil {
+			eh.Logger.Error("Could not create Management Zones for project " + e.Project + ": " + err.Error())
+			return err
+		}
+
 		services, err := getServicesInProject(e.Project, *shipyard, "")
 
 		if err != nil {
@@ -129,12 +135,6 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 		if err != nil {
 			eh.Logger.Error("Could not create Dynatrace dashboard for project " + e.Project + ": " + err.Error())
 			// do not return because there are no dependencies to the dashboard
-		}
-
-		err = eh.DTHelper.CreateManagementZones(e.Project, *shipyard)
-		if err != nil {
-			eh.Logger.Error("Could not create Management Zones for project " + e.Project + ": " + err.Error())
-			return err
 		}
 
 		// try to create metric events - if one fails, don't fail the whole setup

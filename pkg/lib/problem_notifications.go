@@ -22,42 +22,40 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 
 	err = json.Unmarshal([]byte(response), existingNotifications)
 	if err != nil {
-		dt.Logger.Info("No existing Dynatrace problem notifications rules found. Creating new notification.")
+		dt.Logger.Info("No existing Dynatrace problem notification rules found. Creating new notification.")
 	}
 
-	found := false
 	for _, notification := range existingNotifications.Values {
 		if notification.Name == "Keptn Problem Notification" {
-			found = true
+			_, _ = dt.sendDynatraceAPIRequest("/api/config/v1/notifications/"+notification.ID, "DELETE", "")
+
 		}
 	}
-	if !found {
-		problemNotification := PROBLEM_NOTIFICATION_PAYLOAD
-		keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
-		if err != nil {
-			dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
-		}
+	problemNotification := PROBLEM_NOTIFICATION_PAYLOAD
+	keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
+	if err != nil {
+		dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
+	}
 
-		keptnDomain := keptnDomainCM.Data["app_domain"]
+	keptnDomain := keptnDomainCM.Data["app_domain"]
 
-		problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", "https://api.keptn."+keptnDomain)
+	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", "https://api.keptn."+keptnDomain)
 
-		keptnSecret, err := dt.KubeApi.CoreV1().Secrets("keptn").Get("keptn-api-token", metav1.GetOptions{})
-		if err != nil {
-			dt.Logger.Error("Could not retrieve keptn-api-token: " + err.Error())
-		}
+	keptnSecret, err := dt.KubeApi.CoreV1().Secrets("keptn").Get("keptn-api-token", metav1.GetOptions{})
+	if err != nil {
+		dt.Logger.Error("Could not retrieve keptn-api-token: " + err.Error())
+	}
 
-		apiToken := keptnSecret.Data["keptn-api-token"]
+	apiToken := keptnSecret.Data["keptn-api-token"]
 
-		problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", string(apiToken))
+	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", string(apiToken))
 
-		problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
+	problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
 
-		_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", problemNotification)
-		if err != nil {
-			dt.Logger.Error("could not set up problem notification: " + err.Error())
-			return err
-		}
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", problemNotification)
+	if err != nil {
+		dt.Logger.Error("could not set up problem notification: " + err.Error())
+		return err
 	}
 	return nil
 }

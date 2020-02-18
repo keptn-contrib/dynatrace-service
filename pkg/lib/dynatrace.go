@@ -129,16 +129,7 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 
 func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard models.Shipyard) error {
 	// get existing management zones
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", "")
-	if err != nil {
-		dt.Logger.Error("Could not retrieve management zones: " + err.Error())
-	}
-	mzs := &DTAPIListResponse{}
-
-	err = json.Unmarshal([]byte(response), mzs)
-	if err != nil {
-		dt.Logger.Error("Could not parse management zones list: " + err.Error())
-	}
+	mzs := dt.getManagementZones()
 
 	found := false
 	for _, mz := range mzs.Values {
@@ -159,7 +150,7 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard models
 	for _, stage := range shipyard.Stages {
 		found := false
 		for _, mz := range mzs.Values {
-			if mz.Name == "Keptn: "+project+" "+stage.Name {
+			if mz.Name == getManagementZoneNameForStage(project, stage.Name) {
 				found = true
 			}
 		}
@@ -175,6 +166,24 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard models
 	}
 
 	return nil
+}
+
+func getManagementZoneNameForStage(project string, stage string) string {
+	return "Keptn: " + project + " " + stage
+}
+
+func (dt *DynatraceHelper) getManagementZones() *DTAPIListResponse {
+	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", "")
+	if err != nil {
+		dt.Logger.Error("Could not retrieve management zones: " + err.Error())
+	}
+	mzs := &DTAPIListResponse{}
+
+	err = json.Unmarshal([]byte(response), mzs)
+	if err != nil {
+		dt.Logger.Error("Could not parse management zones list: " + err.Error())
+	}
+	return mzs
 }
 
 func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string, body string) (string, error) {

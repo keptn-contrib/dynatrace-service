@@ -29,12 +29,12 @@ const DASHBOARD_STAGE_WIDTH int = 456
 
 // ALERTING PROFILE TYPES
 type AlertingProfile struct {
-	Metadata         AlertingProfileMetadata `json:"metadata"`
-	ID               string                  `json:"id"`
-	DisplayName      string                  `json:"displayName"`
-	Rules            []AlertingProfileRules  `json:"rules"`
-	ManagementZoneID interface{}             `json:"managementZoneId"`
-	EventTypeFilters []string                `json:"eventTypeFilters"`
+	Metadata         AlertingProfileMetadata           `json:"metadata"`
+	ID               string                            `json:"id"`
+	DisplayName      string                            `json:"displayName"`
+	Rules            []AlertingProfileRules            `json:"rules"`
+	ManagementZoneID interface{}                       `json:"managementZoneId"`
+	EventTypeFilters []*AlertingProfileEventTypeFilter `json:"eventTypeFilters,omitempty"`
 }
 type AlertingProfileMetadata struct {
 	ConfigurationVersions []int  `json:"configurationVersions"`
@@ -48,6 +48,20 @@ type AlertingProfileRules struct {
 	SeverityLevel  string                   `json:"severityLevel"`
 	TagFilter      AlertingProfileTagFilter `json:"tagFilter"`
 	DelayInMinutes int                      `json:"delayInMinutes"`
+}
+
+type AlertingProfileEventTypeFilter struct {
+	CustomEventFilter CustomEventFilter `json:"customEventFilter"`
+}
+type CustomTitleFilter struct {
+	Enabled         bool   `json:"enabled"`
+	Value           string `json:"value"`
+	Operator        string `json:"operator"`
+	Negate          bool   `json:"negate"`
+	CaseInsensitive bool   `json:"caseInsensitive"`
+}
+type CustomEventFilter struct {
+	CustomTitleFilter CustomTitleFilter `json:"customTitleFilter"`
 }
 
 // CALCULATED METRIC TYPES
@@ -260,7 +274,7 @@ type MetricEvent struct {
 	DealertingSamples int               `json:"dealertingSamples"`
 	Threshold         float64           `json:"threshold"`
 	Enabled           bool              `json:"enabled"`
-	TagFilters        []METagFilter     `json:"tagFilters"`
+	TagFilters        []METagFilter     `json:"tagFilters,omitempty"`
 	AlertingScope     []MEAlertingScope `json:"alertingScope"`
 	Unit              string            `json:"unit,omitempty"`
 }
@@ -275,13 +289,14 @@ type METagFilter struct {
 	Value   string `json:"value"`
 }
 type MEAlertingScope struct {
-	FilterType string      `json:"filterType"`
-	TagFilter  METagFilter `json:"tagFilter"`
+	FilterType       string       `json:"filterType"`
+	TagFilter        *METagFilter `json:"tagFilter"`
+	ManagementZoneID int64        `json:"managementZoneId,omitempty"`
 }
 
 var supportedAggregations = [...]string{"avg", "max", "min", "count", "sum", "value", "percentile"}
 
-func CreateKeptnMetricEvent(project string, stage string, service string, metric string, query string, condition string, threshold float64) (*MetricEvent, error) {
+func CreateKeptnMetricEvent(project string, stage string, service string, metric string, query string, condition string, threshold float64, managementZoneID int64) (*MetricEvent, error) {
 
 	/*
 		need to map queries used by SLI-service to metric event definition.
@@ -346,7 +361,7 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 		Metadata:          MEMetadata{},
 		MetricID:          metricId,
 		Name:              metric + " (Keptn." + project + "." + stage + "." + service + ")",
-		Description:       "The {metricname} value of {severity} was {alert_condition} your custom threshold of {threshold}.",
+		Description:       "Keptn SLI violated: The {metricname} value of {severity} was {alert_condition} your custom threshold of {threshold}.",
 		AggregationType:   meAggregation,
 		EventType:         "CUSTOM_ALERT",
 		Severity:          "CUSTOM_ALERT",
@@ -360,27 +375,23 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 		AlertingScope: []MEAlertingScope{
 			// LIMITATION: currently only a maximum of 3 tag filters is supported
 			{
-				FilterType: "TAG",
-				TagFilter: METagFilter{
-					Context: "CONTEXTLESS",
-					Key:     "keptn_project",
-					Value:   project,
-				},
+				FilterType:       "MANAGEMENT_ZONE",
+				ManagementZoneID: managementZoneID,
 			},
 			{
 				FilterType: "TAG",
-				TagFilter: METagFilter{
-					Context: "CONTEXTLESS",
-					Key:     "keptn_stage",
-					Value:   stage,
-				},
-			},
-			{
-				FilterType: "TAG",
-				TagFilter: METagFilter{
+				TagFilter: &METagFilter{
 					Context: "CONTEXTLESS",
 					Key:     "keptn_service",
 					Value:   service,
+				},
+			},
+			{
+				FilterType: "TAG",
+				TagFilter: &METagFilter{
+					Context: "CONTEXTLESS",
+					Key:     "keptn_deployment",
+					Value:   "primary",
 				},
 			},
 		},
@@ -478,7 +489,19 @@ func CreateKeptnAlertingProfile() *AlertingProfile {
 			},
 		},
 		ManagementZoneID: nil,
-		EventTypeFilters: nil,
+		EventTypeFilters: []*AlertingProfileEventTypeFilter{
+			{
+				CustomEventFilter: CustomEventFilter{
+					CustomTitleFilter: CustomTitleFilter{
+						Enabled:         true,
+						Value:           "Keptn",
+						Operator:        "CONTAINS",
+						Negate:          false,
+						CaseInsensitive: true,
+					},
+				},
+			},
+		},
 	}
 }
 

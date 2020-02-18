@@ -30,6 +30,14 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 		return err
 	}
 
+	managementZones := dt.getManagementZones()
+	var mzId int64
+	for _, mz := range managementZones.Values {
+		if mz.Name == getManagementZoneNameForStage(project, stage) {
+			mzId, _ = strconv.ParseInt(mz.ID, 10, 64)
+		}
+	}
+
 	metricEventCreated := false
 	// try to create metric events using best effort.
 	for _, objective := range slos.Objectives {
@@ -50,7 +58,7 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 					// comparison-based criteria cannot be mapped to alerts
 					continue
 				}
-				newMetricEvent, err := CreateKeptnMetricEvent(project, stage, service, objective.SLI, config, crit, criteriaObject.Value)
+				newMetricEvent, err := CreateKeptnMetricEvent(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
 
 				if err != nil {
 					dt.Logger.Info("Could create metric event definition for criteria " + objective.SLI + "" + crit + ": " + err.Error())
@@ -113,12 +121,12 @@ func (dt *DynatraceHelper) GetMetricEvent(eventKey string) (*MetricEvent, error)
 				dt.Logger.Error("Could not get existing metric event " + eventKey + ": " + err.Error())
 				return nil, err
 			}
-			metricEvent := &MetricEvent{}
-			err = json.Unmarshal([]byte(res), metricEvent)
+			retrievedMetricEvent := &MetricEvent{}
+			err = json.Unmarshal([]byte(res), retrievedMetricEvent)
 			if err != nil {
 				return nil, err
 			}
-			return metricEvent, nil
+			return retrievedMetricEvent, nil
 		}
 	}
 	return nil, nil
