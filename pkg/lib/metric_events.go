@@ -86,7 +86,7 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 	}
 
 	if metricEventCreated {
-		dt.Logger.Info("To review and enable the generated custom metric events, please go to : https://" + dt.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
+		dt.Logger.Info("To review and enable the generated custom metric events, please go to: https://" + dt.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
 	}
 	return nil
 }
