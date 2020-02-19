@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math"
 	"strings"
-
 	keptnmodels "github.com/keptn/go-utils/pkg/models"
 )
 
@@ -160,8 +159,7 @@ type Dimensions struct {
 	EntityDimension bool     `json:"entityDimension"`
 }
 type FiltersPerEntityType struct {
-	NonDatabaseService EntityFilter `json:"NON_DATABASE_SERVICE,omitempty"`
-	Service            EntityFilter `json:"SERVICE,omitempty"`
+	Service *EntityFilter `json:"SERVICE,omitempty"`
 }
 type EntityFilter struct {
 	AutoTags []string `json:"AUTO_TAGS,omitempty"`
@@ -174,16 +172,16 @@ type FilterConfig struct {
 	FiltersPerEntityType FiltersPerEntityType `json:"filtersPerEntityType"`
 }
 type Tiles struct {
-	Name                      string       `json:"name"`
-	TileType                  string       `json:"tileType"`
-	Configured                bool         `json:"configured"`
-	Bounds                    Bounds       `json:"bounds"`
-	TileFilter                TileFilter   `json:"tileFilter"`
-	FilterConfig              FilterConfig `json:"filterConfig,omitempty"`
-	ChartVisible              bool         `json:"chartVisible,omitempty"`
-	AssignedEntities          []string     `json:"assignedEntities,omitempty"`
-	ExcludeMaintenanceWindows bool         `json:"excludeMaintenanceWindows,omitempty"`
-	Markdown                  string       `json:"markdown,omitempty"`
+	Name                      string        `json:"name"`
+	TileType                  string        `json:"tileType"`
+	Configured                bool          `json:"configured"`
+	Bounds                    Bounds        `json:"bounds"`
+	TileFilter                TileFilter    `json:"tileFilter"`
+	FilterConfig              *FilterConfig `json:"filterConfig,omitempty"`
+	ChartVisible              bool          `json:"chartVisible,omitempty"`
+	AssignedEntities          []string      `json:"assignedEntities,omitempty"`
+	ExcludeMaintenanceWindows bool          `json:"excludeMaintenanceWindows,omitempty"`
+	Markdown                  string        `json:"markdown,omitempty"`
 }
 
 // MANAGEMENT ZONE TYPES
@@ -625,7 +623,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 	infrastructureHeaderTile.Bounds = Bounds{
 		Top:    0,
 		Left:   0,
-		Width:  500,
+		Width:  494,
 		Height: 38,
 	}
 
@@ -639,8 +637,8 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 			Timeframe:      nil,
 			ManagementZone: nil,
 		},
-		FilterConfig: FilterConfig{
-			Type:        "MIXED",
+		FilterConfig: &FilterConfig{
+			Type:        "HOST",
 			CustomName:  "Hosts",
 			DefaultName: "Hosts",
 			ChartConfig: ChartConfig{
@@ -748,7 +746,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 		dtDashboard.Tiles = append(dtDashboard.Tiles, responseTimeTile)
 
 		if len(services) > 0 {
-			servicesMarkdown := "### Services: \n"
+			servicesMarkdown := "### Services in " + stage.Name + ": \n"
 			for _, service := range services {
 				servicesMarkdown = servicesMarkdown + "[" + service + "](http://" + service + "." + projectName + "-" + stage.Name + "." + keptnDomain + ")\n"
 			}
@@ -757,7 +755,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 				Top:    912,
 				Left:   index * DASHBOARD_STAGE_WIDTH,
 				Width:  DASHBOARD_STAGE_WIDTH,
-				Height: 1000,
+				Height: 988,
 			}
 			dtDashboard.Tiles = append(dtDashboard.Tiles, servicesMdTile)
 		}
@@ -887,7 +885,7 @@ func createServiceResponseTimeTile(project string, stage string) Tiles {
 			Timeframe:      nil,
 			ManagementZone: nil,
 		},
-		FilterConfig: FilterConfig{
+		FilterConfig: &FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Response Time " + stage,
 			DefaultName: "Custom Chart",
@@ -908,7 +906,7 @@ func createServiceResponseTimeTile(project string, stage string) Tiles {
 				},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
-				Service: EntityFilter{
+				Service: &EntityFilter{
 					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
 				},
 			},
@@ -928,7 +926,7 @@ func createHostCPULoadTile() Tiles {
 			Timeframe:      nil,
 			ManagementZone: nil,
 		},
-		FilterConfig: FilterConfig{
+		FilterConfig: &FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "CPU",
 			DefaultName: "Custom Chart",
@@ -964,7 +962,7 @@ func createServiceErrorRateTile(project string, stage string) Tiles {
 			Timeframe:      nil,
 			ManagementZone: nil,
 		},
-		FilterConfig: FilterConfig{
+		FilterConfig: &FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Failure Rate " + stage,
 			DefaultName: "Custom Chart",
@@ -985,7 +983,7 @@ func createServiceErrorRateTile(project string, stage string) Tiles {
 				},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
-				Service: EntityFilter{
+				Service: &EntityFilter{
 					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
 				},
 			},
@@ -1005,7 +1003,7 @@ func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
 			Timeframe:      nil,
 			ManagementZone: nil,
 		},
-		FilterConfig: FilterConfig{
+		FilterConfig: &FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Service Calls per Test Name: " + stage,
 			DefaultName: "Custom Chart",
@@ -1032,11 +1030,6 @@ func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
 					},
 				},
 			},
-			FiltersPerEntityType: FiltersPerEntityType{
-				NonDatabaseService: EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
-				},
-			},
 		},
 		ChartVisible:              true,
 		AssignedEntities:          nil,
@@ -1053,7 +1046,7 @@ func createServiceTopAPICallsTile(project string, stage string) Tiles {
 			Timeframe:      nil,
 			ManagementZone: nil,
 		},
-		FilterConfig: FilterConfig{
+		FilterConfig: &FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Top Service Calls per API Endpoint: " + stage,
 			DefaultName: "Custom Chart",
@@ -1081,7 +1074,7 @@ func createServiceTopAPICallsTile(project string, stage string) Tiles {
 				},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
-				NonDatabaseService: EntityFilter{
+				Service: &EntityFilter{
 					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
 				},
 			},
@@ -1101,7 +1094,7 @@ func createServiceThroughputTile(project string, stage string) Tiles {
 			Timeframe:      nil,
 			ManagementZone: nil,
 		},
-		FilterConfig: FilterConfig{
+		FilterConfig: &FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Throughput " + stage,
 			DefaultName: "Custom Chart",
@@ -1122,7 +1115,7 @@ func createServiceThroughputTile(project string, stage string) Tiles {
 				},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
-				Service: EntityFilter{
+				Service: &EntityFilter{
 					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
 				},
 			},
@@ -1142,8 +1135,8 @@ func createStageServicesTile(project string, stage string) Tiles {
 			Timeframe:      nil,
 			ManagementZone: nil,
 		},
-		FilterConfig: FilterConfig{
-			Type:        "MIXED",
+		FilterConfig: &FilterConfig{
+			Type:        "SERVICE",
 			CustomName:  "Services: " + stage,
 			DefaultName: "Services: " + stage,
 			ChartConfig: ChartConfig{
@@ -1152,7 +1145,7 @@ func createStageServicesTile(project string, stage string) Tiles {
 				ResultMetadata: ResultMetadata{},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
-				NonDatabaseService: EntityFilter{
+				Service: &EntityFilter{
 					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
 				},
 			},
@@ -1162,48 +1155,4 @@ func createStageServicesTile(project string, stage string) Tiles {
 		ExcludeMaintenanceWindows: false,
 		Markdown:                  "",
 	}
-}
-
-func addTileToDashboard(tile Tiles, dashboard *DynatraceDashboard, useFullRow bool) {
-	topOffset := 76.0
-	numberOfColumns := 3
-	tileWidth := 304.0
-	tileHeight := 152.0
-
-	usedSpace := 0.0
-
-	for _, tile := range dashboard.Tiles {
-		usedSpace += float64(tile.Bounds.Width)
-	}
-
-	numberOfTiles := int(usedSpace / tileWidth)
-
-	if useFullRow {
-		mod := numberOfTiles % numberOfColumns
-		if mod != 0 {
-			placesToFill := numberOfColumns - mod
-			for i := 0; i < placesToFill; i++ {
-				addTileToDashboard(createMarkdownTile(" "), dashboard, false)
-			}
-			addTileToDashboard(tile, dashboard, useFullRow)
-			return
-		}
-	}
-
-	top := math.Floor(usedSpace/(float64(numberOfColumns)*tileWidth))*tileHeight + topOffset
-
-	left := float64(numberOfTiles%numberOfColumns) * tileWidth
-
-	tile.Bounds = Bounds{
-		Top:    int(top),
-		Left:   int(left),
-		Width:  int(tileWidth),
-		Height: int(tileHeight),
-	}
-
-	if useFullRow {
-		tile.Bounds.Width = int(float64(numberOfColumns) * tileWidth)
-	}
-
-	dashboard.Tiles = append(dashboard.Tiles, tile)
 }
