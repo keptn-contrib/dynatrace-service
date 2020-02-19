@@ -399,7 +399,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 	infrastructureHeaderTile.Bounds = Bounds{
 		Top:    0,
 		Left:   0,
-		Width:  500,
+		Width:  494,
 		Height: 38,
 	}
 
@@ -414,7 +414,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 			ManagementZone: nil,
 		},
 		FilterConfig: &FilterConfig{
-			Type:        "MIXED",
+			Type:        "HOST",
 			CustomName:  "Hosts",
 			DefaultName: "Hosts",
 			ChartConfig: ChartConfig{
@@ -522,7 +522,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard,
 		dtDashboard.Tiles = append(dtDashboard.Tiles, responseTimeTile)
 
 		if len(services) > 0 {
-			servicesMarkdown := "### Services: \n"
+			servicesMarkdown := "### Services in " + stage.Name + ": \n"
 			for _, service := range services {
 				servicesMarkdown = servicesMarkdown + "[" + service + "](http://" + service + "." + projectName + "-" + stage.Name + "." + keptnDomain + ")\n"
 			}
