@@ -84,7 +84,7 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 				resp, err := dt.sendDynatraceAPIRequest(apiURL, apiMethod, string(mePayload))
 				dt.Logger.Debug(resp)
 				if err != nil {
-					dt.Logger.Error("Could not create metric event " + newMetricEvent.Name + ": " + err.Error())
+					dt.Logger.Error("Could not create metric event " + newMetricEvent.Name + ": " + err.Error() + ": " + resp)
 					continue
 				}
 				dt.Logger.Info("Created metric event " + newMetricEvent.Name + " " + crit)

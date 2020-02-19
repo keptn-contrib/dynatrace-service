@@ -204,7 +204,6 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 	responseBody, _ := ioutil.ReadAll(resp.Body)
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		dt.Logger.Error("Response Status:" + resp.Status)
 		return string(responseBody), errors.New(resp.Status)
 	}
 

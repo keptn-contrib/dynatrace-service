@@ -265,7 +265,7 @@ type MetricEvent struct {
 	MetricID          string            `json:"metricId"`
 	Name              string            `json:"name"`
 	Description       string            `json:"description"`
-	AggregationType   string            `json:"aggregationType"`
+	AggregationType   string            `json:"aggregationType,omitempty"`
 	EventType         string            `json:"eventType"`
 	Severity          string            `json:"severity"`
 	AlertCondition    string            `json:"alertCondition"`
@@ -335,26 +335,23 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 		if isSupportedAggregation {
 			meAggregation = getMetricEventAggregation(transformation)
 
-			if meAggregation == "" {
-				return nil, errors.New("unsupported aggregation type: " + transformation)
-			}
+			/*
+				if meAggregation == "" {
+					return nil, errors.New("unsupported aggregation type: " + transformation)
+				}
+
+			*/
 		}
 	}
-	if meAggregation == "" {
-		return nil, errors.New("no aggregation provided in query")
-	}
+	/*
+		if meAggregation == "" {
+			return nil, errors.New("no aggregation provided in query")
+		}
+	*/
 
-	meAlertCondition := ""
-	if strings.Contains(condition, "+") || strings.Contains(condition, "-") || strings.Contains(condition, "%") {
-		return nil, errors.New("unsupported condition. only fixed thresholds are supported")
-	}
-
-	if strings.Contains(condition, ">") {
-		meAlertCondition = "BELOW"
-	} else if strings.Contains(condition, "<") {
-		meAlertCondition = "ABOVE"
-	} else {
-		return nil, errors.New("unsupported condition. only fixed thresholds are supported")
+	meAlertCondition, err := getAlertCondition(condition)
+	if err != nil {
+		return nil, err
 	}
 
 	metricEvent := &MetricEvent{
@@ -362,7 +359,6 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 		MetricID:          metricId,
 		Name:              metric + " (Keptn." + project + "." + stage + "." + service + ")",
 		Description:       "Keptn SLI violated: The {metricname} value of {severity} was {alert_condition} your custom threshold of {threshold}.",
-		AggregationType:   meAggregation,
 		EventType:         "CUSTOM_ALERT",
 		Severity:          "CUSTOM_ALERT",
 		AlertCondition:    meAlertCondition,
@@ -402,7 +398,27 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 		metricEvent.Unit = "MILLI_SECOND"
 	}
 
+	if meAggregation != "" {
+		metricEvent.AggregationType = meAggregation
+	}
+
 	return metricEvent, nil
+}
+
+func getAlertCondition(condition string) (string, error) {
+	meAlertCondition := ""
+	if strings.Contains(condition, "+") || strings.Contains(condition, "-") || strings.Contains(condition, "%") {
+		return "", errors.New("unsupported condition. only fixed thresholds are supported")
+	}
+
+	if strings.Contains(condition, ">") {
+		meAlertCondition = "BELOW"
+	} else if strings.Contains(condition, "<") {
+		meAlertCondition = "ABOVE"
+	} else {
+		return "", errors.New("unsupported condition. only fixed thresholds are supported")
+	}
+	return meAlertCondition, nil
 }
 
 func getMetricEventAggregation(metricAPIAgg string) string {
@@ -417,7 +433,10 @@ func getMetricEventAggregation(metricAPIAgg string) string {
 		} else {
 			return "MEDIAN"
 		}
-	} else if strings.Contains(metricAPIAgg, "min") {
+	}
+	// due to incompatibilities between metrics and metric event API it's safer to not pass an aggregation in the MetricEvent definition in most cases
+	// the Metric Event API will default it to an appropriate aggregation
+	/*else if strings.Contains(metricAPIAgg, "min") {
 		return "MIN"
 	} else if strings.Contains(metricAPIAgg, "max") {
 		return "MAX"
@@ -430,7 +449,7 @@ func getMetricEventAggregation(metricAPIAgg string) string {
 	} else if strings.Contains(metricAPIAgg, "avg") {
 		return "AVG"
 	}
-
+	*/
 	return ""
 }
 

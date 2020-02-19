@@ -24,7 +24,6 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard models.Shipy
 	dt.Logger.Info("Creating Dashboard for project " + project)
 	dashboard, err := CreateDynatraceDashboard(project, shipyard, keptnDomain, services)
 	if err != nil {
-		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
 		return err
 	}
 
@@ -33,7 +32,6 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard models.Shipy
 	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", string(dashboardPayload))
 
 	if err != nil {
-		dt.Logger.Error("Could not create Dynatrace Dashboard for project " + project + ": " + err.Error())
 		return err
 	}
 	dt.Logger.Info("Dynatrace dashboard created successfully. You can view it here: https://" + dt.DynatraceCreds.Tenant + "/#dashboards")
