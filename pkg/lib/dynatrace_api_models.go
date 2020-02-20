@@ -2,8 +2,8 @@ package lib
 
 import (
 	"errors"
-	"math"
 	"strings"
+
 	keptnmodels "github.com/keptn/go-utils/pkg/models"
 )
 
