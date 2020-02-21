@@ -331,17 +331,17 @@ func createWebApplication(project string, stage string) *WebApplication {
 			SpeedIndexVisuallyCompleteRatioThreshold: 50,
 		},
 		MonitoringSettings: WAMonitoringSettings{
-			FetchRequests:  false,
-			XMLHTTPRequest: false,
+			FetchRequests:  true,
+			XMLHTTPRequest: true,
 			JavaScriptFrameworkSupport: WAJavaScriptFrameworkSupport{
-				Angular:       false,
-				Dojo:          false,
-				ExtJS:         false,
-				Icefaces:      false,
-				JQuery:        false,
-				MooTools:      false,
-				Prototype:     false,
-				ActiveXObject: false,
+				Angular:       true,
+				Dojo:          true,
+				ExtJS:         true,
+				Icefaces:      true,
+				JQuery:        true,
+				MooTools:      true,
+				Prototype:     true,
+				ActiveXObject: true,
 			},
 			ContentCapture: WAContentCapture{
 				ResourceTimingSettings: WAResourceTimingSettings{
