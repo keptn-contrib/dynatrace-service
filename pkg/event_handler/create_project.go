@@ -78,6 +78,11 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		// do not return because there are no dependencies to the dashboard
 	}
 
+	err = eh.DTHelper.CreateWebApplications(e.Project, *shipyard)
+	if err != nil {
+		eh.Logger.Error("Could not create Management Zones for project " + e.Project + ": " + err.Error())
+	}
+
 	err = eh.DTHelper.CreateManagementZones(e.Project, *shipyard)
 	if err != nil {
 		eh.Logger.Error("Could not create Management Zones for project " + e.Project + ": " + err.Error())
