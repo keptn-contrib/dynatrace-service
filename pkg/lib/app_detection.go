@@ -334,14 +334,14 @@ func createWebApplication(project string, stage string) *WebApplication {
 			FetchRequests:  true,
 			XMLHTTPRequest: true,
 			JavaScriptFrameworkSupport: WAJavaScriptFrameworkSupport{
-				Angular:       true,
-				Dojo:          true,
-				ExtJS:         true,
-				Icefaces:      true,
-				JQuery:        true,
-				MooTools:      true,
-				Prototype:     true,
-				ActiveXObject: true,
+				Angular:       false,
+				Dojo:          false,
+				ExtJS:         false,
+				Icefaces:      false,
+				JQuery:        false,
+				MooTools:      false,
+				Prototype:     false,
+				ActiveXObject: false,
 			},
 			ContentCapture: WAContentCapture{
 				ResourceTimingSettings: WAResourceTimingSettings{
