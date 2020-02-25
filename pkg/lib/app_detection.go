@@ -9,50 +9,34 @@ import (
 
 // WEB APPLICATION
 type WebApplication struct {
-	Metadata                         *WAMetadata                 `json:"metadata,omitempty"`
-	Identifier                       *string                     `json:"identifier,omitempty"`
-	Name                             string                      `json:"name"`
-	Type                             string                      `json:"type"`
-	RealUserMonitoringEnabled        bool                        `json:"realUserMonitoringEnabled"`
-	CostControlUserSessionPercentage float64                     `json:"costControlUserSessionPercentage"`
-	LoadActionKeyPerformanceMetric   string                      `json:"loadActionKeyPerformanceMetric"`
-	XhrActionKeyPerformanceMetric    string                      `json:"xhrActionKeyPerformanceMetric"`
-	LoadActionApdexSettings          WALoadActionApdexSettings   `json:"loadActionApdexSettings"`
-	XhrActionApdexSettings           WAXhrActionApdexSettings    `json:"xhrActionApdexSettings"`
-	CustomActionApdexSettings        WACustomActionApdexSettings `json:"customActionApdexSettings"`
-	WaterfallSettings                WAWaterfallSettings         `json:"waterfallSettings"`
-	MonitoringSettings               WAMonitoringSettings        `json:"monitoringSettings"`
-	UserActionNamingSettings         WAUserActionNamingSettings  `json:"userActionNamingSettings"`
-	MetaDataCaptureSettings          []interface{}               `json:"metaDataCaptureSettings,omitempty"`
-	ConversionGoals                  []interface{}               `json:"conversionGoals,omitempty"`
+	Metadata                         *WAMetadata                `json:"metadata,omitempty"`
+	Identifier                       *string                    `json:"identifier,omitempty"`
+	Name                             string                     `json:"name"`
+	Type                             string                     `json:"type"`
+	RealUserMonitoringEnabled        bool                       `json:"realUserMonitoringEnabled"`
+	CostControlUserSessionPercentage float64                    `json:"costControlUserSessionPercentage"`
+	LoadActionKeyPerformanceMetric   string                     `json:"loadActionKeyPerformanceMetric"`
+	XhrActionKeyPerformanceMetric    string                     `json:"xhrActionKeyPerformanceMetric"`
+	LoadActionApdexSettings          WAApdexSettings            `json:"loadActionApdexSettings"`
+	XhrActionApdexSettings           WAApdexSettings            `json:"xhrActionApdexSettings"`
+	CustomActionApdexSettings        WAApdexSettings            `json:"customActionApdexSettings"`
+	WaterfallSettings                WAWaterfallSettings        `json:"waterfallSettings"`
+	MonitoringSettings               WAMonitoringSettings       `json:"monitoringSettings"`
+	UserActionNamingSettings         WAUserActionNamingSettings `json:"userActionNamingSettings"`
+	MetaDataCaptureSettings          []interface{}              `json:"metaDataCaptureSettings,omitempty"`
+	ConversionGoals                  []interface{}              `json:"conversionGoals,omitempty"`
 }
 type WAMetadata struct {
 	ConfigurationVersions []int  `json:"configurationVersions"`
 	ClusterVersion        string `json:"clusterVersion"`
 }
-type WALoadActionApdexSettings struct {
-	Threshold                    float64 `json:"threshold"`
-	ToleratedThreshold           int     `json:"toleratedThreshold"`
-	FrustratingThreshold         int     `json:"frustratingThreshold"`
-	ToleratedFallbackThreshold   int     `json:"toleratedFallbackThreshold"`
-	FrustratingFallbackThreshold int     `json:"frustratingFallbackThreshold"`
-	ConsiderJavaScriptErrors     bool    `json:"considerJavaScriptErrors"`
-}
-type WAXhrActionApdexSettings struct {
-	Threshold                    float64 `json:"threshold"`
-	ToleratedThreshold           int     `json:"toleratedThreshold"`
-	FrustratingThreshold         int     `json:"frustratingThreshold"`
-	ToleratedFallbackThreshold   int     `json:"toleratedFallbackThreshold"`
-	FrustratingFallbackThreshold int     `json:"frustratingFallbackThreshold"`
-	ConsiderJavaScriptErrors     bool    `json:"considerJavaScriptErrors"`
-}
-type WACustomActionApdexSettings struct {
-	Threshold                    float64 `json:"threshold"`
-	ToleratedThreshold           int     `json:"toleratedThreshold"`
-	FrustratingThreshold         int     `json:"frustratingThreshold"`
-	ToleratedFallbackThreshold   int     `json:"toleratedFallbackThreshold"`
-	FrustratingFallbackThreshold int     `json:"frustratingFallbackThreshold"`
-	ConsiderJavaScriptErrors     bool    `json:"considerJavaScriptErrors"`
+type WAApdexSettings struct {
+	Threshold                    *float64 `json:"threshold,omitempty"`
+	ToleratedThreshold           *int     `json:"toleratedThreshold,omitempty"`
+	FrustratingThreshold         *int     `json:"frustratingThreshold,omitempty"`
+	ToleratedFallbackThreshold   *int     `json:"toleratedFallbackThreshold,omitempty"`
+	FrustratingFallbackThreshold *int     `json:"frustratingFallbackThreshold,omitempty"`
+	ConsiderJavaScriptErrors     bool     `json:"considerJavaScriptErrors"`
 }
 type WAWaterfallSettings struct {
 	UncompressedResourcesThreshold           int `json:"uncompressedResourcesThreshold"`
@@ -289,6 +273,10 @@ func createAppDetectionRule(project string, stage string, webAppID string) *AppD
 	}
 }
 
+func createFloat(x float64) *float64 {
+	return &x
+}
+
 func createWebApplication(project string, stage string) *WebApplication {
 	return &WebApplication{
 		Name:                             getWebApplicationName(project, stage),
@@ -297,29 +285,17 @@ func createWebApplication(project string, stage string) *WebApplication {
 		CostControlUserSessionPercentage: 100.0,
 		LoadActionKeyPerformanceMetric:   "VISUALLY_COMPLETE",
 		XhrActionKeyPerformanceMetric:    "VISUALLY_COMPLETE",
-		LoadActionApdexSettings: WALoadActionApdexSettings{
-			Threshold:                    3.0,
-			ToleratedThreshold:           3000,
-			FrustratingThreshold:         12000,
-			ToleratedFallbackThreshold:   3000,
-			FrustratingFallbackThreshold: 12000,
-			ConsiderJavaScriptErrors:     true,
+		LoadActionApdexSettings: WAApdexSettings{
+			Threshold:                createFloat(3.0),
+			ConsiderJavaScriptErrors: true,
 		},
-		XhrActionApdexSettings: WAXhrActionApdexSettings{
-			Threshold:                    3.0,
-			ToleratedThreshold:           3000,
-			FrustratingThreshold:         12000,
-			ToleratedFallbackThreshold:   3000,
-			FrustratingFallbackThreshold: 12000,
-			ConsiderJavaScriptErrors:     true,
+		XhrActionApdexSettings: WAApdexSettings{
+			Threshold:                createFloat(3.0),
+			ConsiderJavaScriptErrors: true,
 		},
-		CustomActionApdexSettings: WACustomActionApdexSettings{
-			Threshold:                    3.0,
-			ToleratedThreshold:           3000,
-			FrustratingThreshold:         12000,
-			ToleratedFallbackThreshold:   3000,
-			FrustratingFallbackThreshold: 12000,
-			ConsiderJavaScriptErrors:     true,
+		CustomActionApdexSettings: WAApdexSettings{
+			Threshold:                createFloat(3.0),
+			ConsiderJavaScriptErrors: true,
 		},
 		WaterfallSettings: WAWaterfallSettings{
 			UncompressedResourcesThreshold:           860,
