@@ -1,15 +1,9 @@
 package event_handler
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
-
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
+	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 	keptnevents "github.com/keptn/go-utils/pkg/events"
 	keptnutils "github.com/keptn/go-utils/pkg/utils"
 )
@@ -23,16 +17,21 @@ func (eh CDEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
-	eh.Logger.Info("Received new event of type " + eh.Event.Type())
-
-	dtTenant := os.Getenv("DT_TENANT")
-	dtAPIToken := os.Getenv("DT_API_TOKEN")
-
-	if dtTenant == "" || dtAPIToken == "" {
-		eh.Logger.Error("No Dynatrace credentials defined in cluster. Could not send event.")
-		return errors.New("no Dynatrace credentials defined in cluster")
+	clientSet, err := keptnutils.GetClientset(true)
+	if err != nil {
+		eh.Logger.Error("could not create k8s client")
+		return err
 	}
-	eh.Logger.Info("Trying to send event to DT Tenant: " + os.Getenv("DT_TENANT"))
+
+	dtHelper, err := lib.NewDynatraceHelper()
+	if err != nil {
+		eh.Logger.Error("Could not create Dynatrace Helper: " + err.Error())
+		return err
+	}
+	dtHelper.KubeApi = clientSet
+	dtHelper.Logger = eh.Logger
+
+	eh.Logger.Info("Checking if event of type " + eh.Event.Type() + " should be sent to Dynatrace...")
 
 	if eh.Event.Type() == keptnevents.DeploymentFinishedEventType {
 		dfData := &keptnevents.DeploymentFinishedEventData{}
@@ -42,14 +41,15 @@ func (eh CDEventHandler) HandleEvent() error {
 			return err
 		}
 		de := createDeploymentEvent(dfData, shkeptncontext)
-		sendDynatraceRequest(dtTenant, dtAPIToken, de, eh.Logger)
+
+		dtHelper.SendEvent(de)
 
 		// TODO: an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
 		ie := createInfoEvent(dfData.Project, dfData.Stage, dfData.Service, dfData.TestStrategy, dfData.Image, dfData.Tag, shkeptncontext)
 		if dfData.TestStrategy != "" {
 			ie.Title = "Start Running Tests: " + dfData.TestStrategy
 			ie.Description = "Start running tests: " + dfData.TestStrategy + " against " + dfData.Service
-			sendDynatraceRequest(dtTenant, dtAPIToken, ie, eh.Logger)
+			dtHelper.SendEvent(ie)
 		}
 	} else if eh.Event.Type() == keptnevents.TestsFinishedEventType {
 		tfData := &keptnevents.TestsFinishedEventData{}
@@ -61,7 +61,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		ie := createInfoEvent(tfData.Project, tfData.Stage, tfData.Service, tfData.TestStrategy, "", "", shkeptncontext)
 		ie.Title = "Stop Running Tests: " + tfData.TestStrategy
 		ie.Description = "Stop running tests: " + tfData.TestStrategy + " against " + tfData.Service
-		sendDynatraceRequest(dtTenant, dtAPIToken, ie, eh.Logger)
+		dtHelper.SendEvent(ie)
 
 	} else if eh.Event.Type() == keptnevents.EvaluationDoneEventType {
 		edData := &keptnevents.EvaluationDoneEventData{}
@@ -95,7 +95,9 @@ func (eh CDEventHandler) HandleEvent() error {
 			return nil
 		}
 		ie.Description = "Keptn evaluation status: " + edData.Result
-		sendDynatraceRequest(dtTenant, dtAPIToken, ie, eh.Logger)
+		dtHelper.SendEvent(ie)
+	} else {
+		eh.Logger.Info("    Ignoring event.")
 	}
 	return nil
 }
@@ -212,32 +214,4 @@ func createDeploymentEvent(event *keptnevents.DeploymentFinishedEventData, keptn
 	de.CustomProperties = customProperties
 
 	return de
-}
-
-func sendDynatraceRequest(dtTenant string, dtAPIToken string, dtEvent interface{}, logger *keptnutils.Logger) {
-	jsonString, err := json.Marshal(dtEvent)
-	if err != nil {
-		logger.Error("Error while generating Dynatrace API Request payload.")
-		return
-	}
-	url := "https://" + dtTenant + "/api/v1/events?Api-Token=" + dtAPIToken
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonString))
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Error("Error while sending request to Dynatrace: " + err.Error())
-		return
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		logger.Error("Response Status:" + resp.Status)
-		return
-	}
-	defer resp.Body.Close()
-
-	logger.Debug("Response Status:" + resp.Status)
-	body, _ := ioutil.ReadAll(resp.Body)
-	logger.Debug("Response Body:" + string(body))
 }
