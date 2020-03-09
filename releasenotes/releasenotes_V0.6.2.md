@@ -1,4 +1,4 @@
-# Release Notes develop
+# Release Notes 0.6.2
 
 ## New Features
 - Automated creation of custom alerting events in Dynatrace [#1265](https://github.com/keptn/keptn/issues/1387)
