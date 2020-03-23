@@ -55,6 +55,11 @@ type ProblemEventHandler struct {
 const eventbroker = "EVENTBROKER"
 
 func (eh ProblemEventHandler) HandleEvent() error {
+
+	if eh.Event.Source() != "https://github.com/keptn/keptn/api" {
+		eh.Logger.Debug("Will not handle problem event that did not go through the API (event source = " + eh.Event.Source() + ")")
+		return nil
+	}
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 	dtProblemEvent := &DTProblemEvent{}
@@ -66,13 +71,69 @@ func (eh ProblemEventHandler) HandleEvent() error {
 	}
 
 	// ignore problem events if they are closed
-	if dtProblemEvent.ProblemDetails.Status == "CLOSED" {
-		eh.Logger.Info("Received CLOSED problem")
-		return nil
+	if dtProblemEvent.State == "RESOLVED" {
+		eh.Logger.Info("Received RESOLVED problem notification")
+		return eh.handleClosedProblemFromDT(dtProblemEvent, shkeptncontext)
 	}
 
+	return eh.handleOpenedProblemFromDT(dtProblemEvent, shkeptncontext)
+}
+
+func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProblemEvent, shkeptncontext string) error {
 	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
 
+	project, stage, service := eh.extractContextFromTags(dtProblemEvent)
+
+	newProblemData := keptnevents.ProblemEventData{
+		State:          "CLOSED",
+		PID:            dtProblemEvent.PID,
+		ProblemID:      dtProblemEvent.ProblemID,
+		ProblemTitle:   dtProblemEvent.ProblemTitle,
+		ProblemDetails: json.RawMessage(problemDetailsString),
+		ImpactedEntity: dtProblemEvent.ImpactedEntity,
+		Project:        project,
+		Stage:          stage,
+		Service:        service,
+	}
+
+	eh.Logger.Debug("Sending event to eventbroker")
+	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, "sh.keptn.events.problem")
+	if err != nil {
+		eh.Logger.Error("Could not send cloud event: " + err.Error())
+		return err
+	}
+	eh.Logger.Debug("Event successfully dispatched to eventbroker")
+	return nil
+}
+
+func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProblemEvent, shkeptncontext string) error {
+	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
+
+	project, stage, service := eh.extractContextFromTags(dtProblemEvent)
+
+	newProblemData := keptnevents.ProblemEventData{
+		State:          "OPEN",
+		PID:            dtProblemEvent.PID,
+		ProblemID:      dtProblemEvent.ProblemID,
+		ProblemTitle:   dtProblemEvent.ProblemTitle,
+		ProblemDetails: json.RawMessage(problemDetailsString),
+		ImpactedEntity: dtProblemEvent.ImpactedEntity,
+		Project:        project,
+		Stage:          stage,
+		Service:        service,
+	}
+
+	eh.Logger.Debug("Sending event to eventbroker")
+	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptnevents.ProblemOpenEventType)
+	if err != nil {
+		eh.Logger.Error("Could not send cloud event: " + err.Error())
+		return err
+	}
+	eh.Logger.Debug("Event successfully dispatched to eventbroker")
+	return nil
+}
+
+func (eh ProblemEventHandler) extractContextFromTags(dtProblemEvent *DTProblemEvent) (string, string, string) {
 	splittedTags := strings.Split(dtProblemEvent.Tags, ",")
 
 	project := ""
@@ -94,30 +155,11 @@ func (eh ProblemEventHandler) HandleEvent() error {
 			}
 		}
 	}
-	newProblemData := keptnevents.ProblemEventData{
-		State:          "OPEN",
-		PID:            dtProblemEvent.PID,
-		ProblemID:      dtProblemEvent.ProblemID,
-		ProblemTitle:   dtProblemEvent.ProblemTitle,
-		ProblemDetails: json.RawMessage(problemDetailsString),
-		ImpactedEntity: dtProblemEvent.ImpactedEntity,
-		Project:        project,
-		Stage:          stage,
-		Service:        service,
-	}
-
-	eh.Logger.Debug("Sending event to eventbroker")
-	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext)
-	if err != nil {
-		eh.Logger.Error("Could not send cloud event: " + err.Error())
-		return err
-	}
-	eh.Logger.Debug("Event successfully dispatched to eventbroker")
-	return nil
+	return project, stage, service
 }
 
-func createAndSendCE(eventbroker string, problemData keptnevents.ProblemEventData, shkeptncontext string) error {
-	source, _ := url.Parse("dynatrace")
+func createAndSendCE(eventbroker string, problemData keptnevents.ProblemEventData, shkeptncontext string, eventType string) error {
+	source, _ := url.Parse("dynatrace-service")
 	contentType := "application/json"
 
 	endPoint, err := getServiceEndpoint(eventbroker)
@@ -126,7 +168,7 @@ func createAndSendCE(eventbroker string, problemData keptnevents.ProblemEventDat
 		Context: cloudevents.EventContextV02{
 			ID:          uuid.New().String(),
 			Time:        &types.Timestamp{Time: time.Now()},
-			Type:        keptnevents.ProblemOpenEventType,
+			Type:        eventType,
 			Source:      types.URLRef{URL: *source},
 			ContentType: &contentType,
 			Extensions:  map[string]interface{}{"shkeptncontext": shkeptncontext},
