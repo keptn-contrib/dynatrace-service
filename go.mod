@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.1
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/keptn/go-utils v0.6.0
+	github.com/keptn/go-utils v0.6.1
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/net v0.0.0-20191021144547-ec77196f6094
 	gopkg.in/yaml.v2 v2.2.4
