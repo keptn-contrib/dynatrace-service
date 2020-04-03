@@ -12,7 +12,7 @@ import (
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	cloudeventshttp "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http"
-	keptnutils "github.com/keptn/go-utils/pkg/utils"
+	keptnutils "github.com/keptn/go-utils/pkg/lib"
 )
 
 type envConfig struct {

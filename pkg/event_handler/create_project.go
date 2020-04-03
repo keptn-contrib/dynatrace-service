@@ -3,16 +3,16 @@ package event_handler
 import (
 	"encoding/base64"
 
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	"github.com/ghodss/yaml"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
-	keptnevents "github.com/keptn/go-utils/pkg/events"
-	keptnmodels "github.com/keptn/go-utils/pkg/models"
-	keptnutils "github.com/keptn/go-utils/pkg/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 type CreateProjectEventHandler struct {
-	Logger   keptnutils.LoggerInterface
+	Logger   keptn.LoggerInterface
 	Event    cloudevents.Event
 	DTHelper *lib.DynatraceHelper
 }
@@ -21,14 +21,14 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
-	e := &keptnevents.ProjectCreateEventData{}
+	e := &keptn.ProjectCreateEventData{}
 	err := eh.Event.DataAs(e)
 	if err != nil {
 		eh.Logger.Error("Could not parse event payload: " + err.Error())
 		return err
 	}
 
-	shipyard := &keptnmodels.Shipyard{}
+	shipyard := &keptn.Shipyard{}
 
 	decodedShipyard, err := base64.StdEncoding.DecodeString(e.Shipyard)
 	if err != nil {
@@ -39,12 +39,17 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		eh.Logger.Error("Could not parse shipyard: " + err.Error())
 	}
 
-	clientSet, err := keptnutils.GetClientset(true)
+	clientSet, err := common.GetKubernetesClient()
 	if err != nil {
 		eh.Logger.Error("could not create k8s client")
 	}
 
-	dtHelper, err := lib.NewDynatraceHelper()
+	keptnHandler, err := keptn.NewKeptn(&eh.Event, keptn.KeptnOpts{})
+	if err != nil {
+		eh.Logger.Error("could not create Keptn handler: " + err.Error())
+	}
+
+	dtHelper, err := lib.NewDynatraceHelper(keptnHandler)
 	if err != nil {
 		eh.Logger.Error("Could not create Dynatrace Helper: " + err.Error())
 	}

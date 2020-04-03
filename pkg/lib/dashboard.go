@@ -3,11 +3,11 @@ package lib
 import (
 	"encoding/json"
 
-	"github.com/keptn/go-utils/pkg/models"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (dt *DynatraceHelper) CreateDashboard(project string, shipyard models.Shipyard, services []string) error {
+func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipyard, services []string) error {
 	keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
 	if err != nil {
 		dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())

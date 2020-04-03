@@ -6,19 +6,17 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/keptn/go-utils/pkg/models"
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	"github.com/gorilla/websocket"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
-	keptnmodels "github.com/keptn/go-utils/pkg/configuration-service/models"
-	"github.com/keptn/go-utils/pkg/configuration-service/utils"
-	keptnevents "github.com/keptn/go-utils/pkg/events"
-	keptnutils "github.com/keptn/go-utils/pkg/utils"
+	keptnmodels "github.com/keptn/go-utils/pkg/api/models"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 type ConfigureMonitoringEventHandler struct {
-	Logger           keptnutils.LoggerInterface
+	Logger           keptn.LoggerInterface
 	Event            cloudevents.Event
 	DTHelper         *lib.DynatraceHelper
 	IsCombinedLogger bool
@@ -29,8 +27,8 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
-	if eh.Event.Type() == keptnevents.ConfigureMonitoringEventType {
-		eventData := &keptnevents.ConfigureMonitoringEventData{}
+	if eh.Event.Type() == keptn.ConfigureMonitoringEventType {
+		eventData := &keptn.ConfigureMonitoringEventData{}
 		if err := eh.Event.DataAs(eventData); err != nil {
 			return err
 		}
@@ -39,7 +37,7 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 		}
 	}
 	// open WebSocket, if connection data is available
-	connData := keptnutils.ConnectionData{}
+	connData := keptn.ConnectionData{}
 	if err := eh.Event.DataAs(&connData); err != nil ||
 		connData.EventContext.KeptnContext == nil || connData.EventContext.Token == nil ||
 		*connData.EventContext.KeptnContext == "" || *connData.EventContext.Token == "" {
@@ -50,13 +48,13 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 			eh.Logger.Error(err.Error())
 			return nil
 		}
-		ws, _, err := keptnutils.OpenWS(connData, *apiServiceURL)
+		ws, _, err := keptn.OpenWS(connData, *apiServiceURL)
 		if err != nil {
 			eh.Logger.Error("Opening WebSocket connection failed:" + err.Error())
 			return nil
 		}
-		stdLogger := keptnutils.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
-		combinedLogger := keptnutils.NewCombinedLogger(stdLogger, ws, shkeptncontext)
+		stdLogger := keptn.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
+		combinedLogger := keptn.NewCombinedLogger(stdLogger, ws, shkeptncontext)
 		eh.Logger = combinedLogger
 		eh.WebSocket = ws
 		eh.IsCombinedLogger = true
@@ -68,7 +66,7 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 
 func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 	eh.Logger.Info("Configuring Dynatrace monitoring")
-	e := &keptnevents.ConfigureMonitoringEventData{}
+	e := &keptn.ConfigureMonitoringEventData{}
 	err := eh.Event.DataAs(e)
 	if err != nil {
 		eh.Logger.Error("Could not parse event payload: " + err.Error())
@@ -78,12 +76,17 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 		return nil
 	}
 
-	clientSet, err := keptnutils.GetClientset(true)
+	keptnHandler, err := keptn.NewKeptn(&eh.Event, keptn.KeptnOpts{})
+	if err != nil {
+		eh.Logger.Error("could not create Keptn handler: " + err.Error())
+	}
+
+	clientSet, err := common.GetKubernetesClient()
 	if err != nil {
 		eh.Logger.Error("could not create k8s client")
 	}
 
-	dtHelper, err := lib.NewDynatraceHelper()
+	dtHelper, err := lib.NewDynatraceHelper(keptnHandler)
 	if err != nil {
 		eh.Logger.Error("Could not create Dynatrace Helper: " + err.Error())
 	}
@@ -109,10 +112,8 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 	}
 
 	if e.Project != "" {
-		resourceHandler := utils.NewResourceHandler("configuration-service:8080")
-		keptnHandler := keptnutils.NewKeptnHandler(resourceHandler)
 
-		shipyard, err := keptnHandler.GetShipyard(e.Project)
+		shipyard, err := keptnHandler.GetShipyard()
 		if err != nil {
 			eh.Logger.Error("Could not retrieve shipyard for project " + e.Project + ": " + err.Error())
 			return err
@@ -152,12 +153,12 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 func (eh *ConfigureMonitoringEventHandler) closeWebSocketConnection() {
 	if eh.IsCombinedLogger {
-		eh.Logger.(*keptnutils.CombinedLogger).Terminate()
+		eh.Logger.(*keptn.CombinedLogger).Terminate()
 		eh.WebSocket.Close()
 	}
 }
 
-func getServicesInProject(project string, shipyard models.Shipyard, addService string) ([]string, error) {
+func getServicesInProject(project string, shipyard keptn.Shipyard, addService string) ([]string, error) {
 	services := []string{}
 	if addService != "" {
 		services = []string{addService}

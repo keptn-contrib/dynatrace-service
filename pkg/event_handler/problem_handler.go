@@ -15,8 +15,7 @@ import (
 	cloudeventshttp "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http"
 	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
 	"github.com/google/uuid"
-	keptnevents "github.com/keptn/go-utils/pkg/events"
-	keptnutils "github.com/keptn/go-utils/pkg/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 type DTProblemEvent struct {
@@ -48,7 +47,7 @@ type DTProblemEvent struct {
 }
 
 type ProblemEventHandler struct {
-	Logger *keptnutils.Logger
+	Logger *keptn.Logger
 	Event  cloudevents.Event
 }
 
@@ -84,7 +83,7 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 
 	project, stage, service := eh.extractContextFromTags(dtProblemEvent)
 
-	newProblemData := keptnevents.ProblemEventData{
+	newProblemData := keptn.ProblemEventData{
 		State:          "CLOSED",
 		PID:            dtProblemEvent.PID,
 		ProblemID:      dtProblemEvent.ProblemID,
@@ -111,7 +110,7 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 
 	project, stage, service := eh.extractContextFromTags(dtProblemEvent)
 
-	newProblemData := keptnevents.ProblemEventData{
+	newProblemData := keptn.ProblemEventData{
 		State:          "OPEN",
 		PID:            dtProblemEvent.PID,
 		ProblemID:      dtProblemEvent.ProblemID,
@@ -124,7 +123,7 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 	}
 
 	eh.Logger.Debug("Sending event to eventbroker")
-	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptnevents.ProblemOpenEventType)
+	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptn.ProblemOpenEventType)
 	if err != nil {
 		eh.Logger.Error("Could not send cloud event: " + err.Error())
 		return err
@@ -158,7 +157,7 @@ func (eh ProblemEventHandler) extractContextFromTags(dtProblemEvent *DTProblemEv
 	return project, stage, service
 }
 
-func createAndSendCE(eventbroker string, problemData keptnevents.ProblemEventData, shkeptncontext string, eventType string) error {
+func createAndSendCE(eventbroker string, problemData keptn.ProblemEventData, shkeptncontext string, eventType string) error {
 	source, _ := url.Parse("dynatrace-service")
 	contentType := "application/json"
 
@@ -189,7 +188,7 @@ func createAndSendCE(eventbroker string, problemData keptnevents.ProblemEventDat
 		return errors.New("Failed to create HTTP client:" + err.Error())
 	}
 
-	if _, err := c.Send(context.Background(), ce); err != nil {
+	if _, _, err := c.Send(context.Background(), ce); err != nil {
 		return errors.New("Failed to send cloudevent:, " + err.Error())
 	}
 

@@ -2,22 +2,21 @@ package event_handler
 
 import (
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
-	keptnevents "github.com/keptn/go-utils/pkg/events"
-	keptnutils "github.com/keptn/go-utils/pkg/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 type DynatraceEventHandler interface {
 	HandleEvent() error
 }
 
-func NewEventHandler(event cloudevents.Event, logger *keptnutils.Logger) (DynatraceEventHandler, error) {
+func NewEventHandler(event cloudevents.Event, logger *keptn.Logger) (DynatraceEventHandler, error) {
 	logger.Debug("Received event: " + event.Type())
 	switch event.Type() {
-	case keptnevents.ConfigureMonitoringEventType:
+	case keptn.ConfigureMonitoringEventType:
 		return &ConfigureMonitoringEventHandler{Logger: logger, Event: event}, nil
-	case keptnevents.InternalProjectCreateEventType:
+	case keptn.InternalProjectCreateEventType:
 		return &CreateProjectEventHandler{Logger: logger, Event: event}, nil
-	case keptnevents.ProblemEventType:
+	case keptn.ProblemEventType:
 		return &ProblemEventHandler{Logger: logger, Event: event}, nil
 	default:
 		return &CDEventHandler{Logger: logger, Event: event}, nil

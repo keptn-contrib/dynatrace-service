@@ -10,8 +10,8 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
-	configutils "github.com/keptn/go-utils/pkg/configuration-service/utils"
-	keptnmodelsv2 "github.com/keptn/go-utils/pkg/models/v2"
+	configutils "github.com/keptn/go-utils/pkg/api/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, service string) error {
@@ -23,7 +23,7 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 		return err
 	}
 	// get custom metrics for project
-	projectCustomQueries, err := getCustomQueries(project, stage, service)
+	projectCustomQueries, err := dt.getCustomQueries(project, stage, service)
 	if err != nil {
 		dt.Logger.Error("Failed to get custom queries for project " + project)
 		dt.Logger.Error(err.Error())
@@ -166,14 +166,14 @@ func getConfigurationServiceURL() string {
 	return "configuration-service.keptn.svc.cluster.local:8080"
 }
 
-func retrieveSLOs(project string, stage string, service string) (*keptnmodelsv2.ServiceLevelObjectives, error) {
+func retrieveSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error) {
 	resourceHandler := configutils.NewResourceHandler(getConfigurationServiceURL())
 
 	resource, err := resourceHandler.GetServiceResource(project, stage, service, "slo.yaml")
 	if err != nil || resource.ResourceContent == "" {
 		return nil, errors.New("No SLO file available for service " + service + " in stage " + stage)
 	}
-	var slos keptnmodelsv2.ServiceLevelObjectives
+	var slos keptn.ServiceLevelObjectives
 
 	err = yaml.Unmarshal([]byte(resource.ResourceContent), &slos)
 
@@ -184,10 +184,12 @@ func retrieveSLOs(project string, stage string, service string) (*keptnmodelsv2.
 	return &slos, nil
 }
 
-func getCustomQueries(project string, stage string, service string) (map[string]string, error) {
-	resourceHandler := configutils.NewResourceHandler(getConfigurationServiceURL())
+func (dt *DynatraceHelper) getCustomQueries(project string, stage string, service string) (map[string]string, error) {
 
-	customQueries, err := resourceHandler.GetSLIConfiguration(project, stage, service, sliResourceURI)
+	if dt.KeptnHandler == nil {
+		return nil, errors.New("Could not retrieve SLI config: No KeptnHandler initialized")
+	}
+	customQueries, err := dt.KeptnHandler.GetSLIConfiguration(project, stage, service, sliResourceURI)
 	if err != nil {
 		return nil, err
 	}
