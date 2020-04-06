@@ -27,7 +27,7 @@ The service is subscribed to the following Keptn CloudEvents:
 1. Deploy the `dynatrace-service` using `kubectl apply`:
 
     ```console
-    kubectl apply -f deploy/manifests/dynatrace-service/dynatrace-service.yaml
+    kubectl apply -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/master/deploy/manifests/dynatrace-service/dynatrace-service.yaml
     ```
    
     When the service is deployed, use the following command to let the `dynatrace-service` install Dynatrace on your cluster. If Dynatrace is already deployed, the current deployment of Dynatrace will not be modified.
