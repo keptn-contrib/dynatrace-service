@@ -1,7 +1,10 @@
 # Use the offical Golang image to create a build artifact.
 # This is based on Debian and sets the GOPATH to /go.
 # https://hub.docker.com/_/golang
-FROM golang:1.12 as builder
+FROM golang:1.13.7-alpine as builder
+
+RUN apk add --no-cache gcc libc-dev git
+
 ARG version=develop
 
 WORKDIR /go/src/github.com/keptn/dynatrace-service
@@ -28,19 +31,22 @@ COPY . .
 
 # Build the command inside the container.
 # (You may fetch or manage dependencies here, either manually or with a tool like "godep".)
-RUN CGO_ENABLED=0 GOOS=linux go build $BUILDFLAGS -v -o dynatrace-service ./cmd/
+RUN GOOS=linux go build -ldflags '-linkmode=external' $BUILDFLAGS -v -o dynatrace-service ./cmd/
 
 # Use a Docker multi-stage build to create a lean production image.
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
-FROM alpine
-RUN apk add --no-cache ca-certificates
+FROM alpine:3.11
 
-ARG debugBuild
+# Install extra packages
+# See https://github.com/gliderlabs/docker-alpine/issues/136#issuecomment-272703023
+
+RUN    apk update && apk upgrade \
+	&& apk add ca-certificates libc6-compat \
+	&& update-ca-certificates \
+	&& rm -rf /var/cache/apk/*
+
 ARG version
-
 ENV version $version
-# IF we are debugging, we need to install libc6-compat for delve to work on alpine based containers
-RUN if [ ! -z "$debugBuild" ]; then apk add --no-cache libc6-compat; fi
 
 ARG KUBE_VERSION=1.14.1
 RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v$KUBE_VERSION/bin/linux/amd64/kubectl -O /bin/kubectl && \
@@ -59,8 +65,8 @@ EXPOSE 8080
 ENV GOTRACEBACK=all
 
 # KEEP THE FOLLOWING LINES COMMENTED OUT!!! (they will be included within the travis-ci build)
-#travis-uncomment ADD MANIFEST /
-#travis-uncomment COPY entrypoint.sh /
+#travis-uncomment ADD docker/MANIFEST /
+#travis-uncomment COPY docker/entrypoint.sh /
 #travis-uncomment ENTRYPOINT ["/entrypoint.sh"]
 
 # Run the web service on container startup.
