@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	keptnutils "github.com/keptn/go-utils/pkg/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -91,7 +91,7 @@ func (dt *DynatraceHelper) deployDTOperator() error {
 		return err
 	}
 
-	_, err = keptnutils.ExecuteCommand("kubectl", []string{"apply", "-f", operatorFileName})
+	_, err = keptn.ExecuteCommand("kubectl", []string{"apply", "-f", operatorFileName})
 	if err != nil {
 		_ = deleteFile(operatorFileName)
 		return err
@@ -131,7 +131,7 @@ func (dt *DynatraceHelper) deployDynatrace() error {
 		return err
 	}
 
-	_, err = keptnutils.ExecuteCommand("kubectl", []string{"apply", "-f", dtYamlFileName})
+	_, err = keptn.ExecuteCommand("kubectl", []string{"apply", "-f", dtYamlFileName})
 	if err != nil {
 		_ = deleteFile(dtYamlFileName)
 		return err

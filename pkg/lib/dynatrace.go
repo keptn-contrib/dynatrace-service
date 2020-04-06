@@ -8,11 +8,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/keptn/go-utils/pkg/models"
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 
 	"k8s.io/client-go/kubernetes"
 
-	keptnutils "github.com/keptn/go-utils/pkg/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -49,17 +49,19 @@ type DTCredentials struct {
 type DynatraceHelper struct {
 	KubeApi        *kubernetes.Clientset
 	DynatraceCreds *DTCredentials
-	Logger         keptnutils.LoggerInterface
+	Logger         keptn.LoggerInterface
 	OperatorTag    string
+	KeptnHandler   *keptn.Keptn
 }
 
-func NewDynatraceHelper() (*DynatraceHelper, error) {
+func NewDynatraceHelper(keptnHandler *keptn.Keptn) (*DynatraceHelper, error) {
 	dtHelper := &DynatraceHelper{}
 	dtCreds, err := dtHelper.GetDTCredentials()
 	if err != nil {
 		return nil, err
 	}
 	dtHelper.DynatraceCreds = dtCreds
+	dtHelper.KeptnHandler = keptnHandler
 	return dtHelper, nil
 }
 
@@ -127,7 +129,7 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 	return nil
 }
 
-func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard models.Shipyard) error {
+func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptn.Shipyard) error {
 	// get existing management zones
 	mzs := dt.getManagementZones()
 
@@ -214,7 +216,7 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 }
 
 func (dt *DynatraceHelper) GetDTCredentials() (*DTCredentials, error) {
-	kubeAPI, err := keptnutils.GetClientset(true)
+	kubeAPI, err := common.GetKubernetesClient()
 	if err != nil {
 		return nil, err
 	}

@@ -2,14 +2,16 @@ package event_handler
 
 import (
 	"fmt"
+
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
-	keptnevents "github.com/keptn/go-utils/pkg/events"
-	keptnutils "github.com/keptn/go-utils/pkg/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 type CDEventHandler struct {
-	Logger *keptnutils.Logger
+	Logger *keptn.Logger
 	Event  cloudevents.Event
 }
 
@@ -17,13 +19,18 @@ func (eh CDEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
-	clientSet, err := keptnutils.GetClientset(true)
+	clientSet, err := common.GetKubernetesClient()
 	if err != nil {
 		eh.Logger.Error("could not create k8s client")
 		return err
 	}
 
-	dtHelper, err := lib.NewDynatraceHelper()
+	keptnHandler, err := keptn.NewKeptn(&eh.Event, keptn.KeptnOpts{})
+	if err != nil {
+		eh.Logger.Error("could not create Keptn handler: " + err.Error())
+	}
+
+	dtHelper, err := lib.NewDynatraceHelper(keptnHandler)
 	if err != nil {
 		eh.Logger.Error("Could not create Dynatrace Helper: " + err.Error())
 		return err
@@ -33,8 +40,8 @@ func (eh CDEventHandler) HandleEvent() error {
 
 	eh.Logger.Info("Checking if event of type " + eh.Event.Type() + " should be sent to Dynatrace...")
 
-	if eh.Event.Type() == keptnevents.DeploymentFinishedEventType {
-		dfData := &keptnevents.DeploymentFinishedEventData{}
+	if eh.Event.Type() == keptn.DeploymentFinishedEventType {
+		dfData := &keptn.DeploymentFinishedEventData{}
 		err := eh.Event.DataAs(dfData)
 		if err != nil {
 			eh.Logger.Error("Could not parse event payload: " + err.Error())
@@ -51,8 +58,8 @@ func (eh CDEventHandler) HandleEvent() error {
 			ie.Description = "Start running tests: " + dfData.TestStrategy + " against " + dfData.Service
 			dtHelper.SendEvent(ie)
 		}
-	} else if eh.Event.Type() == keptnevents.TestsFinishedEventType {
-		tfData := &keptnevents.TestsFinishedEventData{}
+	} else if eh.Event.Type() == keptn.TestsFinishedEventType {
+		tfData := &keptn.TestsFinishedEventData{}
 		err := eh.Event.DataAs(tfData)
 		if err != nil {
 			eh.Logger.Error("Could not parse event payload: " + err.Error())
@@ -63,8 +70,8 @@ func (eh CDEventHandler) HandleEvent() error {
 		ie.Description = "Stop running tests: " + tfData.TestStrategy + " against " + tfData.Service
 		dtHelper.SendEvent(ie)
 
-	} else if eh.Event.Type() == keptnevents.EvaluationDoneEventType {
-		edData := &keptnevents.EvaluationDoneEventData{}
+	} else if eh.Event.Type() == keptn.EvaluationDoneEventType {
+		edData := &keptn.EvaluationDoneEventData{}
 		err := eh.Event.DataAs(edData)
 		if err != nil {
 			fmt.Println("Error while parsing JSON payload: " + err.Error())
@@ -200,7 +207,7 @@ func createInfoEvent(project string, stage string, service string, testStrategy 
 	return ie
 }
 
-func createDeploymentEvent(event *keptnevents.DeploymentFinishedEventData, keptnContext string) dtDeploymentEvent {
+func createDeploymentEvent(event *keptn.DeploymentFinishedEventData, keptnContext string) dtDeploymentEvent {
 	ar := createAttachRules(event.Project, event.Stage, event.Service)
 	customProperties := createCustomProperties(event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, keptnContext)
 

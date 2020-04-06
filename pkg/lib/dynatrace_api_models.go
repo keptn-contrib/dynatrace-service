@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	keptnmodels "github.com/keptn/go-utils/pkg/models"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 // PROBLEM NOTIFICATION
@@ -601,7 +601,7 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 	return managementZone
 }
 
-func CreateDynatraceDashboard(projectName string, shipyard keptnmodels.Shipyard, keptnDomain string, services []string) (*DynatraceDashboard, error) {
+func CreateDynatraceDashboard(projectName string, shipyard keptn.Shipyard, keptnDomain string, services []string) (*DynatraceDashboard, error) {
 	dtDashboard := &DynatraceDashboard{
 		DashboardMetadata: DashboardMetadata{
 			Name:   projectName + "@keptn: Digital Delivery & Operations Dashboard",
