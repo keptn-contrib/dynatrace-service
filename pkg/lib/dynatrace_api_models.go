@@ -506,19 +506,6 @@ func CreateKeptnAlertingProfile() *AlertingProfile {
 			},
 		},
 		ManagementZoneID: nil,
-		EventTypeFilters: []*AlertingProfileEventTypeFilter{
-			{
-				CustomEventFilter: CustomEventFilter{
-					CustomTitleFilter: CustomTitleFilter{
-						Enabled:         true,
-						Value:           "Keptn",
-						Operator:        "CONTAINS",
-						Negate:          false,
-						CaseInsensitive: true,
-					},
-				},
-			},
-		},
 	}
 }
 
