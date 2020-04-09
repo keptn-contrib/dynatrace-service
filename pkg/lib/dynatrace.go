@@ -230,9 +230,9 @@ func (dt *DynatraceHelper) GetDTCredentials() (*DTCredentials, error) {
 
 	dtCreds := &DTCredentials{}
 
-	dtCreds.Tenant = string(secret.Data["DT_TENANT"])
-	dtCreds.ApiToken = string(secret.Data["DT_API_TOKEN"])
-	dtCreds.PaaSToken = string(secret.Data["DT_PAAS_TOKEN"])
+	dtCreds.Tenant = strings.Trim(string(secret.Data["DT_TENANT"]), "\n")
+	dtCreds.ApiToken = strings.Trim(string(secret.Data["DT_API_TOKEN"]), "\n")
+	dtCreds.PaaSToken = strings.Trim(string(secret.Data["DT_PAAS_TOKEN"]), "\n")
 
 	return dtCreds, nil
 }
