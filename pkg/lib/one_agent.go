@@ -59,6 +59,8 @@ func (dt *DynatraceHelper) deployDTOperator() error {
 			dt.OperatorTag = operatorInfo.TagName
 		}
 	}
+	// hotfix: set operatortag to 0.6.0
+	dt.OperatorTag = "v0.6.0"
 	if dt.OperatorTag != "" {
 		dt.Logger.Info("Deploying Dynatrace operator " + dt.OperatorTag)
 	} else {
