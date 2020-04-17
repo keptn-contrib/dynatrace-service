@@ -1,0 +1,13 @@
+---
+  spec_version: '0.1.0'
+  attachRules:
+    tagRule:
+      meTypes:
+      - SERVICE
+      tags:
+      - context: CONTEXTLESS
+        tag: keptn_project
+        value: myproject
+      - context: CONTEXTLESS
+        tag: keptn_service
+        value: myservice

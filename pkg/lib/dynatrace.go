@@ -52,6 +52,7 @@ type DynatraceHelper struct {
 	Logger         keptn.LoggerInterface
 	OperatorTag    string
 	KeptnHandler   *keptn.Keptn
+	KeptnBridge    string
 }
 
 func NewDynatraceHelper(keptnHandler *keptn.Keptn) (*DynatraceHelper, error) {
@@ -216,6 +217,15 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 }
 
 func (dt *DynatraceHelper) GetDTCredentials() (*DTCredentials, error) {
+	if common.RunLocal || common.RunLocalTest {
+		dtCreds := &DTCredentials{}
+
+		dtCreds.Tenant = os.Getenv("DT_TENANT")
+		dtCreds.ApiToken = os.Getenv("DT_API_TOKEN")
+		dtCreds.PaaSToken = os.Getenv("DT_PAAS_TOKEN")
+		return dtCreds, nil
+	}
+
 	kubeAPI, err := common.GetKubernetesClient()
 	if err != nil {
 		return nil, err

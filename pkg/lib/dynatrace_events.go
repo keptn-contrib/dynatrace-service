@@ -2,6 +2,8 @@ package lib
 
 import (
 	"encoding/json"
+
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 )
 
 // Sends an event to the Dynatrace events API
@@ -12,6 +14,11 @@ func (dt *DynatraceHelper) SendEvent(dtEvent interface{}) {
 
 	if err != nil {
 		dt.Logger.Error("Error while generating Dynatrace API Request payload.")
+		return
+	}
+
+	if common.RunLocal || common.RunLocalTest {
+		dt.Logger.Info("Dynatrace.SendEvent(RUNLOCAL) - not sending event. Here is the payload: " + string(jsonString))
 		return
 	}
 
