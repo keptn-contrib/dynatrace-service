@@ -3,20 +3,15 @@ package lib
 import (
 	"encoding/json"
 
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipyard, services []string) error {
-	keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
-	if err != nil {
-		dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
-	}
-
-	keptnDomain := keptnDomainCM.Data["app_domain"]
+	keptnDomain, _ := common.GetKeptnDomain()
 
 	// first, check if dashboard for this project already exists and delete that
-	err = dt.DeleteExistingDashboard(project)
+	err := dt.DeleteExistingDashboard(project)
 	if err != nil {
 		return err
 	}
@@ -29,7 +24,7 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipya
 
 	dashboardPayload, _ := json.Marshal(dashboard)
 
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", string(dashboardPayload))
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/dashboards", "POST", string(dashboardPayload))
 
 	if err != nil {
 		return err
@@ -39,7 +34,7 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipya
 }
 
 func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
-	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "GET", "")
+	res, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/dashboards", "GET", "")
 	if err != nil {
 		dt.Logger.Error("Could not retrieve list of existing Dynatrace dashboards: " + err.Error())
 		return err
@@ -55,7 +50,7 @@ func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
 
 	for _, dashboardItem := range dtDashboardsResponse.Dashboards {
 		if dashboardItem.Name == project+"@keptn: Digital Delivery & Operations Dashboard" {
-			res, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards/"+dashboardItem.ID, "DELETE", "")
+			res, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/dashboards/"+dashboardItem.ID, "DELETE", "")
 			if err != nil {
 				dt.Logger.Error("Could not delete previous dashboard for project " + project + ": " + err.Error())
 				return err

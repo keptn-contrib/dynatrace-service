@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -16,7 +17,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 		return err
 	}
 
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "GET", "")
+	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/notifications", "GET", "")
 
 	existingNotifications := &DTAPIListResponse{}
 
@@ -27,17 +28,12 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 
 	for _, notification := range existingNotifications.Values {
 		if notification.Name == "Keptn Problem Notification" {
-			_, _ = dt.sendDynatraceAPIRequest("/api/config/v1/notifications/"+notification.ID, "DELETE", "")
+			_, _ = dt.sendDynatraceAPIRequest("", "/api/config/v1/notifications/"+notification.ID, "DELETE", "")
 
 		}
 	}
 	problemNotification := PROBLEM_NOTIFICATION_PAYLOAD
-	keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
-	if err != nil {
-		dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
-	}
-
-	keptnDomain := keptnDomainCM.Data["app_domain"]
+	keptnDomain, _ := common.GetKeptnDomain()
 
 	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", "https://api.keptn."+keptnDomain)
 
@@ -52,7 +48,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 
 	problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
 
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", problemNotification)
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/notifications", "POST", problemNotification)
 	if err != nil {
 		dt.Logger.Error("could not set up problem notification: " + err.Error())
 		return err
@@ -62,7 +58,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 
 func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
 	dt.Logger.Info("Checking Keptn alerting profile availability")
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "GET", "")
+	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/alertingProfiles", "GET", "")
 
 	existingAlertingProfiles := &DTAPIListResponse{}
 
@@ -84,7 +80,7 @@ func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
 
 	alertingProfilePayload, _ := json.Marshal(alertingProfile)
 
-	response, err = dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "POST", string(alertingProfilePayload))
+	response, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/alertingProfiles", "POST", string(alertingProfilePayload))
 
 	if err != nil {
 		return "", err

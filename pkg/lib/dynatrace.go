@@ -52,11 +52,12 @@ type DynatraceHelper struct {
 	Logger         keptn.LoggerInterface
 	OperatorTag    string
 	KeptnHandler   *keptn.Keptn
+	KeptnBridge    string
 }
 
 func NewDynatraceHelper(keptnHandler *keptn.Keptn) (*DynatraceHelper, error) {
 	dtHelper := &DynatraceHelper{}
-	dtCreds, err := dtHelper.GetDTCredentials()
+	dtCreds, err := dtHelper.GetDTCredentials("")
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (dt *DynatraceHelper) CreateCalculatedMetrics(project string) error {
 	dt.Logger.Info("creating metric calc:service.topurlresponsetime" + project)
 	responseTimeMetric := CreateCalculatedMetric("calc:service.topurlresponsetime"+project, "Top URL Response Time", "RESPONSE_TIME", "MICRO_SECOND", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SUM")
 	responseTimeJSONPayload, _ := json.Marshal(&responseTimeMetric)
-	_, err := dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurlresponsetime"+project, "PUT", string(responseTimeJSONPayload))
+	_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.topurlresponsetime"+project, "PUT", string(responseTimeJSONPayload))
 	if err != nil {
 		dt.Logger.Error("could not create calculated metric calc:service.topurlresponsetime" + project + ". " + err.Error())
 	}
@@ -77,7 +78,7 @@ func (dt *DynatraceHelper) CreateCalculatedMetrics(project string) error {
 	dt.Logger.Info("creating metric calc:service.topurlservicecalls" + project)
 	topServiceCalls := CreateCalculatedMetric("calc:service.topurlservicecalls"+project, "Top URL Service Calls", "NON_DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
 	topServiceCallsJSONPayload, _ := json.Marshal(&topServiceCalls)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurlservicecalls"+project, "PUT", string(topServiceCallsJSONPayload))
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.topurlservicecalls"+project, "PUT", string(topServiceCallsJSONPayload))
 	if err != nil {
 		dt.Logger.Error("could not create calculated metric calc:service.topurlservicecalls" + project + ". " + err.Error())
 	}
@@ -85,7 +86,7 @@ func (dt *DynatraceHelper) CreateCalculatedMetrics(project string) error {
 	dt.Logger.Info("creating metric calc:service.topurldbcalls" + project)
 	topDBCalls := CreateCalculatedMetric("calc:service.topurldbcalls"+project, "Top URL DB Calls", "DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
 	topDBCallsJSONPayload, _ := json.Marshal(&topDBCalls)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurldbcalls"+project, "PUT", string(topDBCallsJSONPayload))
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.topurldbcalls"+project, "PUT", string(topDBCallsJSONPayload))
 	if err != nil {
 		dt.Logger.Error("could not create calculated metric calc:service.topurldbcalls" + project + ". " + err.Error())
 	}
@@ -97,7 +98,7 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 	dt.Logger.Info("creating metric calc:service.teststepresponsetime" + project)
 	responseTimeMetric := CreateCalculatedTestStepMetric("calc:service.teststepresponsetime"+project, "Test Step Response Time", "RESPONSE_TIME", "MICRO_SECOND", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SUM")
 	responseTimeJSONPayload, _ := json.Marshal(&responseTimeMetric)
-	_, err := dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepresponsetime"+project, "PUT", string(responseTimeJSONPayload))
+	_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.teststepresponsetime"+project, "PUT", string(responseTimeJSONPayload))
 	if err != nil {
 		dt.Logger.Error("could not create calculated metric calc:service.teststepresponsetime" + project + ". " + err.Error())
 	}
@@ -105,7 +106,7 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 	dt.Logger.Info("creating metric calc:service.teststepservicecalls" + project)
 	topServiceCalls := CreateCalculatedTestStepMetric("calc:service.teststepservicecalls"+project, "Test Step Service Calls", "NON_DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
 	topServiceCallsJSONPayload, _ := json.Marshal(&topServiceCalls)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepservicecalls"+project, "PUT", string(topServiceCallsJSONPayload))
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.teststepservicecalls"+project, "PUT", string(topServiceCallsJSONPayload))
 	if err != nil {
 		dt.Logger.Error("could not create calculated metric calc:service.teststepservicecalls" + project + ". " + err.Error())
 	}
@@ -113,7 +114,7 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 	dt.Logger.Info("creating metric calc:service.teststepdbcalls" + project)
 	topDBCalls := CreateCalculatedTestStepMetric("calc:service.teststepdbcalls"+project, "Test Step DB Calls", "DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
 	topDBCallsJSONPayload, _ := json.Marshal(&topDBCalls)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepdbcalls"+project, "PUT", string(topDBCallsJSONPayload))
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.teststepdbcalls"+project, "PUT", string(topDBCallsJSONPayload))
 	if err != nil {
 		dt.Logger.Error("could not create calculated metric calc:service.teststepdbcalls" + project + ". " + err.Error())
 	}
@@ -121,7 +122,7 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 	dt.Logger.Info("creating metric calc:service.teststepfailurerate" + project)
 	failureRate := CreateCalculatedTestStepMetric("calc:service.teststepfailurerate"+project, "Test Step DB Calls", "FAILURE_RATE", "PERCENT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "OF_INTEREST_RATIO")
 	failureRateJSONPayload, _ := json.Marshal(&failureRate)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepfailurerate"+project, "PUT", string(failureRateJSONPayload))
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.teststepfailurerate"+project, "PUT", string(failureRateJSONPayload))
 	if err != nil {
 		dt.Logger.Error("could not create calculated metric calc:service.teststepfailurerate" + project + ". " + err.Error())
 	}
@@ -143,7 +144,7 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptn.
 	if !found {
 		managementZone := CreateManagementZoneForProject(project)
 		mzPayload, _ := json.Marshal(managementZone)
-		_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", string(mzPayload))
+		_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/managementZones", "POST", string(mzPayload))
 		if err != nil {
 			dt.Logger.Error("Could not create management zone: " + err.Error())
 		}
@@ -160,7 +161,7 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptn.
 		if !found {
 			managementZone := CreateManagementZoneForStage(project, stage.Name)
 			mzPayload, _ := json.Marshal(managementZone)
-			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", string(mzPayload))
+			_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/managementZones", "POST", string(mzPayload))
 			if err != nil {
 				dt.Logger.Error("Could not create management zone: " + err.Error())
 			}
@@ -175,7 +176,7 @@ func getManagementZoneNameForStage(project string, stage string) string {
 }
 
 func (dt *DynatraceHelper) getManagementZones() *DTAPIListResponse {
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", "")
+	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/managementZones", "GET", "")
 	if err != nil {
 		dt.Logger.Error("Could not retrieve management zones: " + err.Error())
 	}
@@ -188,11 +189,30 @@ func (dt *DynatraceHelper) getManagementZones() *DTAPIListResponse {
 	return mzs
 }
 
-func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string, body string) (string, error) {
-	req, err := http.NewRequest(method, "https://"+dt.DynatraceCreds.Tenant+apiPath, strings.NewReader(body))
+/**
+ * if dtCredsSecretName is passed and it is not dynatrace (=default) then we try to pull the secret based on that name and is it for this API Call
+ */
+func (dt *DynatraceHelper) sendDynatraceAPIRequest(dtCredsSecretName string, apiPath string, method string, body string) (string, error) {
+
+	// Check if we have to use a different dynatrace credential for this call other than default
+	dtCredentials := dt.DynatraceCreds
+	if dtCredsSecretName != "dynatrace" && dtCredsSecretName != "" {
+		var err error
+		dtCredentials, err = dt.GetDTCredentials(dtCredsSecretName)
+		if err != nil {
+			dt.Logger.Error("couldnt retrieve Dynatrace Credentials from custom secret " + dtCredsSecretName + ": " + err.Error())
+		}
+	}
+
+	if common.RunLocal || common.RunLocalTest {
+		dt.Logger.Info("Dynatrace.sendDynatraceAPIRequest(RUNLOCAL) - not sending event to " + dtCredsSecretName + "(" + dtCredentials.Tenant + "). Here is the payload: " + body)
+		return "", nil
+	}
+
+	req, err := http.NewRequest(method, "https://"+dtCredentials.Tenant+apiPath, strings.NewReader(body))
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Api-Token "+dt.DynatraceCreds.ApiToken)
+	req.Header.Set("Authorization", "Api-Token "+dtCredentials.ApiToken)
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
 
 	client := &http.Client{}
@@ -215,12 +235,28 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 	return string(responseBody), nil
 }
 
-func (dt *DynatraceHelper) GetDTCredentials() (*DTCredentials, error) {
+/**
+ * Pulls the Dynatrace Credentials from the passed secret. The default is "dynatrace"
+ */
+func (dt *DynatraceHelper) GetDTCredentials(dynatraceSecretName string) (*DTCredentials, error) {
+	if dynatraceSecretName == "" {
+		dynatraceSecretName = "dynatrace"
+	}
+
+	if common.RunLocal || common.RunLocalTest {
+		dtCreds := &DTCredentials{}
+
+		dtCreds.Tenant = os.Getenv("DT_TENANT")
+		dtCreds.ApiToken = os.Getenv("DT_API_TOKEN")
+		dtCreds.PaaSToken = os.Getenv("DT_PAAS_TOKEN")
+		return dtCreds, nil
+	}
+
 	kubeAPI, err := common.GetKubernetesClient()
 	if err != nil {
 		return nil, err
 	}
-	secret, err := kubeAPI.CoreV1().Secrets("keptn").Get("dynatrace", metav1.GetOptions{})
+	secret, err := kubeAPI.CoreV1().Secrets("keptn").Get(dynatraceSecretName, metav1.GetOptions{})
 
 	if err != nil {
 		return nil, err

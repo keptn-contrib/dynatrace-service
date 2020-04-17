@@ -5,7 +5,7 @@ import "encoding/json"
 func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
 	dt.Logger.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", "")
+	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/autoTags", "GET", "")
 
 	existingDTRules := &DTAPIListResponse{}
 
@@ -34,7 +34,7 @@ func (dt *DynatraceHelper) createDTTaggingRule(rule *DTTaggingRule) error {
 	if err != nil {
 		return err
 	}
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "POST", string(payload))
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/autoTags", "POST", string(payload))
 	return err
 }
 
@@ -42,7 +42,7 @@ func (dt *DynatraceHelper) deleteExistingDTTaggingRule(ruleName string, existing
 	dt.Logger.Info("Deleting rule " + ruleName)
 	for _, rule := range existingRules.Values {
 		if rule.Name == ruleName {
-			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags/"+rule.ID, "DELETE", "")
+			_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/autoTags/"+rule.ID, "DELETE", "")
 			if err != nil {
 				dt.Logger.Info("Could not delete rule " + rule.ID + ": " + err.Error())
 			}

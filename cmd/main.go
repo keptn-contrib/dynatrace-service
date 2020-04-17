@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/event_handler"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents/client"
@@ -26,6 +27,11 @@ func main() {
 	if err := envconfig.Process("", &env); err != nil {
 		log.Fatalf("Failed to process env var: %s", err)
 	}
+
+	if common.RunLocal || common.RunLocalTest {
+		log.Println("env=runlocal: Running with local filesystem to fetch resources")
+	}
+
 	os.Exit(_main(os.Args[1:], env))
 }
 
@@ -37,6 +43,8 @@ func _main(args []string, env envConfig) int {
 		cloudeventshttp.WithPort(env.Port),
 		cloudeventshttp.WithPath(env.Path),
 	)
+
+	log.Printf("Port = %d; Path=%s", env.Port, env.Path)
 
 	if err != nil {
 		log.Fatalf("failed to create transport, %v", err)
