@@ -31,6 +31,7 @@ Content-Type: application/cloudevents+json
       "testid": "12345",
       "buildnr": "build17",
       "runby": "JohnDoe",
+      "environment" : "testenvironment",
       "ciBackLink" : "http://myjenkinsserver/job/12345"
     },
     "deploymentURILocal": "http://carts.sockshop-staging.svc.cluster.local",

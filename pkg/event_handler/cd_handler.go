@@ -38,6 +38,9 @@ func (eh CDEventHandler) HandleEvent() error {
 	dtHelper.KubeApi = clientSet
 	dtHelper.Logger = eh.Logger
 
+	// Create our keptnEvent baseKeptnEvent
+	keptnEvent := &baseKeptnEvent{}
+
 	eh.Logger.Info("Checking if event of type " + eh.Event.Type() + " should be sent to Dynatrace...")
 
 	if eh.Event.Type() == keptn.DeploymentFinishedEventType {
@@ -47,20 +50,41 @@ func (eh CDEventHandler) HandleEvent() error {
 			eh.Logger.Error("Could not parse event payload: " + err.Error())
 			return err
 		}
-		de := createDeploymentEvent(dfData, shkeptncontext, eh.Logger)
 
-		dtHelper.SendEvent(de)
+		// TODO: make this better!!
+		// fill our baseKeptnEvent & get dynatraceConfig
+		keptnEvent.project = dfData.Project
+		keptnEvent.stage = dfData.Stage
+		keptnEvent.service = dfData.Service
+		keptnEvent.testStrategy = dfData.TestStrategy
+		keptnEvent.image = dfData.Image
+		keptnEvent.tag = dfData.Tag
+		keptnEvent.labels = dfData.Labels
+		keptnEvent.context = shkeptncontext
+		dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
+		dtCreds := ""
+		if dynatraceConfig != nil {
+			dtCreds = dynatraceConfig.DtCreds
+		}
+
+		// send Deployment EVent
+		de := createDeploymentEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		dtHelper.SendEvent(de, dtCreds)
 
 		// TODO: an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
-		ie := createInfoEvent(dfData.Project, dfData.Stage, dfData.Service, dfData.TestStrategy, dfData.Image, dfData.Tag, dfData.Labels, shkeptncontext, eh.Logger)
+		// ie := createInfoEvent(keptnEvent, eh.Logger)
+		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if dfData.TestStrategy != "" {
+			if ie.AnnotationType == "" {
+				ie.AnnotationType = "Start Tests: " + dfData.TestStrategy
+			}
 			if ie.Title == "" {
 				ie.Title = "Start Running Tests: " + dfData.TestStrategy
 			}
-			if ie.Description == "" {
-				ie.Description = "Start running tests: " + dfData.TestStrategy + " against " + dfData.Service
+			if ie.AnnotationDescription == "" {
+				ie.AnnotationDescription = "Start running tests: " + dfData.TestStrategy + " against " + dfData.Service
 			}
-			dtHelper.SendEvent(ie)
+			dtHelper.SendEvent(ie, dtCreds)
 		}
 	} else if eh.Event.Type() == keptn.TestsFinishedEventType {
 		tfData := &keptn.TestsFinishedEventData{}
@@ -69,14 +93,38 @@ func (eh CDEventHandler) HandleEvent() error {
 			eh.Logger.Error("Could not parse event payload: " + err.Error())
 			return err
 		}
-		ie := createInfoEvent(tfData.Project, tfData.Stage, tfData.Service, tfData.TestStrategy, "", "", tfData.Labels, shkeptncontext, eh.Logger)
-		if ie.Title == "" {
-			ie.Title = "Stop Running Tests: " + tfData.TestStrategy
+
+		// TODO: make this better!!
+		// fill our baseKeptnEvent
+		keptnEvent.project = tfData.Project
+		keptnEvent.stage = tfData.Stage
+		keptnEvent.service = tfData.Service
+		keptnEvent.testStrategy = tfData.TestStrategy
+		keptnEvent.image = ""
+		keptnEvent.tag = ""
+		keptnEvent.labels = tfData.Labels
+		keptnEvent.context = shkeptncontext
+		dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
+		dtCreds := ""
+		if dynatraceConfig != nil {
+			dtCreds = dynatraceConfig.DtCreds
 		}
-		if ie.Description == "" {
-			ie.Description = "Stop running tests: " + tfData.TestStrategy + " against " + tfData.Service
+
+		// Send Annotation Event
+		// ie := createInfoEvent(keptnEvent, eh.Logger)
+		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		if tfData.TestStrategy != "" {
+			if ie.AnnotationType == "" {
+				ie.AnnotationType = "Stop Tests: " + tfData.TestStrategy
+			}
+			if ie.Title == "" {
+				ie.Title = "Stop Running Tests: " + tfData.TestStrategy
+			}
+			if ie.AnnotationDescription == "" {
+				ie.AnnotationDescription = "Stop running tests: " + tfData.TestStrategy + " against " + tfData.Service
+			}
+			dtHelper.SendEvent(ie, dtCreds)
 		}
-		dtHelper.SendEvent(ie)
 	} else if eh.Event.Type() == keptn.EvaluationDoneEventType {
 		edData := &keptn.EvaluationDoneEventData{}
 		err := eh.Event.DataAs(edData)
@@ -84,7 +132,25 @@ func (eh CDEventHandler) HandleEvent() error {
 			fmt.Println("Error while parsing JSON payload: " + err.Error())
 			return err
 		}
-		ie := createInfoEvent(edData.Project, edData.Stage, edData.Service, edData.TestStrategy, "", "", edData.Labels, shkeptncontext, eh.Logger)
+
+		// TODO: make this better!!
+		// fill our baseKeptnEvent
+		keptnEvent.project = edData.Project
+		keptnEvent.stage = edData.Stage
+		keptnEvent.service = edData.Service
+		keptnEvent.testStrategy = edData.TestStrategy
+		keptnEvent.image = ""
+		keptnEvent.tag = ""
+		keptnEvent.labels = edData.Labels
+		keptnEvent.context = shkeptncontext
+		dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
+		dtCreds := ""
+		if dynatraceConfig != nil {
+			dtCreds = dynatraceConfig.DtCreds
+		}
+
+		// Send Info Event
+		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if edData.Result == "pass" || edData.Result == "warning" {
 			if edData.TestStrategy == "real-user" {
 				ie.Title = "Remediation action successful"
@@ -109,7 +175,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			return nil
 		}
 		ie.Description = "Keptn evaluation status: " + edData.Result
-		dtHelper.SendEvent(ie)
+		dtHelper.SendEvent(ie, dtCreds)
 	} else {
 		eh.Logger.Info("    Ignoring event.")
 	}
@@ -165,18 +231,21 @@ type dtInfoEvent struct {
 	Title            string            `json:"title"`
 }
 
+type dtAnnotationEvent struct {
+	EventType   string        `json:"eventType"`
+	Source      string        `json:"source"`
+	AttachRules dtAttachRules `json:"attachRules"`
+	// CustomProperties  dtCustomProperties `json:"customProperties"`
+	CustomProperties      map[string]string `json:"customProperties"`
+	AnnotationDescription string            `json:"annotationDescription"`
+	AnnotationType        string            `json:"annotationType"`
+	Title                 string            `json:"title"`
+}
+
 /**
  * Changes in #115_116: Parse Tags from dynatrace.conf.yaml and only fall back to default behavior if it doesnt exist
  */
-func createAttachRules(project string, stage string, service string, logger *keptn.Logger) dtAttachRules {
-	dynatraceConfig, err := getDynatraceConfig(project, stage, service, logger)
-
-	if err != nil {
-		logMessage := fmt.Sprintf("Error retrieving dynatrace.conf.yaml for %s/%s/%s: %s. Going with default", service, stage, project, err.Error())
-		logger.Error(logMessage)
-		dynatraceConfig = nil
-	}
-
+func createAttachRules(keptnEvent *baseKeptnEvent, dynatraceConfig *DynatraceConfigFile, logger *keptn.Logger) dtAttachRules {
 	if dynatraceConfig != nil && dynatraceConfig.AttachRules != nil {
 		return *dynatraceConfig.AttachRules
 	}
@@ -189,17 +258,17 @@ func createAttachRules(project string, stage string, service string, logger *kep
 					dtTag{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_project",
-						Value:   project,
+						Value:   keptnEvent.project,
 					},
 					dtTag{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_stage",
-						Value:   stage,
+						Value:   keptnEvent.stage,
 					},
 					dtTag{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_service",
-						Value:   service,
+						Value:   keptnEvent.service,
 					},
 				},
 			},
@@ -213,7 +282,7 @@ func createAttachRules(project string, stage string, service string, logger *kep
  * Change with #115_116: parse labels and move them into custom properties
  */
 // func createCustomProperties(project string, stage string, service string, testStrategy string, image string, tag string, labels map[string]string, keptnContext string) dtCustomProperties {
-func createCustomProperties(project string, stage string, service string, testStrategy string, image string, tag string, labels map[string]string, keptnContext string, logger *keptn.Logger) map[string]string {
+func createCustomProperties(keptnEvent *baseKeptnEvent, logger *keptn.Logger) map[string]string {
 	// TODO: AG - parse labels and push them through
 
 	// var customProperties dtCustomProperties
@@ -226,16 +295,16 @@ func createCustomProperties(project string, stage string, service string, testSt
 	// customProperties.KeptnContext = keptnContext
 	var customProperties map[string]string
 	customProperties = make(map[string]string)
-	customProperties["Project"] = project
-	customProperties["Stage"] = stage
-	customProperties["Service"] = service
-	customProperties["TestStrategy"] = testStrategy
-	customProperties["Image"] = image
-	customProperties["Tag"] = tag
-	customProperties["KeptnContext"] = keptnContext
+	customProperties["Project"] = keptnEvent.project
+	customProperties["Stage"] = keptnEvent.stage
+	customProperties["Service"] = keptnEvent.service
+	customProperties["TestStrategy"] = keptnEvent.testStrategy
+	customProperties["Image"] = keptnEvent.image
+	customProperties["Tag"] = keptnEvent.tag
+	customProperties["KeptnContext"] = keptnEvent.context
 
 	// now add the rest of the labels
-	for key, value := range labels {
+	for key, value := range keptnEvent.labels {
 		customProperties[key] = value
 	}
 
@@ -258,44 +327,70 @@ func getValueFromLabels(labels *map[string]string, valueKey string, defaultValue
 	return defaultValue
 }
 
-func createInfoEvent(project string, stage string, service string, testStrategy string, image string, tag string, labels map[string]string, keptnContext string, logger *keptn.Logger) dtInfoEvent {
+// project string, stage string, service string, testStrategy string, image string, tag string, labels map[string]string, keptnContext string
+func createInfoEvent(keptnEvent *baseKeptnEvent, dynatraceConfig *DynatraceConfigFile, logger *keptn.Logger) dtInfoEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
 	var ie dtInfoEvent
 	ie.EventType = "CUSTOM_INFO"
 	ie.Source = "Keptn dynatrace-service"
-	ie.Title = getValueFromLabels(&labels, "title", "", true)
-	ie.Description = getValueFromLabels(&labels, "description", "", true)
+	ie.Title = getValueFromLabels(&keptnEvent.labels, "title", "", true)
+	ie.Description = getValueFromLabels(&keptnEvent.labels, "description", "", true)
 
 	// now we create our attach rules
-	ar := createAttachRules(project, stage, service, logger)
+	ar := createAttachRules(keptnEvent, dynatraceConfig, logger)
 	ie.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
-	customProperties := createCustomProperties(project, stage, service, testStrategy, image, tag, labels, keptnContext, logger)
+	customProperties := createCustomProperties(keptnEvent, logger)
 	ie.CustomProperties = customProperties
 
 	return ie
 }
 
-func createDeploymentEvent(event *keptn.DeploymentFinishedEventData, keptnContext string, logger *keptn.Logger) dtDeploymentEvent {
+/**
+ * Creates a Dynatrace ANNOTATION event
+ */
+func createAnnotationEvent(keptnEvent *baseKeptnEvent, dynatraceConfig *DynatraceConfigFile, logger *keptn.Logger) dtAnnotationEvent {
+
+	// we fill the Dynatrace Info Event with values from the labels or use our defaults
+	var ie dtAnnotationEvent
+	ie.EventType = "CUSTOM_ANNOTATION"
+	ie.Source = "Keptn dynatrace-service"
+	ie.Title = getValueFromLabels(&keptnEvent.labels, "title", "", true)
+	ie.AnnotationType = getValueFromLabels(&keptnEvent.labels, "type", "", true)
+	ie.AnnotationDescription = getValueFromLabels(&keptnEvent.labels, "description", "", true)
+
+	// now we create our attach rules
+	ar := createAttachRules(keptnEvent, dynatraceConfig, logger)
+	ie.AttachRules = ar
+
+	// and add the rest of the labels and info as custom properties
+	customProperties := createCustomProperties(keptnEvent, logger)
+	ie.CustomProperties = customProperties
+
+	return ie
+}
+
+func createDeploymentEvent(keptnEvent *baseKeptnEvent, dynatraceConfig *DynatraceConfigFile, logger *keptn.Logger) dtDeploymentEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
 	var de dtDeploymentEvent
 	de.EventType = "CUSTOM_DEPLOYMENT"
 	de.Source = "Keptn dynatrace-service"
-	de.DeploymentName = getValueFromLabels(&event.Labels, "deploymentName", "Deploy "+event.Service+" "+event.Tag+" with strategy "+event.DeploymentStrategy, true)
-	de.DeploymentProject = getValueFromLabels(&event.Labels, "deploymentProject", event.Project, true)
-	de.DeploymentVersion = getValueFromLabels(&event.Labels, "deploymentVersion", event.Tag, true)
-	de.CiBackLink = getValueFromLabels(&event.Labels, "ciBackLink", "", true)
-	de.RemediationAction = getValueFromLabels(&event.Labels, "remediationAction", "", true)
+	de.DeploymentName = getValueFromLabels(&keptnEvent.labels, "deploymentName", "Deploy "+keptnEvent.service+" "+keptnEvent.tag+" with strategy "+keptnEvent.deploymentStrategy, true)
+	de.DeploymentProject = getValueFromLabels(&keptnEvent.labels, "deploymentProject", keptnEvent.project, true)
+	de.DeploymentVersion = getValueFromLabels(&keptnEvent.labels, "deploymentVersion", keptnEvent.tag, true)
+	de.CiBackLink = getValueFromLabels(&keptnEvent.labels, "ciBackLink", "", true)
+	de.RemediationAction = getValueFromLabels(&keptnEvent.labels, "remediationAction", "", true)
 
 	// now we create our attach rules
-	ar := createAttachRules(event.Project, event.Stage, event.Service, logger)
+	ar := createAttachRules(keptnEvent, dynatraceConfig, logger)
 	de.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
-	customProperties := createCustomProperties(event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext, logger)
+	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext
+	customProperties := createCustomProperties(keptnEvent, logger)
 	de.CustomProperties = customProperties
 
 	return de

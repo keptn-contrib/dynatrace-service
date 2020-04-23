@@ -16,7 +16,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 		return err
 	}
 
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "GET", "")
+	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/notifications", "GET", "")
 
 	existingNotifications := &DTAPIListResponse{}
 
@@ -27,7 +27,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 
 	for _, notification := range existingNotifications.Values {
 		if notification.Name == "Keptn Problem Notification" {
-			_, _ = dt.sendDynatraceAPIRequest("/api/config/v1/notifications/"+notification.ID, "DELETE", "")
+			_, _ = dt.sendDynatraceAPIRequest("", "/api/config/v1/notifications/"+notification.ID, "DELETE", "")
 
 		}
 	}
@@ -52,7 +52,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 
 	problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
 
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", problemNotification)
+	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/notifications", "POST", problemNotification)
 	if err != nil {
 		dt.Logger.Error("could not set up problem notification: " + err.Error())
 		return err
@@ -62,7 +62,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 
 func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
 	dt.Logger.Info("Checking Keptn alerting profile availability")
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "GET", "")
+	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/alertingProfiles", "GET", "")
 
 	existingAlertingProfiles := &DTAPIListResponse{}
 
@@ -84,7 +84,7 @@ func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
 
 	alertingProfilePayload, _ := json.Marshal(alertingProfile)
 
-	response, err = dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "POST", string(alertingProfilePayload))
+	response, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/alertingProfiles", "POST", string(alertingProfilePayload))
 
 	if err != nil {
 		return "", err

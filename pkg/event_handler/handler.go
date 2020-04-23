@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 
@@ -22,7 +24,26 @@ const DynatraceConfigFilenameLOCAL = "dynatrace/_dynatrace.conf.yaml"
  */
 type DynatraceConfigFile struct {
 	SpecVersion string         `json:"spec_version" yaml:"spec_version"`
+	DtCreds     string         `json:"dtCreds" yaml:"dtCreds"`
 	AttachRules *dtAttachRules `json:"attachRules" yaml:"attachRules"`
+}
+
+type baseKeptnEvent struct {
+	context string
+	source  string
+	event   string
+
+	project            string
+	stage              string
+	service            string
+	deployment         string
+	testStrategy       string
+	deploymentStrategy string
+
+	image string
+	tag   string
+
+	labels map[string]string
 }
 
 type DynatraceEventHandler interface {
@@ -44,38 +65,93 @@ func NewEventHandler(event cloudevents.Event, logger *keptn.Logger) (DynatraceEv
 }
 
 //
+// replaces $ placeholders with actual values
+// $CONTEXT, $EVENT, $SOURCE
+// $PROJECT, $STAGE, $SERVICE, $DEPLOYMENT
+// $TESTSTRATEGY
+// $LABEL.XXXX  -> will replace that with a label called XXXX
+// $ENV.XXXX    -> will replace that with an env variable called XXXX
+// $SECRET.YYYY -> will replace that with the k8s secret called YYYY
+//
+func replaceKeptnPlaceholders(input string, keptnEvent *baseKeptnEvent) string {
+	result := input
+
+	// first we do the regular keptn values
+	result = strings.Replace(result, "$CONTEXT", keptnEvent.context, -1)
+	result = strings.Replace(result, "$EVENT", keptnEvent.event, -1)
+	result = strings.Replace(result, "$SOURCE", keptnEvent.source, -1)
+	result = strings.Replace(result, "$PROJECT", keptnEvent.project, -1)
+	result = strings.Replace(result, "$STAGE", keptnEvent.stage, -1)
+	result = strings.Replace(result, "$SERVICE", keptnEvent.service, -1)
+	result = strings.Replace(result, "$DEPLOYMENT", keptnEvent.deployment, -1)
+	result = strings.Replace(result, "$TESTSTRATEGY", keptnEvent.testStrategy, -1)
+
+	// now we do the labels
+	for key, value := range keptnEvent.labels {
+		result = strings.Replace(result, "$LABEL."+key, value, -1)
+	}
+
+	// now we do all environment variables
+	for _, env := range os.Environ() {
+		pair := strings.SplitN(env, "=", 2)
+		result = strings.Replace(result, "$ENV."+pair[0], pair[1], -1)
+	}
+
+	// TODO: iterate through k8s secrets!
+
+	return result
+}
+
+//
 // Loads dynatrace.conf for the current service
 //
-func getDynatraceConfig(project, service, stage string, logger *keptn.Logger) (*DynatraceConfigFile, error) {
+func getDynatraceConfig(keptnEvent *baseKeptnEvent, logger *keptn.Logger) (*DynatraceConfigFile, error) {
 
 	logger.Info("Loading dynatrace.conf.yaml")
 	// if we run in a runlocal mode we are just getting the file from the local disk
-	var fileContent []byte
-	var err error
+	var fileContent string
 	if common.RunLocal {
-		fileContent, err = ioutil.ReadFile(DynatraceConfigFilenameLOCAL)
+		localFileContent, err := ioutil.ReadFile(DynatraceConfigFilenameLOCAL)
 		if err != nil {
-			logMessage := fmt.Sprintf("No %s file found LOCALLY for service %s in stage %s in project %s", DynatraceConfigFilenameLOCAL, service, stage, project)
+			logMessage := fmt.Sprintf("No %s file found LOCALLY for service %s in stage %s in project %s", DynatraceConfigFilenameLOCAL, keptnEvent.service, keptnEvent.stage, keptnEvent.project)
 			logger.Info(logMessage)
 			return nil, nil
 		}
+		fileContent = string(localFileContent)
 	} else {
 		resourceHandler := utils.NewResourceHandler("configuration-service:8080")
-		keptnResourceContent, err := resourceHandler.GetServiceResource(service, stage, project, DynatraceConfigFilename)
-		if err != nil {
-			logMessage := fmt.Sprintf("No %s file found for service %s in stage %s in project %s", DynatraceConfigFilename, service, stage, project)
-			logger.Info(logMessage)
-			return nil, nil
+
+		// Lets search on SERVICE-LEVEL
+		keptnResourceContent, err := resourceHandler.GetServiceResource(keptnEvent.project, keptnEvent.stage, keptnEvent.service, DynatraceConfigFilename)
+		if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
+			// Lets search on STAGE-LEVEL
+			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.project, keptnEvent.stage, DynatraceConfigFilename)
+			if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
+				// Lets search on PROJECT-LEVEL
+				keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.project, DynatraceConfigFilename)
+				if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
+					logger.Debug(fmt.Sprintf("Keptn Resource not found: %s/%s/%s/%s - %s", keptnEvent.project, keptnEvent.stage, keptnEvent.service, DynatraceConfigFilename, err))
+					return nil, err
+				}
+
+				logger.Debug("Found " + DynatraceConfigFilename + " on project level")
+			} else {
+				logger.Debug("Found " + DynatraceConfigFilename + " on stage level")
+			}
+		} else {
+			logger.Debug("Found " + DynatraceConfigFilename + " on service level")
 		}
-		fileContent = []byte(keptnResourceContent.ResourceContent)
+		fileContent = keptnResourceContent.ResourceContent
 	}
 
+	// replace the placeholders
+	fileContent = replaceKeptnPlaceholders(fileContent, keptnEvent)
+
 	// unmarshal the file
-	var dynatraceConfFile *DynatraceConfigFile
-	dynatraceConfFile, err = parseDynatraceConfigFile(fileContent)
+	dynatraceConfFile, err := parseDynatraceConfigFile([]byte(fileContent))
 
 	if err != nil {
-		logMessage := fmt.Sprintf("Couldn't parse %s file found for service %s in stage %s in project %s. Error: %s", DynatraceConfigFilename, service, stage, project, err.Error())
+		logMessage := fmt.Sprintf("Couldn't parse %s file found for service %s in stage %s in project %s. Error: %s", DynatraceConfigFilename, keptnEvent.service, keptnEvent.stage, keptnEvent.project, err.Error())
 		logger.Error(logMessage)
 		return nil, errors.New(logMessage)
 	}
