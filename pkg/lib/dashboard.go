@@ -3,20 +3,15 @@ package lib
 import (
 	"encoding/json"
 
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipyard, services []string) error {
-	keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
-	if err != nil {
-		dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
-	}
-
-	keptnDomain := keptnDomainCM.Data["app_domain"]
+	keptnDomain, _ := common.GetKeptnDomain()
 
 	// first, check if dashboard for this project already exists and delete that
-	err = dt.DeleteExistingDashboard(project)
+	err := dt.DeleteExistingDashboard(project)
 	if err != nil {
 		return err
 	}

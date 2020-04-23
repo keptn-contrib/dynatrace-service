@@ -6,7 +6,7 @@ import (
 
 // Sends an event to the Dynatrace events API
 func (dt *DynatraceHelper) SendEvent(dtEvent interface{}, dtCreds string) {
-	dt.Logger.Info("Sending event to Dynatrace API")
+	dt.Logger.Info("Sending event to Dynatrace API using dtCreds: " + dtCreds)
 
 	jsonString, err := json.Marshal(dtEvent)
 

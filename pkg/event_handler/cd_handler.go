@@ -15,6 +15,31 @@ type CDEventHandler struct {
 	Event  cloudevents.Event
 }
 
+/**
+ * Initializes baseKeptnEvent and returns it + dynatraceConfig
+ */
+func (eh CDEventHandler) initObjectsForCDEventHandler(project, stage, service, testStrategy, image, tag string, labels map[string]string, context string) (*baseKeptnEvent, *DynatraceConfigFile, string) {
+	keptnEvent := &baseKeptnEvent{}
+	keptnEvent.project = project
+	keptnEvent.stage = stage
+	keptnEvent.service = service
+	keptnEvent.testStrategy = testStrategy
+	keptnEvent.image = image
+	keptnEvent.tag = tag
+	keptnEvent.labels = labels
+	keptnEvent.context = context
+	dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
+	keptnDomain, _ := common.GetKeptnDomain()
+	keptnEvent.labels["Keptns Bridge"] = "https://bridge.keptn." + keptnDomain + "/trace/" + context
+
+	dtCreds := ""
+	if dynatraceConfig != nil {
+		dtCreds = dynatraceConfig.DtCreds
+	}
+
+	return keptnEvent, dynatraceConfig, dtCreds
+}
+
 func (eh CDEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
@@ -38,9 +63,6 @@ func (eh CDEventHandler) HandleEvent() error {
 	dtHelper.KubeApi = clientSet
 	dtHelper.Logger = eh.Logger
 
-	// Create our keptnEvent baseKeptnEvent
-	keptnEvent := &baseKeptnEvent{}
-
 	eh.Logger.Info("Checking if event of type " + eh.Event.Type() + " should be sent to Dynatrace...")
 
 	if eh.Event.Type() == keptn.DeploymentFinishedEventType {
@@ -51,20 +73,13 @@ func (eh CDEventHandler) HandleEvent() error {
 			return err
 		}
 
-		// TODO: make this better!!
-		// fill our baseKeptnEvent & get dynatraceConfig
-		keptnEvent.project = dfData.Project
-		keptnEvent.stage = dfData.Stage
-		keptnEvent.service = dfData.Service
-		keptnEvent.testStrategy = dfData.TestStrategy
-		keptnEvent.image = dfData.Image
-		keptnEvent.tag = dfData.Tag
-		keptnEvent.labels = dfData.Labels
-		keptnEvent.context = shkeptncontext
-		dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
-		dtCreds := ""
-		if dynatraceConfig != nil {
-			dtCreds = dynatraceConfig.DtCreds
+		// initialize our objects
+		keptnEvent, dynatraceConfig, dtCreds := eh.initObjectsForCDEventHandler(dfData.Project, dfData.Stage, dfData.Service, dfData.TestStrategy, dfData.Image, dfData.Tag, dfData.Labels, shkeptncontext)
+		if dfData.DeploymentURILocal != "" {
+			keptnEvent.labels["deploymentURILocal"] = dfData.DeploymentURILocal
+		}
+		if dfData.DeploymentURIPublic != "" {
+			keptnEvent.labels["deploymentURIPublic"] = dfData.DeploymentURIPublic
 		}
 
 		// send Deployment EVent
@@ -77,9 +92,6 @@ func (eh CDEventHandler) HandleEvent() error {
 		if dfData.TestStrategy != "" {
 			if ie.AnnotationType == "" {
 				ie.AnnotationType = "Start Tests: " + dfData.TestStrategy
-			}
-			if ie.Title == "" {
-				ie.Title = "Start Running Tests: " + dfData.TestStrategy
 			}
 			if ie.AnnotationDescription == "" {
 				ie.AnnotationDescription = "Start running tests: " + dfData.TestStrategy + " against " + dfData.Service
@@ -94,21 +106,8 @@ func (eh CDEventHandler) HandleEvent() error {
 			return err
 		}
 
-		// TODO: make this better!!
-		// fill our baseKeptnEvent
-		keptnEvent.project = tfData.Project
-		keptnEvent.stage = tfData.Stage
-		keptnEvent.service = tfData.Service
-		keptnEvent.testStrategy = tfData.TestStrategy
-		keptnEvent.image = ""
-		keptnEvent.tag = ""
-		keptnEvent.labels = tfData.Labels
-		keptnEvent.context = shkeptncontext
-		dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
-		dtCreds := ""
-		if dynatraceConfig != nil {
-			dtCreds = dynatraceConfig.DtCreds
-		}
+		// initialize our objects
+		keptnEvent, dynatraceConfig, dtCreds := eh.initObjectsForCDEventHandler(tfData.Project, tfData.Stage, tfData.Service, tfData.TestStrategy, "", "", tfData.Labels, shkeptncontext)
 
 		// Send Annotation Event
 		// ie := createInfoEvent(keptnEvent, eh.Logger)
@@ -116,9 +115,6 @@ func (eh CDEventHandler) HandleEvent() error {
 		if tfData.TestStrategy != "" {
 			if ie.AnnotationType == "" {
 				ie.AnnotationType = "Stop Tests: " + tfData.TestStrategy
-			}
-			if ie.Title == "" {
-				ie.Title = "Stop Running Tests: " + tfData.TestStrategy
 			}
 			if ie.AnnotationDescription == "" {
 				ie.AnnotationDescription = "Stop running tests: " + tfData.TestStrategy + " against " + tfData.Service
@@ -133,21 +129,8 @@ func (eh CDEventHandler) HandleEvent() error {
 			return err
 		}
 
-		// TODO: make this better!!
-		// fill our baseKeptnEvent
-		keptnEvent.project = edData.Project
-		keptnEvent.stage = edData.Stage
-		keptnEvent.service = edData.Service
-		keptnEvent.testStrategy = edData.TestStrategy
-		keptnEvent.image = ""
-		keptnEvent.tag = ""
-		keptnEvent.labels = edData.Labels
-		keptnEvent.context = shkeptncontext
-		dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
-		dtCreds := ""
-		if dynatraceConfig != nil {
-			dtCreds = dynatraceConfig.DtCreds
-		}
+		// initialize our objects
+		keptnEvent, dynatraceConfig, dtCreds := eh.initObjectsForCDEventHandler(edData.Project, edData.Stage, edData.Service, edData.TestStrategy, "", "", edData.Labels, shkeptncontext)
 
 		// Send Info Event
 		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
@@ -239,7 +222,6 @@ type dtAnnotationEvent struct {
 	CustomProperties      map[string]string `json:"customProperties"`
 	AnnotationDescription string            `json:"annotationDescription"`
 	AnnotationType        string            `json:"annotationType"`
-	Title                 string            `json:"title"`
 }
 
 /**
@@ -357,7 +339,6 @@ func createAnnotationEvent(keptnEvent *baseKeptnEvent, dynatraceConfig *Dynatrac
 	var ie dtAnnotationEvent
 	ie.EventType = "CUSTOM_ANNOTATION"
 	ie.Source = "Keptn dynatrace-service"
-	ie.Title = getValueFromLabels(&keptnEvent.labels, "title", "", true)
 	ie.AnnotationType = getValueFromLabels(&keptnEvent.labels, "type", "", true)
 	ie.AnnotationDescription = getValueFromLabels(&keptnEvent.labels, "description", "", true)
 

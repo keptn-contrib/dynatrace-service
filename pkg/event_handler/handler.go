@@ -130,7 +130,7 @@ func getDynatraceConfig(keptnEvent *baseKeptnEvent, logger *keptn.Logger) (*Dyna
 				// Lets search on PROJECT-LEVEL
 				keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.project, DynatraceConfigFilename)
 				if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
-					logger.Debug(fmt.Sprintf("Keptn Resource not found: %s/%s/%s/%s - %s", keptnEvent.project, keptnEvent.stage, keptnEvent.service, DynatraceConfigFilename, err))
+					logger.Debug(fmt.Sprintf("No Keptn Resource found: %s/%s/%s/%s - %s", keptnEvent.project, keptnEvent.stage, keptnEvent.service, DynatraceConfigFilename, err))
 					return nil, err
 				}
 

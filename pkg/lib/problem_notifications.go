@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,12 +33,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 		}
 	}
 	problemNotification := PROBLEM_NOTIFICATION_PAYLOAD
-	keptnDomainCM, err := dt.KubeApi.CoreV1().ConfigMaps("keptn").Get("keptn-domain", metav1.GetOptions{})
-	if err != nil {
-		dt.Logger.Error("Could not retrieve keptn-domain ConfigMap: " + err.Error())
-	}
-
-	keptnDomain := keptnDomainCM.Data["app_domain"]
+	keptnDomain, _ := common.GetKeptnDomain()
 
 	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", "https://api.keptn."+keptnDomain)
 
