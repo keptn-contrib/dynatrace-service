@@ -143,13 +143,13 @@ func (eh CDEventHandler) HandleEvent() error {
 		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		// If DeploymentStrategy == "" it means we are doing Quality-Gates Only!
 		if edData.DeploymentStrategy == "" {
-			ie.Title = "Quality Gate Result: " + edData.Result
-
+			ie.Title = fmt.Sprintf("Quality Gate Result: %s (%.2f/100)", edData.Result, edData.EvaluationDetails.Score)
 		} else if edData.Result == "pass" || edData.Result == "warning" {
 			if edData.TestStrategy == "real-user" {
 				ie.Title = "Remediation action successful"
 			} else {
-				ie.Title = "Promote Artifact from " + edData.Stage + " to next stage"
+				ie.Title = fmt.Sprintf("Quality Gate Result: %s (%.2f/100): PROMOTING from %s to next stage", edData.Result, edData.EvaluationDetails.Score, edData.Stage)
+				// ie.Title = "Promote Artifact from " + edData.Stage + " to next stage"
 			}
 
 		} else if edData.Result == "fail" && edData.DeploymentStrategy == "blue_green_service" {
@@ -162,7 +162,8 @@ func (eh CDEventHandler) HandleEvent() error {
 			if edData.TestStrategy == "real-user" {
 				ie.Title = "Remediation action not successful"
 			} else {
-				ie.Title = "NOT PROMOTING Artifact from " + edData.Stage + " due to failed evaluation"
+				ie.Title = fmt.Sprintf("Quality Gate Result: %s (%.2f/100): NOT PROMOTING artifact from %s", edData.Result, edData.EvaluationDetails.Score, edData.Stage)
+				// ie.Title = "NOT PROMOTING Artifact from " + edData.Stage + " due to failed evaluation"
 			}
 		} else {
 			eh.Logger.Error("No valid deployment strategy defined in keptn event.")
