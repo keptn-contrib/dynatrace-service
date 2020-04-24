@@ -55,8 +55,8 @@ const eventbroker = "EVENTBROKER"
 
 func (eh ProblemEventHandler) HandleEvent() error {
 
-	if eh.Event.Source() != "https://github.com/keptn/keptn/api" {
-		eh.Logger.Debug("Will not handle problem event that did not go through the API (event source = " + eh.Event.Source() + ")")
+	if eh.Event.Source() != "dynatrace" {
+		eh.Logger.Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification (event source = " + eh.Event.Source() + ")")
 		return nil
 	}
 	var shkeptncontext string
