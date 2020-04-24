@@ -30,6 +30,9 @@ func (eh CDEventHandler) initObjectsForCDEventHandler(project, stage, service, t
 	keptnEvent.context = context
 	dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
 	keptnDomain, _ := common.GetKeptnDomain()
+	if keptnEvent.labels == nil {
+		keptnEvent.labels = make(map[string]string)
+	}
 	keptnEvent.labels["Keptns Bridge"] = "https://bridge.keptn." + keptnDomain + "/trace/" + context
 
 	dtCreds := ""
@@ -131,10 +134,18 @@ func (eh CDEventHandler) HandleEvent() error {
 
 		// initialize our objects
 		keptnEvent, dynatraceConfig, dtCreds := eh.initObjectsForCDEventHandler(edData.Project, edData.Stage, edData.Service, edData.TestStrategy, "", "", edData.Labels, shkeptncontext)
+		keptnEvent.labels["Quality Gate Score"] = fmt.Sprintf("%.2f", edData.EvaluationDetails.Score)
+		keptnEvent.labels["No of evaluated SLIs"] = fmt.Sprintf("%d", len(edData.EvaluationDetails.IndicatorResults))
+		keptnEvent.labels["Evaluation Start"] = edData.EvaluationDetails.TimeStart
+		keptnEvent.labels["Evaluation End"] = edData.EvaluationDetails.TimeEnd
 
 		// Send Info Event
 		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
-		if edData.Result == "pass" || edData.Result == "warning" {
+		// If DeploymentStrategy == "" it means we are doing Quality-Gates Only!
+		if edData.DeploymentStrategy == "" {
+			ie.Title = "Quality Gate Result: " + edData.Result
+
+		} else if edData.Result == "pass" || edData.Result == "warning" {
 			if edData.TestStrategy == "real-user" {
 				ie.Title = "Remediation action successful"
 			} else {
@@ -168,7 +179,7 @@ func (eh CDEventHandler) HandleEvent() error {
 type dtTag struct {
 	Context string `json:"context" yaml:"context"`
 	Key     string `json:"key" yaml:"key"`
-	Value   string `json:"value" yaml:"value"`
+	Value   string `json:"value",omitempty yaml:"value",omitempty`
 }
 
 type dtTagRule struct {

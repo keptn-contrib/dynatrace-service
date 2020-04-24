@@ -3,7 +3,7 @@ spec_version: '0.1.0'
 dtCreds: dynatrace
 attachRules:
   tagRule:
-    meTypes:
+  - meTypes:
     - SERVICE
     tags:
     - context: CONTEXTLESS

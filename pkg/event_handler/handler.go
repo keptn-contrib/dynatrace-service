@@ -24,8 +24,8 @@ const DynatraceConfigFilenameLOCAL = "dynatrace/_dynatrace.conf.yaml"
  */
 type DynatraceConfigFile struct {
 	SpecVersion string         `json:"spec_version" yaml:"spec_version"`
-	DtCreds     string         `json:"dtCreds" yaml:"dtCreds"`
-	AttachRules *dtAttachRules `json:"attachRules" yaml:"attachRules"`
+	DtCreds     string         `json:"dtCreds",omitempty yaml:"dtCreds",omitempty`
+	AttachRules *dtAttachRules `json:"attachRules",omitempty yaml:"attachRules",omitempty`
 }
 
 type baseKeptnEvent struct {
@@ -117,6 +117,7 @@ func getDynatraceConfig(keptnEvent *baseKeptnEvent, logger *keptn.Logger) (*Dyna
 			logger.Info(logMessage)
 			return nil, nil
 		}
+		logger.Info("Loaded LOCAL file " + DynatraceConfigFilenameLOCAL)
 		fileContent = string(localFileContent)
 	} else {
 		resourceHandler := utils.NewResourceHandler("configuration-service:8080")
@@ -145,7 +146,9 @@ func getDynatraceConfig(keptnEvent *baseKeptnEvent, logger *keptn.Logger) (*Dyna
 	}
 
 	// replace the placeholders
+	logger.Debug("Content of dynatrace.conf.yaml: " + fileContent)
 	fileContent = replaceKeptnPlaceholders(fileContent, keptnEvent)
+	logger.Debug("After replacements: " + fileContent)
 
 	// unmarshal the file
 	dynatraceConfFile, err := parseDynatraceConfigFile([]byte(fileContent))
