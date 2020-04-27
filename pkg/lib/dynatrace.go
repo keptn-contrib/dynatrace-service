@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const DefaultOperatorVersion = "v0.5.2"
+const DefaultOperatorVersion = "v0.6.0"
 const sliResourceURI = "dynatrace/sli.yaml"
 const Throughput = "throughput"
 const ErrorRate = "error_rate"
@@ -232,9 +232,9 @@ func (dt *DynatraceHelper) GetDTCredentials() (*DTCredentials, error) {
 
 	dtCreds := &DTCredentials{}
 
-	dtCreds.Tenant = string(secret.Data["DT_TENANT"])
-	dtCreds.ApiToken = string(secret.Data["DT_API_TOKEN"])
-	dtCreds.PaaSToken = string(secret.Data["DT_PAAS_TOKEN"])
+	dtCreds.Tenant = strings.Trim(string(secret.Data["DT_TENANT"]), "\n")
+	dtCreds.ApiToken = strings.Trim(string(secret.Data["DT_API_TOKEN"]), "\n")
+	dtCreds.PaaSToken = strings.Trim(string(secret.Data["DT_PAAS_TOKEN"]), "\n")
 
 	return dtCreds, nil
 }

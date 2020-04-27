@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -45,26 +44,7 @@ func (dt *DynatraceHelper) isDynatraceDeployed() bool {
 }
 
 func (dt *DynatraceHelper) deployDTOperator() error {
-	// get latest operator version
-	resp, err := http.Get("https://api.github.com/repos/dynatrace/dynatrace-oneagent-operator/releases/latest")
-	if err == nil {
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)
-
-		operatorInfo := &dtOperatorReleaseInfo{}
-
-		err = json.Unmarshal(body, operatorInfo)
-
-		if err == nil {
-			dt.OperatorTag = operatorInfo.TagName
-		}
-	}
-	if dt.OperatorTag != "" {
-		dt.Logger.Info("Deploying Dynatrace operator " + dt.OperatorTag)
-	} else {
-		dt.Logger.Info("Could not fetch latest Dynatrace operator version. Using " + DefaultOperatorVersion + " per default.")
-		dt.OperatorTag = DefaultOperatorVersion
-	}
+	dt.OperatorTag = DefaultOperatorVersion
 
 	platform := os.Getenv("PLATFORM")
 
