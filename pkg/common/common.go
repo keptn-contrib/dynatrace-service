@@ -42,3 +42,13 @@ func GetKeptnDomain() (string, error) {
 	keptnDomain := keptnDomainCM.Data["app_domain"]
 	return keptnDomain, nil
 }
+
+/**
+ * Returns the endpoint to the configuration-service
+ */
+func GetConfigurationServiceURL() string {
+	if os.Getenv("CONFIGURATION_SERVICE_URL") != "" {
+		return os.Getenv("CONFIGURATION_SERVICE_URL")
+	}
+	return "configuration-service.keptn.svc.cluster.local:8080"
+}

@@ -120,7 +120,7 @@ func getDynatraceConfig(keptnEvent *baseKeptnEvent, logger *keptn.Logger) (*Dyna
 		logger.Info("Loaded LOCAL file " + DynatraceConfigFilenameLOCAL)
 		fileContent = string(localFileContent)
 	} else {
-		resourceHandler := utils.NewResourceHandler("configuration-service:8080")
+		resourceHandler := utils.NewResourceHandler(common.GetConfigurationServiceURL())
 
 		// Lets search on SERVICE-LEVEL
 		keptnResourceContent, err := resourceHandler.GetServiceResource(keptnEvent.project, keptnEvent.stage, keptnEvent.service, DynatraceConfigFilename)

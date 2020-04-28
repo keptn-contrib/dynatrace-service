@@ -4,12 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/ghodss/yaml"
+
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+
 	configutils "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
@@ -159,15 +161,8 @@ func (dt *DynatraceHelper) DeleteExistingMetricEvent(eventKey string) error {
 	return nil
 }
 
-func getConfigurationServiceURL() string {
-	if os.Getenv("CONFIGURATION_SERVICE_URL") != "" {
-		return os.Getenv("CONFIGURATION_SERVICE_URL")
-	}
-	return "configuration-service.keptn.svc.cluster.local:8080"
-}
-
 func retrieveSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error) {
-	resourceHandler := configutils.NewResourceHandler(getConfigurationServiceURL())
+	resourceHandler := configutils.NewResourceHandler(common.GetConfigurationServiceURL())
 
 	resource, err := resourceHandler.GetServiceResource(project, stage, service, "slo.yaml")
 	if err != nil || resource.ResourceContent == "" {
