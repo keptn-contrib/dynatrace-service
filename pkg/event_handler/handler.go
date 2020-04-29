@@ -159,8 +159,8 @@ func getDynatraceConfig(keptnEvent *baseKeptnEvent, logger *keptn.Logger) (*Dyna
 		return nil, errors.New(logMessage)
 	}
 
-	logMessage := fmt.Sprintf("Loaded Config from dynatrace.conf.yaml:  %s", dynatraceConfFile)
-	logger.Info(logMessage)
+	// logMessage := fmt.Sprintf("Loaded Config from dynatrace.conf.yaml:  %s", dynatraceConfFile)
+	// logger.Info(logMessage)
 
 	return dynatraceConfFile, nil
 }
