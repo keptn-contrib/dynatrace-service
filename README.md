@@ -1,44 +1,87 @@
-# (grabnerandi in dev) Dynatrace Service
+# Dynatrace Service and Dynatrace OneAgent Operator
 
-This is the readme information including changes that come in with this branch. The standard documentation for this service can be found further down!
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-contrib/dynatrace-service)
+[![Build Status](https://travis-ci.org/keptn-contrib/dynatrace-service.svg?branch=master)](https://travis-ci.org/keptn-contrib/dynatrace-service)
+[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-contrib/dynatrace-service)](https://goreportcard.com/report/github.com/keptn-contrib/dynatrace-service)
+
+The *dynatrace-service* is a [Keptn](https://keptn.sh) service that sends information about the current state of a 
+ pipeline run for a service to Dynatrace by sending events for the correlating detected service. 
+ 
+The service is subscribed to the following Keptn CloudEvents:
+
+- sh.keptn.events.deployment-finished
+- sh.keptn.events.evaluation-done
+- sh.keptn.events.tests-finished
+- sh.keptn.internal.event.project.create
+- sh.keptn.event.monitoring.configure
 
 ## Compatibility Matrix
 
-| Keptn Version    | [Dynatrace Service] |
-|:----------------:|:----------------------------------------:|
-|       0.6.1      | grabnerandi/dynatrace-service:0.1 |
+| Keptn Version    | Dynatrace Service | Description
+|:----------------:|:----------------------------------------:|:-----------------------:|
+|       0.6.1      | keptn/dynatrace-service:0.6.2 | Core Dynatrace Integration |
+|       0.6.1      | keptn/dynatrace-service:0.6.3 | Introducing dynatrace.conf.yaml for custom tag rules & multi-dynatrace environment support |
 
 ## Installation
 
 The *dynatrace-service* can either replace your existing installation or can be installed fresh in case you do not yet have a Dynatrace Service Installed.
 
-### New Installation if dynatrace-service not yet existing
+## Installation of Dynatrace Service and Dynatrace OneAgent Operator
 
-If you havent deployed the *dynatrace-service* yet into your Keptn installation you first need to create a secret that holds your Dynatrace Credentials. If you want to learn how to obtain tokens and tenant check out the Keptns doc: https://keptn.sh/docs/0.6.0/reference/monitoring/dynatrace/
+1. Define your credentials by executing the following script:
+    ```console
+    kubectl -n keptn create secret generic dynatrace --from-literal="DT_API_TOKEN=<DT_API_TOKEN>" --from-literal="DT_TENANT=<DT_TENANT>" --from-literal="DT_PAAS_TOKEN=<DT_PAAS_TOKEN>"
+    ```
+    The $DT_TENANT has to be set according to the appropriate pattern:
+    - Dynatrace SaaS tenant: `{your-environment-id}.live.dynatrace.com`
+    - Dynatrace-managed tenant: `{your-domain}/e/{your-environment-id}`
 
-Now we are ready to install this version of the dynatrace-service. We are going to use kubectl apply. Double check the version in the dynatrace-service.yaml to be the one you want to install from the list above!
+1. Deploy the `dynatrace-service` using `kubectl apply`:
+
+    ```console
+    kubectl apply -f deploy/manifests/dynatrace-service/dynatrace-service.yaml
+    ```
+   
+    When the service is deployed, use the following command to let the `dynatrace-service` install Dynatrace on your cluster. If Dynatrace is already deployed, the current deployment of Dynatrace will not be modified.
+
+    ```console
+    keptn configure monitoring dynatrace
+    ```
+   
+ NOTE: If you're rolling out Dynatrace OneAgent to Container-Optimized OS(cos) based GKE clusters, you'll need to edit the `oneagent` Custom Resource in the `dynatrace` namespace and 
+ add the following entry to the `env` section in the custom resource.
+ 
+ First, edit the `OneAgent` Custom Resource:
+  ```console
+  kubectl edit oneagent -n dynatrace
+  ```
+ And then add this entry to the `env` section in the custom resource
+ 
+  ```console
+  env:
+    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
+      value: "true"
+  ```
+
+  When the next event is sent to any of the keptn channels you see an event in Dynatrace for the correlating service:
+![Dynatrace events](assets/events.png?raw=true "Dynatrace Events")
+
+## Set up Dynatrace monitoring for already existing Keptn projects
+
+If you already have created a project using Keptn and would like to enable Dynatrace monitoring for that project afterwards, please execute the following command:
+
+    ```console
+    keptn configure monitoring dynatrace --project=<PROJECT_NAME>
+    ```
+
+## Uninstall dynatrace-service
+
+To uninstall the dynatrace service and remove the subscriptions to keptn channels execute this command.
 
 ```console
-kubectl apply -f deploy/manifests/dynatrace-service/dynatrace-service.yaml
+kubectl delete -f ./deploy/manifests/dynatrace-service/dynatrace-service.yaml
 ```
 
-When the service is deployed, use the following command to let the `dynatrace-service` install Dynatrace OneAgent on your cluster. If Dynatrace OneAgents is already deployed, the current deployment of Dynatrace will not be modified.
-
-```console
-keptn configure monitoring dynatrace
-```
-
-### Replace the core dynatrace-service version with this one
-
-To replace the existing jmeter-service with *jmeter-extened-service* simply replace the image in the jmeter-service deployment like this
-```console
-kubectl -n keptn set image deployment/dynatrace-service dynatrace-service=grabnerandi/dynatrace-service:0.1 --record
-```
-
-If you want to revert back to the core jmeter-service do this
-```console
-kubectl -n keptn set image deployment/dynatrace-service dynatrace-service=keptn/dynatrace-service:0.6.2 --record
-```
 
 ## Usage Information
 
@@ -138,78 +181,3 @@ attachRules:
 ```
 
 The *dtCreds* value references your k8s secret where you store your Tenant and Token information. If you do not specify dtCreds it defaults to *dynatrace* which means it is the default behavior that we had for this service since the beginning!
-
-
-
-# (STANDARD DOC) Dynatrace Service and Dynatrace OneAgent Operator
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-contrib/dynatrace-service)
-[![Build Status](https://travis-ci.org/keptn-contrib/dynatrace-service.svg?branch=master)](https://travis-ci.org/keptn-contrib/dynatrace-service)
-[![Go Report Card](https://goreportcard.com/badge/github.com/keptn-contrib/dynatrace-service)](https://goreportcard.com/report/github.com/keptn-contrib/dynatrace-service)
-
-The *dynatrace-service* is a [Keptn](https://keptn.sh) service that sends information about the current state of a 
- pipeline run for a service to Dynatrace by sending events for the correlating detected service. 
- 
-The service is subscribed to the following Keptn CloudEvents:
-
-- sh.keptn.events.deployment-finished
-- sh.keptn.events.evaluation-done
-- sh.keptn.events.tests-finished
-- sh.keptn.internal.event.project.create
-- sh.keptn.event.monitoring.configure
-
-## Installation of Dynatrace Service and Dynatrace OneAgent Operator
-
-1. Define your credentials by executing the following script:
-    ```console
-    kubectl -n keptn create secret generic dynatrace --from-literal="DT_API_TOKEN=<DT_API_TOKEN>" --from-literal="DT_TENANT=<DT_TENANT>" --from-literal="DT_PAAS_TOKEN=<DT_PAAS_TOKEN>"
-    ```
-    The $DT_TENANT has to be set according to the appropriate pattern:
-    - Dynatrace SaaS tenant: `{your-environment-id}.live.dynatrace.com`
-    - Dynatrace-managed tenant: `{your-domain}/e/{your-environment-id}`
-
-1. Deploy the `dynatrace-service` using `kubectl apply`:
-
-    ```console
-    kubectl apply -f deploy/manifests/dynatrace-service/dynatrace-service.yaml
-    ```
-   
-    When the service is deployed, use the following command to let the `dynatrace-service` install Dynatrace on your cluster. If Dynatrace is already deployed, the current deployment of Dynatrace will not be modified.
-
-    ```console
-    keptn configure monitoring dynatrace
-    ```
-   
- NOTE: If you're rolling out Dynatrace OneAgent to Container-Optimized OS(cos) based GKE clusters, you'll need to edit the `oneagent` Custom Resource in the `dynatrace` namespace and 
- add the following entry to the `env` section in the custom resource.
- 
- First, edit the `OneAgent` Custom Resource:
-  ```console
-  kubectl edit oneagent -n dynatrace
-  ```
- And then add this entry to the `env` section in the custom resource
- 
-  ```console
-  env:
-    - name: ONEAGENT_ENABLE_VOLUME_STORAGE
-      value: "true"
-  ```
-
-  When the next event is sent to any of the keptn channels you see an event in Dynatrace for the correlating service:
-![Dynatrace events](assets/events.png?raw=true "Dynatrace Events")
-
-## Set up Dynatrace monitoring for already existing Keptn projects
-
-If you already have created a project using Keptn and would like to enable Dynatrace monitoring for that project afterwards, please execute the following command:
-
-    ```console
-    keptn configure monitoring dynatrace --project=<PROJECT_NAME>
-    ```
-
-## Uninstall dynatrace-service
-
-To uninstall the dynatrace service and remove the subscriptions to keptn channels execute this command.
-
-```console
-kubectl delete -f ./deploy/manifests/dynatrace-service/dynatrace-service.yaml
-```
-
