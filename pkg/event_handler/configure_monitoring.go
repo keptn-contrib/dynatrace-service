@@ -43,7 +43,7 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 		*connData.EventContext.KeptnContext == "" || *connData.EventContext.Token == "" {
 		eh.Logger.Debug("No WebSocket connection data available")
 	} else {
-		apiServiceURL, err := url.Parse("ws://api-service.keptn.svc.cluster.local:8080")
+		apiServiceURL, err := url.Parse("ws://api.keptn.svc.cluster.local")
 		if err != nil {
 			eh.Logger.Error(err.Error())
 			return nil

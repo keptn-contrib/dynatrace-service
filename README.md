@@ -22,6 +22,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 | Keptn Version    | Dynatrace Service |
 |:----------------:|:----------------------------------------:|
 |       0.6.1      | keptn/dynatrace-service:0.6.2 |
+|       0.6.1      | keptn/dynatrace-service:0.6.9 |
 |       0.6.2      | keptn/dynatrace-service:0.7.0 |
 
 ## Installation
