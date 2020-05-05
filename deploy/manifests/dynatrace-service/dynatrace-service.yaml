@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: dynatrace-service
-        image: grabnerandi/dynatrace-service:0.1
+        image: keptncontrib/dynatrace-service:latest
         ports:
         - containerPort: 8080
         resources:

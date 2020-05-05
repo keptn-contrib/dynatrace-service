@@ -10,8 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var RunLocal = (os.Getenv("env") == "runlocal")
-var RunLocalTest = (os.Getenv("env") == "runlocaltest")
+var RunLocal = (os.Getenv("ENV") == "local")
+var RunLocalTest = (os.Getenv("ENV") == "localtest")
 
 func GetKubernetesClient() (*kubernetes.Clientset, error) {
 	if RunLocal || RunLocalTest {
