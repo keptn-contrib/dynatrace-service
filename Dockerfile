@@ -36,6 +36,7 @@ RUN GOOS=linux go build -ldflags '-linkmode=external' $BUILDFLAGS -v -o dynatrac
 # Use a Docker multi-stage build to create a lean production image.
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
 FROM alpine:3.11
+ENV ENV=production
 
 # Install extra packages
 # See https://github.com/gliderlabs/docker-alpine/issues/136#issuecomment-272703023
@@ -54,10 +55,6 @@ RUN wget -q https://storage.googleapis.com/kubernetes-release/release/v$KUBE_VER
 
 # Copy the binary to the production image from the builder stage.
 COPY --from=builder /go/src/github.com/keptn/dynatrace-service/dynatrace-service /dynatrace-service
-# ADD MANIFEST /
-
-# Run the web service on container startup.
-# CMD ["sh", "-c", "cat MANIFEST && /dynatrace-service"]
 
 EXPOSE 8080
 
