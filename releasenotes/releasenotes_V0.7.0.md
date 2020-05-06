@@ -13,4 +13,6 @@
 
 ## Known Limitations
 - Dynatrace Kubernetes OneAgent operator is now limited to version 0.6.0, which is the last version that supports Kubernetes 1.13 (#132)[https://github.com/keptn-contrib/dynatrace-service/issues/132)]
+- Prior to 0.7.0, Dynatrace-Service has created an alerting profile with a filter that blocks certain problem notifications. There is a known work-around for this described in (#125)[https://github.com/keptn-contrib/dynatrace-service/issues/125]
+- Alerting profiles are not overwritten (#134)[https://github.com/keptn-contrib/dynatrace-service/issues/134] - also related to (#125)[https://github.com/keptn-contrib/dynatrace-service/issues/125]
 - When using Container-Optimized OS (COS) based GKE clusters, the deployed OneAgent has to be updated after the installation of Dynatrace
