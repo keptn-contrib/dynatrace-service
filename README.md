@@ -19,10 +19,11 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 
 ## Compatibility Matrix
 
-| Keptn Version    | Dynatrace Service |
-|:----------------:|:----------------------------------------:|
-|       0.6.1      | keptn/dynatrace-service:0.6.2 |
-|       0.6.2      | keptn/dynatrace-service:0.7.0 |
+| Keptn Version    | [Dynatrace Service](https://hub.docker.com/r/keptncontrib/dynatrace-service/tags?page=1&ordering=last_updated) | Kubernetes Versions                      |
+|:----------------:|:----------------------------------------:|:----------------------------------------:|
+|       0.6.1      | keptn/dynatrace-service:0.6.2            | 1.13 - 1.15                              |
+|       0.6.1      | keptncontrib/dynatrace-service:0.6.9     | 1.13 - 1.15                              |
+|       0.6.2      | keptncontrib/dynatrace-service:0.7.0     | 1.13 - 1.15                              |
 
 ## Installation
 
