@@ -262,8 +262,9 @@ func (dt *DynatraceHelper) GetDTCredentials(dynatraceSecretName string) (*DTCred
 		return nil, err
 	}
 
-	if string(secret.Data["DT_TENANT"]) == "" || string(secret.Data["DT_API_TOKEN"]) == "" || string(secret.Data["DT_PAAS_TOKEN"]) == "" {
-		return nil, errors.New("invalid or no Dynatrace credentials found")
+	// grabnerandi: remove check on DT_PAAS_TOKEN as it is not relevant for quality-gate-only use case
+	if string(secret.Data["DT_TENANT"]) == "" || string(secret.Data["DT_API_TOKEN"]) == "" { // || string(secret.Data["DT_PAAS_TOKEN"]) == "" {
+		return nil, errors.New("invalid or no Dynatrace credentials found. Requires at least DT_TENANT and DT_API_TOKEN in secret!")
 	}
 
 	dtCreds := &DTCredentials{}
