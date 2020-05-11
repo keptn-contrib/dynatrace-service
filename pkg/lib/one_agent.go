@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -19,6 +20,18 @@ func (dt *DynatraceHelper) EnsureDTIsInstalled() error {
 	if dt.isDynatraceDeployed() {
 		dt.Logger.Info("Skipping Dynatrace installation because Dynatrace is already deployed in the cluster.")
 		return nil
+	}
+	if dt.DynatraceCreds == nil {
+		return errors.New("no Dynatrace credentials are available")
+	}
+	if dt.DynatraceCreds.Tenant == "" {
+		return errors.New("no Dynatrace tenant has been defined")
+	}
+	if dt.DynatraceCreds.ApiToken == "" {
+		return errors.New("no API token has been defined")
+	}
+	if dt.DynatraceCreds.PaaSToken == "" {
+		return errors.New("no PaaS token has been defined")
 	}
 	// ensure that the namespace 'dynatrace' is available
 	err := dt.createOrUpdateDynatraceNamespace()
