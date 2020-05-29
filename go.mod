@@ -8,10 +8,8 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.1
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/keptn/go-utils v0.6.2
+	github.com/keptn/go-utils v0.6.3-0.20200528130847-06ffb9763e83
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v0.17.0
 )
-
-replace github.com/keptn/go-utils => github.com/keptn/go-utils v0.6.1-compat
