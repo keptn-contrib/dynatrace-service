@@ -22,6 +22,7 @@ func (eh ActionHandler) HandleEvent() error {
 		return err
 	}
 	dynatraceHelper, err := lib.NewDynatraceHelper(keptnHandler)
+	dynatraceHelper.Logger = eh.Logger
 	if err != nil {
 		eh.Logger.Error("could not initialize Dynatrace helper: " + err.Error())
 		return err
