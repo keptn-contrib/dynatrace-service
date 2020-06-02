@@ -59,6 +59,10 @@ func NewEventHandler(event cloudevents.Event, logger *keptn.Logger) (DynatraceEv
 		return &CreateProjectEventHandler{Logger: logger, Event: event}, nil
 	case keptn.ProblemEventType:
 		return &ProblemEventHandler{Logger: logger, Event: event}, nil
+	case keptn.ActionTriggeredEventType:
+		return &ActionHandler{Logger: logger, Event: event}, nil
+	case keptn.ActionFinishedEventType:
+		return &ActionHandler{Logger: logger, Event: event}, nil
 	default:
 		return &CDEventHandler{Logger: logger, Event: event}, nil
 	}
