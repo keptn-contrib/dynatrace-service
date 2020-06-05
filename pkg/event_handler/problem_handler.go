@@ -38,6 +38,7 @@ type DTProblemEvent struct {
 	} `json:"ProblemDetails"`
 	ProblemID    string `json:"ProblemID"`
 	ProblemTitle string `json:"ProblemTitle"`
+	ProblemURL string `json:"ProblemURL"`
 	State        string `json:"State"`
 	Tags         string `json:"Tags"`
 	EventContext struct {
@@ -89,6 +90,7 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 		ProblemID:      dtProblemEvent.ProblemID,
 		ProblemTitle:   dtProblemEvent.ProblemTitle,
 		ProblemDetails: json.RawMessage(problemDetailsString),
+		ProblemURL:     dtProblemEvent.ProblemURL,
 		ImpactedEntity: dtProblemEvent.ImpactedEntity,
 		Project:        project,
 		Stage:          stage,
@@ -116,6 +118,7 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 		ProblemID:      dtProblemEvent.ProblemID,
 		ProblemTitle:   dtProblemEvent.ProblemTitle,
 		ProblemDetails: json.RawMessage(problemDetailsString),
+		ProblemURL:     dtProblemEvent.ProblemURL,
 		ImpactedEntity: dtProblemEvent.ImpactedEntity,
 		Project:        project,
 		Stage:          stage,
