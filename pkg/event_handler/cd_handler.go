@@ -66,7 +66,7 @@ func (eh CDEventHandler) HandleEvent() error {
 	dtHelper.KubeApi = clientSet
 	dtHelper.Logger = eh.Logger
 
-	eh.Logger.Info("Checking if event of type " + eh.Event.Type() + " should be sent to Dynatrace...")
+	eh.Logger.Info("Check if event of type " + eh.Event.Type() + " should be sent to Dynatrace.")
 
 	if eh.Event.Type() == keptn.DeploymentFinishedEventType {
 		dfData := &keptn.DeploymentFinishedEventData{}
@@ -172,7 +172,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		ie.Description = "Keptn evaluation status: " + edData.Result
 		dtHelper.SendEvent(ie, dtCreds)
 	} else {
-		eh.Logger.Info("    Ignoring event.")
+		eh.Logger.Info("Ignoring event.")
 	}
 	return nil
 }
