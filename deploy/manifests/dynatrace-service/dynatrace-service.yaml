@@ -29,6 +29,24 @@ rules:
     verbs:
       - get
 
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: keptn-dt-operator-nodes
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+
+
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -224,6 +242,23 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: keptn-dynatrace-service-namespace
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: keptn
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keptn-dt-operator-nodes
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: keptn-dt-operator-nodes
 subjects:
   - kind: ServiceAccount
     name: keptn-dynatrace-service
