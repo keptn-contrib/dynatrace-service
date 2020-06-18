@@ -51,8 +51,6 @@ rules:
       - serviceaccounts
     verbs:
       - create
-    resourceNames:
-      - "dynatrace-oneagent-operator"
   - apiGroups:
       - "rbac.authorization.k8s.io"
     resources:
