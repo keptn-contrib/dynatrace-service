@@ -148,6 +148,7 @@ rules:
       - list
       - watch
       - update
+      - create
   - apiGroups:
       - "dynatrace.com"
     resources:
