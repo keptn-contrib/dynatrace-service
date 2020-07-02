@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
@@ -33,19 +32,16 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
 		}
 	}
 	problemNotification := PROBLEM_NOTIFICATION_PAYLOAD
-	keptnDomain, _ := common.GetKeptnDomain()
 
-	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", "https://api.keptn."+keptnDomain)
+	keptnCredentials, err := common.GetKeptnCredentials()
 
-	keptnSecret, err := dt.KubeApi.CoreV1().Secrets("keptn").Get("keptn-api-token", metav1.GetOptions{})
 	if err != nil {
-		dt.Logger.Error("Could not retrieve keptn-api-token: " + err.Error())
+		dt.Logger.Error("Could not retrieve Keptn API credentials: " + err.Error())
+		return err
 	}
 
-	apiToken := keptnSecret.Data["keptn-api-token"]
-
-	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", string(apiToken))
-
+	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", keptnCredentials.ApiURL)
+	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", keptnCredentials.ApiToken)
 	problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
 
 	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/notifications", "POST", problemNotification)

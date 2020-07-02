@@ -588,7 +588,7 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 	return managementZone
 }
 
-func CreateDynatraceDashboard(projectName string, shipyard keptn.Shipyard, keptnDomain string, services []string) (*DynatraceDashboard, error) {
+func CreateDynatraceDashboard(projectName string, shipyard keptn.Shipyard, services []string) (*DynatraceDashboard, error) {
 	dtDashboard := &DynatraceDashboard{
 		DashboardMetadata: DashboardMetadata{
 			Name:   projectName + "@keptn: Digital Delivery & Operations Dashboard",
@@ -675,15 +675,6 @@ func CreateDynatraceDashboard(projectName string, shipyard keptn.Shipyard, keptn
 	}
 	dtDashboard.Tiles = append(dtDashboard.Tiles, cpuLoadTile)
 
-	bridgeTile := createMarkdownTile("## Operations\n[Open Keptns Bridge](https://bridge.keptn." + keptnDomain + "/?#/)")
-	bridgeTile.Bounds = Bounds{
-		Top:    190,
-		Left:   0,
-		Width:  912,
-		Height: 76,
-	}
-	dtDashboard.Tiles = append(dtDashboard.Tiles, bridgeTile)
-
 	// create stage service tiles
 	for index, stage := range shipyard.Stages {
 
@@ -731,21 +722,6 @@ func CreateDynatraceDashboard(projectName string, shipyard keptn.Shipyard, keptn
 			Height: 152,
 		}
 		dtDashboard.Tiles = append(dtDashboard.Tiles, responseTimeTile)
-
-		if len(services) > 0 {
-			servicesMarkdown := "### Services in " + stage.Name + ": \n"
-			for _, service := range services {
-				servicesMarkdown = servicesMarkdown + "[" + service + "](http://" + service + "." + projectName + "-" + stage.Name + "." + keptnDomain + ")\n"
-			}
-			servicesMdTile := createMarkdownTile(servicesMarkdown)
-			servicesMdTile.Bounds = Bounds{
-				Top:    912,
-				Left:   index * DASHBOARD_STAGE_WIDTH,
-				Width:  DASHBOARD_STAGE_WIDTH,
-				Height: 988,
-			}
-			dtDashboard.Tiles = append(dtDashboard.Tiles, servicesMdTile)
-		}
 	}
 
 	return dtDashboard, nil
