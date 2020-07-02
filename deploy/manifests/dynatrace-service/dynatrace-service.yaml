@@ -323,11 +323,6 @@ spec:
                 secretKeyRef:
                   name: dynatrace
                   key: DT_API_TOKEN
-            - name: DT_PAAS_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: dynatrace
-                  key: DT_API_TOKEN
             - name: DT_TENANT
               valueFrom:
                 secretKeyRef:
