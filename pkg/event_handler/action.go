@@ -2,10 +2,14 @@ package event_handler
 
 import (
 	"errors"
+	"os"
+
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
+	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
@@ -72,14 +76,43 @@ func (eh ActionHandler) HandleEvent() error {
 			return err
 		}
 
-		if actionFinishedData.Problem.PID == "" {
+		eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
+
+		events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
+			Project:      keptnHandler.KeptnBase.Project,
+			EventType:    keptn.ProblemOpenEventType,
+			KeptnContext: keptnHandler.KeptnContext,
+		})
+
+		if errObj != nil {
+			msg := "cannot send DT problem comment: Could not retrieve problem.open event for incoming event: " + *errObj.Message
+			eh.Logger.Error(msg)
+			return errors.New(msg)
+		}
+
+		if len(events) == 0 {
+			msg := "cannot send DT problem comment: Could not retrieve problem.open event for incoming event: no events returned"
+			eh.Logger.Error(msg)
+			return errors.New(msg)
+		}
+
+		problemOpenEvent := &keptn.ProblemEventData{}
+		err = mapstructure.Decode(events[0].Data, problemOpenEvent)
+
+		if err != nil {
+			msg := "could not decode problem.open event: " + err.Error()
+			eh.Logger.Error(msg)
+			return errors.New(msg)
+		}
+
+		if problemOpenEvent.PID == "" {
 			eh.Logger.Error("Cannot send DT problem comment: No problem ID is included in the event.")
 			return errors.New("cannot send DT problem comment: No problem ID is included in the event")
 		}
 
 		comment = "Keptn finished execution of action"
 
-		pid = actionFinishedData.Problem.PID
+		pid = problemOpenEvent.PID
 	} else {
 		return errors.New("invalid event type")
 	}
