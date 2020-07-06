@@ -315,9 +315,9 @@ spec:
               cpu: "200m"
           env:
             - name: EVENTBROKER
-              value: 'http://event-broker.keptn.svc.cluster.local/keptn'
+              value: 'http://event-broker/keptn'
             - name: DATASTORE
-              value: 'http://mongodb-datastore.keptn-datastore.svc.cluster.local:8080'
+              value: 'http://mongodb-datastore:8080'
             - name: PLATFORM
               value: kubernetes
             - name: DT_API_TOKEN
