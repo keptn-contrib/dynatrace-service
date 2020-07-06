@@ -33,7 +33,7 @@ func GetConfigurationServiceURL() string {
 	if os.Getenv("CONFIGURATION_SERVICE_URL") != "" {
 		return os.Getenv("CONFIGURATION_SERVICE_URL")
 	}
-	return "configuration-service.keptn.svc.cluster.local:8080"
+	return "configuration-service:8080"
 }
 
 // KeptnCredentials contains the credentials for the Keptn API
