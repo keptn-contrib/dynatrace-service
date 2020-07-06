@@ -3,13 +3,10 @@ package lib
 import (
 	"encoding/json"
 
-	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipyard, services []string) error {
-	keptnDomain, _ := common.GetKeptnDomain()
-
 	// first, check if dashboard for this project already exists and delete that
 	err := dt.DeleteExistingDashboard(project)
 	if err != nil {
@@ -17,7 +14,7 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipya
 	}
 
 	dt.Logger.Info("Creating Dashboard for project " + project)
-	dashboard, err := CreateDynatraceDashboard(project, shipyard, keptnDomain, services)
+	dashboard, err := CreateDynatraceDashboard(project, shipyard, services)
 	if err != nil {
 		return err
 	}

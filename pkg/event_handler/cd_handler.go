@@ -29,11 +29,13 @@ func (eh CDEventHandler) initObjectsForCDEventHandler(project, stage, service, t
 	keptnEvent.labels = labels
 	keptnEvent.context = context
 	dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
-	keptnDomain, _ := common.GetKeptnDomain()
-	if keptnEvent.labels == nil {
-		keptnEvent.labels = make(map[string]string)
+	keptnBridgeURL, err := common.GetKeptnBridgeURL()
+	if err == nil {
+		if keptnEvent.labels == nil {
+			keptnEvent.labels = make(map[string]string)
+		}
+		keptnEvent.labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + context
 	}
-	keptnEvent.labels["Keptns Bridge"] = "https://bridge.keptn." + keptnDomain + "/trace/" + context
 
 	dtCreds := ""
 	if dynatraceConfig != nil {

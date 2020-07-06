@@ -24,6 +24,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 |       0.6.1      | keptn/dynatrace-service:0.6.2            | 1.13 - 1.15                              |
 |       0.6.1      | keptncontrib/dynatrace-service:0.6.9     | 1.13 - 1.15                              |
 |       0.6.2      | keptncontrib/dynatrace-service:0.7.1     | 1.13 - 1.15                              |
+|       0.7.0      | keptncontrib/dynatrace-service:0.8.0     | 1.14 - 1.18                              |
 
 ## Installation
 
@@ -31,10 +32,25 @@ The *dynatrace-service* can be installed as a part of [Keptn's uniform](https://
 
 ### Deploy in your Kubernetes cluster
 
-1. Define your credentials by executing the following command:
+1. Create a secret containing the credentials for the Keptn API. To determine the values for `KEPTN_API_URL` and `KEPTN_API_TOKEN` please refer to the [Keptn docs](https://keptn.sh/docs/0.7.x/operate/install/) 
+
     ```console
-    kubectl -n keptn create secret generic dynatrace --from-literal="DT_API_TOKEN=<DT_API_TOKEN>" --from-literal="DT_TENANT=<DT_TENANT>" --from-literal="DT_PAAS_TOKEN=<DT_PAAS_TOKEN>"
+    kubectl -n keptn create secret generic keptn-credentials --from-literal="KEPTN_API_URL=<KEPTN_API_URL>" --from-literal="KEPTN_API_TOKEN=<KEPTN_API_TOKEN>" 
     ```
+   
+   If you would like to make use of the inclusion of backlinks to the bridge, you can add the `KEPTN_BRIDGE_URL` to the `keptn-credentials` secret.
+   To find the URL of the bridge, please refer to the following section of the [Keptn docs](https://keptn.sh/docs/0.7.x/reference/bridge/#expose-lockdown-bridge)
+   
+   ```console
+   kubectl -n keptn create secret generic keptn-credentials --from-literal="KEPTN_API_URL=<KEPTN_API_URL>" --from-literal="KEPTN_API_TOKEN=<KEPTN_API_TOKEN>" --from-literal="KEPTN_BRIDGE_URL=<KEPTN_BRIDGE_URL>" -oyaml --dry-run | kubectl replace -f -
+   ```
+
+1. Define your credentials by executing the following command:
+
+    ```console
+    kubectl -n keptn create secret generic dynatrace --from-literal="DT_API_TOKEN=<DT_API_TOKEN>" --from-literal="DT_TENANT=<DT_TENANT>" --from-literal="DT_PAAS_TOKEN=<DT_PAAS_TOKEN>" --from-literal="KEPTN_API_URL=<KEPTN_API_URL>" --from-literal="KEPTN_API_TOKEN=<KEPTN_API_TOKEN>"
+    ```
+   
     The `DT_TENANT` has to be set according to the appropriate pattern:
     - Dynatrace SaaS tenant: `{your-environment-id}.live.dynatrace.com`
     - Dynatrace-managed tenant: `{your-domain}/e/{your-environment-id}`

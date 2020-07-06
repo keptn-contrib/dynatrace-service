@@ -37,6 +37,17 @@ func main() {
 
 func _main(args []string, env envConfig) int {
 
+	// check the connection to the Keptn API
+	keptnCredentials, err := common.GetKeptnCredentials()
+	if err != nil {
+		log.Fatalf("failed to get Keptn API credentials: %s", err.Error())
+	}
+
+	err = common.CheckKeptnConnection(keptnCredentials)
+	if err != nil {
+		log.Fatalf("failed to verify Keptn API connection: %s", err.Error())
+	}
+
 	ctx := context.Background()
 
 	t, err := cloudeventshttp.New(

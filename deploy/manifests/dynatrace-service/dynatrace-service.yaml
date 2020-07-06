@@ -29,7 +29,6 @@ rules:
     verbs:
       - get
 
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -316,7 +315,9 @@ spec:
               cpu: "200m"
           env:
             - name: EVENTBROKER
-              value: 'http://event-broker.keptn.svc.cluster.local/keptn'
+              value: 'http://event-broker/keptn'
+            - name: DATASTORE
+              value: 'http://mongodb-datastore:8080'
             - name: PLATFORM
               value: kubernetes
             - name: DT_API_TOKEN
@@ -329,6 +330,16 @@ spec:
                 secretKeyRef:
                   name: dynatrace
                   key: DT_TENANT
+            - name: KEPTN_API_URL
+              valueFrom:
+                secretKeyRef:
+                  name: keptn-credentials
+                  key: KEPTN_API_URL
+            - name: KEPTN_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: keptn-credentials
+                  key: KEPTN_API_TOKEN
       serviceAccountName: keptn-dynatrace-service
 ---
 apiVersion: v1
