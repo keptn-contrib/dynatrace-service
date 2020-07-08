@@ -16,7 +16,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const DefaultOperatorVersion = "v0.6.0"
+const DefaultOperatorVersion = "v0.8.0"
 const sliResourceURI = "dynatrace/sli.yaml"
 const Throughput = "throughput"
 const ErrorRate = "error_rate"
