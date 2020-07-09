@@ -314,6 +314,8 @@ spec:
               memory: "256Mi"
               cpu: "200m"
           env:
+            - name: API_WEBSOCKET_URL
+              value: 'ws://api-service:8080/websocket'
             - name: EVENTBROKER
               value: 'http://event-broker/keptn'
             - name: DATASTORE
