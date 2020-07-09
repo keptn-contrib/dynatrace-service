@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 
@@ -43,25 +42,29 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 		*connData.EventContext.KeptnContext == "" || *connData.EventContext.Token == "" {
 		eh.Logger.Debug("No WebSocket connection data available")
 	} else {
-		apiServiceURL, err := url.Parse("ws://api-service.keptn.svc.cluster.local:8080")
-		if err != nil {
-			eh.Logger.Error(err.Error())
-			return nil
-		}
-		ws, _, err := keptn.OpenWS(connData, *apiServiceURL)
-		if err != nil {
-			eh.Logger.Error("Opening WebSocket connection failed:" + err.Error())
-			return nil
-		}
-		stdLogger := keptn.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
-		combinedLogger := keptn.NewCombinedLogger(stdLogger, ws, shkeptncontext)
-		eh.Logger = combinedLogger
-		eh.WebSocket = ws
-		eh.IsCombinedLogger = true
+		eh.openWebSocketLogger(connData, shkeptncontext)
 	}
 	eh.configureMonitoring()
 	eh.closeWebSocketConnection()
 	return nil
+}
+
+func (eh ConfigureMonitoringEventHandler) openWebSocketLogger(connData keptn.ConnectionData, shkeptncontext string) {
+	wsUrl, err := getServiceEndpoint("API_WEBSOCKET_URL")
+	if err != nil {
+		eh.Logger.Error(err.Error())
+		return
+	}
+	ws, _, err := keptn.OpenWS(connData, wsUrl)
+	if err != nil {
+		eh.Logger.Error("Opening WebSocket connection failed:" + err.Error())
+		return
+	}
+	stdLogger := keptn.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
+	combinedLogger := keptn.NewCombinedLogger(stdLogger, ws, shkeptncontext)
+	eh.Logger = combinedLogger
+	eh.WebSocket = ws
+	eh.IsCombinedLogger = true
 }
 
 func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
