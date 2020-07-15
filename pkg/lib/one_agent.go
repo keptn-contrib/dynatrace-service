@@ -65,7 +65,10 @@ func (dt *DynatraceHelper) deployDTOperator() error {
 		platform = "kubernetes"
 	}
 
-	operatorYaml, err := getHTTPResource("https://raw.githubusercontent.com/Dynatrace/dynatrace-oneagent-operator/" + dt.OperatorTag + "/deploy/" + platform + ".yaml")
+	operatorURL := "https://github.com/Dynatrace/dynatrace-oneagent-operator/releases/download/" + dt.OperatorTag + "/" + platform + ".yaml"
+	dt.Logger.Info("Installing Dynatrace operator from: "+operatorURL)
+
+	operatorYaml, err := getHTTPResource(operatorURL)
 	if err != nil {
 		dt.Logger.Error("could not fetch operator config: " + err.Error())
 	}
