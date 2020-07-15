@@ -41,6 +41,12 @@ rules:
       - get
     resourceNames:
       - "dynatrace"
+  - apiGroups:
+      - "apps"
+    resources:
+      - deployments
+    verbs:
+      - get
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -94,7 +100,7 @@ spec:
       serviceAccountName: keptn-dynatrace-service
       containers:
         - name: dynatrace-service
-          image: keptncontrib/dynatrace-service:0.7.1-12-gbfbeb00-dirty
+          image: keptncontrib/dynatrace-service:0.7.1-14-g6891ee7-dirty
           ports:
             - containerPort: 8080
           resources:
@@ -116,27 +122,27 @@ spec:
             - name: DT_API_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: dynatrace-service
+                  name: dynatrace
                   key: DT_API_TOKEN
             - name: DT_TENANT
               valueFrom:
                 secretKeyRef:
-                  name: dynatrace-service
+                  name: dynatrace
                   key: DT_TENANT
             - name: KEPTN_API_URL
               valueFrom:
                 secretKeyRef:
-                  name: dynatrace-service
+                  name: dynatrace
                   key: KEPTN_API_URL
             - name: KEPTN_API_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: dynatrace-service
+                  name: dynatrace
                   key: KEPTN_API_TOKEN
             - name: KEPTN_BRIDGE_URL
               valueFrom:
                 secretKeyRef:
-                  name: dynatrace-service
+                  name: dynatrace
                   key: KEPTN_BRIDGE_URL
                   optional: true
               
