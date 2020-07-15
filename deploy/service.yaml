@@ -27,37 +27,33 @@ rules:
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: keptn-dynatrace-service-namespace
+  namespace: "dynatrace"
   labels:
     "app": "keptn"
 rules:
   - apiGroups:
-      - ""
-    resources:
-      - namespaces
-    verbs:
-      - get
-    resourceNames:
-      - "dynatrace"
-  - apiGroups:
       - "apps"
     resources:
       - deployments
+    resourceNames:
+      - "dynatrace-oneagent-operator"
     verbs:
       - get
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   name: keptn-dynatrace-service-namespace
+  namespace: "dynatrace"
   labels:
     "app": "keptn"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: keptn-dynatrace-service-namespace
 subjects:
   - kind: ServiceAccount
