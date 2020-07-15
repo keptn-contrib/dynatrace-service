@@ -43,7 +43,6 @@ type Values struct {
 type DTCredentials struct {
 	Tenant    string `json:"DT_TENANT" yaml:"DT_TENANT"`
 	ApiToken  string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
-	PaaSToken string `json:"DT_PAAS_TOKEN" yaml:"DT_PAAS_TOKEN"`
 }
 
 type DynatraceHelper struct {
@@ -248,7 +247,6 @@ func (dt *DynatraceHelper) GetDTCredentials(dynatraceSecretName string) (*DTCred
 
 		dtCreds.Tenant = os.Getenv("DT_TENANT")
 		dtCreds.ApiToken = os.Getenv("DT_API_TOKEN")
-		dtCreds.PaaSToken = os.Getenv("DT_PAAS_TOKEN")
 		return dtCreds, nil
 	}
 
@@ -262,8 +260,7 @@ func (dt *DynatraceHelper) GetDTCredentials(dynatraceSecretName string) (*DTCred
 		return nil, err
 	}
 
-	// grabnerandi: remove check on DT_PAAS_TOKEN as it is not relevant for quality-gate-only use case
-	if string(secret.Data["DT_TENANT"]) == "" || string(secret.Data["DT_API_TOKEN"]) == "" { // || string(secret.Data["DT_PAAS_TOKEN"]) == "" {
+	if string(secret.Data["DT_TENANT"]) == "" || string(secret.Data["DT_API_TOKEN"]) == "" {
 		return nil, errors.New("invalid or no Dynatrace credentials found. Requires at least DT_TENANT and DT_API_TOKEN in secret!")
 	}
 
@@ -271,7 +268,6 @@ func (dt *DynatraceHelper) GetDTCredentials(dynatraceSecretName string) (*DTCred
 
 	dtCreds.Tenant = strings.Trim(string(secret.Data["DT_TENANT"]), "\n")
 	dtCreds.ApiToken = strings.Trim(string(secret.Data["DT_API_TOKEN"]), "\n")
-	dtCreds.PaaSToken = strings.Trim(string(secret.Data["DT_PAAS_TOKEN"]), "\n")
 
 	return dtCreds, nil
 }
