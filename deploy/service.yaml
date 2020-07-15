@@ -27,6 +27,39 @@ rules:
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: keptn-dynatrace-service-namespace
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+    resourceNames:
+      - "dynatrace"
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keptn-dynatrace-service-namespace
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: keptn-dynatrace-service-namespace
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: keptn
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: keptn-dynatrace-service-secrets
@@ -61,7 +94,7 @@ spec:
       serviceAccountName: keptn-dynatrace-service
       containers:
         - name: dynatrace-service
-          image: keptncontrib/dynatrace-service:0.7.1
+          image: keptncontrib/dynatrace-service:0.7.1-12-gbfbeb00-dirty
           ports:
             - containerPort: 8080
           resources:

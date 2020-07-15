@@ -11,4 +11,4 @@ build:
 deploy:
   kubectl:
     manifests:
-      - deploy/manifests/dynatrace-service/dynatrace-service.yaml
+      - deploy/service.yaml

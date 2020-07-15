@@ -1,0 +1,411 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dynatrace
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: keptn-dynatrace-service
+  namespace: keptn
+  labels:
+    "app": "keptn"
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: keptn-dynatrace-service-secrets
+  namespace: keptn
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: keptn-dt-operator-nodes
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: keptn-dynatrace-service-install-dt
+  namespace: dynatrace
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - create
+  - apiGroups:
+      - "rbac.authorization.k8s.io"
+    resources:
+      - roles
+      - rolebindings
+    verbs:
+      - get
+  - apiGroups:
+      - "rbac.authorization.k8s.io"
+    resources:
+      - roles
+      - rolebindings
+    verbs:
+      - create
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: keptn-dynatrace-service-operator
+  namespace: dynatrace
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
+      - delete
+      - create
+      - update
+  - apiGroups:
+      - "apps"
+    resources:
+      - daemonsets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
+  - apiGroups:
+      - "apps"
+    resources:
+      - deployments
+    verbs:
+      - get
+      - create
+      - update
+  - apiGroups:
+      - "dynatrace.com"
+    resources:
+      - oneagents
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - create
+  - apiGroups:
+      - "dynatrace.com"
+    resources:
+      - "oneagents/finalizers"
+      - "oneagents/status"
+    verbs:
+      - update
+  - apiGroups:
+      - "monitoring.coreos.com"
+    resources:
+      - servicemonitors
+    verbs:
+      - get
+      - create
+  - apiGroups:
+      - "networking.istio.io"
+    resources:
+      - serviceentries
+      - virtualservices
+    verbs:
+      - get
+      - list
+      - create
+      - update
+      - delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: keptn-dynatrace-service-namespace
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+      - update
+    resourceNames:
+      - "dynatrace"
+  - apiGroups:
+      - "policy"
+    resources:
+      - "podsecuritypolicies"
+    verbs:
+      - get
+  - apiGroups:
+      - "policy"
+    resources:
+      - "podsecuritypolicies"
+    verbs:
+      - create
+      - patch
+      - use
+  - apiGroups:
+      - "policy"
+    resources:
+      - "podsecuritypolicies"
+    verbs:
+      - use
+    resourceNames:
+      - "dynatrace-oneagent"
+  - apiGroups:
+      - "apiextensions.k8s.io"
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - create
+  - apiGroups:
+      - "rbac.authorization.k8s.io"
+    resources:
+      - clusterroles
+      - clusterrolebindings
+    verbs:
+      - get
+      - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keptn-dynatrace-service-namespace
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: keptn-dynatrace-service-namespace
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: keptn
+
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: keptn-dt-operator-nodes
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: keptn-dt-operator-nodes
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: keptn
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: keptn-dynatrace-service-secrets
+  namespace: keptn
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: keptn-dynatrace-service-secrets
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: keptn
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: keptn-dynatrace-service-operator
+  namespace: dynatrace
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: keptn-dynatrace-service-operator
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: keptn
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: keptn-dynatrace-service-install-dt
+  namespace: dynatrace
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: keptn-dynatrace-service-install-dt
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: keptn
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-service
+  namespace: keptn
+spec:
+  selector:
+    matchLabels:
+      run: dynatrace-service
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: dynatrace-service
+    spec:
+      containers:
+        - name: dynatrace-service
+          image: keptncontrib/dynatrace-service:0.7.1
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          env:
+            - name: EVENTBROKER
+              value: 'http://event-broker.keptn.svc.cluster.local/keptn'
+            - name: PLATFORM
+              value: kubernetes
+            - name: DT_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: dynatrace
+                  key: DT_API_TOKEN
+            - name: DT_TENANT
+              valueFrom:
+                secretKeyRef:
+                  name: dynatrace
+                  key: DT_TENANT
+      serviceAccountName: keptn-dynatrace-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dynatrace-service
+  namespace: keptn
+  labels:
+    run: dynatrace-service
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+  selector:
+    run: dynatrace-service
+---
+## dynatrace-service-distributor
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dynatrace-service-distributor
+  namespace: keptn
+spec:
+  selector:
+    matchLabels:
+      run: distributor
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: distributor
+    spec:
+      containers:
+        - name: distributor
+          image: keptn/distributor:0.6.2
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "500m"
+          env:
+            - name: PUBSUB_URL
+              value: 'nats://keptn-nats-cluster'
+            - name: PUBSUB_TOPIC
+              value: 'sh.keptn.>'
+            - name: PUBSUB_RECIPIENT
+              value: 'dynatrace-service'
+      serviceAccountName: keptn-default

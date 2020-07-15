@@ -72,7 +72,7 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 	e := &keptn.ConfigureMonitoringEventData{}
 	err := eh.Event.DataAs(e)
 	if err != nil {
-		eh.Logger.Error("Could not parse event payload: " + err.Error())
+		eh.Logger.Error("could not parse event payload: " + err.Error())
 		return err
 	}
 	if e.Type != "dynatrace" {
@@ -91,12 +91,13 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	dtHelper, err := lib.NewDynatraceHelper(keptnHandler)
 	if err != nil {
-		eh.Logger.Error("Could not create Dynatrace Helper: " + err.Error())
+		eh.Logger.Error("could not create Dynatrace Helper: " + err.Error())
 	}
 	dtHelper.KubeApi = clientSet
 	dtHelper.Logger = eh.Logger
 	eh.DTHelper = dtHelper
 
+	// Remove the installation
 	err = eh.DTHelper.EnsureDTIsInstalled()
 
 	if err != nil {
@@ -104,6 +105,7 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 		return err
 	}
 
+	// don't touch
 	err = eh.DTHelper.EnsureDTTaggingRulesAreSetUp()
 	if err != nil {
 		eh.Logger.Error("Could not set up tagging rules: " + err.Error())

@@ -6,8 +6,7 @@
 
 The *dynatrace-service* is a [Keptn](https://keptn.sh) service that sends information about the current state of a 
  pipeline run for a service to Dynatrace by sending events for the correlating detected service. In addition the 
- service is responsible for installing the [Dynatrace OneAgent operator](https://github.com/Dynatrace/dynatrace-oneagent-operator) 
- as well as configuring your Dynatrace tenant to fully interact with the Keptn installation.
+ service is responsible for configuring your Dynatrace tenant to fully interact with the Keptn installation.
  
 The service is subscribed to the following [Keptn CloudEvents](https://github.com/keptn/spec/blob/master/cloudevents.md):
 
@@ -26,39 +25,47 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 |       0.6.2      | keptncontrib/dynatrace-service:0.7.1     | 1.13 - 1.15                              |
 |       0.7.0      | keptncontrib/dynatrace-service:0.8.0     | 1.14 - 1.18                              |
 
-## Installation
-
-The *dynatrace-service* can be installed as a part of [Keptn's uniform](https://keptn.sh). 
+## Installation 
 
 ### Deploy in your Kubernetes cluster
 
-1. Create a secret containing the credentials for the Keptn API. To determine the values for `KEPTN_API_URL` and `KEPTN_API_TOKEN` please refer to the [Keptn docs](https://keptn.sh/docs/0.7.x/operate/install/) 
+1. Create a secret containing the credentials for the Keptn API and Dynatrace Tenant.
+    *  To determine the values for `KEPTN_API_URL` and `KEPTN_API_TOKEN` please refer to the [Keptn docs](https://keptn.sh/docs/0.7.x/operate/install/). 
 
+   
+    * If you would like to make use of the inclusion of backlinks to the bridge, you can add the `KEPTN_BRIDGE_URL` to the secret. (
+   To find the URL of the bridge, please refer to the following section of the [Keptn docs](https://keptn.sh/docs/0.7.x/reference/bridge/#expose-lockdown-bridge) ) 
+
+    * The `DT_TENANT` has to be set according to the appropriate pattern:
+      - Dynatrace SaaS tenant: `{your-environment-id}.live.dynatrace.com`
+      - Dynatrace-managed tenant: `{your-domain}/e/{your-environment-id}`
+   
     ```console
-    kubectl -n keptn create secret generic keptn-credentials --from-literal="KEPTN_API_URL=<KEPTN_API_URL>" --from-literal="KEPTN_API_TOKEN=<KEPTN_API_TOKEN>" 
+    DT_API_TOKEN=<DT_API_TOKEN>
+    DT_TENANT=<DT_TENANT>
+    KEPTN_API_URL=<KEPTN_API_URL>
+    KEPTN_API_TOKEN=<KEPTN_API_TOKEN>
+    KEPTN_BRIDGE_URL=<KEPTN_BRIDGE_URL> # optional
     ```
-   
-   If you would like to make use of the inclusion of backlinks to the bridge, you can add the `KEPTN_BRIDGE_URL` to the `keptn-credentials` secret.
-   To find the URL of the bridge, please refer to the following section of the [Keptn docs](https://keptn.sh/docs/0.7.x/reference/bridge/#expose-lockdown-bridge)
-   
-   ```console
-   kubectl -n keptn create secret generic keptn-credentials --from-literal="KEPTN_API_URL=<KEPTN_API_URL>" --from-literal="KEPTN_API_TOKEN=<KEPTN_API_TOKEN>" --from-literal="KEPTN_BRIDGE_URL=<KEPTN_BRIDGE_URL>" -oyaml --dry-run | kubectl replace -f -
-   ```
+
 
 1. Define your credentials by executing the following command:
 
     ```console
-    kubectl -n keptn create secret generic dynatrace --from-literal="DT_API_TOKEN=<DT_API_TOKEN>" --from-literal="DT_TENANT=<DT_TENANT>" --from-literal="DT_PAAS_TOKEN=<DT_PAAS_TOKEN>" --from-literal="KEPTN_API_URL=<KEPTN_API_URL>" --from-literal="KEPTN_API_TOKEN=<KEPTN_API_TOKEN>"
+    kubectl -n keptn create secret generic dynatrace-service 
+    --from-literal="DT_API_TOKEN=<DT_API_TOKEN>" 
+    --from-literal="DT_TENANT=<DT_TENANT>" 
+    --from-literal="KEPTN_API_URL=<KEPTN_API_URL>" 
+    --from-literal="KEPTN_API_TOKEN=<KEPTN_API_TOKEN>"
+    -oyaml --dry-run | kubectl replace -f -
     ```
    
-    The `DT_TENANT` has to be set according to the appropriate pattern:
-    - Dynatrace SaaS tenant: `{your-environment-id}.live.dynatrace.com`
-    - Dynatrace-managed tenant: `{your-domain}/e/{your-environment-id}`
+
 
 1. Deploy the `dynatrace-service` using `kubectl apply`:
 
     ```console
-    kubectl apply -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/manifests/dynatrace-service/dynatrace-service.yaml
+    kubectl apply -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml
     ```
    
    **Note**: Replace `$VERSION` with the desired version number (e.g., 0.7.0) you want to install.
@@ -70,31 +77,9 @@ The *dynatrace-service* can be installed as a part of [Keptn's uniform](https://
    kubectl -n keptn get deployment dynatrace-service-distributor -o wide
    kubectl -n keptn get pods -l run=dynatrace-service
    ```
-   
-1. After the service has been deployed, use the following command to let the `dynatrace-service` install the 
-   [Dynatrace OneAgent Operator](https://github.com/Dynatrace/dynatrace-oneagent-operator) on your cluster. If the
-   Dynatrace OneAgent is already deployed, the existing deployment will not be modified.
-
-    ```console
-    keptn configure monitoring dynatrace
-    ```
   
-NOTE: If you're rolling out Dynatrace OneAgent to Container-Optimized OS(cos) based GKE clusters, you'll need to edit the `oneagent` Custom Resource in the `dynatrace` namespace and 
-add the following entry to the `env` section in the custom resource.
 
-First, edit the `OneAgent` Custom Resource:
-```console
-kubectl edit oneagent -n dynatrace
-```
-And then add this entry to the `env` section in the custom resource
-
-```console
-env:
-- name: ONEAGENT_ENABLE_VOLUME_STORAGE
-  value: "true"
-```
-
-When the next event is sent to any of the keptn channels you see an event in Dynatrace for the correlating service:
+When the an event is sent to any of the Keptn channels, you see an event in Dynatrace for the correlating service:
 
 ![Dynatrace events](assets/events.png?raw=true "Dynatrace Events")
 
@@ -109,7 +94,7 @@ kubectl -n keptn set image deployment/dynatrace-service dynatrace-service=keptnc
 
 ### Uninstall
 
-To uninstall the dynatrace service and remove the subscriptions to keptn channels execute this command.
+To uninstall the dynatrace service and remove the subscriptions to Keptn channels execute this command.
 
 ```console
 kubectl delete -f ./deploy/manifests/dynatrace-service/dynatrace-service.yaml
