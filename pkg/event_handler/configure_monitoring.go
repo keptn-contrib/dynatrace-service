@@ -49,13 +49,13 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 	return nil
 }
 
-func (eh ConfigureMonitoringEventHandler) openWebSocketLogger(connData keptn.ConnectionData, shkeptncontext string) {
-	wsUrl, err := getServiceEndpoint("API_WEBSOCKET_URL")
+func (eh *ConfigureMonitoringEventHandler) openWebSocketLogger(connData keptn.ConnectionData, shkeptncontext string) {
+	wsURL, err := getServiceEndpoint("API_WEBSOCKET_URL")
 	if err != nil {
 		eh.Logger.Error(err.Error())
 		return
 	}
-	ws, _, err := keptn.OpenWS(connData, wsUrl)
+	ws, _, err := keptn.OpenWS(connData, wsURL)
 	if err != nil {
 		eh.Logger.Error("Opening WebSocket connection failed:" + err.Error())
 		return
