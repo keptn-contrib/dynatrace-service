@@ -96,7 +96,7 @@ spec:
       serviceAccountName: keptn-dynatrace-service
       containers:
         - name: dynatrace-service
-          image: keptncontrib/dynatrace-service:0.7.1-patch-fix-ws-comm-20200716.1153
+          image: keptncontrib/dynatrace-service:0.7.1-13-g6c90fc1-dirty
           ports:
             - containerPort: 8080
           resources:

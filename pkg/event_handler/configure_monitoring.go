@@ -97,15 +97,13 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 	dtHelper.Logger = eh.Logger
 	eh.DTHelper = dtHelper
 
-	// Remove the installation
-	err = eh.DTHelper.EnsureDTIsInstalled()
+	err = eh.DTHelper.CheckDTIsInstalled()
 
 	if err != nil {
 		eh.Logger.Error("could not install Dynatrace: " + err.Error())
 		return err
 	}
 
-	// don't touch
 	err = eh.DTHelper.EnsureDTTaggingRulesAreSetUp()
 	if err != nil {
 		eh.Logger.Error("Could not set up tagging rules: " + err.Error())
