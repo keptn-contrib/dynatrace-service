@@ -15,7 +15,7 @@ func (dt *DynatraceHelper) CheckDTIsInstalled() error {
 Dynatrace OneAgent Operator is not installed on cluster
 # ATTENTION # ------------------------------------------------------------------------------------
 The behavior has changed and Dynatrace OneAgent Operator will NOT be installed automatically.
-If you want to roll-out the OneAgent, please follow the instructions as provided here: 
+If you want to roll-out the Dynatrace OneAgent Operator: 
 1.) Please follow the instructions as provided here: 
     https://www.dynatrace.com/support/help/technology-support/cloud-platforms/kubernetes/deploy-oneagent-k8/
 2.) Then, re-deploy the dynatrace-service: 
