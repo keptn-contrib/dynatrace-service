@@ -26,4 +26,3 @@ If you want to roll-out the Dynatrace OneAgent Operator:
 	}
 	return nil
 }
-
