@@ -30,10 +30,10 @@ func (eh CDEventHandler) initObjectsForCDEventHandler(project, stage, service, t
 	keptnEvent.context = context
 	dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
 	keptnBridgeURL, err := common.GetKeptnBridgeURL()
+	if keptnEvent.labels == nil {
+		keptnEvent.labels = make(map[string]string)
+	}
 	if err == nil {
-		if keptnEvent.labels == nil {
-			keptnEvent.labels = make(map[string]string)
-		}
 		keptnEvent.labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + context
 	}
 
