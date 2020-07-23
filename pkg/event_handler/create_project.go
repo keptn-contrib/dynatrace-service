@@ -67,16 +67,6 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		eh.Logger.Error("Could not set up problem notification: " + err.Error())
 	}
 
-	err = eh.DTHelper.CreateCalculatedMetrics(e.Project)
-	if err != nil {
-		eh.Logger.Error("Could not create calculated metrics: " + err.Error())
-	}
-
-	err = eh.DTHelper.CreateTestStepCalculatedMetrics(e.Project)
-	if err != nil {
-		eh.Logger.Error("Could not create calculated metrics: " + err.Error())
-	}
-
 	err = eh.DTHelper.CreateDashboard(e.Project, *shipyard, nil)
 	if err != nil {
 		eh.Logger.Error("Could not create Dynatrace dashboard for project " + e.Project + ": " + err.Error())
