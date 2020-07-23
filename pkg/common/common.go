@@ -1,6 +1,7 @@
 package common
 
 import (
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -67,12 +68,16 @@ func GetKeptnCredentials() (*KeptnCredentials, error) {
 
 // CheckKeptnConnection verifies wether a connection to the Keptn API can be established
 func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
 	req, err := http.NewRequest(http.MethodGet, keptnCredentials.ApiURL+"/v1/auth", nil)
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("x-token", keptnCredentials.ApiToken)
 
-	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return errors.New("could not authenticate at Keptn API: " + err.Error())
