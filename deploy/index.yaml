@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  dynatrace-service:
+  - apiVersion: v2
+    appVersion: 0.8.0
+    created: "2020-08-13T14:48:24.3852117+02:00"
+    description: A Helm chart for Kubernetes
+    digest: e06cda9e0464c9d8f0aed4a63ab99f23f42e3b90bf4784e86e54653b0dd07775
+    name: dynatrace-service
+    type: application
+    urls:
+    - dynatrace-service-0.1.0.tgz
+    version: 0.1.0
+generated: "2020-08-13T14:48:24.3841766+02:00"
