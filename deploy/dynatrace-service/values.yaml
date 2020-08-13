@@ -1,0 +1,20 @@
+replicaCount: 1
+
+namespace: keptn
+
+image:
+  repository: keptncontrib/dynatrace-service:0.8.0
+
+service:
+  port: 8080
+
+serviceAccount:
+  create: true
+  annotations: {}
+
+secret:
+  dtApiToken: ""
+  dtTenant: ""
+  keptnApiToken: ""
+  keptnApiUrl: ""
+  keptnBridgeUrl: ""

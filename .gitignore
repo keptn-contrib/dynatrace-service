@@ -1,5 +1,5 @@
 # Binary
-dynatrace-service
+./cmd/dynatrace-service
 
 # Auto-generated files
 ./deploy/manifests/dynatrace/gen/cr*

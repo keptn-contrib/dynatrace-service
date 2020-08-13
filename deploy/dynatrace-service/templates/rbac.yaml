@@ -1,0 +1,67 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: keptn-dynatrace-service-secrets
+  namespace: {{ .Values.namespace }}
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: keptn-dynatrace-service-namespace
+  namespace: "dynatrace"
+  labels:
+    "app": "keptn"
+rules:
+  - apiGroups:
+      - "apps"
+    resources:
+      - deployments
+    resourceNames:
+      - "dynatrace-oneagent-operator"
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: keptn-dynatrace-service-namespace
+  namespace: "dynatrace"
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: keptn-dynatrace-service-namespace
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: {{ .Values.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: keptn-dynatrace-service-secrets
+  namespace: {{ .Values.namespace }}
+  labels:
+    "app": "keptn"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: keptn-dynatrace-service-secrets
+subjects:
+  - kind: ServiceAccount
+    name: keptn-dynatrace-service
+    namespace: {{ .Values.namespace }}
+  
