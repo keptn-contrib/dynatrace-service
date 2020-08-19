@@ -54,7 +54,7 @@ type DynatraceHelper struct {
 	KeptnBridge    string
 }
 
-var namespace = setParameterValue(os.Getenv("POD_NAMESPACE"), "keptn")
+var namespace = os.Getenv("POD_NAMESPACE")
 
 func NewDynatraceHelper(keptnHandler *keptn.Keptn) (*DynatraceHelper, error) {
 	dtHelper := &DynatraceHelper{}
@@ -308,11 +308,4 @@ func getHTTPResource(url string) (string, error) {
 	}
 
 	return string(body), nil
-}
-
-func setParameterValue(value string, defaultValue string) string {
-	if len(value) == 0 {
-		return defaultValue
-	}
-	return value
 }
