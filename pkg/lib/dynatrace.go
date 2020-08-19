@@ -54,6 +54,8 @@ type DynatraceHelper struct {
 	KeptnBridge    string
 }
 
+var namespace = os.Getenv("POD_NAMESPACE")
+
 func NewDynatraceHelper(keptnHandler *keptn.Keptn) (*DynatraceHelper, error) {
 	dtHelper := &DynatraceHelper{}
 	dtCreds, err := dtHelper.GetDTCredentials("")
@@ -254,7 +256,7 @@ func (dt *DynatraceHelper) GetDTCredentials(dynatraceSecretName string) (*DTCred
 	if err != nil {
 		return nil, err
 	}
-	secret, err := kubeAPI.CoreV1().Secrets("keptn").Get(dynatraceSecretName, metav1.GetOptions{})
+	secret, err := kubeAPI.CoreV1().Secrets(namespace).Get(dynatraceSecretName, metav1.GetOptions{})
 
 	if err != nil {
 		return nil, err
