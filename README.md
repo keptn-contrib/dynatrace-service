@@ -78,11 +78,10 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
    
    **Note**: Replace `$VERSION` with the desired version number (e.g., 0.8.0) you want to install.
    
-   This installs the `dynatrace-service` and a Keptn `distributor` in the `keptn` namespace, which you can verify using:
+   This installs the `dynatrace-service` in the `keptn` namespace, which you can verify using:
 
    ```console
    kubectl -n keptn get deployment dynatrace-service -o wide
-   kubectl -n keptn get deployment dynatrace-service-distributor -o wide
    kubectl -n keptn get pods -l run=dynatrace-service
    ```
 
