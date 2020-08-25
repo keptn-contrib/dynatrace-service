@@ -3,7 +3,6 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: keptn-dynatrace-service
-  namespace: keptn
   labels:
     "app": "keptn"
 
@@ -12,7 +11,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: keptn-dynatrace-service-secrets
-  namespace: keptn
   labels:
     "app": "keptn"
 rules:
@@ -27,45 +25,9 @@ rules:
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: keptn-dynatrace-service-namespace
-  namespace: "dynatrace"
-  labels:
-    "app": "keptn"
-rules:
-  - apiGroups:
-      - "apps"
-    resources:
-      - deployments
-    resourceNames:
-      - "dynatrace-oneagent-operator"
-    verbs:
-      - get
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: keptn-dynatrace-service-namespace
-  namespace: "dynatrace"
-  labels:
-    "app": "keptn"
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: keptn-dynatrace-service-namespace
-subjects:
-  - kind: ServiceAccount
-    name: keptn-dynatrace-service
-    namespace: keptn
-
----
-apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: keptn-dynatrace-service-secrets
-  namespace: keptn
   labels:
     "app": "keptn"
 roleRef:
@@ -75,14 +37,12 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: keptn-dynatrace-service
-    namespace: keptn
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dynatrace-service
-  namespace: keptn
 spec:
   selector:
     matchLabels:
@@ -150,7 +110,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: dynatrace-service
-  namespace: keptn
   labels:
     run: dynatrace-service
 spec:
@@ -165,7 +124,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: dynatrace-service-distributor
-  namespace: keptn
 spec:
   selector:
     matchLabels:
