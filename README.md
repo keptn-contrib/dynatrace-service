@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/keptn-contrib/dynatrace-service.svg?branch=master)](https://travis-ci.org/keptn-contrib/dynatrace-service)
 [![Go Report Card](https://goreportcard.com/badge/github.com/keptn-contrib/dynatrace-service)](https://goreportcard.com/report/github.com/keptn-contrib/dynatrace-service)
 
-The *dynatrace-service* is a [Keptn-service](https://keptn.sh) that forwards Keptn events - occuring during a delivery workflow - to Dynatrace. In addition, the service is responsible for configuring your Dynatrace tenant to fully interact with the Keptn installation.
+The *dynatrace-service* is a [Keptn-service](https://keptn.sh) that forwards Keptn events - occurring during a delivery workflow - to Dynatrace. In addition, the service is responsible for configuring your Dynatrace tenant to fully interact with the Keptn installation.
  
 The service is subscribed to the following [Keptn CloudEvents](https://github.com/keptn/spec/blob/master/cloudevents.md):
 
@@ -73,16 +73,15 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 * Deploy the `dynatrace-service` using `kubectl apply`:
 
     ```console
-    kubectl apply -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml
+    kubectl apply -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml -n keptn
     ```
    
    **Note**: Replace `$VERSION` with the desired version number (e.g., 0.8.0) you want to install.
    
-   This installs the `dynatrace-service` and a Keptn `distributor` in the `keptn` namespace, which you can verify using:
+   This installs the `dynatrace-service` in the `keptn` namespace, which you can verify using:
 
    ```console
    kubectl -n keptn get deployment dynatrace-service -o wide
-   kubectl -n keptn get deployment dynatrace-service-distributor -o wide
    kubectl -n keptn get pods -l run=dynatrace-service
    ```
 
@@ -104,7 +103,7 @@ kubectl -n keptn set image deployment/dynatrace-service dynatrace-service=keptnc
 To uninstall the dynatrace service and remove the subscriptions to Keptn channels execute this command.
 
 ```console
-kubectl delete -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml
+kubectl delete -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml -n keptn
 ```
    
 **Note**: Replace `$VERSION` with the desired version number (e.g., 0.8.0) you want to install.
