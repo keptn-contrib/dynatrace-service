@@ -122,7 +122,7 @@ spec:
             - name: PUBSUB_TOPIC
               value: 'sh.keptn.>'
             - name: PUBSUB_RECIPIENT
-              value: 'localhost'
+              value: '127.0.0.1'
 ---
 apiVersion: v1
 kind: Service
