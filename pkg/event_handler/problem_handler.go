@@ -38,7 +38,7 @@ type DTProblemEvent struct {
 	} `json:"ProblemDetails"`
 	ProblemID    string `json:"ProblemID"`
 	ProblemTitle string `json:"ProblemTitle"`
-	ProblemURL string `json:"ProblemURL"`
+	ProblemURL   string `json:"ProblemURL"`
 	State        string `json:"State"`
 	Tags         string `json:"Tags"`
 	EventContext struct {
@@ -97,6 +97,11 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 		Service:        service,
 	}
 
+	// https://github.com/keptn-contrib/dynatrace-service/issues/176
+	// add problem URL as label so it becomes clickable
+	newProblemData.Labels = make(map[string]string)
+	newProblemData.Labels["Problem URL"] = dtProblemEvent.ProblemURL
+
 	eh.Logger.Debug("Sending event to eventbroker")
 	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, "sh.keptn.events.problem")
 	if err != nil {
@@ -124,6 +129,11 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 		Stage:          stage,
 		Service:        service,
 	}
+
+	// https://github.com/keptn-contrib/dynatrace-service/issues/176
+	// add problem URL as label so it becomes clickable
+	newProblemData.Labels = make(map[string]string)
+	newProblemData.Labels["Problem URL"] = dtProblemEvent.ProblemURL
 
 	eh.Logger.Debug("Sending event to eventbroker")
 	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptn.ProblemOpenEventType)

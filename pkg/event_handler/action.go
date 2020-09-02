@@ -67,6 +67,14 @@ func (eh ActionHandler) HandleEvent() error {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
 		pid = actionTriggeredData.Problem.PID
+
+		// https://github.com/keptn-contrib/dynatrace-service/issues/174
+		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
+		dtInfoEvent := CreateInfoEvent(keptnBase, dynatraceConfig, eh.Logger)
+		dtInfoEvent.Title = "Keptn Remediation Action Triggered"
+		dtInfoEvent.Description = actionTriggeredData.Action.Action
+		dynatraceHelper.SendEvent(dtInfoEvent, dtCreds)
+
 	} else if eh.Event.Type() == keptn.ActionFinishedEventType {
 		actionFinishedData := &keptn.ActionFinishedEventData{}
 
@@ -113,10 +121,25 @@ func (eh ActionHandler) HandleEvent() error {
 		comment = "Keptn finished execution of action"
 
 		pid = problemOpenEvent.PID
+
+		// https://github.com/keptn-contrib/dynatrace-service/issues/174
+		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
+		if actionFinishedData.Action.Status == keptn.ActionStatusSucceeded {
+			dtConfigEvent := CreateConfigurationEvent(keptnBase, dynatraceConfig, eh.Logger)
+			dtConfigEvent.Description = "Keptn Remediation Action Finished"
+			dtConfigEvent.Configuration = "successful"
+			dynatraceHelper.SendEvent(dtConfigEvent, dtCreds)
+		} else {
+			dtInfoEvent := CreateInfoEvent(keptnBase, dynatraceConfig, eh.Logger)
+			dtInfoEvent.Title = "Keptn Remediation Action Finished"
+			dtInfoEvent.Description = "error during execution"
+			dynatraceHelper.SendEvent(dtInfoEvent, dtCreds)
+		}
 	} else {
 		return errors.New("invalid event type")
 	}
 
+	// this is posting the event on the problem as a comment
 	err = dynatraceHelper.SendProblemComment(pid, comment, dtCreds)
 
 	return nil
