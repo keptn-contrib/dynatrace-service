@@ -41,8 +41,8 @@ type Values struct {
 }
 
 type DTCredentials struct {
-	Tenant    string `json:"DT_TENANT" yaml:"DT_TENANT"`
-	ApiToken  string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
+	Tenant   string `json:"DT_TENANT" yaml:"DT_TENANT"`
+	ApiToken string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
 }
 
 type DynatraceHelper struct {
@@ -54,7 +54,16 @@ type DynatraceHelper struct {
 	KeptnBridge    string
 }
 
-var namespace = os.Getenv("POD_NAMESPACE")
+var namespace = getPodNamespace()
+
+func getPodNamespace() string {
+	ns := os.Getenv("POD_NAMESPACE")
+	if ns == "" {
+		return "keptn"
+	}
+
+	return ns
+}
 
 func NewDynatraceHelper(keptnHandler *keptn.Keptn) (*DynatraceHelper, error) {
 	dtHelper := &DynatraceHelper{}
