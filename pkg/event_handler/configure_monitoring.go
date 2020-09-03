@@ -149,7 +149,7 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 func (eh *ConfigureMonitoringEventHandler) closeWebSocketConnection() {
 	if eh.IsCombinedLogger {
-		eh.Logger.(*keptn.CombinedLogger).Terminate()
+		eh.Logger.(*keptn.CombinedLogger).Terminate("")
 		eh.WebSocket.Close()
 	}
 }

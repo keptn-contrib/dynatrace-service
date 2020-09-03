@@ -8,7 +8,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.1
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/keptn/go-utils v0.7.0
+	github.com/keptn/go-utils v0.7.1
 	github.com/mitchellh/mapstructure v1.1.2
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
