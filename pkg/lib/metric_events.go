@@ -17,6 +17,10 @@ import (
 )
 
 func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, service string) error {
+	if !GetMetricEventsConfig() {
+		return nil
+	}
+
 	dt.Logger.Info("Creating custom metric events for project SLIs")
 	slos, err := retrieveSLOs(project, stage, service)
 

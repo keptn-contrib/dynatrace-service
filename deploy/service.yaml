@@ -105,6 +105,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: GENERATE_TAGGING_RULES
+              value: 'true'
+            - name: GENERATE_PROBLEM_NOTIFICATIONS
+              value: 'true'
+            - name: GENERATE_MANAGEMENT_ZONES
+              value: 'true'
+            - name: GENERATE_DASHBOARDS
+              value: 'true'
+            - name: GENERATE_METRIC_EVENTS
+              value: 'true'
         - name: distributor
           image: keptn/distributor:0.7.1
           ports:

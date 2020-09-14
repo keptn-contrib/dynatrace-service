@@ -3,6 +3,10 @@ package lib
 import "encoding/json"
 
 func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
+	if !GetTaggingRulesConfig() {
+		return nil
+	}
+
 	dt.Logger.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
 	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/autoTags", "GET", "")

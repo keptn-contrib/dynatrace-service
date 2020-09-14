@@ -7,6 +7,10 @@ import (
 )
 
 func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipyard, services []string) error {
+	if !GetGenerateDashboardsConfig() {
+		return nil
+	}
+
 	// first, check if dashboard for this project already exists and delete that
 	err := dt.DeleteExistingDashboard(project)
 	if err != nil {

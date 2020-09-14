@@ -141,6 +141,9 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 }
 
 func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptn.Shipyard) error {
+	if !GetManagementZonesConfig() {
+		return nil
+	}
 	// get existing management zones
 	mzs := dt.getManagementZones()
 
