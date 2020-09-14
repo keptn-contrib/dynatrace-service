@@ -8,6 +8,10 @@ import (
 )
 
 func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() error {
+	if !GetProblemNotificationsConfig() {
+		return nil
+	}
+
 	dt.Logger.Info("Setting up problem notifications in Dynatrace Tenant")
 
 	alertingProfileId, err := dt.setupAlertingProfile()
