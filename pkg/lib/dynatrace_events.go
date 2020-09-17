@@ -5,8 +5,8 @@ import (
 )
 
 // Sends an event to the Dynatrace events API
-func (dt *DynatraceHelper) SendEvent(dtEvent interface{}, dtCreds string) {
-	dt.Logger.Info("Sending event to Dynatrace API using dtCreds: " + dtCreds)
+func (dt *DynatraceHelper) SendEvent(dtEvent interface{}) {
+	dt.Logger.Info("Sending event to Dynatrace API")
 
 	jsonString, err := json.Marshal(dtEvent)
 
@@ -15,7 +15,7 @@ func (dt *DynatraceHelper) SendEvent(dtEvent interface{}, dtCreds string) {
 		return
 	}
 
-	body, err := dt.sendDynatraceAPIRequest(dtCreds, "/api/v1/events", "POST", string(jsonString))
+	body, err := dt.sendDynatraceAPIRequest("/api/v1/events", "POST", jsonString)
 
 	if err != nil {
 		dt.Logger.Error("Failed sending Dynatrace API request: " + err.Error())
