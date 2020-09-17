@@ -588,10 +588,10 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 	return managementZone
 }
 
-func CreateDynatraceDashboard(projectName string, shipyard keptn.Shipyard, services []string) (*DynatraceDashboard, error) {
+func CreateDynatraceDashboard(projectName string, shipyard keptn.Shipyard) *DynatraceDashboard {
 	dtDashboard := &DynatraceDashboard{
 		DashboardMetadata: DashboardMetadata{
-			Name:   projectName + "@keptn: Digital Delivery & Operations Dashboard",
+			Name:   projectName + dashboardNameSuffix,
 			Shared: true,
 			Owner:  "",
 			SharingDetails: SharingDetails{
@@ -724,7 +724,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptn.Shipyard, servi
 		dtDashboard.Tiles = append(dtDashboard.Tiles, responseTimeTile)
 	}
 
-	return dtDashboard, nil
+	return dtDashboard
 }
 
 func CreateCalculatedMetric(key string, name string, baseMetric string, unit string, conditionContext string, conditionKey string, conditionValue string, dimensionName string, dimensionDefinition string, dimensionAggregate string) CalculatedMetric {

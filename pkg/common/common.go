@@ -12,8 +12,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-var RunLocal = (os.Getenv("ENV") == "local")
-var RunLocalTest = (os.Getenv("ENV") == "localtest")
+var RunLocal = os.Getenv("ENV") == "local"
+var RunLocalTest = os.Getenv("ENV") == "localtest"
 
 func GetKubernetesClient() (*kubernetes.Clientset, error) {
 	if RunLocal || RunLocalTest {
