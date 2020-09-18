@@ -2,6 +2,7 @@ package lib
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // Sends an event to the Dynatrace events API
@@ -16,12 +17,10 @@ func (dt *DynatraceHelper) SendEvent(dtEvent interface{}) {
 	}
 
 	body, err := dt.sendDynatraceAPIRequest("/api/v1/events", "POST", jsonString)
-
 	if err != nil {
-		dt.Logger.Error("Failed sending Dynatrace API request: " + err.Error())
-		dt.Logger.Error("Response Body:" + body)
+		dt.Logger.Error(fmt.Sprintf("failed sending Dynatrace API request: %v", err))
+	} else {
+		dt.Logger.Debug(fmt.Sprintf("Dynatrace API has accepted the event. Response: %s", body))
 	}
 
-	dt.Logger.Debug("Dynatrace API has accepted the event")
-	dt.Logger.Debug("Response Body:" + body)
 }
