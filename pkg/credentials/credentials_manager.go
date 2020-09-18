@@ -2,11 +2,12 @@ package credentials
 
 import (
 	"errors"
+	"os"
+	"strings"
+
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"strings"
 )
 
 type DTCredentials struct {
@@ -28,7 +29,7 @@ func getPodNamespace() string {
 func GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*DTCredentials, error) {
 
 	secretName := "dynatrace"
-	if dynatraceConfig != nil {
+	if dynatraceConfig != nil && len(dynatraceConfig.DtCreds) > 0 {
 		secretName = dynatraceConfig.DtCreds
 	}
 

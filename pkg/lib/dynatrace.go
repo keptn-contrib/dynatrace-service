@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
-	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
+	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )

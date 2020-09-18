@@ -2,6 +2,7 @@ package event_handler
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
@@ -92,13 +93,11 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
 	if err != nil {
-		eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
-		return err
+		return fmt.Errorf("failed to load Dynatrace config: %v", err)
 	}
 	creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 	if err != nil {
-		eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
-		return err
+		return fmt.Errorf("failed to load Dynatrace credentials: %v", err)
 	}
 	dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
