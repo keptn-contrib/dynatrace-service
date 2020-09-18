@@ -64,10 +64,13 @@ func GetDynatraceConfig(event adapter.EventAdapter, logger keptn.LoggerInterface
 		}
 	}
 
-	// replace the placeholders
-	logger.Debug("Input content of dynatrace.conf.yaml: " + fileContent)
-	fileContent = replaceKeptnPlaceholders(fileContent, event)
-	logger.Debug("Content of dyantrace.conf.yaml after replacements: " + fileContent)
+	if len(fileContent) > 0 {
+
+		// replace the placeholders
+		logger.Debug("Input content of dynatrace.conf.yaml: " + fileContent)
+		fileContent = replaceKeptnPlaceholders(fileContent, event)
+		logger.Debug("Content of dyantrace.conf.yaml after replacements: " + fileContent)
+	}
 
 	// unmarshal the file
 	dynatraceConfFile, err := parseDynatraceConfigFile([]byte(fileContent))
