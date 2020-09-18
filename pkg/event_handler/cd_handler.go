@@ -2,6 +2,7 @@ package event_handler
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
@@ -24,8 +25,6 @@ func (eh CDEventHandler) HandleEvent() error {
 	if err != nil {
 		eh.Logger.Error("could not create Keptn handler: " + err.Error())
 	}
-
-	eh.Logger.Info("Check if event of type " + eh.Event.Type() + " should be sent to Dynatrace.")
 
 	if eh.Event.Type() == keptn.DeploymentFinishedEventType {
 		dfData := &keptn.DeploymentFinishedEventData{}
@@ -157,7 +156,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		ie.Description = "Keptn evaluation status: " + edData.Result
 		dtHelper.SendEvent(ie)
 	} else {
-		eh.Logger.Info("Ignoring event.")
+		eh.Logger.Info(fmt.Sprintf("Ignoring event of type %s", eh.Event.Type()))
 	}
 	return nil
 }
