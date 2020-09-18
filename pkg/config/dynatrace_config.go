@@ -3,14 +3,15 @@ package config
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"github.com/ghodss/yaml"
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	"io/ioutil"
-	"os"
-	"strings"
 )
 
 const DynatraceConfigFilename = "dynatrace/dynatrace.conf.yaml"
@@ -40,12 +41,9 @@ type DynatraceConfigFile struct {
 	AttachRules *DtAttachRules `json:"attachRules",omitempty yaml:"attachRules",omitempty`
 }
 
-//
-// Loads dynatrace.conf for the current service
-//
+// GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo
 func GetDynatraceConfig(event adapter.EventAdapter, logger keptn.LoggerInterface) (*DynatraceConfigFile, error) {
 
-	logger.Info("Loading dynatrace.conf.yaml")
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	var fileContent string
 	if common.RunLocal {
@@ -60,16 +58,16 @@ func GetDynatraceConfig(event adapter.EventAdapter, logger keptn.LoggerInterface
 		fileContent = string(localFileContent)
 	} else {
 		var err error
-		fileContent, err = getDynatraceConfigResource(event)
+		fileContent, err = getDynatraceConfigResource(event, logger)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// replace the placeholders
-	logger.Debug("Content of dynatrace.conf.yaml: " + fileContent)
+	logger.Debug("Input content of dynatrace.conf.yaml: " + fileContent)
 	fileContent = replaceKeptnPlaceholders(fileContent, event)
-	logger.Debug("After replacements: " + fileContent)
+	logger.Debug("Content of dyantrace.conf.yaml after replacements: " + fileContent)
 
 	// unmarshal the file
 	dynatraceConfFile, err := parseDynatraceConfigFile([]byte(fileContent))
@@ -82,27 +80,49 @@ func GetDynatraceConfig(event adapter.EventAdapter, logger keptn.LoggerInterface
 	return dynatraceConfFile, nil
 }
 
-func getDynatraceConfigResource(event adapter.EventAdapter) (string, error) {
+func getDynatraceConfigResource(event adapter.EventAdapter, logger keptn.LoggerInterface) (string, error) {
 
 	resourceHandler := keptnutils.NewResourceHandler(common.GetConfigurationServiceURL())
 
 	// Lets search on SERVICE-LEVEL
-	keptnResourceContent, err := resourceHandler.GetServiceResource(event.GetProject(), event.GetStage(), event.GetService(), DynatraceConfigFilename)
-	if err == keptnutils.ResourceNotFoundError {
-		// Lets search on STAGE-LEVEL
-		keptnResourceContent, err = resourceHandler.GetStageResource(event.GetProject(), event.GetStage(), DynatraceConfigFilename)
+	if len(event.GetProject()) > 0 && len(event.GetStage()) > 0 && len(event.GetService()) > 0 {
+		keptnResourceContent, err := resourceHandler.GetServiceResource(event.GetProject(), event.GetStage(), event.GetService(), DynatraceConfigFilename)
 		if err == keptnutils.ResourceNotFoundError {
-			// Lets search on PROJECT-LEVEL
-			keptnResourceContent, err = resourceHandler.GetProjectResource(event.GetProject(), DynatraceConfigFilename)
+			logger.Info(fmt.Sprintf("No dynatrace.conf.yaml available in project %s at stage %s for service %s", event.GetProject(), event.GetStage(), event.GetService()))
+		} else if err != nil {
+			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s at stage %s for service %s: %v", event.GetProject(), event.GetStage(), event.GetService(), err)
+		} else {
+			logger.Info(fmt.Sprintf("Found dynatrace.conf.yaml in project %s at stage %s for service %s", event.GetProject(), event.GetStage(), event.GetService()))
+			return keptnResourceContent.ResourceContent, nil
 		}
 	}
 
-	if err == keptnutils.ResourceNotFoundError {
-		return "", nil
-	} else if err != nil {
-		return "", err
+	if len(event.GetProject()) > 0 && len(event.GetStage()) > 0 {
+		keptnResourceContent, err := resourceHandler.GetStageResource(event.GetProject(), event.GetStage(), DynatraceConfigFilename)
+		if err == keptnutils.ResourceNotFoundError {
+			logger.Info(fmt.Sprintf("No dynatrace.conf.yaml available in project %s at stage %s", event.GetProject(), event.GetStage()))
+		} else if err != nil {
+			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s at stage %s: %v", event.GetProject(), event.GetStage(), err)
+		} else {
+			logger.Info(fmt.Sprintf("Found dynatrace.conf.yaml in project %s at stage %s", event.GetProject(), event.GetStage()))
+			return keptnResourceContent.ResourceContent, nil
+		}
 	}
-	return keptnResourceContent.ResourceContent, nil
+
+	if len(event.GetProject()) > 0 {
+		keptnResourceContent, err := resourceHandler.GetProjectResource(event.GetProject(), DynatraceConfigFilename)
+		if err == keptnutils.ResourceNotFoundError {
+			logger.Info(fmt.Sprintf("No dynatrace.conf.yaml available in project %s", event.GetProject()))
+		} else if err != nil {
+			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s: %v", event.GetProject(), err)
+		} else {
+			logger.Info(fmt.Sprintf("Found dynatrace.conf.yaml in project %s", event.GetProject()))
+			return keptnResourceContent.ResourceContent, nil
+		}
+	}
+
+	logger.Info("No dynatrace.conf.yaml found")
+	return "", nil
 }
 
 func parseDynatraceConfigFile(input []byte) (*DynatraceConfigFile, error) {

@@ -26,7 +26,7 @@ func GetMetricEventsConfig() bool {
 }
 
 func readEnvAsBool(env string) bool {
-	if b, err := strconv.ParseBool(os.Getenv(env)); err != nil {
+	if b, err := strconv.ParseBool(os.Getenv(env)); err == nil {
 		return b
 	}
 	return false
