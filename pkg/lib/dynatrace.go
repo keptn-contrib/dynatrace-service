@@ -47,6 +47,7 @@ type DynatraceHelper struct {
 	KeptnBridge    string
 }
 
+// NewDynatraceHelper creates a new DynatraceHelper
 func NewDynatraceHelper(keptnHandler *keptn.Keptn, dynatraceCreds *credentials.DTCredentials, logger keptn.LoggerInterface) *DynatraceHelper {
 	return &DynatraceHelper{
 		DynatraceCreds: dynatraceCreds,
@@ -118,6 +119,8 @@ func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error
 
 	return nil
 }
+
+// ConfigureMonitoring configures Dynatrace for a Keptn project
 func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard keptn.Shipyard) error {
 
 	dt.EnsureDTTaggingRulesAreSetUp()

@@ -50,12 +50,12 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
 		// send Deployment EVent
-		de := CreateDeploymentEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		de := createDeploymentEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		dtHelper.SendEvent(de)
 
 		// TODO: an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
 		// ie := createInfoEvent(keptnEvent, eh.Logger)
-		ie := CreateAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if dfData.TestStrategy != "" {
 			if ie.AnnotationType == "" {
 				ie.AnnotationType = "Start Tests: " + dfData.TestStrategy
@@ -90,7 +90,7 @@ func (eh CDEventHandler) HandleEvent() error {
 
 		// Send Annotation Event
 		// ie := createInfoEvent(keptnEvent, eh.Logger)
-		ie := CreateAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if tfData.TestStrategy != "" {
 			if ie.AnnotationType == "" {
 				ie.AnnotationType = "Stop Tests: " + tfData.TestStrategy
@@ -124,7 +124,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
 		// Send Info Event
-		ie := CreateInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		// If DeploymentStrategy == "" it means we are doing Quality-Gates Only!
 		if edData.DeploymentStrategy == "" {
 			ie.Title = fmt.Sprintf("Quality Gate Result: %s (%.2f/100)", edData.Result, edData.EvaluationDetails.Score)

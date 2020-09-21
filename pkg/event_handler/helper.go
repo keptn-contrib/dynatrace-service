@@ -119,8 +119,8 @@ func createCustomProperties(a adapter.EventContentAdapter, logger *keptn.Logger)
 	return customProperties
 }
 
-// Project string, Stage string, Service string, TestStrategy string, Image string, Tag string, Labels map[string]string, keptnContext string
-func CreateInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtInfoEvent {
+// createInfoEvent creates a new Info event
+func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtInfoEvent {
 
 	// we fill the Dynatrace Info Event with values from the Labels or use our defaults
 	var ie dtInfoEvent
@@ -140,10 +140,8 @@ func CreateInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.Dyna
 	return ie
 }
 
-/**
- * Creates a Dynatrace ANNOTATION Event
- */
-func CreateAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtAnnotationEvent {
+// createAnnotationEvent creates a Dynatrace ANNOTATION event
+func createAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtAnnotationEvent {
 
 	// we fill the Dynatrace Info Event with values from the Labels or use our defaults
 	var ie dtAnnotationEvent
@@ -171,7 +169,7 @@ func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue 
 	return defaultValue
 }
 
-func CreateDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtDeploymentEvent {
+func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtDeploymentEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the Labels or use our defaults
 	var de dtDeploymentEvent
@@ -195,7 +193,7 @@ func CreateDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	return de
 }
 
-func CreateConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtConfigurationEvent {
+func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtConfigurationEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the Labels or use our defaults
 	var de dtConfigurationEvent

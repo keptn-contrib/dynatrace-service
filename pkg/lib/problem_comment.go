@@ -2,6 +2,7 @@ package lib
 
 import "encoding/json"
 
+// SendProblemComment sends a commont on a DT problem
 func (dt *DynatraceHelper) SendProblemComment(problemID string, comment string) error {
 	dtCommentPayload := map[string]string{"comment": comment, "user": "keptn", "context": "keptn-remediation"}
 	jsonPayload, err := json.Marshal(dtCommentPayload)
