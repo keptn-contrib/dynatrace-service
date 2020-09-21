@@ -87,11 +87,10 @@ func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.Dy
 }
 
 /**
- * Change with #115_116: parse Labels and move them into custom properties
+ * Change with #115_116: parse labels and move them into custom properties
  */
-// func createCustomProperties(Project string, Stage string, Service string, TestStrategy string, Image string, Tag string, Labels map[string]string, keptnContext string) dtCustomProperties {
 func createCustomProperties(a adapter.EventContentAdapter, logger *keptn.Logger) map[string]string {
-	// TODO: AG - parse Labels and push them through
+	// TODO: AG - parse labels and push them through
 
 	// var customProperties dtCustomProperties
 	// customProperties.Project = Project
@@ -125,7 +124,7 @@ func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.Dyna
 	// we fill the Dynatrace Info Event with values from the Labels or use our defaults
 	var ie dtInfoEvent
 	ie.EventType = "CUSTOM_INFO"
-	ie.Source = "Keptn dynatrace-Service"
+	ie.Source = "Keptn dynatrace-service"
 	ie.Title = a.GetLabels()["title"]
 	ie.Description = a.GetLabels()["description"]
 
@@ -133,7 +132,7 @@ func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.Dyna
 	ar := createAttachRules(a, dynatraceConfig, logger)
 	ie.AttachRules = ar
 
-	// and add the rest of the Labels and info as custom properties
+	// and add the rest of the labels and info as custom properties
 	customProperties := createCustomProperties(a, logger)
 	ie.CustomProperties = customProperties
 
@@ -154,7 +153,7 @@ func createAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	ar := createAttachRules(a, dynatraceConfig, logger)
 	ie.AttachRules = ar
 
-	// and add the rest of the Labels and info as custom properties
+	// and add the rest of the labels and info as custom properties
 	customProperties := createCustomProperties(a, logger)
 	ie.CustomProperties = customProperties
 
@@ -171,10 +170,10 @@ func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue 
 
 func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtDeploymentEvent {
 
-	// we fill the Dynatrace Deployment Event with values from the Labels or use our defaults
+	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
 	var de dtDeploymentEvent
 	de.EventType = "CUSTOM_DEPLOYMENT"
-	de.Source = "Keptn dynatrace-Service"
+	de.Source = "Keptn dynatrace-service"
 	de.DeploymentName = getValueFromLabels(a, "deploymentName", "Deploy "+a.GetService()+" "+a.GetTag()+" with strategy "+a.GetDeploymentStrategy())
 	de.DeploymentProject = getValueFromLabels(a, "deploymentProject", a.GetProject())
 	de.DeploymentVersion = getValueFromLabels(a, "deploymentVersion", a.GetTag())
@@ -185,8 +184,8 @@ func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	ar := createAttachRules(a, dynatraceConfig, logger)
 	de.AttachRules = ar
 
-	// and add the rest of the Labels and info as custom properties
-	// TODO: Event.Project, Event.Stage, Event.Service, Event.TestStrategy, Event.Image, Event.Tag, Event.Labels, keptnContext
+	// and add the rest of the labels and info as custom properties
+	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext
 	customProperties := createCustomProperties(a, logger)
 	de.CustomProperties = customProperties
 
@@ -204,8 +203,8 @@ func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *co
 	ar := createAttachRules(a, dynatraceConfig, logger)
 	de.AttachRules = ar
 
-	// and add the rest of the Labels and info as custom properties
-	// TODO: Event.Project, Event.Stage, Event.Service, Event.TestStrategy, Event.Image, Event.Tag, Event.Labels, keptnContext
+	// and add the rest of the labels and info as custom properties
+	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext
 	customProperties := createCustomProperties(a, logger)
 	de.CustomProperties = customProperties
 

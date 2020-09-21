@@ -62,7 +62,7 @@ func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
 	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "GET", nil)
 	if err != nil {
 		// Error occurred but continue
-		dt.Logger.Error("could not get alerting profiles: " + err.Error())
+		dt.Logger.Debug("could not get alerting profiles: " + err.Error())
 	} else {
 		existingAlertingProfiles := DTAPIListResponse{}
 
