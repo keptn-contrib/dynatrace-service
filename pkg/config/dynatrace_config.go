@@ -7,11 +7,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
+	"gopkg.in/yaml.v2"
 )
 
 // DynatraceConfigFilename is the resource path for the dynatrace.conf.yaml
@@ -24,7 +24,7 @@ const DynatraceConfigFilenameLOCAL = "dynatrace/_dynatrace.conf.yaml"
 type DtTag struct {
 	Context string `json:"context" yaml:"context"`
 	Key     string `json:"key" yaml:"key"`
-	Value   string `json:"value",omitempty yaml:"value",omitempty`
+	Value   string `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
 // DtTagRule defines a Dynatrace configuration structure
@@ -41,8 +41,8 @@ type DtAttachRules struct {
 // DynatraceConfigFile defines the Dynatrace configuration structure
 type DynatraceConfigFile struct {
 	SpecVersion string         `json:"spec_version" yaml:"spec_version"`
-	DtCreds     string         `json:"dtCreds",omitempty yaml:"dtCreds",omitempty`
-	AttachRules *DtAttachRules `json:"attachRules",omitempty yaml:"attachRules",omitempty`
+	DtCreds     string         `json:"dtCreds,omitempty" yaml:"dtCreds,omitempty"`
+	AttachRules *DtAttachRules `json:"attachRules,omitempty" yaml:"attachRules,omitempty"`
 }
 
 // GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo

@@ -69,7 +69,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		tfData := &keptn.TestsFinishedEventData{}
 		err := eh.Event.DataAs(tfData)
 		if err != nil {
-			eh.Logger.Error("Could not parse Event payload: " + err.Error())
+			eh.Logger.Error("Could not parse event payload: " + err.Error())
 			return err
 		}
 
