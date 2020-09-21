@@ -42,7 +42,7 @@ type DynatraceConfigFile struct {
 }
 
 // GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo
-func GetDynatraceConfig(event adapter.EventAdapter, logger keptn.LoggerInterface) (*DynatraceConfigFile, error) {
+func GetDynatraceConfig(event adapter.EventContentAdapter, logger keptn.LoggerInterface) (*DynatraceConfigFile, error) {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	var fileContent string
@@ -83,7 +83,7 @@ func GetDynatraceConfig(event adapter.EventAdapter, logger keptn.LoggerInterface
 	return dynatraceConfFile, nil
 }
 
-func getDynatraceConfigResource(event adapter.EventAdapter, logger keptn.LoggerInterface) (string, error) {
+func getDynatraceConfigResource(event adapter.EventContentAdapter, logger keptn.LoggerInterface) (string, error) {
 
 	resourceHandler := keptnutils.NewResourceHandler(common.GetConfigurationServiceURL())
 
@@ -148,11 +148,11 @@ func parseDynatraceConfigFile(input []byte) (*DynatraceConfigFile, error) {
 // $ENV.XXXX    -> will replace that with an env variable called XXXX
 // $SECRET.YYYY -> will replace that with the k8s secret called YYYY
 //
-func replaceKeptnPlaceholders(input string, event adapter.EventAdapter) string {
+func replaceKeptnPlaceholders(input string, event adapter.EventContentAdapter) string {
 	result := input
 
 	// first we do the regular keptn values
-	result = strings.Replace(result, "$CONTEXT", event.GetContext(), -1)
+	result = strings.Replace(result, "$CONTEXT", event.GetShKeptnContext(), -1)
 	result = strings.Replace(result, "$EVENT", event.GetEvent(), -1)
 	result = strings.Replace(result, "$SOURCE", event.GetSource(), -1)
 	result = strings.Replace(result, "$PROJECT", event.GetProject(), -1)

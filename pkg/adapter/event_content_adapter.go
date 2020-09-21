@@ -1,7 +1,8 @@
 package adapter
 
-type EventAdapter interface {
-	GetContext() string
+// EventContentAdapter allows to retrieve common data fields of an event
+type EventContentAdapter interface {
+	GetShKeptnContext() string
 	GetEvent() string
 	GetSource() string
 
