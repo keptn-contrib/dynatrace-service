@@ -2,14 +2,15 @@ package event_handler
 
 import (
 	"encoding/base64"
+
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
-	"github.com/ghodss/yaml"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 	keptn "github.com/keptn/go-utils/pkg/lib"
+	"gopkg.in/yaml.v2"
 )
 
 type CreateProjectEventHandler struct {
