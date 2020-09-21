@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// DTCredentials is a struct for the tenant and api token information
 type DTCredentials struct {
 	Tenant   string `json:"DT_TENANT" yaml:"DT_TENANT"`
 	ApiToken string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
@@ -26,6 +27,8 @@ func getPodNamespace() string {
 	return ns
 }
 
+// GetDynatraceCredentials reads the Dynatrace credentials from the secret. Therefore, it first checks
+// if a secret is specified in the dynatrace.conf.yaml and if not defaults to the secret "dynatrace"
 func GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*DTCredentials, error) {
 
 	secretName := "dynatrace"
