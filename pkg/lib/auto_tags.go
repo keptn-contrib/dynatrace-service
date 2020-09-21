@@ -1,21 +1,30 @@
 package lib
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
-func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
+// EnsureDTTaggingRulesAreSetUp ensures that the tagging rules are set up
+func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 	if !GetTaggingRulesConfig() {
-		return nil
+		return
 	}
 
 	dt.Logger.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
-	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/autoTags", "GET", "")
+	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", nil)
+	if err != nil {
+		// Error occurred but continue
+		dt.Logger.Error(fmt.Sprintf("Could not get existing tagging rules: %v", err))
+	}
 
 	existingDTRules := &DTAPIListResponse{}
 
 	err = json.Unmarshal([]byte(response), existingDTRules)
 	if err != nil {
-		dt.Logger.Info("No existing Dynatrace tagging rules found")
+		// Error occurred but continue
+		dt.Logger.Error(fmt.Sprintf("failed to unmarshal Dynatrace tagging rules: %v", err))
 	}
 
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
@@ -23,13 +32,14 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() error {
 			rule := createAutoTaggingRule(ruleName)
 			err = dt.createDTTaggingRule(rule)
 			if err != nil {
+				// Error occurred but continue
 				dt.Logger.Error("Could not create auto tagging rule: " + err.Error())
 			}
 		} else {
 			dt.Logger.Info("Tagging rule " + ruleName + " already exists")
 		}
 	}
-	return nil
+	return
 }
 
 func (dt *DynatraceHelper) createDTTaggingRule(rule *DTTaggingRule) error {
@@ -38,20 +48,8 @@ func (dt *DynatraceHelper) createDTTaggingRule(rule *DTTaggingRule) error {
 	if err != nil {
 		return err
 	}
-	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/autoTags", "POST", string(payload))
+	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "POST", payload)
 	return err
-}
-
-func (dt *DynatraceHelper) deleteExistingDTTaggingRule(ruleName string, existingRules *DTAPIListResponse) {
-	dt.Logger.Info("Deleting rule " + ruleName)
-	for _, rule := range existingRules.Values {
-		if rule.Name == ruleName {
-			_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/autoTags/"+rule.ID, "DELETE", "")
-			if err != nil {
-				dt.Logger.Info("Could not delete rule " + rule.ID + ": " + err.Error())
-			}
-		}
-	}
 }
 
 func (dt *DynatraceHelper) taggingRuleExists(ruleName string, existingRules *DTAPIListResponse) bool {

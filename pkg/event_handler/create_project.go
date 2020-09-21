@@ -3,18 +3,19 @@ package event_handler
 import (
 	"encoding/base64"
 
-	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
+	"github.com/keptn-contrib/dynatrace-service/pkg/config"
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
-	"github.com/ghodss/yaml"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 	keptn "github.com/keptn/go-utils/pkg/lib"
+	"gopkg.in/yaml.v2"
 )
 
 type CreateProjectEventHandler struct {
-	Logger   keptn.LoggerInterface
-	Event    cloudevents.Event
-	DTHelper *lib.DynatraceHelper
+	Logger keptn.LoggerInterface
+	Event  cloudevents.Event
 }
 
 func (eh CreateProjectEventHandler) HandleEvent() error {
@@ -28,20 +29,14 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		return err
 	}
 
-	shipyard := &keptn.Shipyard{}
-
+	shipyard := keptn.Shipyard{}
 	decodedShipyard, err := base64.StdEncoding.DecodeString(e.Shipyard)
 	if err != nil {
 		eh.Logger.Error("Could not decode shipyard: " + err.Error())
 	}
-	err = yaml.Unmarshal(decodedShipyard, shipyard)
+	err = yaml.Unmarshal(decodedShipyard, &shipyard)
 	if err != nil {
 		eh.Logger.Error("Could not parse shipyard: " + err.Error())
-	}
-
-	clientSet, err := common.GetKubernetesClient()
-	if err != nil {
-		eh.Logger.Error("could not create k8s client")
 	}
 
 	keptnHandler, err := keptn.NewKeptn(&eh.Event, keptn.KeptnOpts{})
@@ -49,35 +44,25 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		eh.Logger.Error("could not create Keptn handler: " + err.Error())
 	}
 
-	dtHelper, err := lib.NewDynatraceHelper(keptnHandler)
-	if err != nil {
-		eh.Logger.Error("Could not create Dynatrace Helper: " + err.Error())
-	}
-	dtHelper.KubeApi = clientSet
-	dtHelper.Logger = eh.Logger
-	eh.DTHelper = dtHelper
+	keptnEvent := adapter.NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
 
-	err = eh.DTHelper.EnsureDTTaggingRulesAreSetUp()
+	dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
 	if err != nil {
-		eh.Logger.Error("Could not set up tagging rules: " + err.Error())
+		eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+		return err
 	}
-
-	err = eh.DTHelper.EnsureProblemNotificationsAreSetUp()
+	creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 	if err != nil {
-		eh.Logger.Error("Could not set up problem notification: " + err.Error())
+		eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+		return err
 	}
+	dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
-	err = eh.DTHelper.CreateDashboard(e.Project, *shipyard, nil)
+	err = dtHelper.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {
-		eh.Logger.Error("Could not create Dynatrace dashboard for project " + e.Project + ": " + err.Error())
-		// do not return because there are no dependencies to the dashboard
-	}
-
-	err = eh.DTHelper.CreateManagementZones(e.Project, *shipyard)
-	if err != nil {
-		eh.Logger.Error("Could not create Management Zones for project " + e.Project + ": " + err.Error())
 		return err
 	}
 
+	eh.Logger.Info("Dynatrace Monitoring setup done")
 	return nil
 }

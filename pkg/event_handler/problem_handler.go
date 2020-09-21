@@ -66,8 +66,8 @@ func (eh ProblemEventHandler) HandleEvent() error {
 	err := eh.Event.DataAs(dtProblemEvent)
 
 	if err != nil {
-		return err
 		eh.Logger.Error("Could not map received event to datastructure: " + err.Error())
+		return err
 	}
 
 	// ignore problem events if they are closed

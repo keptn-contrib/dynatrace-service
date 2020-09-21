@@ -3,7 +3,9 @@ package event_handler
 import (
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
+	"github.com/keptn-contrib/dynatrace-service/pkg/config"
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
@@ -15,60 +17,14 @@ type CDEventHandler struct {
 	Event  cloudevents.Event
 }
 
-/**
- * Initializes baseKeptnEvent and returns it + dynatraceConfig
- */
-func (eh CDEventHandler) initObjectsForCDEventHandler(project, stage, service, testStrategy, image, tag string, labels map[string]string, context string) (*baseKeptnEvent, *DynatraceConfigFile, string) {
-	keptnEvent := &baseKeptnEvent{}
-	keptnEvent.project = project
-	keptnEvent.stage = stage
-	keptnEvent.service = service
-	keptnEvent.testStrategy = testStrategy
-	keptnEvent.image = image
-	keptnEvent.tag = tag
-	keptnEvent.labels = labels
-	keptnEvent.context = context
-	dynatraceConfig, _ := getDynatraceConfig(keptnEvent, eh.Logger)
-	keptnBridgeURL, err := common.GetKeptnBridgeURL()
-	if keptnEvent.labels == nil {
-		keptnEvent.labels = make(map[string]string)
-	}
-	if err == nil {
-		keptnEvent.labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + context
-	}
-
-	dtCreds := ""
-	if dynatraceConfig != nil {
-		dtCreds = dynatraceConfig.DtCreds
-	}
-
-	return keptnEvent, dynatraceConfig, dtCreds
-}
-
 func (eh CDEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
-
-	clientSet, err := common.GetKubernetesClient()
-	if err != nil {
-		eh.Logger.Error("could not create k8s client")
-		return err
-	}
 
 	keptnHandler, err := keptn.NewKeptn(&eh.Event, keptn.KeptnOpts{})
 	if err != nil {
 		eh.Logger.Error("could not create Keptn handler: " + err.Error())
 	}
-
-	dtHelper, err := lib.NewDynatraceHelper(keptnHandler)
-	if err != nil {
-		eh.Logger.Error("Could not create Dynatrace Helper: " + err.Error())
-		return err
-	}
-	dtHelper.KubeApi = clientSet
-	dtHelper.Logger = eh.Logger
-
-	eh.Logger.Info("Check if event of type " + eh.Event.Type() + " should be sent to Dynatrace.")
 
 	if eh.Event.Type() == keptn.DeploymentFinishedEventType {
 		dfData := &keptn.DeploymentFinishedEventData{}
@@ -79,21 +35,27 @@ func (eh CDEventHandler) HandleEvent() error {
 		}
 
 		// initialize our objects
-		keptnEvent, dynatraceConfig, dtCreds := eh.initObjectsForCDEventHandler(dfData.Project, dfData.Stage, dfData.Service, dfData.TestStrategy, dfData.Image, dfData.Tag, dfData.Labels, shkeptncontext)
-		if dfData.DeploymentURILocal != "" {
-			keptnEvent.labels["deploymentURILocal"] = dfData.DeploymentURILocal
+		keptnEvent := adapter.NewDeploymentFinishedAdapter(*dfData, shkeptncontext, eh.Event.Source())
+
+		dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
+		if err != nil {
+			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			return err
 		}
-		if dfData.DeploymentURIPublic != "" {
-			keptnEvent.labels["deploymentURIPublic"] = dfData.DeploymentURIPublic
+		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
+		if err != nil {
+			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			return err
 		}
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
 		// send Deployment EVent
-		de := CreateDeploymentEvent(keptnEvent, dynatraceConfig, eh.Logger)
-		dtHelper.SendEvent(de, dtCreds)
+		de := createDeploymentEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		dtHelper.SendEvent(de)
 
 		// TODO: an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
 		// ie := createInfoEvent(keptnEvent, eh.Logger)
-		ie := CreateAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if dfData.TestStrategy != "" {
 			if ie.AnnotationType == "" {
 				ie.AnnotationType = "Start Tests: " + dfData.TestStrategy
@@ -101,7 +63,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			if ie.AnnotationDescription == "" {
 				ie.AnnotationDescription = "Start running tests: " + dfData.TestStrategy + " against " + dfData.Service
 			}
-			dtHelper.SendEvent(ie, dtCreds)
+			dtHelper.SendEvent(ie)
 		}
 	} else if eh.Event.Type() == keptn.TestsFinishedEventType {
 		tfData := &keptn.TestsFinishedEventData{}
@@ -112,11 +74,23 @@ func (eh CDEventHandler) HandleEvent() error {
 		}
 
 		// initialize our objects
-		keptnEvent, dynatraceConfig, dtCreds := eh.initObjectsForCDEventHandler(tfData.Project, tfData.Stage, tfData.Service, tfData.TestStrategy, "", "", tfData.Labels, shkeptncontext)
+		keptnEvent := adapter.NewTestFinishedAdapter(*tfData, shkeptncontext, eh.Event.Source())
+
+		dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
+		if err != nil {
+			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			return err
+		}
+		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
+		if err != nil {
+			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			return err
+		}
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
 		// Send Annotation Event
 		// ie := createInfoEvent(keptnEvent, eh.Logger)
-		ie := CreateAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if tfData.TestStrategy != "" {
 			if ie.AnnotationType == "" {
 				ie.AnnotationType = "Stop Tests: " + tfData.TestStrategy
@@ -124,7 +98,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			if ie.AnnotationDescription == "" {
 				ie.AnnotationDescription = "Stop running tests: " + tfData.TestStrategy + " against " + tfData.Service
 			}
-			dtHelper.SendEvent(ie, dtCreds)
+			dtHelper.SendEvent(ie)
 		}
 	} else if eh.Event.Type() == keptn.EvaluationDoneEventType {
 		edData := &keptn.EvaluationDoneEventData{}
@@ -135,14 +109,22 @@ func (eh CDEventHandler) HandleEvent() error {
 		}
 
 		// initialize our objects
-		keptnEvent, dynatraceConfig, dtCreds := eh.initObjectsForCDEventHandler(edData.Project, edData.Stage, edData.Service, edData.TestStrategy, "", "", edData.Labels, shkeptncontext)
-		keptnEvent.labels["Quality Gate Score"] = fmt.Sprintf("%.2f", edData.EvaluationDetails.Score)
-		keptnEvent.labels["No of evaluated SLIs"] = fmt.Sprintf("%d", len(edData.EvaluationDetails.IndicatorResults))
-		keptnEvent.labels["Evaluation Start"] = edData.EvaluationDetails.TimeStart
-		keptnEvent.labels["Evaluation End"] = edData.EvaluationDetails.TimeEnd
+		keptnEvent := adapter.NewEvaluationDoneAdapter(*edData, shkeptncontext, eh.Event.Source())
+
+		dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
+		if err != nil {
+			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			return err
+		}
+		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
+		if err != nil {
+			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			return err
+		}
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
 		// Send Info Event
-		ie := CreateInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		// If DeploymentStrategy == "" it means we are doing Quality-Gates Only!
 		if edData.DeploymentStrategy == "" {
 			ie.Title = fmt.Sprintf("Quality Gate Result: %s (%.2f/100)", edData.Result, edData.EvaluationDetails.Score)
@@ -172,9 +154,9 @@ func (eh CDEventHandler) HandleEvent() error {
 			return nil
 		}
 		ie.Description = "Keptn evaluation status: " + edData.Result
-		dtHelper.SendEvent(ie, dtCreds)
+		dtHelper.SendEvent(ie)
 	} else {
-		eh.Logger.Info("Ignoring event.")
+		eh.Logger.Info(fmt.Sprintf("Ignoring event of type %s", eh.Event.Type()))
 	}
 	return nil
 }

@@ -1,19 +1,17 @@
 package lib
 
 import (
-	"encoding/json"
-	"errors"
+	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-
-	"k8s.io/client-go/kubernetes"
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
+	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const DefaultOperatorVersion = "v0.8.0"
@@ -40,284 +38,84 @@ type Values struct {
 	Name string `json:"name"`
 }
 
-type DTCredentials struct {
-	Tenant   string `json:"DT_TENANT" yaml:"DT_TENANT"`
-	ApiToken string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
-}
-
 type DynatraceHelper struct {
-	KubeApi        *kubernetes.Clientset
-	DynatraceCreds *DTCredentials
+	DynatraceCreds *credentials.DTCredentials
 	Logger         keptn.LoggerInterface
 	OperatorTag    string
 	KeptnHandler   *keptn.Keptn
 	KeptnBridge    string
 }
 
-var namespace = getPodNamespace()
-
-func getPodNamespace() string {
-	ns := os.Getenv("POD_NAMESPACE")
-	if ns == "" {
-		return "keptn"
+// NewDynatraceHelper creates a new DynatraceHelper
+func NewDynatraceHelper(keptnHandler *keptn.Keptn, dynatraceCreds *credentials.DTCredentials, logger keptn.LoggerInterface) *DynatraceHelper {
+	return &DynatraceHelper{
+		DynatraceCreds: dynatraceCreds,
+		KeptnHandler:   keptnHandler,
+		Logger:         logger,
 	}
-
-	return ns
 }
 
-func NewDynatraceHelper(keptnHandler *keptn.Keptn) (*DynatraceHelper, error) {
-	dtHelper := &DynatraceHelper{}
-	dtCreds, err := dtHelper.GetDTCredentials("")
-	if err != nil {
-		return nil, err
-	}
-	dtHelper.DynatraceCreds = dtCreds
-	dtHelper.KeptnHandler = keptnHandler
-	return dtHelper, nil
-}
+// ConfigureMonitoring configures Dynatrace for a Keptn project
+func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard keptn.Shipyard) error {
 
-func (dt *DynatraceHelper) CreateCalculatedMetrics(project string) error {
-	dt.Logger.Info("creating metric calc:service.topurlresponsetime" + project)
-	responseTimeMetric := CreateCalculatedMetric("calc:service.topurlresponsetime"+project, "Top URL Response Time", "RESPONSE_TIME", "MICRO_SECOND", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SUM")
-	responseTimeJSONPayload, _ := json.Marshal(&responseTimeMetric)
-	_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.topurlresponsetime"+project, "PUT", string(responseTimeJSONPayload))
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.topurlresponsetime" + project + ". " + err.Error())
-	}
+	dt.EnsureDTTaggingRulesAreSetUp()
 
-	dt.Logger.Info("creating metric calc:service.topurlservicecalls" + project)
-	topServiceCalls := CreateCalculatedMetric("calc:service.topurlservicecalls"+project, "Top URL Service Calls", "NON_DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
-	topServiceCallsJSONPayload, _ := json.Marshal(&topServiceCalls)
-	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.topurlservicecalls"+project, "PUT", string(topServiceCallsJSONPayload))
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.topurlservicecalls" + project + ". " + err.Error())
-	}
+	dt.EnsureProblemNotificationsAreSetUp()
 
-	dt.Logger.Info("creating metric calc:service.topurldbcalls" + project)
-	topDBCalls := CreateCalculatedMetric("calc:service.topurldbcalls"+project, "Top URL DB Calls", "DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
-	topDBCallsJSONPayload, _ := json.Marshal(&topDBCalls)
-	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.topurldbcalls"+project, "PUT", string(topDBCallsJSONPayload))
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.topurldbcalls" + project + ". " + err.Error())
-	}
+	if project != "" {
+		dt.CreateManagementZones(project, shipyard)
 
-	return nil
-}
+		configHandler := keptnutils.NewServiceHandler("configuration-service:8080")
+		dt.CreateDashboard(project, shipyard)
 
-func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error {
-	dt.Logger.Info("creating metric calc:service.teststepresponsetime" + project)
-	responseTimeMetric := CreateCalculatedTestStepMetric("calc:service.teststepresponsetime"+project, "Test Step Response Time", "RESPONSE_TIME", "MICRO_SECOND", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SUM")
-	responseTimeJSONPayload, _ := json.Marshal(&responseTimeMetric)
-	_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.teststepresponsetime"+project, "PUT", string(responseTimeJSONPayload))
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.teststepresponsetime" + project + ". " + err.Error())
-	}
-
-	dt.Logger.Info("creating metric calc:service.teststepservicecalls" + project)
-	topServiceCalls := CreateCalculatedTestStepMetric("calc:service.teststepservicecalls"+project, "Test Step Service Calls", "NON_DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
-	topServiceCallsJSONPayload, _ := json.Marshal(&topServiceCalls)
-	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.teststepservicecalls"+project, "PUT", string(topServiceCallsJSONPayload))
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.teststepservicecalls" + project + ". " + err.Error())
-	}
-
-	dt.Logger.Info("creating metric calc:service.teststepdbcalls" + project)
-	topDBCalls := CreateCalculatedTestStepMetric("calc:service.teststepdbcalls"+project, "Test Step DB Calls", "DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
-	topDBCallsJSONPayload, _ := json.Marshal(&topDBCalls)
-	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.teststepdbcalls"+project, "PUT", string(topDBCallsJSONPayload))
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.teststepdbcalls" + project + ". " + err.Error())
-	}
-
-	dt.Logger.Info("creating metric calc:service.teststepfailurerate" + project)
-	failureRate := CreateCalculatedTestStepMetric("calc:service.teststepfailurerate"+project, "Test Step DB Calls", "FAILURE_RATE", "PERCENT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "OF_INTEREST_RATIO")
-	failureRateJSONPayload, _ := json.Marshal(&failureRate)
-	_, err = dt.sendDynatraceAPIRequest("", "/api/config/v1/customMetric/service/"+"calc:service.teststepfailurerate"+project, "PUT", string(failureRateJSONPayload))
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.teststepfailurerate" + project + ". " + err.Error())
-	}
-
-	return nil
-}
-
-func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptn.Shipyard) error {
-	if !GetManagementZonesConfig() {
-		return nil
-	}
-	// get existing management zones
-	mzs := dt.getManagementZones()
-
-	found := false
-	for _, mz := range mzs.Values {
-		if mz.Name == "Keptn: "+project {
-			found = true
-		}
-	}
-
-	if !found {
-		managementZone := CreateManagementZoneForProject(project)
-		mzPayload, _ := json.Marshal(managementZone)
-		_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/managementZones", "POST", string(mzPayload))
-		if err != nil {
-			dt.Logger.Error("Could not create management zone: " + err.Error())
-		}
-	}
-
-	for _, stage := range shipyard.Stages {
-		found := false
-		for _, mz := range mzs.Values {
-			if mz.Name == getManagementZoneNameForStage(project, stage.Name) {
-				found = true
-			}
-		}
-
-		if !found {
-			managementZone := CreateManagementZoneForStage(project, stage.Name)
-			mzPayload, _ := json.Marshal(managementZone)
-			_, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/managementZones", "POST", string(mzPayload))
-			if err != nil {
-				dt.Logger.Error("Could not create management zone: " + err.Error())
+		// try to create metric events - if one fails, don't fail the whole setup
+		for _, stage := range shipyard.Stages {
+			if stage.RemediationStrategy == "automated" {
+				services, err := configHandler.GetAllServices(project, stage.Name)
+				if err != nil {
+					return fmt.Errorf("failed to retrieve services of project %s: %v", project, err.Error())
+				}
+				for _, service := range services {
+					dt.CreateMetricEvents(project, stage.Name, service.ServiceName)
+				}
 			}
 		}
 	}
-
 	return nil
-}
-
-func getManagementZoneNameForStage(project string, stage string) string {
-	return "Keptn: " + project + " " + stage
-}
-
-func (dt *DynatraceHelper) getManagementZones() *DTAPIListResponse {
-	response, err := dt.sendDynatraceAPIRequest("", "/api/config/v1/managementZones", "GET", "")
-	if err != nil {
-		dt.Logger.Error("Could not retrieve management zones: " + err.Error())
-	}
-	mzs := &DTAPIListResponse{}
-
-	err = json.Unmarshal([]byte(response), mzs)
-	if err != nil {
-		dt.Logger.Error("Could not parse management zones list: " + err.Error())
-	}
-	return mzs
 }
 
 /**
  * if dtCredsSecretName is passed and it is not dynatrace (=default) then we try to pull the secret based on that name and is it for this API Call
  */
-func (dt *DynatraceHelper) sendDynatraceAPIRequest(dtCredsSecretName string, apiPath string, method string, body string) (string, error) {
-
-	// Check if we have to use a different dynatrace credential for this call other than default
-	dtCredentials := dt.DynatraceCreds
-	if dtCredsSecretName != "dynatrace" && dtCredsSecretName != "" {
-		var err error
-		dtCredentials, err = dt.GetDTCredentials(dtCredsSecretName)
-		if err != nil {
-			dt.Logger.Error("couldnt retrieve Dynatrace Credentials from custom secret " + dtCredsSecretName + ": " + err.Error())
-		}
-	}
+func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string, body []byte) (string, error) {
 
 	if common.RunLocal || common.RunLocalTest {
-		dt.Logger.Info("Dynatrace.sendDynatraceAPIRequest(RUNLOCAL) - not sending event to " + dtCredsSecretName + "(" + dtCredentials.Tenant + "). Here is the payload: " + body)
+		dt.Logger.Info("Dynatrace.sendDynatraceAPIRequest(RUNLOCAL) - not sending event to " +
+			dt.DynatraceCreds.Tenant + "). Here is the payload: " + string(body))
 		return "", nil
 	}
 
-	req, err := http.NewRequest(method, "https://"+dtCredentials.Tenant+apiPath, strings.NewReader(body))
+	req, err := http.NewRequest(method, "https://"+dt.DynatraceCreds.Tenant+apiPath, bytes.NewReader(body))
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Api-Token "+dtCredentials.ApiToken)
+	req.Header.Set("Authorization", "Api-Token "+dt.DynatraceCreds.ApiToken)
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		dt.Logger.Error("could not send Dynatrace API request: " + err.Error())
-		return "", err
+		return "", fmt.Errorf("failed to send Dynatrace API request: %v", err)
 	}
 
 	defer resp.Body.Close()
-	responseBody, _ := ioutil.ReadAll(resp.Body)
-
-	dt.Logger.Debug("Dynatrace service returned status " + resp.Status)
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %v", err)
+	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		dt.Logger.Debug(string(responseBody))
-		return string(responseBody), errors.New(resp.Status)
+		return string(responseBody), fmt.Errorf("api request failed with status %s and response %s", resp.Status, string(responseBody))
 	}
 
 	return string(responseBody), nil
-}
-
-/**
- * Pulls the Dynatrace Credentials from the passed secret. The default is "dynatrace"
- */
-func (dt *DynatraceHelper) GetDTCredentials(dynatraceSecretName string) (*DTCredentials, error) {
-	if dynatraceSecretName == "" {
-		dynatraceSecretName = "dynatrace"
-	}
-
-	if common.RunLocal || common.RunLocalTest {
-		dtCreds := &DTCredentials{}
-
-		dtCreds.Tenant = os.Getenv("DT_TENANT")
-		dtCreds.ApiToken = os.Getenv("DT_API_TOKEN")
-		return dtCreds, nil
-	}
-
-	kubeAPI, err := common.GetKubernetesClient()
-	if err != nil {
-		return nil, err
-	}
-	secret, err := kubeAPI.CoreV1().Secrets(namespace).Get(dynatraceSecretName, metav1.GetOptions{})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if string(secret.Data["DT_TENANT"]) == "" || string(secret.Data["DT_API_TOKEN"]) == "" {
-		return nil, errors.New("invalid or no Dynatrace credentials found. Requires at least DT_TENANT and DT_API_TOKEN in secret!")
-	}
-
-	dtCreds := &DTCredentials{}
-
-	dtCreds.Tenant = strings.Trim(string(secret.Data["DT_TENANT"]), "\n")
-	dtCreds.ApiToken = strings.Trim(string(secret.Data["DT_API_TOKEN"]), "\n")
-
-	return dtCreds, nil
-}
-
-func writeFile(fileName string, content string) error {
-	f, err := os.Create(fileName)
-	if err != nil {
-		return err
-	}
-	_, err = f.WriteString(content)
-	if err != nil {
-		f.Close()
-		return err
-	}
-	err = f.Close()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func deleteFile(fileName string) error {
-	err := os.Remove(fileName)
-	return err
-}
-
-func getHTTPResource(url string) (string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return string(body), nil
 }
