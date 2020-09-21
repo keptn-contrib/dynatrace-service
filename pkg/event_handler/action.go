@@ -2,10 +2,11 @@ package event_handler
 
 import (
 	"errors"
+	"os"
+
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
-	"os"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -68,7 +69,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-		dtInfoEvent := CreateInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		dtInfoEvent := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		dtInfoEvent.Title = "Keptn Remediation Action Triggered"
 		dtInfoEvent.Description = actionTriggeredData.Action.Action
 		dtHelper.SendEvent(dtInfoEvent)
@@ -139,12 +140,12 @@ func (eh ActionHandler) HandleEvent() error {
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 		if actionFinishedData.Action.Status == keptn.ActionStatusSucceeded {
-			dtConfigEvent := CreateConfigurationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+			dtConfigEvent := createConfigurationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 			dtConfigEvent.Description = "Keptn Remediation Action Finished"
 			dtConfigEvent.Configuration = "successful"
 			dtHelper.SendEvent(dtConfigEvent)
 		} else {
-			dtInfoEvent := CreateInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+			dtInfoEvent := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
 			dtInfoEvent.Title = "Keptn Remediation Action Finished"
 			dtInfoEvent.Description = "error during execution"
 			dtHelper.SendEvent(dtInfoEvent)

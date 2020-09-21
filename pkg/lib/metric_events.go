@@ -16,6 +16,7 @@ import (
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
+// CreateMetricEvents creates new metric events if SLOs are specified
 func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, service string) {
 	if !GetMetricEventsConfig() {
 		return

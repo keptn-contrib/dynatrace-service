@@ -5,6 +5,7 @@ import (
 	"fmt"
 )
 
+// EnsureDTTaggingRulesAreSetUp ensures that the tagging rules are set up
 func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 	if !GetTaggingRulesConfig() {
 		return

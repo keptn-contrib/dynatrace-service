@@ -8,6 +8,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 )
 
+// EnsureProblemNotificationsAreSetUp sets up/updates the DT problem notification
 func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 	if !GetProblemNotificationsConfig() {
 		return

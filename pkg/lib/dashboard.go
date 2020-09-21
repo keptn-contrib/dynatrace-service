@@ -7,6 +7,7 @@ import (
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
+// CreateDashboard creates a new dashboard for the provided project
 func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipyard) {
 	if !GetGenerateDashboardsConfig() {
 		return
@@ -20,7 +21,7 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipya
 	}
 
 	dt.Logger.Info("Creating Dashboard for project " + project)
-	dashboard := CreateDynatraceDashboard(project, shipyard)
+	dashboard := createDynatraceDashboard(project, shipyard)
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
 		dt.Logger.Error(fmt.Sprintf("failed to unmarshal Dynatrace dashboards: %v", err))
@@ -38,6 +39,7 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipya
 
 const dashboardNameSuffix = "@keptn: Digital Delivery & Operations Dashboard"
 
+// DeleteExistingDashboard deletes an existing dashboard for the provided project
 func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
 	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "GET", nil)
 	if err != nil {
