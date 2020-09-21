@@ -53,7 +53,7 @@ type dtAnnotationEvent struct {
 /**
  * Changes in #115_116: Parse Tags from dynatrace.conf.yaml and only fall back to default behavior if it doesnt exist
  */
-func createAttachRules(a adapter.EventAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) config.DtAttachRules {
+func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) config.DtAttachRules {
 	if dynatraceConfig != nil && dynatraceConfig.AttachRules != nil {
 		return *dynatraceConfig.AttachRules
 	}
@@ -90,7 +90,7 @@ func createAttachRules(a adapter.EventAdapter, dynatraceConfig *config.Dynatrace
  * Change with #115_116: parse Labels and move them into custom properties
  */
 // func createCustomProperties(Project string, Stage string, Service string, TestStrategy string, Image string, Tag string, Labels map[string]string, keptnContext string) dtCustomProperties {
-func createCustomProperties(a adapter.EventAdapter, logger *keptn.Logger) map[string]string {
+func createCustomProperties(a adapter.EventContentAdapter, logger *keptn.Logger) map[string]string {
 	// TODO: AG - parse Labels and push them through
 
 	// var customProperties dtCustomProperties
@@ -109,7 +109,7 @@ func createCustomProperties(a adapter.EventAdapter, logger *keptn.Logger) map[st
 	customProperties["TestStrategy"] = a.GetTestStrategy()
 	customProperties["Image"] = a.GetImage()
 	customProperties["Tag"] = a.GetTag()
-	customProperties["KeptnContext"] = a.GetContext()
+	customProperties["KeptnContext"] = a.GetShKeptnContext()
 
 	// now add the rest of the Labels
 	for key, value := range a.GetLabels() {
@@ -120,7 +120,7 @@ func createCustomProperties(a adapter.EventAdapter, logger *keptn.Logger) map[st
 }
 
 // Project string, Stage string, Service string, TestStrategy string, Image string, Tag string, Labels map[string]string, keptnContext string
-func CreateInfoEvent(a adapter.EventAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtInfoEvent {
+func CreateInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtInfoEvent {
 
 	// we fill the Dynatrace Info Event with values from the Labels or use our defaults
 	var ie dtInfoEvent
@@ -143,7 +143,7 @@ func CreateInfoEvent(a adapter.EventAdapter, dynatraceConfig *config.DynatraceCo
 /**
  * Creates a Dynatrace ANNOTATION Event
  */
-func CreateAnnotationEvent(a adapter.EventAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtAnnotationEvent {
+func CreateAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtAnnotationEvent {
 
 	// we fill the Dynatrace Info Event with values from the Labels or use our defaults
 	var ie dtAnnotationEvent
@@ -163,7 +163,7 @@ func CreateAnnotationEvent(a adapter.EventAdapter, dynatraceConfig *config.Dynat
 	return ie
 }
 
-func getValueFromLabels(a adapter.EventAdapter, key string, defaultValue string) string {
+func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue string) string {
 	v := a.GetLabels()[key]
 	if len(v) > 0 {
 		return v
@@ -171,7 +171,7 @@ func getValueFromLabels(a adapter.EventAdapter, key string, defaultValue string)
 	return defaultValue
 }
 
-func CreateDeploymentEvent(a adapter.EventAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtDeploymentEvent {
+func CreateDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtDeploymentEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the Labels or use our defaults
 	var de dtDeploymentEvent
@@ -195,7 +195,7 @@ func CreateDeploymentEvent(a adapter.EventAdapter, dynatraceConfig *config.Dynat
 	return de
 }
 
-func CreateConfigurationEvent(a adapter.EventAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtConfigurationEvent {
+func CreateConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtConfigurationEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the Labels or use our defaults
 	var de dtConfigurationEvent
