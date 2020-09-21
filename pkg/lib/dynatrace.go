@@ -2,7 +2,6 @@ package lib
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -54,70 +53,6 @@ func NewDynatraceHelper(keptnHandler *keptn.Keptn, dynatraceCreds *credentials.D
 		KeptnHandler:   keptnHandler,
 		Logger:         logger,
 	}
-}
-
-func (dt *DynatraceHelper) CreateCalculatedMetrics(project string) error {
-	dt.Logger.Info("creating metric calc:service.topurlresponsetime" + project)
-	responseTimeMetric := CreateCalculatedMetric("calc:service.topurlresponsetime"+project, "Top URL Response Time", "RESPONSE_TIME", "MICRO_SECOND", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SUM")
-	responseTimeJSONPayload, _ := json.Marshal(&responseTimeMetric)
-	_, err := dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurlresponsetime"+project, "PUT", responseTimeJSONPayload)
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.topurlresponsetime" + project + ". " + err.Error())
-	}
-
-	dt.Logger.Info("creating metric calc:service.topurlservicecalls" + project)
-	topServiceCalls := CreateCalculatedMetric("calc:service.topurlservicecalls"+project, "Top URL Service Calls", "NON_DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
-	topServiceCallsJSONPayload, _ := json.Marshal(&topServiceCalls)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurlservicecalls"+project, "PUT", topServiceCallsJSONPayload)
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.topurlservicecalls" + project + ". " + err.Error())
-	}
-
-	dt.Logger.Info("creating metric calc:service.topurldbcalls" + project)
-	topDBCalls := CreateCalculatedMetric("calc:service.topurldbcalls"+project, "Top URL DB Calls", "DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
-	topDBCallsJSONPayload, _ := json.Marshal(&topDBCalls)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.topurldbcalls"+project, "PUT", topDBCallsJSONPayload)
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.topurldbcalls" + project + ". " + err.Error())
-	}
-
-	return nil
-}
-
-func (dt *DynatraceHelper) CreateTestStepCalculatedMetrics(project string) error {
-	dt.Logger.Info("creating metric calc:service.teststepresponsetime" + project)
-	responseTimeMetric := CreateCalculatedTestStepMetric("calc:service.teststepresponsetime"+project, "Test Step Response Time", "RESPONSE_TIME", "MICRO_SECOND", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SUM")
-	responseTimeJSONPayload, _ := json.Marshal(&responseTimeMetric)
-	_, err := dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepresponsetime"+project, "PUT", responseTimeJSONPayload)
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.teststepresponsetime" + project + ". " + err.Error())
-	}
-
-	dt.Logger.Info("creating metric calc:service.teststepservicecalls" + project)
-	topServiceCalls := CreateCalculatedTestStepMetric("calc:service.teststepservicecalls"+project, "Test Step Service Calls", "NON_DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
-	topServiceCallsJSONPayload, _ := json.Marshal(&topServiceCalls)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepservicecalls"+project, "PUT", topServiceCallsJSONPayload)
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.teststepservicecalls" + project + ". " + err.Error())
-	}
-
-	dt.Logger.Info("creating metric calc:service.teststepdbcalls" + project)
-	topDBCalls := CreateCalculatedTestStepMetric("calc:service.teststepdbcalls"+project, "Test Step DB Calls", "DATABASE_CHILD_CALL_COUNT", "COUNT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "SINGLE_VALUE")
-	topDBCallsJSONPayload, _ := json.Marshal(&topDBCalls)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepdbcalls"+project, "PUT", topDBCallsJSONPayload)
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.teststepdbcalls" + project + ". " + err.Error())
-	}
-
-	dt.Logger.Info("creating metric calc:service.teststepfailurerate" + project)
-	failureRate := CreateCalculatedTestStepMetric("calc:service.teststepfailurerate"+project, "Test Step DB Calls", "FAILURE_RATE", "PERCENT", "CONTEXTLESS", "keptn_project", project, "URL", "{URL:Path}", "OF_INTEREST_RATIO")
-	failureRateJSONPayload, _ := json.Marshal(&failureRate)
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/customMetric/service/"+"calc:service.teststepfailurerate"+project, "PUT", failureRateJSONPayload)
-	if err != nil {
-		dt.Logger.Error("could not create calculated metric calc:service.teststepfailurerate" + project + ". " + err.Error())
-	}
-
-	return nil
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
