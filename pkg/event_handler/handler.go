@@ -10,7 +10,7 @@ type DynatraceEventHandler interface {
 }
 
 func NewEventHandler(event cloudevents.Event, logger *keptn.Logger) (DynatraceEventHandler, error) {
-	logger.Debug("Received Event: " + event.Type())
+	logger.Debug("Received event: " + event.Type())
 	switch event.Type() {
 	case keptn.ConfigureMonitoringEventType:
 		return &ConfigureMonitoringEventHandler{Logger: logger, Event: event}, nil
