@@ -74,7 +74,10 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
  You can configure whether these entities should be generated within your Dynatrace tenant by the environment variables specified in the provided [manifest](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml),
  i.e., using the environment variables `GENERATE_TAGGING_RULES` (default `true`), `GENERATE_PROBLEM_NOTIFICATIONS` (default `true`), `GENERATE_MANAGEMENT_ZONES` (default `true`), `GENERATE_DASHBOARDS` (default `true`), and `GENERATE_METRIC_EVENTS` (default `true`).
  
-  
+* The `dynatrace-service` by default validates the SSL certificate of the Dynatrace API.
+If your Dynatrace API only has a self-signed certificate, you can disable the SSL certificate check
+by the environment variable `HTTP_SSL_VERIFY` (default `true`) specified in the [manifest](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml).
+
 
 * Deploy the `dynatrace-service` using `kubectl apply`:
 
