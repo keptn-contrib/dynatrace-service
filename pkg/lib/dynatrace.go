@@ -2,6 +2,7 @@ package lib
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -101,7 +102,10 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 	req.Header.Set("Authorization", "Api-Token "+dt.DynatraceCreds.ApiToken)
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
 
-	client := &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !IsHttpSSLVerificationEnabled()},
+	}
+	client := &http.Client{Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to send Dynatrace API request: %v", err)
