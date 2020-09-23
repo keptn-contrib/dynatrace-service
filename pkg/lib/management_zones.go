@@ -9,7 +9,7 @@ import (
 
 // CreateManagementZones creates a new management zone for the project
 func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptn.Shipyard) {
-	if !GetManagementZonesConfig() {
+	if !IsManagementZonesGenerationEnabled() {
 		return
 	}
 	// get existing management zones
