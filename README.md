@@ -76,7 +76,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
  
 * The `dynatrace-service` by default validates the SSL certificate of the Dynatrace API.
 If your Dynatrace API only has a self-signed certificate, you can disable the SSL certificate check
-by the environment variable `HTTP_SSL_VERIFY` (default `true`) specified in the [manifest](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml).
+by setting the environment variable `HTTP_SSL_VERIFY` (default `true`) specified in the [manifest](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml) to `false`.
 
 
 * Deploy the `dynatrace-service` using `kubectl apply`:
