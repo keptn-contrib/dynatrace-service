@@ -25,6 +25,10 @@ func GetMetricEventsConfig() bool {
 	return readEnvAsBool("GENERATE_METRIC_EVENTS")
 }
 
+func GetServiceSyncConfig() bool {
+	return readEnvAsBool("SYNCHRONIZE_DYNATRACE_SERVICES")
+}
+
 func readEnvAsBool(env string) bool {
 	if b, err := strconv.ParseBool(os.Getenv(env)); err == nil {
 		return b
