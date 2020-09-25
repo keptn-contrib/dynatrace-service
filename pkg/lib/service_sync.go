@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -107,6 +108,7 @@ type serviceSynchronizer struct {
 	projectsAPI     *keptnapi.ProjectHandler
 	servicesAPI     *keptnapi.ServiceHandler
 	resourcesAPI    *keptnapi.ResourceHandler
+	apiMutex        sync.Mutex
 	DTHelper        *DynatraceHelper
 	syncTimer       *time.Ticker
 	keptnHandler    *keptn.Keptn
@@ -205,7 +207,7 @@ func (s *serviceSynchronizer) checkForTaggedDynatraceServiceEntities() error {
 	s.logger.Info("fetching services with tags 'keptn_managed' and 'keptn_service'")
 
 	nextPageKey := ""
-	pageSize := 50
+	pageSize := 10
 
 	for {
 		entitiesResponse, err := s.fetchKeptnManagedServicesFromDynatrace(nextPageKey, pageSize)
@@ -214,10 +216,12 @@ func (s *serviceSynchronizer) checkForTaggedDynatraceServiceEntities() error {
 		}
 
 		for _, entity := range entitiesResponse.Entities {
-			err := s.synchronizeDTEntityWithKeptn(entity)
-			if err != nil {
-				s.logger.Error(fmt.Sprintf("could not synchronize DT entity with ID %s: %v", entity.EntityID, err))
-			}
+			go func() {
+				err := s.synchronizeDTEntityWithKeptn(entity)
+				if err != nil {
+					s.logger.Error(fmt.Sprintf("could not synchronize DT entity with ID %s: %v", entity.EntityID, err))
+				}
+			}()
 		}
 
 		return nil
@@ -269,7 +273,9 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(entity Entity) error 
 		s.keptnHandler = newKeptn
 	}
 
+	s.apiMutex.Lock()
 	err := s.keptnHandler.SendCloudEvent(*ce)
+	s.apiMutex.Unlock()
 	if err != nil {
 		return fmt.Errorf("could not send %s for service %s: %v", keptn.InternalServiceCreateEventType, serviceName, err)
 	}
@@ -281,7 +287,9 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(entity Entity) error 
 	var createdService *apimodels.Service
 	for i := 0; i < maxRetries; i++ {
 		<-time.After(3 * time.Second)
+		s.apiMutex.Lock()
 		createdService, _ = s.servicesAPI.GetService(defaultDTProjectName, defaultDTProjectStage, serviceName)
+		s.apiMutex.Unlock()
 		if createdService != nil {
 			serviceAvailable = true
 			break
