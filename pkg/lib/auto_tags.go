@@ -7,7 +7,7 @@ import (
 
 // EnsureDTTaggingRulesAreSetUp ensures that the tagging rules are set up
 func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
-	if !GetTaggingRulesConfig() {
+	if !IsTaggingRulesGenerationEnabled() {
 		return
 	}
 
