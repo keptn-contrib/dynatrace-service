@@ -10,7 +10,7 @@ import (
 
 // EnsureProblemNotificationsAreSetUp sets up/updates the DT problem notification
 func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
-	if !GetProblemNotificationsConfig() {
+	if !IsProblemNotificationsGenerationEnabled() {
 		return
 	}
 

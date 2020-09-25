@@ -115,6 +115,8 @@ spec:
               value: 'false'
             - name: GENERATE_METRIC_EVENTS
               value: 'false'
+            - name: HTTP_SSL_VERIFY
+              value: 'true'
         - name: distributor
           image: keptn/distributor:0.7.1
           ports:

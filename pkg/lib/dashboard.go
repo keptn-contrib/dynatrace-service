@@ -9,7 +9,7 @@ import (
 
 // CreateDashboard creates a new dashboard for the provided project
 func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipyard) {
-	if !GetGenerateDashboardsConfig() {
+	if !IsDashboardsGenerationEnabled() {
 		return
 	}
 
