@@ -216,6 +216,7 @@ func (s *serviceSynchronizer) checkForTaggedDynatraceServiceEntities() error {
 		}
 
 		for _, entity := range entitiesResponse.Entities {
+			// synchronize services in parallel
 			go func() {
 				err := s.synchronizeDTEntityWithKeptn(entity)
 				if err != nil {
