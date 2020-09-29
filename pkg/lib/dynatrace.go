@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
@@ -95,7 +96,13 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 		return "", nil
 	}
 
-	req, err := http.NewRequest(method, "https://"+dt.DynatraceCreds.Tenant+apiPath, bytes.NewReader(body))
+	var url string
+	if !strings.HasPrefix(dt.DynatraceCreds.Tenant, "http://") && !strings.HasPrefix(dt.DynatraceCreds.Tenant, "https://") {
+		url = "https://" + dt.DynatraceCreds.Tenant + apiPath
+	} else {
+		url = dt.DynatraceCreds.Tenant + apiPath
+	}
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Api-Token "+dt.DynatraceCreds.ApiToken)

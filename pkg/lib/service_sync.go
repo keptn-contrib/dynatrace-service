@@ -172,8 +172,8 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 		s.logger.Error(fmt.Sprintf("Could not parse SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS with value %s, using 300s as default.", intervalEnv))
 		syncInterval = 300
 	}
-	s.logger.Info(fmt.Sprintf("Service Synchronizer will sync every %d seconds", syncInterval))
 	syncInterval = int(parseInt)
+	s.logger.Info(fmt.Sprintf("Service Synchronizer will sync every %d seconds", syncInterval))
 	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
 	go func() {
 		for {
@@ -182,6 +182,7 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 			s.synchronizeServices()
 		}
 	}()
+	s.synchronizeServices()
 }
 
 func (s *serviceSynchronizer) synchronizeServices() {
@@ -201,6 +202,7 @@ func (s *serviceSynchronizer) synchronizeServices() {
 	for _, service := range allKeptnServicesInProject {
 		s.servicesInKeptn = append(s.servicesInKeptn, service.ServiceName)
 	}
+	s.checkForTaggedDynatraceServiceEntities()
 }
 
 func (s *serviceSynchronizer) checkForTaggedDynatraceServiceEntities() error {
@@ -216,25 +218,27 @@ func (s *serviceSynchronizer) checkForTaggedDynatraceServiceEntities() error {
 		}
 
 		for _, entity := range entitiesResponse.Entities {
-			// synchronize services in parallel
-			go func() {
-				err := s.synchronizeDTEntityWithKeptn(entity)
-				if err != nil {
-					s.logger.Error(fmt.Sprintf("could not synchronize DT entity with ID %s: %v", entity.EntityID, err))
-				}
-			}()
+			s.logger.Debug("Synchronizing entity " + entity.EntityID)
+			serviceName := getKeptnServiceNameOfEntity(entity)
+			s.logger.Debug(fmt.Sprintf("Keptn Service name used for entity %s: %s", entity.EntityID, serviceName))
+			err := s.synchronizeDTEntityWithKeptn(serviceName)
+			if err != nil {
+				s.logger.Error(fmt.Sprintf("could not synchronize DT entity with ID %s: %v", entity.EntityID, err))
+			}
+			s.servicesInKeptn = append(s.servicesInKeptn, serviceName)
 		}
 
-		return nil
+		if entitiesResponse.NextPageKey == "" {
+			break
+		}
+		nextPageKey = entitiesResponse.NextPageKey
+
 	}
+	return nil
 
 }
 
-func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(entity Entity) error {
-	s.logger.Debug("Synchronizing entity " + entity.EntityID)
-	serviceName := getKeptnServiceNameOfEntity(entity)
-	s.logger.Debug(fmt.Sprintf("Keptn Service name used for entity %s: %s", entity.EntityID, serviceName))
-
+func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(serviceName string) error {
 	s.logger.Debug(fmt.Sprintf("Checking if service %s already exists in Keptn project '%s'", serviceName, defaultDTProjectName))
 	serviceExists := doesServiceExist(s.servicesInKeptn, serviceName)
 
@@ -332,7 +336,7 @@ func doesServiceExist(services []string, serviceName string) bool {
 	return false
 }
 
-func getKeptnServiceNameOfEntity(entity Entity) string {
+func getKeptnServiceNameOfEntity(entity entity) string {
 	if entity.Tags != nil {
 		for _, tag := range entity.Tags {
 			if tag.Key == "keptn_service" && tag.Value != "" && keptn.ValidateKeptnEntityName(tag.Value) {
@@ -344,7 +348,7 @@ func getKeptnServiceNameOfEntity(entity Entity) string {
 	return entity.EntityID
 }
 
-func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey string, pageSize int) (*DTEntityListResponse, error) {
+func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey string, pageSize int) (*dtEntityListResponse, error) {
 	var query string
 	if nextPageKey == "" {
 		query = "/api/v2/entities?entitySelector=type(\"SERVICE\"),tag(\"keptn_managed\"),tag(\"keptn_service\")&fields=+tags&pageSize=" + strconv.FormatInt(int64(pageSize), 10)
@@ -356,7 +360,7 @@ func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey
 		return nil, fmt.Errorf("could not fetch service entities with 'keptn_managed' and 'keptn_service' tags: %v", err)
 	}
 
-	dtEntities := &DTEntityListResponse{}
+	dtEntities := &dtEntityListResponse{}
 	err = json.Unmarshal([]byte(response), dtEntities)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode response from Dynatrace API: %v", err)
@@ -364,20 +368,20 @@ func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey
 	return dtEntities, nil
 }
 
-type DTEntityListResponse struct {
+type dtEntityListResponse struct {
 	TotalCount  int      `json:"totalCount"`
 	PageSize    int      `json:"pageSize"`
 	NextPageKey string   `json:"nextPageKey"`
-	Entities    []Entity `json:"entities"`
+	Entities    []entity `json:"entities"`
 }
-type Tags struct {
+type tags struct {
 	Context              string `json:"context"`
 	Key                  string `json:"key"`
 	StringRepresentation string `json:"stringRepresentation"`
 	Value                string `json:"value,omitempty"`
 }
-type Entity struct {
+type entity struct {
 	EntityID    string `json:"entityId"`
 	DisplayName string `json:"displayName"`
-	Tags        []Tags `json:"tags"`
+	Tags        []tags `json:"tags"`
 }
