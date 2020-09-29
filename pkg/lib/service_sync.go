@@ -308,7 +308,7 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(serviceName string) e
 
 	resourceURI := "slo.yaml"
 	sloResource := &apimodels.Resource{
-		ResourceContent: encodedDefaultSLOFile,
+		ResourceContent: defaultSLOFile,
 		ResourceURI:     &resourceURI,
 	}
 	_, err = s.resourcesAPI.CreateServiceResources(
