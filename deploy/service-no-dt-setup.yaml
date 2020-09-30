@@ -117,6 +117,8 @@ spec:
               value: 'false'
             - name: SYNCHRONIZE_DYNATRACE_SERVICES
               value: 'false'
+            - name: HTTP_SSL_VERIFY
+              value: 'true'
         - name: distributor
           image: keptn/distributor:0.7.1
           ports:

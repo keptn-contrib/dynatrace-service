@@ -121,6 +121,8 @@ spec:
               value: 'true'
             - name: SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS
               value: '300'
+            - name: HTTP_SSL_VERIFY
+              value: 'true'
         - name: distributor
           image: keptn/distributor:0.7.1
           ports:
