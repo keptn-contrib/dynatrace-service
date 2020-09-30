@@ -72,7 +72,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 **Deploy the Service:**
 * The `dynatrace-service` supports to automatically generate tagging rules, problem notifications, management zones, dashboards, and custom metric events in your Dynatrace tenant.
  You can configure whether these entities should be generated within your Dynatrace tenant by the environment variables specified in the provided [manifest](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml),
- i.e., using the environment variables `GENERATE_TAGGING_RULES` (default `true`), `GENERATE_PROBLEM_NOTIFICATIONS` (default `true`), `GENERATE_MANAGEMENT_ZONES` (default `true`), `GENERATE_DASHBOARDS` (default `true`), and `GENERATE_METRIC_EVENTS` (default `true`).
+ i.e., using the environment variables `GENERATE_TAGGING_RULES` (default `true`), `GENERATE_PROBLEM_NOTIFICATIONS` (default `true`), `GENERATE_MANAGEMENT_ZONES` (default `true`), `GENERATE_DASHBOARDS` (default `true`), `GENERATE_METRIC_EVENTS` (default `true`), and `SYNCHRONIZE_DYNATRACE_SERVICES` (default `true`).
  
 * The `dynatrace-service` by default validates the SSL certificate of the Dynatrace API.
 If your Dynatrace API only has a self-signed certificate, you can disable the SSL certificate check
