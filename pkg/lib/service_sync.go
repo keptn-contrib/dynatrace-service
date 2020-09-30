@@ -360,7 +360,7 @@ func getKeptnServiceNameOfEntity(entity entity) string {
 func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey string, pageSize int) (*dtEntityListResponse, error) {
 	var query string
 	if nextPageKey == "" {
-		query = "/api/v2/entities?entitySelector=type(\"SERVICE\"),tag(\"keptn_managed\"),tag(\"keptn_service\")&fields=+tags&pageSize=" + strconv.FormatInt(int64(pageSize), 10)
+		query = "/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\")%20AND%20tag(\"keptn_service\")&fields=+tags&pageSize=" + strconv.FormatInt(int64(pageSize), 10)
 	} else {
 		query = "/api/v2/entities?nextPageKey=" + nextPageKey
 	}
