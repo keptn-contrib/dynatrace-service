@@ -193,6 +193,7 @@ func (s *serviceSynchronizer) synchronizeServices() {
 	if errObj != nil {
 		if errObj.Code == 404 {
 			s.logger.Info("Project " + defaultDTProjectName + " does not exist. Stopping synchronization")
+			return
 		}
 		s.logger.Error(fmt.Sprintf("Could not check if Keptn project %s exists: %s", defaultDTProjectName, errObj.Message))
 		return
