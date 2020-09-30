@@ -51,7 +51,7 @@ func _main(args []string, env envConfig) int {
 		log.Printf("Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster. %s", err.Error())
 	}
 
-	if lib.GetServiceSyncConfig() {
+	if lib.IsServiceSyncEnabled() {
 		lib.ActivateServiceSynchronizer()
 	}
 
