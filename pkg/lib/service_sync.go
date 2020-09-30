@@ -187,20 +187,23 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 
 func (s *serviceSynchronizer) synchronizeServices() {
 	s.logger.Info("checking if project " + defaultDTProjectName + " exists")
-	project, err := s.projectsAPI.GetProject(apimodels.Project{
+	project, errObj := s.projectsAPI.GetProject(apimodels.Project{
 		ProjectName: defaultDTProjectName,
 	})
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("Could not check if Keptn project %s exists: %v", defaultDTProjectName, err))
+	if errObj != nil {
+		if errObj.Code == 404 {
+			s.logger.Info("Project " + defaultDTProjectName + " does not exist. Stopping synchronization")
+		}
+		s.logger.Error(fmt.Sprintf("Could not check if Keptn project %s exists: %s", defaultDTProjectName, errObj.Message))
 		return
 	}
 	if project == nil {
 		s.logger.Info("Project " + defaultDTProjectName + " does not exist. Stopping synchronization")
 		return
 	}
-	allKeptnServicesInProject, errObj := s.servicesAPI.GetAllServices(defaultDTProjectName, defaultDTProjectStage)
-	if errObj != nil {
-		s.logger.Error(fmt.Sprintf("Could not fetch services of Keptn project %s: %v", defaultDTProjectName, err))
+	allKeptnServicesInProject, err := s.servicesAPI.GetAllServices(defaultDTProjectName, defaultDTProjectStage)
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("Could not fetch services of Keptn project %s: %s", defaultDTProjectName, err.Error()))
 	}
 	s.servicesInKeptn = []string{}
 	for _, service := range allKeptnServicesInProject {
