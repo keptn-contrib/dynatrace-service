@@ -195,7 +195,7 @@ func (s *serviceSynchronizer) synchronizeServices() {
 			s.logger.Info("Project " + defaultDTProjectName + " does not exist. Stopping synchronization")
 			return
 		}
-		s.logger.Error(fmt.Sprintf("Could not check if Keptn project %s exists: %s", defaultDTProjectName, errObj.Message))
+		s.logger.Error(fmt.Sprintf("Could not check if Keptn project %s exists: %s", defaultDTProjectName, *errObj.Message))
 		return
 	}
 	if project == nil {
