@@ -187,15 +187,19 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 
 func (s *serviceSynchronizer) synchronizeServices() {
 	s.logger.Info("checking if project " + defaultDTProjectName + " exists")
-	project, _ := s.projectsAPI.GetProject(apimodels.Project{
+	project, err := s.projectsAPI.GetProject(apimodels.Project{
 		ProjectName: defaultDTProjectName,
 	})
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("Could not check if Keptn project %s exists: %v", defaultDTProjectName, err))
+		return
+	}
 	if project == nil {
 		s.logger.Info("Project " + defaultDTProjectName + " does not exist. Stopping synchronization")
 		return
 	}
-	allKeptnServicesInProject, err := s.servicesAPI.GetAllServices(defaultDTProjectName, defaultDTProjectStage)
-	if err != nil {
+	allKeptnServicesInProject, errObj := s.servicesAPI.GetAllServices(defaultDTProjectName, defaultDTProjectStage)
+	if errObj != nil {
 		s.logger.Error(fmt.Sprintf("Could not fetch services of Keptn project %s: %v", defaultDTProjectName, err))
 	}
 	s.servicesInKeptn = []string{}
@@ -205,16 +209,17 @@ func (s *serviceSynchronizer) synchronizeServices() {
 	s.checkForTaggedDynatraceServiceEntities()
 }
 
-func (s *serviceSynchronizer) checkForTaggedDynatraceServiceEntities() error {
+func (s *serviceSynchronizer) checkForTaggedDynatraceServiceEntities() {
 	s.logger.Info("fetching services with tags 'keptn_managed' and 'keptn_service'")
 
 	nextPageKey := ""
-	pageSize := 10
+	pageSize := 50
 
 	for {
 		entitiesResponse, err := s.fetchKeptnManagedServicesFromDynatrace(nextPageKey, pageSize)
 		if err != nil {
-			return fmt.Errorf("could not get keptn_managed services: %v", err)
+			s.logger.Error(fmt.Sprintf("could not get keptn_managed services: %v", err))
+			return
 		}
 
 		for _, entity := range entitiesResponse.Entities {
@@ -234,7 +239,7 @@ func (s *serviceSynchronizer) checkForTaggedDynatraceServiceEntities() error {
 		nextPageKey = entitiesResponse.NextPageKey
 
 	}
-	return nil
+	return
 
 }
 
