@@ -316,3 +316,19 @@ total_score:
   pass: "90%"
   warning: "75%"
 ```
+
+To enable queries against the SLIs specified in the SLO.yaml file, the following configuration is created for the SLI configuration for the `dynatrace-sli-service`:
+
+```
+---
+spec_version: '1.0'
+indicators:
+  throughput: "metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  error_rate: "metricSelector=builtin:service.errors.total.count:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  response_time_p50: "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  response_time_p90: "metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  response_time_p95: "metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"`
+```
+
+This file will be stored in the `dynatrace/sli.yaml` config file for the created service. See the [dynatrace-sli-service docs](https://github.com/keptn-contrib/dynatrace-sli-service/tree/update/test-coverage-and-doc#overwrite-sli-configuration--custom-sli-queries) for a detailed description of how this file is used 
+to configure the retrieval af metrics for a service 
