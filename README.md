@@ -262,6 +262,15 @@ keptn create project dynatrace --shipyard=shipyard.yaml
 After the project has been created, you can import Service Entities detected by Dynatrace by applying the tags `keptn_managed` and `keptn_service: <service_name>`:
 
 ![](./assets/service_tags.png)
+
+To set the `keptn_managed` tag, you can use the Dynatrace UI: First, in the **Transactions and services** menu, open the Service Entity you would like to tag, and add the `keptn_managed` tag as shown in the screenshot below:
+
+![](./assets/keptn_managed_tag.png)
+ 
+The `keptn_service` tag has to be set using an automated tagging rule, which can be set up in the menu **Settings > Tags > Automatically applied tags**. Within this section, add a new 
+rule with the settings shown below:
+
+![](./assets/keptn_service_tag.png)
  
 The Dynatrace Service will then periodically check for services containing those tags and create correlating services within the `dynatrace` project in Keptn.
 If the value of `service_name` is not set to a valid Keptn service name, the Service Entity ID will be used as a fallback value for the Keptn service name.
