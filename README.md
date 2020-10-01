@@ -238,3 +238,72 @@ As a reminder - here is the way how to upload this to your Keptn Configuration R
 keptn add-resource --project=yourproject --stage=preprod --resource=dynatrace/dynatrace-preprod.conf.yaml --resourceUri=dynatrace/dynatrace.conf.yaml
 keptn add-resource --project=yourproject --stage=production --resource=dynatrace/dynatrace-production.conf.yaml --resourceUri=dynatrace/dynatrace.conf.yaml
 ```
+
+
+### Synchronizing Service Entities detected by Dynatrace
+
+The Dynatrace service allows to automatically import Service Entities detected by Dynatrace into Keptn. To enable this feature, the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES`
+needs to be set to `true`. By default, the service will scan Dynatrace for Service Entities every 300s. This interval can be configured by setting the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS` to the desired value.
+
+To import a Service Entity into Keptn, a project with the name `dynatrace`, containing the stage `quality-gate` has to be available within Keptn. To create the project, create a `shipyard.yaml` file with the following content:
+
+```
+stages:
+  - name: "quality-gate"
+    test_strategy: "performance"
+```
+
+Afterwards, create the project using the following command:
+
+```
+keptn create project dynatrace --shipyard=shipyard.yaml
+```
+
+After the project has been created, you can import Service Entities detected by Dynatrace by applying the tags `keptn_managed` and `keptn_service: <service_name>`:
+
+![](./assets/service_tags.png)
+ 
+The Dynatrace Service will then periodically check for services containing those tags and create correlating services within the `dynatrace` project in Keptn.
+If the value of `service_name` is not set to a valid Keptn service name, the Service Entity ID will be used as a fallback value for the Keptn service name.
+After the service synchronization, you should be able to see the newly created services within the Bridge:
+
+
+![](./assets/keptn_services_imported.png)
+
+Note that if you would like to remove one of the imported services from Keptn, you will need to use the Keptn CLI to delete the service after removing the `keptn_managed` and `keptn_service` tags:
+
+```
+keptn delete service <service-to-be-removed> --project=dynatrace
+```
+
+In addition to creating the service, the dynatrace-service will also upload the following default `slo.yaml` to enable the quality-gates feature for the service:
+
+```
+---
+spec_version: "1.0"
+comparison:
+  aggregate_function: "avg"
+  compare_with: "single_result"
+  include_result_with_score: "pass"
+  number_of_comparison_results: 1
+filter:
+objectives:
+  - sli: "response_time_p95"
+    key_sli: false
+    pass:             
+      - criteria:
+          - "<600"    
+    warning:        
+      - criteria:
+          - "<=800"
+    weight: 1
+  - sli: "error_rate"
+    key_sli: false
+    pass:
+      - criteria:
+          - "<5"
+  - sli: throughput
+total_score:
+  pass: "90%"
+  warning: "75%"
+```
