@@ -289,7 +289,7 @@ func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
 	receivedEvent, mockEventBroker := getTestMockEventBroker()
 	defer mockEventBroker.Close()
 
-	receivedSLO, mockCS := getTestConfigService()
+	receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
@@ -366,6 +366,15 @@ func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
 			case <-time.After(5 * time.Second):
 				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
 			}
+
+			select {
+			case rec := <-receivedSLI:
+				if rec != tt.args.serviceName {
+					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLI file")
+				}
+			case <-time.After(5 * time.Second):
+				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
+			}
 		})
 	}
 }
@@ -431,8 +440,9 @@ func getTestMockEventBroker() (chan string, *httptest.Server) {
 	return receivedEvent, mockEventBroker
 }
 
-func getTestConfigService() (chan string, *httptest.Server) {
+func getTestConfigService() (chan string, chan string, *httptest.Server) {
 	receivedSLO := make(chan string)
+	receivedSLI := make(chan string)
 	mockCS := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		bytes, err := ioutil.ReadAll(request.Body)
 		rec := &models.Resources{}
@@ -464,10 +474,16 @@ func getTestConfigService() (chan string, *httptest.Server) {
 			go func() {
 				receivedSLO <- serviceName
 			}()
+		} else if rec.Resources[0].ResourceURI != nil && *rec.Resources[0].ResourceURI == "dynatrace/sli.yaml" {
+			writer.WriteHeader(http.StatusOK)
+			writer.Write([]byte("{}"))
+			go func() {
+				receivedSLI <- serviceName
+			}()
 		}
 
 	}))
-	return receivedSLO, mockCS
+	return receivedSLO, receivedSLI, mockCS
 }
 
 func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Server) *keptn.Keptn {
@@ -635,7 +651,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 	receivedEvent, mockEventBroker := getTestMockEventBroker()
 	defer mockEventBroker.Close()
 
-	receivedSLO, mockCS := getTestConfigService()
+	receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
@@ -691,6 +707,33 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 			receivedSLOUploads = append(receivedSLOUploads, rec)
 			if len(receivedSLOUploads) == 2 {
 				if diff := deep.Equal(receivedSLOUploads, expectedSLOUploads); len(diff) > 0 {
+					t.Error("did not receive expected service create events")
+					for _, d := range diff {
+						t.Log(d)
+					}
+				}
+				finish = true
+				break
+			}
+		case <-time.After(5 * time.Second):
+			t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
+			finish = true
+			break
+		}
+		if finish {
+			break
+		}
+	}
+
+	expectedSLIUploads := []string{"my-service", "my-service-2"}
+	receivedSLIUploads := []string{}
+	finish = false
+	for {
+		select {
+		case rec := <-receivedSLI:
+			receivedSLIUploads = append(receivedSLIUploads, rec)
+			if len(receivedSLIUploads) == 2 {
+				if diff := deep.Equal(receivedSLIUploads, expectedSLIUploads); len(diff) > 0 {
 					t.Error("did not receive expected service create events")
 					for _, d := range diff {
 						t.Log(d)

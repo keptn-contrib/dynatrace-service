@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -48,6 +49,15 @@ objectives:
 total_score:
   pass: "90%"
   warning: "75%"`
+
+const defaultSLIConfigFile = `---
+spec_version: '1.0'
+indicators:
+  throughput: "metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  error_rate: "metricSelector=builtin:service.errors.total.count:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  response_time_p50: "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  response_time_p90: "metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  response_time_p95: "metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"`
 
 var encodedDefaultSLOFile string
 
@@ -325,6 +335,25 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(serviceName string) e
 		return fmt.Errorf("could not upload slo.yaml to service %s: %v", serviceName, err)
 	}
 	s.logger.Info(fmt.Sprintf("uploaded slo.yaml for service %s", serviceName))
+
+	resourceURI = "dynatrace/sli.yaml"
+	sliFileContent := strings.ReplaceAll(defaultSLIConfigFile, "$SERVICE", serviceName)
+
+	sliResource := &apimodels.Resource{
+		ResourceContent: sliFileContent,
+		ResourceURI:     &resourceURI,
+	}
+	_, err = s.resourcesAPI.CreateServiceResources(
+		defaultDTProjectName,
+		defaultDTProjectStage,
+		serviceName,
+		[]*apimodels.Resource{sliResource},
+	)
+
+	if err != nil {
+		return fmt.Errorf("could not upload sli.yaml to service %s: %v", serviceName, err)
+	}
+	s.logger.Info(fmt.Sprintf("uploaded sli.yaml for service %s", serviceName))
 
 	return nil
 }
