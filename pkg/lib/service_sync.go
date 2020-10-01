@@ -16,7 +16,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -108,7 +107,6 @@ type serviceSynchronizer struct {
 	projectsAPI     *keptnapi.ProjectHandler
 	servicesAPI     *keptnapi.ServiceHandler
 	resourcesAPI    *keptnapi.ResourceHandler
-	apiMutex        sync.Mutex
 	DTHelper        *DynatraceHelper
 	syncTimer       *time.Ticker
 	keptnHandler    *keptn.Keptn
@@ -287,9 +285,7 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(serviceName string) e
 		s.keptnHandler = newKeptn
 	}
 
-	s.apiMutex.Lock()
 	err := s.keptnHandler.SendCloudEvent(*ce)
-	s.apiMutex.Unlock()
 	if err != nil {
 		return fmt.Errorf("could not send %s for service %s: %v", keptn.InternalServiceCreateEventType, serviceName, err)
 	}
@@ -301,9 +297,7 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(serviceName string) e
 	var createdService *apimodels.Service
 	for i := 0; i < maxRetries; i++ {
 		<-time.After(3 * time.Second)
-		s.apiMutex.Lock()
 		createdService, _ = s.servicesAPI.GetService(defaultDTProjectName, defaultDTProjectStage, serviceName)
-		s.apiMutex.Unlock()
 		if createdService != nil {
 			serviceAvailable = true
 			break

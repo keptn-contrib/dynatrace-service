@@ -224,7 +224,6 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 				projectsAPI:     tt.fields.projectsAPI,
 				servicesAPI:     tt.fields.servicesAPI,
 				resourcesAPI:    tt.fields.resourcesAPI,
-				apiMutex:        tt.fields.apiMutex,
 				DTHelper:        tt.fields.DTHelper,
 				syncTimer:       tt.fields.syncTimer,
 				keptnHandler:    tt.fields.keptnHandler,
@@ -341,7 +340,6 @@ func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
 				projectsAPI:     tt.fields.projectsAPI,
 				servicesAPI:     tt.fields.servicesAPI,
 				resourcesAPI:    tt.fields.resourcesAPI,
-				apiMutex:        tt.fields.apiMutex,
 				DTHelper:        tt.fields.DTHelper,
 				syncTimer:       tt.fields.syncTimer,
 				keptnHandler:    tt.fields.keptnHandler,
@@ -646,7 +644,6 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		projectsAPI:  keptnapi.NewProjectHandler(projectsMockAPI.URL),
 		servicesAPI:  keptnapi.NewServiceHandler(servicesMockAPI.URL),
 		resourcesAPI: keptnapi.NewResourceHandler(mockCS.URL),
-		apiMutex:     sync.Mutex{},
 		DTHelper: NewDynatraceHelper(nil, &credentials.DTCredentials{
 			Tenant:   dtMockServer.URL,
 			ApiToken: "",
