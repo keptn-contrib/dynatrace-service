@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 	"log"
 	"os"
 
@@ -48,6 +49,10 @@ func _main(args []string, env envConfig) int {
 	err = common.CheckKeptnConnection(keptnCredentials)
 	if err != nil {
 		log.Printf("Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster. %s", err.Error())
+	}
+
+	if lib.IsServiceSyncEnabled() {
+		lib.ActivateServiceSynchronizer()
 	}
 
 	ctx := context.Background()

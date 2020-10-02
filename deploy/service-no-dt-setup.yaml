@@ -115,6 +115,10 @@ spec:
               value: 'false'
             - name: GENERATE_METRIC_EVENTS
               value: 'false'
+            - name: SYNCHRONIZE_DYNATRACE_SERVICES
+              value: 'true'
+            - name: SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS
+              value: '300'
             - name: HTTP_SSL_VERIFY
               value: 'true'
         - name: distributor

@@ -54,7 +54,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper.SendEvent(de)
 
 		// TODO: an additional channel (e.g. start-tests) to correctly determine the time when the tests actually start
-		// ie := createInfoEvent(keptnEvent, eh.Logger)
+		// ie := createInfoEvent(keptnEvent, eh.logger)
 		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if dfData.TestStrategy != "" {
 			if ie.AnnotationType == "" {
@@ -89,7 +89,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
 		// Send Annotation Event
-		// ie := createInfoEvent(keptnEvent, eh.Logger)
+		// ie := createInfoEvent(keptnEvent, eh.logger)
 		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if tfData.TestStrategy != "" {
 			if ie.AnnotationType == "" {
