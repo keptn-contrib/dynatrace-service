@@ -73,6 +73,8 @@ spec:
               value: 'http://event-broker/keptn'
             - name: DATASTORE
               value: 'http://mongodb-datastore:8080'
+            - name: CONFIGURATION_SERVICE
+              value: 'http://configuration-service:8080'
             - name: PLATFORM
               value: kubernetes
             - name: DT_API_TOKEN
@@ -115,6 +117,10 @@ spec:
               value: 'true'
             - name: GENERATE_METRIC_EVENTS
               value: 'true'
+            - name: SYNCHRONIZE_DYNATRACE_SERVICES
+              value: 'true'
+            - name: SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS
+              value: '300'
             - name: HTTP_SSL_VERIFY
               value: 'true'
         - name: distributor
