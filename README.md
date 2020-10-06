@@ -137,7 +137,7 @@ By default, the *dynatrace-service* assumes that all events it sends to Dynatrac
 ```
 attachRules:
   tagRule:
-    meTypes:
+  - meTypes:
     - SERVICE
     tags:
     - context: CONTEXTLESS
@@ -160,7 +160,7 @@ If your services are however not tagged with these but other tags - or if you wa
 spec_version: '0.1.0'
 attachRules:
   tagRule:
-    meTypes:
+  - meTypes:
     - SERVICE
     tags:
     - context: CONTEXTLESS
@@ -222,7 +222,7 @@ spec_version: '0.1.0'
 dtCreds: dynatrace-production
 attachRules:
   tagRule:
-    meTypes:
+  - meTypes:
     - SERVICE
     tags:
     - context: CONTEXTLESS
