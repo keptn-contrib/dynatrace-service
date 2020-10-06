@@ -84,9 +84,12 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 		return fmt.Errorf("could not create Keptn handler: %v", err)
 	}
 
-	shipyard, err := keptnHandler.GetShipyard()
-	if err != nil {
-		return fmt.Errorf("failed to retrieve shipyard for project %s: %v", e.Project, err)
+	var shipyard *keptn.Shipyard
+	if e.Project != "" {
+		shipyard, err = keptnHandler.GetShipyard()
+		if err != nil {
+			return fmt.Errorf("failed to retrieve shipyard for project %s: %v", e.Project, err)
+		}
 	}
 
 	keptnEvent := adapter.NewConfigureMonitoringAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
@@ -101,7 +104,7 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 	}
 	dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
-	err = dtHelper.ConfigureMonitoring(e.Project, *shipyard)
+	err = dtHelper.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {
 		return err
 	}
