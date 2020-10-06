@@ -29,7 +29,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		return err
 	}
 
-	var shipyard *keptn.Shipyard
+	shipyard := &keptn.Shipyard{}
 	decodedShipyard, err := base64.StdEncoding.DecodeString(e.Shipyard)
 	if err != nil {
 		eh.Logger.Error("Could not decode shipyard: " + err.Error())
