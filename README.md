@@ -267,15 +267,19 @@ To set the `keptn_managed` tag, you can use the Dynatrace UI: First, in the **Tr
 
 ![](./assets/keptn_managed_tag.png)
  
-The `keptn_service` tag has to be set using an automated tagging rule, which can be set up in the menu **Settings > Tags > Automatically applied tags**. Within this section, add a new 
-rule with the settings shown below:
+The `keptn_service` tag can be set in two ways. 
 
+1. Using an automated tagging rule, which can be set up in the menu **Settings > Tags > Automatically applied tags**. Within this section, add a new rule with the settings shown below:
 ![](./assets/keptn_service_tag.png)
- 
+
+1. Sending a POST API call to the `v2/tags` endpoint; [see here](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/custom-tags/post-tags/)
+```console
+curl -X POST "${DYNATRACE_TENANT}/api/v2/tags?entitySelector=${ENTITY_ID}" -H "accept: application/json; charset=utf-8" -H "Authorization: Api-Token ${API_TOKEN}" -H "Content-Type: application/json; charset=utf-8" -d "{\"tags\":[{\"key\":\"keptn_service\",\"value\":\"test\"}]}"
+```
+
 The Dynatrace Service will then periodically check for services containing those tags and create correlating services within the `dynatrace` project in Keptn.
 If the value of `service_name` is not set to a valid Keptn service name, the Service Entity ID will be used as a fallback value for the Keptn service name.
 After the service synchronization, you should be able to see the newly created services within the Bridge:
-
 
 ![](./assets/keptn_services_imported.png)
 
