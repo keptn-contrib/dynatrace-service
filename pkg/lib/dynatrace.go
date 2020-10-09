@@ -58,17 +58,17 @@ func NewDynatraceHelper(keptnHandler *keptn.Keptn, dynatraceCreds *credentials.D
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard keptn.Shipyard) error {
+func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptn.Shipyard) error {
 
 	dt.EnsureDTTaggingRulesAreSetUp()
 
 	dt.EnsureProblemNotificationsAreSetUp()
 
-	if project != "" {
-		dt.CreateManagementZones(project, shipyard)
+	if project != "" && shipyard != nil {
+		dt.CreateManagementZones(project, *shipyard)
 
 		configHandler := keptnutils.NewServiceHandler("configuration-service:8080")
-		dt.CreateDashboard(project, shipyard)
+		dt.CreateDashboard(project, *shipyard)
 
 		// try to create metric events - if one fails, don't fail the whole setup
 		for _, stage := range shipyard.Stages {

@@ -213,6 +213,7 @@ func (s *serviceSynchronizer) synchronizeServices() {
 	allKeptnServicesInProject, err := s.servicesAPI.GetAllServices(defaultDTProjectName, defaultDTProjectStage)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("Could not fetch services of Keptn project %s: %s", defaultDTProjectName, err.Error()))
+		return
 	}
 	s.servicesInKeptn = []string{}
 	for _, service := range allKeptnServicesInProject {
