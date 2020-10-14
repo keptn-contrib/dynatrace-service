@@ -29,12 +29,12 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		return err
 	}
 
-	shipyard := keptn.Shipyard{}
+	shipyard := &keptn.Shipyard{}
 	decodedShipyard, err := base64.StdEncoding.DecodeString(e.Shipyard)
 	if err != nil {
 		eh.Logger.Error("Could not decode shipyard: " + err.Error())
 	}
-	err = yaml.Unmarshal(decodedShipyard, &shipyard)
+	err = yaml.Unmarshal(decodedShipyard, shipyard)
 	if err != nil {
 		eh.Logger.Error("Could not parse shipyard: " + err.Error())
 	}

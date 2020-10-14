@@ -23,6 +23,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 |       0.6.2      | keptncontrib/dynatrace-service:0.7.1     | 1.13 - 1.15                              |
 |       0.7.0      | keptncontrib/dynatrace-service:0.8.0     | 1.14 - 1.18                              |
 |       0.7.1      | keptncontrib/dynatrace-service:0.9.0     | 1.14 - 1.18                              |
+|       0.7.2      | keptncontrib/dynatrace-service:0.10.0     | 1.14 - 1.18                              |
 
 ## Installation 
 
@@ -136,7 +137,7 @@ By default, the *dynatrace-service* assumes that all events it sends to Dynatrac
 ```
 attachRules:
   tagRule:
-    meTypes:
+  - meTypes:
     - SERVICE
     tags:
     - context: CONTEXTLESS
@@ -159,7 +160,7 @@ If your services are however not tagged with these but other tags - or if you wa
 spec_version: '0.1.0'
 attachRules:
   tagRule:
-    meTypes:
+  - meTypes:
     - SERVICE
     tags:
     - context: CONTEXTLESS
@@ -221,7 +222,7 @@ spec_version: '0.1.0'
 dtCreds: dynatrace-production
 attachRules:
   tagRule:
-    meTypes:
+  - meTypes:
     - SERVICE
     tags:
     - context: CONTEXTLESS
@@ -267,15 +268,19 @@ To set the `keptn_managed` tag, you can use the Dynatrace UI: First, in the **Tr
 
 ![](./assets/keptn_managed_tag.png)
  
-The `keptn_service` tag has to be set using an automated tagging rule, which can be set up in the menu **Settings > Tags > Automatically applied tags**. Within this section, add a new 
-rule with the settings shown below:
+The `keptn_service` tag can be set in two ways. 
 
+1. Using an automated tagging rule, which can be set up in the menu **Settings > Tags > Automatically applied tags**. Within this section, add a new rule with the settings shown below:
 ![](./assets/keptn_service_tag.png)
- 
+
+1. Sending a POST API call to the `v2/tags` endpoint; [see here](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/custom-tags/post-tags/)
+```console
+curl -X POST "${DYNATRACE_TENANT}/api/v2/tags?entitySelector=${ENTITY_ID}" -H "accept: application/json; charset=utf-8" -H "Authorization: Api-Token ${API_TOKEN}" -H "Content-Type: application/json; charset=utf-8" -d "{\"tags\":[{\"key\":\"keptn_service\",\"value\":\"test\"}]}"
+```
+
 The Dynatrace Service will then periodically check for services containing those tags and create correlating services within the `dynatrace` project in Keptn.
 If the value of `service_name` is not set to a valid Keptn service name, the Service Entity ID will be used as a fallback value for the Keptn service name.
 After the service synchronization, you should be able to see the newly created services within the Bridge:
-
 
 ![](./assets/keptn_services_imported.png)
 
