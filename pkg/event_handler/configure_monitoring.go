@@ -2,19 +2,21 @@ package event_handler
 
 import (
 	"fmt"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
-	"github.com/cloudevents/sdk-go/pkg/cloudevents"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/gorilla/websocket"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 type ConfigureMonitoringEventHandler struct {
-	Logger           keptn.LoggerInterface
+	Logger           keptncommon.LoggerInterface
 	Event            cloudevents.Event
 	IsCombinedLogger bool
 	WebSocket        *websocket.Conn
@@ -34,7 +36,7 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 		}
 	}
 	// open WebSocket, if connection data is available
-	connData := keptn.ConnectionData{}
+	connData := keptncommon.ConnectionData{}
 	if err := eh.Event.DataAs(&connData); err != nil ||
 		connData.EventContext.KeptnContext == nil || connData.EventContext.Token == nil ||
 		*connData.EventContext.KeptnContext == "" || *connData.EventContext.Token == "" {
@@ -50,19 +52,19 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 	return nil
 }
 
-func (eh *ConfigureMonitoringEventHandler) openWebSocketLogger(connData keptn.ConnectionData, shkeptncontext string) {
+func (eh *ConfigureMonitoringEventHandler) openWebSocketLogger(connData keptncommon.ConnectionData, shkeptncontext string) {
 	wsURL, err := getServiceEndpoint("API_WEBSOCKET_URL")
 	if err != nil {
 		eh.Logger.Error(err.Error())
 		return
 	}
-	ws, _, err := keptn.OpenWS(connData, wsURL)
+	ws, _, err := keptncommon.OpenWS(connData, wsURL)
 	if err != nil {
 		eh.Logger.Error("Opening WebSocket connection failed:" + err.Error())
 		return
 	}
-	stdLogger := keptn.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
-	combinedLogger := keptn.NewCombinedLogger(stdLogger, ws, shkeptncontext)
+	stdLogger := keptncommon.NewLogger(shkeptncontext, eh.Event.Context.GetID(), "dynatrace-service")
+	combinedLogger := keptncommon.NewCombinedLogger(stdLogger, ws, shkeptncontext)
 	eh.Logger = combinedLogger
 	eh.WebSocket = ws
 	eh.IsCombinedLogger = true
@@ -79,12 +81,12 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 		return nil
 	}
 
-	keptnHandler, err := keptn.NewKeptn(&eh.Event, keptn.KeptnOpts{})
+	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
 	if err != nil {
 		return fmt.Errorf("could not create Keptn handler: %v", err)
 	}
 
-	var shipyard *keptn.Shipyard
+	var shipyard *keptnv2.Shipyard
 	if e.Project != "" {
 		shipyard, err = keptnHandler.GetShipyard()
 		if err != nil {
@@ -115,7 +117,7 @@ func (eh ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 func (eh *ConfigureMonitoringEventHandler) closeWebSocketConnection() {
 	if eh.IsCombinedLogger {
-		eh.Logger.(*keptn.CombinedLogger).Terminate("")
+		eh.Logger.(*keptncommon.CombinedLogger).Terminate("")
 		eh.WebSocket.Close()
 	}
 }

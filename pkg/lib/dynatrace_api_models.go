@@ -2,9 +2,8 @@ package lib
 
 import (
 	"errors"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"strings"
-
-	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 // PROBLEM NOTIFICATION
@@ -588,7 +587,7 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 	return managementZone
 }
 
-func createDynatraceDashboard(projectName string, shipyard keptn.Shipyard) *DynatraceDashboard {
+func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *DynatraceDashboard {
 	dtDashboard := &DynatraceDashboard{
 		DashboardMetadata: DashboardMetadata{
 			Name:   projectName + dashboardNameSuffix,
@@ -676,7 +675,7 @@ func createDynatraceDashboard(projectName string, shipyard keptn.Shipyard) *Dyna
 	dtDashboard.Tiles = append(dtDashboard.Tiles, cpuLoadTile)
 
 	// create stage service tiles
-	for index, stage := range shipyard.Stages {
+	for index, stage := range shipyard.Spec.Stages {
 
 		headerTile := createHeaderTile(stage.Name)
 		headerTile.Bounds = Bounds{

@@ -2,16 +2,16 @@ package adapter
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 type DeploymentFinishedAdapter struct {
-	event   keptn.DeploymentFinishedEventData
+	event   keptnv2.DeploymentFinishedEventData
 	context string
 	source  string
 }
 
-func NewDeploymentFinishedAdapter(event keptn.DeploymentFinishedEventData, shkeptncontext, source string) DeploymentFinishedAdapter {
+func NewDeploymentFinishedAdapter(event keptnv2.DeploymentFinishedEventData, shkeptncontext, source string) DeploymentFinishedAdapter {
 	return DeploymentFinishedAdapter{event: event, context: shkeptncontext}
 }
 
@@ -27,7 +27,7 @@ func (a DeploymentFinishedAdapter) GetSource() string {
 
 // GetEvent returns the event type
 func (a DeploymentFinishedAdapter) GetEvent() string {
-	return keptn.DeploymentFinishedEventType
+	return keptnv2.GetFinishedEventType(keptnv2.DeploymentTaskName)
 }
 
 // GetProject returns the project
@@ -52,22 +52,22 @@ func (a DeploymentFinishedAdapter) GetDeployment() string {
 
 // GetTestStrategy returns the used test strategy
 func (a DeploymentFinishedAdapter) GetTestStrategy() string {
-	return a.event.TestStrategy
+	return ""
 }
 
 // GetDeploymentStrategy returns the used deployment strategy
 func (a DeploymentFinishedAdapter) GetDeploymentStrategy() string {
-	return a.event.DeploymentStrategy
+	return a.event.Deployment.DeploymentStrategy
 }
 
 // GetImage returns the deployed image
 func (a DeploymentFinishedAdapter) GetImage() string {
-	return a.event.Image
+	return ""
 }
 
 // GetTag returns the deployed tag
 func (a DeploymentFinishedAdapter) GetTag() string {
-	return a.event.Tag
+	return ""
 }
 
 // GetLabels returns a map of labels
@@ -80,11 +80,11 @@ func (a DeploymentFinishedAdapter) GetLabels() map[string]string {
 	if err == nil {
 		labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
-	if a.event.DeploymentURILocal != "" {
-		labels["deploymentURILocal"] = a.event.DeploymentURILocal
+	if len(a.event.Deployment.DeploymentURIsLocal) > 0 {
+		labels["deploymentURILocal"] = a.event.Deployment.DeploymentURIsLocal[0]
 	}
-	if a.event.DeploymentURIPublic != "" {
-		labels["deploymentURIPublic"] = a.event.DeploymentURIPublic
+	if len(a.event.Deployment.DeploymentURIsPublic) > 0 {
+		labels["deploymentURIPublic"] = a.event.Deployment.DeploymentURIsPublic[0]
 	}
 	return labels
 }

@@ -3,12 +3,11 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
-
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 // CreateDashboard creates a new dashboard for the provided project
-func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptn.Shipyard) {
+func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptnv2.Shipyard) {
 	if !IsDashboardsGenerationEnabled() {
 		return
 	}

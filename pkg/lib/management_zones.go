@@ -3,12 +3,11 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
-
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 // CreateManagementZones creates a new management zone for the project
-func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptn.Shipyard) {
+func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv2.Shipyard) {
 	if !IsManagementZonesGenerationEnabled() {
 		return
 	}
@@ -37,7 +36,7 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptn.
 		}
 	}
 
-	for _, stage := range shipyard.Stages {
+	for _, stage := range shipyard.Spec.Stages {
 		found := false
 		for _, mz := range mzs {
 			if mz.Name == getManagementZoneNameForStage(project, stage.Name) {

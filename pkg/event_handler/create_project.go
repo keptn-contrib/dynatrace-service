@@ -2,14 +2,15 @@ package event_handler
 
 import (
 	"encoding/base64"
+	"github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
-	"github.com/cloudevents/sdk-go/pkg/cloudevents"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,15 +23,15 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 	var shkeptncontext string
 	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
-	e := &keptn.ProjectCreateEventData{}
+	e := &keptnv2.ProjectCreateFinishedEventData{}
 	err := eh.Event.DataAs(e)
 	if err != nil {
 		eh.Logger.Error("Could not parse event payload: " + err.Error())
 		return err
 	}
 
-	shipyard := &keptn.Shipyard{}
-	decodedShipyard, err := base64.StdEncoding.DecodeString(e.Shipyard)
+	shipyard := &keptnv2.Shipyard{}
+	decodedShipyard, err := base64.StdEncoding.DecodeString(e.CreatedProject.Shipyard)
 	if err != nil {
 		eh.Logger.Error("Could not decode shipyard: " + err.Error())
 	}
@@ -39,7 +40,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		eh.Logger.Error("Could not parse shipyard: " + err.Error())
 	}
 
-	keptnHandler, err := keptn.NewKeptn(&eh.Event, keptn.KeptnOpts{})
+	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptn.KeptnOpts{})
 	if err != nil {
 		eh.Logger.Error("could not create Keptn handler: " + err.Error())
 	}

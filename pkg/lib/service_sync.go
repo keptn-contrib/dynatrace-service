@@ -4,14 +4,15 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudevents/sdk-go/pkg/cloudevents"
-	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"net/http"
 	"net/url"
 	"os"
@@ -113,13 +114,13 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 }
 
 type serviceSynchronizer struct {
-	logger          keptn.LoggerInterface
+	logger          keptncommon.LoggerInterface
 	projectsAPI     *keptnapi.ProjectHandler
 	servicesAPI     *keptnapi.ServiceHandler
 	resourcesAPI    *keptnapi.ResourceHandler
 	DTHelper        *DynatraceHelper
 	syncTimer       *time.Ticker
-	keptnHandler    *keptn.Keptn
+	keptnHandler    *keptnv2.Keptn
 	servicesInKeptn []string
 }
 
@@ -130,7 +131,7 @@ func ActivateServiceSynchronizer() *serviceSynchronizer {
 	if serviceSynchronizerInstance == nil {
 
 		encodedDefaultSLOFile = b64.StdEncoding.EncodeToString([]byte(defaultSLOFile))
-		logger := keptn.NewLogger("", "", "dynatrace-service")
+		logger := keptncommon.NewLogger("", "", "dynatrace-service")
 		serviceSynchronizerInstance = &serviceSynchronizer{
 			logger: logger,
 		}
@@ -150,7 +151,7 @@ func ActivateServiceSynchronizer() *serviceSynchronizer {
 
 		serviceSynchronizerInstance.logger.Debug("Initializing Service Synchronizer")
 		var configServiceBaseURL string
-		csURL, err := keptn.GetServiceEndpoint("CONFIGURATION_SERVICE")
+		csURL, err := keptncommon.GetServiceEndpoint("CONFIGURATION_SERVICE")
 		if err == nil {
 			configServiceBaseURL = csURL.String()
 		} else {
@@ -274,29 +275,24 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(serviceName string) e
 	}
 
 	source, _ := url.Parse("dynatrace-service")
-	contentType := "application/json"
 	keptnContext := uuid.New().String()
-	ce := &cloudevents.Event{
-		Context: cloudevents.EventContextV02{
-			ID:          uuid.New().String(),
-			Time:        &types.Timestamp{Time: time.Now()},
-			Type:        keptn.InternalServiceCreateEventType,
-			Source:      types.URLRef{URL: *source},
-			ContentType: &contentType,
-			Extensions:  map[string]interface{}{"shkeptncontext": keptnContext},
-		}.AsV02(),
-		Data: createServiceData,
-	}
+
+	ce := cloudevents.NewEvent()
+	ce.SetType(keptn.InternalServiceCreateEventType)
+	ce.SetSource(source.String())
+	ce.SetExtension("shkeptncontext", keptnContext)
+	ce.SetDataContentType(cloudevents.ApplicationJSON)
+	ce.SetData(cloudevents.ApplicationJSON, createServiceData)
 
 	if s.keptnHandler == nil {
-		newKeptn, err := keptn.NewKeptn(ce, keptn.KeptnOpts{})
+		newKeptn, err := keptnv2.NewKeptn(&ce, keptncommon.KeptnOpts{})
 		if err != nil {
 			return fmt.Errorf("could not initialize KeptnHandler: %v", err)
 		}
 		s.keptnHandler = newKeptn
 	}
 
-	err := s.keptnHandler.SendCloudEvent(*ce)
+	err := s.keptnHandler.SendCloudEvent(ce)
 	if err != nil {
 		return fmt.Errorf("could not send %s for service %s: %v", keptn.InternalServiceCreateEventType, serviceName, err)
 	}
@@ -372,7 +368,7 @@ func doesServiceExist(services []string, serviceName string) bool {
 func getKeptnServiceNameOfEntity(entity entity) string {
 	if entity.Tags != nil {
 		for _, tag := range entity.Tags {
-			if tag.Key == "keptn_service" && tag.Value != "" && keptn.ValidateKeptnEntityName(tag.Value) {
+			if tag.Key == "keptn_service" && tag.Value != "" && keptncommon.ValidateKeptnEntityName(tag.Value) {
 				return tag.Value
 
 			}

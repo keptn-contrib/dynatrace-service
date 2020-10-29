@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -10,7 +11,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 	"gopkg.in/yaml.v2"
 )
 
@@ -46,7 +46,7 @@ type DynatraceConfigFile struct {
 }
 
 // GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo
-func GetDynatraceConfig(event adapter.EventContentAdapter, logger keptn.LoggerInterface) (*DynatraceConfigFile, error) {
+func GetDynatraceConfig(event adapter.EventContentAdapter, logger keptncommon.LoggerInterface) (*DynatraceConfigFile, error) {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	var fileContent string
@@ -87,7 +87,7 @@ func GetDynatraceConfig(event adapter.EventContentAdapter, logger keptn.LoggerIn
 	return dynatraceConfFile, nil
 }
 
-func getDynatraceConfigResource(event adapter.EventContentAdapter, logger keptn.LoggerInterface) (string, error) {
+func getDynatraceConfigResource(event adapter.EventContentAdapter, logger keptncommon.LoggerInterface) (string, error) {
 
 	resourceHandler := keptnutils.NewResourceHandler(common.GetConfigurationServiceURL())
 

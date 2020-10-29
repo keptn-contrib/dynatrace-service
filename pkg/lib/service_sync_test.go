@@ -2,14 +2,15 @@ package lib
 
 import (
 	"encoding/json"
-	"github.com/cloudevents/sdk-go/pkg/cloudevents"
-	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-test/deep"
 	"github.com/google/uuid"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	"github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -122,14 +123,14 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 	defer dtMockServer.Close()
 
 	type fields struct {
-		logger          keptn.LoggerInterface
+		logger          keptncommon.LoggerInterface
 		projectsAPI     *keptnapi.ProjectHandler
 		servicesAPI     *keptnapi.ServiceHandler
 		resourcesAPI    *keptnapi.ResourceHandler
 		apiMutex        sync.Mutex
 		DTHelper        *DynatraceHelper
 		syncTimer       *time.Ticker
-		keptnHandler    *keptn.Keptn
+		keptnHandler    *keptnv2.Keptn
 		servicesInKeptn []string
 	}
 	type args struct {
@@ -147,7 +148,7 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 		{
 			name: "",
 			fields: fields{
-				logger:       keptn.NewLogger("", "", ""),
+				logger:       keptncommon.NewLogger("", "", ""),
 				projectsAPI:  nil,
 				servicesAPI:  nil,
 				resourcesAPI: nil,
@@ -155,7 +156,7 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 				DTHelper: NewDynatraceHelper(nil, &credentials.DTCredentials{
 					Tenant:   dtMockServer.URL,
 					ApiToken: "",
-				}, keptn.NewLogger("", "", "")),
+				}, keptncommon.NewLogger("", "", "")),
 				syncTimer:       nil,
 				keptnHandler:    nil,
 				servicesInKeptn: nil,
@@ -295,14 +296,14 @@ func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 
 	type fields struct {
-		logger          keptn.LoggerInterface
+		logger          keptncommon.LoggerInterface
 		projectsAPI     *keptnapi.ProjectHandler
 		servicesAPI     *keptnapi.ServiceHandler
 		resourcesAPI    *keptnapi.ResourceHandler
 		apiMutex        sync.Mutex
 		DTHelper        *DynatraceHelper
 		syncTimer       *time.Ticker
-		keptnHandler    *keptn.Keptn
+		keptnHandler    *keptnv2.Keptn
 		servicesInKeptn []string
 	}
 	type args struct {
@@ -317,7 +318,7 @@ func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
 		{
 			name: "create service",
 			fields: fields{
-				logger:          keptn.NewLogger("", "", ""),
+				logger:          keptncommon.NewLogger("", "", ""),
 				projectsAPI:     nil,
 				servicesAPI:     keptnapi.NewServiceHandler(servicesMockAPI.URL),
 				resourcesAPI:    keptnapi.NewResourceHandler(mockCS.URL),
@@ -486,26 +487,21 @@ func getTestConfigService() (chan string, chan string, *httptest.Server) {
 	return receivedSLO, receivedSLI, mockCS
 }
 
-func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Server) *keptn.Keptn {
+func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Server) *keptnv2.Keptn {
 	source, _ := url.Parse("dynatrace-service")
-	contentType := "application/json"
 	keptnContext := uuid.New().String()
 	createServiceData := keptn.ServiceCreateEventData{
 		Project: defaultDTProjectName,
 		Service: "my-service",
 	}
-	ce := &cloudevents.Event{
-		Context: cloudevents.EventContextV02{
-			ID:          uuid.New().String(),
-			Time:        &types.Timestamp{Time: time.Now()},
-			Type:        keptn.InternalServiceCreateEventType,
-			Source:      types.URLRef{URL: *source},
-			ContentType: &contentType,
-			Extensions:  map[string]interface{}{"shkeptncontext": keptnContext},
-		}.AsV02(),
-		Data: createServiceData,
-	}
-	k, _ := keptn.NewKeptn(ce, keptn.KeptnOpts{
+	ce := cloudevents.NewEvent()
+	ce.SetType(keptn.InternalServiceCreateEventType)
+	ce.SetSource(source.String())
+	ce.SetExtension("shkeptncontext", keptnContext)
+	ce.SetDataContentType(cloudevents.ApplicationJSON)
+	ce.SetData(cloudevents.ApplicationJSON, createServiceData)
+
+	k, _ := keptnv2.NewKeptn(&ce, keptncommon.KeptnOpts{
 		ConfigurationServiceURL: mockCS.URL,
 		EventBrokerURL:          mockEventBroker.URL,
 	})
@@ -656,14 +652,14 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 	s := &serviceSynchronizer{
-		logger:       keptn.NewLogger("", "", ""),
+		logger:       keptncommon.NewLogger("", "", ""),
 		projectsAPI:  keptnapi.NewProjectHandler(projectsMockAPI.URL),
 		servicesAPI:  keptnapi.NewServiceHandler(servicesMockAPI.URL),
 		resourcesAPI: keptnapi.NewResourceHandler(mockCS.URL),
 		DTHelper: NewDynatraceHelper(nil, &credentials.DTCredentials{
 			Tenant:   dtMockServer.URL,
 			ApiToken: "",
-		}, keptn.NewLogger("", "", "")),
+		}, keptncommon.NewLogger("", "", "")),
 		syncTimer:       nil,
 		keptnHandler:    k,
 		servicesInKeptn: []string{},
