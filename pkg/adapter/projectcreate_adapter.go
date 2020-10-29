@@ -2,15 +2,16 @@ package adapter
 
 import (
 	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 type ProjectCreateAdapter struct {
-	event   keptn.ProjectCreateEventData
+	event   keptnv2.ProjectCreateFinishedEventData
 	context string
 	source  string
 }
 
-func NewProjectCreateAdapter(event keptn.ProjectCreateEventData, shkeptncontext, source string) ProjectCreateAdapter {
+func NewProjectCreateAdapter(event keptnv2.ProjectCreateFinishedEventData, shkeptncontext, source string) ProjectCreateAdapter {
 	return ProjectCreateAdapter{event: event, context: shkeptncontext}
 }
 
