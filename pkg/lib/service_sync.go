@@ -1,19 +1,19 @@
 package lib
 
 import (
+	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/cloudevents/sdk-go/pkg/cloudevents"
-	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
-	"github.com/google/uuid"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -113,24 +113,27 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 }
 
 type serviceSynchronizer struct {
-	logger          keptn.LoggerInterface
+	logger          keptncommon.LoggerInterface
 	projectsAPI     *keptnapi.ProjectHandler
 	servicesAPI     *keptnapi.ServiceHandler
 	resourcesAPI    *keptnapi.ResourceHandler
+	apiHandler      *keptnapi.APIHandler
 	DTHelper        *DynatraceHelper
 	syncTimer       *time.Ticker
-	keptnHandler    *keptn.Keptn
+	keptnHandler    *keptnv2.Keptn
 	servicesInKeptn []string
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
+
+const shipyardController = "SHIPYARD_CONTROLLER"
 
 // ActivateServiceSynchronizer godoc
 func ActivateServiceSynchronizer() *serviceSynchronizer {
 	if serviceSynchronizerInstance == nil {
 
 		encodedDefaultSLOFile = b64.StdEncoding.EncodeToString([]byte(defaultSLOFile))
-		logger := keptn.NewLogger("", "", "dynatrace-service")
+		logger := keptncommon.NewLogger("", "", "dynatrace-service")
 		serviceSynchronizerInstance = &serviceSynchronizer{
 			logger: logger,
 		}
@@ -150,7 +153,7 @@ func ActivateServiceSynchronizer() *serviceSynchronizer {
 
 		serviceSynchronizerInstance.logger.Debug("Initializing Service Synchronizer")
 		var configServiceBaseURL string
-		csURL, err := keptn.GetServiceEndpoint("CONFIGURATION_SERVICE")
+		csURL, err := keptncommon.GetServiceEndpoint("CONFIGURATION_SERVICE")
 		if err == nil {
 			configServiceBaseURL = csURL.String()
 		} else {
@@ -267,57 +270,13 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(serviceName string) e
 
 	s.logger.Debug(fmt.Sprintf("Service %s does not exist yet in Keptn project '%s'", serviceName, defaultDTProjectName))
 
-	s.logger.Debug(fmt.Sprintf("sending %s event for service %s", keptn.InternalServiceCreateEventType, serviceName))
-	createServiceData := keptn.ServiceCreateEventData{
-		Project: defaultDTProjectName,
-		Service: serviceName,
-	}
-
-	source, _ := url.Parse("dynatrace-service")
-	contentType := "application/json"
-	keptnContext := uuid.New().String()
-	ce := &cloudevents.Event{
-		Context: cloudevents.EventContextV02{
-			ID:          uuid.New().String(),
-			Time:        &types.Timestamp{Time: time.Now()},
-			Type:        keptn.InternalServiceCreateEventType,
-			Source:      types.URLRef{URL: *source},
-			ContentType: &contentType,
-			Extensions:  map[string]interface{}{"shkeptncontext": keptnContext},
-		}.AsV02(),
-		Data: createServiceData,
-	}
-
-	if s.keptnHandler == nil {
-		newKeptn, err := keptn.NewKeptn(ce, keptn.KeptnOpts{})
-		if err != nil {
-			return fmt.Errorf("could not initialize KeptnHandler: %v", err)
-		}
-		s.keptnHandler = newKeptn
-	}
-
-	err := s.keptnHandler.SendCloudEvent(*ce)
+	_, err := s.createService(defaultDTProjectName, &apimodels.CreateService{
+		ServiceName: &serviceName,
+	})
 	if err != nil {
-		return fmt.Errorf("could not send %s for service %s: %v", keptn.InternalServiceCreateEventType, serviceName, err)
+		return fmt.Errorf("could not create service %s: %s", serviceName, err)
 	}
 
-	s.logger.Debug(fmt.Sprintf("Sent cloud event to create service. waiting until service %s is available", serviceName))
-	// wait for the service to be available
-	maxRetries := 5
-	serviceAvailable := false
-	var createdService *apimodels.Service
-	for i := 0; i < maxRetries; i++ {
-		<-time.After(3 * time.Second)
-		createdService, _ = s.servicesAPI.GetService(defaultDTProjectName, defaultDTProjectStage, serviceName)
-		if createdService != nil {
-			serviceAvailable = true
-			break
-		}
-	}
-
-	if !serviceAvailable {
-		return fmt.Errorf("Service %s is not available. Cannot proceed with uploading SLO", serviceName)
-	}
 	s.logger.Error(fmt.Sprintf("Service %s is available. Proceeding with uploading SLO", serviceName))
 
 	resourceURI := "slo.yaml"
@@ -372,7 +331,7 @@ func doesServiceExist(services []string, serviceName string) bool {
 func getKeptnServiceNameOfEntity(entity entity) string {
 	if entity.Tags != nil {
 		for _, tag := range entity.Tags {
-			if tag.Key == "keptn_service" && tag.Value != "" && keptn.ValidateKeptnEntityName(tag.Value) {
+			if tag.Key == "keptn_service" && tag.Value != "" && keptncommon.ValidateKeptnEntityName(tag.Value) {
 				return tag.Value
 
 			}
@@ -399,6 +358,46 @@ func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey
 		return nil, fmt.Errorf("could not decode response from Dynatrace API: %v", err)
 	}
 	return dtEntities, nil
+}
+
+func (s *serviceSynchronizer) createService(projectName string, service *apimodels.CreateService) (interface{}, interface{}) {
+	bodyStr, err := json.Marshal(service)
+	if err != nil {
+		return "", fmt.Errorf("could not marshal service payload: %s", err.Error())
+	}
+
+	scEndpoint, err := keptncommon.GetServiceEndpoint(shipyardController)
+	if err != nil {
+		return "", fmt.Errorf("could not determine shipyard-controller URL: %s", err.Error())
+	}
+	req, err := http.NewRequest("POST", scEndpoint.String()+"/v1/project/"+projectName+"/service", bytes.NewBuffer(bodyStr))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode >= 200 && resp.StatusCode <= 204 {
+		if len(body) > 0 {
+			return string(body), nil
+		}
+
+		return "", nil
+	}
+
+	if len(body) > 0 {
+		return "", errors.New(string(body))
+	}
+
+	return "", fmt.Errorf("Received unexptected response: %d %s", resp.StatusCode, resp.Status)
 }
 
 type dtEntityListResponse struct {
