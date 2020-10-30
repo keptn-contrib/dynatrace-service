@@ -5,12 +5,14 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
+// TestFinishedAdapter godoc
 type TestFinishedAdapter struct {
 	event   keptnv2.TestFinishedEventData
 	context string
 	source  string
 }
 
+// NewTestFinishedAdapter godoc
 func NewTestFinishedAdapter(event keptnv2.TestFinishedEventData, shkeptncontext, source string) TestFinishedAdapter {
 	return TestFinishedAdapter{event: event, context: shkeptncontext}
 }

@@ -5,12 +5,14 @@ import (
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
+// ActionTriggeredAdapter godoc
 type ActionTriggeredAdapter struct {
 	event   keptn.ActionTriggeredEventData
 	context string
 	source  string
 }
 
+// NewActionTriggeredAdapter godoc
 func NewActionTriggeredAdapter(event keptn.ActionTriggeredEventData, shkeptncontext, source string) ActionTriggeredAdapter {
 	return ActionTriggeredAdapter{event: event, context: shkeptncontext}
 }

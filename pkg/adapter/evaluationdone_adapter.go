@@ -8,12 +8,14 @@ import (
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
+// EvaluationDoneAdapter godoc
 type EvaluationDoneAdapter struct {
 	event   keptnv2.EvaluationFinishedEventData
 	context string
 	source  string
 }
 
+// NewEvaluationDoneAdapter godoc
 func NewEvaluationDoneAdapter(event keptnv2.EvaluationFinishedEventData, shkeptncontext, source string) EvaluationDoneAdapter {
 	return EvaluationDoneAdapter{event: event, context: shkeptncontext}
 }
