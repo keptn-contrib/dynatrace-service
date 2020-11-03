@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,8 +14,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
-
-	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 const DefaultOperatorVersion = "v0.8.0"
@@ -42,14 +42,14 @@ type Values struct {
 
 type DynatraceHelper struct {
 	DynatraceCreds *credentials.DTCredentials
-	Logger         keptn.LoggerInterface
+	Logger         keptncommon.LoggerInterface
 	OperatorTag    string
-	KeptnHandler   *keptn.Keptn
+	KeptnHandler   *keptnv2.Keptn
 	KeptnBridge    string
 }
 
 // NewDynatraceHelper creates a new DynatraceHelper
-func NewDynatraceHelper(keptnHandler *keptn.Keptn, dynatraceCreds *credentials.DTCredentials, logger keptn.LoggerInterface) *DynatraceHelper {
+func NewDynatraceHelper(keptnHandler *keptnv2.Keptn, dynatraceCreds *credentials.DTCredentials, logger keptncommon.LoggerInterface) *DynatraceHelper {
 	return &DynatraceHelper{
 		DynatraceCreds: dynatraceCreds,
 		KeptnHandler:   keptnHandler,
@@ -58,7 +58,7 @@ func NewDynatraceHelper(keptnHandler *keptn.Keptn, dynatraceCreds *credentials.D
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptn.Shipyard) error {
+func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) error {
 
 	dt.EnsureDTTaggingRulesAreSetUp()
 
@@ -71,8 +71,8 @@ func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptn.S
 		dt.CreateDashboard(project, *shipyard)
 
 		// try to create metric events - if one fails, don't fail the whole setup
-		for _, stage := range shipyard.Stages {
-			if stage.RemediationStrategy == "automated" {
+		for _, stage := range shipyard.Spec.Stages {
+			if shouldCreateMetricEvents(stage) {
 				services, err := configHandler.GetAllServices(project, stage.Name)
 				if err != nil {
 					return fmt.Errorf("failed to retrieve services of project %s: %v", project, err.Error())
@@ -84,6 +84,16 @@ func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptn.S
 		}
 	}
 	return nil
+}
+
+// shouldCreateMetricEvents checks if a task sequence with the name 'remediation' is available - this would be the equivalent of remediation_strategy: automated of Keptn < 0.8.x
+func shouldCreateMetricEvents(stage keptnv2.Stage) bool {
+	for _, taskSequence := range stage.Sequences {
+		if taskSequence.Name == "remediation" {
+			return true
+		}
+	}
+	return false
 }
 
 /**

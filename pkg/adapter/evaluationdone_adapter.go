@@ -2,18 +2,21 @@ package adapter
 
 import (
 	"fmt"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
+// EvaluationDoneAdapter godoc
 type EvaluationDoneAdapter struct {
-	event   keptn.EvaluationDoneEventData
+	event   keptnv2.EvaluationFinishedEventData
 	context string
 	source  string
 }
 
-func NewEvaluationDoneAdapter(event keptn.EvaluationDoneEventData, shkeptncontext, source string) EvaluationDoneAdapter {
+// NewEvaluationDoneAdapter godoc
+func NewEvaluationDoneAdapter(event keptnv2.EvaluationFinishedEventData, shkeptncontext, source string) EvaluationDoneAdapter {
 	return EvaluationDoneAdapter{event: event, context: shkeptncontext}
 }
 
@@ -54,12 +57,12 @@ func (a EvaluationDoneAdapter) GetDeployment() string {
 
 // GetTestStrategy returns the used test strategy
 func (a EvaluationDoneAdapter) GetTestStrategy() string {
-	return a.event.TestStrategy
+	return ""
 }
 
 // GetDeploymentStrategy returns the used deployment strategy
 func (a EvaluationDoneAdapter) GetDeploymentStrategy() string {
-	return a.event.DeploymentStrategy
+	return ""
 }
 
 // GetImage returns the deployed image
@@ -82,9 +85,9 @@ func (a EvaluationDoneAdapter) GetLabels() map[string]string {
 	if err == nil {
 		labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
-	labels["Quality Gate Score"] = fmt.Sprintf("%.2f", a.event.EvaluationDetails.Score)
-	labels["No of evaluated SLIs"] = fmt.Sprintf("%d", len(a.event.EvaluationDetails.IndicatorResults))
-	labels["Evaluation Start"] = a.event.EvaluationDetails.TimeStart
-	labels["Evaluation End"] = a.event.EvaluationDetails.TimeEnd
+	labels["Quality Gate Score"] = fmt.Sprintf("%.2f", a.event.Evaluation.Score)
+	labels["No of evaluated SLIs"] = fmt.Sprintf("%d", len(a.event.Evaluation.IndicatorResults))
+	labels["Evaluation Start"] = a.event.Evaluation.TimeStart
+	labels["Evaluation End"] = a.event.Evaluation.TimeEnd
 	return labels
 }

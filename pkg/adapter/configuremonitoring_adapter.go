@@ -4,12 +4,14 @@ import (
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
+// ConfigureMonitoringAdapter godoc
 type ConfigureMonitoringAdapter struct {
 	event   keptn.ConfigureMonitoringEventData
 	context string
 	source  string
 }
 
+// NewConfigureMonitoringAdapter godoc
 func NewConfigureMonitoringAdapter(event keptn.ConfigureMonitoringEventData, shkeptncontext, source string) ConfigureMonitoringAdapter {
 	return ConfigureMonitoringAdapter{event: event, context: shkeptncontext}
 }

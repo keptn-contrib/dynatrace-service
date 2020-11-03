@@ -2,6 +2,8 @@ package event_handler
 
 import (
 	"errors"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"os"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
@@ -12,19 +14,19 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 
-	"github.com/cloudevents/sdk-go/pkg/cloudevents"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 type ActionHandler struct {
-	Logger *keptn.Logger
+	Logger *keptncommon.Logger
 	Event  cloudevents.Event
 }
 
 func (eh ActionHandler) HandleEvent() error {
 
-	keptnHandler, err := keptn.NewKeptn(&eh.Event, keptn.KeptnOpts{})
+	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
 	if err != nil {
 		eh.Logger.Error("could not initialize Keptn handler: " + err.Error())
 		return err
@@ -102,7 +104,7 @@ func (eh ActionHandler) HandleEvent() error {
 		eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
 
 		events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
-			Project:      keptnHandler.KeptnBase.Project,
+			Project:      keptnHandler.KeptnBase.Event.GetProject(),
 			EventType:    keptn.ProblemOpenEventType,
 			KeptnContext: keptnHandler.KeptnContext,
 		})

@@ -3,7 +3,7 @@ package event_handler
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 )
 
 type dtConfigurationEvent struct {
@@ -53,7 +53,7 @@ type dtAnnotationEvent struct {
 /**
  * Changes in #115_116: Parse Tags from dynatrace.conf.yaml and only fall back to default behavior if it doesnt exist
  */
-func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) config.DtAttachRules {
+func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) config.DtAttachRules {
 	if dynatraceConfig != nil && dynatraceConfig.AttachRules != nil {
 		return *dynatraceConfig.AttachRules
 	}
@@ -89,7 +89,7 @@ func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.Dy
 /**
  * Change with #115_116: parse labels and move them into custom properties
  */
-func createCustomProperties(a adapter.EventContentAdapter, logger *keptn.Logger) map[string]string {
+func createCustomProperties(a adapter.EventContentAdapter, logger *keptncommon.Logger) map[string]string {
 	// TODO: AG - parse labels and push them through
 
 	// var customProperties dtCustomProperties
@@ -119,7 +119,7 @@ func createCustomProperties(a adapter.EventContentAdapter, logger *keptn.Logger)
 }
 
 // createInfoEvent creates a new Info event
-func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtInfoEvent {
+func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) dtInfoEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
 	var ie dtInfoEvent
@@ -140,7 +140,7 @@ func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.Dyna
 }
 
 // createAnnotationEvent creates a Dynatrace ANNOTATION event
-func createAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtAnnotationEvent {
+func createAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) dtAnnotationEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
 	var ie dtAnnotationEvent
@@ -168,7 +168,7 @@ func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue 
 	return defaultValue
 }
 
-func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtDeploymentEvent {
+func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) dtDeploymentEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
 	var de dtDeploymentEvent
@@ -192,7 +192,7 @@ func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	return de
 }
 
-func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptn.Logger) dtConfigurationEvent {
+func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) dtConfigurationEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
 	var de dtConfigurationEvent
