@@ -50,7 +50,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		}
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
-		// send Deployment EVent
+		// send Deployment Event
 		de := createDeploymentEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		dtHelper.SendEvent(de)
 	} else if eh.Event.Type() == keptnv2.GetTriggeredEventType(keptnv2.TestTaskName) {
@@ -77,7 +77,6 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
 		// Send Annotation Event
-		// ie := createInfoEvent(keptnEvent, eh.logger)
 		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if ie.AnnotationType == "" {
 			ie.AnnotationType = "Start Tests: " + ttData.Test.TestStrategy
@@ -110,17 +109,15 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
 		// Send Annotation Event
-		// ie := createInfoEvent(keptnEvent, eh.logger)
 		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
-		if tfData.Test.End != "" {
-			if ie.AnnotationType == "" {
-				ie.AnnotationType = "Stop Tests"
-			}
-			if ie.AnnotationDescription == "" {
-				ie.AnnotationDescription = "Stop running tests: against " + tfData.Service
-			}
-			dtHelper.SendEvent(ie)
+
+		if ie.AnnotationType == "" {
+			ie.AnnotationType = "Stop Tests"
 		}
+		if ie.AnnotationDescription == "" {
+			ie.AnnotationDescription = "Stop running tests: against " + tfData.Service
+		}
+		dtHelper.SendEvent(ie)
 	} else if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.EvaluationTaskName) {
 		edData := &keptnv2.EvaluationFinishedEventData{}
 		err := eh.Event.DataAs(edData)

@@ -5,12 +5,14 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
+// DeploymentFinishedAdapter godoc
 type DeploymentFinishedAdapter struct {
 	event   keptnv2.DeploymentFinishedEventData
 	context string
 	source  string
 }
 
+// NewDeploymentFinishedAdapter godoc
 func NewDeploymentFinishedAdapter(event keptnv2.DeploymentFinishedEventData, shkeptncontext, source string) DeploymentFinishedAdapter {
 	return DeploymentFinishedAdapter{event: event, context: shkeptncontext}
 }

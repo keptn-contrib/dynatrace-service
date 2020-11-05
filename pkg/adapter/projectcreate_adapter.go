@@ -5,12 +5,14 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
+// ProjectCreateAdapter godoc
 type ProjectCreateAdapter struct {
 	event   keptnv2.ProjectCreateFinishedEventData
 	context string
 	source  string
 }
 
+// NewProjectCreateAdapter godoc
 func NewProjectCreateAdapter(event keptnv2.ProjectCreateFinishedEventData, shkeptncontext, source string) ProjectCreateAdapter {
 	return ProjectCreateAdapter{event: event, context: shkeptncontext}
 }
