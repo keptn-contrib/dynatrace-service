@@ -127,6 +127,7 @@ type serviceSynchronizer struct {
 var serviceSynchronizerInstance *serviceSynchronizer
 
 const shipyardController = "SHIPYARD_CONTROLLER"
+const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 
 // ActivateServiceSynchronizer godoc
 func ActivateServiceSynchronizer() *serviceSynchronizer {
@@ -366,11 +367,14 @@ func (s *serviceSynchronizer) createService(projectName string, service *apimode
 		return "", fmt.Errorf("could not marshal service payload: %s", err.Error())
 	}
 
+	var scBaseURL string
 	scEndpoint, err := keptncommon.GetServiceEndpoint(shipyardController)
-	if err != nil {
-		return "", fmt.Errorf("could not determine shipyard-controller URL: %s", err.Error())
+	if err == nil {
+		scBaseURL = scEndpoint.String()
+	} else {
+		scBaseURL = defaultShipyardControllerURL
 	}
-	req, err := http.NewRequest("POST", scEndpoint.String()+"/v1/project/"+projectName+"/service", bytes.NewBuffer(bodyStr))
+	req, err := http.NewRequest("POST", scBaseURL+"/v1/project/"+projectName+"/service", bytes.NewBuffer(bodyStr))
 	req.Header.Set("Content-Type", "application/json")
 
 	client := http.Client{}

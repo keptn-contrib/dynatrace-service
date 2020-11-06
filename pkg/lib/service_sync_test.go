@@ -293,7 +293,7 @@ func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
 
 	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
-
+	os.Setenv(shipyardController, mockCS.URL)
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 
 	type fields struct {
