@@ -78,6 +78,7 @@ func (a DeploymentFinishedAdapter) GetImage() string {
 func (a DeploymentFinishedAdapter) getImageAndTag() string {
 	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
 
+	notAvailable := "n/a"
 	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
 		Project:      a.GetProject(),
 		Stage:        a.GetStage(),
@@ -86,31 +87,32 @@ func (a DeploymentFinishedAdapter) getImageAndTag() string {
 		KeptnContext: a.context,
 	})
 	if errObj != nil || events == nil || len(events) == 0 {
-		return "n/a"
+		return notAvailable
 	}
 
 	triggeredData := keptnv2.DeploymentTriggeredEventData{}
 	err := common.DecodeKeptnEventData(events[0].Data, triggeredData)
 	if err != nil {
-		return "n/a"
+		return notAvailable
 	}
 	for key, value := range triggeredData.ConfigurationChange.Values {
 		if strings.HasSuffix(key, "image") {
 			return value.(string)
 		}
 	}
-	return "n/a"
+	return notAvailable
 }
 
 // GetTag returns the deployed tag
 func (a DeploymentFinishedAdapter) GetTag() string {
+	notAvailable := "n/a"
 	imageAndTag := a.getImageAndTag()
-	if imageAndTag == "n/a" {
+	if imageAndTag == notAvailable {
 		return imageAndTag
 	}
 	split := strings.Split(imageAndTag, ":")
 	if len(split) == 1 {
-		return "n/a"
+		return notAvailable
 	}
 	return split[1]
 }

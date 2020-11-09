@@ -10,75 +10,75 @@ import (
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
-// EvaluationDoneAdapter godoc
-type EvaluationDoneAdapter struct {
+// EvaluationFinishedAdapter godoc
+type EvaluationFinishedAdapter struct {
 	event   keptnv2.EvaluationFinishedEventData
 	context string
 	source  string
 }
 
 // NewEvaluationDoneAdapter godoc
-func NewEvaluationDoneAdapter(event keptnv2.EvaluationFinishedEventData, shkeptncontext, source string) EvaluationDoneAdapter {
-	return EvaluationDoneAdapter{event: event, context: shkeptncontext}
+func NewEvaluationDoneAdapter(event keptnv2.EvaluationFinishedEventData, shkeptncontext, source string) EvaluationFinishedAdapter {
+	return EvaluationFinishedAdapter{event: event, context: shkeptncontext}
 }
 
 // GetShKeptnContext returns the shkeptncontext
-func (a EvaluationDoneAdapter) GetShKeptnContext() string {
+func (a EvaluationFinishedAdapter) GetShKeptnContext() string {
 	return a.context
 }
 
 // GetSource returns the source specified in the CloudEvent context
-func (a EvaluationDoneAdapter) GetSource() string {
+func (a EvaluationFinishedAdapter) GetSource() string {
 	return a.source
 }
 
 // GetEvent returns the event type
-func (a EvaluationDoneAdapter) GetEvent() string {
+func (a EvaluationFinishedAdapter) GetEvent() string {
 	return keptn.EvaluationDoneEventType
 }
 
 // GetProject returns the project
-func (a EvaluationDoneAdapter) GetProject() string {
+func (a EvaluationFinishedAdapter) GetProject() string {
 	return a.event.Project
 }
 
 // GetStage returns the stage
-func (a EvaluationDoneAdapter) GetStage() string {
+func (a EvaluationFinishedAdapter) GetStage() string {
 	return a.event.Stage
 }
 
 // GetService returns the service
-func (a EvaluationDoneAdapter) GetService() string {
+func (a EvaluationFinishedAdapter) GetService() string {
 	return a.event.Service
 }
 
 // GetDeployment returns the name of the deployment
-func (a EvaluationDoneAdapter) GetDeployment() string {
+func (a EvaluationFinishedAdapter) GetDeployment() string {
 	return ""
 }
 
 // GetTestStrategy returns the used test strategy
-func (a EvaluationDoneAdapter) GetTestStrategy() string {
+func (a EvaluationFinishedAdapter) GetTestStrategy() string {
 	return ""
 }
 
 // GetDeploymentStrategy returns the used deployment strategy
-func (a EvaluationDoneAdapter) GetDeploymentStrategy() string {
+func (a EvaluationFinishedAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
 // GetImage returns the deployed image
-func (a EvaluationDoneAdapter) GetImage() string {
+func (a EvaluationFinishedAdapter) GetImage() string {
 	return ""
 }
 
 // GetTag returns the deployed tag
-func (a EvaluationDoneAdapter) GetTag() string {
+func (a EvaluationFinishedAdapter) GetTag() string {
 	return ""
 }
 
 // GetLabels returns a map of labels
-func (a EvaluationDoneAdapter) GetLabels() map[string]string {
+func (a EvaluationFinishedAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
 	keptnBridgeURL, err := common.GetKeptnBridgeURL()
 	if labels == nil {
@@ -94,7 +94,8 @@ func (a EvaluationDoneAdapter) GetLabels() map[string]string {
 	return labels
 }
 
-func (a EvaluationDoneAdapter) IsPartOfRemediation() bool {
+// IsPartOfRemediation checks wether the evaluation.finished event is part of a remediation task sequence
+func (a EvaluationFinishedAdapter) IsPartOfRemediation() bool {
 	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
 
 	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
