@@ -2,7 +2,9 @@ package adapter
 
 import (
 	"fmt"
+	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"os"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptn "github.com/keptn/go-utils/pkg/lib"
@@ -90,4 +92,20 @@ func (a EvaluationDoneAdapter) GetLabels() map[string]string {
 	labels["Evaluation Start"] = a.event.Evaluation.TimeStart
 	labels["Evaluation End"] = a.event.Evaluation.TimeEnd
 	return labels
+}
+
+func (a EvaluationDoneAdapter) IsPartOfRemediation() bool {
+	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
+
+	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
+		Project:      a.GetProject(),
+		Stage:        a.GetStage(),
+		Service:      a.GetService(),
+		EventType:    keptnv2.GetTriggeredEventType("remediation"),
+		KeptnContext: a.context,
+	})
+	if errObj != nil || events == nil || len(events) == 0 {
+		return false
+	}
+	return true
 }
