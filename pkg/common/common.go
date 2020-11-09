@@ -114,6 +114,7 @@ func GetKeptnBridgeURL() (string, error) {
 	return url, nil
 }
 
+// DecodeKeptnEventData decodes a Keptn events to the specified object
 func DecodeKeptnEventData(in, out interface{}) error {
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Squash: true,
