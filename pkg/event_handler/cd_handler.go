@@ -2,6 +2,7 @@ package event_handler
 
 import (
 	"fmt"
+	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
@@ -26,7 +27,6 @@ func (eh CDEventHandler) HandleEvent() error {
 	if err != nil {
 		eh.Logger.Error("could not create Keptn handler: " + err.Error())
 	}
-
 	if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.DeploymentTaskName) {
 		dfData := &keptnv2.DeploymentFinishedEventData{}
 		err := eh.Event.DataAs(dfData)
@@ -125,7 +125,6 @@ func (eh CDEventHandler) HandleEvent() error {
 			fmt.Println("Error while parsing JSON payload: " + err.Error())
 			return err
 		}
-
 		// initialize our objects
 		keptnEvent := adapter.NewEvaluationDoneAdapter(*edData, shkeptncontext, eh.Event.Source())
 
@@ -143,10 +142,57 @@ func (eh CDEventHandler) HandleEvent() error {
 
 		// Send Info Event
 		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
-		ie.Title = fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", edData.Stage, edData.Result, edData.Evaluation.Score)
+		qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", edData.Stage, edData.Result, edData.Evaluation.Score)
+		ie.Title = fmt.Sprintf("Evaluation result: %s", edData.Result)
 
-		ie.Description = "Keptn evaluation status: " + string(edData.Result)
+		if keptnEvent.IsPartOfRemediation() {
+			if edData.Result == keptnv2.ResultPass || edData.Result == keptnv2.ResultWarning {
+				ie.Title = "Remediation action successful"
+			} else {
+				ie.Title = "Remediation action not successful"
+			}
+		}
+		ie.Description = qualityGateDescription
 		dtHelper.SendEvent(ie)
+	} else if eh.Event.Type() == keptnv2.GetTriggeredEventType(keptnv2.ReleaseTaskName) {
+		rtData := &keptnv2.ReleaseTriggeredEventData{}
+		err := eh.Event.DataAs(rtData)
+		if err != nil {
+			fmt.Println("Error while parsing JSON payload: " + err.Error())
+			return err
+		}
+		keptnEvent := adapter.NewReleaseTriggeredAdapter(*rtData, shkeptncontext, eh.Event.Source())
+
+		strategy, err := keptnevents.GetDeploymentStrategy(rtData.Deployment.DeploymentStrategy)
+		if err != nil {
+			eh.Logger.Error(fmt.Sprintf("Could not determine deployment strategy: %s", err.Error()))
+			return err
+		}
+		dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
+		if err != nil {
+			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			return err
+		}
+		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
+		if err != nil {
+			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			return err
+		}
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+
+		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		if strategy == keptnevents.Direct && rtData.Result == keptnv2.ResultPass || rtData.Result == keptnv2.ResultWarning {
+			ie.Title = fmt.Sprintf("PROMOTING from %s to next stage", rtData.Stage)
+		} else if rtData.Result == keptnv2.ResultFailed {
+			if strategy == keptnevents.Duplicate {
+				ie.Title = "Rollback Artifact (Switch Blue/Green) in " + rtData.Stage
+			} else {
+				ie.Title = fmt.Sprintf("NOT PROMOTING from %s to next stage", rtData.Stage)
+			}
+		}
+		dtHelper.SendEvent(ie)
+	} else if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ReleaseTaskName) {
+
 	} else {
 		eh.Logger.Info(fmt.Sprintf("Ignoring event of type %s", eh.Event.Type()))
 	}

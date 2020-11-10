@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/websocket v1.4.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/keptn/go-utils v0.6.3-0.20201021140127-a974f80c5982
-	github.com/mitchellh/mapstructure v1.1.2
+	github.com/mitchellh/mapstructure v1.3.3
 	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/apimachinery v0.17.0
 	k8s.io/client-go v0.17.0

@@ -2,7 +2,10 @@ package adapter
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"os"
+	"strings"
 )
 
 // DeploymentFinishedAdapter godoc
@@ -64,12 +67,54 @@ func (a DeploymentFinishedAdapter) GetDeploymentStrategy() string {
 
 // GetImage returns the deployed image
 func (a DeploymentFinishedAdapter) GetImage() string {
-	return ""
+	imageAndTag := a.getImageAndTag()
+	if imageAndTag == "n/a" {
+		return imageAndTag
+	}
+	split := strings.Split(imageAndTag, ":")
+	return split[0]
+}
+
+func (a DeploymentFinishedAdapter) getImageAndTag() string {
+	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
+
+	notAvailable := "n/a"
+	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
+		Project:      a.GetProject(),
+		Stage:        a.GetStage(),
+		Service:      a.GetService(),
+		EventType:    keptnv2.GetTriggeredEventType(keptnv2.DeploymentTaskName),
+		KeptnContext: a.context,
+	})
+	if errObj != nil || events == nil || len(events) == 0 {
+		return notAvailable
+	}
+
+	triggeredData := keptnv2.DeploymentTriggeredEventData{}
+	err := common.DecodeKeptnEventData(events[0].Data, triggeredData)
+	if err != nil {
+		return notAvailable
+	}
+	for key, value := range triggeredData.ConfigurationChange.Values {
+		if strings.HasSuffix(key, "image") {
+			return value.(string)
+		}
+	}
+	return notAvailable
 }
 
 // GetTag returns the deployed tag
 func (a DeploymentFinishedAdapter) GetTag() string {
-	return ""
+	notAvailable := "n/a"
+	imageAndTag := a.getImageAndTag()
+	if imageAndTag == notAvailable {
+		return imageAndTag
+	}
+	split := strings.Split(imageAndTag, ":")
+	if len(split) == 1 {
+		return notAvailable
+	}
+	return split[1]
 }
 
 // GetLabels returns a map of labels
