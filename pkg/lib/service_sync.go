@@ -1,20 +1,19 @@
 package lib
 
 import (
+	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/google/uuid"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"io/ioutil"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -118,6 +117,7 @@ type serviceSynchronizer struct {
 	projectsAPI     *keptnapi.ProjectHandler
 	servicesAPI     *keptnapi.ServiceHandler
 	resourcesAPI    *keptnapi.ResourceHandler
+	apiHandler      *keptnapi.APIHandler
 	DTHelper        *DynatraceHelper
 	syncTimer       *time.Ticker
 	keptnHandler    *keptnv2.Keptn
@@ -125,6 +125,9 @@ type serviceSynchronizer struct {
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
+
+const shipyardController = "SHIPYARD_CONTROLLER"
+const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 
 // ActivateServiceSynchronizer godoc
 func ActivateServiceSynchronizer() *serviceSynchronizer {
@@ -268,52 +271,13 @@ func (s *serviceSynchronizer) synchronizeDTEntityWithKeptn(serviceName string) e
 
 	s.logger.Debug(fmt.Sprintf("Service %s does not exist yet in Keptn project '%s'", serviceName, defaultDTProjectName))
 
-	s.logger.Debug(fmt.Sprintf("sending %s event for service %s", keptn.InternalServiceCreateEventType, serviceName))
-	createServiceData := keptn.ServiceCreateEventData{
-		Project: defaultDTProjectName,
-		Service: serviceName,
-	}
-
-	source, _ := url.Parse("dynatrace-service")
-	keptnContext := uuid.New().String()
-
-	ce := cloudevents.NewEvent()
-	ce.SetType(keptn.InternalServiceCreateEventType)
-	ce.SetSource(source.String())
-	ce.SetExtension("shkeptncontext", keptnContext)
-	ce.SetDataContentType(cloudevents.ApplicationJSON)
-	ce.SetData(cloudevents.ApplicationJSON, createServiceData)
-
-	if s.keptnHandler == nil {
-		newKeptn, err := keptnv2.NewKeptn(&ce, keptncommon.KeptnOpts{})
-		if err != nil {
-			return fmt.Errorf("could not initialize KeptnHandler: %v", err)
-		}
-		s.keptnHandler = newKeptn
-	}
-
-	err := s.keptnHandler.SendCloudEvent(ce)
+	_, err := s.createService(defaultDTProjectName, &apimodels.CreateService{
+		ServiceName: &serviceName,
+	})
 	if err != nil {
-		return fmt.Errorf("could not send %s for service %s: %v", keptn.InternalServiceCreateEventType, serviceName, err)
+		return fmt.Errorf("could not create service %s: %s", serviceName, err)
 	}
 
-	s.logger.Debug(fmt.Sprintf("Sent cloud event to create service. waiting until service %s is available", serviceName))
-	// wait for the service to be available
-	maxRetries := 5
-	serviceAvailable := false
-	var createdService *apimodels.Service
-	for i := 0; i < maxRetries; i++ {
-		<-time.After(3 * time.Second)
-		createdService, _ = s.servicesAPI.GetService(defaultDTProjectName, defaultDTProjectStage, serviceName)
-		if createdService != nil {
-			serviceAvailable = true
-			break
-		}
-	}
-
-	if !serviceAvailable {
-		return fmt.Errorf("Service %s is not available. Cannot proceed with uploading SLO", serviceName)
-	}
 	s.logger.Error(fmt.Sprintf("Service %s is available. Proceeding with uploading SLO", serviceName))
 
 	resourceURI := "slo.yaml"
@@ -395,6 +359,49 @@ func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey
 		return nil, fmt.Errorf("could not decode response from Dynatrace API: %v", err)
 	}
 	return dtEntities, nil
+}
+
+func (s *serviceSynchronizer) createService(projectName string, service *apimodels.CreateService) (interface{}, interface{}) {
+	bodyStr, err := json.Marshal(service)
+	if err != nil {
+		return "", fmt.Errorf("could not marshal service payload: %s", err.Error())
+	}
+
+	var scBaseURL string
+	scEndpoint, err := keptncommon.GetServiceEndpoint(shipyardController)
+	if err == nil {
+		scBaseURL = scEndpoint.String()
+	} else {
+		scBaseURL = defaultShipyardControllerURL
+	}
+	req, err := http.NewRequest("POST", scBaseURL+"/v1/project/"+projectName+"/service", bytes.NewBuffer(bodyStr))
+	req.Header.Set("Content-Type", "application/json")
+
+	client := http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	if resp.StatusCode >= 200 && resp.StatusCode <= 204 {
+		if len(body) > 0 {
+			return string(body), nil
+		}
+
+		return "", nil
+	}
+
+	if len(body) > 0 {
+		return "", errors.New(string(body))
+	}
+
+	return "", fmt.Errorf("Received unexptected response: %d %s", resp.StatusCode, resp.Status)
 }
 
 type dtEntityListResponse struct {

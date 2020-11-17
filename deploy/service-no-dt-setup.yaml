@@ -73,6 +73,10 @@ spec:
               value: 'http://event-broker/keptn'
             - name: DATASTORE
               value: 'http://mongodb-datastore:8080'
+            - name: CONFIGURATION_SERVICE
+              value: 'http://configuration-service:8080'
+            - name: SHIPYARD_CONTROLLER
+              value: 'http://shipyard-controller:8080'
             - name: PLATFORM
               value: kubernetes
             - name: DT_API_TOKEN

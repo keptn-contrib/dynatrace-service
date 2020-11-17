@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -287,12 +288,12 @@ func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
 	servicesMockAPI := getTestServicesAPI()
 	defer servicesMockAPI.Close()
 
-	receivedEvent, mockEventBroker := getTestMockEventBroker()
+	_, mockEventBroker := getTestMockEventBroker()
 	defer mockEventBroker.Close()
 
-	receivedSLO, receivedSLI, mockCS := getTestConfigService()
+	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
-
+	os.Setenv(shipyardController, mockCS.URL)
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 
 	type fields struct {
@@ -351,7 +352,7 @@ func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
 			}
 
 			select {
-			case rec := <-receivedEvent:
+			case rec := <-receivedServiceCreate:
 				if rec != tt.args.serviceName {
 					t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
 				}
@@ -441,15 +442,29 @@ func getTestMockEventBroker() (chan string, *httptest.Server) {
 	return receivedEvent, mockEventBroker
 }
 
-func getTestConfigService() (chan string, chan string, *httptest.Server) {
+type createServiceParams struct {
+	ServiceName string `json:"serviceName"`
+}
+
+func getTestConfigService() (chan string, chan string, chan string, *httptest.Server) {
 	receivedSLO := make(chan string)
 	receivedSLI := make(chan string)
+	receivedServiceCreate := make(chan string)
 	mockCS := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		bytes, err := ioutil.ReadAll(request.Body)
-		rec := &models.Resources{}
 
-		err = json.Unmarshal(bytes, rec)
-		if err != nil {
+		if strings.HasSuffix(request.URL.String(), "dynatrace/service") {
+			createSvcParam := &createServiceParams{}
+			err = json.Unmarshal(bytes, createSvcParam)
+			if err != nil {
+				writer.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			if createSvcParam.ServiceName != "" {
+				go func() {
+					receivedServiceCreate <- createSvcParam.ServiceName
+				}()
+			}
 			writer.WriteHeader(http.StatusOK)
 			return
 		}
@@ -469,6 +484,14 @@ func getTestConfigService() (chan string, chan string, *httptest.Server) {
 			writer.WriteHeader(http.StatusOK)
 			return
 		}
+
+		rec := &models.Resources{}
+
+		err = json.Unmarshal(bytes, rec)
+		if err != nil {
+			writer.WriteHeader(http.StatusOK)
+			return
+		}
 		if rec.Resources[0].ResourceURI != nil && *rec.Resources[0].ResourceURI == "slo.yaml" {
 			writer.WriteHeader(http.StatusOK)
 			writer.Write([]byte("{}"))
@@ -484,7 +507,7 @@ func getTestConfigService() (chan string, chan string, *httptest.Server) {
 		}
 
 	}))
-	return receivedSLO, receivedSLI, mockCS
+	return receivedServiceCreate, receivedSLO, receivedSLI, mockCS
 }
 
 func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Server) *keptnv2.Keptn {
@@ -644,11 +667,13 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 	}))
 	defer servicesMockAPI.Close()
 
-	receivedEvent, mockEventBroker := getTestMockEventBroker()
+	_, mockEventBroker := getTestMockEventBroker()
 	defer mockEventBroker.Close()
 
-	receivedSLO, receivedSLI, mockCS := getTestConfigService()
+	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
+
+	os.Setenv(shipyardController, mockCS.URL)
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 	s := &serviceSynchronizer{
@@ -666,85 +691,41 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 	}
 	s.synchronizeServices()
 
-	// validate if all events and SLO uploads have been received
-	expectedServiceCreateEvents := []string{"my-service", "my-service-2"}
-	receivedServiceCreateEvents := []string{}
-	finish := false
-	for {
-		select {
-		case rec := <-receivedEvent:
-			receivedServiceCreateEvents = append(receivedServiceCreateEvents, rec)
-			if len(receivedServiceCreateEvents) == 2 {
-				if diff := deep.Equal(receivedServiceCreateEvents, expectedServiceCreateEvents); len(diff) > 0 {
-					t.Error("did not receive expected service create events")
-					for _, d := range diff {
-						t.Log(d)
-					}
-				}
-				finish = true
-				break
-			}
-		case <-time.After(5 * time.Second):
-			t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			finish = true
-			break
-		}
-		if finish {
-			break
-		}
+	// validate if all service creation requests have been sent
+	if done := checkReceivedEntities(t, receivedServiceCreate, []string{"my-service", "my-service-2"}); done {
+		t.Error("did not receive expected service creation requests")
 	}
 
-	expectedSLOUploads := []string{"my-service", "my-service-2"}
-	receivedSLOUploads := []string{}
-	finish = false
-	for {
-		select {
-		case rec := <-receivedSLO:
-			receivedSLOUploads = append(receivedSLOUploads, rec)
-			if len(receivedSLOUploads) == 2 {
-				if diff := deep.Equal(receivedSLOUploads, expectedSLOUploads); len(diff) > 0 {
-					t.Error("did not receive expected service create events")
-					for _, d := range diff {
-						t.Log(d)
-					}
-				}
-				finish = true
-				break
-			}
-		case <-time.After(5 * time.Second):
-			t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			finish = true
-			break
-		}
-		if finish {
-			break
-		}
+	// validate if all SLO uploads have been received
+	if done := checkReceivedEntities(t, receivedSLO, []string{"my-service", "my-service-2"}); done {
+		t.Error("did not receive expected service creation requests")
 	}
 
-	expectedSLIUploads := []string{"my-service", "my-service-2"}
-	receivedSLIUploads := []string{}
-	finish = false
+	// validate if all SLI uploads have been received
+	if done := checkReceivedEntities(t, receivedSLI, []string{"my-service", "my-service-2"}); done {
+		t.Error("did not receive expected service creation requests")
+	}
+}
+
+func checkReceivedEntities(t *testing.T, channel chan string, expected []string) bool {
+	received := []string{}
 	for {
 		select {
-		case rec := <-receivedSLI:
-			receivedSLIUploads = append(receivedSLIUploads, rec)
-			if len(receivedSLIUploads) == 2 {
-				if diff := deep.Equal(receivedSLIUploads, expectedSLIUploads); len(diff) > 0 {
-					t.Error("did not receive expected service create events")
+		case rec := <-channel:
+			received = append(received, rec)
+			if len(received) == 2 {
+				if diff := deep.Equal(received, expected); len(diff) > 0 {
+					t.Error("expected did not match received:")
 					for _, d := range diff {
 						t.Log(d)
 					}
+					return true
 				}
-				finish = true
-				break
+				return false
 			}
 		case <-time.After(5 * time.Second):
 			t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			finish = true
-			break
-		}
-		if finish {
-			break
+			return true
 		}
 	}
 }
