@@ -8,9 +8,18 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mitchellh/mapstructure"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 )
+
+// This is the label name for the Problem URL label
+var PROBLEMURL_LABEL = "Problem URL"
+var KEPTNSBRIDGE_LABEL = "Keptns Bridge"
 
 // RunLocal is true if the "ENV"-environment variable is set to local
 var RunLocal = os.Getenv("ENV") == "local"
@@ -111,4 +120,58 @@ func GetKeptnBridgeURL() (string, error) {
 	url = "https://" + url
 
 	return url, nil
+}
+
+/**
+ * Finds the Problem ID that is associated with this Keptn Workflow
+ * It first parses it from Problem URL label - if it cant be found there it will look for the Initial Problem Open Event and gets the ID from there!
+ */
+func FindProblemIDForEvent(keptnHandler *keptn.Keptn, labels map[string]string) (string, error) {
+
+	// Step 1 - see if we have a Problem Url in the labels
+	// iterate through the labels and find Problem URL
+	for labelName, labelValue := range labels {
+		if labelName == PROBLEMURL_LABEL {
+			// the value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
+			// so - lets get the last part after pid=
+
+			ix := strings.LastIndex(labelValue, ";pid=")
+			if ix > 0 {
+				return labelValue[ix+5:], nil
+			}
+		}
+	}
+
+	// Step 2 - lets see if we have a ProblemOpenEvent for this KeptnContext - if so - we try to extract the Problem ID
+	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
+
+	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
+		Project:      keptnHandler.KeptnBase.Project,
+		EventType:    keptn.ProblemOpenEventType,
+		KeptnContext: keptnHandler.KeptnContext,
+	})
+
+	if errObj != nil {
+		msg := "cannot send DT problem comment: Could not retrieve problem.open event for incoming event: " + *errObj.Message
+		return "", errors.New(msg)
+	}
+
+	if len(events) == 0 {
+		msg := "cannot send DT problem comment: Could not retrieve problem.open event for incoming event: no events returned"
+		return "", errors.New(msg)
+	}
+
+	problemOpenEvent := &keptn.ProblemEventData{}
+	err := mapstructure.Decode(events[0].Data, problemOpenEvent)
+
+	if err != nil {
+		msg := "could not decode problem.open event: " + err.Error()
+		return "", errors.New(msg)
+	}
+
+	if problemOpenEvent.PID == "" {
+		return "", errors.New("cannot send DT problem comment: No problem ID is included in the event")
+	}
+
+	return problemOpenEvent.PID, nil
 }
