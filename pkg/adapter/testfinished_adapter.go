@@ -78,7 +78,7 @@ func (a TestFinishedAdapter) GetLabels() map[string]string {
 		labels = make(map[string]string)
 	}
 	if err == nil {
-		labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
+		labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
 	return labels
 }

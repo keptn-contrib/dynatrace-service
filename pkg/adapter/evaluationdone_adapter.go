@@ -80,7 +80,7 @@ func (a EvaluationDoneAdapter) GetLabels() map[string]string {
 		labels = make(map[string]string)
 	}
 	if err == nil {
-		labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
+		labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
 	labels["Quality Gate Score"] = fmt.Sprintf("%.2f", a.event.EvaluationDetails.Score)
 	labels["No of evaluated SLIs"] = fmt.Sprintf("%d", len(a.event.EvaluationDetails.IndicatorResults))
