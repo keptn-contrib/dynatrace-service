@@ -18,8 +18,8 @@ import (
 )
 
 // This is the label name for the Problem URL label
-var PROBLEMURL_LABEL = "Problem URL"
-var KEPTNSBRIDGE_LABEL = "Keptns Bridge"
+const PROBLEMURL_LABEL = "Problem URL"
+const KEPTNSBRIDGE_LABEL = "Keptns Bridge"
 
 // RunLocal is true if the "ENV"-environment variable is set to local
 var RunLocal = os.Getenv("ENV") == "local"
