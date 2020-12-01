@@ -78,7 +78,7 @@ func (a DeploymentFinishedAdapter) GetLabels() map[string]string {
 		labels = make(map[string]string)
 	}
 	if err == nil {
-		labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
+		labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
 	if a.event.DeploymentURILocal != "" {
 		labels["deploymentURILocal"] = a.event.DeploymentURILocal

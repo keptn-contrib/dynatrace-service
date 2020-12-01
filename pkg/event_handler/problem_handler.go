@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	cloudeventsclient "github.com/cloudevents/sdk-go/pkg/cloudevents/client"
 	cloudeventshttp "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http"
@@ -45,6 +47,9 @@ type DTProblemEvent struct {
 		KeptnContext string `json:"keptnContext"`
 		Token        string `json:"token"`
 	} `json:"eventContext"`
+	KeptnProject string `json:"KeptnProject"`
+	KeptnService string `json:"KeptnService"`
+	KeptnStage   string `json:"KeptnStage"`
 }
 
 type ProblemEventHandler struct {
@@ -82,7 +87,7 @@ func (eh ProblemEventHandler) HandleEvent() error {
 func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProblemEvent, shkeptncontext string) error {
 	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
 
-	project, stage, service := eh.extractContextFromTags(dtProblemEvent)
+	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
 
 	newProblemData := keptn.ProblemEventData{
 		State:          "CLOSED",
@@ -100,7 +105,7 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176
 	// add problem URL as label so it becomes clickable
 	newProblemData.Labels = make(map[string]string)
-	newProblemData.Labels["Problem URL"] = dtProblemEvent.ProblemURL
+	newProblemData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
 
 	eh.Logger.Debug("Sending event to eventbroker")
 	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, "sh.keptn.events.problem")
@@ -115,7 +120,7 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProblemEvent, shkeptncontext string) error {
 	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
 
-	project, stage, service := eh.extractContextFromTags(dtProblemEvent)
+	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
 
 	newProblemData := keptn.ProblemEventData{
 		State:          "OPEN",
@@ -133,7 +138,7 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176
 	// add problem URL as label so it becomes clickable
 	newProblemData.Labels = make(map[string]string)
-	newProblemData.Labels["Problem URL"] = dtProblemEvent.ProblemURL
+	newProblemData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
 
 	eh.Logger.Debug("Sending event to eventbroker")
 	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptn.ProblemOpenEventType)
@@ -145,12 +150,15 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 	return nil
 }
 
-func (eh ProblemEventHandler) extractContextFromTags(dtProblemEvent *DTProblemEvent) (string, string, string) {
-	splittedTags := strings.Split(dtProblemEvent.Tags, ",")
+func (eh ProblemEventHandler) extractContextFromDynatraceProblem(dtProblemEvent *DTProblemEvent) (string, string, string) {
 
-	project := ""
-	stage := ""
-	service := ""
+	// First we look if project, stage and service was passed in via the problem data fields and use them as defaults
+	project := dtProblemEvent.KeptnProject
+	stage := dtProblemEvent.KeptnStage
+	service := dtProblemEvent.KeptnService
+
+	// Second we analyze the tag list as its possible that the problem was raised for a specific monitored service that has keptn tags
+	splittedTags := strings.Split(dtProblemEvent.Tags, ",")
 
 	for _, tag := range splittedTags {
 		tag = strings.TrimSpace(tag)

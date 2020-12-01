@@ -109,6 +109,7 @@ func createCustomProperties(a adapter.EventContentAdapter, logger *keptn.Logger)
 	customProperties["Image"] = a.GetImage()
 	customProperties["Tag"] = a.GetTag()
 	customProperties["KeptnContext"] = a.GetShKeptnContext()
+	customProperties["Keptn Service"] = a.GetSource()
 
 	// now add the rest of the Labels
 	for key, value := range a.GetLabels() {
