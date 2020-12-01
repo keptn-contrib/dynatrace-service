@@ -355,7 +355,7 @@ If you use Keptn to deploy your microservices and follow our tagging practices D
 To setup this integration you just need to setup a Custo Problem Notification that looks like this: 
 ```json
 {
-    "specversion":"0.2",
+    "specversion":"1.0",
     "shkeptncontext":"{PID}",
     "type":"sh.keptn.events.problem",
     "source":"dynatrace",
@@ -388,7 +388,7 @@ So - what if you want to send any type of problem for a specific Alerting Profil
 Here the custom payload for a Custom Notification Integration that will send all problems to a Keptn project called `dynatrace`, stage called `production` and service called `allproblems`:
 ```json
 {
-    "specversion":"0.2",
+    "specversion":"1.0",
     "shkeptncontext":"{PID}",
     "type":"sh.keptn.events.problem",
     "source":"dynatrace",

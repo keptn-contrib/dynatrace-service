@@ -7,6 +7,7 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
@@ -150,6 +151,15 @@ func (eh CDEventHandler) HandleEvent() error {
 				ie.Title = "Remediation action successful"
 			} else {
 				ie.Title = "Remediation action not successful"
+			}
+			// If evaluation was done in context of a problem remediation workflow then post comments to the Dynatrace Problem
+			pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
+			if err == nil && pid != "" {
+				// Comment we push over
+				comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], edData.Result, edData.EvaluationDetails.Score)
+
+				// this is posting the Event on the problem as a comment
+				err = dtHelper.SendProblemComment(pid, comment)
 			}
 		}
 		ie.Description = qualityGateDescription
