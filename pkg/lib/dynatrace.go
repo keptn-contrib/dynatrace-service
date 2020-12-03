@@ -41,11 +41,33 @@ type Values struct {
 }
 
 type DynatraceHelper struct {
-	DynatraceCreds *credentials.DTCredentials
-	Logger         keptncommon.LoggerInterface
-	OperatorTag    string
-	KeptnHandler   *keptnv2.Keptn
-	KeptnBridge    string
+	DynatraceCreds     *credentials.DTCredentials
+	Logger             keptncommon.LoggerInterface
+	OperatorTag        string
+	KeptnHandler       *keptnv2.Keptn
+	KeptnBridge        string
+	configuredEntities *ConfiguredEntities
+}
+
+// ConfigResult godoc
+type ConfigResult struct {
+	Name    string
+	Success bool
+	Message string
+}
+
+// ConfiguredEntities contains information about the entities configures in Dynatrace
+type ConfiguredEntities struct {
+	TaggingRulesEnabled         bool
+	TaggingRules                []ConfigResult
+	ProblemNotificationsEnabled bool
+	ProblemNotifications        ConfigResult
+	ManagementZonesEnabled      bool
+	ManagementZones             []ConfigResult
+	DashboardEnabled            bool
+	Dashboard                   ConfigResult
+	MetricEventsEnabled         bool
+	MetricEvents                []ConfigResult
 }
 
 // NewDynatraceHelper creates a new DynatraceHelper
@@ -58,8 +80,20 @@ func NewDynatraceHelper(keptnHandler *keptnv2.Keptn, dynatraceCreds *credentials
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) error {
+func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*ConfiguredEntities, error) {
 
+	dt.configuredEntities = &ConfiguredEntities{
+		TaggingRulesEnabled:         IsTaggingRulesGenerationEnabled(),
+		TaggingRules:                []ConfigResult{},
+		ProblemNotificationsEnabled: IsProblemNotificationsGenerationEnabled(),
+		ProblemNotifications:        ConfigResult{},
+		ManagementZonesEnabled:      IsManagementZonesGenerationEnabled(),
+		ManagementZones:             []ConfigResult{},
+		DashboardEnabled:            IsDashboardsGenerationEnabled(),
+		Dashboard:                   ConfigResult{},
+		MetricEventsEnabled:         IsMetricEventsGenerationEnabled(),
+		MetricEvents:                []ConfigResult{},
+	}
 	dt.EnsureDTTaggingRulesAreSetUp()
 
 	dt.EnsureProblemNotificationsAreSetUp()
@@ -75,7 +109,7 @@ func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptnv2
 			if shouldCreateMetricEvents(stage) {
 				services, err := configHandler.GetAllServices(project, stage.Name)
 				if err != nil {
-					return fmt.Errorf("failed to retrieve services of project %s: %v", project, err.Error())
+					return nil, fmt.Errorf("failed to retrieve services of project %s: %v", project, err.Error())
 				}
 				for _, service := range services {
 					dt.CreateMetricEvents(project, stage.Name, service.ServiceName)
@@ -83,7 +117,7 @@ func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptnv2
 			}
 		}
 	}
-	return nil
+	return dt.configuredEntities, nil
 }
 
 // shouldCreateMetricEvents checks if a task sequence with the name 'remediation' is available - this would be the equivalent of remediation_strategy: automated of Keptn < 0.8.x

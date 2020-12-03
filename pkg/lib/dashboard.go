@@ -15,7 +15,10 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptnv2.Ship
 	// first, check if dashboard for this project already exists and delete that
 	err := dt.DeleteExistingDashboard(project)
 	if err != nil {
-		dt.Logger.Error(err.Error())
+		msg := "Could not delete existing dashboard: " + err.Error()
+		dt.Logger.Error(msg)
+		dt.configuredEntities.Dashboard.Success = false
+		dt.configuredEntities.Dashboard.Message = msg
 		return
 	}
 
@@ -23,16 +26,25 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptnv2.Ship
 	dashboard := createDynatraceDashboard(project, shipyard)
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
-		dt.Logger.Error(fmt.Sprintf("failed to unmarshal Dynatrace dashboards: %v", err))
+		msg := fmt.Sprintf("failed to unmarshal Dynatrace dashboards: %v", err)
+		dt.Logger.Error(msg)
+		dt.configuredEntities.Dashboard.Success = false
+		dt.configuredEntities.Dashboard.Message = msg
 		return
 	}
 
 	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", dashboardPayload)
 	if err != nil {
-		dt.Logger.Error(fmt.Sprintf("failed to create Dynatrace dashboards: %v", err))
+		msg := fmt.Sprintf("failed to create Dynatrace dashboards: %v", err)
+		dt.Logger.Error(msg)
+		dt.configuredEntities.Dashboard.Success = false
+		dt.configuredEntities.Dashboard.Message = msg
 		return
 	}
-	dt.Logger.Info("Dynatrace dashboard created successfully. You can view it here: https://" + dt.DynatraceCreds.Tenant + "/#dashboards")
+	msg := "Dynatrace dashboard created successfully. You can view it here: https://" + dt.DynatraceCreds.Tenant + "/#dashboards"
+	dt.Logger.Info(msg)
+	dt.configuredEntities.Dashboard.Success = false
+	dt.configuredEntities.Dashboard.Message = msg
 	return
 }
 

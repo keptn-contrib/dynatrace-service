@@ -18,7 +18,10 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 
 	alertingProfileId, err := dt.setupAlertingProfile()
 	if err != nil {
-		dt.Logger.Error("failed to set up problem notification: " + err.Error())
+		msg := "failed to set up problem notification: " + err.Error()
+		dt.Logger.Error(msg)
+		dt.configuredEntities.ProblemNotifications.Success = false
+		dt.configuredEntities.ProblemNotifications.Message = msg
 		return
 	}
 
@@ -27,7 +30,8 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 
 	err = json.Unmarshal([]byte(response), &existingNotifications)
 	if err != nil {
-		dt.Logger.Error(fmt.Sprintf("failed to unmarshal notifications: %v", err))
+		msg := fmt.Sprintf("failed to unmarshal notifications: %v", err)
+		dt.Logger.Error(msg)
 	}
 
 	for _, notification := range existingNotifications.Values {
@@ -43,7 +47,10 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 
 	keptnCredentials, err := common.GetKeptnCredentials()
 	if err != nil {
-		dt.Logger.Error("failed to retrieve Keptn API credentials: " + err.Error())
+		msg := "failed to retrieve Keptn API credentials: " + err.Error()
+		dt.Logger.Error(msg)
+		dt.configuredEntities.ProblemNotifications.Success = false
+		dt.configuredEntities.ProblemNotifications.Message = msg
 		return
 	}
 
@@ -53,8 +60,13 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 
 	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", []byte(problemNotification))
 	if err != nil {
-		dt.Logger.Error("failed to set up problem notification: " + err.Error())
+		msg := "failed to set up problem notification: " + err.Error()
+		dt.Logger.Error(msg)
+		dt.configuredEntities.ProblemNotifications.Success = false
+		dt.configuredEntities.ProblemNotifications.Message = msg
 	}
+	dt.configuredEntities.ProblemNotifications.Success = true
+	dt.configuredEntities.ProblemNotifications.Message = "Successfully set up Keptn Alerting Profile and Problem Notifications"
 }
 
 func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {

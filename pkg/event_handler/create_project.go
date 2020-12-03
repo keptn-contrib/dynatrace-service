@@ -59,7 +59,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 	}
 	dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
-	err = dtHelper.ConfigureMonitoring(e.Project, shipyard)
+	_, err = dtHelper.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {
 		return err
 	}
