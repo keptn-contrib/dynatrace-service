@@ -147,8 +147,8 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 
 	if entities.DashboardEnabled && entities.Dashboard.Message != "" {
 		msg = msg + "---Dashboard:--- \n"
-		msg = msg + "  - " + entities.Dashboard.Message + "\n"
-		msg = msg + "\n\n"
+		msg = msg + "  - " + entities.Dashboard.Message
+		msg = msg + "\n"
 	}
 
 	return msg
