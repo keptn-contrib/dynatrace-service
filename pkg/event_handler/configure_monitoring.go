@@ -129,7 +129,7 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 
 	if entities.ProblemNotificationsEnabled {
 		msg = msg + "---Problem Notification:--- \n"
-		msg = msg + "  - " + entities.ProblemNotifications.Message + "\n"
+		msg = msg + "  - " + entities.ProblemNotifications.Message
 		msg = msg + "\n\n"
 	}
 
