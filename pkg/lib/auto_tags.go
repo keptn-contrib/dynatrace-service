@@ -46,7 +46,13 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 				})
 			}
 		} else {
-			dt.Logger.Info("Tagging rule " + ruleName + " already exists")
+			msg := "Tagging rule " + ruleName + " already exists"
+			dt.Logger.Info(msg)
+			dt.configuredEntities.TaggingRules = append(dt.configuredEntities.TaggingRules, ConfigResult{
+				Name:    ruleName,
+				Message: msg,
+				Success: true,
+			})
 		}
 	}
 	return

@@ -47,6 +47,12 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 			// Error occurred but continue
 			fmt.Errorf("failed to marshal management zone: %v", err)
 		}
+	} else {
+		dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+			Name:    "Keptn: " + project,
+			Success: true,
+			Message: "Management Zone 'Keptn:" + project + "' was already available in your Tenant",
+		})
 	}
 
 	for _, stage := range shipyard.Spec.Stages {
@@ -75,6 +81,12 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 					Success: true,
 				})
 			}
+		} else {
+			dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+				Name:    "Keptn: " + project + " " + stage.Name,
+				Success: true,
+				Message: "Management Zone 'Keptn:" + project + " " + stage.Name + "' was already available in your Tenant",
+			})
 		}
 	}
 
