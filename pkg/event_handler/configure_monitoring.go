@@ -101,9 +101,9 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 	if entities == nil {
 		return ""
 	}
-	msg := "Dynatrace monitoring setup done.\n The following entities have been configured:\n\n"
+	msg := "Dynatrace monitoring setup done.\nThe following entities have been configured:\n\n"
 
-	if entities.ManagementZonesEnabled {
+	if entities.ManagementZonesEnabled && len(entities.ManagementZones) > 0 {
 		msg = msg + "---Management Zones:--- \n"
 		for _, mz := range entities.ManagementZones {
 			if mz.Success {
@@ -115,7 +115,7 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 		msg = msg + "\n\n"
 	}
 
-	if entities.TaggingRulesEnabled {
+	if entities.TaggingRulesEnabled && len(entities.TaggingRules) > 0 {
 		msg = msg + "---Automatic Tagging Rules:--- \n"
 		for _, mz := range entities.TaggingRules {
 			if mz.Success {
@@ -133,7 +133,7 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 		msg = msg + "\n\n"
 	}
 
-	if entities.MetricEventsEnabled {
+	if entities.MetricEventsEnabled && len(entities.MetricEvents) > 0 {
 		msg = msg + "---Metric Events:--- \n"
 		for _, mz := range entities.MetricEvents {
 			if mz.Success {
@@ -145,7 +145,7 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 		msg = msg + "\n\n"
 	}
 
-	if entities.DashboardEnabled {
+	if entities.DashboardEnabled && entities.Dashboard.Message != "" {
 		msg = msg + "---Dashboard:--- \n"
 		msg = msg + "  - " + entities.Dashboard.Message + "\n"
 		msg = msg + "\n\n"
