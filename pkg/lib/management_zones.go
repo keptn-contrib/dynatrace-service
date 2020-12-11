@@ -26,14 +26,33 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 		mzPayload, err := json.Marshal(managementZone)
 		if err == nil {
 			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
+
 			if err != nil {
 				// Error occurred but continue
-				dt.Logger.Error("failed to create management zone: " + err.Error())
+				msg := "failed to create management zone: " + err.Error()
+				dt.Logger.Error(msg)
+
+				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+					Name:    "Keptn: " + project,
+					Success: false,
+					Message: msg,
+				})
+			} else {
+				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+					Name:    "Keptn: " + project,
+					Success: true,
+				})
 			}
 		} else {
 			// Error occurred but continue
 			fmt.Errorf("failed to marshal management zone: %v", err)
 		}
+	} else {
+		dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+			Name:    "Keptn: " + project,
+			Success: true,
+			Message: "Management Zone 'Keptn:" + project + "' was already available in your Tenant",
+		})
 	}
 
 	for _, stage := range shipyard.Spec.Stages {
@@ -49,8 +68,25 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 			mzPayload, _ := json.Marshal(managementZone)
 			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
 			if err != nil {
-				dt.Logger.Error("Could not create management zone: " + err.Error())
+				msg := "Could not create management zone: " + err.Error()
+				dt.Logger.Error(msg)
+				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+					Name:    managementZone.Name,
+					Success: false,
+					Message: msg,
+				})
+			} else {
+				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+					Name:    managementZone.Name,
+					Success: true,
+				})
 			}
+		} else {
+			dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+				Name:    "Keptn: " + project + " " + stage.Name,
+				Success: true,
+				Message: "Management Zone 'Keptn:" + project + " " + stage.Name + "' was already available in your Tenant",
+			})
 		}
 	}
 

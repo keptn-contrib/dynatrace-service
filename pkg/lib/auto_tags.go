@@ -33,10 +33,26 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 			err = dt.createDTTaggingRule(rule)
 			if err != nil {
 				// Error occurred but continue
+				dt.configuredEntities.TaggingRules = append(dt.configuredEntities.TaggingRules, ConfigResult{
+					Name:    ruleName,
+					Success: false,
+					Message: "Could not create auto tagging rule: " + err.Error(),
+				})
 				dt.Logger.Error("Could not create auto tagging rule: " + err.Error())
+			} else {
+				dt.configuredEntities.TaggingRules = append(dt.configuredEntities.TaggingRules, ConfigResult{
+					Name:    ruleName,
+					Success: true,
+				})
 			}
 		} else {
-			dt.Logger.Info("Tagging rule " + ruleName + " already exists")
+			msg := "Tagging rule " + ruleName + " already exists"
+			dt.Logger.Info(msg)
+			dt.configuredEntities.TaggingRules = append(dt.configuredEntities.TaggingRules, ConfigResult{
+				Name:    ruleName,
+				Message: msg,
+				Success: true,
+			})
 		}
 	}
 	return

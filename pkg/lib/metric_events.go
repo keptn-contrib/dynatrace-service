@@ -111,6 +111,10 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 					dt.Logger.Error("Could not create metric event " + newMetricEvent.Name + ": " + err.Error())
 					continue
 				}
+				dt.configuredEntities.MetricEvents = append(dt.configuredEntities.MetricEvents, ConfigResult{
+					Name:    newMetricEvent.Name,
+					Success: true,
+				})
 				dt.Logger.Info("Created metric event " + newMetricEvent.Name + " " + crit)
 				metricEventCreated = true
 			}
