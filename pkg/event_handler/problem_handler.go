@@ -173,6 +173,7 @@ func createAndSendCE(eventbroker string, problemData keptn.ProblemEventData, shk
 	ce.SetSource(source.String())
 	ce.SetDataContentType(cloudevents.ApplicationJSON)
 	ce.SetData(cloudevents.ApplicationJSON, problemData)
+	ce.SetExtension("shkeptncontext", shkeptncontext)
 
 	keptnHandler, err := keptnv2.NewKeptn(&ce, keptncommon.KeptnOpts{})
 	if err != nil {
