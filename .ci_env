@@ -1,0 +1,2 @@
+DOCKER_ORGANIZATION="keptncontrib"
+IMAGE="dynatrace-service"
