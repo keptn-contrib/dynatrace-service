@@ -56,7 +56,7 @@ spec:
       serviceAccountName: keptn-dynatrace-service
       containers:
         - name: dynatrace-service
-          image: keptncontrib/dynatrace-service:0.10.2-dev
+          image: keptncontrib/dynatrace-service:0.11.0-alpha
           ports:
             - containerPort: 8080
           resources:
