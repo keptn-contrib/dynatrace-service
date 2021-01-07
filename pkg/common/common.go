@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/mitchellh/mapstructure"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"net/http"
 	"os"
 	"strings"
@@ -116,12 +116,5 @@ func GetKeptnBridgeURL() (string, error) {
 
 // DecodeKeptnEventData decodes a Keptn events to the specified object
 func DecodeKeptnEventData(in, out interface{}) error {
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Squash: true,
-		Result: out,
-	})
-	if err != nil {
-		return err
-	}
-	return decoder.Decode(in)
+	return keptnv2.Decode(in, out)
 }
