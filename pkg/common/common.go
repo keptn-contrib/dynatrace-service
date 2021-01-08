@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"net/http"
 	"os"
 	"strings"
@@ -112,9 +111,4 @@ func GetKeptnBridgeURL() (string, error) {
 	url = "https://" + url
 
 	return url, nil
-}
-
-// DecodeKeptnEventData decodes a Keptn events to the specified object
-func DecodeKeptnEventData(in, out interface{}) error {
-	return keptnv2.Decode(in, out)
 }
