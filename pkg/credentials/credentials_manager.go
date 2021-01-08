@@ -60,6 +60,8 @@ func GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*DTCr
 	dtCreds := &DTCredentials{}
 
 	dtCreds.Tenant = strings.Trim(string(secret.Data["DT_TENANT"]), "\n")
+	// remove trailing slash since this causes errors with the API calls
+	dtCreds.Tenant = strings.TrimSuffix(dtCreds.Tenant, "/")
 	dtCreds.ApiToken = strings.Trim(string(secret.Data["DT_API_TOKEN"]), "\n")
 
 	return dtCreds, nil

@@ -107,9 +107,9 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 		msg = msg + "---Management Zones:--- \n"
 		for _, mz := range entities.ManagementZones {
 			if mz.Success {
-				msg = msg + "  - " + mz.Name + ": Created successfully"
+				msg = msg + "  - " + mz.Name + ": Created successfully \n"
 			} else {
-				msg = msg + "  - " + mz.Name + ": Error: " + mz.Message
+				msg = msg + "  - " + mz.Name + ": Error: " + mz.Message + "\n"
 			}
 		}
 		msg = msg + "\n\n"
@@ -119,9 +119,9 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 		msg = msg + "---Automatic Tagging Rules:--- \n"
 		for _, mz := range entities.TaggingRules {
 			if mz.Success {
-				msg = msg + "  - " + mz.Name + ": Created successfully"
+				msg = msg + "  - " + mz.Name + ": Created successfully \n"
 			} else {
-				msg = msg + "  - " + mz.Name + ": Error: " + mz.Message
+				msg = msg + "  - " + mz.Name + ": Error: " + mz.Message + "\n"
 			}
 		}
 		msg = msg + "\n\n"
@@ -137,9 +137,9 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 		msg = msg + "---Metric Events:--- \n"
 		for _, mz := range entities.MetricEvents {
 			if mz.Success {
-				msg = msg + "  - " + mz.Name + ": Created successfully"
+				msg = msg + "  - " + mz.Name + ": Created successfully \n"
 			} else {
-				msg = msg + "  - " + mz.Name + ": Error: " + mz.Message
+				msg = msg + "  - " + mz.Name + ": Error: " + mz.Message + "\n"
 			}
 		}
 		msg = msg + "\n\n"
