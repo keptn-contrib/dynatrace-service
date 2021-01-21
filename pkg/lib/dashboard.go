@@ -2,8 +2,10 @@ package lib
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"strings"
 )
 
 // CreateDashboard creates a new dashboard for the provided project
@@ -60,6 +62,7 @@ func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
 	dtDashboardsResponse := &DTDashboardsResponse{}
 	err = json.Unmarshal([]byte(res), dtDashboardsResponse)
 	if err != nil {
+		err = checkForUnexpectedHTMLResponseError(err)
 		return fmt.Errorf("failed to unmarshal list of existing Dynatrace dashboards: %v", err)
 	}
 
@@ -72,4 +75,13 @@ func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
 		}
 	}
 	return nil
+}
+
+func checkForUnexpectedHTMLResponseError(err error) error {
+	// in some cases, e.g. when the DT API has a problem, or the request URL is malformed, we do get a 200 response coded, but with an HTML error page instead of JSON
+	// this function checks for the resulting error in that case and generates an error message that is more user friendly
+	if strings.Contains(err.Error(), "invalid character '<'") {
+		err = errors.New("received invalid response from Dynatrace API")
+	}
+	return err
 }

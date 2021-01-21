@@ -1,7 +1,6 @@
 package adapter
 
 import (
-	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -29,7 +28,7 @@ func (a ProjectCreateAdapter) GetSource() string {
 
 // GetEvent returns the event type
 func (a ProjectCreateAdapter) GetEvent() string {
-	return keptn.InternalProjectCreateEventType
+	return keptnv2.GetFinishedEventType(keptnv2.ProjectCreateTaskName)
 }
 
 // GetProject returns the project

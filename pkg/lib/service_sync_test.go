@@ -8,7 +8,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	"github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"io/ioutil"
@@ -420,12 +419,12 @@ func getTestMockEventBroker() (chan string, *httptest.Server) {
 		if err != nil {
 			return
 		}
-		if *event.Type == keptn.InternalServiceCreateEventType {
+		if *event.Type == keptnv2.GetFinishedEventType(keptnv2.ServiceCreateTaskName) {
 			bytes, err = json.Marshal(event.Data)
 			if err != nil {
 				return
 			}
-			serviceCreateData := &keptn.ServiceCreateEventData{}
+			serviceCreateData := &keptnv2.ServiceCreateFinishedEventData{}
 			err = json.Unmarshal(bytes, serviceCreateData)
 			if err != nil {
 				return
@@ -513,12 +512,14 @@ func getTestConfigService() (chan string, chan string, chan string, *httptest.Se
 func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Server) *keptnv2.Keptn {
 	source, _ := url.Parse("dynatrace-service")
 	keptnContext := uuid.New().String()
-	createServiceData := keptn.ServiceCreateEventData{
-		Project: defaultDTProjectName,
-		Service: "my-service",
+	createServiceData := keptnv2.ServiceCreateFinishedEventData{
+		EventData: keptnv2.EventData{
+			Project: defaultDTProjectName,
+			Service: "my-service",
+		},
 	}
 	ce := cloudevents.NewEvent()
-	ce.SetType(keptn.InternalServiceCreateEventType)
+	ce.SetType(keptnv2.GetFinishedEventType(keptnv2.ServiceCreateTaskName))
 	ce.SetSource(source.String())
 	ce.SetExtension("shkeptncontext", keptnContext)
 	ce.SetDataContentType(cloudevents.ApplicationJSON)

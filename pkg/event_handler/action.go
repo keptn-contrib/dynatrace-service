@@ -35,8 +35,8 @@ func (eh ActionHandler) HandleEvent() error {
 	var comment string
 	var pid string
 
-	if eh.Event.Type() == keptn.ActionTriggeredEventType {
-		actionTriggeredData := &keptn.ActionTriggeredEventData{}
+	if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ActionTaskName) {
+		actionTriggeredData := &keptnv2.ActionTriggeredEventData{}
 
 		err = eh.Event.DataAs(actionTriggeredData)
 		if err != nil {
@@ -78,8 +78,8 @@ func (eh ActionHandler) HandleEvent() error {
 
 		// this is posting the Event on the problem as a comment
 		err = dtHelper.SendProblemComment(pid, comment)
-	} else if eh.Event.Type() == keptn.ActionFinishedEventType {
-		actionFinishedData := &keptn.ActionFinishedEventData{}
+	} else if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ActionTaskName) {
+		actionFinishedData := &keptnv2.ActionFinishedEventData{}
 
 		err = eh.Event.DataAs(actionFinishedData)
 		if err != nil {
@@ -141,7 +141,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-		if actionFinishedData.Action.Status == keptn.ActionStatusSucceeded {
+		if actionFinishedData.Status == keptnv2.StatusSucceeded {
 			dtConfigEvent := createConfigurationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 			dtConfigEvent.Description = "Keptn Remediation Action Finished"
 			dtConfigEvent.Configuration = "successful"

@@ -2,18 +2,18 @@ package adapter
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 // ActionTriggeredAdapter godoc
 type ActionTriggeredAdapter struct {
-	event   keptn.ActionTriggeredEventData
+	event   keptnv2.ActionTriggeredEventData
 	context string
 	source  string
 }
 
 // NewActionTriggeredAdapter godoc
-func NewActionTriggeredAdapter(event keptn.ActionTriggeredEventData, shkeptncontext, source string) ActionTriggeredAdapter {
+func NewActionTriggeredAdapter(event keptnv2.ActionTriggeredEventData, shkeptncontext, source string) ActionTriggeredAdapter {
 	return ActionTriggeredAdapter{event: event, context: shkeptncontext}
 }
 
@@ -29,7 +29,7 @@ func (a ActionTriggeredAdapter) GetSource() string {
 
 // GetEvent returns the event type
 func (a ActionTriggeredAdapter) GetEvent() string {
-	return keptn.ActionTriggeredEventType
+	return keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName)
 }
 
 // GetProject returns the project

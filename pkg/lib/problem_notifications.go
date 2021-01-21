@@ -107,6 +107,7 @@ func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
 
 	err = json.Unmarshal([]byte(response), createdItem)
 	if err != nil {
+		err = checkForUnexpectedHTMLResponseError(err)
 		return "", fmt.Errorf("failed to unmarshal alerting profile: %v", err)
 	}
 	dt.Logger.Info("Alerting profile created successfully.")
