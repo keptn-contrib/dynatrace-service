@@ -25,6 +25,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 |       0.7.1      | keptncontrib/dynatrace-service:0.9.0     | 1.14 - 1.18                              |
 |       0.7.2      | keptncontrib/dynatrace-service:0.10.0     | 1.14 - 1.18                             |
 |       0.7.3      | keptncontrib/dynatrace-service:0.10.1     | 1.14 - 1.18                            |
+|       0.7.3      | keptncontrib/dynatrace-service:0.10.2     | 1.14 - 1.18                            |
 
 
 ## Installation 
@@ -331,7 +332,7 @@ To enable queries against the SLIs specified in the SLO.yaml file, the following
 spec_version: '1.0'
 indicators:
   throughput: "metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  error_rate: "metricSelector=builtin:service.errors.total.count:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
+  error_rate: "metricSelector=builtin:service.errors.total.rate:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
   response_time_p50: "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
   response_time_p90: "metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
   response_time_p95: "metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"`
