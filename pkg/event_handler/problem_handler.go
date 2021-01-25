@@ -75,9 +75,11 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		return err
 	}
 
+	// Log the problem ID and state for better troubleshooting
+	eh.Logger.Info(fmt.Sprintf("Received PID=%s, ProblemID=%s, State=%s", dtProblemEvent.PID, dtProblemEvent.ProblemID, dtProblemEvent.State))
+
 	// ignore problem events if they are closed
 	if dtProblemEvent.State == "RESOLVED" {
-		eh.Logger.Info("Received RESOLVED problem notification")
 		return eh.handleClosedProblemFromDT(dtProblemEvent, shkeptncontext)
 	}
 
@@ -97,6 +99,7 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 		ProblemDetails: json.RawMessage(problemDetailsString),
 		ProblemURL:     dtProblemEvent.ProblemURL,
 		ImpactedEntity: dtProblemEvent.ImpactedEntity,
+		Tags:           dtProblemEvent.Tags,
 		Project:        project,
 		Stage:          stage,
 		Service:        service,
@@ -107,13 +110,12 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 	newProblemData.Labels = make(map[string]string)
 	newProblemData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
 
-	eh.Logger.Debug("Sending event to eventbroker")
-	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, "sh.keptn.events.problem")
+	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptn.ProblemEventType)
 	if err != nil {
 		eh.Logger.Error("Could not send cloud event: " + err.Error())
 		return err
 	}
-	eh.Logger.Debug("Event successfully dispatched to eventbroker")
+	eh.Logger.Debug(fmt.Sprintf("Successfully sent Keptn PROBLEM CLOSED event for PID: %s", dtProblemEvent.PID))
 	return nil
 }
 
@@ -130,6 +132,7 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 		ProblemDetails: json.RawMessage(problemDetailsString),
 		ProblemURL:     dtProblemEvent.ProblemURL,
 		ImpactedEntity: dtProblemEvent.ImpactedEntity,
+		Tags:           dtProblemEvent.Tags,
 		Project:        project,
 		Stage:          stage,
 		Service:        service,
@@ -140,13 +143,12 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 	newProblemData.Labels = make(map[string]string)
 	newProblemData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
 
-	eh.Logger.Debug("Sending event to eventbroker")
 	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptn.ProblemOpenEventType)
 	if err != nil {
 		eh.Logger.Error("Could not send cloud event: " + err.Error())
 		return err
 	}
-	eh.Logger.Debug("Event successfully dispatched to eventbroker")
+	eh.Logger.Debug(fmt.Sprintf("Successfully sent Keptn PROBLEM OPEN event for PID: %s", dtProblemEvent.PID))
 	return nil
 }
 
