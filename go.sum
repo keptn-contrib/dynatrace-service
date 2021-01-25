@@ -194,10 +194,6 @@ github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/kelseyhightower/envconfig v1.4.0 h1:Im6hONhd3pLkfDFsbRgu68RDNkGF1r3dvMUtDTo2cv8=
 github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa3axMbJDNb//FQX6Gg=
-github.com/keptn/go-utils v0.6.3-0.20201021140127-a974f80c5982 h1:mlr2u3KxitnnsVMy0X6BGehnWPujx05PrgB0Rk5y2jM=
-github.com/keptn/go-utils v0.6.3-0.20201021140127-a974f80c5982/go.mod h1:jD+ZvrkwYyDMgeKANzVZsBSYgjYQxTJvxw/RB3vYFAE=
-github.com/keptn/go-utils v0.6.3-0.20201203142252-6e5e0dca0b12 h1:jAV19GHP1TckQ+69eP7ziLbHDs73kZloqyQ3V9skSco=
-github.com/keptn/go-utils v0.6.3-0.20201203142252-6e5e0dca0b12/go.mod h1:jD+ZvrkwYyDMgeKANzVZsBSYgjYQxTJvxw/RB3vYFAE=
 github.com/keptn/go-utils v0.6.3-0.20201209152319-7c9665e3aab8 h1:5f64wSr6witmbAQ9H46r4OIqPXbG3h+0cGHspUfYHQE=
 github.com/keptn/go-utils v0.6.3-0.20201209152319-7c9665e3aab8/go.mod h1:ahg4qFnlM+Wkxk7dnvMnIj8lAc++Q2IX22YvUtsm9vM=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=

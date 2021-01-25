@@ -140,20 +140,35 @@ jobs:
 
       - id: docker_login
         name: Docker Login
+        # only run docker login if this is not a fork
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        # note: GH does not allow to access secrets for PRs from a forked repositories due to security reasons
+        # that's fine, but it means we can't push images to dockerhub
         env:
           REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
           REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
         run: echo "$REGISTRY_PASSWORD" | docker login --username $REGISTRY_USER --password-stdin
 
-      - id: prepare_manifest
-        name: Prepare Build Manifest
-        run: |
-          ./docker/writeManifest.sh
-          cat ./docker/MANIFEST
-
       - id: docker_build
-        name: Docker Build service
-        env:
-          IMAGE: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}"
+        name: Docker Build
+        uses: keptn/gh-action-build-docker-image@master
+        with:
+          VERSION: ${{ env.VERSION }}
+          IMAGE_NAME: "${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}"
+          DATETIME: ${{ env.DATETIME }}
+
+      - id: create_docker_build_report
+        name: Create Docker Build Report
         run: |
-          ./gh-actions-scripts/build_docker_image.sh "${IMAGE}" "${GIT_SHA}" "${VERSION}" "${DATETIME}"
+          echo "The following Docker Images have been built: " > docker_build_report_final.txt
+          cat docker_build_report.txt >> docker_build_report_final.txt || echo "* No images have been built or uploaded" >> docker_build_report_final.txt
+          echo "---"
+          cat docker_build_report_final.txt
+      - id: report_docker_build_to_pr
+        name: Report Docker Build to PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          path: docker_build_report_final.txt
+          recreate: true
