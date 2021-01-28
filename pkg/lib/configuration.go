@@ -40,6 +40,10 @@ func IsServiceSyncEnabled() bool {
 	return readEnvAsBool("SYNCHRONIZE_DYNATRACE_SERVICES", false)
 }
 
+func IsDashboardEnvironmentPublic() bool {
+	return readEnvAsBool("DASHBOARD_ENVIRONMENT_PUBLIC", true)
+}
+
 func readEnvAsBool(env string, fallbackValue bool) bool {
 	if b, err := strconv.ParseBool(os.Getenv(env)); err == nil {
 		return b

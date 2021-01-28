@@ -121,6 +121,8 @@ spec:
               value: 'true'
             - name: SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS
               value: '300'
+            - name: DASHBOARD_ENVIRONMENT_PUBLIC
+              value: 'true'
             - name: HTTP_SSL_VERIFY
               value: 'true'
         - name: distributor
