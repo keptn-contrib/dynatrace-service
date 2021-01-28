@@ -56,7 +56,7 @@ spec:
       serviceAccountName: keptn-dynatrace-service
       containers:
         - name: dynatrace-service
-          image: keptncontrib/dynatrace-service:0.10.2
+          image: keptncontrib/dynatrace-service:0.10.3
           ports:
             - containerPort: 8080
           resources:
@@ -114,6 +114,8 @@ spec:
             - name: GENERATE_MANAGEMENT_ZONES
               value: 'true'
             - name: GENERATE_DASHBOARDS
+              value: 'true'
+            - name: DASHBOARD_ENVIRONMENT_PUBLIC
               value: 'true'
             - name: GENERATE_METRIC_EVENTS
               value: 'true'
