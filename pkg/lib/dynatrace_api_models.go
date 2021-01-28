@@ -596,7 +596,7 @@ func createDynatraceDashboard(projectName string, shipyard keptn.Shipyard) *Dyna
 			Owner:  "",
 			SharingDetails: SharingDetails{
 				LinkShared: true,
-				Published:  false,
+				Published:  IsDashboardEnvironmentPublic(),
 			},
 			DashboardFilter: DashboardFilter{
 				Timeframe:      "l_7_DAYS",

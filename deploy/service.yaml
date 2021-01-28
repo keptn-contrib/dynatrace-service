@@ -115,6 +115,8 @@ spec:
               value: 'true'
             - name: GENERATE_DASHBOARDS
               value: 'true'
+            - name: DASHBOARD_ENVIRONMENT_PUBLIC
+              value: 'true'
             - name: GENERATE_METRIC_EVENTS
               value: 'true'
             - name: SYNCHRONIZE_DYNATRACE_SERVICES
