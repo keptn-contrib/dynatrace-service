@@ -90,8 +90,8 @@ func (a DeploymentFinishedAdapter) getImageAndTag() string {
 		return notAvailable
 	}
 
-	triggeredData := keptnv2.DeploymentTriggeredEventData{}
-	err := common.DecodeKeptnEventData(events[0].Data, triggeredData)
+	triggeredData := &keptnv2.DeploymentTriggeredEventData{}
+	err := keptnv2.Decode(events[0].Data, triggeredData)
 	if err != nil {
 		return notAvailable
 	}
