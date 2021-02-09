@@ -2,18 +2,18 @@ package adapter
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 // ActionFinishedAdapter is a content adaptor for events of type sh.keptn.event.action.finished
 type ActionFinishedAdapter struct {
-	event   keptn.ActionFinishedEventData
+	event   keptnv2.ActionFinishedEventData
 	context string
 	source  string
 }
 
 // NewActionFinishedAdapter creates a new ActionFinishedAdapter
-func NewActionFinishedAdapter(event keptn.ActionFinishedEventData, shkeptncontext, source string) ActionFinishedAdapter {
+func NewActionFinishedAdapter(event keptnv2.ActionFinishedEventData, shkeptncontext, source string) ActionFinishedAdapter {
 	return ActionFinishedAdapter{event: event, context: shkeptncontext}
 }
 
@@ -29,7 +29,7 @@ func (a ActionFinishedAdapter) GetSource() string {
 
 // GetEvent returns the event type
 func (a ActionFinishedAdapter) GetEvent() string {
-	return keptn.ActionFinishedEventType
+	return keptnv2.GetFinishedEventType(keptnv2.ActionTaskName)
 }
 
 // GetProject returns the project

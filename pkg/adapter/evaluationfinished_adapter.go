@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 // EvaluationFinishedAdapter godoc
@@ -34,7 +33,7 @@ func (a EvaluationFinishedAdapter) GetSource() string {
 
 // GetEvent returns the event type
 func (a EvaluationFinishedAdapter) GetEvent() string {
-	return keptn.EvaluationDoneEventType
+	return keptnv2.GetFinishedEventType(keptnv2.EvaluationTaskName)
 }
 
 // GetProject returns the project

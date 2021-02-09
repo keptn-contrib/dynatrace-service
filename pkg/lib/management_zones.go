@@ -100,14 +100,14 @@ func getManagementZoneNameForStage(project string, stage string) string {
 func (dt *DynatraceHelper) getManagementZones() []Values {
 	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", nil)
 	if err != nil {
-		dt.Logger.Error("failed not retrieve management zones: " + err.Error())
+		dt.Logger.Error("failed to retrieve management zones: " + err.Error())
 		return nil
 	}
 	mzs := &DTAPIListResponse{}
 
 	err = json.Unmarshal([]byte(response), mzs)
 	if err != nil {
-		dt.Logger.Error("failed not parse management zones list: " + err.Error())
+		dt.Logger.Error("failed to parse management zones list: " + err.Error())
 		return nil
 	}
 	return mzs.Values
