@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	"net/http"
 	"os"
 	"strings"
@@ -11,6 +12,11 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
+
+const shipyardController = "SHIPYARD_CONTROLLER"
+const configurationService = "CONFIGURATION_SERVICE"
+const defaultShipyardControllerURL = "http://shipyard-controller:8080"
+const defaultConfigurationServiceURL = "http://configuration-service:8080"
 
 // RunLocal is true if the "ENV"-environment variable is set to local
 var RunLocal = os.Getenv("ENV") == "local"
@@ -30,14 +36,25 @@ func GetKubernetesClient() (*kubernetes.Clientset, error) {
 	return kubernetes.NewForConfig(config)
 }
 
-/**
- * Returns the endpoint to the configuration-service
- */
+// GetConfigurationServiceURL Returns the endpoint to the configuration-service
 func GetConfigurationServiceURL() string {
-	if os.Getenv("CONFIGURATION_SERVICE_URL") != "" {
-		return os.Getenv("CONFIGURATION_SERVICE_URL")
+	return getKeptnServiceURL(configurationService, defaultConfigurationServiceURL)
+}
+
+// GetShipyardControllerURL Returns the endpoint to the shipyard-controller
+func GetShipyardControllerURL() string {
+	return getKeptnServiceURL(shipyardController, defaultShipyardControllerURL)
+}
+
+func getKeptnServiceURL(servicename, defaultURL string) string {
+	var baseURL string
+	url, err := keptncommon.GetServiceEndpoint(servicename)
+	if err == nil {
+		baseURL = url.String()
+	} else {
+		baseURL = defaultURL
 	}
-	return "configuration-service:8080"
+	return baseURL
 }
 
 // KeptnCredentials contains the credentials for the Keptn API
