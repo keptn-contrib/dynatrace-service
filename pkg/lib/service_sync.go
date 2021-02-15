@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
@@ -127,7 +128,9 @@ type serviceSynchronizer struct {
 var serviceSynchronizerInstance *serviceSynchronizer
 
 const shipyardController = "SHIPYARD_CONTROLLER"
+const configurationService = "CONFIGURATION_SERVICE"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
+const defaultConfigurationServiceURL = "http://configuration-service:8080"
 
 // ActivateServiceSynchronizer godoc
 func ActivateServiceSynchronizer() *serviceSynchronizer {
@@ -153,18 +156,14 @@ func ActivateServiceSynchronizer() *serviceSynchronizer {
 		serviceSynchronizerInstance.DTHelper = NewDynatraceHelper(nil, creds, logger)
 
 		serviceSynchronizerInstance.logger.Debug("Initializing Service Synchronizer")
-		var configServiceBaseURL string
-		csURL, err := keptncommon.GetServiceEndpoint("CONFIGURATION_SERVICE")
-		if err == nil {
-			configServiceBaseURL = csURL.String()
-		} else {
-			configServiceBaseURL = "http://configuration-service:8080"
-		}
+		configServiceBaseURL := common.GetConfigurationServiceURL()
+		shipyardControllerBaseURL := common.GetShipyardControllerURL()
 
 		serviceSynchronizerInstance.logger.Debug("Service Synchronizer uses configuration service URL: " + configServiceBaseURL)
+		serviceSynchronizerInstance.logger.Debug("Service Synchronizer uses shipyard controller URL: " + shipyardControllerBaseURL)
 
-		serviceSynchronizerInstance.projectsAPI = keptnapi.NewProjectHandler(configServiceBaseURL)
-		serviceSynchronizerInstance.servicesAPI = keptnapi.NewServiceHandler(configServiceBaseURL)
+		serviceSynchronizerInstance.projectsAPI = keptnapi.NewProjectHandler(shipyardControllerBaseURL)
+		serviceSynchronizerInstance.servicesAPI = keptnapi.NewServiceHandler(shipyardControllerBaseURL)
 		serviceSynchronizerInstance.resourcesAPI = keptnapi.NewResourceHandler(configServiceBaseURL)
 
 		serviceSynchronizerInstance.initializeSynchronizationTimer()
