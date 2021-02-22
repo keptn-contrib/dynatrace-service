@@ -156,7 +156,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
 			if err == nil && pid != "" {
 				// Comment we push over
-				comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], edData.Result, edData.EvaluationDetails.Score)
+				comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], edData.Result, edData.Evaluation.Score)
 
 				// this is posting the Event on the problem as a comment
 				err = dtHelper.SendProblemComment(pid, comment)

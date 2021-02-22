@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -87,13 +88,13 @@ func (a ActionFinishedAdapter) GetLabels() map[string]string {
 
 // ActionStartedAdapter is a content adaptor for events of type sh.keptn.event.action.started
 type ActionStartedAdapter struct {
-	event   keptn.ActionStartedEventData
+	event   keptnv2.ActionStartedEventData
 	context string
 	source  string
 }
 
 // NewActionStartedAdapter creates a new ActionStartedAdapter
-func NewActionStartedAdapter(event keptn.ActionStartedEventData, shkeptncontext, source string) ActionStartedAdapter {
+func NewActionStartedAdapter(event keptnv2.ActionStartedEventData, shkeptncontext, source string) ActionStartedAdapter {
 	return ActionStartedAdapter{event: event, context: shkeptncontext}
 }
 
