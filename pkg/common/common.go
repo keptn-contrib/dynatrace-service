@@ -4,7 +4,10 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"net/http"
 	"os"
 	"strings"
@@ -138,7 +141,7 @@ func GetKeptnBridgeURL() (string, error) {
  * Finds the Problem ID that is associated with this Keptn Workflow
  * It first parses it from Problem URL label - if it cant be found there it will look for the Initial Problem Open Event and gets the ID from there!
  */
-func FindProblemIDForEvent(keptnHandler *keptn.Keptn, labels map[string]string) (string, error) {
+func FindProblemIDForEvent(keptnHandler *keptnv2.Keptn, labels map[string]string) (string, error) {
 
 	// Step 1 - see if we have a Problem Url in the labels
 	// iterate through the labels and find Problem URL
@@ -158,7 +161,7 @@ func FindProblemIDForEvent(keptnHandler *keptn.Keptn, labels map[string]string) 
 	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
 
 	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
-		Project:      keptnHandler.KeptnBase.Project,
+		Project:      keptnHandler.KeptnBase.Event.GetProject(),
 		EventType:    keptn.ProblemOpenEventType,
 		KeptnContext: keptnHandler.KeptnContext,
 	})
@@ -174,7 +177,7 @@ func FindProblemIDForEvent(keptnHandler *keptn.Keptn, labels map[string]string) 
 	}
 
 	problemOpenEvent := &keptn.ProblemEventData{}
-	err := mapstructure.Decode(events[0].Data, problemOpenEvent)
+	err := keptnv2.Decode(events[0].Data, problemOpenEvent)
 
 	if err != nil {
 		msg := "could not decode problem.open event: " + err.Error()
