@@ -2,6 +2,7 @@ package event_handler
 
 import (
 	"errors"
+	"fmt"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"os"
@@ -103,8 +104,8 @@ func (eh ActionHandler) HandleEvent() error {
 		pid = actionTriggeredData.Problem.PID
 
 		err = dtHelper.SendProblemComment(pid, comment)
-	} else if eh.Event.Type() == keptn.ActionStartedEventType {
-		actionStartedData := &keptn.ActionStartedEventData{}
+	} else if eh.Event.Type() == keptnv2.GetStatusChangedEventType(keptnv2.ActionTaskName) {
+		actionStartedData := &keptnv2.ActionStartedEventData{}
 
 		err = eh.Event.DataAs(actionStartedData)
 		if err != nil {
@@ -199,14 +200,14 @@ func (eh ActionHandler) HandleEvent() error {
 		comment = fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
 			keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL],
 			eh.Event.Source(),
-			actionFinishedData.Action.Result,
-			actionFinishedData.Action.Status)
+			actionFinishedData.Result,
+			actionFinishedData.Status)
 
 		pid = problemOpenEvent.PID
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-		if actionFinishedData.Action.Status == keptn.ActionStatusSucceeded {
+		if actionFinishedData.Status == keptnv2.StatusSucceeded {
 			dtConfigEvent := createConfigurationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 			dtConfigEvent.Description = "Keptn Remediation Action Finished"
 			dtConfigEvent.Configuration = "successful"
