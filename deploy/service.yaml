@@ -56,7 +56,7 @@ spec:
       serviceAccountName: keptn-dynatrace-service
       containers:
         - name: dynatrace-service
-          image: keptncontrib/dynatrace-service:0.10.2-dev
+          image: keptncontrib/dynatrace-service:0.11.0
           ports:
             - containerPort: 8080
           resources:
@@ -126,7 +126,7 @@ spec:
             - name: HTTP_SSL_VERIFY
               value: 'true'
         - name: distributor
-          image: keptn/distributor:0.8.0-alpha # ToDo: change to 0.8.0 once final
+          image: keptn/distributor:0.8.0-dev.202102240725 # TODO: change to 0.8.0 once final
           ports:
             - containerPort: 8080
           resources:
