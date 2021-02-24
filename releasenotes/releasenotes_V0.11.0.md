@@ -1,4 +1,4 @@
-# Release Notes 0.10.0
+# Release Notes 0.11.0
 
 ## Fixed Issues
 
