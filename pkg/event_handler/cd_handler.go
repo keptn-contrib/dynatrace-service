@@ -192,12 +192,18 @@ func (eh CDEventHandler) HandleEvent() error {
 
 		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
 		if strategy == keptnevents.Direct && rtData.Result == keptnv2.ResultPass || rtData.Result == keptnv2.ResultWarning {
-			ie.Title = fmt.Sprintf("PROMOTING from %s to next stage", rtData.Stage)
+			title := fmt.Sprintf("PROMOTING from %s to next stage", rtData.Stage)
+			ie.Title = title
+			ie.Description = title
 		} else if rtData.Result == keptnv2.ResultFailed {
 			if strategy == keptnevents.Duplicate {
-				ie.Title = "Rollback Artifact (Switch Blue/Green) in " + rtData.Stage
+				title := "Rollback Artifact (Switch Blue/Green) in " + rtData.Stage
+				ie.Title = title
+				ie.Description = title
 			} else {
-				ie.Title = fmt.Sprintf("NOT PROMOTING from %s to next stage", rtData.Stage)
+				title := fmt.Sprintf("NOT PROMOTING from %s to next stage", rtData.Stage)
+				ie.Title = title
+				ie.Description = title
 			}
 		}
 		dtHelper.SendEvent(ie)
