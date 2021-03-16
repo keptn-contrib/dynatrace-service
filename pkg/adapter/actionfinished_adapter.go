@@ -2,7 +2,6 @@ package adapter
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -110,7 +109,7 @@ func (a ActionStartedAdapter) GetSource() string {
 
 // GetEvent returns the event type
 func (a ActionStartedAdapter) GetEvent() string {
-	return keptn.ActionStartedEventType
+	return keptnv2.GetStartedEventType(keptnv2.ActionTaskName)
 }
 
 // GetProject returns the project
