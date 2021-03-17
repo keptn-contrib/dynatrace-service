@@ -3,22 +3,16 @@ package event_handler
 import (
 	"errors"
 	"fmt"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"os"
-
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
-
-	"github.com/mitchellh/mapstructure"
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 type ActionHandler struct {
@@ -54,7 +48,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 	var comment string
 
-	if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ActionTaskName) {
+	if eh.Event.Type() == keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName) {
 		actionTriggeredData := &keptnv2.ActionTriggeredEventData{}
 
 		err = eh.Event.DataAs(actionTriggeredData)
@@ -108,7 +102,7 @@ func (eh ActionHandler) HandleEvent() error {
 		}
 
 		err = dtHelper.SendProblemComment(pid, comment)
-	} else if eh.Event.Type() == keptnv2.GetStatusChangedEventType(keptnv2.ActionTaskName) {
+	} else if eh.Event.Type() == keptnv2.GetStartedEventType(keptnv2.ActionTaskName) {
 		actionStartedData := &keptnv2.ActionStartedEventData{}
 
 		err = eh.Event.DataAs(actionStartedData)
@@ -166,48 +160,12 @@ func (eh ActionHandler) HandleEvent() error {
 		}
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
 
-		eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
-
-		events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
-			Project:      keptnHandler.KeptnBase.Event.GetProject(),
-			EventType:    keptn.ProblemOpenEventType,
-			KeptnContext: keptnHandler.KeptnContext,
-		})
-
-		if errObj != nil {
-			msg := "cannot send DT problem comment: Could not retrieve problem.open event for incoming event: " + *errObj.Message
-			eh.Logger.Error(msg)
-			return errors.New(msg)
-		}
-
-		if len(events) == 0 {
-			msg := "cannot send DT problem comment: Could not retrieve problem.open event for incoming event: no events returned"
-			eh.Logger.Error(msg)
-			return errors.New(msg)
-		}
-
-		problemOpenEvent := &keptn.ProblemEventData{}
-		err = mapstructure.Decode(events[0].Data, problemOpenEvent)
-
-		if err != nil {
-			msg := "could not decode problem.open event: " + err.Error()
-			eh.Logger.Error(msg)
-			return errors.New(msg)
-		}
-
-		if problemOpenEvent.PID == "" {
-			eh.Logger.Error("Cannot send DT problem comment: No problem ID is included in the event.")
-			return errors.New("cannot send DT problem comment: No problem ID is included in the event")
-		}
-
 		// Comment text we want to push over
 		comment = fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
 			keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL],
 			eh.Event.Source(),
 			actionFinishedData.Result,
 			actionFinishedData.Status)
-
-		pid = problemOpenEvent.PID
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed

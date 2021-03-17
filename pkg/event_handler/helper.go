@@ -13,8 +13,8 @@ type dtConfigurationEvent struct {
 	// CustomProperties  dtCustomProperties `json:"customProperties"`
 	CustomProperties map[string]string `json:"customProperties"`
 	Description      string            `json:"description"`
-	Configuration    string            `json:"Configuration"`
-	Original         string            `json:"Original,omitempty"`
+	Configuration    string            `json:"configuration"`
+	Original         string            `json:"original,omitempty"`
 }
 
 type dtDeploymentEvent struct {
