@@ -168,7 +168,7 @@ func (eh ActionHandler) HandleEvent() error {
 			actionFinishedData.Status)
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
-		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
+		// Additionally to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 		if actionFinishedData.Status == keptnv2.StatusSucceeded {
 			dtConfigEvent := createConfigurationEvent(keptnEvent, dynatraceConfig, eh.Logger)
 			dtConfigEvent.Description = "Keptn Remediation Action Finished"
