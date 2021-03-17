@@ -53,7 +53,6 @@ func (eh ActionHandler) HandleEvent() error {
 	}
 
 	var comment string
-	var pid string
 
 	if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ActionTaskName) {
 		actionTriggeredData := &keptnv2.ActionTriggeredEventData{}
@@ -64,7 +63,15 @@ func (eh ActionHandler) HandleEvent() error {
 			return err
 		}
 
-		if actionTriggeredData.Problem.PID == "" {
+		keptnEvent := adapter.NewActionTriggeredAdapter(*actionTriggeredData, keptnHandler.KeptnContext, eh.Event.Source())
+
+		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
+		if err != nil {
+			eh.Logger.Error(err.Error())
+			return err
+		}
+
+		if pid == "" {
 			eh.Logger.Error("Cannot send DT problem comment: No problem ID is included in the event.")
 			return errors.New("cannot send DT problem comment: No problem ID is included in the event")
 		}
@@ -73,15 +80,13 @@ func (eh ActionHandler) HandleEvent() error {
 		if actionTriggeredData.Action.Description != "" {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
-		pid = actionTriggeredData.Problem.PID
-
-		keptnEvent := adapter.NewActionTriggeredAdapter(*actionTriggeredData, keptnHandler.KeptnContext, eh.Event.Source())
 
 		dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
 		if err != nil {
 			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 			return err
 		}
+
 		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 		if err != nil {
 			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
@@ -101,7 +106,6 @@ func (eh ActionHandler) HandleEvent() error {
 		if actionTriggeredData.Action.Description != "" {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
-		pid = actionTriggeredData.Problem.PID
 
 		err = dtHelper.SendProblemComment(pid, comment)
 	} else if eh.Event.Type() == keptnv2.GetStatusChangedEventType(keptnv2.ActionTaskName) {
