@@ -13,8 +13,8 @@ type dtConfigurationEvent struct {
 	// CustomProperties  dtCustomProperties `json:"customProperties"`
 	CustomProperties map[string]string `json:"customProperties"`
 	Description      string            `json:"description"`
-	Configuration    string            `json:"Configuration"`
-	Original         string            `json:"Original,omitempty"`
+	Configuration    string            `json:"configuration"`
+	Original         string            `json:"original,omitempty"`
 }
 
 type dtDeploymentEvent struct {
@@ -109,6 +109,7 @@ func createCustomProperties(a adapter.EventContentAdapter, logger *keptncommon.L
 	customProperties["Image"] = a.GetImage()
 	customProperties["Tag"] = a.GetTag()
 	customProperties["KeptnContext"] = a.GetShKeptnContext()
+	customProperties["Keptn Service"] = a.GetSource()
 
 	// now add the rest of the Labels
 	for key, value := range a.GetLabels() {
