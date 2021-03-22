@@ -1,15 +1,11 @@
 package common
 
 import (
-	"crypto/tls"
 	"errors"
-	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"net/http"
 	"os"
 	"strings"
 
@@ -69,31 +65,6 @@ func getKeptnServiceURL(servicename, defaultURL string) string {
 type KeptnCredentials struct {
 	ApiURL   string
 	ApiToken string
-}
-
-// CheckKeptnConnection verifies wether a connection to the Keptn API can be established
-func CheckKeptnConnection(keptnCredentials *credentials.KeptnAPICredentials) error {
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-	req, err := http.NewRequest(http.MethodGet, keptnCredentials.APIURL+"/v1/auth", nil)
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-token", keptnCredentials.APIToken)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return errors.New("could not authenticate at Keptn API: " + err.Error())
-	}
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return errors.New("invalid Keptn API Token: received 401 - Unauthorized from " + keptnCredentials.APIURL + "/v1/auth")
-	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return errors.New(fmt.Sprintf("received unexpected response from "+keptnCredentials.APIURL+"/v1/auth: %d", resp.StatusCode))
-	}
-	return nil
 }
 
 // GetKeptnBridgeURL returns the bridge URL

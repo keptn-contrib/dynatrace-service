@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	"log"
@@ -36,7 +37,11 @@ func main() {
 func _main(args []string, env envConfig) int {
 
 	if lib.IsServiceSyncEnabled() {
-		lib.ActivateServiceSynchronizer()
+		cm, err := credentials.NewCredentialManager(nil)
+		if err != nil {
+			log.Fatalf("failed to initialize CredentialManager: %s", err.Error())
+		}
+		lib.ActivateServiceSynchronizer(cm)
 	}
 
 	ctx := context.Background()

@@ -3,7 +3,6 @@ package event_handler
 import (
 	"errors"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"log"
@@ -74,7 +73,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 	keptnAPICheck.APIURL = keptnCredentials.APIURL
 	log.Printf("Verifying access to Keptn API at %s", keptnCredentials.APIURL)
 
-	err = common.CheckKeptnConnection(keptnCredentials)
+	err = credentials.CheckKeptnConnection(keptnCredentials)
 	if err != nil {
 		log.Printf("Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster. %s", err.Error())
 		keptnAPICheck.ConnectionSuccessful = false
