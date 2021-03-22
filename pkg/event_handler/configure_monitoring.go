@@ -69,17 +69,19 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		log.Printf("failed to get Keptn API credentials: %s", err.Error())
 		keptnAPICheck.Message = "Failed to get Keptn API Credentials"
 		keptnAPICheck.ConnectionSuccessful = false
-	}
-	keptnAPICheck.APIURL = keptnCredentials.APIURL
-	log.Printf("Verifying access to Keptn API at %s", keptnCredentials.APIURL)
-
-	err = credentials.CheckKeptnConnection(keptnCredentials)
-	if err != nil {
-		log.Printf("Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster. %s", err.Error())
-		keptnAPICheck.ConnectionSuccessful = false
-		keptnAPICheck.Message = "Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster."
+		keptnAPICheck.APIURL = "unknown"
 	} else {
-		keptnAPICheck.ConnectionSuccessful = true
+		keptnAPICheck.APIURL = keptnCredentials.APIURL
+		log.Printf("Verifying access to Keptn API at %s", keptnCredentials.APIURL)
+
+		err = credentials.CheckKeptnConnection(keptnCredentials)
+		if err != nil {
+			log.Printf("Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster. %s", err.Error())
+			keptnAPICheck.ConnectionSuccessful = false
+			keptnAPICheck.Message = "Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster."
+		} else {
+			keptnAPICheck.ConnectionSuccessful = true
+		}
 	}
 
 	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
