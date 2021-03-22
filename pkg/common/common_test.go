@@ -1,6 +1,7 @@
 package common
 
 import (
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -112,7 +113,7 @@ func TestGetKeptnCredentials(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Setenv("KEPTN_API_URL", tt.apiURLEnvVar)
 			os.Setenv("KEPTN_API_TOKEN", tt.apiTokenEnvVar)
-			got, err := GetKeptnCredentials()
+			got, err := credentials.GetKeptnCredentials()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetKeptnCredentials() error = %v, wantErr %v", err, tt.wantErr)
 				return

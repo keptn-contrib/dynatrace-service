@@ -3,9 +3,8 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	"strings"
-
-	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 )
 
 // EnsureProblemNotificationsAreSetUp sets up/updates the DT problem notification
@@ -45,7 +44,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 	}
 	problemNotification := PROBLEM_NOTIFICATION_PAYLOAD
 
-	keptnCredentials, err := common.GetKeptnCredentials()
+	keptnCredentials, err := credentials.GetKeptnCredentials()
 	if err != nil {
 		msg := "failed to retrieve Keptn API credentials: " + err.Error()
 		dt.Logger.Error(msg)

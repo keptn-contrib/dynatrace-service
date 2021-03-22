@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
@@ -70,40 +71,17 @@ type KeptnCredentials struct {
 	ApiToken string
 }
 
-// GetKeptnCredentials generates the Keptn Credentials from the environment variables KEPTN_API_URL and KEPTN_API_TOKEN
-func GetKeptnCredentials() (*KeptnCredentials, error) {
-
-	keptnCreds := &KeptnCredentials{}
-
-	keptnCreds.ApiURL = os.Getenv("KEPTN_API_URL")
-	keptnCreds.ApiToken = os.Getenv("KEPTN_API_TOKEN")
-
-	if keptnCreds.ApiURL == "" || keptnCreds.ApiToken == "" {
-		return nil, errors.New("no Keptn API credentials available. please provide them in the KEPTN_API_URL and KEPTN_API_TOKEN environment variables")
-	}
-
-	if strings.HasPrefix(keptnCreds.ApiURL, "http://") {
-		return keptnCreds, nil
-	}
-
-	// ensure that apiURL uses https if no other protocol has explicitly been specified
-	keptnCreds.ApiURL = strings.TrimPrefix(keptnCreds.ApiURL, "https://")
-	keptnCreds.ApiURL = "https://" + keptnCreds.ApiURL
-
-	return keptnCreds, nil
-}
-
 // CheckKeptnConnection verifies wether a connection to the Keptn API can be established
-func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
+func CheckKeptnConnection(keptnCredentials *credentials.KeptnAPICredentials) error {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
-	req, err := http.NewRequest(http.MethodGet, keptnCredentials.ApiURL+"/v1/auth", nil)
+	req, err := http.NewRequest(http.MethodGet, keptnCredentials.APIURL+"/v1/auth", nil)
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-token", keptnCredentials.ApiToken)
+	req.Header.Set("x-token", keptnCredentials.APIToken)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -111,9 +89,9 @@ func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return errors.New("invalid Keptn API Token: received 401 - Unauthorized from " + keptnCredentials.ApiURL + "/v1/auth")
+		return errors.New("invalid Keptn API Token: received 401 - Unauthorized from " + keptnCredentials.APIURL + "/v1/auth")
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return errors.New(fmt.Sprintf("received unexpected response from "+keptnCredentials.ApiURL+"/v1/auth: %d", resp.StatusCode))
+		return errors.New(fmt.Sprintf("received unexpected response from "+keptnCredentials.APIURL+"/v1/auth: %d", resp.StatusCode))
 	}
 	return nil
 }

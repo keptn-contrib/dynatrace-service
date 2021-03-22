@@ -35,19 +35,6 @@ func main() {
 
 func _main(args []string, env envConfig) int {
 
-	// check the connection to the Keptn API
-	keptnCredentials, err := common.GetKeptnCredentials()
-	if err != nil {
-		log.Fatalf("failed to get Keptn API credentials: %s", err.Error())
-	}
-
-	log.Printf("Verifying access to Keptn API at %s", keptnCredentials.ApiURL)
-
-	err = common.CheckKeptnConnection(keptnCredentials)
-	if err != nil {
-		log.Printf("Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster. %s", err.Error())
-	}
-
 	if lib.IsServiceSyncEnabled() {
 		lib.ActivateServiceSynchronizer()
 	}
