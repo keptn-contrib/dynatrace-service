@@ -142,3 +142,65 @@ func TestGetKeptnAPICredentials(t *testing.T) {
 		})
 	}
 }
+
+func TestGetKeptnBridgeURL(t *testing.T) {
+	tests := []struct {
+		name            string
+		want            string
+		wantErr         bool
+		bridgeURLEnvVar string
+	}{
+		{
+			name:            "return bridge URL",
+			want:            "https://bridge.keptn",
+			wantErr:         false,
+			bridgeURLEnvVar: "bridge.keptn",
+		},
+		{
+			name:            "return bridge URL",
+			want:            "https://bridge.keptn",
+			wantErr:         false,
+			bridgeURLEnvVar: "https://bridge.keptn",
+		},
+		{
+			name:            "return bridge URL with http",
+			want:            "http://bridge.keptn",
+			wantErr:         false,
+			bridgeURLEnvVar: "http://bridge.keptn",
+		},
+		{
+			name:            "return error if env var not set",
+			want:            "",
+			wantErr:         true,
+			bridgeURLEnvVar: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeClient := fake.NewSimpleClientset(&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynatrace",
+					Namespace: "keptn",
+				},
+				Data: map[string][]byte{
+					"KEPTN_BRIDGE_URL": []byte(tt.bridgeURLEnvVar),
+				},
+			})
+
+			k8sSecretReader, _ := NewK8sCredentialReader(fakeClient)
+
+			cm, err := NewCredentialManager(k8sSecretReader)
+			if err != nil {
+				t.Errorf("could not initialize CredentialManager: %s", err.Error())
+			}
+			got, err := cm.GetKeptnBridgeURL()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetKeptnBridgeURL() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetKeptnBridgeURL() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

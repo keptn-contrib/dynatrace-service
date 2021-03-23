@@ -67,25 +67,6 @@ type KeptnCredentials struct {
 	ApiToken string
 }
 
-// GetKeptnBridgeURL returns the bridge URL
-func GetKeptnBridgeURL() (string, error) {
-	url := os.Getenv("KEPTN_BRIDGE_URL")
-
-	if url == "" {
-		return "", errors.New("no bridge URL specified in KEPTN_BRIDGE_URL env var")
-	}
-
-	if strings.HasPrefix(url, "http://") {
-		return url, nil
-	}
-
-	// ensure that apiURL uses https if no other protocol has explicitly been specified
-	url = strings.TrimPrefix(url, "https://")
-	url = "https://" + url
-
-	return url, nil
-}
-
 /**
  * Finds the Problem ID that is associated with this Keptn Workflow
  * It first parses it from Problem URL label - if it cant be found there it will look for the Initial Problem Open Event and gets the ID from there!

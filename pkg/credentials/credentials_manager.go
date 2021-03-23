@@ -166,6 +166,24 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, err
 	return keptnCreds, nil
 }
 
+func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
+	secretName := "dynatrace"
+
+	url, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_BRIDGE_URL")
+	if err != nil {
+		return "", errors.New("no bridge URL specified in KEPTN_BRIDGE_URL env var")
+	}
+	if strings.HasPrefix(url, "http://") {
+		return url, nil
+	}
+
+	// ensure that apiURL uses https if no other protocol has explicitly been specified
+	url = strings.TrimPrefix(url, "https://")
+	url = "https://" + url
+
+	return url, nil
+}
+
 // GetDynatraceCredentials reads the Dynatrace credentials from the secret. Therefore, it first checks
 // if a secret is specified in the dynatrace.conf.yaml and if not defaults to the secret "dynatrace"
 func GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*DTCredentials, error) {
@@ -179,7 +197,6 @@ func GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*DTCr
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
 func GetKeptnCredentials() (*KeptnAPICredentials, error) {
-
 	cm, err := NewCredentialManager(nil)
 	if err != nil {
 		return nil, err
@@ -210,4 +227,13 @@ func CheckKeptnConnection(keptnCredentials *KeptnAPICredentials) error {
 		return fmt.Errorf("received unexpected response from "+keptnCredentials.APIURL+"/v1/auth: %d", resp.StatusCode)
 	}
 	return nil
+}
+
+// GetKeptnBridgeURL returns the bridge URL
+func GetKeptnBridgeURL() (string, error) {
+	cm, err := NewCredentialManager(nil)
+	if err != nil {
+		return "", err
+	}
+	return cm.GetKeptnBridgeURL()
 }

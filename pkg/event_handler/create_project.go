@@ -6,7 +6,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
-	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -47,7 +46,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 
 	keptnEvent := adapter.NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
 
-	dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
+	dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
 	if err != nil {
 		eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 		return err

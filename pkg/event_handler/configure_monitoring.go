@@ -8,7 +8,6 @@ import (
 	"log"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
-	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -101,7 +100,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	keptnEvent := adapter.NewConfigureMonitoringAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
 
-	dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
+	dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
 	if err != nil {
 		msg := fmt.Sprintf("failed to load Dynatrace config: %v", err)
 		return eh.handleError(e, msg)

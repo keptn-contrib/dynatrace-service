@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
@@ -145,7 +146,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 			credentialManager: c,
 		}
 
-		dynatraceConfig, err := config.GetDynatraceConfig(initSyncEventAdapter{}, logger)
+		dynatraceConfig, err := adapter.GetDynatraceConfig(initSyncEventAdapter{}, logger)
 		if err != nil {
 			logger.Error(fmt.Sprintf("failed to load Dynatrace config: %s", err.Error()))
 			return nil
