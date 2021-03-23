@@ -207,7 +207,7 @@ func CheckKeptnConnection(keptnCredentials *KeptnAPICredentials) error {
 	if resp.StatusCode == http.StatusUnauthorized {
 		return errors.New("invalid Keptn API Token: received 401 - Unauthorized from " + keptnCredentials.APIURL + "/v1/auth")
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return errors.New(fmt.Sprintf("received unexpected response from "+keptnCredentials.APIURL+"/v1/auth: %d", resp.StatusCode))
+		return fmt.Errorf("received unexpected response from "+keptnCredentials.APIURL+"/v1/auth: %d", resp.StatusCode)
 	}
 	return nil
 }
