@@ -79,32 +79,6 @@ spec:
               value: 'http://shipyard-controller:8080'
             - name: PLATFORM
               value: kubernetes
-            - name: DT_API_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: dynatrace
-                  key: DT_API_TOKEN
-            - name: DT_TENANT
-              valueFrom:
-                secretKeyRef:
-                  name: dynatrace
-                  key: DT_TENANT
-            - name: KEPTN_API_URL
-              valueFrom:
-                secretKeyRef:
-                  name: dynatrace
-                  key: KEPTN_API_URL
-            - name: KEPTN_API_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: dynatrace
-                  key: KEPTN_API_TOKEN
-            - name: KEPTN_BRIDGE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: dynatrace
-                  key: KEPTN_BRIDGE_URL
-                  optional: true
             - name: POD_NAMESPACE
               valueFrom:
                 fieldRef:

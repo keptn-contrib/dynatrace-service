@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -75,7 +76,7 @@ func (a ActionFinishedAdapter) GetTag() string {
 // GetLabels returns a map of labels
 func (a ActionFinishedAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
-	keptnBridgeURL, err := common.GetKeptnBridgeURL()
+	keptnBridgeURL, err := credentials.GetKeptnBridgeURL()
 	if labels == nil {
 		labels = make(map[string]string)
 	}
@@ -155,7 +156,7 @@ func (a ActionStartedAdapter) GetTag() string {
 // GetLabels returns a map of labels
 func (a ActionStartedAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
-	keptnBridgeURL, err := common.GetKeptnBridgeURL()
+	keptnBridgeURL, err := credentials.GetKeptnBridgeURL()
 	if labels == nil {
 		labels = make(map[string]string)
 	}

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"log"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
-	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -22,6 +22,12 @@ type ConfigureMonitoringEventHandler struct {
 	IsCombinedLogger bool
 	WebSocket        *websocket.Conn
 	KeptnHandler     *keptnv2.Keptn
+}
+
+type KeptnAPIConnectionCheck struct {
+	APIURL               string
+	ConnectionSuccessful bool
+	Message              string
 }
 
 func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
@@ -55,6 +61,28 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		return nil
 	}
 
+	keptnAPICheck := &KeptnAPIConnectionCheck{}
+	// check the connection to the Keptn API
+	keptnCredentials, err := credentials.GetKeptnCredentials()
+	if err != nil {
+		log.Printf("failed to get Keptn API credentials: %s", err.Error())
+		keptnAPICheck.Message = "Failed to get Keptn API Credentials"
+		keptnAPICheck.ConnectionSuccessful = false
+		keptnAPICheck.APIURL = "unknown"
+	} else {
+		keptnAPICheck.APIURL = keptnCredentials.APIURL
+		log.Printf("Verifying access to Keptn API at %s", keptnCredentials.APIURL)
+
+		err = credentials.CheckKeptnConnection(keptnCredentials)
+		if err != nil {
+			log.Printf("Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster. %s", err.Error())
+			keptnAPICheck.ConnectionSuccessful = false
+			keptnAPICheck.Message = "Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster."
+		} else {
+			keptnAPICheck.ConnectionSuccessful = true
+		}
+	}
+
 	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
 	if err != nil {
 		return fmt.Errorf("could not create Keptn handler: %v", err)
@@ -72,7 +100,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	keptnEvent := adapter.NewConfigureMonitoringAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
 
-	dynatraceConfig, err := config.GetDynatraceConfig(keptnEvent, eh.Logger)
+	dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
 	if err != nil {
 		msg := fmt.Sprintf("failed to load Dynatrace config: %v", err)
 		return eh.handleError(e, msg)
@@ -91,13 +119,13 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	eh.Logger.Info("Dynatrace Monitoring setup done")
 
-	if err := eh.sendConfigureMonitoringFinishedEvent(e, keptnv2.StatusSucceeded, keptnv2.ResultPass, getConfigureMonitoringResultMessage(configuredEntities)); err != nil {
+	if err := eh.sendConfigureMonitoringFinishedEvent(e, keptnv2.StatusSucceeded, keptnv2.ResultPass, getConfigureMonitoringResultMessage(keptnAPICheck, configuredEntities)); err != nil {
 		eh.Logger.Error(err.Error())
 	}
 	return nil
 }
 
-func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) string {
+func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, entities *lib.ConfiguredEntities) string {
 	if entities == nil {
 		return ""
 	}
@@ -148,6 +176,13 @@ func getConfigureMonitoringResultMessage(entities *lib.ConfiguredEntities) strin
 	if entities.DashboardEnabled && entities.Dashboard.Message != "" {
 		msg = msg + "---Dashboard:--- \n"
 		msg = msg + "  - " + entities.Dashboard.Message
+		msg = msg + "\n\n"
+	}
+
+	if apiCheck != nil {
+		msg = msg + "---Keptn API Connection Check:--- \n"
+		msg = msg + "  - Keptn API URL: " + apiCheck.APIURL + "\n"
+		msg = msg + fmt.Sprintf("  - Connection Successful: %v. %s\n", apiCheck.ConnectionSuccessful, apiCheck.Message)
 		msg = msg + "\n"
 	}
 

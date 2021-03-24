@@ -1,9 +1,11 @@
-package common
+package credentials
 
 import (
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/fake"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 )
@@ -21,7 +23,7 @@ func TestCheckKeptnConnection(t *testing.T) {
 	defer ts.Close()
 
 	type args struct {
-		keptnCredentials *KeptnCredentials
+		KeptnAPICredentials *KeptnAPICredentials
 	}
 	tests := []struct {
 		name             string
@@ -32,9 +34,9 @@ func TestCheckKeptnConnection(t *testing.T) {
 		{
 			name: "Successful connection",
 			args: args{
-				keptnCredentials: &KeptnCredentials{
-					ApiURL:   ts.URL,
-					ApiToken: "my-test-token",
+				KeptnAPICredentials: &KeptnAPICredentials{
+					APIURL:   ts.URL,
+					APIToken: "my-test-token",
 				},
 			},
 			returnedResponse: 200,
@@ -43,9 +45,9 @@ func TestCheckKeptnConnection(t *testing.T) {
 		{
 			name: "unauthorized connection",
 			args: args{
-				keptnCredentials: &KeptnCredentials{
-					ApiURL:   ts.URL,
-					ApiToken: "my-test-token",
+				KeptnAPICredentials: &KeptnAPICredentials{
+					APIURL:   ts.URL,
+					APIToken: "my-test-token",
 				},
 			},
 			returnedResponse: 401,
@@ -55,64 +57,81 @@ func TestCheckKeptnConnection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			returnedResponse = tt.returnedResponse
-			if err := CheckKeptnConnection(tt.args.keptnCredentials); (err != nil) != tt.wantErr {
+			if err := CheckKeptnConnection(tt.args.KeptnAPICredentials); (err != nil) != tt.wantErr {
 				t.Errorf("CheckKeptnConnection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestGetKeptnCredentials(t *testing.T) {
+func TestGetKeptnAPICredentials(t *testing.T) {
 	tests := []struct {
 		name           string
-		want           *KeptnCredentials
+		want           *KeptnAPICredentials
 		wantErr        bool
-		apiURLEnvVar   string
-		apiTokenEnvVar string
+		APIURLEnvVar   string
+		APITokenEnvVar string
 	}{
 		{
 			name:           "return error if required environment variables are not set",
 			want:           nil,
 			wantErr:        true,
-			apiURLEnvVar:   "",
-			apiTokenEnvVar: "",
+			APIURLEnvVar:   "",
+			APITokenEnvVar: "",
 		},
 		{
 			name: "return credentials with https://",
-			want: &KeptnCredentials{
-				ApiURL:   "https://api.keptn.test.com",
-				ApiToken: "1234",
+			want: &KeptnAPICredentials{
+				APIURL:   "https://api.keptn.test.com",
+				APIToken: "1234",
 			},
 			wantErr:        false,
-			apiURLEnvVar:   "api.keptn.test.com",
-			apiTokenEnvVar: "1234",
+			APIURLEnvVar:   "api.keptn.test.com",
+			APITokenEnvVar: "1234",
 		},
 		{
 			name: "return credentials with https://",
-			want: &KeptnCredentials{
-				ApiURL:   "https://api.keptn.test.com",
-				ApiToken: "1234",
+			want: &KeptnAPICredentials{
+				APIURL:   "https://api.keptn.test.com",
+				APIToken: "1234",
 			},
 			wantErr:        false,
-			apiURLEnvVar:   "https://api.keptn.test.com",
-			apiTokenEnvVar: "1234",
+			APIURLEnvVar:   "https://api.keptn.test.com",
+			APITokenEnvVar: "1234",
 		},
 		{
 			name: "return credentials with http://",
-			want: &KeptnCredentials{
-				ApiURL:   "http://api.keptn.test.com",
-				ApiToken: "1234",
+			want: &KeptnAPICredentials{
+				APIURL:   "http://api.keptn.test.com",
+				APIToken: "1234",
 			},
 			wantErr:        false,
-			apiURLEnvVar:   "http://api.keptn.test.com",
-			apiTokenEnvVar: "1234",
+			APIURLEnvVar:   "http://api.keptn.test.com",
+			APITokenEnvVar: "1234",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("KEPTN_API_URL", tt.apiURLEnvVar)
-			os.Setenv("KEPTN_API_TOKEN", tt.apiTokenEnvVar)
-			got, err := GetKeptnCredentials()
+
+			fakeClient := fake.NewSimpleClientset(&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynatrace",
+					Namespace: "keptn",
+				},
+				Data: map[string][]byte{
+					"KEPTN_API_URL":   []byte(tt.APIURLEnvVar),
+					"KEPTN_API_TOKEN": []byte(tt.APITokenEnvVar),
+				},
+			})
+
+			k8sSecretReader, _ := NewK8sCredentialReader(fakeClient)
+
+			cm, err := NewCredentialManager(k8sSecretReader)
+			if err != nil {
+				t.Errorf("could not initialize CredentialManager: %s", err.Error())
+			}
+
+			got, err := cm.GetKeptnAPICredentials()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetKeptnCredentials() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -158,8 +177,23 @@ func TestGetKeptnBridgeURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("KEPTN_BRIDGE_URL", tt.bridgeURLEnvVar)
-			got, err := GetKeptnBridgeURL()
+			fakeClient := fake.NewSimpleClientset(&v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "dynatrace",
+					Namespace: "keptn",
+				},
+				Data: map[string][]byte{
+					"KEPTN_BRIDGE_URL": []byte(tt.bridgeURLEnvVar),
+				},
+			})
+
+			k8sSecretReader, _ := NewK8sCredentialReader(fakeClient)
+
+			cm, err := NewCredentialManager(k8sSecretReader)
+			if err != nil {
+				t.Errorf("could not initialize CredentialManager: %s", err.Error())
+			}
+			got, err := cm.GetKeptnBridgeURL()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetKeptnBridgeURL() error = %v, wantErr %v", err, tt.wantErr)
 				return

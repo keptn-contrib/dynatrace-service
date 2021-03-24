@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
@@ -114,15 +115,17 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 }
 
 type serviceSynchronizer struct {
-	logger          keptncommon.LoggerInterface
-	projectsAPI     *keptnapi.ProjectHandler
-	servicesAPI     *keptnapi.ServiceHandler
-	resourcesAPI    *keptnapi.ResourceHandler
-	apiHandler      *keptnapi.APIHandler
-	DTHelper        *DynatraceHelper
-	syncTimer       *time.Ticker
-	keptnHandler    *keptnv2.Keptn
-	servicesInKeptn []string
+	logger            keptncommon.LoggerInterface
+	projectsAPI       *keptnapi.ProjectHandler
+	servicesAPI       *keptnapi.ServiceHandler
+	resourcesAPI      *keptnapi.ResourceHandler
+	apiHandler        *keptnapi.APIHandler
+	credentialManager credentials.CredentialManagerInterface
+	DTHelper          *DynatraceHelper
+	syncTimer         *time.Ticker
+	keptnHandler      *keptnv2.Keptn
+	servicesInKeptn   []string
+	dtConfig          *config.DynatraceConfigFile
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
@@ -133,27 +136,24 @@ const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 const defaultConfigurationServiceURL = "http://configuration-service:8080"
 
 // ActivateServiceSynchronizer godoc
-func ActivateServiceSynchronizer() *serviceSynchronizer {
+func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynchronizer {
 	if serviceSynchronizerInstance == nil {
 
 		encodedDefaultSLOFile = b64.StdEncoding.EncodeToString([]byte(defaultSLOFile))
 		logger := keptncommon.NewLogger("", "", "dynatrace-service")
 		serviceSynchronizerInstance = &serviceSynchronizer{
-			logger: logger,
+			logger:            logger,
+			credentialManager: c,
 		}
 
-		dynatraceConfig, err := config.GetDynatraceConfig(initSyncEventAdapter{}, logger)
+		dynatraceConfig, err := adapter.GetDynatraceConfig(initSyncEventAdapter{}, logger)
 		if err != nil {
-			logger.Error("failed to load Dynatrace config: " + err.Error())
+			logger.Error(fmt.Sprintf("failed to load Dynatrace config: %s", err.Error()))
 			return nil
 		}
-		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
-		if err != nil {
-			logger.Error("failed to load Dynatrace credentials: " + err.Error())
-			return nil
-		}
+		serviceSynchronizerInstance.dtConfig = dynatraceConfig
 
-		serviceSynchronizerInstance.DTHelper = NewDynatraceHelper(nil, creds, logger)
+		serviceSynchronizerInstance.DTHelper = NewDynatraceHelper(nil, nil, logger)
 
 		serviceSynchronizerInstance.logger.Debug("Initializing Service Synchronizer")
 		configServiceBaseURL := common.GetConfigurationServiceURL()
@@ -196,7 +196,21 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 	s.synchronizeServices()
 }
 
+func (s *serviceSynchronizer) establishDTAPIConnection() error {
+	creds, err := s.credentialManager.GetDynatraceCredentials(s.dtConfig)
+	if err != nil {
+		return fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
+	}
+
+	s.DTHelper.DynatraceCreds = creds
+	return nil
+}
+
 func (s *serviceSynchronizer) synchronizeServices() {
+	if err := s.establishDTAPIConnection(); err != nil {
+		s.logger.Error(fmt.Sprintf("could not synchronize DT services: %s", err.Error()))
+		return
+	}
 	s.logger.Info("checking if project " + defaultDTProjectName + " exists")
 	project, errObj := s.projectsAPI.GetProject(apimodels.Project{
 		ProjectName: defaultDTProjectName,
