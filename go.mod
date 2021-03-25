@@ -11,7 +11,7 @@ require (
 	github.com/keptn/go-utils v0.8.2
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.17.0
-	k8s.io/apimachinery v0.17.0
-	k8s.io/client-go v0.17.0
+	k8s.io/api v0.20.5
+	k8s.io/apimachinery v0.20.5
+	k8s.io/client-go v0.20.5
 )
