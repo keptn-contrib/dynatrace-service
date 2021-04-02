@@ -10,13 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 
 	"github.com/cloudevents/sdk-go/pkg/cloudevents"
 	cloudeventsclient "github.com/cloudevents/sdk-go/pkg/cloudevents/client"
 	cloudeventshttp "github.com/cloudevents/sdk-go/pkg/cloudevents/transport/http"
 	"github.com/cloudevents/sdk-go/pkg/cloudevents/types"
-	"github.com/google/uuid"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
@@ -58,6 +58,8 @@ type ProblemEventHandler struct {
 }
 
 const eventbroker = "EVENTBROKER"
+
+const TEST_NOTIFICATION_CONTEXT = "39393939-3920-4020-a020-202020202020"
 
 func (eh ProblemEventHandler) HandleEvent() error {
 
@@ -123,6 +125,13 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
 
 	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
+
+	// check for special keptn context that comes from a Dynatrace "Send Test Notification Event"
+	if strings.Compare(shkeptncontext, TEST_NOTIFICATION_CONTEXT) == 0 {
+		// if the incoming context is the one for the test event -> thats the one that gets created when {PID} == "99999" then clear it so that we get a new context
+		uuid.SetRand(nil)
+		shkeptncontext = uuid.New().String()
+	}
 
 	newProblemData := keptn.ProblemEventData{
 		State:          "OPEN",

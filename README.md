@@ -346,21 +346,18 @@ to configure the retrieval af metrics for a service
 One major use case of Keptn is Auto-Remediation. This is where Keptn receives a problem event which then triggers a remediation workflow.
 External tools such as Dynatrace can send a `sh.keptn.events.problem` event to Keptn but first need to be mapped to a Keptn Project, Service and Stage. Depending on the alerting tool this might be done differently. 
 
-The *dynatrace-service* provides the capabilty to receive such a `sh.keptn.events.problem` - analyzes its content and sends a `sh.keptn.event.problem.open` to the matching keptn project, service and stage including all relevent problem details such as PID, ProblemTitle, Problem URL, ...
+The *dynatrace-service* provides the capability to receive such a `sh.keptn.events.problem` - analyzes its content and sends a `sh.keptn.event.problem.open` to the matching keptn project, service and stage including all relevant problem details such as PID, ProblemTitle, Problem URL, ...
 
 **Setting Up Problem Notification for Problems detected on Keptn Deployed Services**
 
 If you use Keptn to deploy your microservices and follow our tagging practices Dynatrace will tag your monitored services with keptn_project, keptn_service and keptn_stage. If Dynatrace then detects a problem in one of these deployed services, e.g: High Failure Rate, Slow response time, ... you can let Dynatrace send these problems back to Keptn and map the problem directly to the correct Kept Project, Stage and Service.
 
-To setup this integration you just need to setup a Custo Problem Notification that looks like this: 
+To setup this integration you just need to setup a Custom Problem Notification that looks like this: 
 ```json
 {
     "specversion":"0.2",
-    "shkeptncontext":"{PID}",
     "type":"sh.keptn.events.problem",
     "source":"dynatrace",
-    "id":"{PID}",
-    "time":"",
     "contenttype":"application/json",
     "data": {
         "State":"{State}",
@@ -389,11 +386,8 @@ Here the custom payload for a Custom Notification Integration that will send all
 ```json
 {
     "specversion":"0.2",
-    "shkeptncontext":"{PID}",
     "type":"sh.keptn.events.problem",
     "source":"dynatrace",
-    "id":"{PID}",
-    "time":"",
     "contenttype":"application/json",
     "data": {
         "State":"{State}",
@@ -406,7 +400,7 @@ Here the custom payload for a Custom Notification Integration that will send all
         "ImpactedEntities":{ImpactedEntities},
         "ImpactedEntity":"{ImpactedEntity}",
         "KeptnProject" : "demo-remediation",
-        "KeptnService" : "allproblem",
+        "KeptnService" : "allproblems",
         "KeptnStage" : "production"
     }
 }
