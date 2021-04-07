@@ -33,7 +33,7 @@ Create chart name and version as used by the chart label.
 {{/*
 Common labels
 */}}
-{{- define "dynatraceservice.labels" -}}
+{{- define "dynatrace-service.labels" -}}
 dynatrace-sli.sh/chart: {{ include "dynatrace-service.chart" . }}
 {{ include "dynatrace-service.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
