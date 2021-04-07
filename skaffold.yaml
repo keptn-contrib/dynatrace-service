@@ -9,6 +9,18 @@ build:
           debugBuild: true
           version: develop
 deploy:
-  kubectl:
-    manifests:
-      - deploy/service.yaml
+  helm:
+    flags:
+      upgrade: ["--reuse-values"]
+    releases:
+      - name: dynatrace-service # needs to be the same name as currently used (check via helm ls -n keptn)
+        namespace: keptn # needs to be the same namespace as where the helm-chart is currently deployed
+        # upgradeOnChange: true
+        # recreatePods: false # don't recreate all pods
+        artifactOverrides:
+          image: keptncontrib/dynatrace-service
+        overrides:
+          distributor:
+            image:
+              tag: 0.8.1
+        chartPath: chart
