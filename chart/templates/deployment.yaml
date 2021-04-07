@@ -52,7 +52,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.namespace
             - name: GENERATE_TAGGING_RULES
-                value: '{{ .Values.dynatraceService.config.generateTaggingRules }}'
+              value: '{{ .Values.dynatraceService.config.generateTaggingRules }}'
             - name: GENERATE_PROBLEM_NOTIFICATIONS
               value: '{{ .Values.dynatraceService.config.generateProblemNotifications }}'
             - name: GENERATE_MANAGEMENT_ZONES
