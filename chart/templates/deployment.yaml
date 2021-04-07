@@ -64,7 +64,7 @@ spec:
             - name: SYNCHRONIZE_DYNATRACE_SERVICES
               value: '{{ .Values.dynatraceService.config.synchronizeDynatraceServices }}'
             - name: SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS
-              value: {{ .Values.dynatraceService.config.synchronizeDynatraceServicesIntervalSeconds }}
+              value: '{{ .Values.dynatraceService.config.synchronizeDynatraceServicesIntervalSeconds }}'
             - name: HTTP_SSL_VERIFY
               value: '{{ .Values.dynatraceService.config.httpSSLVerify }}'
           livenessProbe:
