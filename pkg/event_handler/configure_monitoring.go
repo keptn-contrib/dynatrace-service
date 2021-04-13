@@ -22,6 +22,7 @@ type ConfigureMonitoringEventHandler struct {
 	IsCombinedLogger bool
 	WebSocket        *websocket.Conn
 	KeptnHandler     *keptnv2.Keptn
+	dtConfigGetter   adapter.DynatraceConfigGetterInterface
 }
 
 type KeptnAPIConnectionCheck struct {
@@ -100,7 +101,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	keptnEvent := adapter.NewConfigureMonitoringAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
 
-	dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 	if err != nil {
 		msg := fmt.Sprintf("failed to load Dynatrace config: %v", err)
 		return eh.handleError(e, msg)

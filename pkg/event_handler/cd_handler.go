@@ -15,8 +15,9 @@ import (
 )
 
 type CDEventHandler struct {
-	Logger *keptncommon.Logger
-	Event  cloudevents.Event
+	Logger         *keptncommon.Logger
+	Event          cloudevents.Event
+	dtConfigGetter adapter.DynatraceConfigGetterInterface
 }
 
 func (eh CDEventHandler) HandleEvent() error {
@@ -38,7 +39,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		// initialize our objects
 		keptnEvent := adapter.NewDeploymentFinishedAdapter(*dfData, shkeptncontext, eh.Event.Source())
 
-		dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 		if err != nil {
 			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 			return err
@@ -64,7 +65,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		// initialize our objects
 		keptnEvent := adapter.NewTestTriggeredAdapter(*ttData, shkeptncontext, eh.Event.Source())
 
-		dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 		if err != nil {
 			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 			return err
@@ -96,7 +97,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		// initialize our objects
 		keptnEvent := adapter.NewTestFinishedAdapter(*tfData, shkeptncontext, eh.Event.Source())
 
-		dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 		if err != nil {
 			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 			return err
@@ -128,7 +129,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		// initialize our objects
 		keptnEvent := adapter.NewEvaluationDoneAdapter(*edData, shkeptncontext, eh.Event.Source())
 
-		dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 		if err != nil {
 			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 			return err
@@ -177,7 +178,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			eh.Logger.Error(fmt.Sprintf("Could not determine deployment strategy: %s", err.Error()))
 			return err
 		}
-		dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 		if err != nil {
 			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 			return err

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
@@ -125,15 +124,13 @@ type serviceSynchronizer struct {
 	syncTimer         *time.Ticker
 	keptnHandler      *keptnv2.Keptn
 	servicesInKeptn   []string
-	dtConfig          *config.DynatraceConfigFile
+	dtConfigGetter    adapter.DynatraceConfigGetterInterface
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
 
 const shipyardController = "SHIPYARD_CONTROLLER"
-const configurationService = "CONFIGURATION_SERVICE"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
-const defaultConfigurationServiceURL = "http://configuration-service:8080"
 
 // ActivateServiceSynchronizer godoc
 func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynchronizer {
@@ -146,13 +143,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 			credentialManager: c,
 		}
 
-		dynatraceConfig, err := adapter.GetDynatraceConfig(initSyncEventAdapter{}, logger)
-		if err != nil {
-			logger.Error(fmt.Sprintf("failed to load Dynatrace config: %s", err.Error()))
-			return nil
-		}
-		serviceSynchronizerInstance.dtConfig = dynatraceConfig
-
+		serviceSynchronizerInstance.dtConfigGetter = &adapter.DynatraceConfigGetter{}
 		serviceSynchronizerInstance.DTHelper = NewDynatraceHelper(nil, nil, logger)
 
 		serviceSynchronizerInstance.logger.Debug("Initializing Service Synchronizer")
@@ -197,7 +188,13 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 }
 
 func (s *serviceSynchronizer) establishDTAPIConnection() error {
-	creds, err := s.credentialManager.GetDynatraceCredentials(s.dtConfig)
+
+	dynatraceConfig, err := s.dtConfigGetter.GetDynatraceConfig(initSyncEventAdapter{}, s.logger)
+	if err != nil {
+		return fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
+	}
+
+	creds, err := s.credentialManager.GetDynatraceCredentials(dynatraceConfig)
 	if err != nil {
 		return fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
 	}

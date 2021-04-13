@@ -1,4 +1,4 @@
-apiVersion: skaffold/v1beta13
+apiVersion: skaffold/v2beta10
 kind: Config
 build:
   artifacts:
@@ -23,4 +23,8 @@ deploy:
           distributor:
             image:
               tag: 0.8.1
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
         chartPath: chart
