@@ -13,8 +13,16 @@ import (
 	"strings"
 )
 
+//go:generate moq --skip-ensure -pkg adapter_mock -out ./mock/dynatrace_config_mock.go . DynatraceConfigGetterInterface
+type DynatraceConfigGetterInterface interface {
+	GetDynatraceConfig(event EventContentAdapter, logger keptn.LoggerInterface) (*config.DynatraceConfigFile, error)
+}
+
+type DynatraceConfigGetter struct {
+}
+
 // GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo
-func GetDynatraceConfig(event EventContentAdapter, logger keptn.LoggerInterface) (*config.DynatraceConfigFile, error) {
+func (d *DynatraceConfigGetter) GetDynatraceConfig(event EventContentAdapter, logger keptn.LoggerInterface) (*config.DynatraceConfigFile, error) {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	var fileContent string

@@ -5,6 +5,8 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-test/deep"
 	"github.com/google/uuid"
+	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
+	adapter_mock "github.com/keptn-contrib/dynatrace-service/pkg/adapter/mock"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	credentials_mock "github.com/keptn-contrib/dynatrace-service/pkg/credentials/mock"
@@ -702,7 +704,10 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 				return &credentials.KeptnAPICredentials{}, nil
 			},
 		},
-		dtConfig: &config.DynatraceConfigFile{},
+		dtConfigGetter: &adapter_mock.DynatraceConfigGetterInterfaceMock{
+			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter, logger keptncommon.LoggerInterface) (*config.DynatraceConfigFile, error) {
+				return &config.DynatraceConfigFile{}, nil
+			}},
 	}
 	s.synchronizeServices()
 

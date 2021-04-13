@@ -14,8 +14,9 @@ import (
 )
 
 type CreateProjectEventHandler struct {
-	Logger keptn.LoggerInterface
-	Event  cloudevents.Event
+	Logger         keptn.LoggerInterface
+	Event          cloudevents.Event
+	dtConfigGetter adapter.DynatraceConfigGetterInterface
 }
 
 func (eh CreateProjectEventHandler) HandleEvent() error {
@@ -46,7 +47,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 
 	keptnEvent := adapter.NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
 
-	dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 	if err != nil {
 		eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 		return err

@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/websocket v1.4.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/keptn/go-utils v0.8.2
+	github.com/matryer/moq v0.2.1 // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.17.0

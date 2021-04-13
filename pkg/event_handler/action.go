@@ -16,15 +16,16 @@ import (
 )
 
 type ActionHandler struct {
-	Logger *keptncommon.Logger
-	Event  cloudevents.Event
+	Logger         *keptncommon.Logger
+	Event          cloudevents.Event
+	dtConfigGetter adapter.DynatraceConfigGetterInterface
 }
 
 /**
  * Retrieves Dynatrace Credential information
  */
 func (eh ActionHandler) GetDynatraceCredentials(keptnEvent adapter.EventContentAdapter) (*config.DynatraceConfigFile, *credentials.DTCredentials, error) {
-	dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 	if err != nil {
 		eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 		return nil, nil, err
@@ -75,7 +76,7 @@ func (eh ActionHandler) HandleEvent() error {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
 
-		dynatraceConfig, err := adapter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
 		if err != nil {
 			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
 			return err
