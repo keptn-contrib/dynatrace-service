@@ -115,6 +115,45 @@ jobs:
         run: go test -coverprofile=coverage.txt -covermode=atomic -v ./...
         working-directory: .
 
+  ############################################################################
+  # Build Helm Charts                                                        #
+  ############################################################################
+  helm_charts_build:
+    needs: prepare_ci_run
+    name: Build Helm Charts
+    runs-on: ubuntu-20.04
+    env:
+      BRANCH: ${{ needs.prepare_ci_run.outputs.BRANCH }}
+      VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
+      DATETIME: ${{ needs.prepare_ci_run.outputs.DATE }}${{ needs.prepare_ci_run.outputs.TIME }}
+      GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Load CI Environment from .ci_env
+        id: load_ci_env
+        uses: c-py/action-dotenv-to-setenv@v3
+        with:
+          env-file: .ci_env
+
+      - name: Build Helm Chart
+        id: build_helm_chart
+        run: |
+          if [[ "$BRANCH" == "master" ]]; then
+            # use VERSION.DATETIME for the image tag (e.g., nightly build)
+            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}.${DATETIME}" "${IMAGE}"
+          else
+            # just use VERSION for the image tag
+            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}" "${IMAGE}"
+          fi
+
+      - name: Upload Helm Chart as an artifact
+        id: upload_helm_chart
+        uses: actions/upload-artifact@v2
+        with:
+          name: installer
+          path: installer/*.tgz
 
   ############################################################################
   # Build Docker Image                                                      #
@@ -175,3 +214,29 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           path: docker_build_report_final.txt
           recreate: true
+
+  store-output-in-build-config:
+    name: "Store output of last step in build-config.env"
+    needs: prepare_ci_run
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Create build config file
+        env:
+          BRANCH: ${{ needs.prepare_ci_run.outputs.BRANCH }}
+          BRANCH_SLUG: ${{ needs.prepare_ci_run.outputs.BRANCH_SLUG }}
+          VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
+          DATETIME: ${{ needs.prepare_ci_run.outputs.DATE }}${{ needs.prepare_ci_run.outputs.TIME }}
+          GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
+        run: |
+          echo "BRANCH=${BRANCH}" >> build-config.env
+          echo "BRANCH_SLUG=${BRANCH_SLUG}" >> build-config.env
+          echo "VERSION=${VERSION}" >> build-config.env
+          echo "DATETIME=${DATETIME}" >> build-config.env
+          echo "GIT_SHA=${GIT_SHA}" >> build-config.env
+
+      - name: Upload build config as artifact
+        id: upload_build_config
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-config
+          path: build-config.env

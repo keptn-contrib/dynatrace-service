@@ -1,0 +1,239 @@
+name: Create Release Draft
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '0 3 * * 1-5' # run integration tests at 3 AM, monday to friday (1-5)
+
+  workflow_dispatch: # run only when triggered manually
+    inputs:
+      branch:
+        description: 'Branch to create release draft from (e.g., master, release-x.y.z)'
+        required: true
+        default: 'master'
+defaults:
+  run:
+    shell: bash
+jobs:
+  prepare-release:
+    name: "Prepare release"
+    runs-on: ubuntu-20.04
+    outputs:
+      BRANCH: ${{ steps.determine_branch.outputs.BRANCH }}
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v2
+
+      - name: Create downloads folder
+        run: mkdir ~/downloads
+
+      - name: Cache downloads paths
+        uses: actions/cache@v2.1.4
+        with:
+          path: |
+            ~/downloads
+          key: ${{ runner.os }}-${{ matrix.CLOUD_PROVIDER }}-downloads
+
+      - name: Determine Target Branch for Release draft
+        id: determine_branch
+        run: |
+          if [[ "${{ github.event.inputs.branch }}" != "" ]]; then
+            BRANCH=${{ github.event.inputs.branch }}
+            echo "Using $BRANCH as target branch for release draft"
+          else
+            echo "Determining branch based on what triggered this workflow"
+
+            if [[ "${GITHUB_REF}" == "refs/heads"* ]]; then
+              echo "This is a push to a local branch -> using branch name"
+              BRANCH=${GITHUB_REF#refs/heads/}
+              echo "Branch Name: $BRANCH"
+            else
+              if [[ "${GITHUB_REF}" == "refs/pull/"* ]]; then
+                # usually the format for PRs is: refs/pull/1234/merge
+                echo "::error::This is a Pull Request, and PRs are not supported yet"
+                exit 1
+              else
+                echo "::error This is neither a push, nor a PR, probably something else... Exiting"
+                exit 1
+              fi
+            fi
+          fi
+
+          echo "##[set-output name=BRANCH;]$(echo ${BRANCH})"
+  #######################################################################
+  # This job publishes a draft release based on the previous steps      #
+  #######################################################################
+  publish-draft-release:
+    name: Publish Draft release
+    needs: prepare-release
+    runs-on: ubuntu-20.04
+    env:
+      BRANCH: ${{ needs.prepare-release.outputs.BRANCH }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Debug - Output Branch
+        run: echo $BRANCH
+
+      - name: Load CI Environment from .ci_env
+        id: load_ci_env
+        uses: c-py/action-dotenv-to-setenv@v3
+        with:
+          env-file: .ci_env
+
+      - name: Download all artifacts from last successful build of specified branch
+        uses: dawidd6/action-download-artifact@v2
+        with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          # Required, workflow file name or ID
+          workflow: CI.yml
+          workflow_conclusion: success
+          # Use the branch
+          branch: ${{ env.BRANCH}}
+          # Optional, directory where to extract artifact
+          path: ./dist
+
+      - name: Load Build-Config Environment from ./dist/build-config/build-config.env
+        id: load_build_env
+        uses: c-py/action-dotenv-to-setenv@v3
+        with:
+          env-file: ./dist/build-config/build-config.env
+
+      - name: Overwrite VERSION String for nightly builds
+        run: |
+          if [[ "$BRANCH" == "master" ]]; then
+            # use VERSION.DATETIME for the cli version (e.g., nightly build)
+            VERSION=${VERSION}.${DATETIME}
+            # overwrite VERSION
+            echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          fi
+
+      - name: DEBUG Build-Config
+        run: |
+          echo VERSION=${VERSION}
+          echo BRANCH=${BRANCH}
+
+      # Part of this job is to check if a releasenotes file exists and to use it as the release message
+      - name: Try getting release notes
+        id: get_releasenotes
+        run: |
+          filename="releasenotes/releasenotes_V${VERSION}.md"
+          if [[ -f "$filename" ]]; then
+            echo "Found releasenotes in $filename"
+          else
+            echo "::warning Could not find release notes $filename, using releasenotes_develop"
+            filename="releasenotes/releasenotes_develop.md"
+          fi
+
+          echo "##[set-output name=RELEASENOTES_FILENAME;]$(echo ${filename})"
+
+      # Create release message by concatenating releasenotes with the test/build report
+      - name: Create a Release message
+        env:
+          RELEASENOTES_FILENAME: ${{ steps.get_releasenotes.outputs.RELEASENOTES_FILENAME }}
+        run: |
+          # print CI information
+          echo ""  >> release-notes.txt
+          echo "<details><summary>CI Information</summary>"  >> release-notes.txt
+          echo "<p>" >> release-notes.txt
+          echo "" >> release-notes.txt
+          echo "* **BUILD ${VERSION} ON ${BRANCH}**" >> release-notes.txt
+          echo "* **DATETIME**: $DATETIME" >> release-notes.txt
+          echo "* **GIT_SHA**: $GIT_SHA" >> release-notes.txt
+          echo "* **ACTION RUN**: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> release-notes.txt
+          echo "" >> release-notes.txt
+          echo "" >> release-notes.txt
+          echo "" >> release-notes.txt
+          echo "</p>" >> release-notes.txt
+          echo "</details>" >> release-notes.txt
+
+      - name: Abort if (published) release already exists
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            let tag = "${{ env.VERSION }}";
+            console.log(`Trying to fetch release by tag '${tag}'...`);
+
+            try {
+              release = await github.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tag
+              });
+              console.log("::error Release already exists... Aborting!");
+              core.setFailed("Release already exists... Aborting!");
+
+              return 1; // failure
+            } catch (error) {
+              // release not found -> okay
+              console.log("No release found -> okay");
+              return 0;
+            }
+
+      - name: Delete draft release if it already exists
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            let tag = "${{ env.VERSION }}";
+            console.log(`Trying to fetch DRAFT release by tag '${tag}'...`);
+
+            try {
+              // get all releases (including drafts)
+              let releases = await github.repos.listReleases({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+              // find a draft release
+              let release = releases.data.find(release => release.tag_name === tag);
+              if (release) {
+                // found a release with specified tag; check if it is a draft release
+                if (release.draft) {
+                  // found a draft release
+                  console.log(`🥳 Found a draft release with id ${release.id}, deleting it`);
+                  console.log(`Release Tag Name: ${release.tag_name}`);
+                  console.log(`Release Draft: ${release.draft}`);
+                  console.log(`Release URL: ${release.html_url}`);
+
+                  console.log(`::error::Draft release found, please delete it manually!`);
+
+                  return 1;
+                  // ToDo: Commented out as there seems to be a problem with deleting releases
+
+                  /*github.repos.deleteRelease({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    release_id: release.id
+                  });*/
+
+                  console.log("Deleted! -> okay");
+                } else {
+                  console.log("::error Release with tag found, but it's not a draft release");
+                  core.setFailed("Release with tag found, but it's not a draft release");
+                }
+              } else {
+                console.log("No draft release found -> okay");
+              }
+
+              return 0;
+            } catch (error) {
+              // error happened
+              console.log("An error happened while trying to fetch all releases:");
+              console.log(error);
+              throw error;
+            }
+
+      - name: Draft Release with Releasenotes
+        id: create_draft_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ env.VERSION }}
+          tag_name: ${{ env.VERSION }}
+          draft: true       # we only want to publish draft releases here - a human should review it and push the button eventually
+          prerelease: true  # mark as pre-release for now, a human can always change it to a non-prerelease afterwards
+          body_path: release-notes.txt
+          files: |
+            dist/installer/*.tgz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

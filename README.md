@@ -79,21 +79,21 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 
 **Deploy the Service:**
 * The `dynatrace-service` supports to automatically generate tagging rules, problem notifications, management zones, dashboards, and custom metric events in your Dynatrace tenant.
- You can configure whether these entities should be generated within your Dynatrace tenant by the environment variables specified in the provided [manifest](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml),
- i.e., using the environment variables `GENERATE_TAGGING_RULES` (default `true`), `GENERATE_PROBLEM_NOTIFICATIONS` (default `true`), `GENERATE_MANAGEMENT_ZONES` (default `true`), `GENERATE_DASHBOARDS` (default `true`), `GENERATE_METRIC_EVENTS` (default `true`), and `SYNCHRONIZE_DYNATRACE_SERVICES` (default `true`).
+ You can configure whether these entities should be generated within your Dynatrace tenant by the environment variables specified in the provided [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml),
+ i.e., using the variables `dynatraceService.config.generateTaggingRules` (default `false`), `dynatraceService.config.generateProblemNotifications` (default `false`), `dynatraceService.config.generateManagementZones` (default `false`), `dynatraceService.config.generateDashboards` (default `false`), `dynatraceService.config.generateMetricEvents` (default `false`), and `dynatraceService.config.synchronizeDynatraceServices` (default `true`).
  
 * The `dynatrace-service` by default validates the SSL certificate of the Dynatrace API.
 If your Dynatrace API only has a self-signed certificate, you can disable the SSL certificate check
-by setting the environment variable `HTTP_SSL_VERIFY` (default `true`) specified in the [manifest](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml) to `false`.
+by setting the environment variable `dynatraceService.config.httpSSLVerify` (default `true`) specified in the [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml) to `false`.
 
 
-* Deploy the `dynatrace-service` using `kubectl apply`:
+* To deploy the current version of the *dynatrace-service* in your Kubernetes cluster, use the helm chart located in the `chart` directory.
+Please use the same namespace for the *dynatrace-service* as you are using for Keptn, e.g: keptn.
 
     ```console
-    kubectl apply -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml -n keptn
-    ```
+    helm upgrade --install dynatrace-service -n keptn http://https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz
    
-   **Note**: Replace `$VERSION` with the desired version number (e.g., 0.8.0) you want to install.
+   **Note**: Replace `$VERSION` with the desired version number (e.g., 0.13.0) you want to install.
    
    This installs the `dynatrace-service` in the `keptn` namespace, which you can verify using:
 
@@ -112,19 +112,16 @@ by setting the environment variable `HTTP_SSL_VERIFY` (default `true`) specified
 Adapt and use the following command in case you want to up- or downgrade your installed version (specified by the `$VERSION` placeholder):
 
 ```console
-kubectl -n keptn set image deployment/dynatrace-service dynatrace-service=keptncontrib/dynatrace-service:$VERSION --record
+helm upgrade dynatrace-service -n keptn http://https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz
 ```
 
 ### Uninstall
 
-To uninstall the dynatrace service and remove the subscriptions to Keptn channels execute this command.
+To delete a deployed *dynatrace-service*, use the `helm` CLI to uninstall the installed release of the service:
 
 ```console
-kubectl delete -f https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/deploy/service.yaml -n keptn
+helm delete -n keptn dynatrace-service
 ```
-   
-**Note**: Replace `$VERSION` with the desired version number (e.g., 0.8.0) you want to install.
-
 
 ## Set up Dynatrace monitoring for already existing Keptn projects
 
