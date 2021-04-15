@@ -42,13 +42,14 @@ serviceAccount:
 
 podAnnotations: {}                           # Annotations to add to the created pods
 
-podSecurityContext: {}                       # Set the pod security context (e.g. fsGroups)
-  # fsGroup: 2000
+podSecurityContext:                          # Set the pod security context (e.g. fsGroups)
+   fsGroup: 65532
 
-securityContext: {}                          # Set the security context (e.g. runAsUser)
-#  readOnlyRootFilesystem: true
-#  runAsNonRoot: true
-#  runAsUser: 1000
+securityContext:                             # Set the security context (e.g. runAsUser)
+  runAsNonRoot: true
+  runAsUser: 65532
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
 
 resources: {}                                 # Resource limits and requests
   # We usually recommend not to specify default resources and to leave this as a conscious

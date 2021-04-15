@@ -74,6 +74,8 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         - name: distributor
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.distributor.image.repository }}:{{ .Values.distributor.image.tag | default .Chart.AppVersion }}"
           livenessProbe:
             httpGet:

@@ -53,6 +53,8 @@ spec:
       labels:
         run: dynatrace-service
     spec:
+      securityContext:
+        fsGroup: 65532
       serviceAccountName: keptn-dynatrace-service
       containers:
         - name: dynatrace-service
@@ -95,6 +97,11 @@ spec:
               value: '300'
             - name: HTTP_SSL_VERIFY
               value: 'true'
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
         - name: distributor
           image: keptn/distributor:0.8.0
           ports:
@@ -113,6 +120,11 @@ spec:
               value: 'sh.keptn.>'
             - name: PUBSUB_RECIPIENT
               value: '127.0.0.1'
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
 ---
 apiVersion: v1
 kind: Service
