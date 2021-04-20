@@ -2,7 +2,7 @@ dynatraceService:
   image:
     repository: docker.io/keptncontrib/dynatrace-service # Container Image Name
     pullPolicy: IfNotPresent                 # Kubernetes Image Pull Policy
-    tag: ""                                  # Container Tag
+    tag: "0.13.0"                            # Container Tag
   service:
     enabled: true                            # Creates a Kubernetes Service for the dynatrace-sli-service
   config:
@@ -15,7 +15,6 @@ dynatraceService:
     synchronizeDynatraceServicesIntervalSeconds: 300       # Synchronization Interval
     httpSSLVerify: true                      # Verify HTTPS SSL certificates
 
-
 distributor:
   stageFilter: ""                            # Sets the stage this dynatrace-sli-service belongs to
   serviceFilter: ""                          # Sets the service this dynatrace-sli-service belongs to
@@ -23,10 +22,10 @@ distributor:
   image:
     repository: docker.io/keptn/distributor  # Container Image Name
     pullPolicy: IfNotPresent                 # Kubernetes Image Pull Policy
-    tag: "0.8.1"                                  # Container Tag
+    tag: "0.8.2"                             # Container Tag
 
 remoteControlPlane:
-  enabled: false                              # Enables remote execution plane mode
+  enabled: false                             # Enables remote execution plane mode
   api:
     protocol: "https"                        # Used Protocol (http, https)
     hostname: ""                             # Hostname of the control plane cluster (and Port)
