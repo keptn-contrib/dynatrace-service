@@ -1,4 +1,4 @@
-# Release Notes 0.13.0
+# Release Notes 0.13.1
 
 ## New Features
 
