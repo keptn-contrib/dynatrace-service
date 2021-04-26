@@ -29,6 +29,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 |       0.7.3      | keptncontrib/dynatrace-service:0.10.3     | 1.14 - 1.18                            |
 |       0.8.0, 0.8.1      | keptncontrib/dynatrace-service:0.11.0 (*)    | 1.14 - 1.19                            |
 |       0.8.0, 0.8.1      | keptncontrib/dynatrace-service:0.12.0    | 1.14 - 1.19                            |
+|       0.8.0 - 0.8.2     | keptncontrib/dynatrace-service:0.13.1    | 1.14 - 1.19                            |
 
 (*) *Note:* 0.11.0 is feature-complete with 0.10.0. Changes and fixes made from 0.10.1 to 0.10.3 will be incorporated in 0.12.0
 
