@@ -2,4 +2,6 @@
 
 ## New Features
 
-- Allow repos starting with numbers in Helm Chart #306
+- Run container as non-root and set securityContext #293
+- Read dynatrace-config on every sync #290
+- Create a Helm Chart for installing dynatrace-service instead of Kubernetes deployment manifests #261
