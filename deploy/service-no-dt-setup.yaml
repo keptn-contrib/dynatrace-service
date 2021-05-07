@@ -94,7 +94,7 @@ spec:
             - name: SYNCHRONIZE_DYNATRACE_SERVICES
               value: 'true'
             - name: SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS
-              value: '300'
+              value: '60'
             - name: HTTP_SSL_VERIFY
               value: 'true'
           securityContext:
