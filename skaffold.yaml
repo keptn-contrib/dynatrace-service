@@ -22,7 +22,7 @@ deploy:
         overrides:
           distributor:
             image:
-              tag: 0.8.1
+              tag: 0.8.2
           resources:
             limits:
               memory: "512Mi"
