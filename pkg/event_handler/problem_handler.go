@@ -104,7 +104,7 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 	newProblemData.Labels = make(map[string]string)
 	newProblemData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
 
-	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptn.ProblemEventType)
+	err = createAndSendCE(newProblemData, shkeptncontext, keptn.ProblemEventType)
 	if err != nil {
 		eh.Logger.Error("Could not send cloud event: " + err.Error())
 		return err
@@ -118,26 +118,30 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 
 	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
 
-	newProblemData := keptn.ProblemEventData{
-		State:          "OPEN",
-		PID:            dtProblemEvent.PID,
-		ProblemID:      dtProblemEvent.ProblemID,
-		ProblemTitle:   dtProblemEvent.ProblemTitle,
-		ProblemDetails: json.RawMessage(problemDetailsString),
-		ProblemURL:     dtProblemEvent.ProblemURL,
-		ImpactedEntity: dtProblemEvent.ImpactedEntity,
-		Tags:           dtProblemEvent.Tags,
-		Project:        project,
-		Stage:          stage,
-		Service:        service,
+	remediationEventData := keptnv2.RemediationTriggeredEventData{
+		EventData: keptnv2.EventData{
+			Project:        project,
+			Stage:          stage,
+			Service:        service,
+		},
+		Problem: keptnv2.ProblemDetails{
+			State:          "OPEN",
+			PID:            dtProblemEvent.PID,
+			ProblemID:      dtProblemEvent.ProblemID,
+			ProblemTitle:   dtProblemEvent.ProblemTitle,
+			ProblemDetails: json.RawMessage(problemDetailsString),
+			ProblemURL:     dtProblemEvent.ProblemURL,
+			ImpactedEntity: dtProblemEvent.ImpactedEntity,
+			Tags:           dtProblemEvent.Tags,
+		},
 	}
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176
 	// add problem URL as label so it becomes clickable
-	newProblemData.Labels = make(map[string]string)
-	newProblemData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
+	remediationEventData.Labels = make(map[string]string)
+	remediationEventData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
 
-	err = createAndSendCE(eventbroker, newProblemData, shkeptncontext, keptn.ProblemOpenEventType)
+	err = createAndSendCE(remediationEventData, shkeptncontext, keptnv2.GetTriggeredEventType(keptnv2.RemediationTaskName))
 	if err != nil {
 		eh.Logger.Error("Could not send cloud event: " + err.Error())
 		return err
@@ -174,7 +178,7 @@ func (eh ProblemEventHandler) extractContextFromDynatraceProblem(dtProblemEvent 
 	return project, stage, service
 }
 
-func createAndSendCE(eventbroker string, problemData keptn.ProblemEventData, shkeptncontext string, eventType string) error {
+func createAndSendCE(problemData interface{}, shkeptncontext string, eventType string) error {
 	source, _ := url.Parse("dynatrace-service")
 
 	ce := cloudevents.NewEvent()
