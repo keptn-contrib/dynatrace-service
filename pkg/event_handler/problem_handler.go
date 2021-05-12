@@ -141,7 +141,10 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 	remediationEventData.Labels = make(map[string]string)
 	remediationEventData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
 
-	err = createAndSendCE(remediationEventData, shkeptncontext, keptnv2.GetTriggeredEventType(keptnv2.RemediationTaskName))
+	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
+	err = createAndSendCE(remediationEventData, shkeptncontext, keptnv2.GetTriggeredEventType(
+		fmt.Sprintf("%s.%s", stage, keptnv2.RemediationTaskName),
+	))
 	if err != nil {
 		eh.Logger.Error("Could not send cloud event: " + err.Error())
 		return err
