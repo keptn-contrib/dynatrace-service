@@ -92,7 +92,8 @@ by setting the environment variable `dynatraceService.config.httpSSLVerify` (def
 Please use the same namespace for the *dynatrace-service* as you are using for Keptn, e.g: keptn.
 
     ```console
-    helm upgrade --install dynatrace-service -n keptn http://https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz
+    helm upgrade --install dynatrace-service -n keptn https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service-$VERSION.tgz
+    ```
    
    **Note**: Replace `$VERSION` with the desired version number (e.g., 0.13.0) you want to install.
    
@@ -113,7 +114,7 @@ Please use the same namespace for the *dynatrace-service* as you are using for K
 Adapt and use the following command in case you want to up- or downgrade your installed version (specified by the `$VERSION` placeholder):
 
 ```console
-helm upgrade dynatrace-service -n keptn http://https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz
+helm upgrade dynatrace-service -n keptn https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service-$VERSION.tgz
 ```
 
 ### Uninstall
