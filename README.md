@@ -75,7 +75,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
     --from-literal="DT_TENANT=<DT_TENANT>" 
     --from-literal="KEPTN_API_URL=<KEPTN_API_URL>" 
     --from-literal="KEPTN_API_TOKEN=<KEPTN_API_TOKEN>"
-    -oyaml --dry-run | kubectl replace -f -
+    -oyaml --dry-run=client | kubectl replace -f -
     ```
 
 **Deploy the Service:**
