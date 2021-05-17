@@ -87,13 +87,18 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 If your Dynatrace API only has a self-signed certificate, you can disable the SSL certificate check
 by setting the environment variable `dynatraceService.config.httpSSLVerify` (default `true`) specified in the [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml) to `false`.
 
-* The `dynatrace-service` can be configured to use a proxy server via the `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables  as described in [`httpproxy.FromEnvironment()`](https://golang.org/pkg/vendor/golang.org/x/net/http/httpproxy/#FromEnvironment). As the `dynatrace-service` connects to a `distributor`, a `NO_PROXY` entry including `localhost` should be used to prevent these from being proxied. The `HTTP_PROXY` and `HTTPS_PROXY` environment variables can be configured using the `dynatraceService.config.httpProxy` (default `""`) and `dynatraceService.config.httpsProxy` (default `""`) in [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml), `NO_PROXY` is set to `localhost` by default. 
+* The `dynatrace-service` can be configured to use a proxy server via the `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables  as described in [`httpproxy.FromEnvironment()`](https://golang.org/pkg/vendor/golang.org/x/net/http/httpproxy/#FromEnvironment). As the `dynatrace-service` connects to a `distributor`, a `NO_PROXY` entry including `127.0.0.1` should be used to prevent these from being proxied. The `HTTP_PROXY` and `HTTPS_PROXY` environment variables can be configured using the `dynatraceService.config.httpProxy` (default `""`) and `dynatraceService.config.httpsProxy` (default `""`) in [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml), `NO_PROXY` is set to `127.0.0.1` by default. For example:
+
+
+    ```console
+    helm upgrade --install dynatrace-service -n keptn https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz --set dynatraceService.config.httpProxy=http://mylocalproxy:1234 --set dynatraceService.config.httpsProxy=https://mylocalproxy:1234
+    ```
 
 * To deploy the current version of the *dynatrace-service* in your Kubernetes cluster, use the helm chart located in the `chart` directory.
 Please use the same namespace for the *dynatrace-service* as you are using for Keptn, e.g: keptn.
 
     ```console
-    helm upgrade --install dynatrace-service -n keptn http://https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz
+    helm upgrade --install dynatrace-service -n keptn https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz
    
    **Note**: Replace `$VERSION` with the desired version number (e.g., 0.13.0) you want to install.
    
@@ -114,7 +119,7 @@ Please use the same namespace for the *dynatrace-service* as you are using for K
 Adapt and use the following command in case you want to up- or downgrade your installed version (specified by the `$VERSION` placeholder):
 
 ```console
-helm upgrade dynatrace-service -n keptn http://https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz
+helm upgrade dynatrace-service -n keptn https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz
 ```
 
 ### Uninstall
