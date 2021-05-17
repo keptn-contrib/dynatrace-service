@@ -67,6 +67,12 @@ spec:
               value: '{{ .Values.dynatraceService.config.synchronizeDynatraceServicesIntervalSeconds }}'
             - name: HTTP_SSL_VERIFY
               value: '{{ .Values.dynatraceService.config.httpSSLVerify }}'
+            - name: HTTP_PROXY
+              value: '{{ .Values.dynatraceService.config.httpProxy }}'
+            - name: HTTPS_PROXY
+              value: '{{ .Values.dynatraceService.config.httpsProxy }}'
+            - name: NO_PROXY
+              value: 'localhost'
           livenessProbe:
             httpGet:
               path: /health

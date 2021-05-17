@@ -14,6 +14,8 @@ dynatraceService:
     synchronizeDynatraceServices: true       # Synchronize Service Entities between Dynatrace and Keptn
     synchronizeDynatraceServicesIntervalSeconds: 60       # Synchronization Interval
     httpSSLVerify: true                      # Verify HTTPS SSL certificates
+    httpProxy: ""
+    httpsProxy: ""
 
 distributor:
   stageFilter: ""                            # Sets the stage this dynatrace-sli-service belongs to

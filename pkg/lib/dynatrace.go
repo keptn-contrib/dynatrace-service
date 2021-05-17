@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
@@ -141,22 +142,58 @@ func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string
 		return "", nil
 	}
 
+	req, err := dt.createRequest(apiPath, method, body)
+	if err != nil {
+		return "", fmt.Errorf("failed to create request: %v", err)
+	}
+
+	client, err := dt.createClient(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to create client: %v", err)
+	}
+
+	response, err := dt.doRequest(client, req)
+	if err != nil {
+		return "", fmt.Errorf("failed to do request: %v", err)
+	}
+
+	return response, nil
+}
+
+// creates http request for api call with appropriate headers including authorization
+func (dt *DynatraceHelper) createRequest(apiPath string, method string, body []byte) (*http.Request, error) {
 	var url string
 	if !strings.HasPrefix(dt.DynatraceCreds.Tenant, "http://") && !strings.HasPrefix(dt.DynatraceCreds.Tenant, "https://") {
 		url = "https://" + dt.DynatraceCreds.Tenant + apiPath
 	} else {
 		url = dt.DynatraceCreds.Tenant + apiPath
 	}
+
 	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create new request: %v", err)
+	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Api-Token "+dt.DynatraceCreds.ApiToken)
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
 
+	return req, nil
+}
+
+// creates http client with proxy and TLS configuration
+func (dt *DynatraceHelper) createClient(req *http.Request) (*http.Client, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !IsHttpSSLVerificationEnabled()},
+		Proxy:           http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}
+
+	return client, nil
+}
+
+// performs the request and reads the response
+func (dt *DynatraceHelper) doRequest(client *http.Client, req *http.Request) (string, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to send Dynatrace API request: %v", err)

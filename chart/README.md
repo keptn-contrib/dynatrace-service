@@ -23,6 +23,8 @@ The following table lists the configurable parameters of the dynatrace-service c
 | `dynatraceService.config.synchronizeDynatraceServices` | Synchronize Service Entities between Dynatrace and Keptn | `true` |
 | `dynatraceService.config.synchronizeDynatraceServicesIntervalSeconds` | Synchronization Interval | `300` |
 | `dynatraceService.config.httpSSLVerify` | Verify HTTPS SSL certificates | `true` |
+| `dynatraceService.config.httpProxy` | Proxy for HTTP requests | `""` |
+| `dynatraceService.config.httpsProxy` | Proxy for HTTPS requests | `""` |
 | `distributor.stageFilter` | Sets the stage this dynatrace-sli-service belongs to | `""` |
 | `distributor.serviceFilter` | Sets the service this dynatrace-sli-service belongs to | `""` |
 | `distributor.projectFilter` | Sets the project this dynatrace-sli-service belongs to | `""` |
