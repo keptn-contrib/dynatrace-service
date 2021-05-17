@@ -87,6 +87,7 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 If your Dynatrace API only has a self-signed certificate, you can disable the SSL certificate check
 by setting the environment variable `dynatraceService.config.httpSSLVerify` (default `true`) specified in the [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml) to `false`.
 
+* The `dynatrace-service` can be configured to use a proxy server via the `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables  as described in [`httpproxy.FromEnvironment()`](https://golang.org/pkg/vendor/golang.org/x/net/http/httpproxy/#FromEnvironment). As the `dynatrace-service` connects to a `distributor`, a `NO_PROXY` entry including `localhost` should be used to prevent these from being proxied. The `HTTP_PROXY` and `HTTPS_PROXY` environment variables can be configured using the `dynatraceService.config.httpProxy` (default `""`) and `dynatraceService.config.httpsProxy` (default `""`) in [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml), `NO_PROXY` is set to `localhost` by default. 
 
 * To deploy the current version of the *dynatrace-service* in your Kubernetes cluster, use the helm chart located in the `chart` directory.
 Please use the same namespace for the *dynatrace-service* as you are using for Keptn, e.g: keptn.
