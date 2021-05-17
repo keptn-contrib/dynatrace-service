@@ -6,6 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
@@ -13,12 +20,6 @@ import (
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const defaultDTProjectName = "dynatrace"
@@ -354,7 +355,7 @@ func getKeptnServiceNameOfEntity(entity entity) string {
 func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey string, pageSize int) (*dtEntityListResponse, error) {
 	var query string
 	if nextPageKey == "" {
-		query = "/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\")%20AND%20tag(\"keptn_service\")&fields=+tags&pageSize=" + strconv.FormatInt(int64(pageSize), 10)
+		query = "/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=" + strconv.FormatInt(int64(pageSize), 10)
 	} else {
 		query = "/api/v2/entities?nextPageKey=" + nextPageKey
 	}
