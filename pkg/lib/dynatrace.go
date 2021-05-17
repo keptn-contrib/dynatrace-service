@@ -183,20 +183,16 @@ func (dt *DynatraceHelper) createRequest(apiPath string, method string, body []b
 
 // creates http client with proxy and TLS configuration
 func (dt *DynatraceHelper) createClient(req *http.Request) (*http.Client, error) {
-	proxyUrl, err := http.ProxyFromEnvironment(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine proxy server: %v", err)
-	}
-
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !IsHttpSSLVerificationEnabled()},
-		Proxy:           http.ProxyURL(proxyUrl),
+		Proxy:           http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}
 
 	return client, nil
 }
 
+// performs the request and reads the response
 func (dt *DynatraceHelper) doRequest(client *http.Client, req *http.Request) (string, error) {
 	resp, err := client.Do(req)
 	if err != nil {
