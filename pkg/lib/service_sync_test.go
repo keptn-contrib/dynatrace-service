@@ -2,6 +2,16 @@ package lib
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-test/deep"
 	"github.com/google/uuid"
@@ -14,15 +24,6 @@ import (
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"os"
-	"strings"
-	"sync"
-	"testing"
-	"time"
 )
 
 const testDTEntityQueryResponse = `{
@@ -48,72 +49,6 @@ const testDTEntityQueryResponse = `{
         }
     ]
 }`
-
-func Test_getKeptnServiceNameOfEntity(t *testing.T) {
-	type args struct {
-		entity entity
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{
-			name: "use service entity ID",
-			args: args{
-				entity: entity{
-					EntityID:    "entity-id",
-					DisplayName: ":10999",
-					Tags:        nil,
-				},
-			},
-			want: "entity-id",
-		},
-		{
-			name: "use service entity ID because of invalid tag value",
-			args: args{
-				entity: entity{
-					EntityID:    "entity-id",
-					DisplayName: ":10999",
-					Tags: []tags{
-						{
-							Context:              "CONTEXTLESS",
-							Key:                  "keptn-service",
-							StringRepresentation: "keptn_service:/invalid/service",
-							Value:                "/invalid/service",
-						},
-					},
-				},
-			},
-			want: "entity-id",
-		},
-		{
-			name: "use keptn_service tag",
-			args: args{
-				entity: entity{
-					EntityID:    "entity-id",
-					DisplayName: ":10999",
-					Tags: []tags{
-						{
-							Context:              "CONTEXTLESS",
-							Key:                  "keptn_service",
-							StringRepresentation: "keptn_service:my-service",
-							Value:                "my-service",
-						},
-					},
-				},
-			},
-			want: "my-service",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := getKeptnServiceNameOfEntity(tt.args.entity); got != tt.want {
-				t.Errorf("getKeptnServiceNameOfEntity() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.T) {
 
@@ -281,104 +216,6 @@ func Test_doesServiceExist(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := doesServiceExist(tt.args.services, tt.args.serviceName); got != tt.want {
 				t.Errorf("doesServiceExist() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_serviceSynchronizer_synchronizeDTEntityWithKeptn(t *testing.T) {
-
-	servicesMockAPI := getTestServicesAPI()
-	defer servicesMockAPI.Close()
-
-	_, mockEventBroker := getTestMockEventBroker()
-	defer mockEventBroker.Close()
-
-	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
-	defer mockCS.Close()
-	os.Setenv(shipyardController, mockCS.URL)
-	k := getTestKeptnHandler(mockCS, mockEventBroker)
-
-	type fields struct {
-		logger          keptncommon.LoggerInterface
-		projectsAPI     *keptnapi.ProjectHandler
-		servicesAPI     *keptnapi.ServiceHandler
-		resourcesAPI    *keptnapi.ResourceHandler
-		apiMutex        sync.Mutex
-		DTHelper        *DynatraceHelper
-		syncTimer       *time.Ticker
-		keptnHandler    *keptnv2.Keptn
-		servicesInKeptn []string
-	}
-	type args struct {
-		serviceName string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "create service",
-			fields: fields{
-				logger:          keptncommon.NewLogger("", "", ""),
-				projectsAPI:     nil,
-				servicesAPI:     keptnapi.NewServiceHandler(servicesMockAPI.URL),
-				resourcesAPI:    keptnapi.NewResourceHandler(mockCS.URL),
-				apiMutex:        sync.Mutex{},
-				DTHelper:        nil,
-				syncTimer:       nil,
-				keptnHandler:    k,
-				servicesInKeptn: []string{},
-			},
-			args: args{
-				serviceName: "my-service",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &serviceSynchronizer{
-				logger:          tt.fields.logger,
-				projectsAPI:     tt.fields.projectsAPI,
-				servicesAPI:     tt.fields.servicesAPI,
-				resourcesAPI:    tt.fields.resourcesAPI,
-				DTHelper:        tt.fields.DTHelper,
-				syncTimer:       tt.fields.syncTimer,
-				keptnHandler:    tt.fields.keptnHandler,
-				servicesInKeptn: tt.fields.servicesInKeptn,
-			}
-			if err := s.synchronizeDTEntityWithKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {
-				t.Errorf("synchronizeDTEntityWithKeptn() error = %v, wantErr %v", err, tt.wantErr)
-			}
-
-			select {
-			case rec := <-receivedServiceCreate:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			}
-
-			select {
-			case rec := <-receivedSLO:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLO file")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			}
-
-			select {
-			case rec := <-receivedSLI:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLI file")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
 			}
 		})
 	}
@@ -747,5 +584,165 @@ func checkReceivedEntities(t *testing.T, channel chan string, expected []string)
 			t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
 			return true
 		}
+	}
+}
+
+func Test_getKeptnServiceName(t *testing.T) {
+	type args struct {
+		entity entity
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "error due to missing tag",
+			args: args{
+				entity: entity{
+					EntityID:    "entity-id",
+					DisplayName: ":10999",
+					Tags:        nil,
+				},
+			},
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name: "use keptn_service tag",
+			args: args{
+				entity: entity{
+					EntityID:    "entity-id",
+					DisplayName: ":10999",
+					Tags: []tags{
+						{
+							Context:              "CONTEXTLESS",
+							Key:                  "keptn_service",
+							StringRepresentation: "keptn_service:my-service",
+							Value:                "my-service",
+						},
+					},
+				},
+			},
+			want:    "my-service",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getKeptnServiceName(tt.args.entity)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getKeptnServiceName() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("getKeptnServiceName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
+
+	servicesMockAPI := getTestServicesAPI()
+	defer servicesMockAPI.Close()
+
+	_, mockEventBroker := getTestMockEventBroker()
+	defer mockEventBroker.Close()
+
+	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
+	defer mockCS.Close()
+	os.Setenv(shipyardController, mockCS.URL)
+	k := getTestKeptnHandler(mockCS, mockEventBroker)
+
+	type fields struct {
+		logger            keptncommon.LoggerInterface
+		projectsAPI       *keptnapi.ProjectHandler
+		servicesAPI       *keptnapi.ServiceHandler
+		resourcesAPI      *keptnapi.ResourceHandler
+		apiHandler        *keptnapi.APIHandler
+		credentialManager credentials.CredentialManagerInterface
+		apiMutex          sync.Mutex
+		DTHelper          *DynatraceHelper
+		syncTimer         *time.Ticker
+		keptnHandler      *keptnv2.Keptn
+		servicesInKeptn   []string
+		dtConfigGetter    adapter.DynatraceConfigGetterInterface
+	}
+	type args struct {
+		serviceName string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "create service",
+			fields: fields{
+				logger:          keptncommon.NewLogger("", "", ""),
+				projectsAPI:     nil,
+				servicesAPI:     keptnapi.NewServiceHandler(servicesMockAPI.URL),
+				resourcesAPI:    keptnapi.NewResourceHandler(mockCS.URL),
+				apiMutex:        sync.Mutex{},
+				DTHelper:        nil,
+				syncTimer:       nil,
+				keptnHandler:    k,
+				servicesInKeptn: []string{},
+			},
+			args: args{
+				serviceName: "my-service",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &serviceSynchronizer{
+				logger:            tt.fields.logger,
+				projectsAPI:       tt.fields.projectsAPI,
+				servicesAPI:       tt.fields.servicesAPI,
+				resourcesAPI:      tt.fields.resourcesAPI,
+				apiHandler:        tt.fields.apiHandler,
+				credentialManager: tt.fields.credentialManager,
+				DTHelper:          tt.fields.DTHelper,
+				syncTimer:         tt.fields.syncTimer,
+				keptnHandler:      tt.fields.keptnHandler,
+				servicesInKeptn:   tt.fields.servicesInKeptn,
+				dtConfigGetter:    tt.fields.dtConfigGetter,
+			}
+			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {
+				t.Errorf("serviceSynchronizer.addServiceToKeptn() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			select {
+			case rec := <-receivedServiceCreate:
+				if rec != tt.args.serviceName {
+					t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
+				}
+			case <-time.After(5 * time.Second):
+				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
+			}
+
+			select {
+			case rec := <-receivedSLO:
+				if rec != tt.args.serviceName {
+					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLO file")
+				}
+			case <-time.After(5 * time.Second):
+				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
+			}
+
+			select {
+			case rec := <-receivedSLI:
+				if rec != tt.args.serviceName {
+					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLI file")
+				}
+			case <-time.After(5 * time.Second):
+				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
+			}
+		})
 	}
 }
