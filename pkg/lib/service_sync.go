@@ -190,23 +190,23 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 
 func (s *serviceSynchronizer) synchronizeServices() {
 	if err := s.establishDTAPIConnection(); err != nil {
-		s.logger.Error(fmt.Sprintf("could not establish Dynatrace API connection: %s", err.Error()))
+		s.logger.Error(fmt.Sprintf("Could not establish Dynatrace API connection: %s", err.Error()))
 		return
 	}
 
-	s.logger.Info("fetching existing services in project " + defaultDTProjectName + " ")
+	s.logger.Info("Fetching existing services in project " + defaultDTProjectName + " ")
 	if err := s.fetchExistingServices(); err != nil {
-		s.logger.Error(fmt.Sprintf("could not fetch existing services in project: %s", err.Error()))
+		s.logger.Error(fmt.Sprintf("Could not fetch existing services in project: %s", err.Error()))
 		return
 	}
 
-	s.logger.Info("fetching service entities with tags 'keptn_managed' and 'keptn_service'")
+	s.logger.Info("Fetching service entities with tags 'keptn_managed' and 'keptn_service'")
 	nextPageKey := ""
 	pageSize := 50
 	for {
 		entitiesResponse, err := s.fetchKeptnManagedServicesFromDynatrace(nextPageKey, pageSize)
 		if err != nil {
-			s.logger.Error(fmt.Sprintf("fetching service entities with tags 'keptn_managed' and 'keptn_service': %s", err))
+			s.logger.Error(fmt.Sprintf("Fetching service entities with tags 'keptn_managed' and 'keptn_service': %s", err))
 			return
 		}
 
@@ -222,22 +222,22 @@ func (s *serviceSynchronizer) synchronizeServices() {
 }
 
 func (s *serviceSynchronizer) synchronizeEntity(entity entity) {
-	s.logger.Debug(fmt.Sprintf("synchronizing entity: %s", entity.EntityID))
+	s.logger.Debug(fmt.Sprintf("Synchronizing entity: %s", entity.EntityID))
 
 	serviceName, err := getKeptnServiceName(entity)
 	if err != nil {
-		s.logger.Debug(fmt.Sprintf("skipping entity %s due to no valid service name", entity.EntityID))
+		s.logger.Debug(fmt.Sprintf("Skipping entity %s due to no valid service name", entity.EntityID))
 		return
 	}
-	s.logger.Debug(fmt.Sprintf("got service name for entity: %s", serviceName))
+	s.logger.Debug(fmt.Sprintf("Got %s as service name for entity %s", serviceName, entity.EntityID))
 
 	if doesServiceExist(s.servicesInKeptn, serviceName) {
-		s.logger.Debug(fmt.Sprintf("service %s already exists in project, skipping", serviceName))
+		s.logger.Debug(fmt.Sprintf("Service %s already exists in project, skipping", serviceName))
 		return
 	}
 
 	if err := s.addServiceToKeptn(serviceName); err != nil {
-		s.logger.Error(fmt.Sprintf("could not synchronize DT entity with ID %s: %s", entity.EntityID, err.Error()))
+		s.logger.Error(fmt.Sprintf("Could not synchronize DT entity with ID %s: %s", entity.EntityID, err.Error()))
 	}
 }
 
@@ -264,7 +264,6 @@ func (s *serviceSynchronizer) fetchExistingServices() error {
 		if errObj.Code == 404 {
 			return fmt.Errorf("project %s does not exist", defaultDTProjectName)
 		}
-		// TODO: check this format
 		return fmt.Errorf("could not check if Keptn project %s exists: %s", defaultDTProjectName, *errObj.Message)
 	}
 	if project == nil {
@@ -275,7 +274,7 @@ func (s *serviceSynchronizer) fetchExistingServices() error {
 	s.servicesInKeptn = []string{}
 	allKeptnServicesInProject, err := s.servicesAPI.GetAllServices(defaultDTProjectName, defaultDTProjectStage)
 	if err != nil {
-		return fmt.Errorf("Could not fetch services of Keptn project %s: %s", defaultDTProjectName, err.Error())
+		return fmt.Errorf("could not fetch services of Keptn project %s: %s", defaultDTProjectName, err.Error())
 	}
 	for _, service := range allKeptnServicesInProject {
 		s.servicesInKeptn = append(s.servicesInKeptn, service.ServiceName)
@@ -335,15 +334,15 @@ func (s *serviceSynchronizer) addServiceToKeptn(serviceName string) error {
 	s.logger.Debug(fmt.Sprintf("Service %s is available. Proceeding with uploading SLO", serviceName))
 
 	if err := s.createSLOResource(serviceName); err == nil {
-		s.logger.Info(fmt.Sprintf("uploaded slo.yaml for service %s", serviceName))
+		s.logger.Info(fmt.Sprintf("Uploaded slo.yaml for service %s", serviceName))
 	} else {
-		s.logger.Info(fmt.Sprintf("could not create SLO resource for %s: %s", serviceName, err))
+		s.logger.Info(fmt.Sprintf("Could not create SLO resource for %s: %s", serviceName, err))
 	}
 
 	if err := s.createSLIResource(serviceName); err == nil {
-		s.logger.Info(fmt.Sprintf("uploaded sli.yaml for service %s", serviceName))
+		s.logger.Info(fmt.Sprintf("Uploaded sli.yaml for service %s", serviceName))
 	} else {
-		s.logger.Info(fmt.Sprintf("could not create SLI resource for %s: %s", serviceName, err))
+		s.logger.Info(fmt.Sprintf("Could not create SLI resource for %s: %s", serviceName, err))
 	}
 
 	s.servicesInKeptn = append(s.servicesInKeptn, serviceName)
@@ -390,7 +389,7 @@ func (s *serviceSynchronizer) createService(projectName string, service *apimode
 		return "", errors.New(string(body))
 	}
 
-	return "", fmt.Errorf("Received unexpected response: %d %s", resp.StatusCode, resp.Status)
+	return "", fmt.Errorf("received unexpected response: %d %s", resp.StatusCode, resp.Status)
 }
 
 func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
@@ -407,7 +406,7 @@ func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("could not upload slo.yaml to service %s: %v", serviceName, err)
+		return fmt.Errorf("could not upload slo.yaml to service %s: %s", serviceName, err.Error())
 	}
 
 	return nil
@@ -429,7 +428,7 @@ func (s *serviceSynchronizer) createSLIResource(serviceName string) error {
 	)
 
 	if err != nil {
-		return fmt.Errorf("could not upload sli.yaml to service %s: %v", serviceName, err)
+		return fmt.Errorf("could not upload sli.yaml to service %s: %s", serviceName, err.Error())
 	}
 
 	return nil
