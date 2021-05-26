@@ -102,7 +102,7 @@ func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptnv2
 	if project != "" && shipyard != nil {
 		dt.CreateManagementZones(project, *shipyard)
 
-		configHandler := keptnutils.NewServiceHandler("configuration-service:8080")
+		configHandler := keptnutils.NewServiceHandler("shipyard-controller:8080")
 		dt.CreateDashboard(project, *shipyard)
 
 		// try to create metric events - if one fails, don't fail the whole setup
