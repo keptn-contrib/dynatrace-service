@@ -73,6 +73,15 @@ spec:
               value: '{{ .Values.dynatraceService.config.httpsProxy }}'
             - name: NO_PROXY
               value: '127.0.0.1'
+            - name: KEPTN_API_URL
+              value: '{{ .Values.dynatraceService.config.keptnApiUrl }}'
+            - name: KEPTN_BRIDGE_URL
+              value: '{{ .Values.dynatraceService.config.keptnBridgeUrl }}'
+            - name: KEPTN_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: keptn-api-token
+                  key: keptn-api-token
           livenessProbe:
             httpGet:
               path: /health
