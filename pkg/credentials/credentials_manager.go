@@ -116,17 +116,15 @@ func (cm *CredentialManager) GetDynatraceCredentials(dynatraceConfig *config.Dyn
 
 	dtTenant, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_TENANT")
 	if err != nil {
-		return nil, errors.New("DT_TENANT was not found in dynatrace secret.")
+		return nil, fmt.Errorf("DT_TENANT was not found in \"%s\" secret.", secretName)
 	}
 
 	dtAPIToken, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_API_TOKEN")
 	if err != nil {
-		return nil, errors.New("DT_API_TOKEN was not found in dynatrace secret.")
+		return nil, fmt.Errorf("DT_API_TOKEN was not found in \"%s\" secret.", secretName)
 	}
 
-	dtAPIToken = strings.Trim(dtAPIToken, "\n")
-
-	return &DTCredentials{Tenant: getCleanURL(dtTenant), ApiToken: dtAPIToken}, nil
+	return &DTCredentials{Tenant: getCleanURL(dtTenant), ApiToken: getCleanToken(dtAPIToken)}, nil
 }
 
 func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, error) {
@@ -136,7 +134,7 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, err
 	if err != nil {
 		apiURL = os.Getenv("KEPTN_API_URL")
 		if apiURL == "" {
-			return nil, errors.New("KEPTN_API_URL was not found in dynatrace secret or environment variables.")
+			return nil, fmt.Errorf("KEPTN_API_URL was not found in \"%s\" secret or environment variables.", secretName)
 		}
 	}
 
@@ -144,13 +142,11 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, err
 	if err != nil {
 		apiToken = os.Getenv("KEPTN_API_TOKEN")
 		if apiToken == "" {
-			return nil, errors.New("KEPTN_API_TOKEN was not found in dynatrace secret or environment variables.")
+			return nil, fmt.Errorf("KEPTN_API_TOKEN was not found in \"%s\" secret or environment variables.", secretName)
 		}
 	}
 
-	apiToken = strings.Trim(apiToken, "\n")
-
-	return &KeptnAPICredentials{APIURL: getCleanURL(apiURL), APIToken: apiToken}, nil
+	return &KeptnAPICredentials{APIURL: getCleanURL(apiURL), APIToken: getCleanToken(apiToken)}, nil
 }
 
 func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
@@ -179,6 +175,10 @@ func getCleanURL(url string) string {
 	}
 
 	return url
+}
+
+func getCleanToken(token string) string {
+	return strings.Trim(token, "\n")
 }
 
 // GetDynatraceCredentials reads the Dynatrace credentials from the secret. Therefore, it first checks
