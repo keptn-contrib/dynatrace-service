@@ -208,6 +208,8 @@ func TestGetKeptnBridgeURL(t *testing.T) {
 	}
 }
 
+// Test dynatrace credential behavior: values should be read from dynatrace secret unless secret name has been overridden in dynatrace config file.
+// If neither is available, an error should be produced.
 func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 
 	dynatraceSecret := createDynatraceDTSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123")
@@ -223,6 +225,14 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 		want    *DTCredentials
 		wantErr bool
 	}{
+		{
+			name:   "with no secret, no config",
+			secret: &v1.Secret{},
+			args: args{
+				dynatraceConfig: nil,
+			},
+			wantErr: true,
+		},
 		{
 			name:   "with dynatrace secret, no config",
 			secret: dynatraceSecret,
@@ -257,10 +267,6 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 					DtCreds: "dynatrace_other2",
 				},
 			},
-			want: &DTCredentials{
-				Tenant:   "https://mySampleEnv.live.dynatrace.com",
-				ApiToken: "abc123",
-			},
 			wantErr: true,
 		},
 		{
@@ -268,10 +274,6 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			secret: dynatraceOtherSecret,
 			args: args{
 				dynatraceConfig: nil,
-			},
-			want: &DTCredentials{
-				Tenant:   "https://mySampleEnv.live.dynatrace.com",
-				ApiToken: "abc123",
 			},
 			wantErr: true,
 		},
@@ -315,6 +317,8 @@ func createDynatraceDTSecret(name string, namespace string, dtTenant string, dtA
 	}
 }
 
+// Test keptn api credential behavior: values in dynatrace secret should be used, if not available, fall back to environment variables
+// If neither is available, an error should be produced.
 func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 
 	dynatraceSecret := createDynatraceKeptnSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123", "https://mySampleEnv.live.dynatrace.com/bridge")
@@ -333,33 +337,37 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "with secret, no override",
+			name:    "no secret, no env vars",
+			secret:  &v1.Secret{},
+			wantErr: true,
+		},
+		{
+			name:    "with secret, no env vars",
 			secret:  dynatraceSecret,
 			want:    &KeptnAPICredentials{APIURL: "https://mySampleEnv.live.dynatrace.com", APIToken: "abc123"},
 			wantErr: false,
 		},
 		{
-			name:    "with secret, with override",
+			name:    "with secret, with env vars",
 			secret:  dynatraceSecret,
 			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
 			want:    &KeptnAPICredentials{APIURL: "https://mySampleEnv.live.dynatrace.com", APIToken: "abc123"},
 			wantErr: false,
 		},
 		{
-			name:    "no secret, with override",
+			name:    "no secret, with env vars",
 			secret:  &v1.Secret{},
 			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
 			want:    &KeptnAPICredentials{APIURL: "https://otherSampleEnv.live.dynatrace.com", APIToken: "def456"},
 			wantErr: false,
 		},
 		{
-			name:    "with other secret, no override",
+			name:    "with other secret, no env vars",
 			secret:  otherDynatraceSecret,
-			want:    &KeptnAPICredentials{APIURL: "https://mySampleEnv.live.dynatrace.com", APIToken: "abc123"},
 			wantErr: true,
 		},
 		{
-			name:    "with other secret, with override",
+			name:    "with other secret, with env vars",
 			secret:  otherDynatraceSecret,
 			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
 			want:    &KeptnAPICredentials{APIURL: "https://otherSampleEnv.live.dynatrace.com", APIToken: "def456"},
@@ -400,27 +408,83 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 	}
 }
 
+// Test keptn bridge URL behavior: value in dynatrace secret should be used, if not available, fall back to environment variable
+// If neither is available, an error should be produced.
 func TestCredentialManager_GetKeptnBridgeURL(t *testing.T) {
-	type fields struct {
-		SecretReader SecretReader
+
+	dynatraceSecret := createDynatraceKeptnSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123", "https://mySampleEnv.live.dynatrace.com/bridge")
+	otherDynatraceSecret := createDynatraceKeptnSecret("dynatrace_other", "keptn", "https://sampleEnv.live.dynatrace.com", "xyz000", "https://sampleEnv.live.dynatrace.com/bridge")
+
+	type envVars struct {
+		keptnBridgeURL string
 	}
+
 	tests := []struct {
 		name    string
-		fields  fields
+		secret  *v1.Secret
+		envVars envVars
 		want    string
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:    "no secret, no env vars",
+			secret:  &v1.Secret{},
+			wantErr: true,
+		},
+		{
+			name:    "with secret, no env vars",
+			secret:  dynatraceSecret,
+			want:    "https://mySampleEnv.live.dynatrace.com/bridge",
+			wantErr: false,
+		},
+		{
+			name:    "with secret, with env vars",
+			secret:  dynatraceSecret,
+			envVars: envVars{keptnBridgeURL: "https://sampleEnv.live.dynatrace.com/bridge"},
+			want:    "https://mySampleEnv.live.dynatrace.com/bridge",
+			wantErr: false,
+		},
+		{
+			name:    "no secret, with env vars",
+			secret:  &v1.Secret{},
+			envVars: envVars{keptnBridgeURL: "https://sampleEnv.live.dynatrace.com/bridge"},
+			want:    "https://sampleEnv.live.dynatrace.com/bridge",
+			wantErr: false,
+		},
+		{
+			name:    "with other secret, no env vars",
+			secret:  otherDynatraceSecret,
+			wantErr: true,
+		},
+		{
+			name:    "with other secret, with env vars",
+			secret:  otherDynatraceSecret,
+			envVars: envVars{keptnBridgeURL: "https://sampleEnv.live.dynatrace.com/bridge"},
+			want:    "https://sampleEnv.live.dynatrace.com/bridge",
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cm := &CredentialManager{
-				SecretReader: tt.fields.SecretReader,
+			secretReader, err := NewK8sCredentialReader(fake.NewSimpleClientset(tt.secret))
+			if err != nil {
+				t.Fatalf("NewK8sCredentialReader() error = %v", err)
+			}
+
+			os.Setenv("KEPTN_BRIDGE_URL", tt.envVars.keptnBridgeURL)
+			defer func() {
+				os.Unsetenv("KEPTN_BRIDGE_URL")
+			}()
+
+			cm, err := NewCredentialManager(secretReader)
+			if err != nil {
+				t.Fatalf("NewCredentialManager() error = %v", err)
 			}
 			got, err := cm.GetKeptnBridgeURL()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("CredentialManager.GetKeptnBridgeURL() error = %v, wantErr %v", err, tt.wantErr)
+			if (err != nil) && tt.wantErr {
 				return
+			} else if (err != nil) != tt.wantErr {
+				t.Fatalf("CredentialManager.GetKeptnBridgeURL() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if got != tt.want {
 				t.Errorf("CredentialManager.GetKeptnBridgeURL() = %v, want %v", got, tt.want)
