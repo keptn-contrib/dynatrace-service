@@ -4,10 +4,11 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"k8s.io/client-go/kubernetes"
 	"net/http"
 	"os"
 	"strings"
+
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
@@ -95,11 +96,9 @@ func NewCredentialManager(sr SecretReader) (*CredentialManager, error) {
 	cm := &CredentialManager{}
 	if sr != nil {
 		cm.SecretReader = sr
+	} else if common.RunLocal || common.RunLocalTest {
+		cm.SecretReader = &OSEnvCredentialReader{}
 	} else {
-		if common.RunLocal || common.RunLocalTest {
-			cm.SecretReader = &OSEnvCredentialReader{}
-			return cm, nil
-		}
 		sr, err := NewK8sCredentialReader(nil)
 		if err != nil {
 			return nil, fmt.Errorf("could not initialize CredentialManager: %s", err.Error())
@@ -117,22 +116,15 @@ func (cm *CredentialManager) GetDynatraceCredentials(dynatraceConfig *config.Dyn
 
 	dtTenant, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_TENANT")
 	if err != nil {
-		return nil, errors.New("invalid or no Dynatrace credentials found. Requires at least DT_TENANT and DT_API_TOKEN in secret!")
+		return nil, fmt.Errorf("key DT_TENANT was not found in secret \"%s\"", secretName)
 	}
 
 	dtAPIToken, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_API_TOKEN")
 	if err != nil {
-		return nil, errors.New("invalid or no Dynatrace credentials found. Requires at least DT_TENANT and DT_API_TOKEN in secret!")
+		return nil, fmt.Errorf("key DT_API_TOKEN was not found in secret \"%s\"", secretName)
 	}
 
-	dtCreds := &DTCredentials{}
-
-	dtCreds.Tenant = strings.Trim(dtTenant, "\n")
-	// remove trailing slash since this causes errors with the API calls
-	dtCreds.Tenant = strings.TrimSuffix(dtCreds.Tenant, "/")
-	dtCreds.ApiToken = strings.Trim(dtAPIToken, "\n")
-
-	return dtCreds, nil
+	return &DTCredentials{Tenant: getCleanURL(dtTenant), ApiToken: getCleanToken(dtAPIToken)}, nil
 }
 
 func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, error) {
@@ -140,48 +132,53 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, err
 
 	apiURL, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_API_URL")
 	if err != nil {
-		return nil, errors.New("invalid or no Keptn credentials found. Requires at least KEPTN_API_URL and KEPTN_API_TOKEN in secret!")
+		apiURL = os.Getenv("KEPTN_API_URL")
+		if apiURL == "" {
+			return nil, fmt.Errorf("key KEPTN_API_URL was not found in secret \"%s\" or environment variables", secretName)
+		}
 	}
 
 	apiToken, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_API_TOKEN")
 	if err != nil {
-		return nil, errors.New("invalid or no Keptn credentials found. Requires at least KEPTN_API_URL and KEPTN_API_TOKEN in secret!")
+		apiToken = os.Getenv("KEPTN_API_TOKEN")
+		if apiToken == "" {
+			return nil, fmt.Errorf("key KEPTN_API_TOKEN was not found in secret \"%s\" or environment variables", secretName)
+		}
 	}
 
-	keptnCreds := &KeptnAPICredentials{}
-
-	keptnCreds.APIURL = strings.Trim(apiURL, "\n")
-	// remove trailing slash since this causes errors with the API calls
-	keptnCreds.APIURL = strings.TrimSuffix(keptnCreds.APIURL, "/")
-	keptnCreds.APIToken = strings.Trim(apiToken, "\n")
-
-	if strings.HasPrefix(keptnCreds.APIURL, "http://") {
-		return keptnCreds, nil
-	}
-
-	// ensure that apiURL uses https if no other protocol has explicitly been specified
-	keptnCreds.APIURL = strings.TrimPrefix(keptnCreds.APIURL, "https://")
-	keptnCreds.APIURL = "https://" + keptnCreds.APIURL
-
-	return keptnCreds, nil
+	return &KeptnAPICredentials{APIURL: getCleanURL(apiURL), APIToken: getCleanToken(apiToken)}, nil
 }
 
 func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
 	secretName := "dynatrace"
 
-	url, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_BRIDGE_URL")
+	bridgeURL, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_BRIDGE_URL")
+
 	if err != nil {
-		return "", errors.New("no bridge URL specified in KEPTN_BRIDGE_URL env var")
-	}
-	if strings.HasPrefix(url, "http://") {
-		return url, nil
+		bridgeURL = os.Getenv("KEPTN_BRIDGE_URL")
+		if bridgeURL == "" {
+			return "", fmt.Errorf("key KEPTN_BRIDGE_URL was not found in secret \"%s\" or environment variables", secretName)
+		}
 	}
 
-	// ensure that apiURL uses https if no other protocol has explicitly been specified
-	url = strings.TrimPrefix(url, "https://")
-	url = "https://" + url
+	return getCleanURL(bridgeURL), nil
+}
 
-	return url, nil
+// Trims new lines and trailing slashes, defaults to https if http not specified
+func getCleanURL(url string) string {
+	url = strings.Trim(url, "\n")
+	url = strings.TrimSuffix(url, "/")
+
+	// ensure that url uses https if http has not been explicitly specified
+	if !strings.HasPrefix(url, "http://") {
+		url = "https://" + strings.TrimPrefix(url, "https://")
+	}
+
+	return url
+}
+
+func getCleanToken(token string) string {
+	return strings.Trim(token, "\n")
 }
 
 // GetDynatraceCredentials reads the Dynatrace credentials from the secret. Therefore, it first checks

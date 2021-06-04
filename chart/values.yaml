@@ -16,6 +16,8 @@ dynatraceService:
     httpSSLVerify: true                      # Verify HTTPS SSL certificates
     httpProxy: ""
     httpsProxy: ""
+    keptnApiUrl: ""                          # URL of keptn API
+    keptnBridgeUrl: ""                       # URL of keptn bridge
 
 distributor:
   stageFilter: ""                            # Sets the stage this dynatrace-sli-service belongs to
