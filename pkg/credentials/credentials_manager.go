@@ -116,12 +116,12 @@ func (cm *CredentialManager) GetDynatraceCredentials(dynatraceConfig *config.Dyn
 
 	dtTenant, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_TENANT")
 	if err != nil {
-		return nil, fmt.Errorf("DT_TENANT was not found in \"%s\" secret.", secretName)
+		return nil, fmt.Errorf("key DT_TENANT was not found in secret \"%s\"", secretName)
 	}
 
 	dtAPIToken, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_API_TOKEN")
 	if err != nil {
-		return nil, fmt.Errorf("DT_API_TOKEN was not found in \"%s\" secret.", secretName)
+		return nil, fmt.Errorf("key DT_API_TOKEN was not found in secret \"%s\"", secretName)
 	}
 
 	return &DTCredentials{Tenant: getCleanURL(dtTenant), ApiToken: getCleanToken(dtAPIToken)}, nil
@@ -134,7 +134,7 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, err
 	if err != nil {
 		apiURL = os.Getenv("KEPTN_API_URL")
 		if apiURL == "" {
-			return nil, fmt.Errorf("KEPTN_API_URL was not found in \"%s\" secret or environment variables.", secretName)
+			return nil, fmt.Errorf("key KEPTN_API_URL was not found in secret \"%s\" or environment variables", secretName)
 		}
 	}
 
@@ -142,7 +142,7 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, err
 	if err != nil {
 		apiToken = os.Getenv("KEPTN_API_TOKEN")
 		if apiToken == "" {
-			return nil, fmt.Errorf("KEPTN_API_TOKEN was not found in \"%s\" secret or environment variables.", secretName)
+			return nil, fmt.Errorf("key KEPTN_API_TOKEN was not found in secret \"%s\" or environment variables", secretName)
 		}
 	}
 
@@ -157,7 +157,7 @@ func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
 	if err != nil {
 		bridgeURL = os.Getenv("KEPTN_BRIDGE_URL")
 		if bridgeURL == "" {
-			return "", errors.New("KEPTN_BRIDGE_URL was not found in dynatrace secret or environment variables.")
+			return "", fmt.Errorf("key KEPTN_BRIDGE_URL was not found in secret \"%s\" or environment variables", secretName)
 		}
 	}
 
