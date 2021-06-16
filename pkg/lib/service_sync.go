@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +21,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-const defaultSyncInterval = 300
 const defaultDTProjectName = "dynatrace"
 const defaultDTProjectStage = "quality-gate"
 const defaultSLOFile = `---
@@ -166,17 +164,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 }
 
 func (s *serviceSynchronizer) initializeSynchronizationTimer() {
-	var syncInterval int
-	intervalEnv := os.Getenv("SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS")
-	if intervalEnv == "" {
-		syncInterval = defaultSyncInterval
-	}
-	parseInt, err := strconv.ParseInt(intervalEnv, 10, 32)
-	if err != nil {
-		s.logger.Error(fmt.Sprintf("Could not parse SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS with value %s, using %ds as default.", intervalEnv, defaultSyncInterval))
-		syncInterval = defaultSyncInterval
-	}
-	syncInterval = int(parseInt)
+	syncInterval := GetServiceSyncInterval()
 	s.logger.Info(fmt.Sprintf("Service Synchronizer will sync every %d seconds", syncInterval))
 	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
 	go func() {
