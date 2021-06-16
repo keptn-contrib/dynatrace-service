@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"strings"
+
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
 )
 
 // CreateDashboard creates a new dashboard for the provided project
@@ -17,36 +19,32 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptnv2.Ship
 	// first, check if dashboard for this project already exists and delete that
 	err := dt.DeleteExistingDashboard(project)
 	if err != nil {
-		msg := "Could not delete existing dashboard: " + err.Error()
-		dt.Logger.Error(msg)
+		log.WithError(err).Error("Could not delete existing dashboard")
 		dt.configuredEntities.Dashboard.Success = false
-		dt.configuredEntities.Dashboard.Message = msg
+		dt.configuredEntities.Dashboard.Message = "Could not delete existing dashboard: " + err.Error()
 		return
 	}
 
-	dt.Logger.Info("Creating Dashboard for project " + project)
+	log.WithField("project", project).Info("Creating Dashboard for project")
 	dashboard := createDynatraceDashboard(project, shipyard)
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
-		msg := fmt.Sprintf("failed to unmarshal Dynatrace dashboards: %v", err)
-		dt.Logger.Error(msg)
+		log.WithError(err).Error("Failed to unmarshal Dynatrace dashboards")
 		dt.configuredEntities.Dashboard.Success = false
-		dt.configuredEntities.Dashboard.Message = msg
+		dt.configuredEntities.Dashboard.Message = fmt.Sprintf("failed to unmarshal Dynatrace dashboards: %v", err)
 		return
 	}
 
 	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", dashboardPayload)
 	if err != nil {
-		msg := fmt.Sprintf("failed to create Dynatrace dashboards: %v", err)
-		dt.Logger.Error(msg)
+		log.WithError(err).Error("Failed to create Dynatrace dashboards")
 		dt.configuredEntities.Dashboard.Success = false
-		dt.configuredEntities.Dashboard.Message = msg
+		dt.configuredEntities.Dashboard.Message = fmt.Sprintf("failed to create Dynatrace dashboards: %v", err)
 		return
 	}
-	msg := "Dynatrace dashboard created successfully. You can view it here: https://" + dt.DynatraceCreds.Tenant + "/#dashboards"
-	dt.Logger.Info(msg)
+	log.WithField("dashboardUrl", "https://"+dt.DynatraceCreds.Tenant+"/#dashboards").Info("Dynatrace dashboard created successfully")
 	dt.configuredEntities.Dashboard.Success = false
-	dt.configuredEntities.Dashboard.Message = msg
+	dt.configuredEntities.Dashboard.Message = "Dynatrace dashboard created successfully. You can view it here: https://" + dt.DynatraceCreds.Tenant + "/#dashboards"
 	return
 }
 

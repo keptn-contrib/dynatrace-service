@@ -62,7 +62,6 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 	defer dtMockServer.Close()
 
 	type fields struct {
-		logger          keptncommon.LoggerInterface
 		projectsAPI     *keptnapi.ProjectHandler
 		servicesAPI     *keptnapi.ServiceHandler
 		resourcesAPI    *keptnapi.ResourceHandler
@@ -87,7 +86,6 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 		{
 			name: "",
 			fields: fields{
-				logger:       keptncommon.NewLogger("", "", ""),
 				projectsAPI:  nil,
 				servicesAPI:  nil,
 				resourcesAPI: nil,
@@ -95,7 +93,7 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 				DTHelper: NewDynatraceHelper(nil, &credentials.DTCredentials{
 					Tenant:   dtMockServer.URL,
 					ApiToken: "",
-				}, keptncommon.NewLogger("", "", "")),
+				}),
 				syncTimer:       nil,
 				keptnHandler:    nil,
 				servicesInKeptn: nil,
@@ -160,7 +158,6 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &serviceSynchronizer{
-				logger:          tt.fields.logger,
 				projectsAPI:     tt.fields.projectsAPI,
 				servicesAPI:     tt.fields.servicesAPI,
 				resourcesAPI:    tt.fields.resourcesAPI,
@@ -519,14 +516,13 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 	s := &serviceSynchronizer{
-		logger:       keptncommon.NewLogger("", "", ""),
 		projectsAPI:  keptnapi.NewProjectHandler(projectsMockAPI.URL),
 		servicesAPI:  keptnapi.NewServiceHandler(servicesMockAPI.URL),
 		resourcesAPI: keptnapi.NewResourceHandler(mockCS.URL),
 		DTHelper: NewDynatraceHelper(nil, &credentials.DTCredentials{
 			Tenant:   dtMockServer.URL,
 			ApiToken: "",
-		}, keptncommon.NewLogger("", "", "")),
+		}),
 		syncTimer:       nil,
 		keptnHandler:    k,
 		servicesInKeptn: []string{},
@@ -542,7 +538,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 			},
 		},
 		dtConfigGetter: &adapter_mock.DynatraceConfigGetterInterfaceMock{
-			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter, logger keptncommon.LoggerInterface) (*config.DynatraceConfigFile, error) {
+			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter) (*config.DynatraceConfigFile, error) {
 				return &config.DynatraceConfigFile{}, nil
 			}},
 	}
@@ -701,7 +697,6 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &serviceSynchronizer{
-				logger:            tt.fields.logger,
 				projectsAPI:       tt.fields.projectsAPI,
 				servicesAPI:       tt.fields.servicesAPI,
 				resourcesAPI:      tt.fields.resourcesAPI,

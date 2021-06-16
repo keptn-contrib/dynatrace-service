@@ -3,7 +3,6 @@ package event_handler
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 )
 
 type dtConfigurationEvent struct {
@@ -53,7 +52,7 @@ type dtAnnotationEvent struct {
 /**
  * Changes in #115_116: Parse Tags from dynatrace.conf.yaml and only fall back to default behavior if it doesnt exist
  */
-func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) config.DtAttachRules {
+func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) config.DtAttachRules {
 	if dynatraceConfig != nil && dynatraceConfig.AttachRules != nil {
 		return *dynatraceConfig.AttachRules
 	}
@@ -89,7 +88,7 @@ func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.Dy
 /**
  * Change with #115_116: parse labels and move them into custom properties
  */
-func createCustomProperties(a adapter.EventContentAdapter, logger *keptncommon.Logger) map[string]string {
+func createCustomProperties(a adapter.EventContentAdapter) map[string]string {
 	// TODO: AG - parse labels and push them through
 
 	// var customProperties dtCustomProperties
@@ -120,7 +119,7 @@ func createCustomProperties(a adapter.EventContentAdapter, logger *keptncommon.L
 }
 
 // createInfoEvent creates a new Info event
-func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) dtInfoEvent {
+func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) dtInfoEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
 	var ie dtInfoEvent
@@ -130,18 +129,18 @@ func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.Dyna
 	ie.Description = a.GetLabels()["description"]
 
 	// now we create our attach rules
-	ar := createAttachRules(a, dynatraceConfig, logger)
+	ar := createAttachRules(a, dynatraceConfig)
 	ie.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
-	customProperties := createCustomProperties(a, logger)
+	customProperties := createCustomProperties(a)
 	ie.CustomProperties = customProperties
 
 	return ie
 }
 
 // createAnnotationEvent creates a Dynatrace ANNOTATION event
-func createAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) dtAnnotationEvent {
+func createAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) dtAnnotationEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
 	var ie dtAnnotationEvent
@@ -151,11 +150,11 @@ func createAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	ie.AnnotationDescription = a.GetLabels()["description"]
 
 	// now we create our attach rules
-	ar := createAttachRules(a, dynatraceConfig, logger)
+	ar := createAttachRules(a, dynatraceConfig)
 	ie.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
-	customProperties := createCustomProperties(a, logger)
+	customProperties := createCustomProperties(a)
 	ie.CustomProperties = customProperties
 
 	return ie
@@ -169,7 +168,7 @@ func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue 
 	return defaultValue
 }
 
-func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) dtDeploymentEvent {
+func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) dtDeploymentEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
 	var de dtDeploymentEvent
@@ -182,18 +181,18 @@ func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	de.RemediationAction = getValueFromLabels(a, "remediationAction", "")
 
 	// now we create our attach rules
-	ar := createAttachRules(a, dynatraceConfig, logger)
+	ar := createAttachRules(a, dynatraceConfig)
 	de.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
 	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext
-	customProperties := createCustomProperties(a, logger)
+	customProperties := createCustomProperties(a)
 	de.CustomProperties = customProperties
 
 	return de
 }
 
-func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile, logger *keptncommon.Logger) dtConfigurationEvent {
+func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) dtConfigurationEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
 	var de dtConfigurationEvent
@@ -201,12 +200,12 @@ func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *co
 	de.Source = "Keptn dynatrace-service"
 
 	// now we create our attach rules
-	ar := createAttachRules(a, dynatraceConfig, logger)
+	ar := createAttachRules(a, dynatraceConfig)
 	de.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
 	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext
-	customProperties := createCustomProperties(a, logger)
+	customProperties := createCustomProperties(a)
 	de.CustomProperties = customProperties
 
 	return de

@@ -11,6 +11,8 @@ require (
 	github.com/keptn/go-utils v0.8.4-0.20210512062520-b524ddf69d98
 	github.com/matryer/moq v0.2.1 // indirect
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
+	golang.org/x/net v0.0.0-20200625001655-4c5254603344 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.17.0
 	k8s.io/apimachinery v0.17.0
