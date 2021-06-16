@@ -9,7 +9,8 @@ import (
 	"os"
 	"strings"
 
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	log "github.com/sirupsen/logrus"
+
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
@@ -43,7 +44,6 @@ type Values struct {
 
 type DynatraceHelper struct {
 	DynatraceCreds     *credentials.DTCredentials
-	Logger             keptncommon.LoggerInterface
 	OperatorTag        string
 	KeptnHandler       *keptnv2.Keptn
 	KeptnBridge        string
@@ -72,11 +72,10 @@ type ConfiguredEntities struct {
 }
 
 // NewDynatraceHelper creates a new DynatraceHelper
-func NewDynatraceHelper(keptnHandler *keptnv2.Keptn, dynatraceCreds *credentials.DTCredentials, logger keptncommon.LoggerInterface) *DynatraceHelper {
+func NewDynatraceHelper(keptnHandler *keptnv2.Keptn, dynatraceCreds *credentials.DTCredentials) *DynatraceHelper {
 	return &DynatraceHelper{
 		DynatraceCreds: dynatraceCreds,
 		KeptnHandler:   keptnHandler,
-		Logger:         logger,
 	}
 }
 
@@ -137,8 +136,11 @@ func shouldCreateMetricEvents(stage keptnv2.Stage) bool {
 func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string, body []byte) (string, error) {
 
 	if common.RunLocal || common.RunLocalTest {
-		dt.Logger.Info("Dynatrace.sendDynatraceAPIRequest(RUNLOCAL) - not sending event to " +
-			dt.DynatraceCreds.Tenant + "). Here is the payload: " + string(body))
+		log.WithFields(
+			log.Fields{
+				"tenant": dt.DynatraceCreds.Tenant,
+				"body":   string(body),
+			}).Info("Dynatrace.sendDynatraceAPIRequest(RUNLOCAL) - not sending event to tenant")
 		return "", nil
 	}
 

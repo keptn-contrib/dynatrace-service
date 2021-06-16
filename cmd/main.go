@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"os"
+
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
-	"log"
-	"os"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/event_handler"
@@ -24,7 +24,7 @@ type envConfig struct {
 func main() {
 	var env envConfig
 	if err := envconfig.Process("", &env); err != nil {
-		log.Fatalf("Failed to process env var: %s", err)
+		log.WithError(err).Fatal("Failed to process env var")
 	}
 
 	if common.RunLocal || common.RunLocalTest {
@@ -39,7 +39,7 @@ func _main(args []string, env envConfig) int {
 	if lib.IsServiceSyncEnabled() {
 		cm, err := credentials.NewCredentialManager(nil)
 		if err != nil {
-			log.Fatalf("failed to initialize CredentialManager: %s", err.Error())
+			log.WithError(err).Fatal("Failed to initialize CredentialManager")
 		}
 		lib.ActivateServiceSynchronizer(cm)
 	}
@@ -49,11 +49,11 @@ func _main(args []string, env envConfig) int {
 
 	p, err := cloudevents.NewHTTP(cloudevents.WithPath(env.Path), cloudevents.WithPort(env.Port))
 	if err != nil {
-		log.Fatalf("failed to create client, %v", err)
+		log.WithError(err).Fatal("Failed to create client")
 	}
 	c, err := cloudevents.NewClient(p)
 	if err != nil {
-		log.Fatalf("failed to create client, %v", err)
+		log.WithError(err).Fatal("Failed to create client")
 	}
 	log.Fatal(c.StartReceiver(ctx, gotEvent))
 
@@ -65,9 +65,7 @@ func gotEvent(ctx context.Context, event cloudevents.Event) error {
 	var shkeptncontext string
 	_ = event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
-	logger := keptncommon.NewLogger(shkeptncontext, event.Context.GetID(), "dynatrace-service")
-
-	dynatraceEventHandler, err := event_handler.NewEventHandler(event, logger)
+	dynatraceEventHandler, err := event_handler.NewEventHandler(event)
 
 	if err != nil {
 		return err

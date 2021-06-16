@@ -1,6 +1,10 @@
 package lib
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	log "github.com/sirupsen/logrus"
+)
 
 // SendProblemComment sends a commont on a DT problem
 func (dt *DynatraceHelper) SendProblemComment(problemID string, comment string) error {
@@ -11,11 +15,11 @@ func (dt *DynatraceHelper) SendProblemComment(problemID string, comment string) 
 		return err
 	}
 
-	dt.Logger.Info("Sending problem event: " + string(jsonPayload))
+	log.WithField("jsonPayload", jsonPayload).Info("Sending problem event")
 
 	resp, err := dt.sendDynatraceAPIRequest("/api/v1/problem/details/"+problemID+"/comments", "POST", jsonPayload)
 
-	dt.Logger.Info("Received response from Dynatrace API: " + resp)
+	log.WithField("response", resp).Info("Received response from Dynatrace API")
 	if err != nil {
 		return err
 	}

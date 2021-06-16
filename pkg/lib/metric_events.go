@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"gopkg.in/yaml.v2"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
@@ -22,16 +24,19 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 		return
 	}
 
-	dt.Logger.Info("Creating custom metric events for project SLIs")
+	log.Info("Creating custom metric events for project SLIs")
 	slos, err := retrieveSLOs(project, stage, service)
 	if err != nil {
-		dt.Logger.Info("No SLOs defined for service " + service + " in stage " + stage + ". Skipping creation of custom metric events.")
+		log.WithError(err).WithFields(
+			log.Fields{
+				"service": service,
+				"stage":   stage}).Info("No SLOs defined for service. Skipping creation of custom metric events.")
 		return
 	}
 	// get custom metrics for project
 	projectCustomQueries, err := dt.getCustomQueries(project, stage, service)
 	if err != nil {
-		dt.Logger.Error(fmt.Sprintf("failed to get custom queries for project %s: %v", project, err))
+		log.WithError(err).WithField("project", project).Error("Failed to get custom queries for project")
 		return
 	}
 
@@ -43,7 +48,10 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 		}
 	}
 	if mzId < 0 {
-		dt.Logger.Error(fmt.Sprintf("no management zone found for project %s and stage %s", project, stage))
+		log.WithFields(log.Fields{
+			"project": project,
+			"stage":   stage,
+		}).Error("No management zone found")
 		return
 	}
 
@@ -53,7 +61,7 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 		config, err := getTimeseriesConfig(objective.SLI, projectCustomQueries)
 		if err != nil {
 			// Error occurred but continue
-			dt.Logger.Error("Could not find query for SLI " + objective.SLI)
+			log.WithField("sli", objective.SLI).Error("Could not find query for SLI")
 		}
 		for _, criteria := range objective.Pass {
 			for _, crit := range criteria.Criteria {
@@ -61,7 +69,7 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 				criteriaObject, err := parseCriteriaString(crit)
 				if err != nil {
 					// Error occurred but continue
-					dt.Logger.Error("Could not parse criteria " + crit + ": " + err.Error())
+					log.WithError(err).WithField("criteria", crit).Error("Could not parse criteria")
 					continue
 				}
 				if criteriaObject.IsComparison {
@@ -71,14 +79,18 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 				newMetricEvent, err := CreateKeptnMetricEvent(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
 				if err != nil {
 					// Error occurred but continue
-					dt.Logger.Error("Could not create metric event definition for criteria " + objective.SLI + "" + crit + ": " + err.Error())
+					log.WithError(err).WithFields(
+						log.Fields{
+							"sli":      objective.SLI,
+							"criteria": crit,
+						}).Error("Could not create metric event definition for criteria")
 					continue
 				}
 
 				event, err := dt.GetMetricEvent(newMetricEvent.Name)
 				if err != nil {
 					// Error occurred but continue
-					dt.Logger.Error("Could not get metric event: " + err.Error())
+					log.WithError(err).Error("Could not get metric event")
 					continue
 				}
 
@@ -88,7 +100,7 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 				mePayload, err := json.Marshal(newMetricEvent)
 				if err != nil {
 					// Error occurred but continue
-					dt.Logger.Error("Could not marshal metric event: " + err.Error())
+					log.WithError(err).Error("Could not marshal metric event")
 					continue
 				}
 
@@ -101,28 +113,33 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 					mePayload, err = json.Marshal(event)
 					if err != nil {
 						// Error occurred but continue
-						dt.Logger.Error("Could not marshal metric event: " + err.Error())
+						log.WithError(err).Error("Could not marshal metric event")
 						continue
 					}
 				}
 
 				_, err = dt.sendDynatraceAPIRequest(apiURL, apiMethod, mePayload)
 				if err != nil {
-					dt.Logger.Error("Could not create metric event " + newMetricEvent.Name + ": " + err.Error())
+					log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
 					continue
 				}
 				dt.configuredEntities.MetricEvents = append(dt.configuredEntities.MetricEvents, ConfigResult{
 					Name:    newMetricEvent.Name,
 					Success: true,
 				})
-				dt.Logger.Info("Created metric event " + newMetricEvent.Name + " " + crit)
+				log.WithFields(
+					log.Fields{
+						"name":     newMetricEvent.Name,
+						"criteria": crit,
+					}).Info("Created metric event")
 				metricEventCreated = true
 			}
 		}
 	}
 
 	if metricEventCreated {
-		dt.Logger.Info("To review and enable the generated custom metric events, please go to: https://" + dt.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
+		// TODO: improve this?
+		log.Info("To review and enable the generated custom metric events, please go to: https://" + dt.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
 	}
 	return
 }
@@ -143,7 +160,7 @@ func (dt *DynatraceHelper) getCustomQueries(project string, stage string, servic
 func (dt *DynatraceHelper) GetMetricEvent(eventKey string) (*MetricEvent, error) {
 	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
 	if err != nil {
-		dt.Logger.Error("Could not retrieve list of existing Dynatrace metric events: " + err.Error())
+		log.WithError(err).Error("Could not retrieve list of existing Dynatrace metric events")
 		return nil, err
 	}
 
@@ -151,7 +168,7 @@ func (dt *DynatraceHelper) GetMetricEvent(eventKey string) (*MetricEvent, error)
 	err = json.Unmarshal([]byte(res), dtMetricEvents)
 
 	if err != nil {
-		dt.Logger.Error("Could not parse list of existing Dynatrace metric events: " + err.Error())
+		log.WithError(err).Error("Could not parse list of existing Dynatrace metric events")
 		return nil, err
 	}
 
@@ -159,7 +176,7 @@ func (dt *DynatraceHelper) GetMetricEvent(eventKey string) (*MetricEvent, error)
 		if metricEvent.Name == eventKey {
 			res, err = dt.sendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents/"+metricEvent.ID, "GET", nil)
 			if err != nil {
-				dt.Logger.Error("Could not get existing metric event " + eventKey + ": " + err.Error())
+				log.WithError(err).WithField("eventKey", eventKey).Error("Could not get existing metric event")
 				return nil, err
 			}
 			retrievedMetricEvent := &MetricEvent{}
@@ -176,7 +193,7 @@ func (dt *DynatraceHelper) GetMetricEvent(eventKey string) (*MetricEvent, error)
 func (dt *DynatraceHelper) DeleteExistingMetricEvent(eventKey string) error {
 	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
 	if err != nil {
-		dt.Logger.Error("Could not retrieve list of existing Dynatrace metric events: " + err.Error())
+		log.WithError(err).Error("Could not retrieve list of existing Dynatrace metric events")
 		return err
 	}
 
@@ -184,7 +201,7 @@ func (dt *DynatraceHelper) DeleteExistingMetricEvent(eventKey string) error {
 	err = json.Unmarshal([]byte(res), dtMetricEvents)
 
 	if err != nil {
-		dt.Logger.Error("Could not parse list of existing Dynatrace metric events: " + err.Error())
+		log.WithError(err).Error("Could not parse list of existing Dynatrace metric events")
 		return err
 	}
 
@@ -192,7 +209,7 @@ func (dt *DynatraceHelper) DeleteExistingMetricEvent(eventKey string) error {
 		if metricEvent.Name == eventKey {
 			res, err = dt.sendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents/"+metricEvent.ID, "DELETE", nil)
 			if err != nil {
-				dt.Logger.Error("Could not delete existing metric event " + eventKey + ": " + err.Error())
+				log.WithError(err).WithField("eventKey", eventKey).Error("Could not delete existing metric event")
 				return err
 			}
 		}

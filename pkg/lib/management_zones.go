@@ -3,7 +3,9 @@ package lib
 import (
 	"encoding/json"
 	"fmt"
+
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
 )
 
 // CreateManagementZones creates a new management zone for the project
@@ -29,13 +31,13 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 
 			if err != nil {
 				// Error occurred but continue
-				msg := "failed to create management zone: " + err.Error()
-				dt.Logger.Error(msg)
+
+				log.WithError(err).Error("Failed to create management zone")
 
 				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
 					Name:    "Keptn: " + project,
 					Success: false,
-					Message: msg,
+					Message: "failed to create management zone: " + err.Error(),
 				})
 			} else {
 				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
@@ -44,6 +46,7 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 				})
 			}
 		} else {
+			// TODO: Check what happens to this error?
 			// Error occurred but continue
 			fmt.Errorf("failed to marshal management zone: %v", err)
 		}
@@ -68,12 +71,11 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 			mzPayload, _ := json.Marshal(managementZone)
 			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
 			if err != nil {
-				msg := "Could not create management zone: " + err.Error()
-				dt.Logger.Error(msg)
+				log.WithError(err).Error("Could not create management zone")
 				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
 					Name:    managementZone.Name,
 					Success: false,
-					Message: msg,
+					Message: "Could not create management zone: " + err.Error(),
 				})
 			} else {
 				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
@@ -100,14 +102,14 @@ func getManagementZoneNameForStage(project string, stage string) string {
 func (dt *DynatraceHelper) getManagementZones() []Values {
 	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", nil)
 	if err != nil {
-		dt.Logger.Error("failed to retrieve management zones: " + err.Error())
+		log.WithError(err).Error("Failed to retrieve management zones")
 		return nil
 	}
 	mzs := &DTAPIListResponse{}
 
 	err = json.Unmarshal([]byte(response), mzs)
 	if err != nil {
-		dt.Logger.Error("failed to parse management zones list: " + err.Error())
+		log.WithError(err).Error("Failed to parse management zones list")
 		return nil
 	}
 	return mzs.Values

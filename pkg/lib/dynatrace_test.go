@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -30,7 +29,6 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 	}
 	type fields struct {
 		DynatraceCreds     *credentials.DTCredentials
-		Logger             keptncommon.LoggerInterface
 		OperatorTag        string
 		KeptnHandler       *keptnv2.Keptn
 		KeptnBridge        string
@@ -62,7 +60,6 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 					Tenant:   mockTenant,
 					ApiToken: "",
 				},
-				Logger: keptncommon.NewLogger("", "", ""),
 			},
 			args: args{
 				req: mockReq,
@@ -94,7 +91,6 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 
 			dt := &DynatraceHelper{
 				DynatraceCreds:     tt.fields.DynatraceCreds,
-				Logger:             tt.fields.Logger,
 				OperatorTag:        tt.fields.OperatorTag,
 				KeptnHandler:       tt.fields.KeptnHandler,
 				KeptnBridge:        tt.fields.KeptnBridge,
