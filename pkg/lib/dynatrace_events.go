@@ -2,25 +2,26 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Sends an event to the Dynatrace events API
 func (dt *DynatraceHelper) SendEvent(dtEvent interface{}) {
-	dt.Logger.Info("Sending event to Dynatrace API")
+	log.Info("Sending event to Dynatrace API")
 
 	jsonString, err := json.Marshal(dtEvent)
 
 	if err != nil {
-		dt.Logger.Error("Error while generating Dynatrace API Request payload.")
+		log.WithError(err).Error("Error while generating Dynatrace API Request payload.")
 		return
 	}
 
 	body, err := dt.sendDynatraceAPIRequest("/api/v1/events", "POST", jsonString)
 	if err != nil {
-		dt.Logger.Error(fmt.Sprintf("failed sending Dynatrace API request: %v", err))
+		log.WithError(err).Error("Failed sending Dynatrace API request")
 	} else {
-		dt.Logger.Debug(fmt.Sprintf("Dynatrace API has accepted the event. Response: %s", body))
+		log.WithField("body", body).Debug("Dynatrace API has accepted the event")
 	}
 
 }

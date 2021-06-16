@@ -3,9 +3,10 @@ package event_handler
 import (
 	"errors"
 	"fmt"
+
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
@@ -66,19 +67,19 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 	// check the connection to the Keptn API
 	keptnCredentials, err := credentials.GetKeptnCredentials()
 	if err != nil {
-		log.Printf("failed to get Keptn API credentials: %s", err.Error())
+		log.WithError(err).Error("Failed to get Keptn API credentials")
 		keptnAPICheck.Message = "Failed to get Keptn API Credentials"
 		keptnAPICheck.ConnectionSuccessful = false
 		keptnAPICheck.APIURL = "unknown"
 	} else {
 		keptnAPICheck.APIURL = keptnCredentials.APIURL
-		log.Printf("Verifying access to Keptn API at %s", keptnCredentials.APIURL)
+		log.WithField("apiUrl", keptnCredentials.APIURL).Print("Verifying access to Keptn API")
 
 		err = credentials.CheckKeptnConnection(keptnCredentials)
 		if err != nil {
-			log.Printf("Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster. %s", err.Error())
 			keptnAPICheck.ConnectionSuccessful = false
 			keptnAPICheck.Message = "Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster."
+			log.WithError(err).Warn(keptnAPICheck.Message)
 		} else {
 			keptnAPICheck.ConnectionSuccessful = true
 		}
@@ -101,7 +102,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	keptnEvent := adapter.NewConfigureMonitoringAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
 
-	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
+	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		msg := fmt.Sprintf("failed to load Dynatrace config: %v", err)
 		return eh.handleError(e, msg)
@@ -111,17 +112,17 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		msg := fmt.Sprintf("failed to load Dynatrace credentials: %v", err)
 		return eh.handleError(e, msg)
 	}
-	dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+	dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 	configuredEntities, err := dtHelper.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {
 		return eh.handleError(e, err.Error())
 	}
 
-	eh.Logger.Info("Dynatrace Monitoring setup done")
+	log.Info("Dynatrace Monitoring setup done")
 
 	if err := eh.sendConfigureMonitoringFinishedEvent(e, keptnv2.StatusSucceeded, keptnv2.ResultPass, getConfigureMonitoringResultMessage(keptnAPICheck, configuredEntities)); err != nil {
-		eh.Logger.Error(err.Error())
+		log.WithError(err).Error("Failed to send configure monitoring finished event")
 	}
 	return nil
 }
@@ -191,9 +192,9 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 }
 
 func (eh *ConfigureMonitoringEventHandler) handleError(e *keptn.ConfigureMonitoringEventData, msg string) error {
-	eh.Logger.Error(msg)
+	log.Error(msg)
 	if err := eh.sendConfigureMonitoringFinishedEvent(e, keptnv2.StatusErrored, keptnv2.ResultFailed, msg); err != nil {
-		eh.Logger.Error(err.Error())
+		log.WithError(err).Error("Failed to send configure monitoring finished event")
 	}
 	return errors.New(msg)
 }

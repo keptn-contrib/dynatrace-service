@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"os"
+	"strings"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"net/url"
-	"os"
-	"strings"
+	log "github.com/sirupsen/logrus"
 )
 
 type DTProblemEvent struct {
@@ -47,8 +49,7 @@ type DTProblemEvent struct {
 }
 
 type ProblemEventHandler struct {
-	Logger *keptncommon.Logger
-	Event  cloudevents.Event
+	Event cloudevents.Event
 }
 
 const eventbroker = "EVENTBROKER"
@@ -56,7 +57,7 @@ const eventbroker = "EVENTBROKER"
 func (eh ProblemEventHandler) HandleEvent() error {
 
 	if eh.Event.Source() != "dynatrace" {
-		eh.Logger.Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification (event source = " + eh.Event.Source() + ")")
+		log.WithField("eventSource", eh.Event.Source()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
 		return nil
 	}
 	var shkeptncontext string
@@ -65,12 +66,17 @@ func (eh ProblemEventHandler) HandleEvent() error {
 	err := eh.Event.DataAs(dtProblemEvent)
 
 	if err != nil {
-		eh.Logger.Error("Could not map received event to datastructure: " + err.Error())
+		log.WithError(err).Error("Could not map received event to datastructure")
 		return err
 	}
 
 	// Log the problem ID and state for better troubleshooting
-	eh.Logger.Info(fmt.Sprintf("Received PID=%s, ProblemID=%s, State=%s", dtProblemEvent.PID, dtProblemEvent.ProblemID, dtProblemEvent.State))
+	log.WithFields(
+		log.Fields{
+			"PID":       dtProblemEvent.PID,
+			"problemId": dtProblemEvent.ProblemID,
+			"state":     dtProblemEvent.State,
+		}).Info("Received event")
 
 	// ignore problem events if they are closed
 	if dtProblemEvent.State == "RESOLVED" {
@@ -106,10 +112,10 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 
 	err = createAndSendCE(newProblemData, shkeptncontext, keptn.ProblemEventType)
 	if err != nil {
-		eh.Logger.Error("Could not send cloud event: " + err.Error())
+		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
-	eh.Logger.Debug(fmt.Sprintf("Successfully sent Keptn PROBLEM CLOSED event for PID: %s", dtProblemEvent.PID))
+	log.WithField("PID", dtProblemEvent.PID).Debug("Successfully sent Keptn PROBLEM CLOSED event")
 	return nil
 }
 
@@ -120,9 +126,9 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 
 	remediationEventData := keptnv2.RemediationTriggeredEventData{
 		EventData: keptnv2.EventData{
-			Project:        project,
-			Stage:          stage,
-			Service:        service,
+			Project: project,
+			Stage:   stage,
+			Service: service,
 		},
 		Problem: keptnv2.ProblemDetails{
 			State:          "OPEN",
@@ -146,10 +152,10 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 		fmt.Sprintf("%s.%s", stage, keptnv2.RemediationTaskName),
 	))
 	if err != nil {
-		eh.Logger.Error("Could not send cloud event: " + err.Error())
+		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
-	eh.Logger.Debug(fmt.Sprintf("Successfully sent Keptn PROBLEM OPEN event for PID: %s", dtProblemEvent.PID))
+	log.WithField("PID", dtProblemEvent.PID).Debug("Successfully sent Keptn PROBLEM OPEN event")
 	return nil
 }
 

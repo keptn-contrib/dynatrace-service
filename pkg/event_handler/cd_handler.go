@@ -2,9 +2,11 @@ package event_handler
 
 import (
 	"fmt"
+
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
@@ -15,7 +17,6 @@ import (
 )
 
 type CDEventHandler struct {
-	Logger         *keptncommon.Logger
 	Event          cloudevents.Event
 	dtConfigGetter adapter.DynatraceConfigGetterInterface
 }
@@ -26,59 +27,59 @@ func (eh CDEventHandler) HandleEvent() error {
 
 	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
 	if err != nil {
-		eh.Logger.Error("could not create Keptn handler: " + err.Error())
+		log.WithError(err).Error("Could not create Keptn handler")
 	}
 	if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.DeploymentTaskName) {
 		dfData := &keptnv2.DeploymentFinishedEventData{}
 		err := eh.Event.DataAs(dfData)
 		if err != nil {
-			eh.Logger.Error("Could not parse event payload: " + err.Error())
+			log.WithError(err).Error("Could not parse event payload")
 			return err
 		}
 
 		// initialize our objects
 		keptnEvent := adapter.NewDeploymentFinishedAdapter(*dfData, shkeptncontext, eh.Event.Source())
 
-		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace config")
 			return err
 		}
 		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			log.WithError(err).Error("failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// send Deployment Event
-		de := createDeploymentEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		de := createDeploymentEvent(keptnEvent, dynatraceConfig)
 		dtHelper.SendEvent(de)
 	} else if eh.Event.Type() == keptnv2.GetTriggeredEventType(keptnv2.TestTaskName) {
 		ttData := &keptnv2.TestTriggeredEventData{}
 		err := eh.Event.DataAs(ttData)
 		if err != nil {
-			eh.Logger.Error("Could not parse event payload: " + err.Error())
+			log.WithError(err).Error("Could not parse event payload")
 			return err
 		}
 
 		// initialize our objects
 		keptnEvent := adapter.NewTestTriggeredAdapter(*ttData, shkeptncontext, eh.Event.Source())
 
-		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			log.WithError(err).Error("failed to load Dynatrace config")
 			return err
 		}
 		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			log.WithError(err).Error("failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Annotation Event
-		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createAnnotationEvent(keptnEvent, dynatraceConfig)
 		if ie.AnnotationType == "" {
 			ie.AnnotationType = "Start Tests: " + ttData.Test.TestStrategy
 		}
@@ -90,27 +91,27 @@ func (eh CDEventHandler) HandleEvent() error {
 		tfData := &keptnv2.TestFinishedEventData{}
 		err := eh.Event.DataAs(tfData)
 		if err != nil {
-			eh.Logger.Error("Could not parse event payload: " + err.Error())
+			log.WithError(err).Error("Could not parse event payload")
 			return err
 		}
 
 		// initialize our objects
 		keptnEvent := adapter.NewTestFinishedAdapter(*tfData, shkeptncontext, eh.Event.Source())
 
-		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace config")
 			return err
 		}
 		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Annotation Event
-		ie := createAnnotationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createAnnotationEvent(keptnEvent, dynatraceConfig)
 
 		if ie.AnnotationType == "" {
 			ie.AnnotationType = "Stop Tests"
@@ -123,26 +124,26 @@ func (eh CDEventHandler) HandleEvent() error {
 		edData := &keptnv2.EvaluationFinishedEventData{}
 		err := eh.Event.DataAs(edData)
 		if err != nil {
-			fmt.Println("Error while parsing JSON payload: " + err.Error())
+			log.WithError(err).Error("Error while parsing JSON payload")
 			return err
 		}
 		// initialize our objects
 		keptnEvent := adapter.NewEvaluationDoneAdapter(*edData, shkeptncontext, eh.Event.Source())
 
-		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace config")
 			return err
 		}
 		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Info Event
-		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createInfoEvent(keptnEvent, dynatraceConfig)
 		qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", edData.Stage, edData.Result, edData.Evaluation.Score)
 		ie.Title = fmt.Sprintf("Evaluation result: %s", edData.Result)
 
@@ -168,29 +169,29 @@ func (eh CDEventHandler) HandleEvent() error {
 		rtData := &keptnv2.ReleaseTriggeredEventData{}
 		err := eh.Event.DataAs(rtData)
 		if err != nil {
-			fmt.Println("Error while parsing JSON payload: " + err.Error())
+			log.WithError(err).Error("Error while parsing JSON payload")
 			return err
 		}
 		keptnEvent := adapter.NewReleaseTriggeredAdapter(*rtData, shkeptncontext, eh.Event.Source())
 
 		strategy, err := keptnevents.GetDeploymentStrategy(rtData.Deployment.DeploymentStrategy)
 		if err != nil {
-			eh.Logger.Error(fmt.Sprintf("Could not determine deployment strategy: %s", err.Error()))
+			log.WithError(err).Error("Could not determine deployment strategy")
 			return err
 		}
-		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace config")
 			return err
 		}
 		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
-		ie := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		ie := createInfoEvent(keptnEvent, dynatraceConfig)
 		if strategy == keptnevents.Direct && rtData.Result == keptnv2.ResultPass || rtData.Result == keptnv2.ResultWarning {
 			title := fmt.Sprintf("PROMOTING from %s to next stage", rtData.Stage)
 			ie.Title = title
@@ -210,7 +211,7 @@ func (eh CDEventHandler) HandleEvent() error {
 	} else if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ReleaseTaskName) {
 
 	} else {
-		eh.Logger.Info(fmt.Sprintf("Ignoring event of type %s", eh.Event.Type()))
+		log.WithField("EventType", eh.Event.Type()).Info("Ignoring event")
 	}
 	return nil
 }

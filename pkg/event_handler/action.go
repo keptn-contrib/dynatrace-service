@@ -3,12 +3,14 @@ package event_handler
 import (
 	"errors"
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 
@@ -16,7 +18,6 @@ import (
 )
 
 type ActionHandler struct {
-	Logger         *keptncommon.Logger
 	Event          cloudevents.Event
 	dtConfigGetter adapter.DynatraceConfigGetterInterface
 }
@@ -25,14 +26,14 @@ type ActionHandler struct {
  * Retrieves Dynatrace Credential information
  */
 func (eh ActionHandler) GetDynatraceCredentials(keptnEvent adapter.EventContentAdapter) (*config.DynatraceConfigFile, *credentials.DTCredentials, error) {
-	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
+	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
-		eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+		log.WithError(err).Error("Failed to load Dynatrace config")
 		return nil, nil, err
 	}
 	creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 	if err != nil {
-		eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return nil, nil, err
 	}
 
@@ -43,7 +44,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
 	if err != nil {
-		eh.Logger.Error("could not initialize Keptn handler: " + err.Error())
+		log.WithError(err).Error("Could not initialize Keptn handler")
 		return err
 	}
 
@@ -54,7 +55,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		err = eh.Event.DataAs(actionTriggeredData)
 		if err != nil {
-			eh.Logger.Error("Cannot parse incoming event: " + err.Error())
+			log.WithError(err).Error("Cannot parse incoming event")
 			return err
 		}
 
@@ -62,12 +63,12 @@ func (eh ActionHandler) HandleEvent() error {
 
 		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
 		if err != nil {
-			eh.Logger.Error(err.Error())
+			log.WithError(err).Error("Could not find problem ID for event")
 			return err
 		}
 
 		if pid == "" {
-			eh.Logger.Error("Cannot send DT problem comment: No problem ID is included in the event.")
+			log.Error("Cannot send DT problem comment: No problem ID is included in the event.")
 			return errors.New("cannot send DT problem comment: No problem ID is included in the event")
 		}
 
@@ -76,22 +77,22 @@ func (eh ActionHandler) HandleEvent() error {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
 
-		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent, eh.Logger)
+		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace config")
 			return err
 		}
 
 		creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace credentials: " + err.Error())
+			log.WithError(err).Error("failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-		dtInfoEvent := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+		dtInfoEvent := createInfoEvent(keptnEvent, dynatraceConfig)
 		dtInfoEvent.Title = "Keptn Remediation Action Triggered"
 		dtInfoEvent.Description = actionTriggeredData.Action.Action
 		dtHelper.SendEvent(dtInfoEvent)
@@ -108,7 +109,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		err = eh.Event.DataAs(actionStartedData)
 		if err != nil {
-			eh.Logger.Error("Cannot parse incoming Event: " + err.Error())
+			log.WithError(err).Error("Cannot parse incoming Event")
 			return err
 		}
 
@@ -116,7 +117,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
 		if err != nil {
-			eh.Logger.Error(err.Error())
+			log.WithError(err).Error("Could not find problem ID for event")
 			return err
 		}
 
@@ -128,7 +129,7 @@ func (eh ActionHandler) HandleEvent() error {
 		}
 
 		// Create our DTHelper
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// Comment we push over
 		comment = fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.Event.Source())
@@ -140,7 +141,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		err = eh.Event.DataAs(actionFinishedData)
 		if err != nil {
-			eh.Logger.Error("Cannot parse incoming Event: " + err.Error())
+			log.WithError(err).Error("Cannot parse incoming Event")
 			return err
 		}
 
@@ -149,17 +150,17 @@ func (eh ActionHandler) HandleEvent() error {
 		// lets get our dynatrace credentials - if we have none - no need to continue
 		dynatraceConfig, creds, err := eh.GetDynatraceCredentials(keptnEvent)
 		if err != nil {
-			eh.Logger.Error("failed to load Dynatrace config: " + err.Error())
+			log.WithError(err).Error("Failed to load Dynatrace config")
 			return err
 		}
 
 		// lets find our dynatrace problem details for this remediaiton workflow
 		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
 		if err != nil {
-			eh.Logger.Error(err.Error())
+			log.WithError(err).Error("Could not find problem ID for event")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds, eh.Logger)
+		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// Comment text we want to push over
 		comment = fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
@@ -171,12 +172,12 @@ func (eh ActionHandler) HandleEvent() error {
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionally to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 		if actionFinishedData.Status == keptnv2.StatusSucceeded {
-			dtConfigEvent := createConfigurationEvent(keptnEvent, dynatraceConfig, eh.Logger)
+			dtConfigEvent := createConfigurationEvent(keptnEvent, dynatraceConfig)
 			dtConfigEvent.Description = "Keptn Remediation Action Finished"
 			dtConfigEvent.Configuration = "successful"
 			dtHelper.SendEvent(dtConfigEvent)
 		} else {
-			dtInfoEvent := createInfoEvent(keptnEvent, dynatraceConfig, eh.Logger)
+			dtInfoEvent := createInfoEvent(keptnEvent, dynatraceConfig)
 			dtInfoEvent.Title = "Keptn Remediation Action Finished"
 			dtInfoEvent.Description = "error during execution"
 			dtHelper.SendEvent(dtInfoEvent)

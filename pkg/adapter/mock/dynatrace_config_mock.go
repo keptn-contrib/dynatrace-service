@@ -6,7 +6,6 @@ package adapter_mock
 import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
-	"github.com/keptn/go-utils/pkg/lib/keptn"
 	"sync"
 )
 
@@ -27,7 +26,7 @@ import (
 // 	}
 type DynatraceConfigGetterInterfaceMock struct {
 	// GetDynatraceConfigFunc mocks the GetDynatraceConfig method.
-	GetDynatraceConfigFunc func(event adapter.EventContentAdapter, logger keptn.LoggerInterface) (*config.DynatraceConfigFile, error)
+	GetDynatraceConfigFunc func(event adapter.EventContentAdapter) (*config.DynatraceConfigFile, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -35,41 +34,35 @@ type DynatraceConfigGetterInterfaceMock struct {
 		GetDynatraceConfig []struct {
 			// Event is the event argument value.
 			Event adapter.EventContentAdapter
-			// Logger is the logger argument value.
-			Logger keptn.LoggerInterface
 		}
 	}
 	lockGetDynatraceConfig sync.RWMutex
 }
 
 // GetDynatraceConfig calls GetDynatraceConfigFunc.
-func (mock *DynatraceConfigGetterInterfaceMock) GetDynatraceConfig(event adapter.EventContentAdapter, logger keptn.LoggerInterface) (*config.DynatraceConfigFile, error) {
+func (mock *DynatraceConfigGetterInterfaceMock) GetDynatraceConfig(event adapter.EventContentAdapter) (*config.DynatraceConfigFile, error) {
 	if mock.GetDynatraceConfigFunc == nil {
 		panic("DynatraceConfigGetterInterfaceMock.GetDynatraceConfigFunc: method is nil but DynatraceConfigGetterInterface.GetDynatraceConfig was just called")
 	}
 	callInfo := struct {
-		Event  adapter.EventContentAdapter
-		Logger keptn.LoggerInterface
+		Event adapter.EventContentAdapter
 	}{
-		Event:  event,
-		Logger: logger,
+		Event: event,
 	}
 	mock.lockGetDynatraceConfig.Lock()
 	mock.calls.GetDynatraceConfig = append(mock.calls.GetDynatraceConfig, callInfo)
 	mock.lockGetDynatraceConfig.Unlock()
-	return mock.GetDynatraceConfigFunc(event, logger)
+	return mock.GetDynatraceConfigFunc(event)
 }
 
 // GetDynatraceConfigCalls gets all the calls that were made to GetDynatraceConfig.
 // Check the length with:
 //     len(mockedDynatraceConfigGetterInterface.GetDynatraceConfigCalls())
 func (mock *DynatraceConfigGetterInterfaceMock) GetDynatraceConfigCalls() []struct {
-	Event  adapter.EventContentAdapter
-	Logger keptn.LoggerInterface
+	Event adapter.EventContentAdapter
 } {
 	var calls []struct {
-		Event  adapter.EventContentAdapter
-		Logger keptn.LoggerInterface
+		Event adapter.EventContentAdapter
 	}
 	mock.lockGetDynatraceConfig.RLock()
 	calls = mock.calls.GetDynatraceConfig

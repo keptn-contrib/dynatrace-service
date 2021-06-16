@@ -2,7 +2,8 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // EnsureDTTaggingRulesAreSetUp ensures that the tagging rules are set up
@@ -11,12 +12,12 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 		return
 	}
 
-	dt.Logger.Info("Setting up auto-tagging rules in Dynatrace Tenant")
+	log.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
 	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", nil)
 	if err != nil {
 		// Error occurred but continue
-		dt.Logger.Error(fmt.Sprintf("Could not get existing tagging rules: %v", err))
+		log.WithError(err).Error("Could not get existing tagging rules")
 	}
 
 	existingDTRules := &DTAPIListResponse{}
@@ -24,7 +25,7 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 	err = json.Unmarshal([]byte(response), existingDTRules)
 	if err != nil {
 		// Error occurred but continue
-		dt.Logger.Error(fmt.Sprintf("failed to unmarshal Dynatrace tagging rules: %v", err))
+		log.WithError(err).Error("Failed to unmarshal Dynatrace tagging rules")
 	}
 
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
@@ -38,7 +39,7 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 					Success: false,
 					Message: "Could not create auto tagging rule: " + err.Error(),
 				})
-				dt.Logger.Error("Could not create auto tagging rule: " + err.Error())
+				log.WithError(err).Error("Could not create auto tagging rule")
 			} else {
 				dt.configuredEntities.TaggingRules = append(dt.configuredEntities.TaggingRules, ConfigResult{
 					Name:    ruleName,
@@ -46,11 +47,10 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 				})
 			}
 		} else {
-			msg := "Tagging rule " + ruleName + " already exists"
-			dt.Logger.Info(msg)
+			log.WithField("ruleName", ruleName).Info("Tagging rule already exists")
 			dt.configuredEntities.TaggingRules = append(dt.configuredEntities.TaggingRules, ConfigResult{
 				Name:    ruleName,
-				Message: msg,
+				Message: "Tagging rule " + ruleName + " already exists",
 				Success: true,
 			})
 		}
@@ -59,7 +59,7 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 }
 
 func (dt *DynatraceHelper) createDTTaggingRule(rule *DTTaggingRule) error {
-	dt.Logger.Info("Creating DT tagging rule: " + rule.Name)
+	log.WithField("name", rule.Name).Info("Creating DT tagging rule")
 	payload, err := json.Marshal(rule)
 	if err != nil {
 		return err
