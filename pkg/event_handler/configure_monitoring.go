@@ -18,7 +18,6 @@ import (
 )
 
 type ConfigureMonitoringEventHandler struct {
-	Logger           keptncommon.LoggerInterface
 	Event            cloudevents.Event
 	IsCombinedLogger bool
 	WebSocket        *websocket.Conn
@@ -47,13 +46,13 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 	}
 	err := eh.configureMonitoring()
 	if err != nil {
-		eh.Logger.Error(err.Error())
+		log.WithError(err).Error("Configure monitoring failed")
 	}
 	return nil
 }
 
 func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
-	eh.Logger.Info("Configuring Dynatrace monitoring")
+	log.Info("Configuring Dynatrace monitoring")
 	e := &keptn.ConfigureMonitoringEventData{}
 	err := eh.Event.DataAs(e)
 	if err != nil {
