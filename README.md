@@ -256,8 +256,8 @@ keptn add-resource --project=yourproject --stage=production --resource=dynatrace
 
 ### Synchronizing Service Entities detected by Dynatrace
 
-The Dynatrace service allows to automatically import Service Entities detected by Dynatrace into Keptn. To enable this feature, the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES`
-needs to be set to `true`. By default, the service will scan Dynatrace for Service Entities every 300s. This interval can be configured by setting the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS` to the desired value.
+The Dynatrace service allows Service Entities detected by Dynatrace to be automatically imported into Keptn. To enable this feature, the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES`
+needs to be set to `true`. Once enabled, the service will by default scan Dynatrace for Service Entities every 60 seconds. This interval can be configured by changing the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS`.
 
 To import a Service Entity into Keptn, a project with the name `dynatrace`, containing the stage `quality-gate` has to be available within Keptn. To create the project, create a `shipyard.yaml` file with the following content:
 

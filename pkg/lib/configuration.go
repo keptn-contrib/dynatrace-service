@@ -42,10 +42,10 @@ func IsServiceSyncEnabled() bool {
 	return readEnvAsBool("SYNCHRONIZE_DYNATRACE_SERVICES", false)
 }
 
-// GetServiceSyncInterval returns the number of seconds the service synchronizer should sleep between synchronization runs
-// if the environment variable is empty or cannot be parsed, a default sync interval is used
+// GetServiceSyncInterval returns the number of seconds the service synchronizer should sleep between synchronization runs.
+// If the environment variable is empty or cannot be parsed, a default sync interval is used.
 func GetServiceSyncInterval() int {
-	return readEnvAsInt("SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS", 300)
+	return readEnvAsInt("SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS", 60)
 }
 
 func readEnvAsBool(env string, defaultValue bool) bool {
