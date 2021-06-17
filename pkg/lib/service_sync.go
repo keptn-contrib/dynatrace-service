@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,7 +22,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultSyncInterval = 300
 const defaultDTProjectName = "dynatrace"
 const defaultDTProjectStage = "quality-gate"
 const defaultSLOFile = `---
@@ -165,22 +163,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 }
 
 func (s *serviceSynchronizer) initializeSynchronizationTimer() {
-	var syncInterval int
-	intervalEnv := os.Getenv("SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS")
-	if intervalEnv == "" {
-		syncInterval = defaultSyncInterval
-	}
-	parseInt, err := strconv.ParseInt(intervalEnv, 10, 32)
-	if err != nil {
-		log.WithError(err).WithFields(
-			log.Fields{
-				"name":    "SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS",
-				"value":   intervalEnv,
-				"default": defaultSyncInterval,
-			}).Error("Could not parse environment variable. Using default.")
-		syncInterval = defaultSyncInterval
-	}
-	syncInterval = int(parseInt)
+	syncInterval := GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
 	go func() {
