@@ -46,7 +46,7 @@ func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
 	}
 	err := eh.configureMonitoring()
 	if err != nil {
-		log.Error(err.Error())
+		log.WithError(err).Error("Configure monitoring failed")
 	}
 	return nil
 }
