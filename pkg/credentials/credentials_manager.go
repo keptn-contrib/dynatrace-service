@@ -1,6 +1,7 @@
 package credentials
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -62,7 +63,7 @@ func NewK8sCredentialReader(k8sClient kubernetes.Interface) (*K8sCredentialReade
 }
 
 func (kcr *K8sCredentialReader) ReadSecret(secretName, namespace, secretKey string) (string, error) {
-	secret, err := kcr.K8sClient.CoreV1().Secrets(namespace).Get(secretName, metav1.GetOptions{})
+	secret, err := kcr.K8sClient.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
