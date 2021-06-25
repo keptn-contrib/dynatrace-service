@@ -53,14 +53,14 @@ spec:
       labels:
         run: dynatrace-service
         app.kubernetes.io/name: dynatrace-service
-        app.kubernetes.io/version: latest
+        app.kubernetes.io/version: 0.15.0
     spec:
       securityContext:
         fsGroup: 65532
       serviceAccountName: keptn-dynatrace-service
       containers:
         - name: dynatrace-service
-          image: keptncontrib/dynatrace-service:latest
+          image: keptncontrib/dynatrace-service:0.15.0
           ports:
             - containerPort: 8080
           resources:
