@@ -7,6 +7,7 @@
 ## Fixed Issues
 
 - Errors when parsing the service synchronization interval environment variable cause unexpected value [#347](https://github.com/keptn-contrib/dynatrace-service/issues/347)
+- Dynatrace secret should not contain Keptn API/TOKEN [#309](https://github.com/keptn-contrib/dynatrace-service/issues/309)
 
 ## Other Changes
 
