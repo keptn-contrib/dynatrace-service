@@ -1,18 +1,11 @@
 # Use the offical Golang image to create a build artifact.
 # This is based on Debian and sets the GOPATH to /go.
 # https://hub.docker.com/_/golang
-FROM golang:1.16.2-alpine as builder
-
-RUN apk add --no-cache gcc libc-dev git
+FROM golang:1.16.5 as builder
 
 ARG version=develop
 
 WORKDIR /go/src/github.com/keptn/dynatrace-service
-
-# Force the go compiler to use modules 
-ENV GO111MODULE=on
-ENV GOPROXY=https://proxy.golang.org
-ENV BUILDFLAGS=""
 
 # Copy `go.mod` for definitions and `go.sum` to invalidate the next layer
 # in case of a change in the dependencies
@@ -21,21 +14,19 @@ COPY go.mod go.sum ./
 # Download dependencies
 RUN go mod download 
 
-ARG debugBuild
-
-# set buildflags for debug build
-RUN if [ ! -z "$debugBuild" ]; then export BUILDFLAGS='-gcflags "all=-N -l"'; fi  
-
 # Copy local code to the container image.
 COPY . .
 
+# `skaffold debug` sets SKAFFOLD_GO_GCFLAGS to disable compiler optimizations
+ARG SKAFFOLD_GO_GCFLAGS
+
 # Build the command inside the container.
 # (You may fetch or manage dependencies here, either manually or with a tool like "godep".)
-RUN GOOS=linux go build -ldflags '-linkmode=external' $BUILDFLAGS -v -o dynatrace-service ./cmd/
+RUN GOOS=linux go build -ldflags '-linkmode=external' -gcflags="${SKAFFOLD_GO_GCFLAGS}" -v -o dynatrace-service ./cmd/
 
 # Use a Docker multi-stage build to create a lean production image.
 # https://docs.docker.com/develop/develop-images/multistage-build/#use-multi-stage-builds
-FROM alpine:3.13
+FROM alpine:3.14
 ENV ENV=production
 
 # Install extra packages

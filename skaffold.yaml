@@ -5,9 +5,6 @@ build:
     - image: keptncontrib/dynatrace-service
       docker:    # 	beta describes an artifact built from a Dockerfile.
         dockerfile: Dockerfile
-        buildArgs:
-          debugBuild: true
-          version: develop
 deploy:
   helm:
     flags:
@@ -15,14 +12,11 @@ deploy:
     releases:
       - name: dynatrace-service # needs to be the same name as currently used (check via helm ls -n keptn)
         namespace: keptn # needs to be the same namespace as where the helm-chart is currently deployed
-        # upgradeOnChange: true
-        # recreatePods: false # don't recreate all pods
         artifactOverrides:
           image: keptncontrib/dynatrace-service
         overrides:
-          distributor:
-            image:
-              tag: 0.8.2
+          securityContext:
+            readOnlyRootFilesystem: false
           resources:
             limits:
               memory: "512Mi"

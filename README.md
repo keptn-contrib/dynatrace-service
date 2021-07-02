@@ -140,6 +140,10 @@ To delete a deployed *dynatrace-service*, use the `helm` CLI to uninstall the in
 helm delete -n keptn dynatrace-service
 ```
 
+## Debugging
+
+Remote debugging is supported using [Skaffold](https://skaffold.dev/) via `skaffold debug`, which starts a [Delve](https://github.com/go-delve/delve) instance prior to running the service.
+
 ## Set up Dynatrace monitoring for already existing Keptn projects
 
 If you already have created a project using Keptn and would like to enable Dynatrace monitoring for that project afterwards, please execute the following command:
