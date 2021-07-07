@@ -20,6 +20,9 @@ dynatraceService:
     keptnBridgeUrl: ""                       # URL of keptn bridge
 
 distributor:
+  metadata:
+    hostname:                                # Sets the hostname sent by the distributor to the control-plane
+    namespace:                               # Sets the namespace sent by the distributor to the control-plane
   stageFilter: ""                            # Sets the stage this dynatrace-sli-service belongs to
   serviceFilter: ""                          # Sets the service this dynatrace-sli-service belongs to
   projectFilter: ""                          # Sets the project this dynatrace-sli-service belongs to
