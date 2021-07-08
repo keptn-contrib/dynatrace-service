@@ -31,7 +31,8 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 |       0.8.0, 0.8.1      | keptncontrib/dynatrace-service:0.12.0    | 1.14 - 1.19                            |
 |       0.8.0 - 0.8.3     | keptncontrib/dynatrace-service:0.13.1    | 1.14 - 1.19                            |
 |       0.8.0 - 0.8.3     | keptncontrib/dynatrace-service:0.14.0    | 1.14 - 1.19                            |
-|       0.8.4             | keptncontrib/dynatrace-service:0.15.0    | 1.15 - 1.20                        |
+|       0.8.4 - 0.8.6     | keptncontrib/dynatrace-service:0.15.0    | 1.15 - 1.20                        |
+|       0.8.4 - 0.8.6     | keptncontrib/dynatrace-service:0.15.1    | 1.15 - 1.20                        |
 
 (*) *Note:* 0.11.0 is feature-complete with 0.10.0. Changes and fixes made from 0.10.1 to 0.10.3 will be incorporated in 0.12.0
 
@@ -104,7 +105,7 @@ kubectl -n keptn get pods -l run=dynatrace-service
 ```
 
 **Notes**: 
-* Replace `$VERSION` with the desired version number (e.g. 0.15.0) you want to install.
+* Replace `$VERSION` with the desired version number (e.g. 0.15.1) you want to install.
 * Variables may be set by appending key-value pairs with the syntax `--set key=value`
 * If the `KEPTN_API_URL` and optionally `KEPTN_BRIDGE_URL` were not provided via a secret (see above) they should be provided using the variables `dynatraceService.config.keptnApiUrl` and `dynatraceService.config.keptnBridgeUrl`, i.e. by appending `--set dynatraceService.config.keptnApiUrl=$KEPTN_API_URL --set dynatraceService.config.keptnBridgeUrl=$KEPTN_BRIDGE_URL`.
 * The `dynatrace-service` can automatically generate tagging rules, problem notifications, management zones, dashboards, and custom metric events in your Dynatrace tenant. You can configure whether these entities should be generated within your Dynatrace tenant by the environment variables specified in the provided [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml),
