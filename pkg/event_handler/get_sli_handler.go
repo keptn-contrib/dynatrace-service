@@ -290,7 +290,7 @@ func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggered
 		keptnEvent,
 		map[string]string{
 			"Authorization": "Api-Token " + dtCredentials.ApiToken,
-			"User-Agent":    "keptn-contrib/dynatrace-sli-service:" + os.Getenv("version"),
+			"User-Agent":    "keptn-contrib/dynatrace-service:" + os.Getenv("version"),
 		},
 		eventData.GetSLI.CustomFilters, shkeptncontext, event.ID())
 
