@@ -41,7 +41,7 @@ ARG version
 ENV version $version
 
 # Copy the binary to the production image from the builder stage.
-COPY --from=builder /go/src/github.com/kept-contrib/dynatrace-service/dynatrace-service /dynatrace-service
+COPY --from=builder /go/src/github.com/keptn-contrib/dynatrace-service/dynatrace-service /dynatrace-service
 
 EXPOSE 8080
 
