@@ -62,20 +62,11 @@ func _main(args []string, env envConfig) int {
 
 func gotEvent(ctx context.Context, event cloudevents.Event) error {
 
-	var shkeptncontext string
-	_ = event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
-
 	dynatraceEventHandler, err := event_handler.NewEventHandler(event)
 
 	if err != nil {
 		return err
 	}
 
-	err = dynatraceEventHandler.HandleEvent()
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return dynatraceEventHandler.HandleEvent()
 }

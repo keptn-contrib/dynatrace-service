@@ -28,6 +28,8 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		return &ActionHandler{Event: event, dtConfigGetter: dtConfigGetter}, nil
 	case keptnv2.GetFinishedEventType(keptnv2.ActionTaskName):
 		return &ActionHandler{Event: event, dtConfigGetter: dtConfigGetter}, nil
+	case keptnv2.GetTriggeredEventType(keptnv2.GetSLITaskName):
+		return &GetSLIEventHandler{event: event, dtConfigGetter: dtConfigGetter}, nil
 	default:
 		return &CDEventHandler{Event: event, dtConfigGetter: dtConfigGetter}, nil
 	}
