@@ -2,7 +2,7 @@
 
 ## Configurations of Dashboard SLI/SLO queries through dynatrace.conf.yaml
 
-The `dynatrace.conf.yaml` provides an additional option to configure whether the *dynatrace-service* should use the metric queries defined in `sli.yaml`, whether it should pull data from a specific dashboard or whether it query the data from a Dynatrace Dashboard who's name matches the Keptn project, stage and service. 
+The `dynatrace.conf.yaml` provides an additional option to configure whether the *dynatrace-service* should use the metric queries defined in `sli.yaml`, whether it should pull data from a specific dashboard or whether it should query the data from a Dynatrace Dashboard whose name matches the Keptn project, stage and service. 
 
 Here is an example `dynatrace.conf.yaml` including the dashboard parameter
 ```yaml
