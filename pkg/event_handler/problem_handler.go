@@ -52,6 +52,34 @@ type ProblemEventHandler struct {
 	Event cloudevents.Event
 }
 
+type remediationTriggeredEventData struct {
+	keptnv2.EventData
+
+	// Problem contains details about the problem
+	Problem ProblemDetails `json:"problem"`
+}
+
+const remediationTaskName = "remediation"
+
+type ProblemDetails struct {
+	// State is the state of the problem; possible values are: OPEN, RESOLVED
+	State string `json:"State,omitempty jsonschema:"enum=open,enum=resolved"`
+	// ProblemID is a unique system identifier of the reported problem
+	ProblemID string `json:"ProblemID"`
+	// ProblemTitle is the display number of the reported problem.
+	ProblemTitle string `json:"ProblemTitle"`
+	// ProblemDetails are all problem event details including root cause
+	ProblemDetails json.RawMessage `json:"ProblemDetails"`
+	// PID is a unique system identifier of the reported problem.
+	PID string `json:"PID"`
+	// ImpactedEntity is an identifier of the impacted entity
+	// ProblemURL is a back link to the original problem
+	ProblemURL     string `json:"ProblemURL,omitempty"`
+	ImpactedEntity string `json:"ImpactedEntity,omitempty"`
+	// Tags is a comma separated list of tags that are defined for all impacted entities.
+	Tags string `json:"Tags,omitempty"`
+}
+
 const eventbroker = "EVENTBROKER"
 
 func (eh ProblemEventHandler) HandleEvent() error {
@@ -124,13 +152,13 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 
 	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
 
-	remediationEventData := keptnv2.RemediationTriggeredEventData{
+	remediationEventData := remediationTriggeredEventData{
 		EventData: keptnv2.EventData{
 			Project: project,
 			Stage:   stage,
 			Service: service,
 		},
-		Problem: keptnv2.ProblemDetails{
+		Problem: ProblemDetails{
 			State:          "OPEN",
 			PID:            dtProblemEvent.PID,
 			ProblemID:      dtProblemEvent.ProblemID,
@@ -149,7 +177,7 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 
 	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
 	err = createAndSendCE(remediationEventData, shkeptncontext, keptnv2.GetTriggeredEventType(
-		fmt.Sprintf("%s.%s", stage, keptnv2.RemediationTaskName),
+		fmt.Sprintf("%s.%s", stage, remediationTaskName),
 	))
 	if err != nil {
 		log.WithError(err).Error("Could not send cloud event")
