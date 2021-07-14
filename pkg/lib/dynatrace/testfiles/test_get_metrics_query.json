@@ -1,0 +1,206 @@
+{
+    "result": [
+    {
+        "metricId": "builtin:tech.generic.processCount:merge(0):avg:names",
+        "data": [
+          {
+            "dimensions": [
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              1.0
+            ]
+          }
+        ]
+    },
+    {
+        "metricId": "builtin:service.response.time",
+        "data": [
+          {
+            "dimensions": [
+              "SERVICE-123456"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+
+    {
+        "metricId": "builtin:tech.generic.mem.workingSetSize:merge(0):avg:names",
+        "data": [
+          {
+            "dimensions": [
+              "PROCESS_GROUP_INSTANCE-24A949AB19EC17CB"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+    
+    {
+        "metricId": "builtin:tech.generic.cpu.usage:merge(0):avg:names",
+        "data": [
+          {
+            "dimensions": [
+              "PROCESS_GROUP_INSTANCE-24A949AB19EC17CB"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+    
+    {
+        "metricId": "builtin:service.errors.server.rate:merge(0):avg:names",
+        "data": [
+          {
+            "dimensions": [
+              "SERVICE-24A949AB19EC17CB"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+    
+    {
+        "metricId": "builtin:service.requestCount.total:merge(0):value:names",
+        "data": [
+          {
+            "dimensions": [
+              "SERVICE-24A949AB19EC17CB"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+    
+    {
+        "metricId": "builtin:host.cpu.usage:merge(0):avg:names",
+        "data": [
+          {
+            "dimensions": [
+              "HOST-24A949AB19EC17CB"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+    
+    {
+        "metricId": "builtin:host.mem.usage:merge(0):avg:names",
+        "data": [
+          {
+            "dimensions": [
+              "HOST-24A949AB19EC17CB"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+    
+    {
+        "metricId": "builtin:host.disk.queueLength:merge(1):merge(0):max:names",
+        "data": [
+          {
+            "dimensions": [
+              "HOST-24A949AB19EC17CB"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+    
+    {
+        "metricId": "builtin:service.nonDbChildCallCount:merge(0):value:names",
+        "data": [
+          {
+            "dimensions": [
+              "SERVICE-24A949AB19EC17CB"
+            ],
+            "timestamps": [
+              1600950300000
+            ],
+            "values": [
+              0.04146322688540897
+            ]
+          }
+        ]
+    },
+
+    {
+      "metricId": "jmeter.usermetrics.transaction.meantime:avg:names",
+      "data": [
+        {
+          "dimensions": [
+            "4 - Random Search"
+          ],
+          "dimensionMap": {
+            "transaction": "4 - Random Search"
+          },
+          "timestamps": [
+            1607334000000
+          ],
+          "values": [
+            1808.208984375
+          ]
+        },
+        {
+          "dimensions": [
+            "2 - CalculateRecommendations"
+          ],
+          "dimensionMap": {
+            "transaction": "2 - CalculateRecommendations"
+          },
+          "timestamps": [
+            1607334000000
+          ],
+          "values": [
+            858.5491536458334
+          ]
+        }
+       ]
+    }
+
+    ]
+}

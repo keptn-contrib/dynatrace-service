@@ -21,4 +21,7 @@ deploy:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          distributor:
+            metadata:
+              namespace: keptn
         chartPath: chart

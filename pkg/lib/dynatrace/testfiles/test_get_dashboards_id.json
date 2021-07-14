@@ -1,0 +1,765 @@
+{
+  "metadata": {
+    "configurationVersions": [
+      3
+    ],
+    "clusterVersion": "1.202.80.20200921-133947"
+  },
+  "id": "12345678-1111-4444-8888-123456789012",
+  "dashboardMetadata": {
+    "name": "KQG;project=qualitygate;service=evalservice;stage=qualitystage",
+    "shared": false,
+    "owner": "",
+    "sharingDetails": {
+      "linkShared": true,
+      "published": false
+    },
+    "dashboardFilter": {
+      "timeframe": "",
+      "managementZone": null
+    }
+  },
+  "tiles": [
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 646,
+        "left": 760,
+        "width": 418,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Worker Process Count (Avg);sli=proc_count;",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:tech.generic.processCount",
+              "aggregation": "AVG",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "PROCESS_GROUP_INSTANCE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 114,
+        "left": 0,
+        "width": 2052,
+        "height": 38
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "markdown": "KQG.Total.Pass=90%;KQG.Total.Warning=70%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg"
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 190,
+        "left": 0,
+        "width": 380,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Response time (P95);sli=svc_rt_p95;pass=<+10%,<600",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:service.response.time",
+              "aggregation": "PERCENTILE",
+              "percentile": 95,
+              "type": "LINE",
+              "entityType": "SERVICE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {
+          "SERVICE": {
+            "SERVICE_TO_PG": [
+              "PROCESS_GROUP-88C57C95F9A41B3C|keptn07project.simplenode.prod.primary"
+            ],
+            "SPECIFIC_ENTITIES": [
+              "SERVICE-086C46F600BA1DC6"
+            ],
+            "SERVICE_SOFTWARE_TECH": [
+              "NODE_JS"
+            ],
+            "SERVICE_TYPE": [
+              "1"
+            ],
+            "AUTO_TAGS": [
+              "keptn_deployment:primary"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 418,
+        "left": 0,
+        "width": 380,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Response time (P90);sli=svc_rt_p90;pass=<+10%,<550",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:service.response.time",
+              "aggregation": "PERCENTILE",
+              "percentile": 90,
+              "type": "LINE",
+              "entityType": "SERVICE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 646,
+        "left": 0,
+        "width": 380,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Response time (P50);sli=svc_rt_p50;pass=<+10%,<500",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:service.response.time",
+              "aggregation": "PERCENTILE",
+              "percentile": 50,
+              "type": "LINE",
+              "entityType": "SERVICE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 152,
+        "left": 0,
+        "width": 380,
+        "height": 38
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "markdown": "## Service Performance (SLI/SLO)"
+    },
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 152,
+        "left": 1178,
+        "width": 418,
+        "height": 38
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "markdown": "## Host-based (SLI/SLO)"
+    },
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 152,
+        "left": 760,
+        "width": 418,
+        "height": 38
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "markdown": "## Process Metrics (SLI/SLO)"
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 418,
+        "left": 760,
+        "width": 418,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Process Memory;sli=process_memory",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:tech.generic.mem.workingSetSize",
+              "aggregation": "AVG",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "PROCESS_GROUP_INSTANCE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 190,
+        "left": 760,
+        "width": 418,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Process CPU;sli=process_cpu;pass=<20;warning=<50;key=false",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:tech.generic.cpu.usage",
+              "aggregation": "AVG",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "PROCESS_GROUP_INSTANCE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 152,
+        "left": 380,
+        "width": 380,
+        "height": 38
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "markdown": "## Service Errors & Throughput (SLI/SLO)"
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 190,
+        "left": 380,
+        "width": 380,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Failure Rate (Avg);sli=svc_fr;pass=<+10%,<2",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:service.errors.server.rate",
+              "aggregation": "AVG",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "SERVICE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 418,
+        "left": 380,
+        "width": 380,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Throughput (per min);sli=svc_tp_min;pass=<+10%,<200",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:service.requestCount.total",
+              "aggregation": "NONE",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "SERVICE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "MINUTE"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 152,
+        "left": 1596,
+        "width": 456,
+        "height": 38
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "markdown": "## Test Transaction (SLI/SLO)"
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 190,
+        "left": 1178,
+        "width": 418,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Host CPU %;sli=host_cpu;pass=<20;warning=<50;key=false",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:host.cpu.usage",
+              "aggregation": "AVG",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "HOST",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 418,
+        "left": 1178,
+        "width": 418,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Host Memory used %;sli=host_mem;pass=<20;warning=<50;key=false",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:host.mem.usage",
+              "aggregation": "AVG",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "HOST",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 646,
+        "left": 1178,
+        "width": 418,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:host.disk.queueLength",
+              "aggregation": "MAX",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "HOST",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Custom chart",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 646,
+        "left": 380,
+        "width": 380,
+        "height": 228
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Calls to backend services (per min);sli=svc2svc_calls;",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "SINGLE_VALUE",
+          "series": [
+            {
+              "metric": "builtin:service.nonDbChildCallCount",
+              "aggregation": "NONE",
+              "percentile": null,
+              "type": "LINE",
+              "entityType": "SERVICE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "MINUTE"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    },
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 190,
+        "left": 1596,
+        "width": 456,
+        "height": 152
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "markdown": "## Extend with Test Transactions\n\n\nFollow the best practices around SRE-driven Performance Engineering as described in [this blog](https://www.dynatrace.com/news/blog/guide-to-automated-sre-driven-performance-engineering-analysis/)\n\nThis will allow you to add metrics per test or business transaction"
+    },
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 0,
+        "left": 0,
+        "width": 2052,
+        "height": 114
+      },
+      "tileFilter": {
+        "timeframe": null,
+        "managementZone": null
+      },
+      "markdown": "## Welcome to your first SLI/SLO-based Quality Gate Dashboard. See all results in your [Keptn's Bridge](http://keptn.keptn07-agrabner.demo.keptn.sh/bridge/project/qualitygate)\n \nThis default dashboard includes a set of base metrics (SLIs) that should produce values in any Dynatrace deployment. \nUse this to make yourself familiar with defining your own SLIs (by adding more custom charts) and how to define SLOs (as part of the chart title) for every metric.\nThis default chart doesn't split by metric dimension such as Service, Process or Host - however - splitting is supported by Keptn and is encouraged.\nFor more best practices on how to create these SLI/SLO dashboards please have a look at the [Dynatrace-SLI-Service readme](https://github.com/keptn-contrib/dynatrace-sli-service)."
+    },
+    {
+      "name": "Service-level objective",
+      "tileType": "SLO",
+      "configured": true,
+      "bounds": {
+        "top": 190,
+        "left": 0,
+        "width": 304,
+        "height": 152
+      },
+      "tileFilter": {},
+      "assignedEntities": [
+        "524ca177-849b-3e8c-8175-42b93fbc33c5"
+      ]
+    },
+    {
+      "name": "Problems",
+      "tileType": "OPEN_PROBLEMS",
+      "configured": true,
+      "bounds": {
+        "top": 418,
+        "left": 0,
+        "width": 152,
+        "height": 152
+      },
+      "tileFilter": {
+        "managementZone": {
+          "id": "7030365576649815430",
+          "name": "Keptn: keptn07project"
+        }
+      }
+    },
+    {
+      "name": "Service health",
+      "tileType": "SERVICES",
+      "configured": true,
+      "bounds": {
+        "top": 418,
+        "left": 152,
+        "width": 152,
+        "height": 152
+      },
+      "tileFilter": {},
+      "chartVisible": true
+    },
+    {
+      "name": "Host health",
+      "tileType": "HOSTS",
+      "configured": true,
+      "bounds": {
+        "top": 570,
+        "left": 0,
+        "width": 152,
+        "height": 152
+      },
+      "tileFilter": {},
+      "chartVisible": true
+    },
+    {
+      "name": "Application health",
+      "tileType": "APPLICATIONS",
+      "configured": true,
+      "bounds": {
+        "top": 570,
+        "left": 152,
+        "width": 152,
+        "height": 152
+      },
+      "tileFilter": {},
+      "chartVisible": true
+    },
+    {
+      "name": "Database health",
+      "tileType": "DATABASES_OVERVIEW",
+      "configured": true,
+      "bounds": {
+        "top": 722,
+        "left": 0,
+        "width": 152,
+        "height": 152
+      },
+      "tileFilter": {},
+      "chartVisible": true
+    },
+    {
+      "name": "JMeter Transactions Median;sli=jm_tx_med",
+      "tileType": "DATA_EXPLORER",
+      "configured": true,
+      "bounds": {
+          "top": 38,
+          "left": 304,
+          "width": 684,
+          "height": 304
+      },
+      "tileFilter": {},
+      "customName": "JMeter;slo=jmeter",
+      "queries": [{
+          "id": "A",
+          "metric": "jmeter.usermetrics.transaction.meantime",
+          "spaceAggregation": "AVG",
+          "timeAggregation": "DEFAULT",
+          "splitBy": ["transaction"],
+          "filterBy": {
+            "filterOperator": "AND",
+            "nestedFilters": [{
+                "filter": "dt.entity.service",
+                "filterType": "DIMENSION",
+                "filterOperator": "OR",
+                "nestedFilters": [],
+                "criteria": [{
+                    "value": "SERVICE-FFD81F003E39B468",
+                    "evaluator": "EQ"
+                }]
+            }],
+            "criteria": []
+        }          
+      }],
+      "visualConfig": {
+          "type": "GRAPH_CHART",
+          "global": {
+              "theme": "DEFAULT",
+              "thresholds": [],
+              "seriesType": "LINE"
+          },
+          "rules": []
+      }
+    }    
+  ]
+}
