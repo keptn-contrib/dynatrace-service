@@ -1,0 +1,39 @@
+{
+  "metricId": "jmeter.usermetrics.transaction.meantime",
+  "displayName": "",
+  "description": "",
+  "unit": "Unspecified",
+  "dduBillable": true,
+  "created": 1600353971400,
+  "lastWritten": 1607093917978,
+  "entityType": [],
+  "aggregationTypes": [
+    "auto",
+    "avg",
+    "count",
+    "max",
+    "min",
+    "sum"
+  ],
+  "transformations": [
+    "filter",
+    "fold",
+    "limit",
+    "merge",
+    "names",
+    "parents",
+    "splitBy"
+  ],
+  "defaultAggregation": {
+    "type": "avg"
+  },
+  "dimensionDefinitions": [
+    {
+      "key": "transaction",
+      "name": null,
+      "displayName": "transaction",
+      "index": null,
+      "type": "STRING"
+    }
+  ]
+}

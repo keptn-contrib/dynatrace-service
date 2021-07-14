@@ -20,24 +20,26 @@ Content-Type: application/cloudevents+json
     "customFilters": [
     ],
     "deploymentstrategy": "direct",
-    "end": "2019-11-19T09:26:53Z",
+    "start": "2020-07-09T12:28:14Z",
+    "end": "2020-07-09T14:28:53Z",
     "indicators": [
-      "response_time_p95"
+      "response_time_p95",
+      "response_time_p90",
+      "response_time_p50",
+      "error_rate",
+      "throughput"
     ],
-    "project": "sockshop",
-    "service": "carts",
+    "project": "dynatrace",
+    "service": "sampleservice",
     "sliProvider": "dynatrace",
-    "stage": "dev",
-    "start": "2019-11-19T09:18:14Z",
+    "stage": "qualitystage",
     "teststrategy": "performance",
     "labels": {
       "testid": "12345",
       "buildnr": "build17",
-      "runby": "JohnDoe"
+      "runby": "JohnDoe",
+      "dttag" : "evalservice"
     }
-  },
-  "id": "432b41e2-e50e-4d55-a4ca-0076df5b0b29",
-  "time": "2019-11-19T09:26:54.282Z",
-  "shkeptncontext": "cc42042e-9d25-48cb-a0df-ad8c2e30b6d7"
+  }
 }
 ###

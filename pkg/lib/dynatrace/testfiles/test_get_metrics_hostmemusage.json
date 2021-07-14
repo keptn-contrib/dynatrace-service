@@ -1,0 +1,39 @@
+{
+    "metricId": "builtin:host.mem.usage",
+    "displayName": "Memory used %",
+    "description": "Percentage of memory currently used. Note: Calculated by taking 100% - \"Memory available %\".",
+    "unit": "Percent",
+    "dduBillable": false,
+    "created": null,
+    "lastWritten": 1600947947028,
+    "entityType": [
+      "HOST"
+    ],
+    "aggregationTypes": [
+      "auto",
+      "avg",
+      "max",
+      "min"
+    ],
+    "transformations": [
+      "filter",
+      "fold",
+      "limit",
+      "merge",
+      "names",
+      "parents",
+      "splitBy"
+    ],
+    "defaultAggregation": {
+      "type": "avg"
+    },
+    "dimensionDefinitions": [
+      {
+        "key": "dt.entity.host",
+        "name": "Host",
+        "displayName": "Host",
+        "index": 0,
+        "type": "ENTITY"
+      }
+    ]
+  }

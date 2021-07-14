@@ -1,0 +1,39 @@
+{
+    "metricId": "builtin:tech.generic.mem.workingSetSize",
+    "displayName": "Process memory",
+    "description": "",
+    "unit": "Byte",
+    "dduBillable": false,
+    "created": null,
+    "lastWritten": 1600947826832,
+    "entityType": [
+      "PROCESS_GROUP_INSTANCE"
+    ],
+    "aggregationTypes": [
+      "auto",
+      "avg",
+      "max",
+      "min"
+    ],
+    "transformations": [
+      "filter",
+      "fold",
+      "limit",
+      "merge",
+      "names",
+      "parents",
+      "splitBy"
+    ],
+    "defaultAggregation": {
+      "type": "avg"
+    },
+    "dimensionDefinitions": [
+      {
+        "key": "dt.entity.process_group_instance",
+        "name": "Process",
+        "displayName": "Process",
+        "index": 0,
+        "type": "ENTITY"
+      }
+    ]
+  }

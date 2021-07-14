@@ -5,7 +5,7 @@ FROM golang:1.16.5 as builder
 
 ARG version=develop
 
-WORKDIR /go/src/github.com/keptn/dynatrace-service
+WORKDIR /go/src/github.com/keptn-contrib/dynatrace-service
 
 # Copy `go.mod` for definitions and `go.sum` to invalidate the next layer
 # in case of a change in the dependencies
@@ -41,7 +41,7 @@ ARG version
 ENV version $version
 
 # Copy the binary to the production image from the builder stage.
-COPY --from=builder /go/src/github.com/keptn/dynatrace-service/dynatrace-service /dynatrace-service
+COPY --from=builder /go/src/github.com/keptn-contrib/dynatrace-service/dynatrace-service /dynatrace-service
 
 EXPOSE 8080
 
