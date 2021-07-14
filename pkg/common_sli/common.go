@@ -464,9 +464,7 @@ func GetDTCredentials(dynatraceSecretName string) (*DTCredentials, error) {
 	}
 
 	// ensure URL always has http or https in front
-	if strings.HasPrefix(dtCreds.Tenant, "https://") || strings.HasPrefix(dtCreds.Tenant, "http://") {
-		dtCreds.Tenant = dtCreds.Tenant
-	} else {
+	if !(strings.HasPrefix(dtCreds.Tenant, "https://") || strings.HasPrefix(dtCreds.Tenant, "http://")) {
 		dtCreds.Tenant = "https://" + dtCreds.Tenant
 	}
 

@@ -1019,7 +1019,7 @@ func (ph *Handler) isMatchingMetricID(singleResultMetricID string, queryMetricID
 
 		//
 		// lets just see whether everything until the first : matches
-		if strings.Contains(singleResultMetricID, ":") && strings.Contains(singleResultMetricID, ":") {
+		if strings.Contains(singleResultMetricID, ":") {
 			log.Debug("Just compare before first")
 
 			fuzzyResultMetricID := strings.Split(singleResultMetricID, ":")[0]

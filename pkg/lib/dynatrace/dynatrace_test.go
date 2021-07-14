@@ -292,9 +292,9 @@ func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
 	defer teardown()
 
 	var filtersPerEntityType = map[string]map[string][]string{
-		"SERVICE": map[string][]string{
-			"SPECIFIC_ENTITIES": []string{"SERVICE-086C46F600BA1DC6"},
-			"AUTO_TAGS":         []string{"keptn_deployment:primary"},
+		"SERVICE": {
+			"SPECIFIC_ENTITIES": {"SERVICE-086C46F600BA1DC6"},
+			"AUTO_TAGS":         {"keptn_deployment:primary"},
 		},
 	}
 	entityTileFilter := dh.GetEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
@@ -745,8 +745,8 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 				customName: "Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true",
 			},
 			want:  "teststep_rt",
-			want1: []*keptn.SLOCriteria{&keptn.SLOCriteria{Criteria: []string{"<500ms", "<+10%"}}},
-			want2: []*keptn.SLOCriteria{&keptn.SLOCriteria{Criteria: []string{"<1000ms", "<+20%"}}},
+			want1: []*keptn.SLOCriteria{{Criteria: []string{"<500ms", "<+10%"}}},
+			want2: []*keptn.SLOCriteria{{Criteria: []string{"<1000ms", "<+20%"}}},
 			want3: 1,
 			want4: true,
 		},
@@ -756,8 +756,8 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 				customName: "Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false",
 			},
 			want:  "host_disk_queue",
-			want1: []*keptn.SLOCriteria{&keptn.SLOCriteria{Criteria: []string{"<=0"}}},
-			want2: []*keptn.SLOCriteria{&keptn.SLOCriteria{Criteria: []string{"<1"}}},
+			want1: []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
+			want2: []*keptn.SLOCriteria{{Criteria: []string{"<1"}}},
 			want3: 1,
 			want4: false,
 		},
@@ -767,8 +767,8 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 				customName: "Host CPU %;sli=host_cpu;pass=<20;warning=<50;key=false;weight=2",
 			},
 			want:  "host_cpu",
-			want1: []*keptn.SLOCriteria{&keptn.SLOCriteria{Criteria: []string{"<20"}}},
-			want2: []*keptn.SLOCriteria{&keptn.SLOCriteria{Criteria: []string{"<50"}}},
+			want1: []*keptn.SLOCriteria{{Criteria: []string{"<20"}}},
+			want2: []*keptn.SLOCriteria{{Criteria: []string{"<50"}}},
 			want3: 2,
 			want4: false,
 		},
