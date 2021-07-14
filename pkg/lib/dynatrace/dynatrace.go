@@ -473,6 +473,27 @@ func (ph *Handler) executeDynatraceREST(httpMethod string, requestUrl string, ad
 }
 
 /**
+ * Helper function to check response from API REST request and formulate an error if needed
+ */
+func checkApiResponse(resp *http.Response, body []byte) error {
+	if resp == nil {
+		return fmt.Errorf("Dynatrace API did not return a response")
+	}
+
+	// no error if the status code from the API is 200
+	if resp.StatusCode == 200 {
+		return nil
+	} else {
+		dtApiv2Error := &DtEnvAPIv2Error{}
+		err := json.Unmarshal(body, dtApiv2Error)
+		if err != nil {
+			return fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
+		}
+		return fmt.Errorf("Dynatrace API returned error %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
+	}
+}
+
+/**
  * Helper function to validate whether string is a valid UUID
  */
 func IsValidUUID(uuid string) bool {
@@ -620,18 +641,8 @@ func (ph *Handler) ExecuteGetDynatraceSLO(sloID string, startUnix time.Time, end
 	if err != nil {
 		return nil, err
 	}
-	if resp == nil {
-		return nil, fmt.Errorf("No valid response from SLO api for query: %s", targetURL)
-	}
-
-	// make sure the status code from the API is 200
-	if resp.StatusCode != 200 {
-		dtApiv2Error := &DtEnvAPIv2Error{}
-		err := json.Unmarshal(body, dtApiv2Error)
-		if err == nil {
-			return nil, fmt.Errorf("Dynatrace API returned status code %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
-		}
-		return nil, fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
+	if err := checkApiResponse(resp, body); err != nil {
+		return nil, fmt.Errorf("SLO API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json
@@ -666,18 +677,8 @@ func (ph *Handler) ExecuteGetDynatraceProblems(problemQuery string, startUnix ti
 	if err != nil {
 		return nil, err
 	}
-	if resp == nil {
-		return nil, fmt.Errorf("No valid response from problem api for query: %s", targetURL)
-	}
-
-	// make sure the status code from the API is 200
-	if resp.StatusCode != 200 {
-		dtApiv2Err := &DtEnvAPIv2Error{}
-		err := json.Unmarshal(body, dtApiv2Err)
-		if err == nil {
-			return nil, fmt.Errorf("Dynatrace API returned status code %d: %s", dtApiv2Err.Error.Code, dtApiv2Err.Error.Message)
-		}
-		return nil, fmt.Errorf("Dynatrace API returned status code %d - Problem could not be received.", resp.StatusCode)
+	if err := checkApiResponse(resp, body); err != nil {
+		return nil, fmt.Errorf("Problems API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json
@@ -706,18 +707,9 @@ func (ph *Handler) ExecuteGetDynatraceSecurityProblems(problemQuery string, star
 	if err != nil {
 		return nil, err
 	}
-	if resp == nil {
-		return nil, fmt.Errorf("No valid response from problem api for query: %s", targetURL)
-	}
 
-	// make sure the status code from the API is 200
-	if resp.StatusCode != 200 {
-		dtApiv2Error := &DtEnvAPIv2Error{}
-		err := json.Unmarshal(body, dtApiv2Error)
-		if err == nil {
-			return nil, fmt.Errorf("Dynatrace API returned status code %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
-		}
-		return nil, fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
+	if err := checkApiResponse(resp, body); err != nil {
+		return nil, fmt.Errorf("Security Problems API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json
@@ -741,18 +733,9 @@ func (ph *Handler) ExecuteMetricAPIDescribe(metricID string) (*MetricDefinition,
 	if err != nil {
 		return nil, err
 	}
-	if resp == nil {
-		return nil, fmt.Errorf("No valid response from metrics description api for query: %s", targetURL)
-	}
 
-	// make sure the status code from the API is 200
-	if resp.StatusCode != 200 {
-		dtApiv2Error := &DtEnvAPIv2Error{}
-		err := json.Unmarshal(body, dtApiv2Error)
-		if err == nil {
-			return nil, fmt.Errorf("Dynatrace API returned status code %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
-		}
-		return nil, fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
+	if err := checkApiResponse(resp, body); err != nil {
+		return nil, fmt.Errorf("Metrics API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json if we have a 200
@@ -774,18 +757,8 @@ func (ph *Handler) ExecuteMetricsAPIQuery(metricsQuery string) (*DynatraceMetric
 		return nil, err
 	}
 
-	if resp == nil {
-		return nil, fmt.Errorf("No valid response from metrics api for query: %s", metricsQuery)
-	}
-
-	// make sure the status code from the API is 200
-	if resp.StatusCode != 200 {
-		dtApiv2Error := &DtEnvAPIv2Error{}
-		err := json.Unmarshal(body, dtApiv2Error)
-		if err == nil {
-			return nil, fmt.Errorf("Dynatrace API returned status code %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
-		}
-		return nil, fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
+	if err := checkApiResponse(resp, body); err != nil {
+		return nil, fmt.Errorf("Metrics API request %s was not successful: %w", metricsQuery, err)
 	}
 
 	// parse response json
@@ -818,18 +791,8 @@ func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceP
 		return nil, err
 	}
 
-	if resp == nil {
-		return nil, fmt.Errorf("No valid response from problems api for problemId: %s", problemId)
-	}
-
-	// make sure the status code from the API is 200
-	if resp.StatusCode != 200 {
-		dtApiv2Error := &DtEnvAPIv2Error{}
-		err := json.Unmarshal(body, dtApiv2Error)
-		if err == nil {
-			return nil, fmt.Errorf("Dynatrace API returned status code %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
-		}
-		return nil, fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
+	if err := checkApiResponse(resp, body); err != nil {
+		return nil, fmt.Errorf("Problems API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json
@@ -847,18 +810,12 @@ func (ph *Handler) ExecuteUSQLQuery(usql string) (*DTUSQLResult, error) {
 	// now we execute the query against the Dynatrace API
 	resp, body, err := ph.executeDynatraceREST("GET", usql, map[string]string{"Content-Type": "application/json"})
 
-	if resp == nil || err != nil {
+	if err != nil {
 		return nil, err
 	}
 
-	// make sure the status code from the API is 200
-	if resp.StatusCode != 200 {
-		dtApiv2Error := &DtEnvAPIv2Error{}
-		err := json.Unmarshal(body, dtApiv2Error)
-		if err == nil {
-			return nil, fmt.Errorf("Dynatrace API returned status code %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
-		}
-		return nil, fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
+	if err := checkApiResponse(resp, body); err != nil {
+		return nil, fmt.Errorf("USQL API request %s was not successful: %w", usql, err)
 	}
 
 	// parse response json

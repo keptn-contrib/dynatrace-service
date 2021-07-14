@@ -53,26 +53,7 @@ func TestGetSLIValue(t *testing.T) {
 		]
 	}`
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(okResponse))
-	})
-
-	httpClient, teardown := testingHTTPClient(h)
-	defer teardown()
-
-	keptnEvent := &common_sli.BaseKeptnEvent{}
-	keptnEvent.Project = "sockshop"
-	keptnEvent.Stage = "dev"
-	keptnEvent.Service = "carts"
-	keptnEvent.DeploymentStrategy = ""
-
-	// dh := NewDynatraceHandler("http://dynatrace", "sockshop", "dev", "carts", nil, nil, "")
-	dh := NewDynatraceHandler("http://dynatrace", keptnEvent, nil, nil, "", "")
-	dh.HTTPClient = httpClient
-
-	start := time.Unix(1571649084, 0).UTC()
-	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err := runGetSLIValueTest(okResponse)
 
 	assert.NoError(t, err)
 
@@ -168,25 +149,7 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 	]
 }`
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(okResponse))
-	})
-
-	httpClient, teardown := testingHTTPClient(h)
-	defer teardown()
-
-	keptnEvent := &common_sli.BaseKeptnEvent{}
-	keptnEvent.Project = "sockshop"
-	keptnEvent.Stage = "dev"
-	keptnEvent.Service = "carts"
-	keptnEvent.DeploymentStrategy = ""
-
-	dh := NewDynatraceHandler("http://dynatrace", keptnEvent, nil, nil, "", "")
-	dh.HTTPClient = httpClient
-
-	start := time.Unix(1571649084, 0).UTC()
-	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err := runGetSLIValueTest(okResponse)
 
 	assert.Error(t, err)
 
@@ -217,6 +180,17 @@ func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
 		]
 	}`
 
+	value, err := runGetSLIValueTest(okResponse)
+
+	assert.EqualValues(t, errors.New("Not able to query identifier response_time_p50 from Dynatrace"), err)
+
+	assert.EqualValues(t, 0.0, value)
+}
+
+/*
+ * Helper function to test GetSLIValue
+ */
+func runGetSLIValueTest(okResponse string) (float64, error) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(okResponse))
 	})
@@ -235,11 +209,8 @@ func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(ResponseTimeP50, start, end)
 
-	assert.EqualValues(t, errors.New("Not able to query identifier response_time_p50 from Dynatrace"), err)
-
-	assert.EqualValues(t, 0.0, value)
+	return dh.GetSLIValue(ResponseTimeP50, start, end)
 }
 
 func TestGetSLIValueWithMV2Prefix(t *testing.T) {
