@@ -2,19 +2,19 @@
 Dynatrace-service
 ===========
 
-Helm Chart for the keptn-contrib dynatrace-service
+Helm Chart for the *keptn-contrib* *dynatrace-service*
 
 
 ## Configuration
 
-The following table lists the configurable parameters of the dynatrace-service chart and their default values.
+The following table lists the configurable parameters of the *dynatrace-service* chart and their default values.
 
 | Parameter                | Description             | Default        |
 | ------------------------ | ----------------------- | -------------- |
-| `dynatraceService.image.repository` | Container image name | `"docker.io/keptncontrib/dynatrace-sli-service"` |
+| `dynatraceService.image.repository` | Container image name | `"docker.io/keptncontrib/dynatrace-service"` |
 | `dynatraceService.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
 | `dynatraceService.image.tag` | Container tag | `""` |
-| `dynatraceService.service.enabled` | Creates a kubernetes service for the dynatrace-sli-service | `true` |
+| `dynatraceService.service.enabled` | Creates a kubernetes service for the *dynatrace-service* | `true` |
 | `dynatraceService.config.generateTaggingRules` | Generate Tagging Rules in Dynatrace Tenant | `false` |
 | `dynatraceService.config.generateProblemNotifications` | Generate Problem Notifications in Dynatrace Tenant | `false` |
 | `dynatraceService.config.generateManagementZones` | Generate Management Zones in Dynatrace Tenant | `false` |
@@ -25,9 +25,9 @@ The following table lists the configurable parameters of the dynatrace-service c
 | `dynatraceService.config.httpSSLVerify` | Verify HTTPS SSL certificates | `true` |
 | `dynatraceService.config.httpProxy` | Proxy for HTTP requests | `""` |
 | `dynatraceService.config.httpsProxy` | Proxy for HTTPS requests | `""` |
-| `distributor.stageFilter` | Sets the stage this dynatrace-sli-service belongs to | `""` |
-| `distributor.serviceFilter` | Sets the service this dynatrace-sli-service belongs to | `""` |
-| `distributor.projectFilter` | Sets the project this dynatrace-sli-service belongs to | `""` |
+| `distributor.stageFilter` | Sets the stage this *dynatrace-service* belongs to | `""` |
+| `distributor.serviceFilter` | Sets the service this *dynatrace-service* belongs to | `""` |
+| `distributor.projectFilter` | Sets the project this *dynatrace-service* belongs to | `""` |
 | `distributor.image.repository` | Container image name | `"docker.io/keptn/distributor"` |
 | `distributor.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
 | `distributor.image.tag` | Container tag | `""` |
@@ -41,8 +41,8 @@ The following table lists the configurable parameters of the dynatrace-service c
 | `serviceAccount.annotations` | Annotations to add to the service account | `{}` |
 | `serviceAccount.name` | The name of the service account to use. | `""` |
 | `podAnnotations` | Annotations to add to the created pods | `{}` |
-| `podSecurityContext` | Set the pod security context (e.g. fsgroups) | `{}` |
-| `securityContext` | Set the security context (e.g. runasuser) | `{}` |
+| `podSecurityContext` | Set the pod security context (e.g. `fsgroups`) | `{}` |
+| `securityContext` | Set the security context (e.g. `runasuser`) | `{}` |
 | `resources` | Resource limits and requests | `{}` |
 | `nodeSelector` | Node selector configuration | `{}` |
 | `tolerations` | Tolerations for the pods | `[]` |

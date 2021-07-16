@@ -15,15 +15,15 @@ The service is subscribed to the following [Keptn CloudEvents](https://github.co
 - sh.keptn.event.monitoring.configure
 - sh.keptn.event.get-sli.triggered
 
-The *dynatrace-service* is a [Keptn](https://keptn.sh) service that is responsible for retrieving the values of SLIs from your Dynatrace Tenant via the Dynatrace Metrics v2 API endpoint. For that it handles the Keptn Event *sh.keptn.internal.event.get-sli* which gets executed as part of a quality gate evaluation!
+The *dynatrace-service* is a [Keptn](https://keptn.sh) service that is responsible for retrieving the values of SLIs from your Dynatrace Tenant via the Dynatrace Metrics v2 API endpoint. For that it handles the Keptn Event *sh.keptn.internal.event.get-sli* which gets sent as part of a quality gate evaluation!
 
 The *dynatrace-service* provides the capabilty to connect to different Dynatrace Tenants for your Keptn projects, stages or services. It also allows you to either define SLIs through `sli.yaml` files or through a Dynatrace dashboard and all of this is configurable through `dynatrace.conf.yaml`:
 
-![](./documentation/images/dynatracesliserviceoverview.png)
+![](./documentation/images/dynatraceserviceoverview.png)
 
 By default, even if you do not specify a custom `sli.yaml` or a Dynatrace dashboard, the following SLIs are automatically supported in case you reference them in your `slo.yaml`:
 
-```
+```yaml
  - throughput: builtin:service.requestCount.total
  - error_rate: builtin:service.errors.total.rate
  - response_time_p50: builtin:service.response.time:percentile(50)

@@ -1,77 +1,10 @@
 # Configuration
-## Pre-Requisites: Dynatrace Tenant URL & API Token
 
-In order for the *dynatrace-sli-service* to connect to Dynatrace you need to provide a Dynatrace Tenant URL and a Dynatrace API Token. In our examples below we use the best practice to export these values in the environment variables `DT_TENANT` and `DT_API_TOKEN` as explained in the [Keptn documentation for Dynatrace](https://keptn.sh/docs/0.8.x/monitoring/dynatrace/install/)
+## Sending Events to Dynatrace Monitored Entities
 
-## Configuration of project- & Keptn-wide Dynatrace credentials
+By default, the *dynatrace-service* assumes that all events it sends to Dynatrace, e.g. Deployment or Test Start/Stop Events, are sent to a monitored Dynatrace Service entity that has the following attachRule definition:
 
-The *dynatrace-sli-service* uses the same implementation as the [dynatrace-service](https://github.com/keptn-contrib/dynatrace-service) when it comes to connecting to your Dynatrace Tenant (SaaS or Managed). Both services pull the Dynatrace Tenant URL and Dynatrace API Token from the k8s secret stored in the same namespace as where your *dynatrace-xx-service* is installed.
-
-Both services give you the option to configure project-wide-default or keptn-wide-default credentials. For project-wide, the secret needs to be named  *dynatrace-credentials-YOURPROJECT*. For keptn-wide the secret can either be called *dynatrace-credentials* or just *dynatrace*.
-
-The following is an example to define a secret for a Keptn project called sockshop:
-
-```console
-kubectl create secret generic dynatrace-credentials-sockshop -n "keptn" --from-literal="DT_TENANT=$DT_TENANT" --from-literal="DT_API_TOKEN=$DT_API_TOKEN"
-```
-
-And here is an example to specify a keptn wide default secret that is used in case there is no project wide secret defined for a particular Keptn project
-
-```console
-kubectl create secret generic dynatrace -n "keptn" --from-literal="DT_TENANT=$DT_TENANT" --from-literal="DT_API_TOKEN=$DT_API_TOKEN"
-```
-
-## Configurations of Credentials through `dynatrace.conf.yaml`
-
-While project and keptn wide credentials give a certain flexibility - it has its drawbacks that have asked for more fine grained control over Dynatrace Credential Management as well as configuraing the behavior of other features of the *dynatrace-sli-service* on a project, service and stage level. This is why its important to understand and use `dynatrace.conf.yaml` 
-
-When the *dynatrace-sli-service* is processing a *sh.keptn.internal.event.get-sli* it looks for the file called `dynatrace/dynatrace.conf.yaml` in the Keptn Configuration Repository. It first looks for it on the service, then the stage and then finally the project level. This conf file is also used by the *dynatrace-service*. For the *dynatrace-sli-service* it allows you to configure the following behavior:
-* Which k8s secret to use to pull Dynatrace Tenant Credentials (DT_TENANT & DT_API_TOKEN)
-* Whether to pull SLI/SLO information from a Dynatrace dashboard or use the stored `sli.yaml` and `slo.yaml` in the Keptn Configuration Repository
-
-Here is an example `dynatrace.conf.yaml`
 ```yaml
----
-spec_version: '0.1.0'
-dtCreds: dynatrace-preprod
-dashboard: query
-```
-
-To upload this to your Keptn project you can for instance use the Keptn CLI:
-```console
-keptn add-resource --project=yourproject --stage=yourstage --resource=./dynatrace.conf.yaml --resourceUri=dynatrace/dynatrace.conf.yaml
-```
-
-**dtCreds**
-*dtCreds* allows you to specify the name of the k8s secret in your Keptn namespace that holds the required credentials to connect to the Dynatrace Tenant. This extends the default behavior as explained in the beginning by having the *dynatrace-sli-service* first look at the secret defined in dtCreds. If dtCreds is not specified or if there is no `dynatrace.conf.yaml` at all then it just does the default behavior.
-
-In the example above where dtCreds was specified with the value *dynatrace-preprod* the *dynatrace-sli-service* would be looking for the first matching secret in the following order: *dynatrace-preprod*, *dynatrace-credentials-YOURKEPTNPROJECT*, *dynatrace-credentials*, *dynatrace*
-If none of these secrets is configured in your k8s Keptn namespace the *dynatrace-sli-service* will respond with an error indicating that no Dynatrace credentials could be found!
-
-For completeness of the example - here is the way on how to create that secret so it matches whats in `dynatrace.conf.yaml`:
-```console
-kubectl create secret generic dynatrace-preprod -n "keptn" --from-literal="DT_TENANT=$DT_TENANT" --from-literal="DT_API_TOKEN=$DT_API_TOKEN"
-```
-
-*dtCreds* was requested by many users as it gives you the option to specify credentials for your different Dynatrace Tenants, e.g: my-dynatrace-preprod, my-dynatrace-prod, my-dynatrace-dev. And then you can configure on project, stage or even service level which Dynatrace Tenant to be used. This gives you all flexiblity to manage multiple environments within a single project but separate it out by e.g: stages
-
-
-## Set up Dynatrace monitoring for already existing Keptn projects
-
-If you already have created a project using Keptn and would like to enable Dynatrace monitoring for that project afterwards, please execute the following command:
-
-```console
-keptn configure monitoring dynatrace --project=<PROJECT_NAME>
-```
-
-**ATTENTION:** If you have different Dynatrace Tenants (or Managed Environments) and want to make sure a Keptn project is linked to the correct Dynatrace Tenant/Environment please have a look at the dynatrace.conf.yaml file option as explained further down in this readme. It allows you on a project level to specify which Dynatrace Tenant/Environment to use. Whats needed is that you first upload dynatrace.conf.yaml on project level before calling keptn configure monitoring!
-
-## Usage information
-
-### Sending Events to Dynatrace Monitored Entities
-
-By default, the *dynatrace-service* assumes that all events it sends to Dynatrace, e.g: Deployment or Test Start/Stop Events are sent to a monitored Dynatrace SERVICE entity that has the following attachRule definition:
-```
 attachRules:
   tagRule:
   - meTypes:
@@ -90,10 +23,13 @@ attachRules:
 
 If your services are deployed with Keptn's *helm-service*, chances are that your services are automatically tagged like this. Here is a screenshot of how these tags show up in Dynatrace for a service deployed with Keptn:
 
-![](./assets/keptn_tags_in_dynatrace.png)
+![](./images/keptn_tags_in_dynatrace.png)
 
-If your services are however not tagged with these but other tags - or if you want the *dynatrace-service* to send the events not to a service but rather an application, process group or host then you can overwrite the default behavior by providing a *dynatrace/dynatrace.conf.yaml* file. This file can either be located on project, stage or service level. This file allows you to define your own attachRules and also allows you to leverage all available $PLACEHOLDERS such as $SERVICE,$STAGE,$PROJECT,$LABEL.YOURLABEL, etc. - here is one example: It will instruct the *dynatrace-service* to send its events to a monitored Dynatrace Service that holds a tag with the key that matches your Keptn Service name ($SERVICE) as well as holds an additional auto-tag that defines the enviornment to be pulled from a label that has been sent to Keptn.
-```
+If your services are however not tagged with these but other tags or if you want the *dynatrace-service* to send the events not to a service but rather an application, process group or host then you can overwrite the default behavior by providing a `dynatrace.conf.yaml` file. This file can either be located on project, stage or service level. This file allows you to define your own attachRules and also allows you to leverage placeholders such as `$SERVICE`, `$STAGE`, `$PROJECT`, `$LABEL.YOURLABEL` etc. 
+
+The following example instructs the *dynatrace-service* to send its events to a monitored Dynatrace Service that holds a tag with the key that matches your Keptn Service name (`$SERVICE`) as well as holds an additional auto-tag that defines the environment to be pulled from a label that has been sent to Keptn:
+
+```yaml
 ---
 spec_version: '0.1.0'
 attachRules:
@@ -108,17 +44,18 @@ attachRules:
       value: $LABEL.environment
 ```
 
-Now - once you have this file - make sure you add it as a resource to your Keptn Project. As mentioned above - the dynatrace/dynatrace.conf.yaml can be uploaded either on project, service or stage level. Here is an example on how to define it for the whole project!
-```
+Now - once you have this file - make sure you add it as a resource to your Keptn Project. As mentioned above - the `dynatrace.conf.yaml` can be uploaded either on project, service or stage level. Here is an example on how to define it for the whole project:
+
+```console
 keptn add-resource --project=yourproject --resource=dynatrace/dynatrace.conf.yaml --resourceUri=dynatrace/dynatrace.conf.yaml
 ```
 
-### Enriching Events sent to Dynatrace with more context
+## Enriching Events sent to Dynatrace with more context
 
 The *dynatrace-service* sends CUSTOM_DEPLOYMENT, CUSTOM_INFO and CUSTOM_ANNOTATION events when it handles Keptn events such as deployment-finished, test-finished or evaluation-done. The *dynatrace-service* will parse all labels in the Keptn event and will pass them on to Dynatrace as custom properties. This gives you more flexiblity in passing more context to Dynatrace, e.g: ciBackLink for a CUSTOM_DEPLOYMENT or things like Jenkins Job ID, Jenkins Job URL, etc. that will show up in Dynatrace as well. 
 
 Here is a sample Deployment Finished Event:
-```
+```json
 {
   "type": "sh.keptn.events.deployment-finished",
   "contenttype": "application/json",
@@ -149,13 +86,15 @@ Here is a sample Deployment Finished Event:
 
 It will result in the following events in Dynatrace:
 
-![](./assets/deployevent.png)
+![](./images/deployevent.png)
 
-### Sending Events to different Dynatrace Environments per Project, Stage or Service
+## Sending Events to different Dynatrace Environments per Project, Stage or Service
 
-Many Dynatrace user have different Dynatrace environments for e.g: Pre-Production vs Production. By default the *dynatrace-service* gets the Dynatrace Tenant URL & Token from the k8s secret stored in keptn/dynatrace (see installation instructions for details).
-If you have multiple Dynatrace environment and want to have the *dynatrace-service* send events to a specific Dynatrace Environment for a specific Keptn Project, Stage or Service you can now specify the name of the secret that should be used in the *dynatrace.conf.yaml* which was introduced earlier. Here is a sample file:
-```
+Many Dynatrace user have different Dynatrace environments for pre-production and production. By default the *dynatrace-service* gets the Dynatrace Tenant URL and Token from the `dynatrace` Kubernetes secret (see installation instructions for details).
+
+If you have multiple Dynatrace environments and want to have the *dynatrace-service* send events to a specific Dynatrace Environment for a specific Keptn Project, Stage or Service you can specify the name of the secret that should be used in the `dynatrace.conf.yaml` which was introduced earlier. Here is a sample file:
+
+```yaml
 ---
 spec_version: '0.1.0'
 dtCreds: dynatrace-production
@@ -171,23 +110,24 @@ attachRules:
       value: $LABEL.environment
 ```
 
-The *dtCreds* value references your k8s secret where you store your Tenant and Token information. If you do not specify dtCreds it defaults to *dynatrace* which means it is the default behavior that we had for this service since the beginning!
+The `dtCreds` value references your Kubernetes secret where you store your Dynatrace tenant and API token information. If you do not specify `dtCreds` it defaults to `dynatrace` which means it is the default behavior that we had for this service since the beginning!
 
-As a reminder - here is the way how to upload this to your Keptn Configuration Repository. In case you have two separate dynatrace.conf.yaml for your different dynatrace tenants you can even upload them to your different stages in your Keptn project in case your different stages are monitored by different dynatrace enviornments. Here are some examples on how to upload these files:
-```
+As a reminder - here is the way how to upload this to your Keptn Configuration Repository. In case you have two separate `dynatrace.conf.yaml` for your different Dynatrace tenants you can even upload them to your different stages in your Keptn project in case your different stages are monitored by different Dynatrace enviornments, e.g.:
+
+```console
 keptn add-resource --project=yourproject --stage=preprod --resource=dynatrace/dynatrace-preprod.conf.yaml --resourceUri=dynatrace/dynatrace.conf.yaml
+
 keptn add-resource --project=yourproject --stage=production --resource=dynatrace/dynatrace-production.conf.yaml --resourceUri=dynatrace/dynatrace.conf.yaml
 ```
 
+## Synchronizing Service Entities detected by Dynatrace
 
-### Synchronizing Service Entities detected by Dynatrace
-
-The Dynatrace service allows Service Entities detected by Dynatrace to be automatically imported into Keptn. To enable this feature, the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES`
+The *dynatrace-service* allows Service Entities detected by Dynatrace to be automatically imported into Keptn. To enable this feature, the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES`
 needs to be set to `true`. Once enabled, the service will by default scan Dynatrace for Service Entities every 60 seconds. This interval can be configured by changing the environment variable `SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS`.
 
 To import a Service Entity into Keptn, a project with the name `dynatrace`, containing the stage `quality-gate` has to be available within Keptn. To create the project, create a `shipyard.yaml` file with the following content:
 
-```
+```yaml
 stages:
   - name: "quality-gate"
     test_strategy: "performance"
@@ -195,41 +135,42 @@ stages:
 
 Afterwards, create the project using the following command:
 
-```
+```console
 keptn create project dynatrace --shipyard=shipyard.yaml
 ```
 
 After the project has been created, you can import Service Entities detected by Dynatrace by applying the tags `keptn_managed` and `keptn_service: <service_name>`:
 
-![](./assets/service_tags.png)
+![](./images/service_tags.png)
 
 To set the `keptn_managed` tag, you can use the Dynatrace UI: First, in the **Transactions and services** menu, open the Service Entity you would like to tag, and add the `keptn_managed` tag as shown in the screenshot below:
 
-![](./assets/keptn_managed_tag.png)
+![](./images/keptn_managed_tag.png)
  
-The `keptn_service` tag can be set in two ways. 
+The `keptn_service` tag can be set in two ways: 
 
 1. Using an automated tagging rule, which can be set up in the menu **Settings > Tags > Automatically applied tags**. Within this section, add a new rule with the settings shown below:
-    ![](./assets/keptn_service_tag.png)
 
-1. Sending a POST API call to the `v2/tags` endpoint; [see here](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/custom-tags/post-tags/)
+    ![](./images/keptn_service_tag.png)
+
+1. Sending a POST API call to the `v2/tags` endpoint ([as described here](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/custom-tags/post-tags/)):
     ```console
     curl -X POST "${DYNATRACE_TENANT}/api/v2/tags?entitySelector=${ENTITY_ID}" -H "accept: application/json; charset=utf-8" -H "Authorization: Api-Token ${API_TOKEN}" -H "Content-Type: application/json; charset=utf-8" -d "{\"tags\":[{\"key\":\"keptn_service\",\"value\":\"test\"}]}"
     ```
 
-The Dynatrace Service will then periodically check for services containing those tags and create correlating services within the `dynatrace` project in Keptn. After the service synchronization, you should be able to see the newly created services within the Bridge:
+The *dynatrace-service* will then periodically check for services containing those tags and create correlating services within the `dynatrace` project in Keptn. After the service synchronization, you should be able to see the newly created services within the Bridge:
 
-![](./assets/keptn_services_imported.png)
+![](./images/keptn_services_imported.png)
 
 Note that if you would like to remove one of the imported services from Keptn, you will need to use the Keptn CLI to delete the service after removing the `keptn_managed` and `keptn_service` tags:
 
-```
+```console
 keptn delete service <service-to-be-removed> --project=dynatrace
 ```
 
-In addition to creating the service, the dynatrace-service will also upload the following default `slo.yaml` to enable the quality-gates feature for the service:
+In addition to creating the service, the *dynatrace-service* will also upload the following default `slo.yaml` to enable the quality-gates feature for the service:
 
-```
+```yaml
 ---
 spec_version: "1.0"
 comparison:
@@ -259,9 +200,9 @@ total_score:
   warning: "75%"
 ```
 
-To enable queries against the SLIs specified in the SLO.yaml file, the following configuration is created for the SLI configuration for the `dynatrace-sli-service`:
+To enable queries against the SLIs specified in the `SLO.yaml` file, the following configuration is created for the SLI configuration for the *dynatrace-service*:
 
-```
+```yaml
 ---
 spec_version: '1.0'
 indicators:
@@ -272,21 +213,22 @@ indicators:
   response_time_p95: "metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"`
 ```
 
-This file will be stored in the `dynatrace/sli.yaml` config file for the created service. See the [dynatrace-sli-service docs](https://github.com/keptn-contrib/dynatrace-sli-service/tree/update/test-coverage-and-doc#overwrite-sli-configuration--custom-sli-queries) for a detailed description of how this file is used 
-to configure the retrieval af metrics for a service 
+This file will be stored in the `dynatrace/sli.yaml` config file for the created service.
 
-### Sending Dynatrace Problems to Keptn for Auto-Remediation
+## Sending Dynatrace Problems to Keptn for Auto-Remediation
 
 One major use case of Keptn is Auto-Remediation. This is where Keptn receives a problem event which then triggers a remediation workflow.
+
 External tools such as Dynatrace can send a `sh.keptn.events.problem` event to Keptn but first need to be mapped to a Keptn Project, Service and Stage. Depending on the alerting tool this might be done differently. 
 
 The *dynatrace-service* provides the capabilty to receive such a `sh.keptn.events.problem` - analyzes its content and sends a `sh.keptn.event.problem.open` to the matching keptn project, service and stage including all relevent problem details such as PID, ProblemTitle, Problem URL, ...
 
 **Setting Up Problem Notification for Problems detected on Keptn Deployed Services**
 
-If you use Keptn to deploy your microservices and follow our tagging practices Dynatrace will tag your monitored services with keptn_project, keptn_service and keptn_stage. If Dynatrace then detects a problem in one of these deployed services, e.g: High Failure Rate, Slow response time, ... you can let Dynatrace send these problems back to Keptn and map the problem directly to the correct Kept Project, Stage and Service.
+If you use Keptn to deploy your microservices and follow our tagging practices, Dynatrace will tag your monitored services with `keptn_project`, `keptn_service` and `keptn_stage`. If Dynatrace then detects a problem in one of these deployed services, e.g: High Failure Rate, Slow response time, ... you can let Dynatrace send these problems back to Keptn and map the problem directly to the correct Kept Project, Stage and Service.
 
-To setup this integration you just need to setup a Custo Problem Notification that looks like this: 
+To setup this integration you just need to setup a Custom Problem Notification that looks like this: 
+
 ```json
 {
     "specversion":"1.0",
@@ -310,16 +252,17 @@ To setup this integration you just need to setup a Custo Problem Notification th
 }
 ```
 
-The *dynatrace-service* will parse the "Tags" field and tries to find keptn_project, keptn_service and keptn_stage tags that come directly from the impacted entities that Dynatrace detected. If the problem was in fact detected on a Keptn deployed service the `{Tags}` string should contain the correct information and the mapping will work.
+The *dynatrace-service* will parse the `Tags` field and tries to find `keptn_project`, `keptn_service` and `keptn_stage` tags that come directly from the impacted entities that Dynatrace detected. If the problem was in fact detected on a Keptn deployed service the `{Tags}` string should contain the correct information and the mapping will work.
 
-*Best practice:* if you setup this type of integration we suggest that you use a Dynatrace Alerting Profile that only includes problems on services that have the Keptn tags. Otherwise problems will be sent to Keptn that cant be mapped through this capability!
+*Best practice:* if you setup this type of integration we suggest that you use a Dynatrace Alerting Profile that only includes problems on services that have the Keptn tags. Otherwise problems will be sent to Keptn that can't be mapped through this capability!
 
 
-**Setting Up Problem Notification for ANY type of detected problem, e.g: Infrastructure, ...**
+**Setting Up Problem Notification for ANY type of detected problem, e.g. Infrastructure**
 
-So - what if you want to send any type of problem for a specific Alerting Profile to Keptn and use Keptn to orchestrate auto-remediation workflows? In that case we allow you specify Keptn Project, Stage and Service as properties in the data structure that is sent to Keptn.
+So - what if you want to send any type of problem for a specific Alerting Profile to Keptn and use Keptn to orchestrate auto-remediation workflows? In that case we allow you to specify the Keptn Project, Stage and Service as properties in the data structure that is sent to Keptn.
 
 Here the custom payload for a Custom Notification Integration that will send all problems to a Keptn project called `dynatrace`, stage called `production` and service called `allproblems`:
+
 ```json
 {
     "specversion":"1.0",
@@ -346,11 +289,10 @@ Here the custom payload for a Custom Notification Integration that will send all
 }
 ``` 
 
-When the *dynatrace-service* receives this `sh.keptn.events.problem` it will parse the fields KeptnProject, KeptnService and KeptnStage and will then send a `sh.keptn.event.problem.open` to Keptn including the rest of the problem details!
-This allows you to send any type of Dynatrace detected problem to Keptn and let Keptn execute a remediation workflow
+When the *dynatrace-service* receives this `sh.keptn.events.problem` it will parse the fields `KeptnProject`, `KeptnService` and `KeptnStage` and will then send a `sh.keptn.event.problem.open` to Keptn including the rest of the problem details! This allows you to send any type of Dynatrace detected problem to Keptn and let Keptn execute a remediation workflow.
 
-*Best Practice:* We suggest that you use Dynatrace Alerting Profiles to filter on certain problem types, e.g: Infrastructure problems in production, Slow Performance in Developer Environment ...  We then also suggest that you create a Keptn project on Dynatrace to handle these remediation workflows and create a Keptn Service for each alerting profile. With this you have a clear match of Problems per Alerting Profile and a Keptn Remediation Workflow that will be executed as it matches your Keptn Project and Service. For stage I suggest you also go with the environment names you have, e.g: Pre-Prod or Production.
+*Best Practice:* We suggest that you use Dynatrace Alerting Profiles to filter on certain problem types, e.g: Infrastructure problems in production, Slow Performance in Developer Environment ...  We then also suggest that you create a Keptn project on Dynatrace to handle these remediation workflows and create a Keptn Service for each alerting profile. With this you have a clear match of Problems per Alerting Profile and a Keptn Remediation Workflow that will be executed as it matches your Keptn Project and Service. For stage I suggest you also go with the environment names you have, e.g. Pre-Prod or Production.
 
 Here is a screenshot of a workflow triggered by a Dynatrace problem and how it then executes in Keptn:
 
-![](./assets/remediation_workflow.png)
+![](./images/remediation_workflow.png)

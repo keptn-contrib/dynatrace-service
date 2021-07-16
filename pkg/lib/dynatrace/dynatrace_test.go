@@ -402,7 +402,7 @@ func TestGetSLIValueWithSLOPrefix(t *testing.T) {
 
 func TestGetCustomQueries(t *testing.T) {
 	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	keptncommon.NewLogger("test-context", "test-event", "dynatrace-sli-service-testing")
+	keptncommon.NewLogger("test-context", "test-event", "dynatrace-service-testing")
 
 	common_sli.RunLocal = true
 
