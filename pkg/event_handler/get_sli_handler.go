@@ -456,7 +456,7 @@ func getDynatraceCredentials(secretName string, project string) (*common_sli.DTC
  */
 func sendGetSLIFinishedEvent(inputEvent cloudevents.Event, eventData *keptnv2.GetSLITriggeredEventData, indicatorValues []*keptnv2.SLIResult, err error) error {
 
-	source, _ := url.Parse("dynatrace-sli-service")
+	source, _ := url.Parse("dynatrace-service")
 
 	// if an error was set - the indicators will be set to failed and error message is set to each
 	if err != nil {
@@ -519,7 +519,7 @@ func sendGetSLIFinishedEvent(inputEvent cloudevents.Event, eventData *keptnv2.Ge
 
 func sendGetSLIStartedEvent(inputEvent cloudevents.Event, eventData *keptnv2.GetSLITriggeredEventData) error {
 
-	source, _ := url.Parse("dynatrace-sli-service")
+	source, _ := url.Parse("dynatrace-service")
 
 	getSLIStartedEvent := keptnv2.GetSLIStartedEventData{
 		EventData: keptnv2.EventData{
