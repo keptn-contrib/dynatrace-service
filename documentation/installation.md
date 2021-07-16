@@ -84,7 +84,7 @@ helm upgrade --install dynatrace-service -n keptn https://github.com/keptn-contr
 
 * When an event is sent out by Keptn, you see an event in Dynatrace for the correlating service:
 
-![Dynatrace events](assets/events.png?raw=true "Dynatrace Events")
+![Dynatrace events](images/events.png?raw=true "Dynatrace Events")
 
 
 ### Up- or Downgrading

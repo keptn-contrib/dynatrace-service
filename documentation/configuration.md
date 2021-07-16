@@ -90,7 +90,7 @@ attachRules:
 
 If your services are deployed with Keptn's *helm-service*, chances are that your services are automatically tagged like this. Here is a screenshot of how these tags show up in Dynatrace for a service deployed with Keptn:
 
-![](./assets/keptn_tags_in_dynatrace.png)
+![](./images/keptn_tags_in_dynatrace.png)
 
 If your services are however not tagged with these but other tags - or if you want the *dynatrace-service* to send the events not to a service but rather an application, process group or host then you can overwrite the default behavior by providing a *dynatrace/dynatrace.conf.yaml* file. This file can either be located on project, stage or service level. This file allows you to define your own attachRules and also allows you to leverage all available $PLACEHOLDERS such as $SERVICE,$STAGE,$PROJECT,$LABEL.YOURLABEL, etc. - here is one example: It will instruct the *dynatrace-service* to send its events to a monitored Dynatrace Service that holds a tag with the key that matches your Keptn Service name ($SERVICE) as well as holds an additional auto-tag that defines the enviornment to be pulled from a label that has been sent to Keptn.
 ```
@@ -149,7 +149,7 @@ Here is a sample Deployment Finished Event:
 
 It will result in the following events in Dynatrace:
 
-![](./assets/deployevent.png)
+![](./images/deployevent.png)
 
 ### Sending Events to different Dynatrace Environments per Project, Stage or Service
 
@@ -201,16 +201,16 @@ keptn create project dynatrace --shipyard=shipyard.yaml
 
 After the project has been created, you can import Service Entities detected by Dynatrace by applying the tags `keptn_managed` and `keptn_service: <service_name>`:
 
-![](./assets/service_tags.png)
+![](./images/service_tags.png)
 
 To set the `keptn_managed` tag, you can use the Dynatrace UI: First, in the **Transactions and services** menu, open the Service Entity you would like to tag, and add the `keptn_managed` tag as shown in the screenshot below:
 
-![](./assets/keptn_managed_tag.png)
+![](./images/keptn_managed_tag.png)
  
 The `keptn_service` tag can be set in two ways. 
 
 1. Using an automated tagging rule, which can be set up in the menu **Settings > Tags > Automatically applied tags**. Within this section, add a new rule with the settings shown below:
-    ![](./assets/keptn_service_tag.png)
+    ![](./images/keptn_service_tag.png)
 
 1. Sending a POST API call to the `v2/tags` endpoint; [see here](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/custom-tags/post-tags/)
     ```console
@@ -219,7 +219,7 @@ The `keptn_service` tag can be set in two ways.
 
 The Dynatrace Service will then periodically check for services containing those tags and create correlating services within the `dynatrace` project in Keptn. After the service synchronization, you should be able to see the newly created services within the Bridge:
 
-![](./assets/keptn_services_imported.png)
+![](./images/keptn_services_imported.png)
 
 Note that if you would like to remove one of the imported services from Keptn, you will need to use the Keptn CLI to delete the service after removing the `keptn_managed` and `keptn_service` tags:
 
@@ -353,4 +353,4 @@ This allows you to send any type of Dynatrace detected problem to Keptn and let 
 
 Here is a screenshot of a workflow triggered by a Dynatrace problem and how it then executes in Keptn:
 
-![](./assets/remediation_workflow.png)
+![](./images/remediation_workflow.png)
