@@ -4,7 +4,7 @@ dynatraceService:
     pullPolicy: IfNotPresent                 # Kubernetes Image Pull Policy
     tag: ""                                  # Container Tag
   service:
-    enabled: true                            # Creates a Kubernetes Service for the dynatrace-sli-service
+    enabled: true                            # Creates a Kubernetes Service for the dynatrace-service
   config:
     generateTaggingRules: false              # Generate Tagging Rules in Dynatrace Tenant
     generateProblemNotifications: false      # Generate Problem Notifications in Dynatrace Tenant
@@ -23,9 +23,9 @@ distributor:
   metadata:
     hostname: ""                             # Sets the hostname sent by the distributor to the control-plane
     namespace: ""                            # Sets the namespace sent by the distributor to the control-plane
-  stageFilter: ""                            # Sets the stage this dynatrace-sli-service belongs to
-  serviceFilter: ""                          # Sets the service this dynatrace-sli-service belongs to
-  projectFilter: ""                          # Sets the project this dynatrace-sli-service belongs to
+  stageFilter: ""                            # Sets the stage this dynatrace-service belongs to
+  serviceFilter: ""                          # Sets the service this dynatrace-service belongs to
+  projectFilter: ""                          # Sets the project this dynatrace-service belongs to
   image:
     repository: docker.io/keptn/distributor  # Container Image Name
     pullPolicy: IfNotPresent                 # Kubernetes Image Pull Policy
