@@ -4,6 +4,17 @@
 [![Build Status](https://travis-ci.org/keptn-contrib/dynatrace-service.svg?branch=master)](https://travis-ci.org/keptn-contrib/dynatrace-service)
 [![Go Report Card](https://goreportcard.com/badge/github.com/keptn-contrib/dynatrace-service)](https://goreportcard.com/report/github.com/keptn-contrib/dynatrace-service)
 
+## Important Notice
+
+The *dynatrace-service* is currently absorbing the functionality of the [*dynatrace-sli-service*](https://www.github.com/keptn-contrib/dynatrace-sli-service). Until the merge is complete and the combined service is released, we recommend that you continue to use the latest releases of the two services as outlined in their respective documentation:
+
+| Service | Version | Release | Documentation |
+|---------|---------|---------|---------------|
+| dynatrace-service | v0.15.1 | [(Release)](https://github.com/keptn-contrib/dynatrace-service/releases/tag/0.15.1) | [(Documentation)](https://github.com/keptn-contrib/dynatrace-service/blob/0.15.1/README.md) |
+| dynatrace-sli-service | v0.12.1 | [(Release)](https://github.com/keptn-contrib/dynatrace-sli-service/releases/tag/0.12.1) | [(Documentation)](https://github.com/keptn-contrib/dynatrace-sli-service/blob/0.12.1/README.md) |
+
+---
+
 The *dynatrace-service* is a [Keptn-service](https://keptn.sh) that forwards Keptn events - occurring during a delivery workflow - to Dynatrace. In addition, the service is responsible for configuring your Dynatrace tenant to fully interact with the Keptn installation.
  
 The service is subscribed to the following [Keptn CloudEvents](https://github.com/keptn/spec/blob/master/cloudevents.md):
