@@ -272,8 +272,7 @@ func AddResourceContentToSLIMap(SLIs map[string]string, sliFilePath string, sliF
 	if sliFilePath != "" {
 		localFileContent, err := ioutil.ReadFile(sliFilePath)
 		if err != nil {
-			log.WithField("sliFilePath", sliFilePath).Info("Could not load file")
-			return nil, nil
+			return nil, err
 		}
 		log.WithField("sliFilePath", sliFilePath).Info("Loaded LOCAL file")
 		sliFileContent = string(localFileContent)

@@ -171,6 +171,8 @@ func (dt *DynatraceHelper) createRequest(apiPath string, method string, body []b
 		url = dt.DynatraceCreds.Tenant + apiPath
 	}
 
+	log.WithField("requestUrl", url).Trace("createRequest")
+
 	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new request: %v", err)

@@ -647,13 +647,13 @@ func TestGetTimeseriesUnsupportedSLI(t *testing.T) {
 	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	got, err := dh.getTimeseriesConfig("foobar")
+	got, err := dh.getSLIQuery("foobar")
 
 	if got != "" {
 		t.Errorf("dh.getTimeseriesConfig() returned (\"%s\"), expected(\"\")", got)
 	}
 
-	expected := "Unsupported SLI metric foobar"
+	expected := "Unsupported SLI foobar"
 
 	if err == nil {
 		t.Errorf("dh.getTimeseriesConfig() did not return an error")

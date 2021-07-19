@@ -22,6 +22,7 @@ type envConfig struct {
 }
 
 func main() {
+	log.SetLevel(log.TraceLevel)
 	var env envConfig
 	if err := envconfig.Process("", &env); err != nil {
 		log.WithError(err).Fatal("Failed to process env var")
@@ -63,7 +64,6 @@ func _main(args []string, env envConfig) int {
 func gotEvent(ctx context.Context, event cloudevents.Event) error {
 
 	dynatraceEventHandler, err := event_handler.NewEventHandler(event)
-
 	if err != nil {
 		return err
 	}
