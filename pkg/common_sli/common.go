@@ -267,17 +267,7 @@ func GetKeptnResource(keptnEvent *BaseKeptnEvent, resourceURI string) (string, e
 /**
  * Loads SLIs from a local file and adds it to the SLI map
  */
-func AddResourceContentToSLIMap(SLIs map[string]string, sliFilePath string, sliFileContent string) (map[string]string, error) {
-
-	if sliFilePath != "" {
-		localFileContent, err := ioutil.ReadFile(sliFilePath)
-		if err != nil {
-			log.WithField("sliFilePath", sliFilePath).Info("Could not load file")
-			return nil, nil
-		}
-		log.WithField("sliFilePath", sliFilePath).Info("Loaded LOCAL file")
-		sliFileContent = string(localFileContent)
-	}
+func addResourceContentToSLIMap(SLIs map[string]string, sliFileContent string) (map[string]string, error) {
 
 	if sliFileContent != "" {
 		sliConfig := keptn.SLIConfig{}
@@ -287,6 +277,13 @@ func AddResourceContentToSLIMap(SLIs map[string]string, sliFilePath string, sliF
 		}
 
 		for key, value := range sliConfig.Indicators {
+
+			if _, keyPresent := SLIs[key]; keyPresent {
+				log.WithFields(
+					log.Fields{"key": key,
+						"value": value,
+					}).Warn("Overwriting SLI in SLIMap")
+			}
 			SLIs[key] = value
 		}
 	}
@@ -310,23 +307,41 @@ func GetCustomQueries(keptnEvent *BaseKeptnEvent) (map[string]string, error) {
 	// Step 1: Load Project Level
 	foundLocation := ""
 	sliContent, err := GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelProject)
-	if err == nil && sliContent != "" {
-		sliMap, _ = AddResourceContentToSLIMap(sliMap, "", sliContent)
-		foundLocation = "project,"
+	if err != nil {
+		log.WithError(err).Warn("Could not load SLIs on project level")
+	} else {
+		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
+		if err != nil {
+			log.WithError(err).Warn("Could not add SLIs to SLIMap on project level")
+		} else {
+			foundLocation = "project,"
+		}
 	}
 
 	// Step 2: Load Stage Level
 	sliContent, err = GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelStage)
-	if err == nil && sliContent != "" {
-		sliMap, _ = AddResourceContentToSLIMap(sliMap, "", sliContent)
-		foundLocation = foundLocation + "stage,"
+	if err != nil {
+		log.WithError(err).Warn("Could not load SLIs on stage level")
+	} else {
+		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
+		if err != nil {
+			log.WithError(err).Warn("Could not add SLIs to SLIMap on stage level")
+		} else {
+			foundLocation = foundLocation + "stage,"
+		}
 	}
 
 	// Step 3: Load Service Level
 	sliContent, err = GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelService)
-	if err == nil && sliContent != "" {
-		sliMap, _ = AddResourceContentToSLIMap(sliMap, "", sliContent)
-		foundLocation = foundLocation + "service"
+	if err != nil {
+		log.WithError(err).Warn("Could not load SLIs on service level")
+	} else {
+		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
+		if err != nil {
+			log.WithError(err).Warn("Could not add SLIs to SLIMap on service level")
+		} else {
+			foundLocation = foundLocation + "service"
+		}
 	}
 
 	// couldnt load any SLIs
