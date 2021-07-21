@@ -556,6 +556,14 @@ func (ph *Handler) findDynatraceDashboard(keptnEvent *common_sli.BaseKeptnEvent)
 		}
 	}
 
+	log.WithFields(
+		log.Fields{
+			"project":        keptnEvent.Project,
+			"stage":          keptnEvent.Stage,
+			"service":        keptnEvent.Service,
+			"dashboardCount": len(dashboardsJSON.Dashboards),
+		}).Warn("Found dashboards but none matched the name specification")
+
 	return "", nil
 }
 
@@ -1726,6 +1734,8 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common_sli.BaseKep
 				if err == nil {
 					newSliResults := ph.GenerateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), baseIndicatorName, passSLOs, warningSLOs, weight, keySli, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
 					sliResults = append(sliResults, newSliResults...)
+				} else {
+					log.WithError(err).Warn("GenerateMetricQueryFromDataExplorer returned an error, SLI will not be used")
 				}
 
 			}
@@ -1767,6 +1777,8 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common_sli.BaseKep
 				if err == nil {
 					newSliResults := ph.GenerateSLISLOFromMetricsAPIQuery(len(series.Dimensions), baseIndicatorName, passSLOs, warningSLOs, weight, keySli, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
 					sliResults = append(sliResults, newSliResults...)
+				} else {
+					log.WithError(err).Warn("GenerateMetricQueryFromChart returned an error, SLI will not be used")
 				}
 			}
 		}
