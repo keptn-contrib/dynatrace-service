@@ -17,7 +17,7 @@ import (
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
-	"github.com/keptn-contrib/dynatrace-service/pkg/common_sli"
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 )
@@ -413,7 +413,7 @@ type Handler struct {
 	ApiURL        string
 	Username      string
 	Password      string
-	KeptnEvent    *common_sli.BaseKeptnEvent
+	KeptnEvent    *common.BaseKeptnEvent
 	HTTPClient    *http.Client
 	Headers       map[string]string
 	CustomQueries map[string]string
@@ -421,7 +421,7 @@ type Handler struct {
 }
 
 // NewDynatraceHandler returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewDynatraceHandler(apiURL string, keptnEvent *common_sli.BaseKeptnEvent, headers map[string]string, customFilters []*keptnv2.SLIFilter, keptnContext string, eventID string) *Handler {
+func NewDynatraceHandler(apiURL string, keptnEvent *common.BaseKeptnEvent, headers map[string]string, customFilters []*keptnv2.SLIFilter, keptnContext string, eventID string) *Handler {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
@@ -507,7 +507,7 @@ func IsValidUUID(uuid string) bool {
  *
  * Returns the UUID of the dashboard that was found. If no dashboard was found it returns ""
  */
-func (ph *Handler) findDynatraceDashboard(keptnEvent *common_sli.BaseKeptnEvent) (string, error) {
+func (ph *Handler) findDynatraceDashboard(keptnEvent *common.BaseKeptnEvent) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
 	// ph.Logger.Debug(fmt.Sprintf("Query all dashboards\n"))
@@ -576,10 +576,10 @@ func (ph *Handler) findDynatraceDashboard(keptnEvent *common_sli.BaseKeptnEvent)
 
  * Returns: parsed Dynatrace Dashboard and actual dashboard ID in case we queried a dashboard
  */
-func (ph *Handler) loadDynatraceDashboard(keptnEvent *common_sli.BaseKeptnEvent, dashboard string) (*DynatraceDashboard, string, error) {
+func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, dashboard string) (*DynatraceDashboard, string, error) {
 
 	// Option 1: Query dashboards
-	if dashboard == common_sli.DynatraceConfigDashboardQUERY {
+	if dashboard == common.DynatraceConfigDashboardQUERY {
 		dashboard, _ = ph.findDynatraceDashboard(keptnEvent)
 		if dashboard == "" {
 			log.WithFields(
@@ -641,8 +641,8 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common_sli.BaseKeptnEvent,
 func (ph *Handler) ExecuteGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*DynatraceSLOResult, error) {
 	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/slo/%s?from=%s&to=%s",
 		sloID,
-		common_sli.TimestampToString(startUnix),
-		common_sli.TimestampToString(endUnix))
+		common.TimestampToString(startUnix),
+		common.TimestampToString(endUnix))
 
 	resp, body, err := ph.executeDynatraceREST("GET", targetURL, nil)
 
@@ -676,8 +676,8 @@ func (ph *Handler) ExecuteGetDynatraceSLO(sloID string, startUnix time.Time, end
  */
 func (ph *Handler) ExecuteGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceProblemQueryResult, error) {
 	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/problems?from=%s&to=%s&%s",
-		common_sli.TimestampToString(startUnix),
-		common_sli.TimestampToString(endUnix),
+		common.TimestampToString(startUnix),
+		common.TimestampToString(endUnix),
 		problemQuery)
 
 	resp, body, err := ph.executeDynatraceREST("GET", targetURL, nil)
@@ -706,8 +706,8 @@ func (ph *Handler) ExecuteGetDynatraceProblems(problemQuery string, startUnix ti
  */
 func (ph *Handler) ExecuteGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceSecurityProblemQueryResult, error) {
 	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/securityProblems?from=%s&to=%s&%s",
-		common_sli.TimestampToString(startUnix),
-		common_sli.TimestampToString(endUnix),
+		common.TimestampToString(startUnix),
+		common.TimestampToString(endUnix),
 		problemQuery)
 
 	resp, body, err := ph.executeDynatraceREST("GET", targetURL, nil)
@@ -854,8 +854,8 @@ func (ph *Handler) BuildDynatraceUSQLQuery(query string, startUnix time.Time, en
 		"query":             usql,
 		"explain":           "false",
 		"addDeepLinkFields": "false",
-		"startTimestamp":    common_sli.TimestampToString(startUnix),
-		"endTimestamp":      common_sli.TimestampToString(endUnix),
+		"startTimestamp":    common.TimestampToString(startUnix),
+		"endTimestamp":      common.TimestampToString(endUnix),
 	}
 
 	targetURL := fmt.Sprintf("%s/api/v1/userSessionQueryLanguage/table", ph.ApiURL)
@@ -921,8 +921,8 @@ func (ph *Handler) BuildDynatraceMetricsQuery(metricQuery string, startUnix time
 	// default query params that are required: resolution, from and to
 	queryParams := map[string]string{
 		"resolution": "Inf", // resolution=Inf means that we only get 1 datapoint (per service)
-		"from":       common_sli.TimestampToString(startUnix),
-		"to":         common_sli.TimestampToString(endUnix),
+		"from":       common.TimestampToString(startUnix),
+		"to":         common.TimestampToString(endUnix),
 	}
 	// append queryParams to targetURL
 	u, err := url.Parse(targetURL)
@@ -1004,7 +1004,7 @@ func (ph *Handler) isMatchingMetricID(singleResultMetricID string, queryMetricID
 /**
  * This function will validate if the current dashboard.json stored in the configuration repo is the same as the one passed as parameter
  */
-func (ph *Handler) HasDashboardChanged(keptnEvent *common_sli.BaseKeptnEvent, dashboardJSON *DynatraceDashboard, existingDashboardContent string) bool {
+func (ph *Handler) HasDashboardChanged(keptnEvent *common.BaseKeptnEvent, dashboardJSON *DynatraceDashboard, existingDashboardContent string) bool {
 
 	jsonAsByteArray, _ := json.MarshalIndent(dashboardJSON, "", "  ")
 	newDashboardContent := string(jsonAsByteArray)
@@ -1062,7 +1062,7 @@ func (ph *Handler) ProcessSLOTile(sloID string, startUnix time.Time, endUnix tim
 	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
 	// IndicatorName is based on the slo Name
 	// the value defaults to the E
-	indicatorName := common_sli.CleanIndicatorName(sloResult.Name)
+	indicatorName := common.CleanIndicatorName(sloResult.Name)
 	value := sloResult.EvaluatedPercentage
 	sliResult := &keptnv2.SLIResult{
 		Metric:  indicatorName,
@@ -1094,7 +1094,7 @@ func (ph *Handler) ProcessSLOTile(sloID string, startUnix time.Time, endUnix tim
 		target = sloResult.TargetSuccessOLD
 	}
 	sloString := fmt.Sprintf("sli=%s;pass=>=%f;warning=>=%f", indicatorName, warning, target)
-	_, passSLOs, warningSLOs, weight, keySli := common_sli.ParsePassAndWarningFromString(sloString, []string{}, []string{})
+	_, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(sloString, []string{}, []string{})
 	sloDefinition := &keptncommon.SLO{
 		SLI:     indicatorName,
 		Weight:  weight,
@@ -1154,7 +1154,7 @@ func (ph *Handler) ProcessOpenProblemTile(problemSelector string, entitySelector
 	// lets add the SLO definitin in case we need to generate an SLO.yaml
 	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
-	_, passSLOs, warningSLOs, weight, keySli := common_sli.ParsePassAndWarningFromString(sloString, []string{}, []string{})
+	_, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(sloString, []string{}, []string{})
 	sloDefinition := &keptncommon.SLO{
 		SLI:     indicatorName,
 		Weight:  weight,
@@ -1207,7 +1207,7 @@ func (ph *Handler) ProcessOpenSecurityProblemTile(securityProblemSelector string
 	// lets add the SLO definitin in case we need to generate an SLO.yaml
 	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
-	_, passSLOs, warningSLOs, weight, keySli := common_sli.ParsePassAndWarningFromString(sloString, []string{}, []string{})
+	_, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(sloString, []string{}, []string{})
 	sloDefinition := &keptncommon.SLO{
 		SLI:     indicatorName,
 		Weight:  weight,
@@ -1502,7 +1502,7 @@ func (ph *Handler) GenerateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 					}
 
 					// make sure we have a valid indicator name by getting rid of special characters
-					indicatorName = common_sli.CleanIndicatorName(indicatorName)
+					indicatorName = common.CleanIndicatorName(indicatorName)
 
 					// calculating the value
 					value := 0.0
@@ -1566,15 +1566,15 @@ func (ph *Handler) GenerateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 //  #3: ServiceLevelObjectives
 //  #4: SLIResult
 //  #5: Error
-func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common_sli.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (string, *DynatraceDashboard, *SLI, *keptncommon.ServiceLevelObjectives, []*keptnv2.SLIResult, error) {
+func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (string, *DynatraceDashboard, *SLI, *keptncommon.ServiceLevelObjectives, []*keptnv2.SLIResult, error) {
 
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
 	// This check is espcially important for backward compatibilty as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
 	// If a dashboard.json exists and dashboard property is empty we default to QUERY - which is the old default behavior
-	existingDashboardContent, err := common_sli.GetKeptnResource(keptnEvent, common_sli.DynatraceDashboardFilename)
+	existingDashboardContent, err := common.GetKeptnResource(keptnEvent, common.DynatraceDashboardFilename)
 	if err == nil && existingDashboardContent != "" && dashboard == "" {
 		log.Debug("Set dashboard=query for backward compatibility as dashboard.json was present!")
-		dashboard = common_sli.DynatraceConfigDashboardQUERY
+		dashboard = common.DynatraceConfigDashboardQUERY
 	}
 
 	// lets load the dashboard if needed
@@ -1599,8 +1599,8 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common_sli.BaseKep
 	}
 
 	// convert timestamp to string as we mainly need strings later on
-	startInString := common_sli.TimestampToString(startUnix)
-	endInString := common_sli.TimestampToString(endUnix)
+	startInString := common.TimestampToString(startUnix)
+	endInString := common.TimestampToString(endUnix)
 
 	// if there is a dashboard management zone filter get them for both the queries as well as for the dashboard link
 	dashboardManagementZoneFilter := ""
@@ -1639,7 +1639,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common_sli.BaseKep
 			// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
 			// if we find KQG. we process the markdown
 			if strings.Contains(tile.Markdown, "KQG.") {
-				common_sli.ParseMarkdownConfiguration(tile.Markdown, dashboardSLO)
+				common.ParseMarkdownConfiguration(tile.Markdown, dashboardSLO)
 			}
 
 			continue
@@ -1717,7 +1717,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common_sli.BaseKep
 		if tile.TileType == "DATA_EXPLORER" {
 
 			// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-			baseIndicatorName, passSLOs, warningSLOs, weight, keySli := common_sli.ParsePassAndWarningFromString(tile.Name, []string{}, []string{})
+			baseIndicatorName, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(tile.Name, []string{}, []string{})
 			if baseIndicatorName == "" {
 				log.WithField("tileName", tile.Name).Debug("Data explorer tile not included as name doesnt include sli=SLINAME")
 				continue
@@ -1753,7 +1753,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common_sli.BaseKep
 		}
 
 		// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-		baseIndicatorName, passSLOs, warningSLOs, weight, keySli := common_sli.ParsePassAndWarningFromString(tileTitle, []string{}, []string{})
+		baseIndicatorName, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(tileTitle, []string{}, []string{})
 		if baseIndicatorName == "" {
 			log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
 			continue
@@ -2073,7 +2073,7 @@ func (ph *Handler) replaceQueryParameters(query string) string {
 	query = strings.Replace(query, "$SERVICE", ph.Service, -1)
 	query = strings.Replace(query, "$DEPLOYMENT", ph.Deployment, -1)*/
 
-	query = common_sli.ReplaceKeptnPlaceholders(query, ph.KeptnEvent)
+	query = common.ReplaceKeptnPlaceholders(query, ph.KeptnEvent)
 
 	return query
 }

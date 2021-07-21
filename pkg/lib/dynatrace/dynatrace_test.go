@@ -26,7 +26,7 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"golang.org/x/net/context"
 
-	"github.com/keptn-contrib/dynatrace-service/pkg/common_sli"
+	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 )
 
 const QUALITYGATE_DASHBOARD_ID = "12345678-1111-4444-8888-123456789012"
@@ -131,8 +131,8 @@ func testingDynatraceHTTPClient() (*http.Client, string, func()) {
 /**
  * Creates a new Keptn Event
  */
-func testingGetKeptnEvent(project string, stage string, service string, deployment string, test string) *common_sli.BaseKeptnEvent {
-	keptnEvent := &common_sli.BaseKeptnEvent{}
+func testingGetKeptnEvent(project string, stage string, service string, deployment string, test string) *common.BaseKeptnEvent {
+	keptnEvent := &common.BaseKeptnEvent{}
 	keptnEvent.Project = project
 	keptnEvent.Stage = stage
 	keptnEvent.Service = service
@@ -147,7 +147,7 @@ func testingGetKeptnEvent(project string, stage string, service string, deployme
  * It returns the Dynatrace Handler as well as the httpClient, mocked server url and the teardown method
  * ATTENTION: When using this method you have to call the "teardown" method that is returned in the last parameter
  */
-func testingGetDynatraceHandler(keptnEvent *common_sli.BaseKeptnEvent) (*Handler, *http.Client, string, func()) {
+func testingGetDynatraceHandler(keptnEvent *common.BaseKeptnEvent) (*Handler, *http.Client, string, func()) {
 	httpClient, url, teardown := testingDynatraceHTTPClient()
 
 	dh := NewDynatraceHandler(url, keptnEvent, map[string]string{
@@ -229,7 +229,7 @@ func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
 	defer teardown()
 
 	// this should load the dashboard
-	dashboardJSON, dashboard, err := dh.loadDynatraceDashboard(keptnEvent, common_sli.DynatraceConfigDashboardQUERY)
+	dashboardJSON, dashboard, err := dh.loadDynatraceDashboard(keptnEvent, common.DynatraceConfigDashboardQUERY)
 
 	if dashboardJSON == nil {
 		t.Errorf("Didnt query dashboard for quality gate project even though it shoudl exist: " + dashboard)
@@ -311,7 +311,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
-	dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, err := dh.QueryDynatraceDashboardForSLIs(keptnEvent, common_sli.DynatraceConfigDashboardQUERY, startTime, endTime)
+	dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, err := dh.QueryDynatraceDashboardForSLIs(keptnEvent, common.DynatraceConfigDashboardQUERY, startTime, endTime)
 
 	if dashboardLinkAsLabel == "" {
 		t.Errorf("No dashboard link label generated")
@@ -404,9 +404,9 @@ func TestGetCustomQueries(t *testing.T) {
 	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
 	keptncommon.NewLogger("test-context", "test-event", "dynatrace-service-testing")
 
-	common_sli.RunLocal = true
+	common.RunLocal = true
 
-	customQueries, err := common_sli.GetCustomQueries(keptnEvent)
+	customQueries, err := common.GetCustomQueries(keptnEvent)
 
 	if err != nil {
 		t.Error(err)
@@ -546,7 +546,7 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 
 	type args struct {
 		apiURL        string // this is really the tenant
-		keptnEvent    *common_sli.BaseKeptnEvent
+		keptnEvent    *common.BaseKeptnEvent
 		headers       map[string]string
 		customFilters []*keptnv2.SLIFilter
 		keptnContext  string
@@ -667,7 +667,7 @@ func TestGetTimeseriesUnsupportedSLI(t *testing.T) {
 func TestTimestampToString(t *testing.T) {
 	dt := time.Now()
 
-	got := common_sli.TimestampToString(dt)
+	got := common.TimestampToString(dt)
 
 	expected := strconv.FormatInt(dt.Unix()*1000, 10)
 
@@ -678,7 +678,7 @@ func TestTimestampToString(t *testing.T) {
 
 // tests the parseUnixTimestamp with invalid params
 func TestParseInvalidUnixTimestamp(t *testing.T) {
-	_, err := common_sli.ParseUnixTimestamp("")
+	_, err := common.ParseUnixTimestamp("")
 
 	if err == nil {
 		t.Errorf("parseUnixTimestamp(\"\") did not return an error")
@@ -687,7 +687,7 @@ func TestParseInvalidUnixTimestamp(t *testing.T) {
 
 // tests the parseUnixTimestamp with valid params
 func TestParseValidUnixTimestamp(t *testing.T) {
-	got, err := common_sli.ParseUnixTimestamp("2019-10-24T15:44:27.152330783Z")
+	got, err := common.ParseUnixTimestamp("2019-10-24T15:44:27.152330783Z")
 
 	if err != nil {
 		t.Errorf("parseUnixTimestamp(\"2019-10-24T15:44:27.152330783Z\") returned error %s", err.Error())
@@ -775,7 +775,7 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, got3, got4 := common_sli.ParsePassAndWarningFromString(tt.args.customName, []string{}, []string{})
+			got, got1, got2, got3, got4 := common.ParsePassAndWarningFromString(tt.args.customName, []string{}, []string{})
 			if got != tt.want {
 				t.Errorf("ParsePassAndWarningFromString() got = %v, want %v", got, tt.want)
 			}
@@ -804,7 +804,7 @@ func TestParseMarkdownConfiguration(t *testing.T) {
 	}
 
 	// first run - single result
-	common_sli.ParseMarkdownConfiguration("KQG.Total.Pass=90%;KQG.Total.Warning=70%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg", dashboardSLO1)
+	common.ParseMarkdownConfiguration("KQG.Total.Pass=90%;KQG.Total.Warning=70%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg", dashboardSLO1)
 
 	if dashboardSLO1.TotalScore.Pass != "90%" {
 		t.Errorf("Total Pass not 90% - is " + dashboardSLO1.TotalScore.Pass)
@@ -831,7 +831,7 @@ func TestParseMarkdownConfiguration(t *testing.T) {
 		TotalScore: &keptn.SLOScore{Pass: "", Warning: ""},
 		Comparison: &keptn.SLOComparison{CompareWith: "", IncludeResultWithScore: "", NumberOfComparisonResults: 0, AggregateFunction: ""},
 	}
-	common_sli.ParseMarkdownConfiguration("KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p50", dashboardSLO2)
+	common.ParseMarkdownConfiguration("KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p50", dashboardSLO2)
 
 	if dashboardSLO2.TotalScore.Pass != "50%" {
 		t.Errorf("Total Pass not 50% - is " + dashboardSLO2.TotalScore.Pass)
@@ -858,7 +858,7 @@ func TestParseMarkdownConfiguration(t *testing.T) {
 		TotalScore: &keptn.SLOScore{Pass: "", Warning: ""},
 		Comparison: &keptn.SLOComparison{CompareWith: "", IncludeResultWithScore: "", NumberOfComparisonResults: 0, AggregateFunction: ""},
 	}
-	common_sli.ParseMarkdownConfiguration("KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=INVALID", dashboardSLO3)
+	common.ParseMarkdownConfiguration("KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=INVALID", dashboardSLO3)
 
 	if dashboardSLO3.TotalScore.Pass != "50%" {
 		t.Errorf("Total Pass not 50% - is " + dashboardSLO3.TotalScore.Pass)
