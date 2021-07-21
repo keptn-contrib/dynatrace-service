@@ -2,12 +2,13 @@ package common
 
 import (
 	"errors"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptn "github.com/keptn/go-utils/pkg/lib"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"os"
 	"strings"
+
+	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
+	keptncommon "github.com/keptn/go-utils/pkg/lib"
+	"github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -52,7 +53,7 @@ func GetShipyardControllerURL() string {
 
 func getKeptnServiceURL(servicename, defaultURL string) string {
 	var baseURL string
-	url, err := keptncommon.GetServiceEndpoint(servicename)
+	url, err := keptn.GetServiceEndpoint(servicename)
 	if err == nil {
 		baseURL = url.String()
 	} else {
@@ -92,7 +93,7 @@ func FindProblemIDForEvent(keptnHandler *keptnv2.Keptn, labels map[string]string
 
 	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
 		Project:      keptnHandler.KeptnBase.Event.GetProject(),
-		EventType:    keptn.ProblemOpenEventType,
+		EventType:    keptncommon.ProblemOpenEventType,
 		KeptnContext: keptnHandler.KeptnContext,
 	})
 
@@ -106,7 +107,7 @@ func FindProblemIDForEvent(keptnHandler *keptnv2.Keptn, labels map[string]string
 		return "", errors.New(msg)
 	}
 
-	problemOpenEvent := &keptn.ProblemEventData{}
+	problemOpenEvent := &keptncommon.ProblemEventData{}
 	err := keptnv2.Decode(events[0].Data, problemOpenEvent)
 
 	if err != nil {
