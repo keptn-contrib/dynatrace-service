@@ -182,7 +182,7 @@ func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
 
 	value, err := runGetSLIValueTest(okResponse)
 
-	assert.EqualValues(t, errors.New("Not able to query identifier response_time_p50 from Dynatrace"), err)
+	assert.EqualValues(t, errors.New("No result matched the query's metric selector"), err)
 
 	assert.EqualValues(t, 0.0, value)
 }
