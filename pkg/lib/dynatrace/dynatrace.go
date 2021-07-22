@@ -18,6 +18,7 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
+	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 )
@@ -423,7 +424,7 @@ type Handler struct {
 // NewDynatraceHandler returns a new dynatrace handler that interacts with the Dynatrace REST API
 func NewDynatraceHandler(apiURL string, keptnEvent *common.BaseKeptnEvent, headers map[string]string, customFilters []*keptnv2.SLIFilter, keptnContext string, eventID string) *Handler {
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !IsHttpSSLVerificationEnabled()},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	ph := &Handler{
