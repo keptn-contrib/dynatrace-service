@@ -149,6 +149,7 @@ func FindProblemIDForEvent(keptnHandler *keptnv2.Keptn, labels map[string]string
 const DynatraceDashboardFilename = "dynatrace/dashboard.json"
 const DynatraceSLIFilename = "dynatrace/sli.yaml"
 const KeptnSLOFilename = "slo.yaml"
+const KeptnSLIResultFilename = "sliresult.json"
 
 const ConfigLevelProject = "Project"
 const ConfigLevelStage = "Stage"
@@ -391,7 +392,7 @@ func addResourceContentToSLIMap(SLIs map[string]string, sliFileContent string) (
  * getCustomQueries loads custom SLIs from dynatrace/sli.yaml
  * if there is no sli.yaml it will just return an empty map
  */
-func GetCustomQueries(keptnEvent *BaseKeptnEvent) (map[string]string, error) {
+func GetCustomQueries(keptnEvent *BaseKeptnEvent) map[string]string {
 	var sliMap = map[string]string{}
 	/*if common.RunLocal || common.RunLocalTest {
 		sliMap, _ = AddResourceContentToSLIMap(sliMap, "dynatrace/sli.yaml", "")
@@ -460,7 +461,7 @@ func GetCustomQueries(keptnEvent *BaseKeptnEvent) (map[string]string, error) {
 			}).Info("Found SLI queries in dynatrace/sli.yaml")
 	}
 
-	return sliMap, nil
+	return sliMap
 }
 
 // GetDynatraceConfig loads dynatrace.conf for the current service.
@@ -636,6 +637,7 @@ func ParsePassAndWarningFromString(customName string, defaultPass []string, defa
 		// the value is the after that =
 		nameString := strings.ToLower(nameValueSplits[i][:nameValueDividerIndex])
 		valueString := nameValueSplits[i][nameValueDividerIndex+1:]
+		var err error
 		switch nameString /*nameValueSplit[0]*/ {
 		case "sli":
 			sliName = valueString
@@ -648,9 +650,15 @@ func ParsePassAndWarningFromString(customName string, defaultPass []string, defa
 				Criteria: strings.Split(valueString, ","),
 			})
 		case "key":
-			keySli, _ = strconv.ParseBool(valueString)
+			keySli, err = strconv.ParseBool(valueString)
+			if err != nil {
+				log.WithError(err).Warn("Error parsing bool")
+			}
 		case "weight":
-			weight, _ = strconv.Atoi(valueString)
+			weight, err = strconv.Atoi(valueString)
+			if err != nil {
+				log.WithError(err).Warn("Error parsing weight")
+			}
 		}
 	}
 

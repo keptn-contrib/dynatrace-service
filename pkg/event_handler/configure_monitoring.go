@@ -32,9 +32,6 @@ type KeptnAPIConnectionCheck struct {
 }
 
 func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
-	var shkeptncontext string
-	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
-
 	if eh.Event.Type() == keptn.ConfigureMonitoringEventType {
 		eventData := &keptn.ConfigureMonitoringEventData{}
 		if err := eh.Event.DataAs(eventData); err != nil {
@@ -210,14 +207,12 @@ func (eh *ConfigureMonitoringEventHandler) sendConfigureMonitoringFinishedEvent(
 		},
 	}
 
-	keptnContext, _ := eh.Event.Context.GetExtension("shkeptncontext")
-
 	event := cloudevents.NewEvent()
 	event.SetSource("dynatrace-service")
 	event.SetDataContentType(cloudevents.ApplicationJSON)
 	event.SetType(keptnv2.GetFinishedEventType(keptnv2.ConfigureMonitoringTaskName))
 	event.SetData(cloudevents.ApplicationJSON, cmFinishedEvent)
-	event.SetExtension("shkeptncontext", keptnContext)
+	event.SetExtension("shkeptncontext", getShKeptnContext(eh.Event))
 	event.SetExtension("triggeredid", eh.Event.Context.GetID())
 
 	if err := eh.KeptnHandler.SendCloudEvent(event); err != nil {

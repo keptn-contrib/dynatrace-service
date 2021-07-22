@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -142,9 +141,12 @@ func addSLO(keptnEvent *common.BaseKeptnEvent, newSLO *keptncommon.SLO) error {
 
 	// and now we save it back to Keptn
 	if dashboardSLO != nil {
-		yamlAsByteArray, _ := yaml.Marshal(dashboardSLO)
+		yamlAsByteArray, err := yaml.Marshal(dashboardSLO)
+		if err != nil {
+			return err
+		}
 
-		err := common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
+		err = common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
 		if err != nil {
 			return fmt.Errorf("could not store %s : %v", common.KeptnSLOFilename, err)
 		}
@@ -169,9 +171,11 @@ func getDataFromDynatraceDashboard(dynatraceHandler *dynatrace.Handler, keptnEve
 
 	// lets store the dashboard as well
 	if dashboardJSON != nil {
-		jsonAsByteArray, _ := json.MarshalIndent(dashboardJSON, "", "  ")
-
-		err := common.UploadKeptnResource(jsonAsByteArray, common.DynatraceDashboardFilename, keptnEvent)
+		jsonAsByteArray, err := json.MarshalIndent(dashboardJSON, "", "  ")
+		if err != nil {
+			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not convert dashboard to JSON: %s", err)
+		}
+		err = common.UploadKeptnResource(jsonAsByteArray, common.DynatraceDashboardFilename, keptnEvent)
 		if err != nil {
 			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not store %s : %v", common.DynatraceDashboardFilename, err)
 		}
@@ -179,9 +183,12 @@ func getDataFromDynatraceDashboard(dynatraceHandler *dynatrace.Handler, keptnEve
 
 	// lets write the SLI to the config repo
 	if dashboardSLI != nil {
-		yamlAsByteArray, _ := yaml.Marshal(dashboardSLI)
+		yamlAsByteArray, err := yaml.Marshal(dashboardSLI)
+		if err != nil {
+			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not convert dashboardSLI to JSON: %s", err)
+		}
 
-		err := common.UploadKeptnResource(yamlAsByteArray, common.DynatraceSLIFilename, keptnEvent)
+		err = common.UploadKeptnResource(yamlAsByteArray, common.DynatraceSLIFilename, keptnEvent)
 		if err != nil {
 			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not store %s : %v", common.DynatraceSLIFilename, err)
 		}
@@ -189,9 +196,11 @@ func getDataFromDynatraceDashboard(dynatraceHandler *dynatrace.Handler, keptnEve
 
 	// lets write the SLO to the config repo
 	if dashboardSLO != nil {
-		yamlAsByteArray, _ := yaml.Marshal(dashboardSLO)
-
-		err := common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
+		yamlAsByteArray, err := yaml.Marshal(dashboardSLO)
+		if err != nil {
+			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not convert dashboardSLO to JSON: %s", err)
+		}
+		err = common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
 		if err != nil {
 			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not store %s : %v", common.KeptnSLOFilename, err)
 		}
@@ -201,9 +210,15 @@ func getDataFromDynatraceDashboard(dynatraceHandler *dynatrace.Handler, keptnEve
 	if sliResults != nil {
 		if common.RunLocal || common.RunLocalTest {
 			log.Info("(RunLocal Output) Write SLIResult to sliresult.json")
-			jsonAsByteArray, _ := json.MarshalIndent(sliResults, "", "  ")
+			jsonAsByteArray, err := json.MarshalIndent(sliResults, "", "  ")
+			if err != nil {
+				return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not convert sliResults to JSON: %s", err)
+			}
 
-			common.UploadKeptnResource(jsonAsByteArray, "sliresult.json", keptnEvent)
+			err = common.UploadKeptnResource(jsonAsByteArray, common.KeptnSLIResultFilename, keptnEvent)
+			if err != nil {
+				return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not store %s : %v", common.KeptnSLIResultFilename, err)
+			}
 		}
 	}
 
@@ -327,7 +342,7 @@ func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggered
 	// Option 2: If we have not received any data via a Dynatrace Dashboard lets query the SLIs based on the SLI.yaml definition
 	if sliResults == nil {
 		// get custom metrics for project if they exist
-		projectCustomQueries, _ := common.GetCustomQueries(keptnEvent)
+		projectCustomQueries := common.GetCustomQueries(keptnEvent)
 
 		// set our list of queries on the handler
 		if projectCustomQueries != nil {
@@ -456,8 +471,6 @@ func getDynatraceCredentials(secretName string, project string) (*common.DTCrede
  */
 func sendGetSLIFinishedEvent(inputEvent cloudevents.Event, eventData *keptnv2.GetSLITriggeredEventData, indicatorValues []*keptnv2.SLIResult, err error) error {
 
-	source, _ := url.Parse("dynatrace-service")
-
 	// if an error was set - the indicators will be set to failed and error message is set to each
 	if err != nil {
 		errMessage := err.Error()
@@ -500,17 +513,11 @@ func sendGetSLIFinishedEvent(inputEvent cloudevents.Event, eventData *keptnv2.Ge
 		},
 	}
 
-	keptnContext, err := inputEvent.Context.GetExtension("shkeptncontext")
-
-	if err != nil {
-		return fmt.Errorf("could not determine keptnContext of input event: %s", err.Error())
-	}
-
 	event := cloudevents.NewEvent()
 	event.SetType(keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName))
-	event.SetSource(source.String())
+	event.SetSource(getEventSource())
 	event.SetDataContentType(cloudevents.ApplicationJSON)
-	event.SetExtension("shkeptncontext", keptnContext)
+	event.SetExtension("shkeptncontext", getShKeptnContext(inputEvent))
 	event.SetExtension("triggeredid", inputEvent.ID())
 	event.SetData(cloudevents.ApplicationJSON, getSLIEvent)
 
@@ -518,8 +525,6 @@ func sendGetSLIFinishedEvent(inputEvent cloudevents.Event, eventData *keptnv2.Ge
 }
 
 func sendGetSLIStartedEvent(inputEvent cloudevents.Event, eventData *keptnv2.GetSLITriggeredEventData) error {
-
-	source, _ := url.Parse("dynatrace-service")
 
 	getSLIStartedEvent := keptnv2.GetSLIStartedEventData{
 		EventData: keptnv2.EventData{
@@ -540,7 +545,7 @@ func sendGetSLIStartedEvent(inputEvent cloudevents.Event, eventData *keptnv2.Get
 
 	event := cloudevents.NewEvent()
 	event.SetType(keptnv2.GetStartedEventType(keptnv2.GetSLITaskName))
-	event.SetSource(source.String())
+	event.SetSource(getEventSource())
 	event.SetDataContentType(cloudevents.ApplicationJSON)
 	event.SetExtension("shkeptncontext", keptnContext)
 	event.SetExtension("triggeredid", inputEvent.ID())
@@ -559,7 +564,5 @@ func sendEvent(event cloudevents.Event) error {
 		return err
 	}
 
-	_ = keptnHandler.SendCloudEvent(event)
-
-	return nil
+	return keptnHandler.SendCloudEvent(event)
 }

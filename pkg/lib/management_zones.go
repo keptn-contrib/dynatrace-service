@@ -2,7 +2,6 @@ package lib
 
 import (
 	"encoding/json"
-	"fmt"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -28,7 +27,6 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 		mzPayload, err := json.Marshal(managementZone)
 		if err == nil {
 			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
-
 			if err != nil {
 				// Error occurred but continue
 
@@ -46,9 +44,8 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 				})
 			}
 		} else {
-			// TODO: Check what happens to this error?
 			// Error occurred but continue
-			fmt.Errorf("failed to marshal management zone: %v", err)
+			log.WithError(err).Warn("Failed to marshal management zone for project")
 		}
 	} else {
 		dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
@@ -68,20 +65,25 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 
 		if !found {
 			managementZone := CreateManagementZoneForStage(project, stage.Name)
-			mzPayload, _ := json.Marshal(managementZone)
-			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
-			if err != nil {
-				log.WithError(err).Error("Could not create management zone")
-				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
-					Name:    managementZone.Name,
-					Success: false,
-					Message: "Could not create management zone: " + err.Error(),
-				})
+			mzPayload, err := json.Marshal(managementZone)
+			if err == nil {
+				_, err = dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
+
+				if err != nil {
+					log.WithError(err).Error("Could not create management zone")
+					dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+						Name:    managementZone.Name,
+						Success: false,
+						Message: "Could not create management zone: " + err.Error(),
+					})
+				} else {
+					dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
+						Name:    managementZone.Name,
+						Success: true,
+					})
+				}
 			} else {
-				dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
-					Name:    managementZone.Name,
-					Success: true,
-				})
+				log.WithError(err).Warn("Failed to marshal management zone for stage")
 			}
 		} else {
 			dt.configuredEntities.ManagementZones = append(dt.configuredEntities.ManagementZones, ConfigResult{
@@ -91,8 +93,6 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 			})
 		}
 	}
-
-	return
 }
 
 func getManagementZoneNameForStage(project string, stage string) string {

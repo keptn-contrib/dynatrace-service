@@ -13,7 +13,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/types"
 	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
 )
 
@@ -23,10 +22,7 @@ type CDEventHandler struct {
 }
 
 func (eh CDEventHandler) HandleEvent() error {
-	shkeptncontext, err := types.ToString(eh.Event.Context.GetExtensions()["shkeptncontext"])
-	if err != nil {
-		log.WithError(err).Warn("Event does not contain shkeptncontext")
-	}
+	shkeptncontext := getShKeptnContext(eh.Event)
 
 	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
 	if err != nil {

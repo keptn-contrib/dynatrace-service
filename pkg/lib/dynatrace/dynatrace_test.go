@@ -406,11 +406,7 @@ func TestGetCustomQueries(t *testing.T) {
 
 	common.RunLocal = true
 
-	customQueries, err := common.GetCustomQueries(keptnEvent)
-
-	if err != nil {
-		t.Error(err)
-	}
+	customQueries := common.GetCustomQueries(keptnEvent)
 
 	for k, v := range customQueries {
 		fmt.Printf("%s: %s\n", k, v)

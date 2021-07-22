@@ -1,8 +1,13 @@
 package event_handler
 
 import (
+	"net/url"
+
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/cloudevents/sdk-go/v2/types"
 	"github.com/keptn-contrib/dynatrace-service/pkg/adapter"
 	"github.com/keptn-contrib/dynatrace-service/pkg/config"
+	log "github.com/sirupsen/logrus"
 )
 
 type dtConfigurationEvent struct {
@@ -209,4 +214,17 @@ func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *co
 	de.CustomProperties = customProperties
 
 	return de
+}
+
+func getShKeptnContext(event cloudevents.Event) string {
+	shkeptncontext, err := types.ToString(event.Context.GetExtensions()["shkeptncontext"])
+	if err != nil {
+		log.WithError(err).Warn("Event does not contain shkeptncontext")
+	}
+	return shkeptncontext
+}
+
+func getEventSource() string {
+	source, _ := url.Parse("dynatrace-service")
+	return source.String()
 }

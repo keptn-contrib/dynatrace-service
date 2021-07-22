@@ -468,7 +468,10 @@ func (ph *Handler) executeDynatraceREST(httpMethod string, requestUrl string, ad
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp, nil, fmt.Errorf("failed to read response body: %v", err)
+	}
 
 	return resp, body, nil
 }
@@ -581,9 +584,10 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, das
 
 	// Option 1: Query dashboards
 	if dashboard == common.DynatraceConfigDashboardQUERY {
-		dashboard, _ = ph.findDynatraceDashboard(keptnEvent)
-		if dashboard == "" {
-			log.WithFields(
+		var err error
+		dashboard, err = ph.findDynatraceDashboard(keptnEvent)
+		if dashboard == "" || err != nil {
+			log.WithError(err).WithFields(
 				log.Fields{
 					"project": keptnEvent.Project,
 					"stage":   keptnEvent.Stage,
@@ -862,8 +866,14 @@ func (ph *Handler) BuildDynatraceUSQLQuery(query string, startUnix time.Time, en
 	targetURL := fmt.Sprintf("%s/api/v1/userSessionQueryLanguage/table", ph.ApiURL)
 
 	// append queryParams to targetURL
-	u, _ := url.Parse(targetURL)
-	q, _ := url.ParseQuery(u.RawQuery)
+	u, err := url.Parse(targetURL)
+	if err != nil {
+		log.WithError(err).Warn("Error parsing targetUrl")
+	}
+	q, err := url.ParseQuery(u.RawQuery)
+	if err != nil {
+		log.WithError(err).Warn("Error parsing targetUrl raw query")
+	}
 
 	for param, value := range queryParams {
 		q.Add(param, value)
@@ -1007,7 +1017,10 @@ func (ph *Handler) isMatchingMetricID(singleResultMetricID string, queryMetricID
  */
 func (ph *Handler) HasDashboardChanged(keptnEvent *common.BaseKeptnEvent, dashboardJSON *DynatraceDashboard, existingDashboardContent string) bool {
 
-	jsonAsByteArray, _ := json.MarshalIndent(dashboardJSON, "", "  ")
+	jsonAsByteArray, err := json.MarshalIndent(dashboardJSON, "", "  ")
+	if err != nil {
+		log.WithError(err).Warn("Could not marshal dashboard")
+	}
 	newDashboardContent := string(jsonAsByteArray)
 
 	// If ParseOnChange is not specified we consider this as a dashboard with a change
