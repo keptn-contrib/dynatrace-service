@@ -22,13 +22,17 @@ type envConfig struct {
 }
 
 func main() {
+	// only emit logs of info and higher in formal builds
+	// keep trace and debug for development
+	log.SetLevel(log.InfoLevel)
+
 	var env envConfig
 	if err := envconfig.Process("", &env); err != nil {
 		log.WithError(err).Fatal("Failed to process env var")
 	}
 
 	if common.RunLocal || common.RunLocalTest {
-		log.Println("env=runlocal: Running with local filesystem to fetch resources")
+		log.Info("env=runlocal: Running with local filesystem to fetch resources")
 	}
 
 	os.Exit(_main(os.Args[1:], env))

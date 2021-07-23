@@ -406,11 +406,11 @@ func GetCustomQueries(keptnEvent *BaseKeptnEvent) map[string]string {
 	foundLocation := ""
 	sliContent, err := GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelProject)
 	if err != nil {
-		log.WithError(err).Warn("Could not load SLIs on project level")
+		log.WithError(err).Debug("Could not load SLIs on project level")
 	} else {
 		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
 		if err != nil {
-			log.WithError(err).Warn("Could not add SLIs to SLIMap on project level")
+			log.WithError(err).Debug("Could not add SLIs to SLIMap on project level")
 		} else {
 			foundLocation = "project,"
 		}
@@ -419,11 +419,11 @@ func GetCustomQueries(keptnEvent *BaseKeptnEvent) map[string]string {
 	// Step 2: Load Stage Level
 	sliContent, err = GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelStage)
 	if err != nil {
-		log.WithError(err).Warn("Could not load SLIs on stage level")
+		log.WithError(err).Debug("Could not load SLIs on stage level")
 	} else {
 		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
 		if err != nil {
-			log.WithError(err).Warn("Could not add SLIs to SLIMap on stage level")
+			log.WithError(err).Debug("Could not add SLIs to SLIMap on stage level")
 		} else {
 			foundLocation = foundLocation + "stage,"
 		}
@@ -432,11 +432,11 @@ func GetCustomQueries(keptnEvent *BaseKeptnEvent) map[string]string {
 	// Step 3: Load Service Level
 	sliContent, err = GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelService)
 	if err != nil {
-		log.WithError(err).Warn("Could not load SLIs on service level")
+		log.WithError(err).Debug("Could not load SLIs on service level")
 	} else {
 		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
 		if err != nil {
-			log.WithError(err).Warn("Could not add SLIs to SLIMap on service level")
+			log.WithError(err).Debug("Could not add SLIs to SLIMap on service level")
 		} else {
 			foundLocation = foundLocation + "service"
 		}

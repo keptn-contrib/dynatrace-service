@@ -219,7 +219,7 @@ func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *co
 func getShKeptnContext(event cloudevents.Event) string {
 	shkeptncontext, err := types.ToString(event.Context.GetExtensions()["shkeptncontext"])
 	if err != nil {
-		log.WithError(err).Warn("Event does not contain shkeptncontext")
+		log.WithError(err).Debug("Event does not contain shkeptncontext")
 	}
 	return shkeptncontext
 }
