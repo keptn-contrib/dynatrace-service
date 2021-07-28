@@ -88,8 +88,9 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		log.WithField("eventSource", eh.Event.Source()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
 		return nil
 	}
-	var shkeptncontext string
-	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
+
+	shkeptncontext := getShKeptnContext(eh.Event)
+
 	dtProblemEvent := &DTProblemEvent{}
 	err := eh.Event.DataAs(dtProblemEvent)
 
@@ -216,11 +217,10 @@ func (eh ProblemEventHandler) extractContextFromDynatraceProblem(dtProblemEvent 
 }
 
 func createAndSendCE(problemData interface{}, shkeptncontext string, eventType string) error {
-	source, _ := url.Parse("dynatrace-service")
 
 	ce := cloudevents.NewEvent()
 	ce.SetType(eventType)
-	ce.SetSource(source.String())
+	ce.SetSource(getEventSource())
 	ce.SetDataContentType(cloudevents.ApplicationJSON)
 	ce.SetData(cloudevents.ApplicationJSON, problemData)
 	ce.SetExtension("shkeptncontext", shkeptncontext)

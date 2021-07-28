@@ -22,8 +22,6 @@ type CreateProjectEventHandler struct {
 }
 
 func (eh CreateProjectEventHandler) HandleEvent() error {
-	var shkeptncontext string
-	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
 
 	e := &keptnv2.ProjectCreateFinishedEventData{}
 	err := eh.Event.DataAs(e)

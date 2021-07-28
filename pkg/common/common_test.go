@@ -1,4 +1,4 @@
-package common_sli
+package common
 
 import (
 	"reflect"

@@ -44,7 +44,10 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 	var mzId int64 = -1
 	for _, mz := range managementZones {
 		if mz.Name == getManagementZoneNameForStage(project, stage) {
-			mzId, _ = strconv.ParseInt(mz.ID, 10, 64)
+			mzId, err = strconv.ParseInt(mz.ID, 10, 64)
+			if err != nil {
+				log.WithError(err).Warn("Could not parse management zone ID")
+			}
 		}
 	}
 	if mzId < 0 {
@@ -141,7 +144,6 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 		// TODO: improve this?
 		log.Info("To review and enable the generated custom metric events, please go to: https://" + dt.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
 	}
-	return
 }
 
 func (dt *DynatraceHelper) getCustomQueries(project string, stage string, service string) (map[string]string, error) {

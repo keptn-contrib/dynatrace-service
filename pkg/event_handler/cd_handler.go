@@ -22,8 +22,7 @@ type CDEventHandler struct {
 }
 
 func (eh CDEventHandler) HandleEvent() error {
-	var shkeptncontext string
-	_ = eh.Event.Context.ExtensionAs("shkeptncontext", &shkeptncontext)
+	shkeptncontext := getShKeptnContext(eh.Event)
 
 	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
 	if err != nil {

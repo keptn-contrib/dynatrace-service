@@ -81,7 +81,7 @@ func getDynatraceConfigResource(event EventContentAdapter) (string, error) {
 					"project": event.GetProject(),
 					"stage":   event.GetStage(),
 					"service": event.GetService(),
-				}).Info("No dynatrace.conf.yaml available for service")
+				}).Debug("No dynatrace.conf.yaml available for service")
 		} else if err != nil {
 			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s at stage %s for service %s: %v", event.GetProject(), event.GetStage(), event.GetService(), err)
 		} else {
@@ -102,7 +102,7 @@ func getDynatraceConfigResource(event EventContentAdapter) (string, error) {
 				log.Fields{
 					"project": event.GetProject(),
 					"stage":   event.GetStage(),
-				}).Info("No dynatrace.conf.yaml available for stage")
+				}).Debug("No dynatrace.conf.yaml available for stage")
 		} else if err != nil {
 			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s at stage %s: %v", event.GetProject(), event.GetStage(), err)
 		} else {
@@ -118,7 +118,7 @@ func getDynatraceConfigResource(event EventContentAdapter) (string, error) {
 	if len(event.GetProject()) > 0 {
 		keptnResourceContent, err := resourceHandler.GetProjectResource(event.GetProject(), config.DynatraceConfigFilename)
 		if err == api.ResourceNotFoundError {
-			log.WithField("project", event.GetProject()).Info("No dynatrace.conf.yaml available for project")
+			log.WithField("project", event.GetProject()).Debug("No dynatrace.conf.yaml available for project")
 		} else if err != nil {
 			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s: %v", event.GetProject(), err)
 		} else {
