@@ -142,8 +142,8 @@ type DynatraceDashboard struct {
 		Configured bool   `json:"configured"`
 		Query      string `json:"query"`
 		Type       string `json:"type"`
-		CustomName string `json:"customName`
-		Markdown   string `json:"markdown`
+		CustomName string `json:"customName"`
+		Markdown   string `json:"markdown"`
 		Bounds     struct {
 			Top    int `json:"top"`
 			Left   int `json:"left"`
