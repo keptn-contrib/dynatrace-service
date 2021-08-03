@@ -150,9 +150,7 @@ func testingGetKeptnEvent(project string, stage string, service string, deployme
 func testingGetDynatraceHandler(keptnEvent *common.BaseKeptnEvent) (*Handler, *http.Client, string, func()) {
 	httpClient, url, teardown := testingDynatraceHTTPClient()
 
-	dh := NewDynatraceHandler(url, keptnEvent, map[string]string{
-		"Authorization": "Api-Token " + "test",
-	}, nil, "", "")
+	dh := NewDynatraceHandler(url, keptnEvent, map[string]string{"Authorization": "Api-Token " + "test"}, nil)
 
 	dh.HTTPClient = httpClient
 
@@ -610,9 +608,7 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 				tt.args.apiURL,
 				tt.args.keptnEvent,
 				tt.args.headers,
-				tt.args.customFilters,
-				tt.args.keptnContext,
-				tt.args.eventID)
+				tt.args.customFilters)
 
 			gotTransport := gotHandler.HTTPClient.Transport.(*http.Transport)
 			gotProxyURL, err := gotTransport.Proxy(tt.request)
