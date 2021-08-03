@@ -256,7 +256,6 @@ func getTimeseriesConfig(metric string, customQueries map[string]string) (string
 	case ResponseTimeP95:
 		return "builtin:service.response.time:merge(0):percentile(95)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
 	default:
-		fmt.Sprintf("Unknown metric %s\n", metric)
 		return "", fmt.Errorf("unsupported SLI metric %s", metric)
 	}
 }
