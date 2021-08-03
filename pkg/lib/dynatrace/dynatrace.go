@@ -103,15 +103,6 @@ type ChartSeries struct {
 	AggregationRate string `json:"aggregationRate"`
 }
 
-// DynatraceDashboards is struct for /dashboards endpoint
-type DynatraceDashboards struct {
-	Dashboards []struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Owner string `json:"owner"`
-	} `json:"dashboards"`
-}
-
 // DynatraceDashboard is struct for /dashboards/<dashboardID> endpoint
 type DynatraceDashboard struct {
 	Metadata struct {
@@ -526,84 +517,40 @@ func IsValidUUID(uuid string) bool {
 	return r.MatchString(uuid)
 }
 
-/**
- * findDynatraceDashboard
- * Queries all Dynatrace Dashboards and returns the dashboard ID that matches the following name patter: KQG;project=%project%;service=%service%;stage=%stage;xxx
- *
- * Returns the UUID of the dashboard that was found. If no dashboard was found it returns ""
- */
+// findDynatraceDashboard Queries all Dynatrace Dashboards and returns the dashboard ID that matches the following name pattern:
+//   KQG;project=%project%;service=%service%;stage=%stage%;xxx
+// It returns the UUID of the dashboard that was found. If no dashboard was found it returns ""
 func (ph *Handler) findDynatraceDashboard(keptnEvent *common.BaseKeptnEvent) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
-	// ph.Logger.Debug(fmt.Sprintf("Query all dashboards\n"))
-
-	dashboardAPIUrl := ph.ApiURL + fmt.Sprintf("/api/config/v1/dashboards")
-	resp, body, err := ph.executeDynatraceREST("GET", dashboardAPIUrl, nil)
-
-	if resp == nil || resp.StatusCode != 200 {
-		return "", err
-	}
-
-	// parse json
-	dashboardsJSON := &DynatraceDashboards{}
-	err = json.Unmarshal(body, &dashboardsJSON)
-
+	body, err := ph.GetForPath("/api/config/v1/dashboards", nil, "Dashboards API")
 	if err != nil {
 		return "", err
 	}
 
-	// now - lets iterate through the list and find one that matches our project, stage, service ...
-	findValues := []string{strings.ToLower(fmt.Sprintf("project=%s", keptnEvent.Project)), strings.ToLower(fmt.Sprintf("service=%s", keptnEvent.Service)), strings.ToLower(fmt.Sprintf("stage=%s", keptnEvent.Stage))}
-	for _, dashboard := range dashboardsJSON.Dashboards {
-
-		// lets see if the dashboard matches our name
-		if strings.HasPrefix(strings.ToLower(dashboard.Name), "kqg;") {
-			nameSplits := strings.Split(dashboard.Name, ";")
-
-			// now lets see if we can find all our name/value pairs for project, service & stage
-			dashboardMatch := true
-			for _, findValue := range findValues {
-				foundValue := false
-				for _, nameSplitValue := range nameSplits {
-					if strings.Compare(findValue, strings.ToLower(nameSplitValue)) == 0 {
-						foundValue = true
-					}
-				}
-				if foundValue == false {
-					dashboardMatch = false
-					continue
-				}
-			}
-
-			if dashboardMatch {
-				return dashboard.ID, nil
-			}
-		}
+	// parse json
+	dashboards := &DynatraceDashboards{}
+	err = json.Unmarshal(body, &dashboards)
+	if err != nil {
+		return "", err
 	}
 
-	log.WithFields(
-		log.Fields{
-			"project":        keptnEvent.Project,
-			"stage":          keptnEvent.Stage,
-			"service":        keptnEvent.Service,
-			"dashboardCount": len(dashboardsJSON.Dashboards),
-		}).Warn("Found dashboards but none matched the name specification")
-
-	return "", nil
+	return dashboards.SearchForDashboardMatching(keptnEvent), nil
 }
 
-/**
- * loadDynatraceDashboard:
- * Depending on the dashboard parameter which is pulled from dynatrace.conf.yaml:dashboard this method either
- * -- query: queries all dashboards on the Dynatrace Tenant and returns the one that matches project/service/stage
- * -- dashboard-ID: if this is a valid dashboard ID it will query the dashboard with this ID, e.g: ddb6a571-4bda-4e8b-a9c0-4a3e02c2e14a
- * -- <empty>: will not query any dashboard
-
- * Returns: parsed Dynatrace Dashboard and actual dashboard ID in case we queried a dashboard
- */
+// loadDynatraceDashboard Depending on the dashboard parameter which is pulled from dynatrace.conf.yaml:dashboard this method either
+//   - query:        queries all dashboards on the Dynatrace Tenant and returns the one that matches project/service/stage, or
+//   - dashboard-ID: if this is a valid dashboard ID it will query the dashboard with this ID, e.g: ddb6a571-4bda-4e8b-a9c0-4a3e02c2e14a, or
+//   - <empty>:      it will not query any dashboard.
+// It returns a parsed Dynatrace Dashboard and the actual dashboard ID in case we queried a dashboard.
 func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, dashboard string) (*DynatraceDashboard, string, error) {
 
-	// Option 1: Query dashboards
+	// Option 1: there is no dashboard we should query
+	if dashboard == "" {
+		return nil, dashboard, nil
+	}
+
+	// Option 2: Query dashboards
 	if dashboard == common.DynatraceConfigDashboardQUERY {
 		var err error
 		dashboard, err = ph.findDynatraceDashboard(keptnEvent)
@@ -614,20 +561,19 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, das
 					"stage":   keptnEvent.Stage,
 					"service": keptnEvent.Service,
 				}).Debug("Dashboard option query but couldnt find KQG dashboard")
-		} else {
-			log.WithFields(
-				log.Fields{
-					"project":   keptnEvent.Project,
-					"stage":     keptnEvent.Stage,
-					"service":   keptnEvent.Service,
-					"dashboard": dashboard,
-				}).Debug("Dashboard option query found for dashboard")
-		}
-	}
 
-	// Option 2: there is no dashboard we should query
-	if dashboard == "" {
-		return nil, dashboard, nil
+			// TODO 2021-08-03: should this really return no error, if querying dashboards found no match?
+			// this would be the same result as option 1 then
+			return nil, dashboard, nil
+		}
+
+		log.WithFields(
+			log.Fields{
+				"project":   keptnEvent.Project,
+				"stage":     keptnEvent.Stage,
+				"service":   keptnEvent.Service,
+				"dashboard": dashboard,
+			}).Debug("Dashboard option query found for dashboard")
 	}
 
 	// Lets validate if we have a valid UUID - either because it was passed or because queried
@@ -638,25 +584,19 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, das
 
 	// We have a valid Dashboard UUID - now lets query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
-	dashboardAPIUrl := ph.ApiURL + fmt.Sprintf("/api/config/v1/dashboards/%s", dashboard)
-	resp, body, err := ph.executeDynatraceREST("GET", dashboardAPIUrl, nil)
-
+	body, err := ph.GetForPath("/api/config/v1/dashboards/"+dashboard, nil, "Dashboards API")
 	if err != nil {
 		return nil, dashboard, err
 	}
 
-	if resp == nil || resp.StatusCode != 200 {
-		return nil, dashboard, fmt.Errorf("No valid response from Dashboard API")
-	}
-
 	// parse json
-	dashboardJSON := &DynatraceDashboard{}
-	err = json.Unmarshal(body, &dashboardJSON)
+	dynatraceDashboard := &DynatraceDashboard{}
+	err = json.Unmarshal(body, &dynatraceDashboard)
 	if err != nil {
 		return nil, dashboard, fmt.Errorf("could not decode response payload: %v", err)
 	}
 
-	return dashboardJSON, dashboard, nil
+	return dynatraceDashboard, dashboard, nil
 }
 
 // ExecuteGetDynatraceSLO Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
