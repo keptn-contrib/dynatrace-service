@@ -63,7 +63,7 @@ const remediationTaskName = "remediation"
 
 type ProblemDetails struct {
 	// State is the state of the problem; possible values are: OPEN, RESOLVED
-	State string `json:"State,omitempty jsonschema:"enum=open,enum=resolved"`
+	State string `json:"State,omitempty" jsonschema:"enum=open,enum=resolved"`
 	// ProblemID is a unique system identifier of the reported problem
 	ProblemID string `json:"ProblemID"`
 	// ProblemTitle is the display number of the reported problem.
