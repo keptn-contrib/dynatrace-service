@@ -487,14 +487,14 @@ func checkApiResponse(resp *http.Response, body []byte) error {
 	// no error if the status code from the API is 200
 	if resp.StatusCode == 200 {
 		return nil
-	} else {
-		dtApiv2Error := &DtEnvAPIv2Error{}
-		err := json.Unmarshal(body, dtApiv2Error)
-		if err != nil {
-			return fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
-		}
-		return fmt.Errorf("Dynatrace API returned error %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
 	}
+
+	dtApiv2Error := &DtEnvAPIv2Error{}
+	err := json.Unmarshal(body, dtApiv2Error)
+	if err != nil {
+		return fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
+	}
+	return fmt.Errorf("Dynatrace API returned error %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
 }
 
 // IsValidUUID Helper function to validate whether string is a valid UUID in version 4, variant 1
