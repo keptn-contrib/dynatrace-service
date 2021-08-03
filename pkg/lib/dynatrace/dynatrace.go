@@ -497,6 +497,29 @@ func checkApiResponse(resp *http.Response, body []byte) error {
 	return fmt.Errorf("Dynatrace API returned error %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
 }
 
+// GetForPath sends a HTTP GET request to the specified apiPath and adds optional headers to the request.
+// The apiPath is appended to the base URL of the Handler
+// It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
+func (ph *Handler) GetForPath(apiPath string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
+	return ph.Get(ph.ApiURL+apiPath, additionalHeaders, errorContext)
+}
+
+// Get sends a HTTP GET request to the specified request URL and adds optional headers to the request.
+// It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
+func (ph *Handler) Get(requestURL string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
+	resp, body, err := ph.executeDynatraceREST(http.MethodGet, requestURL, additionalHeaders)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO 2021-08-03: remove the variable `errorContext` as soon as we are sure, that there is no logic based on error messages
+	if err := checkApiResponse(resp, body); err != nil {
+		return nil, fmt.Errorf("%s request %s was not successful: %w", errorContext, requestURL, err)
+	}
+
+	return body, nil
+}
+
 // IsValidUUID Helper function to validate whether string is a valid UUID in version 4, variant 1
 func IsValidUUID(uuid string) bool {
 	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
@@ -636,24 +659,18 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, das
 	return dashboardJSON, dashboard, nil
 }
 
-/**
- * ExecuteGetDynatraceSLO
- * Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
- * If successful returns the DynatraceSLOResult object
- */
+// ExecuteGetDynatraceSLO Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
+// It returns a DynatraceSLOResult object on success, an error otherwise
 func (ph *Handler) ExecuteGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*DynatraceSLOResult, error) {
-	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/slo/%s?from=%s&to=%s",
-		sloID,
-		common.TimestampToString(startUnix),
-		common.TimestampToString(endUnix))
-
-	resp, body, err := ph.executeDynatraceREST("GET", targetURL, nil)
-
+	body, err := ph.GetForPath(
+		fmt.Sprintf("/api/v2/slo/%s?from=%s&to=%s",
+			sloID,
+			common.TimestampToString(startUnix),
+			common.TimestampToString(endUnix)),
+		nil,
+		"SLO API")
 	if err != nil {
 		return nil, err
-	}
-	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("SLO API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json
@@ -672,24 +689,18 @@ func (ph *Handler) ExecuteGetDynatraceSLO(sloID string, startUnix time.Time, end
 	return &result, nil
 }
 
-/**
- * ExecuteGetDynatraceProblems
- * Calls the /problems/ API call to retrieve the the list of problems for that timeframe
- * If successful returns the DynatraceProblemQueryResult object
- */
+// ExecuteGetDynatraceProblems Calls the /problems/ API call to retrieve the the list of problems for that timeframe
+// It returns a DynatraceProblemQueryResult object on success, an error otherwise
 func (ph *Handler) ExecuteGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceProblemQueryResult, error) {
-	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/problems?from=%s&to=%s&%s",
-		common.TimestampToString(startUnix),
-		common.TimestampToString(endUnix),
-		problemQuery)
-
-	resp, body, err := ph.executeDynatraceREST("GET", targetURL, nil)
-
+	body, err := ph.GetForPath(
+		fmt.Sprintf("/api/v2/problems?from=%s&to=%s&%s",
+			common.TimestampToString(startUnix),
+			common.TimestampToString(endUnix),
+			problemQuery),
+		nil,
+		"Problems API")
 	if err != nil {
 		return nil, err
-	}
-	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("Problems API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json
@@ -702,25 +713,18 @@ func (ph *Handler) ExecuteGetDynatraceProblems(problemQuery string, startUnix ti
 	return &result, nil
 }
 
-/**
- * ExecuteGetDynatraceSecurityProblems
- * Calls the /securityProblems/ API call to retrieve the list of security problems for that timeframe
- * If successful returns the DynatraceSecurityProblemQueryResult object
- */
+// ExecuteGetDynatraceSecurityProblems Calls the /securityProblems/ API call to retrieve the list of security problems for that timeframe.
+// It returns a DynatraceSecurityProblemQueryResult object on success, an error otherwise.
 func (ph *Handler) ExecuteGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceSecurityProblemQueryResult, error) {
-	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/securityProblems?from=%s&to=%s&%s",
-		common.TimestampToString(startUnix),
-		common.TimestampToString(endUnix),
-		problemQuery)
-
-	resp, body, err := ph.executeDynatraceREST("GET", targetURL, nil)
-
+	body, err := ph.GetForPath(
+		fmt.Sprintf("/api/v2/securityProblems?from=%s&to=%s&%s",
+			common.TimestampToString(startUnix),
+			common.TimestampToString(endUnix),
+			problemQuery),
+		nil,
+		"Security Problems API")
 	if err != nil {
 		return nil, err
-	}
-
-	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("Security Problems API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json
@@ -733,20 +737,11 @@ func (ph *Handler) ExecuteGetDynatraceSecurityProblems(problemQuery string, star
 	return &result, nil
 }
 
-/**
- * ExecuteMetricAPIDescribe
- * Calls the /metrics/<metricID> API call to retrieve Metric Definition Details
- */
-func (ph *Handler) ExecuteMetricAPIDescribe(metricID string) (*MetricDefinition, error) {
-	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/metrics/%s", metricID)
-	resp, body, err := ph.executeDynatraceREST("GET", targetURL, nil)
-
+// ExecuteMetricAPIDescribe Calls the /metrics/<metricID> API call to retrieve Metric Definition Details.
+func (ph *Handler) ExecuteMetricAPIDescribe(metricId string) (*MetricDefinition, error) {
+	body, err := ph.GetForPath("/api/v2/metrics/"+metricId, nil, "Metrics API")
 	if err != nil {
 		return nil, err
-	}
-
-	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("Metrics API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json if we have a 200
@@ -761,15 +756,9 @@ func (ph *Handler) ExecuteMetricAPIDescribe(metricID string) (*MetricDefinition,
 
 // ExecuteMetricsAPIQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) ExecuteMetricsAPIQuery(metricsQuery string) (*DynatraceMetricsQueryResult, error) {
-	// now we execute the query against the Dynatrace API
-	resp, body, err := ph.executeDynatraceREST("GET", metricsQuery, map[string]string{"Content-Type": "application/json"})
-
+	body, err := ph.Get(metricsQuery, map[string]string{"Content-Type": "application/json"}, "Metrics API")
 	if err != nil {
 		return nil, err
-	}
-
-	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("Metrics API request %s was not successful: %w", metricsQuery, err)
 	}
 
 	// parse response json
@@ -787,23 +776,11 @@ func (ph *Handler) ExecuteMetricsAPIQuery(metricsQuery string) (*DynatraceMetric
 	return &result, nil
 }
 
-/**
- * ExecuteGetProblem
- * Calls the /problems/<problemId> API call to retrieve Problem  Details
- */
+// ExecuteGetDynatraceProblemById Calls the /problems/<problemId> API call to retrieve Problem Details
 func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceProblem, error) {
-
-	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/problems/%s", problemId)
-
-	// now we execute the query against the Dynatrace API
-	resp, body, err := ph.executeDynatraceREST("GET", targetURL, nil)
-
+	body, err := ph.GetForPath("/api/v2/problems/"+problemId, nil, "Problems API")
 	if err != nil {
 		return nil, err
-	}
-
-	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("Problems API request %s was not successful: %w", targetURL, err)
 	}
 
 	// parse response json
@@ -818,15 +795,9 @@ func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceP
 
 // ExecuteUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) ExecuteUSQLQuery(usql string) (*DTUSQLResult, error) {
-	// now we execute the query against the Dynatrace API
-	resp, body, err := ph.executeDynatraceREST("GET", usql, map[string]string{"Content-Type": "application/json"})
-
+	body, err := ph.Get(usql, map[string]string{"Content-Type": "application/json"}, "USQL API")
 	if err != nil {
 		return nil, err
-	}
-
-	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("USQL API request %s was not successful: %w", usql, err)
 	}
 
 	// parse response json
