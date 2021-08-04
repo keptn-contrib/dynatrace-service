@@ -8,14 +8,17 @@ import (
 
 // DynatraceDashboards is the data structure for /dashboards endpoint
 type DynatraceDashboards struct {
-	Dashboards []struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Owner string `json:"owner"`
-	} `json:"dashboards"`
+	Dashboards []DashboardEntry `json:"dashboards"`
 }
 
-// SearchForDashboardMatching searches for a dashboard that matches either project, service or stage
+// DashboardEntry is the data structure for /dashboards endpoint
+type DashboardEntry struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Owner string `json:"owner"`
+}
+
+// SearchForDashboardMatching searches for a dashboard that exactly matches project, service and stage
 // It returns the id of the dashboard on success or an error otherwise
 func (dashboards *DynatraceDashboards) SearchForDashboardMatching(keptnEvent *common.BaseKeptnEvent) string {
 	keyValuePairs := []string{
