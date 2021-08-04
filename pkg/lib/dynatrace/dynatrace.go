@@ -488,16 +488,16 @@ func checkApiResponse(resp *http.Response, body []byte) error {
 	return fmt.Errorf("Dynatrace API returned error %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
 }
 
-// GetForPath sends a HTTP GET request to the specified apiPath and adds optional headers to the request.
+// getForPath sends a HTTP GET request to the specified apiPath and adds optional headers to the request.
 // The apiPath is appended to the base URL of the Handler
 // It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
-func (ph *Handler) GetForPath(apiPath string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
-	return ph.Get(ph.ApiURL+apiPath, additionalHeaders, errorContext)
+func (ph *Handler) getForPath(apiPath string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
+	return ph.get(ph.ApiURL+apiPath, additionalHeaders, errorContext)
 }
 
-// Get sends a HTTP GET request to the specified request URL and adds optional headers to the request.
+// get sends a HTTP GET request to the specified request URL and adds optional headers to the request.
 // It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
-func (ph *Handler) Get(requestURL string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
+func (ph *Handler) get(requestURL string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
 	resp, body, err := ph.executeDynatraceREST(http.MethodGet, requestURL, additionalHeaders)
 	if err != nil {
 		return nil, err
@@ -511,8 +511,8 @@ func (ph *Handler) Get(requestURL string, additionalHeaders map[string]string, e
 	return body, nil
 }
 
-// IsValidUUID Helper function to validate whether string is a valid UUID in version 4, variant 1
-func IsValidUUID(uuid string) bool {
+// isValidUUID Helper function to validate whether string is a valid UUID in version 4, variant 1
+func isValidUUID(uuid string) bool {
 	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
 	return r.MatchString(uuid)
 }
@@ -523,7 +523,7 @@ func IsValidUUID(uuid string) bool {
 func (ph *Handler) findDynatraceDashboard(keptnEvent *common.BaseKeptnEvent) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
-	body, err := ph.GetForPath("/api/config/v1/dashboards", nil, "Dashboards API")
+	body, err := ph.getForPath("/api/config/v1/dashboards", nil, "Dashboards API")
 	if err != nil {
 		return "", err
 	}
@@ -578,13 +578,13 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, das
 
 	// Lets validate if we have a valid UUID - either because it was passed or because queried
 	// If not - we are going down the dashboard route!
-	if !IsValidUUID(dashboard) {
+	if !isValidUUID(dashboard) {
 		return nil, dashboard, fmt.Errorf("Dashboard ID %s not a valid UUID", dashboard)
 	}
 
 	// We have a valid Dashboard UUID - now lets query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
-	body, err := ph.GetForPath("/api/config/v1/dashboards/"+dashboard, nil, "Dashboards API")
+	body, err := ph.getForPath("/api/config/v1/dashboards/"+dashboard, nil, "Dashboards API")
 	if err != nil {
 		return nil, dashboard, err
 	}
@@ -599,10 +599,10 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, das
 	return dynatraceDashboard, dashboard, nil
 }
 
-// ExecuteGetDynatraceSLO Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
+// executeGetDynatraceSLO Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
 // It returns a DynatraceSLOResult object on success, an error otherwise
-func (ph *Handler) ExecuteGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*DynatraceSLOResult, error) {
-	body, err := ph.GetForPath(
+func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*DynatraceSLOResult, error) {
+	body, err := ph.getForPath(
 		fmt.Sprintf("/api/v2/slo/%s?from=%s&to=%s",
 			sloID,
 			common.TimestampToString(startUnix),
@@ -629,10 +629,10 @@ func (ph *Handler) ExecuteGetDynatraceSLO(sloID string, startUnix time.Time, end
 	return &result, nil
 }
 
-// ExecuteGetDynatraceProblems Calls the /problems/ API call to retrieve the the list of problems for that timeframe
+// executeGetDynatraceProblems Calls the /problems/ API call to retrieve the the list of problems for that timeframe
 // It returns a DynatraceProblemQueryResult object on success, an error otherwise
-func (ph *Handler) ExecuteGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceProblemQueryResult, error) {
-	body, err := ph.GetForPath(
+func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceProblemQueryResult, error) {
+	body, err := ph.getForPath(
 		fmt.Sprintf("/api/v2/problems?from=%s&to=%s&%s",
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
@@ -653,10 +653,10 @@ func (ph *Handler) ExecuteGetDynatraceProblems(problemQuery string, startUnix ti
 	return &result, nil
 }
 
-// ExecuteGetDynatraceSecurityProblems Calls the /securityProblems/ API call to retrieve the list of security problems for that timeframe.
+// executeGetDynatraceSecurityProblems Calls the /securityProblems/ API call to retrieve the list of security problems for that timeframe.
 // It returns a DynatraceSecurityProblemQueryResult object on success, an error otherwise.
-func (ph *Handler) ExecuteGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceSecurityProblemQueryResult, error) {
-	body, err := ph.GetForPath(
+func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceSecurityProblemQueryResult, error) {
+	body, err := ph.getForPath(
 		fmt.Sprintf("/api/v2/securityProblems?from=%s&to=%s&%s",
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
@@ -677,9 +677,9 @@ func (ph *Handler) ExecuteGetDynatraceSecurityProblems(problemQuery string, star
 	return &result, nil
 }
 
-// ExecuteMetricAPIDescribe Calls the /metrics/<metricID> API call to retrieve Metric Definition Details.
-func (ph *Handler) ExecuteMetricAPIDescribe(metricId string) (*MetricDefinition, error) {
-	body, err := ph.GetForPath("/api/v2/metrics/"+metricId, nil, "Metrics API")
+// executeMetricAPIDescribe Calls the /metrics/<metricID> API call to retrieve Metric Definition Details.
+func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition, error) {
+	body, err := ph.getForPath("/api/v2/metrics/"+metricId, nil, "Metrics API")
 	if err != nil {
 		return nil, err
 	}
@@ -694,9 +694,9 @@ func (ph *Handler) ExecuteMetricAPIDescribe(metricId string) (*MetricDefinition,
 	return &result, nil
 }
 
-// ExecuteMetricsAPIQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (ph *Handler) ExecuteMetricsAPIQuery(metricsQuery string) (*DynatraceMetricsQueryResult, error) {
-	body, err := ph.Get(metricsQuery, map[string]string{"Content-Type": "application/json"}, "Metrics API")
+// executeMetricsAPIQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
+func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetricsQueryResult, error) {
+	body, err := ph.get(metricsQuery, map[string]string{"Content-Type": "application/json"}, "Metrics API")
 	if err != nil {
 		return nil, err
 	}
@@ -718,7 +718,7 @@ func (ph *Handler) ExecuteMetricsAPIQuery(metricsQuery string) (*DynatraceMetric
 
 // ExecuteGetDynatraceProblemById Calls the /problems/<problemId> API call to retrieve Problem Details
 func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceProblem, error) {
-	body, err := ph.GetForPath("/api/v2/problems/"+problemId, nil, "Problems API")
+	body, err := ph.getForPath("/api/v2/problems/"+problemId, nil, "Problems API")
 	if err != nil {
 		return nil, err
 	}
@@ -733,9 +733,9 @@ func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceP
 	return &result, nil
 }
 
-// ExecuteUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (ph *Handler) ExecuteUSQLQuery(usql string) (*DTUSQLResult, error) {
-	body, err := ph.Get(usql, map[string]string{"Content-Type": "application/json"}, "USQL API")
+// executeGetDynatraceUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
+func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*DTUSQLResult, error) {
+	body, err := ph.get(usql, map[string]string{"Content-Type": "application/json"}, "USQL API")
 	if err != nil {
 		return nil, err
 	}
@@ -756,8 +756,8 @@ func (ph *Handler) ExecuteUSQLQuery(usql string) (*DTUSQLResult, error) {
 	return &result, nil
 }
 
-// BuildDynatraceUSQLQuery builds a USQL query based on the incoming values
-func (ph *Handler) BuildDynatraceUSQLQuery(query string, startUnix time.Time, endUnix time.Time) string {
+// buildDynatraceUSQLQuery builds a USQL query based on the incoming values
+func (ph *Handler) buildDynatraceUSQLQuery(query string, startUnix time.Time, endUnix time.Time) string {
 	log.WithField("query", query).Debug("Finalize USQL query")
 
 	// replace query params (e.g., $PROJECT, $STAGE, $SERVICE ...)
@@ -794,13 +794,13 @@ func (ph *Handler) BuildDynatraceUSQLQuery(query string, startUnix time.Time, en
 	return u.String()
 }
 
-// BuildDynatraceMetricsQuery builds the complete query string based on start, end and filters
+// buildDynatraceMetricsQuery builds the complete query string based on start, end and filters
 // metricQuery should contain metricSelector and entitySelector
 // Returns:
 //  #1: Finalized Dynatrace API Query
 //  #2: Metric selector that this query will return, e.g: builtin:host.cpu
 //  #3: error
-func (ph *Handler) BuildDynatraceMetricsQuery(metricQuery string, startUnix time.Time, endUnix time.Time) (string, string, error) {
+func (ph *Handler) buildDynatraceMetricsQuery(metricQuery string, startUnix time.Time, endUnix time.Time) (string, string, error) {
 	// replace query params (e.g., $PROJECT, $STAGE, $SERVICE ...)
 	metricQuery = ph.replaceQueryParameters(metricQuery)
 
@@ -921,10 +921,8 @@ func (ph *Handler) isMatchingMetricID(singleResultMetricID string, queryMetricID
 	return false
 }
 
-/**
- * This function will validate if the current dashboard.json stored in the configuration repo is the same as the one passed as parameter
- */
-func (ph *Handler) HasDashboardChanged(keptnEvent *common.BaseKeptnEvent, dashboardJSON *DynatraceDashboard, existingDashboardContent string) bool {
+// hasDashboardChanged Will validate if the current dashboard.json stored in the configuration repo is the same as the one passed as parameter
+func (ph *Handler) hasDashboardChanged(keptnEvent *common.BaseKeptnEvent, dashboardJSON *DynatraceDashboard, existingDashboardContent string) bool {
 
 	jsonAsByteArray, err := json.MarshalIndent(dashboardJSON, "", "  ")
 	if err != nil {
@@ -945,11 +943,10 @@ func (ph *Handler) HasDashboardChanged(keptnEvent *common.BaseKeptnEvent, dashbo
 	return true
 }
 
-/**
- * Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter - the return value always starts with a , (comma)
- * return example: ,entityId("ABAD-222121321321")
- */
-func (ph *Handler) GetEntitySelectorFromEntityFilter(filtersPerEntityType map[string]map[string][]string, entityType string) string {
+// getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -
+// the return value always starts with a , (comma)
+//   return example: ,entityId("ABAD-222121321321")
+func (ph *Handler) getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]map[string][]string, entityType string) string {
 	entityTileFilter := ""
 	if filtersPerEntityType, containsEntityType := filtersPerEntityType[entityType]; containsEntityType {
 		// Check for SPECIFIC_ENTITIES - if we have an array then we filter for each entity
@@ -970,14 +967,12 @@ func (ph *Handler) GetEntitySelectorFromEntityFilter(filtersPerEntityType map[st
 	return entityTileFilter
 }
 
-/**
- * Processes an SLO Tile and queries the data from the Dynatrace API
- * If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
- */
-func (ph *Handler) ProcessSLOTile(sloID string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
+// processSLOTile Processes an SLO Tile and queries the data from the Dynatrace API.
+// If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
+func (ph *Handler) processSLOTile(sloID string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
-	sloResult, err := ph.ExecuteGetDynatraceSLO(sloID, startUnix, endUnix)
+	sloResult, err := ph.executeGetDynatraceSLO(sloID, startUnix, endUnix)
 	if err != nil {
 		return nil, "", "", nil, err
 	}
@@ -1029,11 +1024,9 @@ func (ph *Handler) ProcessSLOTile(sloID string, startUnix time.Time, endUnix tim
 	return sliResult, indicatorName, sliQuery, sloDefinition, nil
 }
 
-/**
- * Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
- * If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
- */
-func (ph *Handler) ProcessOpenProblemTile(problemSelector string, entitySelector string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
+// processOpenProblemTile Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
+// If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
+func (ph *Handler) processOpenProblemTile(problemSelector string, entitySelector string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
 
 	problemQuery := ""
 	separator := ""
@@ -1048,7 +1041,7 @@ func (ph *Handler) ProcessOpenProblemTile(problemSelector string, entitySelector
 	}
 
 	// Step 1: Query the Dynatrace API to get the number of actual problems matching that query and timeframe
-	problemQueryResult, err := ph.ExecuteGetDynatraceProblems(problemQuery, startUnix, endUnix)
+	problemQueryResult, err := ph.executeGetDynatraceProblems(problemQuery, startUnix, endUnix)
 	if err != nil {
 		return nil, "", "", nil, err
 	}
@@ -1089,11 +1082,9 @@ func (ph *Handler) ProcessOpenProblemTile(problemSelector string, entitySelector
 	return sliResult, indicatorName, sliQuery, sloDefinition, nil
 }
 
-/**
- * Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
- * If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
- */
-func (ph *Handler) ProcessOpenSecurityProblemTile(securityProblemSelector string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
+// processOpenSecurityProblemTile Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
+// If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
+func (ph *Handler) processOpenSecurityProblemTile(securityProblemSelector string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
 
 	problemQuery := ""
 	if securityProblemSelector != "" {
@@ -1101,7 +1092,7 @@ func (ph *Handler) ProcessOpenSecurityProblemTile(securityProblemSelector string
 	}
 
 	// Step 1: Query the Dynatrace API to get the number of actual problems matching that query and timeframe
-	problemQueryResult, err := ph.ExecuteGetDynatraceSecurityProblems(problemQuery, startUnix, endUnix)
+	problemQueryResult, err := ph.executeGetDynatraceSecurityProblems(problemQuery, startUnix, endUnix)
 	if err != nil {
 		return nil, "", "", nil, err
 	}
@@ -1142,20 +1133,21 @@ func (ph *Handler) ProcessOpenSecurityProblemTile(securityProblemSelector string
 	return sliResult, indicatorName, sliQuery, sloDefinition, nil
 }
 
-/**
- * Looks at the DataExplorerQuery configuration of a data explorer chart and generates the Metrics Query
- * Returns
- * #1: metricId, e.g: built-in:mymetric
- * #2: metricUnit, e.g: MilliSeconds
- * #3: metricQuery, e.g: metricSelector=metric&filter...
- * #4: fullMetricQuery, e.g: metricQuery&from=123213&to=2323
- * #5: entitySelectirSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
- * #6: filterSLIDefinitionAttregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
- */
-func (ph *Handler) GenerateMetricQueryFromDataExplorer(dataQuery DataExplorerQuery, tileManagementZoneFilter string, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
+// Looks at the DataExplorerQuery configuration of a data explorer chart and generates the Metrics Query.
+//
+// Returns
+//   #1: metricId, e.g: built-in:mymetric
+//   #2: metricUnit, e.g: MilliSeconds
+//   #3: metricQuery, e.g: metricSelector=metric&filter...
+//   #4: fullMetricQuery, e.g: metricQuery&from=123213&to=2323
+//   #5: entitySelectirSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
+//   #6: filterSLIDefinitionAttregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
+func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQuery, tileManagementZoneFilter string, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
+
+	// TODO 2021-08-04: there are too many return values and they are have the same type
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
-	metricDefinition, err := ph.ExecuteMetricAPIDescribe(dataQuery.Metric)
+	metricDefinition, err := ph.executeMetricAPIDescribe(dataQuery.Metric)
 	if err != nil {
 		log.WithError(err).WithField("metric", dataQuery.Metric).Debug("Error retrieving metric description")
 		return "", "", "", "", "", "", err
@@ -1229,7 +1221,7 @@ func (ph *Handler) GenerateMetricQueryFromDataExplorer(dataQuery DataExplorerQue
 		entityFilter, tileManagementZoneFilter)
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
-	fullMetricQuery, metricID, err := ph.BuildDynatraceMetricsQuery(metricQuery, startUnix, endUnix)
+	fullMetricQuery, metricID, err := ph.buildDynatraceMetricsQuery(metricQuery, startUnix, endUnix)
 	if err != nil {
 		return "", "", "", "", "", "", err
 	}
@@ -1237,19 +1229,21 @@ func (ph *Handler) GenerateMetricQueryFromDataExplorer(dataQuery DataExplorerQue
 	return metricID, metricDefinition.Unit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, nil
 }
 
-/**
- * Looks at the ChartSeries configuration of a regular chart and generates the Metrics Query
- * Returns
- * #1: metricId, e.g: built-in:mymetric
- * #2: metricUnit, e.g: MilliSeconds
- * #3: metricQuery, e.g: metricSelector=metric&filter...
- * #4: fullMetricQuery, e.g: metricQuery&from=123213&to=2323
- * #5: entitySelectirSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
- * #6: filterSLIDefinitionAttregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
- */
-func (ph *Handler) GenerateMetricQueryFromChart(series ChartSeries, tileManagementZoneFilter string, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
+// Looks at the ChartSeries configuration of a regular chart and generates the Metrics Query
+//
+// Returns
+//   #1: metricId, e.g: built-in:mymetric
+//   #2: metricUnit, e.g: MilliSeconds
+//   #3: metricQuery, e.g: metricSelector=metric&filter...
+//   #4: fullMetricQuery, e.g: metricQuery&from=123213&to=2323
+//   #5: entitySelectirSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
+//   #6: filterSLIDefinitionAttregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
+func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManagementZoneFilter string, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
+
+	// TODO 2021-08-04: there are too many return values and they are have the same type
+
 	// Lets query the metric definition as we need to know how many dimension the metric has
-	metricDefinition, err := ph.ExecuteMetricAPIDescribe(series.Metric)
+	metricDefinition, err := ph.executeMetricAPIDescribe(series.Metric)
 	if err != nil {
 		log.WithError(err).WithField("metric", series.Metric).Debug("Error retrieving metric description")
 		return "", "", "", "", "", "", err
@@ -1333,7 +1327,7 @@ func (ph *Handler) GenerateMetricQueryFromChart(series ChartSeries, tileManageme
 
 	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entites or tags
 	// lets see if we have a FiltersPerEntityType for the tiles EntityType
-	entityTileFilter := ph.GetEntitySelectorFromEntityFilter(filtersPerEntityType, entityType)
+	entityTileFilter := ph.getEntitySelectorFromEntityFilter(filtersPerEntityType, entityType)
 
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
@@ -1342,7 +1336,7 @@ func (ph *Handler) GenerateMetricQueryFromChart(series ChartSeries, tileManageme
 		entityType, entityTileFilter, tileManagementZoneFilter)
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
-	fullMetricQuery, metricID, err := ph.BuildDynatraceMetricsQuery(metricQuery, startUnix, endUnix)
+	fullMetricQuery, metricID, err := ph.buildDynatraceMetricsQuery(metricQuery, startUnix, endUnix)
 	if err != nil {
 		return "", "", "", "", "", "", err
 	}
@@ -1350,16 +1344,16 @@ func (ph *Handler) GenerateMetricQueryFromChart(series ChartSeries, tileManageme
 	return metricID, metricDefinition.Unit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, nil
 }
 
-/**
- * Generates the relvant SLIs & SLO definitions based on the metric query
- * noOfDimensionsInChart: how many dimensions did we have in the chart definition
- */
-func (ph *Handler) GenerateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, baseIndicatorName string, passSLOs []*keptncommon.SLOCriteria, warningSLOs []*keptncommon.SLOCriteria, weight int, keySli bool, metricID string, metricUnit string, metricQuery string, fullMetricQuery string, filterSLIDefinitionAggregator string, entitySelectorSLIDefinition string, dashboardSLI *SLI, dashboardSLO *keptncommon.ServiceLevelObjectives) []*keptnv2.SLIResult {
+// Generates the relevant SLIs & SLO definitions based on the metric query
+// noOfDimensionsInChart: how many dimensions did we have in the chart definition
+func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, baseIndicatorName string, passSLOs []*keptncommon.SLOCriteria, warningSLOs []*keptncommon.SLOCriteria, weight int, keySli bool, metricID string, metricUnit string, metricQuery string, fullMetricQuery string, filterSLIDefinitionAggregator string, entitySelectorSLIDefinition string, dashboardSLI *SLI, dashboardSLO *keptncommon.ServiceLevelObjectives) []*keptnv2.SLIResult {
+
+	// TODO 2021-08-04: there are too many parameters and many of them have the same type
 
 	var sliResults []*keptnv2.SLIResult
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := ph.ExecuteMetricsAPIQuery(fullMetricQuery)
+	queryResult, err := ph.executeMetricsAPIQuery(fullMetricQuery)
 	if err != nil {
 		log.WithError(err).Debug("No result for query")
 
@@ -1538,7 +1532,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
-	if !ph.HasDashboardChanged(keptnEvent, dashboardJSON, existingDashboardContent) {
+	if !ph.hasDashboardChanged(keptnEvent, dashboardJSON, existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
 		return dashboardLinkAsLabel, nil, nil, nil, nil, nil
 	}
@@ -1580,7 +1574,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			for _, sloEntity := range tile.AssignedEntities {
 				log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
 
-				sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.ProcessSLOTile(sloEntity, startUnix, endUnix)
+				sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processSLOTile(sloEntity, startUnix, endUnix)
 				if err != nil {
 					log.WithError(err).Error("Error Processing SLO")
 				} else {
@@ -1604,7 +1598,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 				problemSelector = fmt.Sprintf("%s,managementZoneIds(%s)", problemSelector, tile.TileFilter.ManagementZone.ID)
 			}
 
-			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.ProcessOpenProblemTile(problemSelector, entitySelector, startUnix, endUnix)
+			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, entitySelector, startUnix, endUnix)
 			if err != nil {
 				log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
 			} else {
@@ -1625,7 +1619,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 				problemSelector = fmt.Sprintf("%s,managementZoneIds(%s)", problemSelector, tile.TileFilter.ManagementZone.ID)
 			}
 
-			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.ProcessOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
+			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
 			if err != nil {
 				log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
 			} else {
@@ -1651,14 +1645,14 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 				log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
 
 				// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-				metricID, metricUnit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, err := ph.GenerateMetricQueryFromDataExplorer(dataQuery, tileManagementZoneFilter, startUnix, endUnix)
+				metricID, metricUnit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, err := ph.generateMetricQueryFromDataExplorer(dataQuery, tileManagementZoneFilter, startUnix, endUnix)
 
 				// if there was no error we generate the SLO & SLO definition
 				if err == nil {
-					newSliResults := ph.GenerateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), baseIndicatorName, passSLOs, warningSLOs, weight, keySli, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
+					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), baseIndicatorName, passSLOs, warningSLOs, weight, keySli, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
 					sliResults = append(sliResults, newSliResults...)
 				} else {
-					log.WithError(err).Warn("GenerateMetricQueryFromDataExplorer returned an error, SLI will not be used")
+					log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
 				}
 
 			}
@@ -1694,14 +1688,14 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			for _, series := range tile.FilterConfig.ChartConfig.Series {
 
 				// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-				metricID, metricUnit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, err := ph.GenerateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, startUnix, endUnix)
+				metricID, metricUnit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, err := ph.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, startUnix, endUnix)
 
 				// if there was no error we generate the SLO & SLO definition
 				if err == nil {
-					newSliResults := ph.GenerateSLISLOFromMetricsAPIQuery(len(series.Dimensions), baseIndicatorName, passSLOs, warningSLOs, weight, keySli, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
+					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), baseIndicatorName, passSLOs, warningSLOs, weight, keySli, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
 					sliResults = append(sliResults, newSliResults...)
 				} else {
-					log.WithError(err).Warn("GenerateMetricQueryFromChart returned an error, SLI will not be used")
+					log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
 				}
 			}
 		}
@@ -1714,8 +1708,8 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
 			// TABLE: we assume the first column is the dimension and the last is the value
 
-			usql := ph.BuildDynatraceUSQLQuery(tile.Query, startUnix, endUnix)
-			usqlResult, err := ph.ExecuteUSQLQuery(usql)
+			usql := ph.buildDynatraceUSQLQuery(tile.Query, startUnix, endUnix)
+			usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
 
 			if err != nil {
 
@@ -1784,10 +1778,8 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	return dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, nil
 }
 
-/**
- * GetSLIValue queries a single metric value from Dynatrace API
- * Can handle both Metric Queries as well as USQL
- */
+// GetSLIValue queries a single metric value from Dynatrace API.
+// Can handle both Metric Queries as well as USQL
 func (ph *Handler) GetSLIValue(name string, startUnix time.Time, endUnix time.Time) (float64, error) {
 
 	// first we get the query from the SLI configuration based on its logical name
@@ -1830,8 +1822,8 @@ func (ph *Handler) executeUSQLQuery(metricsQuery string, startUnix time.Time, en
 	requestedDimensionName := querySplits[2]
 	usqlRawQuery := querySplits[3]
 
-	usql := ph.BuildDynatraceUSQLQuery(usqlRawQuery, startUnix, endUnix)
-	usqlResult, err := ph.ExecuteUSQLQuery(usql)
+	usql := ph.buildDynatraceUSQLQuery(usqlRawQuery, startUnix, endUnix)
+	usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
 
 	if err != nil {
 		return 0, fmt.Errorf("Error executing USQL Query %v", err)
@@ -1875,7 +1867,7 @@ func (ph *Handler) executeSLOQuery(metricsQuery string, startUnix time.Time, end
 	}
 
 	sloID := querySplits[1]
-	sloResult, err := ph.ExecuteGetDynatraceSLO(sloID, startUnix, endUnix)
+	sloResult, err := ph.executeGetDynatraceSLO(sloID, startUnix, endUnix)
 	if err != nil {
 		return 0, fmt.Errorf("Error executing SLO Dynatrace Query %v", err)
 	}
@@ -1891,7 +1883,7 @@ func (ph *Handler) executeProblemQuery(metricsQuery string, startUnix time.Time,
 	}
 
 	problemQuery := querySplits[1]
-	problemQueryResult, err := ph.ExecuteGetDynatraceProblems(problemQuery, startUnix, endUnix)
+	problemQueryResult, err := ph.executeGetDynatraceProblems(problemQuery, startUnix, endUnix)
 	if err != nil {
 		return 0, fmt.Errorf("Error executing Dynatrace Problem v2 Query %v", err)
 	}
@@ -1908,7 +1900,7 @@ func (ph *Handler) executeSecurityProblemQuery(metricsQuery string, startUnix ti
 	}
 
 	problemQuery := querySplits[1]
-	problemQueryResult, err := ph.ExecuteGetDynatraceSecurityProblems(problemQuery, startUnix, endUnix)
+	problemQueryResult, err := ph.executeGetDynatraceSecurityProblems(problemQuery, startUnix, endUnix)
 	if err != nil {
 		return 0, fmt.Errorf("Error executing Dynatrace Security Problem v2 Query %v", err)
 	}
@@ -1932,11 +1924,11 @@ func (ph *Handler) executeMetricsV2Query(metricsQuery string, startUnix time.Tim
 
 func (ph *Handler) executeMetricsQuery(metricsQuery string, unit string, startUnix time.Time, endUnix time.Time) (float64, error) {
 
-	metricsQuery, metricSelector, err := ph.BuildDynatraceMetricsQuery(metricsQuery, startUnix, endUnix)
+	metricsQuery, metricSelector, err := ph.buildDynatraceMetricsQuery(metricsQuery, startUnix, endUnix)
 	if err != nil {
 		return 0, err
 	}
-	result, err := ph.ExecuteMetricsAPIQuery(metricsQuery)
+	result, err := ph.executeMetricsAPIQuery(metricsQuery)
 
 	if err != nil {
 		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %s. This was the query executed: %s", err.Error(), metricsQuery)

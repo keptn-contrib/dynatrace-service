@@ -295,10 +295,10 @@ func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
 			"AUTO_TAGS":         {"keptn_deployment:primary"},
 		},
 	}
-	entityTileFilter := dh.GetEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
+	entityTileFilter := dh.getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
 
 	if strings.Compare(entityTileFilter, ",entityId(\"SERVICE-086C46F600BA1DC6\"),tag(\"keptn_deployment:primary\")") != 0 {
-		t.Errorf("GetEntitySelectorFromEntityFilter wrong. Returned: " + entityTileFilter)
+		t.Errorf("getEntitySelectorFromEntityFilter wrong. Returned: " + entityTileFilter)
 	}
 }
 
@@ -364,7 +364,7 @@ func TestExecuteGetDynatraceSLO(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 	sloID := "524ca177-849b-3e8c-8175-42b93fbc33c5"
-	sloResult, err := dh.ExecuteGetDynatraceSLO(sloID, startTime, endTime)
+	sloResult, err := dh.executeGetDynatraceSLO(sloID, startTime, endTime)
 
 	if err != nil {
 		t.Error(err)
@@ -419,7 +419,7 @@ func TestExecuteGetDynatraceProblems(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 	problemQuery := "problemEntity=status(open)"
-	problemResult, err := dh.ExecuteGetDynatraceProblems(problemQuery, startTime, endTime)
+	problemResult, err := dh.executeGetDynatraceProblems(problemQuery, startTime, endTime)
 
 	if err != nil {
 		t.Error(err)
@@ -442,7 +442,7 @@ func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 	problemQuery := "problemEntity=status(OPEN)"
-	problemResult, err := dh.ExecuteGetDynatraceSecurityProblems(problemQuery, startTime, endTime)
+	problemResult, err := dh.executeGetDynatraceSecurityProblems(problemQuery, startTime, endTime)
 
 	if err != nil {
 		t.Error(err)
@@ -895,7 +895,7 @@ func TestIsValidUUID(t *testing.T) {
 		},
 	}
 	for _, config := range testConfigs {
-		got := IsValidUUID(config.uuid)
+		got := isValidUUID(config.uuid)
 		if got != config.want {
 			t.Errorf("uuid: %s, result should have been: %v, but got: %v", config.uuid, config.want, got)
 		}
