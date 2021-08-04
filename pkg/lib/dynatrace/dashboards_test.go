@@ -69,6 +69,19 @@ func TestDynatraceDashboards_SearchForDashboardMatching(t *testing.T) {
 			expectedDashboardID: "",
 		},
 		{
+			testDescription: "no match, because only a subset of project, service and/or stage are given and would match",
+			keptnEvent:      event,
+			dashboards: createDashboards(
+				createDashboardWith("dashboard-1", project, service, ""),
+				createDashboardWith("dashboard-2", "", service, stage),
+				createDashboardWith("dashboard-3", project, "", stage),
+				createDashboardWith("dashboard-4", project, "", ""),
+				createDashboardWith("dashboard-5", "", service, ""),
+				createDashboardWith("dashboard-6", "", "", stage),
+				createDashboardWith("dashboard-7", "", "", "")),
+			expectedDashboardID: "",
+		},
+		{
 			testDescription: "no match, and multiple dashboards without matching subsets of project, service and stage",
 			keptnEvent:      event,
 			dashboards: createDashboards(
@@ -113,7 +126,18 @@ func TestDynatraceDashboards_SearchForDashboardMatching(t *testing.T) {
 }
 
 func createDashboardNameFor(project string, service string, stage string) string {
-	return fmt.Sprintf("KQG;project=%s;service=%s;stage=%s;something-else", project, service, stage)
+	dashboardName := "KQG;"
+	if project != "" {
+		dashboardName = fmt.Sprintf("%sproject=%s;", dashboardName, project)
+	}
+	if service != "" {
+		dashboardName = fmt.Sprintf("%sservice=%s;", dashboardName, service)
+	}
+	if stage != "" {
+		dashboardName = fmt.Sprintf("%sstage=%s;", dashboardName, stage)
+	}
+
+	return dashboardName + "something-else"
 }
 
 func createDashboardWith(dashboardID string, project string, service string, stage string) DashboardEntry {
