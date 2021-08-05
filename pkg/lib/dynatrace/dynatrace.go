@@ -581,7 +581,7 @@ func hasDashboardChanged(keptnEvent *common.BaseKeptnEvent, dashboardJSON *Dynat
 // getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -
 // the return value always starts with a , (comma)
 //   return example: ,entityId("ABAD-222121321321")
-func (ph *Handler) getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]map[string][]string, entityType string) string {
+func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]map[string][]string, entityType string) string {
 	entityTileFilter := ""
 	if filtersPerEntityType, containsEntityType := filtersPerEntityType[entityType]; containsEntityType {
 		// Check for SPECIFIC_ENTITIES - if we have an array then we filter for each entity
@@ -962,7 +962,7 @@ func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManageme
 
 	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entites or tags
 	// lets see if we have a FiltersPerEntityType for the tiles EntityType
-	entityTileFilter := ph.getEntitySelectorFromEntityFilter(filtersPerEntityType, entityType)
+	entityTileFilter := getEntitySelectorFromEntityFilter(filtersPerEntityType, entityType)
 
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension

@@ -285,17 +285,13 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 }
 
 func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
-	defer teardown()
-
 	var filtersPerEntityType = map[string]map[string][]string{
 		"SERVICE": {
 			"SPECIFIC_ENTITIES": {"SERVICE-086C46F600BA1DC6"},
 			"AUTO_TAGS":         {"keptn_deployment:primary"},
 		},
 	}
-	entityTileFilter := dh.getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
+	entityTileFilter := getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
 
 	if strings.Compare(entityTileFilter, ",entityId(\"SERVICE-086C46F600BA1DC6\"),tag(\"keptn_deployment:primary\")") != 0 {
 		t.Errorf("getEntitySelectorFromEntityFilter wrong. Returned: " + entityTileFilter)
