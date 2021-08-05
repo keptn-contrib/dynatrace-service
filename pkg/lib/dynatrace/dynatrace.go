@@ -71,6 +71,9 @@ func (ph *Handler) executeDynatraceREST(httpMethod string, requestUrl string, ad
 
 	// new request to our URL
 	req, err := http.NewRequest(httpMethod, requestUrl, nil)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	// add our default headers, e.g: authentication
 	for headerName, headerValue := range ph.Headers {
