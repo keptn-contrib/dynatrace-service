@@ -524,7 +524,7 @@ func (ph *Handler) buildDynatraceMetricsQuery(metricQuery string, startUnix time
  * This function here tries to come up with a better matching algorithm
  * WHILE NOT PERFECT - HERE IS THE FIRST IMPLEMENTATION
  */
-func (ph *Handler) isMatchingMetricID(singleResultMetricID string, queryMetricID string) bool {
+func isMatchingMetricID(singleResultMetricID string, queryMetricID string) bool {
 	if strings.Compare(singleResultMetricID, queryMetricID) == 0 {
 		return true
 	}
@@ -1012,7 +1012,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 					"filterSLIDefinitionAggregator": filterSLIDefinitionAggregator,
 					"entitySelectorSLIDefinition":   entitySelectorSLIDefinition,
 				}).Debug("Processing result")
-			if ph.isMatchingMetricID(singleResult.MetricID, metricID) {
+			if isMatchingMetricID(singleResult.MetricID, metricID) {
 				dataResultCount := len(singleResult.Data)
 				if dataResultCount == 0 {
 					log.Debug("No data for metric")
@@ -1574,7 +1574,7 @@ func (ph *Handler) executeMetricsQuery(metricsQuery string, unit string, startUn
 	}
 	for _, i := range result.Result {
 
-		if ph.isMatchingMetricID(i.MetricID, metricSelector) {
+		if isMatchingMetricID(i.MetricID, metricSelector) {
 
 			if len(i.Data) != 1 {
 				jsonString, _ := json.Marshal(i)
