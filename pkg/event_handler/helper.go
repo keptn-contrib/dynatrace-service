@@ -30,8 +30,8 @@ type dtDeploymentEvent struct {
 	DeploymentVersion string            `json:"deploymentVersion"`
 	DeploymentName    string            `json:"deploymentName"`
 	DeploymentProject string            `json:"deploymentProject"`
-	CiBackLink        string            `json:"ciBackLink",omitempty`
-	RemediationAction string            `json:"remediationAction",omitempty`
+	CiBackLink        string            `json:"ciBackLink,omitempty"`
+	RemediationAction string            `json:"remediationAction,omitempty"`
 }
 
 type dtInfoEvent struct {

@@ -307,7 +307,7 @@ func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggered
 			"Authorization": "Api-Token " + dtCredentials.ApiToken,
 			"User-Agent":    "keptn-contrib/dynatrace-service:" + os.Getenv("version"),
 		},
-		eventData.GetSLI.CustomFilters, shkeptncontext, event.ID())
+		eventData.GetSLI.CustomFilters)
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps
