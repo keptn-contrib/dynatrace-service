@@ -557,7 +557,7 @@ func isMatchingMetricID(singleResultMetricID string, queryMetricID string) bool 
 }
 
 // hasDashboardChanged Will validate if the current dashboard.json stored in the configuration repo is the same as the one passed as parameter
-func (ph *Handler) hasDashboardChanged(keptnEvent *common.BaseKeptnEvent, dashboardJSON *DynatraceDashboard, existingDashboardContent string) bool {
+func hasDashboardChanged(keptnEvent *common.BaseKeptnEvent, dashboardJSON *DynatraceDashboard, existingDashboardContent string) bool {
 
 	jsonAsByteArray, err := json.MarshalIndent(dashboardJSON, "", "  ")
 	if err != nil {
@@ -1167,7 +1167,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
-	if !ph.hasDashboardChanged(keptnEvent, dashboardJSON, existingDashboardContent) {
+	if !hasDashboardChanged(keptnEvent, dashboardJSON, existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
 		return dashboardLinkAsLabel, nil, nil, nil, nil, nil
 	}
