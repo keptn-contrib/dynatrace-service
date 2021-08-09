@@ -158,7 +158,7 @@ func addSLO(keptnEvent *common.BaseKeptnEvent, newSLO *keptncommon.SLO) error {
 /**
  * Tries to find a dynatrace dashboard that matches our project. If so - returns the SLI, SLO and SLIResults
  */
-func getDataFromDynatraceDashboard(dynatraceHandler *dynatrace.Handler, keptnEvent *common.BaseKeptnEvent, startUnix time.Time, endUnix time.Time, dashboardConfig string) (string, []*keptnv2.SLIResult, error) {
+func getDataFromDynatraceDashboard(dynatraceHandler *dynatrace.Handler, keptnEvent *common.BaseKeptnEvent, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*dynatrace.DashboardLink, []*keptnv2.SLIResult, error) {
 
 	//
 	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
@@ -331,11 +331,11 @@ func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggered
 	}
 
 	// add link to dynatrace dashboard to labels
-	if dashboardLinkAsLabel != "" {
+	if dashboardLinkAsLabel != nil {
 		if eventData.Labels == nil {
 			eventData.Labels = make(map[string]string)
 		}
-		eventData.Labels["Dashboard Link"] = dashboardLinkAsLabel
+		eventData.Labels["Dashboard Link"] = dashboardLinkAsLabel.String()
 	}
 
 	//

@@ -307,7 +307,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	endTime := time.Unix(1571649085, 0).UTC()
 	dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, err := dh.QueryDynatraceDashboardForSLIs(keptnEvent, common.DynatraceConfigDashboardQUERY, startTime, endTime)
 
-	if dashboardLinkAsLabel == "" {
+	if dashboardLinkAsLabel == nil {
 		t.Errorf("No dashboard link label generated")
 	}
 

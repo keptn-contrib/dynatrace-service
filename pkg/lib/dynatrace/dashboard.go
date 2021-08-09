@@ -52,31 +52,37 @@ type ChartSeries struct {
 	AggregationRate string `json:"aggregationRate"`
 }
 
+type ManagementZone struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type DashboardFilter struct {
+	Timeframe      string          `json:"timeframe"`
+	ManagementZone *ManagementZone `json:"managementZone,omitempty"`
+}
+
+type DashboardMetadata struct {
+	Name           string `json:"name"`
+	Shared         bool   `json:"shared"`
+	Owner          string `json:"owner"`
+	SharingDetails struct {
+		LinkShared bool `json:"linkShared"`
+		Published  bool `json:"published"`
+	} `json:"sharingDetails"`
+	DashboardFilter *DashboardFilter `json:"dashboardFilter,omitempty"`
+	Tags            []string         `json:"tags"`
+}
+
 // DynatraceDashboard is struct for /dashboards/<dashboardID> endpoint
 type DynatraceDashboard struct {
 	Metadata struct {
 		ConfigurationVersions []int  `json:"configurationVersions"`
 		ClusterVersion        string `json:"clusterVersion"`
 	} `json:"metadata"`
-	ID                string `json:"id"`
-	DashboardMetadata struct {
-		Name           string `json:"name"`
-		Shared         bool   `json:"shared"`
-		Owner          string `json:"owner"`
-		SharingDetails struct {
-			LinkShared bool `json:"linkShared"`
-			Published  bool `json:"published"`
-		} `json:"sharingDetails"`
-		DashboardFilter *struct {
-			Timeframe      string `json:"timeframe"`
-			ManagementZone *struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"managementZone,omitempty"`
-		} `json:"dashboardFilter,omitempty"`
-		Tags []string `json:"tags"`
-	} `json:"dashboardMetadata"`
-	Tiles []struct {
+	ID                string            `json:"id"`
+	DashboardMetadata DashboardMetadata `json:"dashboardMetadata"`
+	Tiles             []struct {
 		Name       string `json:"name"`
 		TileType   string `json:"tileType"`
 		Configured bool   `json:"configured"`
@@ -91,11 +97,8 @@ type DynatraceDashboard struct {
 			Height int `json:"height"`
 		} `json:"bounds"`
 		TileFilter struct {
-			Timeframe      string `json:"timeframe"`
-			ManagementZone *struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"managementZone,omitempty"`
+			Timeframe      string          `json:"timeframe"`
+			ManagementZone *ManagementZone `json:"managementZone,omitempty"`
 		} `json:"tileFilter"`
 		Queries          []DataExplorerQuery `json:"queries"`
 		AssignedEntities []string            `json:"assignedEntities"`

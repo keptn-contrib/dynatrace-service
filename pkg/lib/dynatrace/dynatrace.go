@@ -1100,7 +1100,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 //  #3: ServiceLevelObjectives
 //  #4: SLIResult
 //  #5: Error
-func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (string, *DynatraceDashboard, *SLI, *keptncommon.ServiceLevelObjectives, []*keptnv2.SLIResult, error) {
+func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardLink, *DynatraceDashboard, *SLI, *keptncommon.ServiceLevelObjectives, []*keptnv2.SLIResult, error) {
 
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
 	// This check is espcially important for backward compatibilty as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
@@ -1114,11 +1114,11 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	// lets load the dashboard if needed
 	dashboardJSON, dashboard, err := ph.loadDynatraceDashboard(keptnEvent, dashboard)
 	if err != nil {
-		return "", nil, nil, nil, nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboard, err)
+		return nil, nil, nil, nil, nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboard, err)
 	}
 
 	if dashboardJSON == nil {
-		return "", nil, nil, nil, nil, nil
+		return nil, nil, nil, nil, nil, nil
 	}
 
 	// generate our own SLIResult array based on the dashboard configuration
@@ -1132,20 +1132,14 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		Comparison: &keptncommon.SLOComparison{CompareWith: "single_result", IncludeResultWithScore: "pass", NumberOfComparisonResults: 1, AggregateFunction: "avg"},
 	}
 
-	// convert timestamp to string as we mainly need strings later on
-	startInString := common.TimestampToString(startUnix)
-	endInString := common.TimestampToString(endUnix)
-
 	// if there is a dashboard management zone filter get them for both the queries as well as for the dashboard link
 	dashboardManagementZoneFilter := ""
-	mgmtZone := ""
 	if dashboardJSON.DashboardMetadata.DashboardFilter != nil && dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone != nil {
 		dashboardManagementZoneFilter = fmt.Sprintf(",mzId(%s)", dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone.ID)
-		mgmtZone = ";gf=" + dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone.ID
 	}
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := fmt.Sprintf("%s#dashboard;id=%s;gtf=c_%s_%s%s", ph.ApiURL, dashboardJSON.ID, startInString, endInString, mgmtZone)
+	dashboardLinkAsLabel := NewDashboardLink(ph.ApiURL, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
