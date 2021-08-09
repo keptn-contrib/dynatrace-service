@@ -755,7 +755,7 @@ func (ph *Handler) processOpenSecurityProblemTile(securityProblemSelector string
 //   #4: fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   #5: entitySelectirSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   #6: filterSLIDefinitionAttregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQuery, tileManagementZoneFilter string, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
+func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
@@ -831,7 +831,7 @@ func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQue
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s%s",
 		dataQuery.Metric, mergeAggregator, filterAggregator, strings.ToLower(metricAggregation),
-		entityFilter, tileManagementZoneFilter)
+		entityFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
 	fullMetricQuery, metricID, err := ph.buildDynatraceMetricsQuery(metricQuery, startUnix, endUnix)
@@ -851,7 +851,7 @@ func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQue
 //   #4: fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   #5: entitySelectirSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   #6: filterSLIDefinitionAttregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManagementZoneFilter string, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
+func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
@@ -946,9 +946,9 @@ func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManageme
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names&entitySelector=type(%s)%s%s",
 		series.Metric, mergeAggregator, filterAggregator, strings.ToLower(metricAggregation),
-		entityType, entityTileFilter, tileManagementZoneFilter)
+		entityType, entityTileFilter, tileManagementZoneFilter.ForEntitySelector())
 
-	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
+	// lets build the Dynatrace API Metric query for the proposed timeframe and additional filters!
 	fullMetricQuery, metricID, err := ph.buildDynatraceMetricsQuery(metricQuery, startUnix, endUnix)
 	if err != nil {
 		return "", "", "", "", "", "", err
@@ -1132,12 +1132,6 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		Comparison: &keptncommon.SLOComparison{CompareWith: "single_result", IncludeResultWithScore: "pass", NumberOfComparisonResults: 1, AggregateFunction: "avg"},
 	}
 
-	// if there is a dashboard management zone filter get them for both the queries as well as for the dashboard link
-	dashboardManagementZoneFilter := ""
-	if dashboardJSON.DashboardMetadata.DashboardFilter != nil && dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone != nil {
-		dashboardManagementZoneFilter = fmt.Sprintf(",mzId(%s)", dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone.ID)
-	}
-
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
 	dashboardLinkAsLabel := NewDashboardLink(ph.ApiURL, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
 
@@ -1175,10 +1169,9 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 		// get the tile specific management zone filter that might be needed by different tile processors
 		// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-		tileManagementZoneFilter := dashboardManagementZoneFilter
-		if tile.TileFilter.ManagementZone != nil {
-			tileManagementZoneFilter = fmt.Sprintf(",mzId(%s)", tile.TileFilter.ManagementZone.ID)
-		}
+		tileManagementZoneFilter := NewManagementZoneFilter(
+			dashboardJSON.DashboardMetadata.DashboardFilter,
+			tile.TileFilter.ManagementZone)
 
 		if tile.TileType == "SLO" {
 			// we will take the SLO definition from Dynatrace
@@ -1201,13 +1194,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			// we will query the number of open problems based on the specification of that tile
 			entitySelector := ""
 
-			problemSelector := "status(open)"
-			if dashboardJSON.DashboardMetadata.DashboardFilter != nil && dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone != nil {
-				problemSelector = fmt.Sprintf("%s,managementZoneIds(%s)", problemSelector, dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone.ID)
-			}
-			if tile.TileFilter.ManagementZone != nil {
-				problemSelector = fmt.Sprintf("%s,managementZoneIds(%s)", problemSelector, tile.TileFilter.ManagementZone.ID)
-			}
+			problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
 
 			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, entitySelector, startUnix, endUnix)
 			if err != nil {
@@ -1222,13 +1209,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		if (tile.TileType == "OPEN_SECURITY_PROBLEMS") ||
 			(tile.TileType == "OPEN_PROBLEMS") { // TODO: Remove this once we have an actual security tile!
 			// we will query the number of open security problems based on the specification of that tile
-			problemSelector := "status(OPEN)"
-			if dashboardJSON.DashboardMetadata.DashboardFilter != nil && dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone != nil {
-				problemSelector = fmt.Sprintf("%s,managementZoneIds(%s)", problemSelector, dashboardJSON.DashboardMetadata.DashboardFilter.ManagementZone.ID)
-			}
-			if tile.TileFilter.ManagementZone != nil {
-				problemSelector = fmt.Sprintf("%s,managementZoneIds(%s)", problemSelector, tile.TileFilter.ManagementZone.ID)
-			}
+			problemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
 
 			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
 			if err != nil {
