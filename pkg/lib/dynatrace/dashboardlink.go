@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-type ManagementZoneID string
-
 type DashboardLink struct {
 	apiURL          string
 	startTimestamp  time.Time
