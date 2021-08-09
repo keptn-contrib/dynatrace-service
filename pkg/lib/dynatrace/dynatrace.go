@@ -556,28 +556,6 @@ func isMatchingMetricID(singleResultMetricID string, queryMetricID string) bool 
 	return false
 }
 
-// hasDashboardChanged Will validate if the current dashboard.json stored in the configuration repo is the same as the one passed as parameter
-func hasDashboardChanged(dashboardJSON *DynatraceDashboard, existingDashboardContent string) bool {
-
-	jsonAsByteArray, err := json.MarshalIndent(dashboardJSON, "", "  ")
-	if err != nil {
-		log.WithError(err).Warn("Could not marshal dashboard")
-	}
-	newDashboardContent := string(jsonAsByteArray)
-
-	// If ParseOnChange is not specified we consider this as a dashboard with a change
-	if strings.Index(newDashboardContent, "KQG.QueryBehavior=ParseOnChange") == -1 {
-		return true
-	}
-
-	// now lets compare the dashboard from the config repo and the one passed to this function
-	if strings.Compare(newDashboardContent, existingDashboardContent) == 0 {
-		return false
-	}
-
-	return true
-}
-
 // getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -
 // the return value always starts with a , (comma)
 //   return example: ,entityId("ABAD-222121321321")
@@ -1171,7 +1149,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
-	if !hasDashboardChanged(dashboardJSON, existingDashboardContent) {
+	if dashboardJSON.isTheSameAs(existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
 		return dashboardLinkAsLabel, nil, nil, nil, nil, nil
 	}
