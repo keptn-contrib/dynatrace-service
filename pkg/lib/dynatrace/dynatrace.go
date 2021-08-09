@@ -1279,68 +1279,67 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 			usql := ph.buildDynatraceUSQLQuery(tile.Query, startUnix, endUnix)
 			usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
-
 			if err != nil {
+				log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
+				continue
+			}
 
-			} else {
+			for _, rowValue := range usqlResult.Values {
+				dimensionName := ""
+				dimensionValue := 0.0
 
-				for _, rowValue := range usqlResult.Values {
-					dimensionName := ""
-					dimensionValue := 0.0
-
-					if tile.Type == "SINGLE_VALUE" {
-						dimensionValue = rowValue[0].(float64)
-					} else if tile.Type == "PIE_CHART" {
-						dimensionName = rowValue[0].(string)
-						dimensionValue = rowValue[1].(float64)
-					} else if tile.Type == "COLUMN_CHART" {
-						dimensionName = rowValue[0].(string)
-						dimensionValue = rowValue[1].(float64)
-					} else if tile.Type == "TABLE" {
-						dimensionName = rowValue[0].(string)
-						dimensionValue = rowValue[len(rowValue)-1].(float64)
-					} else {
-						log.WithField("tileType", tile.Type).Debug("Unsupport USQL tile type")
-						continue
-					}
-
-					// lets scale the metric
-					// value = scaleData(metricDefinition.MetricID, metricDefinition.Unit, value)
-
-					// we got our metric, slos and the value
-					indicatorName := sloDefinition.SLI
-					if dimensionName != "" {
-						indicatorName = indicatorName + "_" + dimensionName
-					}
-
-					log.WithFields(
-						log.Fields{
-							"name":           indicatorName,
-							"dimensionValue": dimensionValue,
-						}).Debug("Appending SLIResult")
-
-					// lets add the value to our SLIResult array
-					sliResults = append(sliResults, &keptnv2.SLIResult{
-						Metric:  indicatorName,
-						Value:   dimensionValue,
-						Success: true,
-					})
-
-					// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-					// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
-					dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
-
-					// lets add the SLO definition in case we need to generate an SLO.yaml
-					dashboardSLO.Objectives = append(
-						dashboardSLO.Objectives,
-						&keptncommon.SLO{
-							SLI:     indicatorName,
-							Weight:  sloDefinition.Weight,
-							KeySLI:  sloDefinition.KeySLI,
-							Pass:    sloDefinition.Pass,
-							Warning: sloDefinition.Warning,
-						})
+				if tile.Type == "SINGLE_VALUE" {
+					dimensionValue = rowValue[0].(float64)
+				} else if tile.Type == "PIE_CHART" {
+					dimensionName = rowValue[0].(string)
+					dimensionValue = rowValue[1].(float64)
+				} else if tile.Type == "COLUMN_CHART" {
+					dimensionName = rowValue[0].(string)
+					dimensionValue = rowValue[1].(float64)
+				} else if tile.Type == "TABLE" {
+					dimensionName = rowValue[0].(string)
+					dimensionValue = rowValue[len(rowValue)-1].(float64)
+				} else {
+					log.WithField("tileType", tile.Type).Debug("Unsupport USQL tile type")
+					continue
 				}
+
+				// lets scale the metric
+				// value = scaleData(metricDefinition.MetricID, metricDefinition.Unit, value)
+
+				// we got our metric, slos and the value
+				indicatorName := sloDefinition.SLI
+				if dimensionName != "" {
+					indicatorName = indicatorName + "_" + dimensionName
+				}
+
+				log.WithFields(
+					log.Fields{
+						"name":           indicatorName,
+						"dimensionValue": dimensionValue,
+					}).Debug("Appending SLIResult")
+
+				// lets add the value to our SLIResult array
+				sliResults = append(sliResults, &keptnv2.SLIResult{
+					Metric:  indicatorName,
+					Value:   dimensionValue,
+					Success: true,
+				})
+
+				// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
+				// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
+				dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
+
+				// lets add the SLO definition in case we need to generate an SLO.yaml
+				dashboardSLO.Objectives = append(
+					dashboardSLO.Objectives,
+					&keptncommon.SLO{
+						SLI:     indicatorName,
+						Weight:  sloDefinition.Weight,
+						KeySLI:  sloDefinition.KeySLI,
+						Pass:    sloDefinition.Pass,
+						Warning: sloDefinition.Warning,
+					})
 			}
 		}
 	}
