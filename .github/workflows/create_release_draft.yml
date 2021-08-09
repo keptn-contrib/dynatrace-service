@@ -97,6 +97,7 @@ jobs:
           workflow_conclusion: success
           # Use the branch
           branch: ${{ env.BRANCH}}
+          run_id: ${{ steps.last_run_id.outputs.RUN_ID }}
           # Optional, directory where to extract artifact
           path: ./dist
 
