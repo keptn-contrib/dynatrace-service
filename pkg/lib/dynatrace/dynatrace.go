@@ -639,18 +639,11 @@ func (ph *Handler) processSLOTile(sloID string, startUnix time.Time, endUnix tim
 
 // processOpenProblemTile Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
 // If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (ph *Handler) processOpenProblemTile(problemSelector string, entitySelector string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
+func (ph *Handler) processOpenProblemTile(problemSelector string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
 
 	problemQuery := ""
-	separator := ""
 	if problemSelector != "" {
 		problemQuery = fmt.Sprintf("problemSelector=%s", problemSelector)
-	}
-	if entitySelector != "" {
-		if problemQuery != "" {
-			separator = "&"
-		}
-		problemQuery = fmt.Sprintf("%sentitySelector=%s", separator, entitySelector)
 	}
 
 	// Step 1: Query the Dynatrace API to get the number of actual problems matching that query and timeframe
@@ -1192,11 +1185,9 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 		if tile.TileType == "OPEN_PROBLEMS" {
 			// we will query the number of open problems based on the specification of that tile
-			entitySelector := ""
-
 			problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
 
-			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, entitySelector, startUnix, endUnix)
+			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, startUnix, endUnix)
 			if err != nil {
 				log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
 			} else {
