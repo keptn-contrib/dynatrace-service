@@ -68,6 +68,7 @@ jobs:
     runs-on: ubuntu-20.04
     env:
       BRANCH: ${{ needs.prepare-release.outputs.BRANCH }}
+      REPO_SLUG: "keptn-contrib/dynatrace-service"
     steps:
       - name: Check out code
         uses: actions/checkout@v2.3.4
@@ -81,15 +82,19 @@ jobs:
         with:
           env-file: .ci_env
 
+      - name: Find latest successful run ID
+        id: last_run_id
+        run: |
+          RUN_ID=$(curl -sLH 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "api.github.com/repos/$REPO_SLUG/actions/workflows/CI.yml/runs" | jq --arg branch "$BRANCH" -c '[.workflow_runs[] | select( .conclusion == "success" and .head_branch == $branch)][0] | .id')
+          echo "::set-output name=RUN_ID::$RUN_ID"
+
       - name: Download all artifacts from last successful build of specified branch
         uses: dawidd6/action-download-artifact@v2.14.0
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           # Required, workflow file name or ID
           workflow: CI.yml
-          workflow_conclusion: success
-          # Use the branch
-          branch: ${{ env.BRANCH}}
+          run_id: ${{ steps.last_run_id.outputs.RUN_ID }}
           # Optional, directory where to extract artifact
           path: ./dist
 
