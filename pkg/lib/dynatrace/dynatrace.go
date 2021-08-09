@@ -1252,14 +1252,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 		}
 
-		// custom chart and usql have different ways to define their tile names - so - lets figure it out by looking at the potential values
-		tileTitle := tile.FilterConfig.CustomName // this is for all custom charts
-		if tileTitle == "" {
-			tileTitle = tile.CustomName
-		}
-		if tileTitle == "" {
-			tileTitle = tile.Name
-		}
+		tileTitle := tile.Title()
 
 		// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 		baseIndicatorName, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(tileTitle, []string{}, []string{})
