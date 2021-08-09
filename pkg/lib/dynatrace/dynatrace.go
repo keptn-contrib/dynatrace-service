@@ -720,14 +720,14 @@ func (ph *Handler) processOpenSecurityProblemTile(securityProblemSelector string
 
 // Looks at the DataExplorerQuery configuration of a data explorer chart and generates the Metrics Query.
 //
-// Returns
-//   #1: metricId, e.g: built-in:mymetric
-//   #2: metricUnit, e.g: MilliSeconds
-//   #3: metricQuery, e.g: metricSelector=metric&filter...
-//   #4: fullMetricQuery, e.g: metricQuery&from=123213&to=2323
-//   #5: entitySelectirSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
-//   #6: filterSLIDefinitionAttregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
+// Returns a MetricQueryComponents object
+//   - metricId, e.g: built-in:mymetric
+//   - metricUnit, e.g: MilliSeconds
+//   - metricQuery, e.g: metricSelector=metric&filter...
+//   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
+//   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
+//   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
+func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter, startUnix time.Time, endUnix time.Time) (*MetricQueryComponents, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
@@ -735,7 +735,7 @@ func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQue
 	metricDefinition, err := ph.executeMetricAPIDescribe(dataQuery.Metric)
 	if err != nil {
 		log.WithError(err).WithField("metric", dataQuery.Metric).Debug("Error retrieving metric description")
-		return "", "", "", "", "", "", err
+		return nil, err
 	}
 
 	// building the merge aggregator string, e.g: merge(1):merge(0) - or merge(0)
@@ -808,30 +808,36 @@ func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQue
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
 	fullMetricQuery, metricID, err := ph.buildDynatraceMetricsQuery(metricQuery, startUnix, endUnix)
 	if err != nil {
-		return "", "", "", "", "", "", err
+		return nil, err
 	}
 
-	return metricID, metricDefinition.Unit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, nil
+	return &MetricQueryComponents{
+		metricID:                      metricID,
+		metricUnit:                    metricDefinition.Unit,
+		metricQuery:                   metricQuery,
+		fullMetricQuery:               fullMetricQuery,
+		entitySelectorSLIDefinition:   entitySelectorSLIDefinition,
+		filterSLIDefinitionAggregator: filterSLIDefinitionAggregator,
+	}, nil
+
 }
 
 // Looks at the ChartSeries configuration of a regular chart and generates the Metrics Query
 //
-// Returns
-//   #1: metricId, e.g: built-in:mymetric
-//   #2: metricUnit, e.g: MilliSeconds
-//   #3: metricQuery, e.g: metricSelector=metric&filter...
-//   #4: fullMetricQuery, e.g: metricQuery&from=123213&to=2323
-//   #5: entitySelectirSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
-//   #6: filterSLIDefinitionAttregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (string, string, string, string, string, string, error) {
-
-	// TODO 2021-08-04: there are too many return values and they are have the same type
+// Returns a MetricQueryComponents object
+//   - metricId, e.g: built-in:mymetric
+//   - metricUnit, e.g: MilliSeconds
+//   - metricQuery, e.g: metricSelector=metric&filter...
+//   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
+//   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
+//   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
+func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (*MetricQueryComponents, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := ph.executeMetricAPIDescribe(series.Metric)
 	if err != nil {
 		log.WithError(err).WithField("metric", series.Metric).Debug("Error retrieving metric description")
-		return "", "", "", "", "", "", err
+		return nil, err
 	}
 
 	// building the merge aggregator string, e.g: merge(1):merge(0) - or merge(0)
@@ -923,22 +929,29 @@ func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManageme
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additional filters!
 	fullMetricQuery, metricID, err := ph.buildDynatraceMetricsQuery(metricQuery, startUnix, endUnix)
 	if err != nil {
-		return "", "", "", "", "", "", err
+		return nil, err
 	}
 
-	return metricID, metricDefinition.Unit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, nil
+	return &MetricQueryComponents{
+		metricID:                      metricID,
+		metricUnit:                    metricDefinition.Unit,
+		metricQuery:                   metricQuery,
+		fullMetricQuery:               fullMetricQuery,
+		entitySelectorSLIDefinition:   entitySelectorSLIDefinition,
+		filterSLIDefinitionAggregator: filterSLIDefinitionAggregator,
+	}, nil
 }
 
 // Generates the relevant SLIs & SLO definitions based on the metric query
 // noOfDimensionsInChart: how many dimensions did we have in the chart definition
-func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricID string, metricUnit string, metricQuery string, fullMetricQuery string, filterSLIDefinitionAggregator string, entitySelectorSLIDefinition string, dashboardSLI *SLI, dashboardSLO *keptncommon.ServiceLevelObjectives) []*keptnv2.SLIResult {
+func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *MetricQueryComponents, dashboardSLI *SLI, dashboardSLO *keptncommon.ServiceLevelObjectives) []*keptnv2.SLIResult {
 
 	// TODO 2021-08-04: there are too many parameters and many of them have the same type
 
 	var sliResults []*keptnv2.SLIResult
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := ph.executeMetricsAPIQuery(fullMetricQuery)
+	queryResult, err := ph.executeMetricsAPIQuery(metricQueryComponents.fullMetricQuery)
 	if err != nil {
 		log.WithError(err).Debug("No result for query")
 
@@ -952,7 +965,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 		})
 
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-		dashboardSLI.Indicators[sloDefinition.SLI] = metricQuery
+		dashboardSLI.Indicators[sloDefinition.SLI] = metricQueryComponents.metricQuery
 
 		return sliResults
 	}
@@ -962,13 +975,13 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 		log.WithFields(
 			log.Fields{
 				"metricId":                      singleResult.MetricID,
-				"filterSLIDefinitionAggregator": filterSLIDefinitionAggregator,
-				"entitySelectorSLIDefinition":   entitySelectorSLIDefinition,
+				"filterSLIDefinitionAggregator": metricQueryComponents.filterSLIDefinitionAggregator,
+				"entitySelectorSLIDefinition":   metricQueryComponents.entitySelectorSLIDefinition,
 			}).Debug("Processing result")
-		if !isMatchingMetricID(singleResult.MetricID, metricID) {
+		if !isMatchingMetricID(singleResult.MetricID, metricQueryComponents.metricID) {
 			log.WithFields(
 				log.Fields{
-					"wantedMetricId": metricID,
+					"wantedMetricId": metricQueryComponents.metricID,
 					"gotMetricId":    singleResult.MetricID,
 				}).Debug("Retrieving unintended metric")
 
@@ -985,7 +998,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 			// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
 			indicatorName := sloDefinition.SLI
 
-			metricQueryForSLI := metricQuery
+			metricQueryForSLI := metricQueryComponents.metricQuery
 
 			// we need this one to "fake" the MetricQuery for the SLi.yaml to include the dynamic dimension name for each value
 			// we initialize it with ":names" as this is the part of the metric query string we will replace
@@ -1006,11 +1019,11 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 					dimensionValue := singleDataEntry.Dimensions[dimIx]
 					indicatorName = indicatorName + "_" + dimensionValue
 
-					filterSLIDefinitionAggregatorValue = ":names" + strings.Replace(filterSLIDefinitionAggregator, "FILTERDIMENSIONVALUE", dimensionValue, 1)
+					filterSLIDefinitionAggregatorValue = ":names" + strings.Replace(metricQueryComponents.filterSLIDefinitionAggregator, "FILTERDIMENSIONVALUE", dimensionValue, 1)
 
-					if entitySelectorSLIDefinition != "" && dimensionIncrement == 2 {
+					if metricQueryComponents.entitySelectorSLIDefinition != "" && dimensionIncrement == 2 {
 						dimensionEntityID := singleDataEntry.Dimensions[dimIx+1]
-						metricQueryForSLI = metricQueryForSLI + strings.Replace(entitySelectorSLIDefinition, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
+						metricQueryForSLI = metricQueryForSLI + strings.Replace(metricQueryComponents.entitySelectorSLIDefinition, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
 					}
 				}
 			}
@@ -1026,7 +1039,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 			value = value / float64(len(singleDataEntry.Values))
 
 			// lets scale the metric
-			value = scaleData(metricID, metricUnit, value)
+			value = scaleData(metricQueryComponents.metricID, metricQueryComponents.metricUnit, value)
 
 			// we got our metric, slos and the value
 
@@ -1046,7 +1059,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 			// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
 			// we use ":names" to find the right spot to add our custom dimension filter
 			// we also "pre-pend" the metricDefinition.Unit - which allows us later on to do the scaling right
-			dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("MV2;%s;%s", metricUnit, strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1))
+			dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("MV2;%s;%s", metricQueryComponents.metricUnit, strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1))
 
 			// lets add the SLO definition in case we need to generate an SLO.yaml
 			dashboardSLO.Objectives = append(
@@ -1208,11 +1221,11 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 				log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
 
 				// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-				metricID, metricUnit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, err := ph.generateMetricQueryFromDataExplorer(dataQuery, tileManagementZoneFilter, startUnix, endUnix)
+				metricQuery, err := ph.generateMetricQueryFromDataExplorer(dataQuery, tileManagementZoneFilter, startUnix, endUnix)
 
 				// if there was no error we generate the SLO & SLO definition
 				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
+					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, dashboardSLI, dashboardSLO)
 					sliResults = append(sliResults, newSliResults...)
 				} else {
 					log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
@@ -1244,11 +1257,11 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			for _, series := range tile.FilterConfig.ChartConfig.Series {
 
 				// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-				metricID, metricUnit, metricQuery, fullMetricQuery, entitySelectorSLIDefinition, filterSLIDefinitionAggregator, err := ph.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, startUnix, endUnix)
+				metricQuery, err := ph.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, startUnix, endUnix)
 
 				// if there was no error we generate the SLO & SLO definition
 				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
+					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricQuery, dashboardSLI, dashboardSLO)
 					sliResults = append(sliResults, newSliResults...)
 				} else {
 					log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
