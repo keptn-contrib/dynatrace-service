@@ -416,14 +416,8 @@ func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggered
 		// lets add this to the SLO in case this indicator is not yet in SLO.yaml. Becuase if it doesnt get added the lighthouse wont evaluate the SLI values
 		// we default it to open_problems<=0
 		sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", problemIndicator)
-		_, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(sloString, []string{}, []string{})
-		sloDefinition := &keptncommon.SLO{
-			SLI:     problemIndicator,
-			Weight:  weight,
-			KeySLI:  keySli,
-			Pass:    passSLOs,
-			Warning: warningSLOs,
-		}
+		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
+
 		addSLO(keptnEvent, sloDefinition)
 	}
 

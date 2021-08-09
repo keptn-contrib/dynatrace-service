@@ -625,14 +625,7 @@ func (ph *Handler) processSLOTile(sloID string, startUnix time.Time, endUnix tim
 		target = sloResult.TargetSuccessOLD
 	}
 	sloString := fmt.Sprintf("sli=%s;pass=>=%f;warning=>=%f", indicatorName, warning, target)
-	_, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(sloString, []string{}, []string{})
-	sloDefinition := &keptncommon.SLO{
-		SLI:     indicatorName,
-		Weight:  weight,
-		KeySLI:  keySli,
-		Pass:    passSLOs,
-		Warning: warningSLOs,
-	}
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
 	return sliResult, indicatorName, sliQuery, sloDefinition, nil
 }
@@ -676,14 +669,7 @@ func (ph *Handler) processOpenProblemTile(problemSelector string, startUnix time
 	// lets add the SLO definitin in case we need to generate an SLO.yaml
 	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
-	_, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(sloString, []string{}, []string{})
-	sloDefinition := &keptncommon.SLO{
-		SLI:     indicatorName,
-		Weight:  weight,
-		KeySLI:  keySli,
-		Pass:    passSLOs,
-		Warning: warningSLOs,
-	}
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
 	return sliResult, indicatorName, sliQuery, sloDefinition, nil
 }
@@ -727,14 +713,7 @@ func (ph *Handler) processOpenSecurityProblemTile(securityProblemSelector string
 	// lets add the SLO definitin in case we need to generate an SLO.yaml
 	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
-	_, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(sloString, []string{}, []string{})
-	sloDefinition := &keptncommon.SLO{
-		SLI:     indicatorName,
-		Weight:  weight,
-		KeySLI:  keySli,
-		Pass:    passSLOs,
-		Warning: warningSLOs,
-	}
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
 	return sliResult, indicatorName, sliQuery, sloDefinition, nil
 }
@@ -952,7 +931,7 @@ func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManageme
 
 // Generates the relevant SLIs & SLO definitions based on the metric query
 // noOfDimensionsInChart: how many dimensions did we have in the chart definition
-func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, baseIndicatorName string, passSLOs []*keptncommon.SLOCriteria, warningSLOs []*keptncommon.SLOCriteria, weight int, keySli bool, metricID string, metricUnit string, metricQuery string, fullMetricQuery string, filterSLIDefinitionAggregator string, entitySelectorSLIDefinition string, dashboardSLI *SLI, dashboardSLO *keptncommon.ServiceLevelObjectives) []*keptnv2.SLIResult {
+func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricID string, metricUnit string, metricQuery string, fullMetricQuery string, filterSLIDefinitionAggregator string, entitySelectorSLIDefinition string, dashboardSLI *SLI, dashboardSLO *keptncommon.ServiceLevelObjectives) []*keptnv2.SLIResult {
 
 	// TODO 2021-08-04: there are too many parameters and many of them have the same type
 
@@ -966,14 +945,14 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 		// ERROR-CASE: Metric API return no values or an error
 		// we could not query data - so - we return the error back as part of our SLIResults
 		sliResults = append(sliResults, &keptnv2.SLIResult{
-			Metric:  baseIndicatorName,
+			Metric:  sloDefinition.SLI,
 			Value:   0,
 			Success: false, // Mark as failure
 			Message: err.Error(),
 		})
 
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-		dashboardSLI.Indicators[baseIndicatorName] = metricQuery
+		dashboardSLI.Indicators[sloDefinition.SLI] = metricQuery
 
 		return sliResults
 	}
@@ -1004,7 +983,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 			//
 			// we need to generate the indicator name based on the base name + all dimensions, e.g: teststep_MYTESTSTEP, teststep_MYOTHERTESTSTEP
 			// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
-			indicatorName := baseIndicatorName
+			indicatorName := sloDefinition.SLI
 
 			metricQueryForSLI := metricQuery
 
@@ -1070,14 +1049,15 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 			dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("MV2;%s;%s", metricUnit, strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1))
 
 			// lets add the SLO definition in case we need to generate an SLO.yaml
-			sloDefinition := &keptncommon.SLO{
-				SLI:     indicatorName,
-				Weight:  weight,
-				KeySLI:  keySli,
-				Pass:    passSLOs,
-				Warning: warningSLOs,
-			}
-			dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
+			dashboardSLO.Objectives = append(
+				dashboardSLO.Objectives,
+				&keptncommon.SLO{
+					SLI:     indicatorName,
+					Weight:  sloDefinition.Weight,
+					KeySLI:  sloDefinition.KeySLI,
+					Pass:    sloDefinition.Pass,
+					Warning: sloDefinition.Warning,
+				})
 		}
 	}
 
@@ -1217,8 +1197,8 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		if tile.TileType == "DATA_EXPLORER" {
 
 			// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-			baseIndicatorName, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(tile.Name, []string{}, []string{})
-			if baseIndicatorName == "" {
+			sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
+			if sloDefinition.SLI == "" {
 				log.WithField("tileName", tile.Name).Debug("Data explorer tile not included as name doesnt include sli=SLINAME")
 				continue
 			}
@@ -1232,7 +1212,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 				// if there was no error we generate the SLO & SLO definition
 				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), baseIndicatorName, passSLOs, warningSLOs, weight, keySli, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
+					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
 					sliResults = append(sliResults, newSliResults...)
 				} else {
 					log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
@@ -1246,8 +1226,8 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		tileTitle := tile.Title()
 
 		// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-		baseIndicatorName, passSLOs, warningSLOs, weight, keySli := common.ParsePassAndWarningFromString(tileTitle, []string{}, []string{})
-		if baseIndicatorName == "" {
+		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
+		if sloDefinition.SLI == "" {
 			log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
 			continue
 		}
@@ -1257,7 +1237,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			log.WithFields(
 				log.Fields{
 					"tileTitle":         tileTitle,
-					"baseIndicatorName": baseIndicatorName,
+					"baseIndicatorName": sloDefinition.SLI,
 				}).Debug("Processing custom chart")
 
 			// we can potentially have multiple series on that chart
@@ -1268,7 +1248,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 				// if there was no error we generate the SLO & SLO definition
 				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), baseIndicatorName, passSLOs, warningSLOs, weight, keySli, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
+					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricID, metricUnit, metricQuery, fullMetricQuery, filterSLIDefinitionAggregator, entitySelectorSLIDefinition, dashboardSLI, dashboardSLO)
 					sliResults = append(sliResults, newSliResults...)
 				} else {
 					log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
@@ -1315,7 +1295,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 					// value = scaleData(metricDefinition.MetricID, metricDefinition.Unit, value)
 
 					// we got our metric, slos and the value
-					indicatorName := baseIndicatorName
+					indicatorName := sloDefinition.SLI
 					if dimensionName != "" {
 						indicatorName = indicatorName + "_" + dimensionName
 					}
@@ -1337,15 +1317,16 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 					// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
 					dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
 
-					// lets add the SLO definitin in case we need to generate an SLO.yaml
-					sloDefinition := &keptncommon.SLO{
-						SLI:     indicatorName,
-						Weight:  weight,
-						KeySLI:  keySli,
-						Pass:    passSLOs,
-						Warning: warningSLOs,
-					}
-					dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
+					// lets add the SLO definition in case we need to generate an SLO.yaml
+					dashboardSLO.Objectives = append(
+						dashboardSLO.Objectives,
+						&keptncommon.SLO{
+							SLI:     indicatorName,
+							Weight:  sloDefinition.Weight,
+							KeySLI:  sloDefinition.KeySLI,
+							Pass:    sloDefinition.Pass,
+							Warning: sloDefinition.Warning,
+						})
 				}
 			}
 		}
