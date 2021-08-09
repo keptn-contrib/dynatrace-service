@@ -993,7 +993,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 		log.WithError(err).Debug("No result for query")
 
 		// ERROR-CASE: Metric API return no values or an error
-		// we couldnt query data - so - we return the error back as part of our SLIResults
+		// we could not query data - so - we return the error back as part of our SLIResults
 		sliResults = append(sliResults, &keptnv2.SLIResult{
 			Metric:  baseIndicatorName,
 			Value:   0,
@@ -1003,106 +1003,110 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
 		dashboardSLI.Indicators[baseIndicatorName] = metricQuery
-	} else {
-		// SUCCESS-CASE: we retrieved values - now we interate through the results and create an indicator result for every dimension
-		for _, singleResult := range queryResult.Result {
+
+		return sliResults
+	}
+
+	// SUCCESS-CASE: we retrieved values - now we iterate through the results and create an indicator result for every dimension
+	for _, singleResult := range queryResult.Result {
+		log.WithFields(
+			log.Fields{
+				"metricId":                      singleResult.MetricID,
+				"filterSLIDefinitionAggregator": filterSLIDefinitionAggregator,
+				"entitySelectorSLIDefinition":   entitySelectorSLIDefinition,
+			}).Debug("Processing result")
+		if !isMatchingMetricID(singleResult.MetricID, metricID) {
 			log.WithFields(
 				log.Fields{
-					"metricId":                      singleResult.MetricID,
-					"filterSLIDefinitionAggregator": filterSLIDefinitionAggregator,
-					"entitySelectorSLIDefinition":   entitySelectorSLIDefinition,
-				}).Debug("Processing result")
-			if isMatchingMetricID(singleResult.MetricID, metricID) {
-				dataResultCount := len(singleResult.Data)
-				if dataResultCount == 0 {
-					log.Debug("No data for metric")
+					"wantedMetricId": metricID,
+					"gotMetricId":    singleResult.MetricID,
+				}).Debug("Retrieving unintended metric")
+
+			continue
+		}
+
+		dataResultCount := len(singleResult.Data)
+		if dataResultCount == 0 {
+			log.Debug("No data for metric")
+		}
+		for _, singleDataEntry := range singleResult.Data {
+			//
+			// we need to generate the indicator name based on the base name + all dimensions, e.g: teststep_MYTESTSTEP, teststep_MYOTHERTESTSTEP
+			// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
+			indicatorName := baseIndicatorName
+
+			metricQueryForSLI := metricQuery
+
+			// we need this one to "fake" the MetricQuery for the SLi.yaml to include the dynamic dimension name for each value
+			// we initialize it with ":names" as this is the part of the metric query string we will replace
+			filterSLIDefinitionAggregatorValue := ":names"
+
+			if dataResultCount > 1 {
+				// because we use the ":names" transformation we always get two dimension entries for entity dimensions, e.g: Host, Service .... First is the Name of the entity, then the ID of the Entity
+				// lets first validate that we really received Dimension Names
+				dimensionCount := len(singleDataEntry.Dimensions)
+				dimensionIncrement := 2
+				if dimensionCount != (noOfDimensionsInChart * 2) {
+					// ph.Logger.Debug(fmt.Sprintf("DIDNT RECEIVE ID and Names. Lets assume we just received the dimension IDs"))
+					dimensionIncrement = 1
 				}
-				for _, singleDataEntry := range singleResult.Data {
-					//
-					// we need to generate the indicator name based on the base name + all dimensions, e.g: teststep_MYTESTSTEP, teststep_MYOTHERTESTSTEP
-					// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
-					indicatorName := baseIndicatorName
 
-					metricQueryForSLI := metricQuery
+				// lets iterate through the list and get all names
+				for dimIx := 0; dimIx < len(singleDataEntry.Dimensions); dimIx = dimIx + dimensionIncrement {
+					dimensionValue := singleDataEntry.Dimensions[dimIx]
+					indicatorName = indicatorName + "_" + dimensionValue
 
-					// we need this one to "fake" the MetricQuery for the SLi.yaml to include the dynamic dimension name for each value
-					// we initialize it with ":names" as this is the part of the metric query string we will replace
-					filterSLIDefinitionAggregatorValue := ":names"
+					filterSLIDefinitionAggregatorValue = ":names" + strings.Replace(filterSLIDefinitionAggregator, "FILTERDIMENSIONVALUE", dimensionValue, 1)
 
-					if dataResultCount > 1 {
-						// because we use the ":names" transformation we always get two dimension entries for entity dimensions, e.g: Host, Service .... First is the Name of the entity, then the ID of the Entity
-						// lets first validate that we really received Dimension Names
-						dimensionCount := len(singleDataEntry.Dimensions)
-						dimensionIncrement := 2
-						if dimensionCount != (noOfDimensionsInChart * 2) {
-							// ph.Logger.Debug(fmt.Sprintf("DIDNT RECEIVE ID and Names. Lets assume we just received the dimension IDs"))
-							dimensionIncrement = 1
-						}
-
-						// lets iterate through the list and get all names
-						for dimIx := 0; dimIx < len(singleDataEntry.Dimensions); dimIx = dimIx + dimensionIncrement {
-							dimensionValue := singleDataEntry.Dimensions[dimIx]
-							indicatorName = indicatorName + "_" + dimensionValue
-
-							filterSLIDefinitionAggregatorValue = ":names" + strings.Replace(filterSLIDefinitionAggregator, "FILTERDIMENSIONVALUE", dimensionValue, 1)
-
-							if entitySelectorSLIDefinition != "" && dimensionIncrement == 2 {
-								dimensionEntityID := singleDataEntry.Dimensions[dimIx+1]
-								metricQueryForSLI = metricQueryForSLI + strings.Replace(entitySelectorSLIDefinition, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
-							}
-						}
+					if entitySelectorSLIDefinition != "" && dimensionIncrement == 2 {
+						dimensionEntityID := singleDataEntry.Dimensions[dimIx+1]
+						metricQueryForSLI = metricQueryForSLI + strings.Replace(entitySelectorSLIDefinition, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
 					}
-
-					// make sure we have a valid indicator name by getting rid of special characters
-					indicatorName = common.CleanIndicatorName(indicatorName)
-
-					// calculating the value
-					value := 0.0
-					for _, singleValue := range singleDataEntry.Values {
-						value = value + singleValue
-					}
-					value = value / float64(len(singleDataEntry.Values))
-
-					// lets scale the metric
-					value = scaleData(metricID, metricUnit, value)
-
-					// we got our metric, slos and the value
-
-					log.WithFields(
-						log.Fields{
-							"name":  indicatorName,
-							"value": value,
-						}).Debug("Got indicator value")
-
-					// lets add the value to our SLIResult array
-					sliResults = append(sliResults, &keptnv2.SLIResult{
-						Metric:  indicatorName,
-						Value:   value,
-						Success: true,
-					})
-
-					// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-					// we use ":names" to find the right spot to add our custom dimension filter
-					// we also "pre-pend" the metricDefinition.Unit - which allows us later on to do the scaling right
-					dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("MV2;%s;%s", metricUnit, strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1))
-
-					// lets add the SLO definitin in case we need to generate an SLO.yaml
-					sloDefinition := &keptncommon.SLO{
-						SLI:     indicatorName,
-						Weight:  weight,
-						KeySLI:  keySli,
-						Pass:    passSLOs,
-						Warning: warningSLOs,
-					}
-					dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
 				}
-			} else {
-				log.WithFields(
-					log.Fields{
-						"wantedMetricId": metricID,
-						"gotMetricId":    singleResult.MetricID,
-					}).Debug("Retrieving unintened metric")
 			}
+
+			// make sure we have a valid indicator name by getting rid of special characters
+			indicatorName = common.CleanIndicatorName(indicatorName)
+
+			// calculating the value
+			value := 0.0
+			for _, singleValue := range singleDataEntry.Values {
+				value = value + singleValue
+			}
+			value = value / float64(len(singleDataEntry.Values))
+
+			// lets scale the metric
+			value = scaleData(metricID, metricUnit, value)
+
+			// we got our metric, slos and the value
+
+			log.WithFields(
+				log.Fields{
+					"name":  indicatorName,
+					"value": value,
+				}).Debug("Got indicator value")
+
+			// lets add the value to our SLIResult array
+			sliResults = append(sliResults, &keptnv2.SLIResult{
+				Metric:  indicatorName,
+				Value:   value,
+				Success: true,
+			})
+
+			// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
+			// we use ":names" to find the right spot to add our custom dimension filter
+			// we also "pre-pend" the metricDefinition.Unit - which allows us later on to do the scaling right
+			dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("MV2;%s;%s", metricUnit, strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1))
+
+			// lets add the SLO definition in case we need to generate an SLO.yaml
+			sloDefinition := &keptncommon.SLO{
+				SLI:     indicatorName,
+				Weight:  weight,
+				KeySLI:  keySli,
+				Pass:    passSLOs,
+				Warning: warningSLOs,
+			}
+			dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
 		}
 	}
 
