@@ -140,16 +140,14 @@ func addSLO(keptnEvent *common.BaseKeptnEvent, newSLO *keptncommon.SLO) error {
 	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
 
 	// and now we save it back to Keptn
-	if dashboardSLO != nil {
-		yamlAsByteArray, err := yaml.Marshal(dashboardSLO)
-		if err != nil {
-			return err
-		}
+	yamlAsByteArray, err := yaml.Marshal(dashboardSLO)
+	if err != nil {
+		return err
+	}
 
-		err = common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
-		if err != nil {
-			return fmt.Errorf("could not store %s : %v", common.KeptnSLOFilename, err)
-		}
+	err = common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
+	if err != nil {
+		return fmt.Errorf("could not store %s : %v", common.KeptnSLOFilename, err)
 	}
 
 	return nil
