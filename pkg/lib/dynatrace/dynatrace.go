@@ -1086,10 +1086,10 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 //  #3: ServiceLevelObjectives
 //  #4: SLIResult
 //  #5: Error
-func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardLink, *DynatraceDashboard, *SLI, *keptncommon.ServiceLevelObjectives, []*keptnv2.SLIResult, error) {
+func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardQueryResult, error) {
 
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
-	// This check is espcially important for backward compatibilty as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
+	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
 	// If a dashboard.json exists and dashboard property is empty we default to QUERY - which is the old default behavior
 	existingDashboardContent, err := common.GetKeptnResource(keptnEvent, common.DynatraceDashboardFilename)
 	if err == nil && existingDashboardContent != "" && dashboard == "" {
@@ -1100,11 +1100,11 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	// lets load the dashboard if needed
 	dashboardJSON, dashboard, err := ph.loadDynatraceDashboard(keptnEvent, dashboard)
 	if err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboard, err)
+		return nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboard, err)
 	}
 
 	if dashboardJSON == nil {
-		return nil, nil, nil, nil, nil, nil
+		return nil, nil
 	}
 
 	// generate our own SLIResult array based on the dashboard configuration
@@ -1125,7 +1125,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
 	if dashboardJSON.isTheSameAs(existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
-		return dashboardLinkAsLabel, nil, nil, nil, nil, nil
+		return NewDashboardQueryResultFrom(dashboardLinkAsLabel), nil
 	}
 
 	log.Debug("Dashboard has changed: reparsing it!")
@@ -1344,7 +1344,13 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		}
 	}
 
-	return dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, nil
+	return NewDashboardQueryResult(
+			dashboardLinkAsLabel,
+			dashboardJSON,
+			dashboardSLI,
+			dashboardSLO,
+			sliResults),
+		nil
 }
 
 // GetSLIValue queries a single metric value from Dynatrace API.

@@ -164,65 +164,69 @@ func getDataFromDynatraceDashboard(dynatraceHandler *dynatrace.Handler, keptnEve
 	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
 	// ==============================================================================
 	// Lets see if we have a Dashboard in Dynatrace that we should parse
-	dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, err := dynatraceHandler.QueryDynatraceDashboardForSLIs(keptnEvent, dashboardConfig, startUnix, endUnix)
+	result, err := dynatraceHandler.QueryDynatraceDashboardForSLIs(keptnEvent, dashboardConfig, startUnix, endUnix)
+	if result == nil && err == nil {
+		return nil, nil, nil
+	}
+
 	if err != nil {
-		return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
+		return nil, nil, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
 	}
 
 	// lets store the dashboard as well
-	if dashboardJSON != nil {
-		jsonAsByteArray, err := json.MarshalIndent(dashboardJSON, "", "  ")
+	if result.Dashboard() != nil {
+		jsonAsByteArray, err := json.MarshalIndent(result.Dashboard(), "", "  ")
 		if err != nil {
-			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not convert dashboard to JSON: %s", err)
+			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not convert dashboard to JSON: %s", err)
 		}
 		err = common.UploadKeptnResource(jsonAsByteArray, common.DynatraceDashboardFilename, keptnEvent)
 		if err != nil {
-			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not store %s : %v", common.DynatraceDashboardFilename, err)
+			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not store %s : %v", common.DynatraceDashboardFilename, err)
 		}
 	}
 
 	// lets write the SLI to the config repo
-	if dashboardSLI != nil {
-		yamlAsByteArray, err := yaml.Marshal(dashboardSLI)
+	if result.SLI() != nil {
+		yamlAsByteArray, err := yaml.Marshal(result.SLI())
 		if err != nil {
-			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not convert dashboardSLI to JSON: %s", err)
+			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not convert dashboardSLI to JSON: %s", err)
 		}
 
 		err = common.UploadKeptnResource(yamlAsByteArray, common.DynatraceSLIFilename, keptnEvent)
 		if err != nil {
-			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not store %s : %v", common.DynatraceSLIFilename, err)
+			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not store %s : %v", common.DynatraceSLIFilename, err)
 		}
 	}
 
 	// lets write the SLO to the config repo
-	if dashboardSLO != nil {
-		yamlAsByteArray, err := yaml.Marshal(dashboardSLO)
+	if result.SLO() != nil {
+		yamlAsByteArray, err := yaml.Marshal(result.SLO())
 		if err != nil {
-			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not convert dashboardSLO to JSON: %s", err)
+			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not convert dashboardSLO to JSON: %s", err)
 		}
 		err = common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
 		if err != nil {
-			return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not store %s : %v", common.KeptnSLOFilename, err)
+			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not store %s : %v", common.KeptnSLOFilename, err)
 		}
 	}
 
 	// lets also write the result to a local file in local test mode
-	if sliResults != nil {
+	if result.SLIResults() != nil {
 		if common.RunLocal || common.RunLocalTest {
 			log.Info("(RunLocal Output) Write SLIResult to sliresult.json")
-			jsonAsByteArray, err := json.MarshalIndent(sliResults, "", "  ")
+			jsonAsByteArray, err := json.MarshalIndent(result.SLIResults(), "", "  ")
 			if err != nil {
-				return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not convert sliResults to JSON: %s", err)
+				return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not convert sliResults to JSON: %s", err)
 			}
 
 			err = common.UploadKeptnResource(jsonAsByteArray, common.KeptnSLIResultFilename, keptnEvent)
 			if err != nil {
-				return dashboardLinkAsLabel, sliResults, fmt.Errorf("could not store %s : %v", common.KeptnSLIResultFilename, err)
+				return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not store %s : %v", common.KeptnSLIResultFilename, err)
 			}
 		}
 	}
 
-	return dashboardLinkAsLabel, sliResults, nil
+	return result.DashboardLink(), result.SLIResults(), nil
 }
 
 /**

@@ -305,46 +305,61 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
-	dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, err := dh.QueryDynatraceDashboardForSLIs(keptnEvent, common.DynatraceConfigDashboardQUERY, startTime, endTime)
+	result, err := dh.QueryDynatraceDashboardForSLIs(keptnEvent, common.DynatraceConfigDashboardQUERY, startTime, endTime)
 
-	if dashboardLinkAsLabel == nil {
+	if result == nil {
+		t.Fatalf("No result returned")
+	}
+
+	if result.dashboardLink == nil {
 		t.Errorf("No dashboard link label generated")
 	}
 
-	if dashboardJSON == nil {
+	if result.dashboard == nil {
 		t.Errorf("No Dashboard JSON returned")
 	}
 
-	expectedSLOs := 14
+	const expectedSLOs = 14
 
 	// validate the SLIs - there should be 9 SLIs coming back
-	if dashboardSLI == nil {
+	if result.sli != nil {
+		if len(result.sli.Indicators) != expectedSLOs {
+			t.Errorf("Excepted %d SLIs to come back but got %d", expectedSLOs, len(result.sli.Indicators))
+		}
+	} else {
 		t.Errorf("No SLI returned")
-	}
-	if len(dashboardSLI.Indicators) != expectedSLOs {
-		t.Errorf("Excepted %d SLIs to come back but got %d", expectedSLOs, len(dashboardSLI.Indicators))
 	}
 
 	// validate the SLOs
-	if dashboardSLO == nil {
+	if result.slo != nil {
+		if len(result.slo.Objectives) != expectedSLOs {
+			t.Errorf("Excepted %d SLOs to come back but got %d", expectedSLOs, len(result.slo.Objectives))
+		}
+		if result.slo.TotalScore.Pass != "90%" || result.slo.TotalScore.Warning != "70%" {
+			t.Errorf("Total Warning and Pass Scores not as expected. Got %s (pass) and %s (warning)", result.slo.TotalScore.Pass, result.slo.TotalScore.Warning)
+		}
+		if result.slo.Comparison.CompareWith != "single_result" ||
+			result.slo.Comparison.IncludeResultWithScore != "pass" ||
+			result.slo.Comparison.NumberOfComparisonResults != 1 ||
+			result.slo.Comparison.AggregateFunction != "avg" {
+			t.Errorf(
+				"Incorrect Comparisons: %s, %s, %d, %s",
+				result.slo.Comparison.CompareWith,
+				result.slo.Comparison.IncludeResultWithScore,
+				result.slo.Comparison.NumberOfComparisonResults,
+				result.slo.Comparison.AggregateFunction)
+		}
+	} else {
 		t.Errorf("No SLO return")
-	}
-	if len(dashboardSLO.Objectives) != expectedSLOs {
-		t.Errorf("Excepted %d SLOs to come back but got %d", expectedSLOs, len(dashboardSLO.Objectives))
-	}
-	if dashboardSLO.TotalScore.Pass != "90%" || dashboardSLO.TotalScore.Warning != "70%" {
-		t.Errorf("Total Warning and Pass Scores not as expected. Got %s (pass) and %s (warning)", dashboardSLO.TotalScore.Pass, dashboardSLO.TotalScore.Warning)
-	}
-	if dashboardSLO.Comparison.CompareWith != "single_result" || dashboardSLO.Comparison.IncludeResultWithScore != "pass" || dashboardSLO.Comparison.NumberOfComparisonResults != 1 || dashboardSLO.Comparison.AggregateFunction != "avg" {
-		t.Errorf("Incorrect Comparisons: %s, %s, %d, %s", dashboardSLO.Comparison.CompareWith, dashboardSLO.Comparison.IncludeResultWithScore, dashboardSLO.Comparison.NumberOfComparisonResults, dashboardSLO.Comparison.AggregateFunction)
 	}
 
 	// validate the SLI Results
-	if sliResults == nil {
+	if result.sliResults != nil {
+		if len(result.sliResults) != expectedSLOs {
+			t.Errorf("Excepted %d SLI Results to come back but got %d", expectedSLOs, len(result.sliResults))
+		}
+	} else {
 		t.Errorf("No SLI Results returned")
-	}
-	if len(sliResults) != expectedSLOs {
-		t.Errorf("Excepted %d SLI Results to come back but got %d", expectedSLOs, len(sliResults))
 	}
 
 	if err != nil {
