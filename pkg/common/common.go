@@ -618,7 +618,7 @@ func ParsePassAndWarningWithoutDefaultsFrom(customName string) *keptncommon.SLO 
 func ParsePassAndWarningFromString(customName string, defaultPass []string, defaultWarning []string) *keptncommon.SLO {
 	result := &keptncommon.SLO{
 		Weight:  1,
-		KeySLI:  true,
+		KeySLI:  false,
 		Pass:    []*keptncommon.SLOCriteria{},
 		Warning: []*keptncommon.SLOCriteria{},
 	}
