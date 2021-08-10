@@ -256,12 +256,10 @@ func getDynatraceProblemContext(eventData *keptnv2.GetSLITriggeredEventData) str
 	return ""
 }
 
-/**
- * Handles keptn.InternalGetSLIEventType
- *
- * First tries to find a Dynatrace dashboard and then parses it for SLIs and SLOs
- * Second will go to parse the SLI.yaml and returns the SLI as passed in by the event
- */
+// retrieveMetrics Handles keptn.InternalGetSLIEventType
+//
+// First tries to find a Dynatrace dashboard and then parses it for SLIs and SLOs
+// Second will go to parse the SLI.yaml and returns the SLI as passed in by the event
 func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggeredEventData) error {
 	// extract keptn context id
 	var shkeptncontext string
@@ -327,7 +325,7 @@ func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggered
 	var sliResults []*keptnv2.SLIResult
 
 	//
-	// Option 1 - see if we can get the data from a Dnatrace Dashboard
+	// Option 1 - see if we can get the data from a Dynatrace Dashboard
 	dashboardLinkAsLabel, sliResults, err := getDataFromDynatraceDashboard(dynatraceHandler, keptnEvent, startUnix, endUnix, dynatraceConfigFile.Dashboard)
 	if err != nil {
 		// log the error, but continue with loading sli.yaml
@@ -422,7 +420,11 @@ func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggered
 		sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", problemIndicator)
 		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
-		addSLO(keptnEvent, sloDefinition)
+		errAddSlo := addSLO(keptnEvent, sloDefinition)
+		if errAddSlo != nil {
+			// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
+			log.WithError(errAddSlo).Debug("problem while adding SLOs")
+		}
 	}
 
 	// now - lets see if we have captured any result values - if not - return send an error
