@@ -285,17 +285,13 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 }
 
 func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
-	defer teardown()
-
 	var filtersPerEntityType = map[string]map[string][]string{
 		"SERVICE": {
 			"SPECIFIC_ENTITIES": {"SERVICE-086C46F600BA1DC6"},
 			"AUTO_TAGS":         {"keptn_deployment:primary"},
 		},
 	}
-	entityTileFilter := dh.getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
+	entityTileFilter := getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
 
 	if strings.Compare(entityTileFilter, ",entityId(\"SERVICE-086C46F600BA1DC6\"),tag(\"keptn_deployment:primary\")") != 0 {
 		t.Errorf("getEntitySelectorFromEntityFilter wrong. Returned: " + entityTileFilter)
@@ -311,7 +307,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	endTime := time.Unix(1571649085, 0).UTC()
 	dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, err := dh.QueryDynatraceDashboardForSLIs(keptnEvent, common.DynatraceConfigDashboardQUERY, startTime, endTime)
 
-	if dashboardLinkAsLabel == "" {
+	if dashboardLinkAsLabel == nil {
 		t.Errorf("No dashboard link label generated")
 	}
 
@@ -723,65 +719,67 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 		customName string
 	}
 	tests := []struct {
-		name  string
-		args  args
-		want  string
-		want1 []*keptn.SLOCriteria
-		want2 []*keptn.SLOCriteria
-		want3 int
-		want4 bool
+		name string
+		args args
+		want keptn.SLO
 	}{
 		{
 			name: "simple test",
 			args: args{
 				customName: "Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true",
 			},
-			want:  "teststep_rt",
-			want1: []*keptn.SLOCriteria{{Criteria: []string{"<500ms", "<+10%"}}},
-			want2: []*keptn.SLOCriteria{{Criteria: []string{"<1000ms", "<+20%"}}},
-			want3: 1,
-			want4: true,
+			want: keptn.SLO{
+				SLI:     "teststep_rt",
+				Pass:    []*keptn.SLOCriteria{{Criteria: []string{"<500ms", "<+10%"}}},
+				Warning: []*keptn.SLOCriteria{{Criteria: []string{"<1000ms", "<+20%"}}},
+				Weight:  1,
+				KeySLI:  true,
+			},
 		},
 		{
 			name: "test with = in pass/warn expression",
 			args: args{
 				customName: "Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false",
 			},
-			want:  "host_disk_queue",
-			want1: []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
-			want2: []*keptn.SLOCriteria{{Criteria: []string{"<1"}}},
-			want3: 1,
-			want4: false,
+			want: keptn.SLO{
+				SLI:     "host_disk_queue",
+				Pass:    []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
+				Warning: []*keptn.SLOCriteria{{Criteria: []string{"<1"}}},
+				Weight:  1,
+				KeySLI:  false,
+			},
 		},
 		{
 			name: "test weight",
 			args: args{
 				customName: "Host CPU %;sli=host_cpu;pass=<20;warning=<50;key=false;weight=2",
 			},
-			want:  "host_cpu",
-			want1: []*keptn.SLOCriteria{{Criteria: []string{"<20"}}},
-			want2: []*keptn.SLOCriteria{{Criteria: []string{"<50"}}},
-			want3: 2,
-			want4: false,
+			want: keptn.SLO{
+				SLI:     "host_cpu",
+				Pass:    []*keptn.SLOCriteria{{Criteria: []string{"<20"}}},
+				Warning: []*keptn.SLOCriteria{{Criteria: []string{"<50"}}},
+				Weight:  2,
+				KeySLI:  false,
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, got3, got4 := common.ParsePassAndWarningFromString(tt.args.customName, []string{}, []string{})
-			if got != tt.want {
+			got := common.ParsePassAndWarningWithoutDefaultsFrom(tt.args.customName)
+			if got.SLI != tt.want.SLI {
 				t.Errorf("ParsePassAndWarningFromString() got = %v, want %v", got, tt.want)
 			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("ParsePassAndWarningFromString() got1 = %v, want %v", got1, tt.want1)
+			if !reflect.DeepEqual(got.Pass, tt.want.Pass) {
+				t.Errorf("ParsePassAndWarningFromString() Pass = %v, want %v", got.Pass, tt.want.Pass)
 			}
-			if !reflect.DeepEqual(got2, tt.want2) {
-				t.Errorf("ParsePassAndWarningFromString() got2 = %v, want %v", got2, tt.want2)
+			if !reflect.DeepEqual(got.Warning, tt.want.Warning) {
+				t.Errorf("ParsePassAndWarningFromString() Warning = %v, want %v", got.Warning, tt.want.Warning)
 			}
-			if !reflect.DeepEqual(got3, tt.want3) {
-				t.Errorf("ParsePassAndWarningFromString() got2 = %v, want %v", got3, tt.want3)
+			if got.Weight != tt.want.Weight {
+				t.Errorf("ParsePassAndWarningFromString() Weight = %v, want %v", got.Weight, tt.want.Weight)
 			}
-			if !reflect.DeepEqual(got4, tt.want4) {
-				t.Errorf("ParsePassAndWarningFromString() got2 = %v, want %v", got4, tt.want4)
+			if got.KeySLI != tt.want.KeySLI {
+				t.Errorf("ParsePassAndWarningFromString() KeySLI = %v, want %v", got.KeySLI, tt.want.KeySLI)
 			}
 		})
 	}

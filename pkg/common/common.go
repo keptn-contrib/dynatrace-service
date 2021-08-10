@@ -604,28 +604,28 @@ func TimestampToString(time time.Time) string {
 	return strconv.FormatInt(time.Unix()*1000, 10)
 }
 
+func ParsePassAndWarningWithoutDefaultsFrom(customName string) *keptncommon.SLO {
+	return ParsePassAndWarningFromString(customName, []string{}, []string{})
+}
+
 // ParsePassAndWarningFromString takes a value such as
-// Example 1: Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true
-// Example 2: Response time (P95);sli=svc_rt_p95;pass=<+10%,<600
-// Example 3: Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false
-// can also take a value like "KQG;project=myproject;pass=90%;warning=75%;"
-// This will return
-// #1: teststep_rt
-// #2: []SLOCriteria { Criteria{"<500ms","<+10%"}}
-// #3: []SLOCriteria { ["<1000ms","<+20%" }}
-// #4: 1
-// #5: true
-func ParsePassAndWarningFromString(customName string, defaultPass []string, defaultWarning []string) (string, []*keptncommon.SLOCriteria, []*keptncommon.SLOCriteria, int, bool) {
+//   Example 1: Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true
+//   Example 2: Response time (P95);sli=svc_rt_p95;pass=<+10%,<600
+//   Example 3: Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false
+// can also take a value like
+// 	 "KQG;project=myproject;pass=90%;warning=75%;"
+// This will return a SLO object
+func ParsePassAndWarningFromString(customName string, defaultPass []string, defaultWarning []string) *keptncommon.SLO {
+	result := &keptncommon.SLO{
+		Weight:  1,
+		KeySLI:  false,
+		Pass:    []*keptncommon.SLOCriteria{},
+		Warning: []*keptncommon.SLOCriteria{},
+	}
+
 	nameValueSplits := strings.Split(customName, ";")
 
-	// lets initialize it
-	sliName := ""
-	weight := 1
-	keySli := false
-	passCriteria := []*keptncommon.SLOCriteria{}
-	warnCriteria := []*keptncommon.SLOCriteria{}
-
-	// lets iterate through all name-value pairs which are seprated through ";" to extract keys such as warning, pass, weight, key, sli
+	// lets iterate through all name-value pairs which are separated through ";" to extract keys such as warning, pass, weight, key, sli
 	for i := 0; i < len(nameValueSplits); i++ {
 
 		nameValueDividerIndex := strings.Index(nameValueSplits[i], "=")
@@ -640,22 +640,22 @@ func ParsePassAndWarningFromString(customName string, defaultPass []string, defa
 		var err error
 		switch nameString /*nameValueSplit[0]*/ {
 		case "sli":
-			sliName = valueString
+			result.SLI = valueString
 		case "pass":
-			passCriteria = append(passCriteria, &keptncommon.SLOCriteria{
-				Criteria: strings.Split(valueString, ","),
-			})
+			result.Pass = append(
+				result.Pass,
+				&keptncommon.SLOCriteria{Criteria: strings.Split(valueString, ",")})
 		case "warning":
-			warnCriteria = append(warnCriteria, &keptncommon.SLOCriteria{
-				Criteria: strings.Split(valueString, ","),
-			})
+			result.Warning = append(
+				result.Warning,
+				&keptncommon.SLOCriteria{Criteria: strings.Split(valueString, ",")})
 		case "key":
-			keySli, err = strconv.ParseBool(valueString)
+			result.KeySLI, err = strconv.ParseBool(valueString)
 			if err != nil {
 				log.WithError(err).Warn("Error parsing bool")
 			}
 		case "weight":
-			weight, err = strconv.Atoi(valueString)
+			result.Weight, err = strconv.Atoi(valueString)
 			if err != nil {
 				log.WithError(err).Warn("Error parsing weight")
 			}
@@ -663,27 +663,23 @@ func ParsePassAndWarningFromString(customName string, defaultPass []string, defa
 	}
 
 	// use the defaults if nothing was specified
-	if (len(passCriteria) == 0) && (len(defaultPass) > 0) {
-		passCriteria = append(passCriteria, &keptncommon.SLOCriteria{
-			Criteria: defaultPass,
-		})
+	if (len(result.Pass) == 0) && (len(defaultPass) > 0) {
+		result.Pass = append(result.Pass, &keptncommon.SLOCriteria{Criteria: defaultPass})
 	}
 
-	if (len(warnCriteria) == 0) && (len(defaultWarning) > 0) {
-		warnCriteria = append(warnCriteria, &keptncommon.SLOCriteria{
-			Criteria: defaultWarning,
-		})
+	if (len(result.Warning) == 0) && (len(defaultWarning) > 0) {
+		result.Warning = append(result.Warning, &keptncommon.SLOCriteria{Criteria: defaultWarning})
 	}
 
 	// if we have no criteria for warn or pass we just return nil
-	if len(passCriteria) == 0 {
-		passCriteria = nil
+	if len(result.Pass) == 0 {
+		result.Pass = nil
 	}
-	if len(warnCriteria) == 0 {
-		warnCriteria = nil
+	if len(result.Warning) == 0 {
+		result.Warning = nil
 	}
 
-	return sliName, passCriteria, warnCriteria, weight, keySli
+	return result
 }
 
 // ParseMarkdownConfiguration parses a text that can be used in a Markdown tile to specify global SLO properties
