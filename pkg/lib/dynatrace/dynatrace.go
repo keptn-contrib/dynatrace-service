@@ -1157,12 +1157,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		}
 
 		if tile.TileType == "MARKDOWN" {
-			// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
-			// if we find KQG. we process the markdown
-			if strings.Contains(tile.Markdown, "KQG.") {
-				common.ParseMarkdownConfiguration(tile.Markdown, result.slo)
-			}
-
+			ph.addSLIAndSLOToResultFromMarkdownTile(&tile, result)
 			continue
 		}
 
@@ -1199,6 +1194,14 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	}
 
 	return result, nil
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromMarkdownTile(tile *Tile, result *DashboardQueryResult) {
+	// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
+	// if we find KQG. we process the markdown
+	if strings.Contains(tile.Markdown, "KQG.") {
+		common.ParseMarkdownConfiguration(tile.Markdown, result.slo)
+	}
 }
 
 func (ph *Handler) addSLIAndSLOToResultFromSLOTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
