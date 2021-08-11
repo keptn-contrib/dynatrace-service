@@ -1187,15 +1187,6 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			continue
 		}
 
-		tileTitle := tile.Title()
-
-		// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
-		if sloDefinition.SLI == "" {
-			log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
-			continue
-		}
-
 		// only interested in custom charts
 		if tile.TileType == "CUSTOM_CHARTING" {
 			ph.addSLIAndSLOToResultFromCustomChartsTile(&tile, startUnix, endUnix, result)
@@ -1203,76 +1194,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 		// Dynatrace Query Language
 		if tile.TileType == "DTAQL" {
-
-			// for Dynatrace Query Language we currently support the following
-			// SINGLE_VALUE: we just take the one value that comes back
-			// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
-			// TABLE: we assume the first column is the dimension and the last is the value
-
-			usql := ph.buildDynatraceUSQLQuery(tile.Query, startUnix, endUnix)
-			usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
-			if err != nil {
-				log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
-				continue
-			}
-
-			for _, rowValue := range usqlResult.Values {
-				dimensionName := ""
-				dimensionValue := 0.0
-
-				if tile.Type == "SINGLE_VALUE" {
-					dimensionValue = rowValue[0].(float64)
-				} else if tile.Type == "PIE_CHART" {
-					dimensionName = rowValue[0].(string)
-					dimensionValue = rowValue[1].(float64)
-				} else if tile.Type == "COLUMN_CHART" {
-					dimensionName = rowValue[0].(string)
-					dimensionValue = rowValue[1].(float64)
-				} else if tile.Type == "TABLE" {
-					dimensionName = rowValue[0].(string)
-					dimensionValue = rowValue[len(rowValue)-1].(float64)
-				} else {
-					log.WithField("tileType", tile.Type).Debug("Unsupport USQL tile type")
-					continue
-				}
-
-				// lets scale the metric
-				// value = scaleData(metricDefinition.MetricID, metricDefinition.Unit, value)
-
-				// we got our metric, slos and the value
-				indicatorName := sloDefinition.SLI
-				if dimensionName != "" {
-					indicatorName = indicatorName + "_" + dimensionName
-				}
-
-				log.WithFields(
-					log.Fields{
-						"name":           indicatorName,
-						"dimensionValue": dimensionValue,
-					}).Debug("Appending SLIResult")
-
-				// lets add the value to our SLIResult array
-				result.sliResults = append(result.sliResults, &keptnv2.SLIResult{
-					Metric:  indicatorName,
-					Value:   dimensionValue,
-					Success: true,
-				})
-
-				// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-				// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
-				result.sli.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
-
-				// lets add the SLO definition in case we need to generate an SLO.yaml
-				result.slo.Objectives = append(
-					result.slo.Objectives,
-					&keptncommon.SLO{
-						SLI:     indicatorName,
-						Weight:  sloDefinition.Weight,
-						KeySLI:  sloDefinition.KeySLI,
-						Pass:    sloDefinition.Pass,
-						Warning: sloDefinition.Warning,
-					})
-			}
+			ph.addSLIAndSLOToResultFromUserSessionQueryTile(&tile, startUnix, endUnix, result)
 		}
 	}
 
@@ -1406,6 +1328,87 @@ func (ph *Handler) addSLIAndSLOToResultFromCustomChartsTile(tile *Tile, startUni
 
 		newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricQuery, result.sli, result.slo)
 		result.sliResults = append(result.sliResults, newSliResults...)
+	}
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromUserSessionQueryTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// for Dynatrace Query Language we currently support the following
+	// SINGLE_VALUE: we just take the one value that comes back
+	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
+	// TABLE: we assume the first column is the dimension and the last is the value
+
+	usql := ph.buildDynatraceUSQLQuery(tile.Query, startUnix, endUnix)
+	usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
+	if err != nil {
+		log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
+		return
+	}
+
+	tileTitle := tile.Title()
+
+	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
+	if sloDefinition.SLI == "" {
+		log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
+		return
+	}
+
+	for _, rowValue := range usqlResult.Values {
+		dimensionName := ""
+		dimensionValue := 0.0
+
+		if tile.Type == "SINGLE_VALUE" {
+			dimensionValue = rowValue[0].(float64)
+		} else if tile.Type == "PIE_CHART" {
+			dimensionName = rowValue[0].(string)
+			dimensionValue = rowValue[1].(float64)
+		} else if tile.Type == "COLUMN_CHART" {
+			dimensionName = rowValue[0].(string)
+			dimensionValue = rowValue[1].(float64)
+		} else if tile.Type == "TABLE" {
+			dimensionName = rowValue[0].(string)
+			dimensionValue = rowValue[len(rowValue)-1].(float64)
+		} else {
+			log.WithField("tileType", tile.Type).Debug("Unsupport USQL tile type")
+			continue
+		}
+
+		// lets scale the metric
+		// value = scaleData(metricDefinition.MetricID, metricDefinition.Unit, value)
+
+		// we got our metric, slos and the value
+		indicatorName := sloDefinition.SLI
+		if dimensionName != "" {
+			indicatorName = indicatorName + "_" + dimensionName
+		}
+
+		log.WithFields(
+			log.Fields{
+				"name":           indicatorName,
+				"dimensionValue": dimensionValue,
+			}).Debug("Appending SLIResult")
+
+		// lets add the value to our SLIResult array
+		result.sliResults = append(result.sliResults, &keptnv2.SLIResult{
+			Metric:  indicatorName,
+			Value:   dimensionValue,
+			Success: true,
+		})
+
+		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
+		// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
+		result.sli.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
+
+		// lets add the SLO definition in case we need to generate an SLO.yaml
+		result.slo.Objectives = append(
+			result.slo.Objectives,
+			&keptncommon.SLO{
+				SLI:     indicatorName,
+				Weight:  sloDefinition.Weight,
+				KeySLI:  sloDefinition.KeySLI,
+				Pass:    sloDefinition.Pass,
+				Warning: sloDefinition.Warning,
+			})
 	}
 }
 
