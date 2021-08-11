@@ -1154,9 +1154,6 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			ph.addSLIAndSLOToResultFromOpenProblemsTile(&tile, startUnix, endUnix, result)
 			// current logic also does security tile processing for open problem tiles
 			ph.addSLIAndSLOToResultFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result)
-		case "OPEN_SECURITY_PROBLEMS":
-			// TODO: Remove this once we have an actual security tile!
-			ph.addSLIAndSLOToResultFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result)
 		case "DATA_EXPLORER":
 			// here we handle the new Metric Data Explorer Tile
 			ph.addSLIAndSLOToResultFromDataExplorerTile(&tile, startUnix, endUnix, result)
