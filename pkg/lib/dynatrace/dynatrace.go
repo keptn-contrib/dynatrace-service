@@ -1143,53 +1143,30 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 	log.Debug("Dashboard has changed: reparsing it!")
 
-	//
 	// now lets iterate through the dashboard to find our SLIs
 	for _, tile := range dashboardJSON.Tiles {
-		if tile.TileType == "HEADER" {
-			// we dont do markdowns or synthetic tests
-			continue
-		}
-
-		if tile.TileType == "SYNTHETIC_TESTS" {
-			// we dont do markdowns or synthetic tests
-			continue
-		}
-
-		if tile.TileType == "MARKDOWN" {
+		switch tile.TileType {
+		case "MARKDOWN":
 			ph.addSLIAndSLOToResultFromMarkdownTile(&tile, result)
-			continue
-		}
-
-		if tile.TileType == "SLO" {
+		case "SLO":
 			ph.addSLIAndSLOToResultFromSLOTile(&tile, startUnix, endUnix, result)
-			continue
-		}
-
-		if tile.TileType == "OPEN_PROBLEMS" {
+		case "OPEN_PROBLEMS":
 			ph.addSLIAndSLOToResultFromOpenProblemsTile(&tile, startUnix, endUnix, result)
-		}
-
-		if (tile.TileType == "OPEN_SECURITY_PROBLEMS") ||
-			(tile.TileType == "OPEN_PROBLEMS") { // TODO: Remove this once we have an actual security tile!
+			// current logic also does security tile processing for open problem tiles
 			ph.addSLIAndSLOToResultFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result)
-		}
-
-		//
-		// here we handle the new Metric Data Explorer Tile
-		if tile.TileType == "DATA_EXPLORER" {
+		case "OPEN_SECURITY_PROBLEMS":
+			// TODO: Remove this once we have an actual security tile!
+			ph.addSLIAndSLOToResultFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result)
+		case "DATA_EXPLORER":
+			// here we handle the new Metric Data Explorer Tile
 			ph.addSLIAndSLOToResultFromDataExplorerTile(&tile, startUnix, endUnix, result)
-			continue
-		}
-
-		// only interested in custom charts
-		if tile.TileType == "CUSTOM_CHARTING" {
+		case "CUSTOM_CHARTING":
 			ph.addSLIAndSLOToResultFromCustomChartsTile(&tile, startUnix, endUnix, result)
-		}
-
-		// Dynatrace Query Language
-		if tile.TileType == "DTAQL" {
+		case "DTAQL":
 			ph.addSLIAndSLOToResultFromUserSessionQueryTile(&tile, startUnix, endUnix, result)
+		default:
+			// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)
+			continue
 		}
 	}
 
