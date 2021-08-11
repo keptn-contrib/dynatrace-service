@@ -1354,11 +1354,12 @@ func (ph *Handler) addSLIAndSLOToResultFromOpenSecurityProblemsTile(tile *Tile, 
 	sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
 	if err != nil {
 		log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
-	} else {
-		result.sliResults = append(result.sliResults, sliResult)
-		result.sli.Indicators[sliIndicator] = sliQuery
-		result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+		return
 	}
+
+	result.sliResults = append(result.sliResults, sliResult)
+	result.sli.Indicators[sliIndicator] = sliQuery
+	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 }
 
 func (ph *Handler) addSLIAndSLOToResultFromDataExplorerTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
