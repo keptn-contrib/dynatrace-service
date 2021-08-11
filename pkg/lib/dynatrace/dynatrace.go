@@ -1337,18 +1337,19 @@ func (ph *Handler) addSLIAndSLOToResultFromUserSessionQueryTile(tile *Tile, star
 		dimensionName := ""
 		dimensionValue := 0.0
 
-		if tile.Type == "SINGLE_VALUE" {
+		switch tile.Type {
+		case "SINGLE_VALUE":
 			dimensionValue = rowValue[0].(float64)
-		} else if tile.Type == "PIE_CHART" {
+		case "PIE_CHART":
 			dimensionName = rowValue[0].(string)
 			dimensionValue = rowValue[1].(float64)
-		} else if tile.Type == "COLUMN_CHART" {
+		case "COLUMN_CHART":
 			dimensionName = rowValue[0].(string)
 			dimensionValue = rowValue[1].(float64)
-		} else if tile.Type == "TABLE" {
+		case "TABLE":
 			dimensionName = rowValue[0].(string)
 			dimensionValue = rowValue[len(rowValue)-1].(float64)
-		} else {
+		default:
 			log.WithField("tileType", tile.Type).Debug("Unsupport USQL tile type")
 			continue
 		}
