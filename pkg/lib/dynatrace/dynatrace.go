@@ -1287,11 +1287,12 @@ func (ph *Handler) addSLIAndSLOToResultFromSLOTile(tile *Tile, startUnix time.Ti
 		sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processSLOTile(sloEntity, startUnix, endUnix)
 		if err != nil {
 			log.WithError(err).Error("Error Processing SLO")
-		} else {
-			result.sliResults = append(result.sliResults, sliResult)
-			result.sli.Indicators[sliIndicator] = sliQuery
-			result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+			continue
 		}
+
+		result.sliResults = append(result.sliResults, sliResult)
+		result.sli.Indicators[sliIndicator] = sliQuery
+		result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 	}
 }
 
