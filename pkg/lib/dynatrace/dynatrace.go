@@ -1178,17 +1178,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			tile.TileFilter.ManagementZone)
 
 		if tile.TileType == "OPEN_PROBLEMS" {
-			// we will query the number of open problems based on the specification of that tile
-			problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
-
-			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, startUnix, endUnix)
-			if err != nil {
-				log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
-			} else {
-				result.sliResults = append(result.sliResults, sliResult)
-				result.sli.Indicators[sliIndicator] = sliQuery
-				result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
-			}
+			ph.addSLIAndSLOToResultFromOpenProblemsTile(&tile, startUnix, endUnix, result)
 		}
 
 		if (tile.TileType == "OPEN_SECURITY_PROBLEMS") ||
@@ -1361,6 +1351,27 @@ func (ph *Handler) addSLIAndSLOToResultFromSLOTile(tile *Tile, startUnix time.Ti
 			result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 		}
 	}
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromOpenProblemsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(
+		result.dashboard.DashboardMetadata.DashboardFilter,
+		tile.TileFilter.ManagementZone)
+
+	// we will query the number of open problems based on the specification of that tile
+	problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
+
+	sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, startUnix, endUnix)
+	if err != nil {
+		log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
+		return
+	}
+
+	result.sliResults = append(result.sliResults, sliResult)
+	result.sli.Indicators[sliIndicator] = sliQuery
+	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 }
 
 // GetSLIValue queries a single metric value from Dynatrace API.
