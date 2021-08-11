@@ -421,7 +421,7 @@ func retrieveMetrics(event cloudevents.Event, eventData *keptnv2.GetSLITriggered
 		errAddSlo := addSLO(keptnEvent, sloDefinition)
 		if errAddSlo != nil {
 			// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
-			log.WithError(errAddSlo).Debug("problem while adding SLOs")
+			log.WithError(errAddSlo).Error("problem while adding SLOs")
 		}
 	}
 
