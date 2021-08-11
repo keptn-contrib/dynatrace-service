@@ -1386,7 +1386,7 @@ func (ph *Handler) addSLIAndSLOToResultFromDataExplorerTile(tile *Tile, startUni
 		// if there was no error we generate the SLO & SLO definition
 		if err != nil {
 			log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
-			return
+			continue
 		}
 
 		newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, result.sli, result.slo)
