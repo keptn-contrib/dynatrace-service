@@ -1171,12 +1171,6 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			continue
 		}
 
-		// get the tile specific management zone filter that might be needed by different tile processors
-		// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-		tileManagementZoneFilter := NewManagementZoneFilter(
-			dashboardJSON.DashboardMetadata.DashboardFilter,
-			tile.TileFilter.ManagementZone)
-
 		if tile.TileType == "OPEN_PROBLEMS" {
 			ph.addSLIAndSLOToResultFromOpenProblemsTile(&tile, startUnix, endUnix, result)
 		}
@@ -1204,26 +1198,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 		// only interested in custom charts
 		if tile.TileType == "CUSTOM_CHARTING" {
-			log.WithFields(
-				log.Fields{
-					"tileTitle":         tileTitle,
-					"baseIndicatorName": sloDefinition.SLI,
-				}).Debug("Processing custom chart")
-
-			// we can potentially have multiple series on that chart
-			for _, series := range tile.FilterConfig.ChartConfig.Series {
-
-				// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-				metricQuery, err := ph.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, startUnix, endUnix)
-
-				// if there was no error we generate the SLO & SLO definition
-				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricQuery, result.sli, result.slo)
-					result.sliResults = append(result.sliResults, newSliResults...)
-				} else {
-					log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
-				}
-			}
+			ph.addSLIAndSLOToResultFromCustomChartsTile(&tile, startUnix, endUnix, result)
 		}
 
 		// Dynatrace Query Language
@@ -1390,6 +1365,45 @@ func (ph *Handler) addSLIAndSLOToResultFromDataExplorerTile(tile *Tile, startUni
 		}
 
 		newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, result.sli, result.slo)
+		result.sliResults = append(result.sliResults, newSliResults...)
+	}
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromCustomChartsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	tileTitle := tile.Title()
+
+	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
+	if sloDefinition.SLI == "" {
+		log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
+		return
+	}
+
+	log.WithFields(
+		log.Fields{
+			"tileTitle":         tileTitle,
+			"baseIndicatorName": sloDefinition.SLI,
+		}).Debug("Processing custom chart")
+
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(
+		result.dashboard.DashboardMetadata.DashboardFilter,
+		tile.TileFilter.ManagementZone)
+
+	// we can potentially have multiple series on that chart
+	for _, series := range tile.FilterConfig.ChartConfig.Series {
+
+		// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
+		metricQuery, err := ph.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, startUnix, endUnix)
+
+		// if there was no error we generate the SLO & SLO definition
+		if err != nil {
+			log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
+			continue
+		}
+
+		newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricQuery, result.sli, result.slo)
 		result.sliResults = append(result.sliResults, newSliResults...)
 	}
 }
