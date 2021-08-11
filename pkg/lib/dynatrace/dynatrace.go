@@ -1183,17 +1183,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 		if (tile.TileType == "OPEN_SECURITY_PROBLEMS") ||
 			(tile.TileType == "OPEN_PROBLEMS") { // TODO: Remove this once we have an actual security tile!
-			// we will query the number of open security problems based on the specification of that tile
-			problemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
-
-			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
-			if err != nil {
-				log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
-			} else {
-				result.sliResults = append(result.sliResults, sliResult)
-				result.sli.Indicators[sliIndicator] = sliQuery
-				result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
-			}
+			ph.addSLIAndSLOToResultFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result)
 		}
 
 		//
@@ -1372,6 +1362,26 @@ func (ph *Handler) addSLIAndSLOToResultFromOpenProblemsTile(tile *Tile, startUni
 	result.sliResults = append(result.sliResults, sliResult)
 	result.sli.Indicators[sliIndicator] = sliQuery
 	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromOpenSecurityProblemsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(
+		result.dashboard.DashboardMetadata.DashboardFilter,
+		tile.TileFilter.ManagementZone)
+
+	// we will query the number of open security problems based on the specification of that tile
+	problemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
+
+	sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
+	if err != nil {
+		log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
+	} else {
+		result.sliResults = append(result.sliResults, sliResult)
+		result.sli.Indicators[sliIndicator] = sliQuery
+		result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+	}
 }
 
 // GetSLIValue queries a single metric value from Dynatrace API.
