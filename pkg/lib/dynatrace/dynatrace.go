@@ -1189,30 +1189,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		//
 		// here we handle the new Metric Data Explorer Tile
 		if tile.TileType == "DATA_EXPLORER" {
-
-			// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-			sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
-			if sloDefinition.SLI == "" {
-				log.WithField("tileName", tile.Name).Debug("Data explorer tile not included as name doesnt include sli=SLINAME")
-				continue
-			}
-
-			// now lets process that tile - lets run through each query
-			for _, dataQuery := range tile.Queries {
-				log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
-
-				// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-				metricQuery, err := ph.generateMetricQueryFromDataExplorer(dataQuery, tileManagementZoneFilter, startUnix, endUnix)
-
-				// if there was no error we generate the SLO & SLO definition
-				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, result.sli, result.slo)
-					result.sliResults = append(result.sliResults, newSliResults...)
-				} else {
-					log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
-				}
-
-			}
+			ph.addSLIAndSLOToResultFromDataExplorerTile(&tile, startUnix, endUnix, result)
 			continue
 		}
 
@@ -1381,6 +1358,38 @@ func (ph *Handler) addSLIAndSLOToResultFromOpenSecurityProblemsTile(tile *Tile, 
 		result.sliResults = append(result.sliResults, sliResult)
 		result.sli.Indicators[sliIndicator] = sliQuery
 		result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+	}
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromDataExplorerTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(
+		result.dashboard.DashboardMetadata.DashboardFilter,
+		tile.TileFilter.ManagementZone)
+
+	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
+	if sloDefinition.SLI == "" {
+		log.WithField("tileName", tile.Name).Debug("Data explorer tile not included as name doesnt include sli=SLINAME")
+		return
+	}
+
+	// now lets process that tile - lets run through each query
+	for _, dataQuery := range tile.Queries {
+		log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
+
+		// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
+		metricQuery, err := ph.generateMetricQueryFromDataExplorer(dataQuery, tileManagementZoneFilter, startUnix, endUnix)
+
+		// if there was no error we generate the SLO & SLO definition
+		if err != nil {
+			log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
+			return
+		}
+
+		newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, result.sli, result.slo)
+		result.sliResults = append(result.sliResults, newSliResults...)
 	}
 }
 
