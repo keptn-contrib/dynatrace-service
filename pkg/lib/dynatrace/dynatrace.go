@@ -1086,10 +1086,10 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 //  #3: ServiceLevelObjectives
 //  #4: SLIResult
 //  #5: Error
-func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardLink, *DynatraceDashboard, *SLI, *keptncommon.ServiceLevelObjectives, []*keptnv2.SLIResult, error) {
+func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardQueryResult, error) {
 
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
-	// This check is espcially important for backward compatibilty as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
+	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
 	// If a dashboard.json exists and dashboard property is empty we default to QUERY - which is the old default behavior
 	existingDashboardContent, err := common.GetKeptnResource(keptnEvent, common.DynatraceDashboardFilename)
 	if err == nil && existingDashboardContent != "" && dashboard == "" {
@@ -1100,22 +1100,11 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	// lets load the dashboard if needed
 	dashboardJSON, dashboard, err := ph.loadDynatraceDashboard(keptnEvent, dashboard)
 	if err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboard, err)
+		return nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboard, err)
 	}
 
 	if dashboardJSON == nil {
-		return nil, nil, nil, nil, nil, nil
-	}
-
-	// generate our own SLIResult array based on the dashboard configuration
-	var sliResults []*keptnv2.SLIResult
-	dashboardSLI := &SLI{}
-	dashboardSLI.SpecVersion = "0.1.4"
-	dashboardSLI.Indicators = make(map[string]string)
-	dashboardSLO := &keptncommon.ServiceLevelObjectives{
-		Objectives: []*keptncommon.SLO{},
-		TotalScore: &keptncommon.SLOScore{Pass: "90%", Warning: "75%"},
-		Comparison: &keptncommon.SLOComparison{CompareWith: "single_result", IncludeResultWithScore: "pass", NumberOfComparisonResults: 1, AggregateFunction: "avg"},
+		return nil, nil
 	}
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
@@ -1125,226 +1114,280 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
 	if dashboardJSON.isTheSameAs(existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
-		return dashboardLinkAsLabel, nil, nil, nil, nil, nil
+		return NewDashboardQueryResultFrom(dashboardLinkAsLabel), nil
+	}
+
+	// generate our own SLIResult array based on the dashboard configuration
+	result := &DashboardQueryResult{
+		dashboardLink: dashboardLinkAsLabel,
+		dashboard:     dashboardJSON,
+		sli: &SLI{
+			SpecVersion: "0.1.4",
+			Indicators:  make(map[string]string),
+		},
+		slo: &keptncommon.ServiceLevelObjectives{
+			Objectives: []*keptncommon.SLO{},
+			TotalScore: &keptncommon.SLOScore{
+				Pass:    "90%",
+				Warning: "75%",
+			},
+			Comparison: &keptncommon.SLOComparison{
+				CompareWith:               "single_result",
+				IncludeResultWithScore:    "pass",
+				NumberOfComparisonResults: 1,
+				AggregateFunction:         "avg",
+			},
+		},
+		sliResults: []*keptnv2.SLIResult{},
 	}
 
 	log.Debug("Dashboard has changed: reparsing it!")
 
-	//
 	// now lets iterate through the dashboard to find our SLIs
 	for _, tile := range dashboardJSON.Tiles {
-		if tile.TileType == "HEADER" {
-			// we dont do markdowns or synthetic tests
+		switch tile.TileType {
+		case "MARKDOWN":
+			ph.addSLIAndSLOToResultFromMarkdownTile(&tile, result)
+		case "SLO":
+			ph.addSLIAndSLOToResultFromSLOTile(&tile, startUnix, endUnix, result)
+		case "OPEN_PROBLEMS":
+			ph.addSLIAndSLOToResultFromOpenProblemsTile(&tile, startUnix, endUnix, result)
+			// current logic also does security tile processing for open problem tiles
+			ph.addSLIAndSLOToResultFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result)
+		case "DATA_EXPLORER":
+			// here we handle the new Metric Data Explorer Tile
+			ph.addSLIAndSLOToResultFromDataExplorerTile(&tile, startUnix, endUnix, result)
+		case "CUSTOM_CHARTING":
+			ph.addSLIAndSLOToResultFromCustomChartsTile(&tile, startUnix, endUnix, result)
+		case "DTAQL":
+			ph.addSLIAndSLOToResultFromUserSessionQueryTile(&tile, startUnix, endUnix, result)
+		default:
+			// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)
 			continue
-		}
-
-		if tile.TileType == "SYNTHETIC_TESTS" {
-			// we dont do markdowns or synthetic tests
-			continue
-		}
-
-		if tile.TileType == "MARKDOWN" {
-			// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
-			// if we find KQG. we process the markdown
-			if strings.Contains(tile.Markdown, "KQG.") {
-				common.ParseMarkdownConfiguration(tile.Markdown, dashboardSLO)
-			}
-
-			continue
-		}
-
-		// get the tile specific management zone filter that might be needed by different tile processors
-		// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-		tileManagementZoneFilter := NewManagementZoneFilter(
-			dashboardJSON.DashboardMetadata.DashboardFilter,
-			tile.TileFilter.ManagementZone)
-
-		if tile.TileType == "SLO" {
-			// we will take the SLO definition from Dynatrace
-			for _, sloEntity := range tile.AssignedEntities {
-				log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
-
-				sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processSLOTile(sloEntity, startUnix, endUnix)
-				if err != nil {
-					log.WithError(err).Error("Error Processing SLO")
-				} else {
-					sliResults = append(sliResults, sliResult)
-					dashboardSLI.Indicators[sliIndicator] = sliQuery
-					dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
-				}
-			}
-			continue
-		}
-
-		if tile.TileType == "OPEN_PROBLEMS" {
-			// we will query the number of open problems based on the specification of that tile
-			problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
-
-			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, startUnix, endUnix)
-			if err != nil {
-				log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
-			} else {
-				sliResults = append(sliResults, sliResult)
-				dashboardSLI.Indicators[sliIndicator] = sliQuery
-				dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
-			}
-		}
-
-		if (tile.TileType == "OPEN_SECURITY_PROBLEMS") ||
-			(tile.TileType == "OPEN_PROBLEMS") { // TODO: Remove this once we have an actual security tile!
-			// we will query the number of open security problems based on the specification of that tile
-			problemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
-
-			sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
-			if err != nil {
-				log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
-			} else {
-				sliResults = append(sliResults, sliResult)
-				dashboardSLI.Indicators[sliIndicator] = sliQuery
-				dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
-			}
-		}
-
-		//
-		// here we handle the new Metric Data Explorer Tile
-		if tile.TileType == "DATA_EXPLORER" {
-
-			// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-			sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
-			if sloDefinition.SLI == "" {
-				log.WithField("tileName", tile.Name).Debug("Data explorer tile not included as name doesnt include sli=SLINAME")
-				continue
-			}
-
-			// now lets process that tile - lets run through each query
-			for _, dataQuery := range tile.Queries {
-				log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
-
-				// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-				metricQuery, err := ph.generateMetricQueryFromDataExplorer(dataQuery, tileManagementZoneFilter, startUnix, endUnix)
-
-				// if there was no error we generate the SLO & SLO definition
-				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, dashboardSLI, dashboardSLO)
-					sliResults = append(sliResults, newSliResults...)
-				} else {
-					log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
-				}
-
-			}
-			continue
-
-		}
-
-		tileTitle := tile.Title()
-
-		// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
-		if sloDefinition.SLI == "" {
-			log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
-			continue
-		}
-
-		// only interested in custom charts
-		if tile.TileType == "CUSTOM_CHARTING" {
-			log.WithFields(
-				log.Fields{
-					"tileTitle":         tileTitle,
-					"baseIndicatorName": sloDefinition.SLI,
-				}).Debug("Processing custom chart")
-
-			// we can potentially have multiple series on that chart
-			for _, series := range tile.FilterConfig.ChartConfig.Series {
-
-				// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-				metricQuery, err := ph.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, startUnix, endUnix)
-
-				// if there was no error we generate the SLO & SLO definition
-				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricQuery, dashboardSLI, dashboardSLO)
-					sliResults = append(sliResults, newSliResults...)
-				} else {
-					log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
-				}
-			}
-		}
-
-		// Dynatrace Query Language
-		if tile.TileType == "DTAQL" {
-
-			// for Dynatrace Query Language we currently support the following
-			// SINGLE_VALUE: we just take the one value that comes back
-			// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
-			// TABLE: we assume the first column is the dimension and the last is the value
-
-			usql := ph.buildDynatraceUSQLQuery(tile.Query, startUnix, endUnix)
-			usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
-			if err != nil {
-				log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
-				continue
-			}
-
-			for _, rowValue := range usqlResult.Values {
-				dimensionName := ""
-				dimensionValue := 0.0
-
-				if tile.Type == "SINGLE_VALUE" {
-					dimensionValue = rowValue[0].(float64)
-				} else if tile.Type == "PIE_CHART" {
-					dimensionName = rowValue[0].(string)
-					dimensionValue = rowValue[1].(float64)
-				} else if tile.Type == "COLUMN_CHART" {
-					dimensionName = rowValue[0].(string)
-					dimensionValue = rowValue[1].(float64)
-				} else if tile.Type == "TABLE" {
-					dimensionName = rowValue[0].(string)
-					dimensionValue = rowValue[len(rowValue)-1].(float64)
-				} else {
-					log.WithField("tileType", tile.Type).Debug("Unsupport USQL tile type")
-					continue
-				}
-
-				// lets scale the metric
-				// value = scaleData(metricDefinition.MetricID, metricDefinition.Unit, value)
-
-				// we got our metric, slos and the value
-				indicatorName := sloDefinition.SLI
-				if dimensionName != "" {
-					indicatorName = indicatorName + "_" + dimensionName
-				}
-
-				log.WithFields(
-					log.Fields{
-						"name":           indicatorName,
-						"dimensionValue": dimensionValue,
-					}).Debug("Appending SLIResult")
-
-				// lets add the value to our SLIResult array
-				sliResults = append(sliResults, &keptnv2.SLIResult{
-					Metric:  indicatorName,
-					Value:   dimensionValue,
-					Success: true,
-				})
-
-				// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-				// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
-				dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
-
-				// lets add the SLO definition in case we need to generate an SLO.yaml
-				dashboardSLO.Objectives = append(
-					dashboardSLO.Objectives,
-					&keptncommon.SLO{
-						SLI:     indicatorName,
-						Weight:  sloDefinition.Weight,
-						KeySLI:  sloDefinition.KeySLI,
-						Pass:    sloDefinition.Pass,
-						Warning: sloDefinition.Warning,
-					})
-			}
 		}
 	}
 
-	return dashboardLinkAsLabel, dashboardJSON, dashboardSLI, dashboardSLO, sliResults, nil
+	return result, nil
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromMarkdownTile(tile *Tile, result *DashboardQueryResult) {
+	// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
+	// if we find KQG. we process the markdown
+	if strings.Contains(tile.Markdown, "KQG.") {
+		common.ParseMarkdownConfiguration(tile.Markdown, result.slo)
+	}
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromSLOTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// we will take the SLO definition from Dynatrace
+	for _, sloEntity := range tile.AssignedEntities {
+		log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
+
+		sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processSLOTile(sloEntity, startUnix, endUnix)
+		if err != nil {
+			log.WithError(err).Error("Error Processing SLO")
+			continue
+		}
+
+		result.sliResults = append(result.sliResults, sliResult)
+		result.sli.Indicators[sliIndicator] = sliQuery
+		result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+	}
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromOpenProblemsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(
+		result.dashboard.DashboardMetadata.DashboardFilter,
+		tile.TileFilter.ManagementZone)
+
+	// we will query the number of open problems based on the specification of that tile
+	problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
+
+	sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, startUnix, endUnix)
+	if err != nil {
+		log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
+		return
+	}
+
+	result.sliResults = append(result.sliResults, sliResult)
+	result.sli.Indicators[sliIndicator] = sliQuery
+	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromOpenSecurityProblemsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(
+		result.dashboard.DashboardMetadata.DashboardFilter,
+		tile.TileFilter.ManagementZone)
+
+	// we will query the number of open security problems based on the specification of that tile
+	problemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
+
+	sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
+	if err != nil {
+		log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
+		return
+	}
+
+	result.sliResults = append(result.sliResults, sliResult)
+	result.sli.Indicators[sliIndicator] = sliQuery
+	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromDataExplorerTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(
+		result.dashboard.DashboardMetadata.DashboardFilter,
+		tile.TileFilter.ManagementZone)
+
+	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
+	if sloDefinition.SLI == "" {
+		log.WithField("tileName", tile.Name).Debug("Data explorer tile not included as name doesnt include sli=SLINAME")
+		return
+	}
+
+	// now lets process that tile - lets run through each query
+	for _, dataQuery := range tile.Queries {
+		log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
+
+		// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
+		metricQuery, err := ph.generateMetricQueryFromDataExplorer(dataQuery, tileManagementZoneFilter, startUnix, endUnix)
+
+		// if there was no error we generate the SLO & SLO definition
+		if err != nil {
+			log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
+			continue
+		}
+
+		newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, result.sli, result.slo)
+		result.sliResults = append(result.sliResults, newSliResults...)
+	}
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromCustomChartsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	tileTitle := tile.Title()
+
+	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
+	if sloDefinition.SLI == "" {
+		log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
+		return
+	}
+
+	log.WithFields(
+		log.Fields{
+			"tileTitle":         tileTitle,
+			"baseIndicatorName": sloDefinition.SLI,
+		}).Debug("Processing custom chart")
+
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(
+		result.dashboard.DashboardMetadata.DashboardFilter,
+		tile.TileFilter.ManagementZone)
+
+	// we can potentially have multiple series on that chart
+	for _, series := range tile.FilterConfig.ChartConfig.Series {
+
+		// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
+		metricQuery, err := ph.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, startUnix, endUnix)
+
+		// if there was no error we generate the SLO & SLO definition
+		if err != nil {
+			log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
+			continue
+		}
+
+		newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricQuery, result.sli, result.slo)
+		result.sliResults = append(result.sliResults, newSliResults...)
+	}
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromUserSessionQueryTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// for Dynatrace Query Language we currently support the following
+	// SINGLE_VALUE: we just take the one value that comes back
+	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
+	// TABLE: we assume the first column is the dimension and the last is the value
+
+	usql := ph.buildDynatraceUSQLQuery(tile.Query, startUnix, endUnix)
+	usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
+	if err != nil {
+		log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
+		return
+	}
+
+	tileTitle := tile.Title()
+
+	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
+	if sloDefinition.SLI == "" {
+		log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
+		return
+	}
+
+	for _, rowValue := range usqlResult.Values {
+		dimensionName := ""
+		dimensionValue := 0.0
+
+		switch tile.Type {
+		case "SINGLE_VALUE":
+			dimensionValue = rowValue[0].(float64)
+		case "PIE_CHART":
+			dimensionName = rowValue[0].(string)
+			dimensionValue = rowValue[1].(float64)
+		case "COLUMN_CHART":
+			dimensionName = rowValue[0].(string)
+			dimensionValue = rowValue[1].(float64)
+		case "TABLE":
+			dimensionName = rowValue[0].(string)
+			dimensionValue = rowValue[len(rowValue)-1].(float64)
+		default:
+			log.WithField("tileType", tile.Type).Debug("Unsupport USQL tile type")
+			continue
+		}
+
+		// lets scale the metric
+		// value = scaleData(metricDefinition.MetricID, metricDefinition.Unit, value)
+
+		// we got our metric, slos and the value
+		indicatorName := sloDefinition.SLI
+		if dimensionName != "" {
+			indicatorName = indicatorName + "_" + dimensionName
+		}
+
+		log.WithFields(
+			log.Fields{
+				"name":           indicatorName,
+				"dimensionValue": dimensionValue,
+			}).Debug("Appending SLIResult")
+
+		// lets add the value to our SLIResult array
+		result.sliResults = append(result.sliResults, &keptnv2.SLIResult{
+			Metric:  indicatorName,
+			Value:   dimensionValue,
+			Success: true,
+		})
+
+		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
+		// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
+		result.sli.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
+
+		// lets add the SLO definition in case we need to generate an SLO.yaml
+		result.slo.Objectives = append(
+			result.slo.Objectives,
+			&keptncommon.SLO{
+				SLI:     indicatorName,
+				Weight:  sloDefinition.Weight,
+				KeySLI:  sloDefinition.KeySLI,
+				Pass:    sloDefinition.Pass,
+				Warning: sloDefinition.Warning,
+			})
+	}
 }
 
 // GetSLIValue queries a single metric value from Dynatrace API.
