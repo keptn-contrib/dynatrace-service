@@ -1167,19 +1167,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		}
 
 		if tile.TileType == "SLO" {
-			// we will take the SLO definition from Dynatrace
-			for _, sloEntity := range tile.AssignedEntities {
-				log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
-
-				sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processSLOTile(sloEntity, startUnix, endUnix)
-				if err != nil {
-					log.WithError(err).Error("Error Processing SLO")
-				} else {
-					result.sliResults = append(result.sliResults, sliResult)
-					result.sli.Indicators[sliIndicator] = sliQuery
-					result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
-				}
-			}
+			ph.addSLIAndSLOToResultFromSLOTile(&tile, startUnix, endUnix, result)
 			continue
 		}
 
@@ -1357,6 +1345,22 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	}
 
 	return result, nil
+}
+
+func (ph *Handler) addSLIAndSLOToResultFromSLOTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+	// we will take the SLO definition from Dynatrace
+	for _, sloEntity := range tile.AssignedEntities {
+		log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
+
+		sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processSLOTile(sloEntity, startUnix, endUnix)
+		if err != nil {
+			log.WithError(err).Error("Error Processing SLO")
+		} else {
+			result.sliResults = append(result.sliResults, sliResult)
+			result.sli.Indicators[sliIndicator] = sliQuery
+			result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+		}
+	}
 }
 
 // GetSLIValue queries a single metric value from Dynatrace API.
