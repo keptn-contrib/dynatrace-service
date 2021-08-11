@@ -1107,17 +1107,6 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		return nil, nil
 	}
 
-	// generate our own SLIResult array based on the dashboard configuration
-	var sliResults []*keptnv2.SLIResult
-	dashboardSLI := &SLI{}
-	dashboardSLI.SpecVersion = "0.1.4"
-	dashboardSLI.Indicators = make(map[string]string)
-	dashboardSLO := &keptncommon.ServiceLevelObjectives{
-		Objectives: []*keptncommon.SLO{},
-		TotalScore: &keptncommon.SLOScore{Pass: "90%", Warning: "75%"},
-		Comparison: &keptncommon.SLOComparison{CompareWith: "single_result", IncludeResultWithScore: "pass", NumberOfComparisonResults: 1, AggregateFunction: "avg"},
-	}
-
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
 	dashboardLinkAsLabel := NewDashboardLink(ph.ApiURL, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
 
@@ -1126,6 +1115,30 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 	if dashboardJSON.isTheSameAs(existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
 		return NewDashboardQueryResultFrom(dashboardLinkAsLabel), nil
+	}
+
+	// generate our own SLIResult array based on the dashboard configuration
+	result := &DashboardQueryResult{
+		dashboardLink: dashboardLinkAsLabel,
+		dashboard:     dashboardJSON,
+		sli: &SLI{
+			SpecVersion: "0.1.4",
+			Indicators:  make(map[string]string),
+		},
+		slo: &keptncommon.ServiceLevelObjectives{
+			Objectives: []*keptncommon.SLO{},
+			TotalScore: &keptncommon.SLOScore{
+				Pass:    "90%",
+				Warning: "75%",
+			},
+			Comparison: &keptncommon.SLOComparison{
+				CompareWith:               "single_result",
+				IncludeResultWithScore:    "pass",
+				NumberOfComparisonResults: 1,
+				AggregateFunction:         "avg",
+			},
+		},
+		sliResults: []*keptnv2.SLIResult{},
 	}
 
 	log.Debug("Dashboard has changed: reparsing it!")
@@ -1147,17 +1160,11 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
 			// if we find KQG. we process the markdown
 			if strings.Contains(tile.Markdown, "KQG.") {
-				common.ParseMarkdownConfiguration(tile.Markdown, dashboardSLO)
+				common.ParseMarkdownConfiguration(tile.Markdown, result.slo)
 			}
 
 			continue
 		}
-
-		// get the tile specific management zone filter that might be needed by different tile processors
-		// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-		tileManagementZoneFilter := NewManagementZoneFilter(
-			dashboardJSON.DashboardMetadata.DashboardFilter,
-			tile.TileFilter.ManagementZone)
 
 		if tile.TileType == "SLO" {
 			// we will take the SLO definition from Dynatrace
@@ -1168,13 +1175,19 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 				if err != nil {
 					log.WithError(err).Error("Error Processing SLO")
 				} else {
-					sliResults = append(sliResults, sliResult)
-					dashboardSLI.Indicators[sliIndicator] = sliQuery
-					dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
+					result.sliResults = append(result.sliResults, sliResult)
+					result.sli.Indicators[sliIndicator] = sliQuery
+					result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 				}
 			}
 			continue
 		}
+
+		// get the tile specific management zone filter that might be needed by different tile processors
+		// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+		tileManagementZoneFilter := NewManagementZoneFilter(
+			dashboardJSON.DashboardMetadata.DashboardFilter,
+			tile.TileFilter.ManagementZone)
 
 		if tile.TileType == "OPEN_PROBLEMS" {
 			// we will query the number of open problems based on the specification of that tile
@@ -1184,9 +1197,9 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			if err != nil {
 				log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
 			} else {
-				sliResults = append(sliResults, sliResult)
-				dashboardSLI.Indicators[sliIndicator] = sliQuery
-				dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
+				result.sliResults = append(result.sliResults, sliResult)
+				result.sli.Indicators[sliIndicator] = sliQuery
+				result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 			}
 		}
 
@@ -1199,9 +1212,9 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 			if err != nil {
 				log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
 			} else {
-				sliResults = append(sliResults, sliResult)
-				dashboardSLI.Indicators[sliIndicator] = sliQuery
-				dashboardSLO.Objectives = append(dashboardSLO.Objectives, sloDefinition)
+				result.sliResults = append(result.sliResults, sliResult)
+				result.sli.Indicators[sliIndicator] = sliQuery
+				result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 			}
 		}
 
@@ -1225,15 +1238,14 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 				// if there was no error we generate the SLO & SLO definition
 				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, dashboardSLI, dashboardSLO)
-					sliResults = append(sliResults, newSliResults...)
+					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(dataQuery.SplitBy), sloDefinition, metricQuery, result.sli, result.slo)
+					result.sliResults = append(result.sliResults, newSliResults...)
 				} else {
 					log.WithError(err).Warn("generateMetricQueryFromDataExplorer returned an error, SLI will not be used")
 				}
 
 			}
 			continue
-
 		}
 
 		tileTitle := tile.Title()
@@ -1261,8 +1273,8 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 				// if there was no error we generate the SLO & SLO definition
 				if err == nil {
-					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricQuery, dashboardSLI, dashboardSLO)
-					sliResults = append(sliResults, newSliResults...)
+					newSliResults := ph.generateSLISLOFromMetricsAPIQuery(len(series.Dimensions), sloDefinition, metricQuery, result.sli, result.slo)
+					result.sliResults = append(result.sliResults, newSliResults...)
 				} else {
 					log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
 				}
@@ -1320,7 +1332,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 					}).Debug("Appending SLIResult")
 
 				// lets add the value to our SLIResult array
-				sliResults = append(sliResults, &keptnv2.SLIResult{
+				result.sliResults = append(result.sliResults, &keptnv2.SLIResult{
 					Metric:  indicatorName,
 					Value:   dimensionValue,
 					Success: true,
@@ -1328,11 +1340,11 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 
 				// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
 				// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
-				dashboardSLI.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
+				result.sli.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
 
 				// lets add the SLO definition in case we need to generate an SLO.yaml
-				dashboardSLO.Objectives = append(
-					dashboardSLO.Objectives,
+				result.slo.Objectives = append(
+					result.slo.Objectives,
 					&keptncommon.SLO{
 						SLI:     indicatorName,
 						Weight:  sloDefinition.Weight,
@@ -1344,13 +1356,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEv
 		}
 	}
 
-	return NewDashboardQueryResult(
-			dashboardLinkAsLabel,
-			dashboardJSON,
-			dashboardSLI,
-			dashboardSLO,
-			sliResults),
-		nil
+	return result, nil
 }
 
 // GetSLIValue queries a single metric value from Dynatrace API.

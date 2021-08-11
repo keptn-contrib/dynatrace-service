@@ -21,23 +21,6 @@ func NewDashboardQueryResultFrom(dashboardLink *DashboardLink) *DashboardQueryRe
 	}
 }
 
-// NewDashboardQueryResult creates a new DashboardQueryResult object with all members
-func NewDashboardQueryResult(
-	dashboardLink *DashboardLink,
-	dashboard *DynatraceDashboard,
-	sli *SLI,
-	slo *keptn.ServiceLevelObjectives,
-	sliResults []*keptnv2.SLIResult,
-) *DashboardQueryResult {
-	return &DashboardQueryResult{
-		dashboardLink: dashboardLink,
-		dashboard:     dashboard,
-		sli:           sli,
-		slo:           slo,
-		sliResults:    sliResults,
-	}
-}
-
 func (result *DashboardQueryResult) DashboardLink() *DashboardLink {
 	return result.dashboardLink
 }
