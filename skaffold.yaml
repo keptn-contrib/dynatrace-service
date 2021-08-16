@@ -7,8 +7,6 @@ build:
         dockerfile: Dockerfile
 deploy:
   helm:
-    flags:
-      upgrade: ["--reuse-values"]
     releases:
       - name: dynatrace-service # needs to be the same name as currently used (check via helm ls -n keptn)
         namespace: keptn # needs to be the same namespace as where the helm-chart is currently deployed
