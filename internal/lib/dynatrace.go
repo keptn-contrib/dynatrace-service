@@ -15,18 +15,17 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 )
 
 const DefaultOperatorVersion = "v0.8.0"
-const sliResourceURI = "dynatrace/sli.yaml"
+const SliResourceURI = "dynatrace/sli.yaml"
 const Throughput = "throughput"
 const ErrorRate = "error_rate"
 const ResponseTimeP50 = "response_time_p50"
 const ResponseTimeP90 = "response_time_p90"
 const ResponseTimeP95 = "response_time_p95"
 
-type criteriaObject struct {
+type CriteriaObject struct {
 	Operator        string
 	Value           float64
 	CheckPercentage bool
@@ -77,57 +76,6 @@ func NewDynatraceHelper(keptnHandler *keptnv2.Keptn, dynatraceCreds *credentials
 		DynatraceCreds: dynatraceCreds,
 		KeptnHandler:   keptnHandler,
 	}
-}
-
-// ConfigureMonitoring configures Dynatrace for a Keptn project
-func (dt *DynatraceHelper) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*ConfiguredEntities, error) {
-
-	dt.configuredEntities = &ConfiguredEntities{
-		TaggingRulesEnabled:         IsTaggingRulesGenerationEnabled(),
-		TaggingRules:                []ConfigResult{},
-		ProblemNotificationsEnabled: IsProblemNotificationsGenerationEnabled(),
-		ProblemNotifications:        ConfigResult{},
-		ManagementZonesEnabled:      IsManagementZonesGenerationEnabled(),
-		ManagementZones:             []ConfigResult{},
-		DashboardEnabled:            IsDashboardsGenerationEnabled(),
-		Dashboard:                   ConfigResult{},
-		MetricEventsEnabled:         IsMetricEventsGenerationEnabled(),
-		MetricEvents:                []ConfigResult{},
-	}
-	dt.EnsureDTTaggingRulesAreSetUp()
-
-	dt.EnsureProblemNotificationsAreSetUp()
-
-	if project != "" && shipyard != nil {
-		dt.CreateManagementZones(project, *shipyard)
-
-		configHandler := keptnutils.NewServiceHandler("shipyard-controller:8080")
-		dt.CreateDashboard(project, *shipyard)
-
-		// try to create metric events - if one fails, don't fail the whole setup
-		for _, stage := range shipyard.Spec.Stages {
-			if shouldCreateMetricEvents(stage) {
-				services, err := configHandler.GetAllServices(project, stage.Name)
-				if err != nil {
-					return nil, fmt.Errorf("failed to retrieve services of project %s: %v", project, err.Error())
-				}
-				for _, service := range services {
-					dt.CreateMetricEvents(project, stage.Name, service.ServiceName)
-				}
-			}
-		}
-	}
-	return dt.configuredEntities, nil
-}
-
-// shouldCreateMetricEvents checks if a task sequence with the name 'remediation' is available - this would be the equivalent of remediation_strategy: automated of Keptn < 0.8.x
-func shouldCreateMetricEvents(stage keptnv2.Stage) bool {
-	for _, taskSequence := range stage.Sequences {
-		if taskSequence.Name == "remediation" {
-			return true
-		}
-	}
-	return false
 }
 
 // SendDynatraceAPIRequest makes an Dynatrace API request and returns the response
