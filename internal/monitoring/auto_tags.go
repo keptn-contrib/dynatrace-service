@@ -41,7 +41,7 @@ func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
 	}
 
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
-		if taggingRuleExists(ruleName, existingDTRules) {
+		if !taggingRuleExists(ruleName, existingDTRules) {
 			rule := createAutoTaggingRule(ruleName)
 			err = at.createDTTaggingRule(rule)
 			if err != nil {
