@@ -587,7 +587,7 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 	return managementZone
 }
 
-func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *DynatraceDashboard {
+func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, dashboardNameSuffix string) *DynatraceDashboard {
 	dtDashboard := &DynatraceDashboard{
 		DashboardMetadata: DashboardMetadata{
 			Name:   projectName + dashboardNameSuffix,
