@@ -31,6 +31,7 @@ const keptnService = "keptn_service"
 const keptnDeployment = "keptn_deployment"
 
 const customChartingTileType = "CUSTOM_CHARTING"
+const customChartName = "Custom Chart"
 const timeSeriesChartType = "TIMESERIES"
 
 const DefaultOperatorVersion = "v0.8.0"
@@ -806,46 +807,24 @@ func CreateCalculatedTestStepMetric(key string, name string, baseMetric string, 
 }
 
 func createMarkdownTile(markdown string) Tiles {
-	return Tiles{
-		Name:       "Markdown",
-		TileType:   "MARKDOWN",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		Markdown: markdown,
-	}
+	tile := createTileWith("Markdown", "MARKDOWN", nil)
+	tile.Markdown = markdown
+
+	return tile
 }
 
 func createHeaderTile(name string) Tiles {
-	return Tiles{
-		Name:       name,
-		TileType:   "HEADER",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+	return createTileWith(name, "HEADER", nil)
 }
 
 func createServiceResponseTimeTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Response Time " + stage,
-		TileType:   customChartingTileType,
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	return createTileWith(
+		"Response Time "+stage,
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Response Time " + stage,
-			DefaultName: "Custom Chart",
+			DefaultName: customChartName,
 			ChartConfig: ChartConfig{
 				Type: timeSeriesChartType,
 				Series: []Series{
@@ -867,26 +846,17 @@ func createServiceResponseTimeTile(project string, stage string) Tiles {
 					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+		})
 }
 
 func createHostCPULoadTile() Tiles {
-	return Tiles{
-		Name:       "Host CPU Load",
-		TileType:   customChartingTileType,
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	return createTileWith(
+		"Host CPU Load",
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "CPU",
-			DefaultName: "Custom Chart",
+			DefaultName: customChartName,
 			ChartConfig: ChartConfig{
 				Type: timeSeriesChartType,
 				Series: []Series{
@@ -903,26 +873,17 @@ func createHostCPULoadTile() Tiles {
 					},
 				},
 			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+		})
 }
 
 func createServiceErrorRateTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Failure Rate " + stage,
-		TileType:   customChartingTileType,
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	return createTileWith(
+		"Failure Rate "+stage,
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Failure Rate " + stage,
-			DefaultName: "Custom Chart",
+			DefaultName: customChartName,
 			ChartConfig: ChartConfig{
 				Type: timeSeriesChartType,
 				Series: []Series{
@@ -944,26 +905,17 @@ func createServiceErrorRateTile(project string, stage string) Tiles {
 					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+		})
 }
 
 func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Service Calls per Test Name: " + stage,
-		TileType:   customChartingTileType,
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	return createTileWith(
+		"Service Calls per Test Name: "+stage,
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Service Calls per Test Name: " + stage,
-			DefaultName: "Custom Chart",
+			DefaultName: customChartName,
 			ChartConfig: ChartConfig{
 				Type: timeSeriesChartType,
 				Series: []Series{
@@ -987,26 +939,17 @@ func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
 					},
 				},
 			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+		})
 }
 
 func createServiceTopAPICallsTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Top Service Calls per API Endpoint: " + stage,
-		TileType:   customChartingTileType,
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	return createTileWith(
+		"Top Service Calls per API Endpoint: "+stage,
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Top Service Calls per API Endpoint: " + stage,
-			DefaultName: "Custom Chart",
+			DefaultName: customChartName,
 			ChartConfig: ChartConfig{
 				Type: timeSeriesChartType,
 				Series: []Series{
@@ -1035,26 +978,17 @@ func createServiceTopAPICallsTile(project string, stage string) Tiles {
 					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+		})
 }
 
 func createServiceThroughputTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Throughput " + stage,
-		TileType:   customChartingTileType,
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	return createTileWith(
+		"Throughput "+stage,
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "Throughput " + stage,
-			DefaultName: "Custom Chart",
+			DefaultName: customChartName,
 			ChartConfig: ChartConfig{
 				Type: timeSeriesChartType,
 				Series: []Series{
@@ -1076,23 +1010,14 @@ func createServiceThroughputTile(project string, stage string) Tiles {
 					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+		})
 }
 
 func createStageServicesTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Services: " + stage,
-		TileType:   "SERVICES",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	return createTileWith(
+		"Services: "+stage,
+		"SERVICES",
+		&FilterConfig{
 			Type:        "SERVICE",
 			CustomName:  "Services: " + stage,
 			DefaultName: "Services: " + stage,
@@ -1106,7 +1031,19 @@ func createStageServicesTile(project string, stage string) Tiles {
 					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
+		})
+}
+
+func createTileWith(name string, tileType string, filterConfig *FilterConfig) Tiles {
+	return Tiles{
+		Name:       name,
+		TileType:   tileType,
+		Configured: true,
+		TileFilter: TileFilter{
+			Timeframe:      nil,
+			ManagementZone: nil,
 		},
+		FilterConfig:              filterConfig,
 		ChartVisible:              true,
 		AssignedEntities:          nil,
 		ExcludeMaintenanceWindows: false,
