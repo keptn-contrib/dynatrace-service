@@ -33,6 +33,7 @@ const keptnDeployment = "keptn_deployment"
 const customChartingTileType = "CUSTOM_CHARTING"
 const customChartName = "Custom Chart"
 const timeSeriesChartType = "TIMESERIES"
+const serviceEntityType = "SERVICE"
 
 const DefaultOperatorVersion = "v0.8.0"
 const SliResourceURI = "dynatrace/sli.yaml"
@@ -535,7 +536,7 @@ func CreateManagementZoneForProject(project string) *ManagementZone {
 		Name: "Keptn: " + project,
 		Rules: []MZRules{
 			{
-				Type:             "SERVICE",
+				Type:             serviceEntityType,
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions:       []MZConditions{creteManagementZoneConditionsFor(keptnProject, project)},
@@ -551,7 +552,7 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 		Name: "Keptn: " + project + " " + stage,
 		Rules: []MZRules{
 			{
-				Type:             "SERVICE",
+				Type:             serviceEntityType,
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions: []MZConditions{
@@ -686,29 +687,15 @@ func createHeaderTile(name string) Tiles {
 }
 
 func createServiceResponseTimeTile(project string, stage string) Tiles {
+	name := "Response Time " + stage
 	return createTileWith(
-		"Response Time "+stage,
+		name,
 		customChartingTileType,
 		&FilterConfig{
 			Type:        "MIXED",
-			CustomName:  "Response Time " + stage,
+			CustomName:  name,
 			DefaultName: customChartName,
-			ChartConfig: ChartConfig{
-				Type: timeSeriesChartType,
-				Series: []Series{
-					{
-						Metric:          "builtin:service.response.time",
-						Aggregation:     "AVG",
-						Percentile:      nil,
-						Type:            "LINE",
-						EntityType:      "SERVICE",
-						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
+			ChartConfig: createTimeSeriesChartConfig("builtin:service.response.time", "AVG", "LINE", serviceEntityType),
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
 					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
@@ -725,49 +712,20 @@ func createHostCPULoadTile() Tiles {
 			Type:        "MIXED",
 			CustomName:  "CPU",
 			DefaultName: customChartName,
-			ChartConfig: ChartConfig{
-				Type: timeSeriesChartType,
-				Series: []Series{
-					{
-						Metric:          "builtin:host.cpu.load",
-						Aggregation:     "AVG",
-						Percentile:      nil,
-						Type:            "LINE",
-						EntityType:      "HOST",
-						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
+			ChartConfig: createTimeSeriesChartConfig("builtin:host.cpu.load", "AVG", "LINE", "HOST"),
 		})
 }
 
 func createServiceErrorRateTile(project string, stage string) Tiles {
+	name := "Failure Rate " + stage
 	return createTileWith(
-		"Failure Rate "+stage,
+		name,
 		customChartingTileType,
 		&FilterConfig{
 			Type:        "MIXED",
-			CustomName:  "Failure Rate " + stage,
+			CustomName:  name,
 			DefaultName: customChartName,
-			ChartConfig: ChartConfig{
-				Type: timeSeriesChartType,
-				Series: []Series{
-					{
-						Metric:          "builtin:service.errors.server.rate",
-						Aggregation:     "AVG",
-						Percentile:      nil,
-						Type:            "BAR",
-						EntityType:      "SERVICE",
-						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
+			ChartConfig: createTimeSeriesChartConfig("builtin:service.errors.server.rate", "AVG", "BAR", serviceEntityType),
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
 					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
@@ -777,29 +735,15 @@ func createServiceErrorRateTile(project string, stage string) Tiles {
 }
 
 func createServiceThroughputTile(project string, stage string) Tiles {
+	name := "Throughput " + stage
 	return createTileWith(
-		"Throughput "+stage,
+		name,
 		customChartingTileType,
 		&FilterConfig{
 			Type:        "MIXED",
-			CustomName:  "Throughput " + stage,
+			CustomName:  name,
 			DefaultName: customChartName,
-			ChartConfig: ChartConfig{
-				Type: timeSeriesChartType,
-				Series: []Series{
-					{
-						Metric:          "builtin:service.requestCount.total",
-						Aggregation:     "NONE",
-						Percentile:      nil,
-						Type:            "BAR",
-						EntityType:      "SERVICE",
-						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
+			ChartConfig: createTimeSeriesChartConfig("builtin:service.requestCount.total", "NONE", "BAR", serviceEntityType),
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
 					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
@@ -808,14 +752,34 @@ func createServiceThroughputTile(project string, stage string) Tiles {
 		})
 }
 
+func createTimeSeriesChartConfig(metric string, aggregation string, seriesType string, entity string) ChartConfig {
+	return ChartConfig{
+		Type: timeSeriesChartType,
+		Series: []Series{
+			{
+				Metric:          metric,
+				Aggregation:     aggregation,
+				Percentile:      nil,
+				Type:            seriesType,
+				EntityType:      entity,
+				Dimensions:      []Dimensions{},
+				SortAscending:   false,
+				SortColumn:      true,
+				AggregationRate: "TOTAL",
+			},
+		},
+	}
+}
+
 func createStageServicesTile(project string, stage string) Tiles {
+	name := "Services: " + stage
 	return createTileWith(
-		"Services: "+stage,
+		name,
 		"SERVICES",
 		&FilterConfig{
-			Type:        "SERVICE",
-			CustomName:  "Services: " + stage,
-			DefaultName: "Services: " + stage,
+			Type:        serviceEntityType,
+			CustomName:  name,
+			DefaultName: name,
 			ChartConfig: ChartConfig{
 				Type:           timeSeriesChartType,
 				Series:         []Series{},
