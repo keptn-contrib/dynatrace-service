@@ -24,11 +24,11 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case keptnevents.ProblemEventType:
 		return &problem.ProblemEventHandler{Event: event}, nil
 	case keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName):
-		return &problem.ActionHandler{Event: event, DtConfigGetter: dtConfigGetter}, nil
+		return &problem.ActionHandler{Event: event, DTConfigGetter: dtConfigGetter}, nil
 	case keptnv2.GetStartedEventType(keptnv2.ActionTaskName):
-		return &problem.ActionHandler{Event: event, DtConfigGetter: dtConfigGetter}, nil
+		return &problem.ActionHandler{Event: event, DTConfigGetter: dtConfigGetter}, nil
 	case keptnv2.GetFinishedEventType(keptnv2.ActionTaskName):
-		return &problem.ActionHandler{Event: event, DtConfigGetter: dtConfigGetter}, nil
+		return &problem.ActionHandler{Event: event, DTConfigGetter: dtConfigGetter}, nil
 	case keptnv2.GetTriggeredEventType(keptnv2.GetSLITaskName):
 		return &GetSLIEventHandler{event: event, dtConfigGetter: dtConfigGetter}, nil
 	default:
