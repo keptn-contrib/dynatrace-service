@@ -20,14 +20,14 @@ import (
 
 type ActionHandler struct {
 	Event          cloudevents.Event
-	DtConfigGetter adapter.DynatraceConfigGetterInterface
+	DTConfigGetter adapter.DynatraceConfigGetterInterface
 }
 
 /**
  * Retrieves Dynatrace Credential information
  */
 func (eh ActionHandler) GetDynatraceCredentials(keptnEvent adapter.EventContentAdapter) (*config.DynatraceConfigFile, *credentials.DTCredentials, error) {
-	dynatraceConfig, err := eh.DtConfigGetter.GetDynatraceConfig(keptnEvent)
+	dynatraceConfig, err := eh.DTConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		log.WithError(err).Error("Failed to load Dynatrace config")
 		return nil, nil, err
@@ -78,7 +78,7 @@ func (eh ActionHandler) HandleEvent() error {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
 
-		dynatraceConfig, err := eh.DtConfigGetter.GetDynatraceConfig(keptnEvent)
+		dynatraceConfig, err := eh.DTConfigGetter.GetDynatraceConfig(keptnEvent)
 		if err != nil {
 			log.WithError(err).Error("Failed to load Dynatrace config")
 			return err
