@@ -3,6 +3,7 @@ package monitoring
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	"strings"
 
@@ -12,19 +13,19 @@ import (
 )
 
 type ProblemNotificationCreation struct {
-	client *lib.DynatraceHelper
+	client *dynatrace.DynatraceHelper
 }
 
-func NewProblemNotificationCreation(client *lib.DynatraceHelper) *ProblemNotificationCreation {
+func NewProblemNotificationCreation(client *dynatrace.DynatraceHelper) *ProblemNotificationCreation {
 	return &ProblemNotificationCreation{
 		client: client,
 	}
 }
 
 // Create sets up/updates the DT problem notification and returns it
-func (pn *ProblemNotificationCreation) Create() lib.ConfigResult {
+func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 	if !lib.IsProblemNotificationsGenerationEnabled() {
-		return lib.ConfigResult{}
+		return dynatrace.ConfigResult{}
 	}
 
 	log.Info("Setting up problem notifications in Dynatrace Tenant")
@@ -32,14 +33,14 @@ func (pn *ProblemNotificationCreation) Create() lib.ConfigResult {
 	alertingProfileId, err := pn.setupAlertingProfile()
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
-		return lib.ConfigResult{
+		return dynatrace.ConfigResult{
 			Success: false,
 			Message: "failed to set up problem notification: " + err.Error(),
 		}
 	}
 
 	response, err := pn.client.SendDynatraceAPIRequest("/api/config/v1/notifications", "GET", nil)
-	existingNotifications := lib.DTAPIListResponse{}
+	existingNotifications := dynatrace.DTAPIListResponse{}
 
 	err = json.Unmarshal([]byte(response), &existingNotifications)
 	if err != nil {
@@ -59,13 +60,13 @@ func (pn *ProblemNotificationCreation) Create() lib.ConfigResult {
 	keptnCredentials, err := credentials.GetKeptnCredentials()
 	if err != nil {
 		log.WithError(err).Error("Failed to retrieve Keptn API credentials")
-		return lib.ConfigResult{
+		return dynatrace.ConfigResult{
 			Success: false,
 			Message: "failed to retrieve Keptn API credentials: " + err.Error(),
 		}
 	}
 
-	problemNotification := lib.PROBLEM_NOTIFICATION_PAYLOAD
+	problemNotification := dynatrace.PROBLEM_NOTIFICATION_PAYLOAD
 	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", keptnCredentials.APIURL)
 	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", keptnCredentials.APIToken)
 	problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
@@ -73,13 +74,13 @@ func (pn *ProblemNotificationCreation) Create() lib.ConfigResult {
 	_, err = pn.client.SendDynatraceAPIRequest("/api/config/v1/notifications", "POST", []byte(problemNotification))
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
-		return lib.ConfigResult{
+		return dynatrace.ConfigResult{
 			Success: false,
 			Message: "failed to set up problem notification: " + err.Error(),
 		}
 	}
 
-	return lib.ConfigResult{
+	return dynatrace.ConfigResult{
 		Success: true,
 		Message: "Successfully set up Keptn Alerting Profile and Problem Notifications",
 	}
@@ -92,7 +93,7 @@ func (pn *ProblemNotificationCreation) setupAlertingProfile() (string, error) {
 		// Error occurred but continue
 		log.WithError(err).Debug("Could not get alerting profiles")
 	} else {
-		existingAlertingProfiles := lib.DTAPIListResponse{}
+		existingAlertingProfiles := dynatrace.DTAPIListResponse{}
 
 		err = json.Unmarshal([]byte(response), &existingAlertingProfiles)
 		if err != nil {
@@ -108,7 +109,7 @@ func (pn *ProblemNotificationCreation) setupAlertingProfile() (string, error) {
 	}
 
 	log.Info("Creating Keptn alerting profile.")
-	alertingProfile := lib.CreateKeptnAlertingProfile()
+	alertingProfile := dynatrace.CreateKeptnAlertingProfile()
 	alertingProfilePayload, err := json.Marshal(alertingProfile)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal alerting profile: %v", err)
@@ -119,7 +120,7 @@ func (pn *ProblemNotificationCreation) setupAlertingProfile() (string, error) {
 		return "", fmt.Errorf("failed to setup alerting profile: %v", err)
 	}
 
-	createdItem := &lib.Values{}
+	createdItem := &dynatrace.Values{}
 
 	err = json.Unmarshal([]byte(response), createdItem)
 	if err != nil {

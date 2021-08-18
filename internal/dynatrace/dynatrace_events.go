@@ -1,4 +1,4 @@
-package lib
+package dynatrace
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Sends an event to the Dynatrace events API
+// SendEvent sends an event to the Dynatrace events API
 func (dt *DynatraceHelper) SendEvent(dtEvent interface{}) {
 	log.Info("Sending event to Dynatrace API")
 

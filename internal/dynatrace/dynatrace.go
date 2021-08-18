@@ -1,9 +1,10 @@
-package lib
+package dynatrace
 
 import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -132,7 +133,7 @@ func (dt *DynatraceHelper) createRequest(apiPath string, method string, body []b
 // creates http client with proxy and TLS configuration
 func (dt *DynatraceHelper) createClient(req *http.Request) (*http.Client, error) {
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !IsHttpSSLVerificationEnabled()},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}

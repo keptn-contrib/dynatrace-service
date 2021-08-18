@@ -2,19 +2,18 @@ package event_handler
 
 import (
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
-
-	cloudevents "github.com/cloudevents/sdk-go/v2"
 )
 
 type CDEventHandler struct {
@@ -50,7 +49,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			log.WithError(err).Error("failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 		// send Deployment Event
 		de := event.CreateDeploymentEvent(keptnEvent, dynatraceConfig)
@@ -76,7 +75,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			log.WithError(err).Error("failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Annotation Event
 		ie := event.CreateAnnotationEvent(keptnEvent, dynatraceConfig)
@@ -108,7 +107,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			log.WithError(err).Error("Failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Annotation Event
 		ie := event.CreateAnnotationEvent(keptnEvent, dynatraceConfig)
@@ -140,7 +139,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			log.WithError(err).Error("Failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Info Event
 		ie := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
@@ -189,7 +188,7 @@ func (eh CDEventHandler) HandleEvent() error {
 			log.WithError(err).Error("Failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 		ie := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 		if strategy == keptnevents.Direct && rtData.Result == keptnv2.ResultPass || rtData.Result == keptnv2.ResultWarning {

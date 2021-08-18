@@ -3,6 +3,7 @@ package monitoring
 import (
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -14,7 +15,6 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/gorilla/websocket"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
@@ -109,7 +109,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		msg := fmt.Sprintf("failed to load Dynatrace credentials: %v", err)
 		return eh.handleError(e, msg)
 	}
-	config := NewConfiguration(lib.NewDynatraceHelper(keptnHandler, creds))
+	config := NewConfiguration(dynatrace.NewDynatraceHelper(keptnHandler, creds))
 
 	configuredEntities, err := config.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {
@@ -124,7 +124,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 	return nil
 }
 
-func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, entities *lib.ConfiguredEntities) string {
+func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, entities *dynatrace.ConfiguredEntities) string {
 	if entities == nil {
 		return ""
 	}

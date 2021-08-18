@@ -1,4 +1,4 @@
-package lib
+package dynatrace
 
 import (
 	"bytes"
