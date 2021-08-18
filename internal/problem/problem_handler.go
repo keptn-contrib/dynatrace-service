@@ -1,4 +1,4 @@
-package event_handler
+package problem
 
 import (
 	"encoding/json"
@@ -10,6 +10,7 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -89,7 +90,7 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		return nil
 	}
 
-	shkeptncontext := getShKeptnContext(eh.Event)
+	shkeptncontext := event.GetShKeptnContext(eh.Event)
 
 	dtProblemEvent := &DTProblemEvent{}
 	err := eh.Event.DataAs(dtProblemEvent)
@@ -220,7 +221,7 @@ func createAndSendCE(problemData interface{}, shkeptncontext string, eventType s
 
 	ce := cloudevents.NewEvent()
 	ce.SetType(eventType)
-	ce.SetSource(getEventSource())
+	ce.SetSource(event.GetEventSource())
 	ce.SetDataContentType(cloudevents.ApplicationJSON)
 	ce.SetData(cloudevents.ApplicationJSON, problemData)
 	ce.SetExtension("shkeptncontext", shkeptncontext)

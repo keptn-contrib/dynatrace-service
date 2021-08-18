@@ -1,4 +1,4 @@
-package event_handler
+package event
 
 import (
 	"net/url"
@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type dtConfigurationEvent struct {
+type DTConfigurationEvent struct {
 	EventType   string               `json:"eventType"`
 	Source      string               `json:"source"`
 	AttachRules config.DtAttachRules `json:"attachRules"`
@@ -21,7 +21,7 @@ type dtConfigurationEvent struct {
 	Original         string            `json:"original,omitempty"`
 }
 
-type dtDeploymentEvent struct {
+type DTDeploymentEvent struct {
 	EventType   string               `json:"eventType"`
 	Source      string               `json:"source"`
 	AttachRules config.DtAttachRules `json:"attachRules"`
@@ -34,7 +34,7 @@ type dtDeploymentEvent struct {
 	RemediationAction string            `json:"remediationAction,omitempty"`
 }
 
-type dtInfoEvent struct {
+type DTInfoEvent struct {
 	EventType   string               `json:"eventType"`
 	Source      string               `json:"source"`
 	AttachRules config.DtAttachRules `json:"attachRules"`
@@ -44,7 +44,7 @@ type dtInfoEvent struct {
 	Title            string            `json:"title"`
 }
 
-type dtAnnotationEvent struct {
+type DTAnnotationEvent struct {
 	EventType   string               `json:"eventType"`
 	Source      string               `json:"source"`
 	AttachRules config.DtAttachRules `json:"attachRules"`
@@ -123,11 +123,11 @@ func createCustomProperties(a adapter.EventContentAdapter) map[string]string {
 	return customProperties
 }
 
-// createInfoEvent creates a new Info event
-func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) dtInfoEvent {
+// CreateInfoEvent creates a new Info event
+func CreateInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) DTInfoEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
-	var ie dtInfoEvent
+	var ie DTInfoEvent
 	ie.EventType = "CUSTOM_INFO"
 	ie.Source = "Keptn dynatrace-service"
 	ie.Title = a.GetLabels()["title"]
@@ -144,11 +144,11 @@ func createInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.Dyna
 	return ie
 }
 
-// createAnnotationEvent creates a Dynatrace ANNOTATION event
-func createAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) dtAnnotationEvent {
+// CreateAnnotationEvent creates a Dynatrace ANNOTATION event
+func CreateAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) DTAnnotationEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
-	var ie dtAnnotationEvent
+	var ie DTAnnotationEvent
 	ie.EventType = "CUSTOM_ANNOTATION"
 	ie.Source = "Keptn dynatrace-service"
 	ie.AnnotationType = a.GetLabels()["type"]
@@ -173,10 +173,10 @@ func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue 
 	return defaultValue
 }
 
-func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) dtDeploymentEvent {
+func CreateDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) DTDeploymentEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
-	var de dtDeploymentEvent
+	var de DTDeploymentEvent
 	de.EventType = "CUSTOM_DEPLOYMENT"
 	de.Source = "Keptn dynatrace-service"
 	de.DeploymentName = getValueFromLabels(a, "deploymentName", "Deploy "+a.GetService()+" "+a.GetTag()+" with strategy "+a.GetDeploymentStrategy())
@@ -197,10 +197,10 @@ func createDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	return de
 }
 
-func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) dtConfigurationEvent {
+func CreateConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) DTConfigurationEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
-	var de dtConfigurationEvent
+	var de DTConfigurationEvent
 	de.EventType = "CUSTOM_CONFIGURATION"
 	de.Source = "Keptn dynatrace-service"
 
@@ -216,7 +216,8 @@ func createConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *co
 	return de
 }
 
-func getShKeptnContext(event cloudevents.Event) string {
+// GetShKeptnContext extracts the keptn context from a CloudEvent
+func GetShKeptnContext(event cloudevents.Event) string {
 	shkeptncontext, err := types.ToString(event.Context.GetExtensions()["shkeptncontext"])
 	if err != nil {
 		log.WithError(err).Debug("Event does not contain shkeptncontext")
@@ -224,7 +225,8 @@ func getShKeptnContext(event cloudevents.Event) string {
 	return shkeptncontext
 }
 
-func getEventSource() string {
+// GetEventSource gets the source to be used for CloudEvents originating from the dynatrace-service
+func GetEventSource() string {
 	source, _ := url.Parse("dynatrace-service")
 	return source.String()
 }

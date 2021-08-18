@@ -13,6 +13,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib/dynatrace"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -511,15 +512,15 @@ func sendGetSLIFinishedEvent(inputEvent cloudevents.Event, eventData *keptnv2.Ge
 		},
 	}
 
-	event := cloudevents.NewEvent()
-	event.SetType(keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName))
-	event.SetSource(getEventSource())
-	event.SetDataContentType(cloudevents.ApplicationJSON)
-	event.SetExtension("shkeptncontext", getShKeptnContext(inputEvent))
-	event.SetExtension("triggeredid", inputEvent.ID())
-	event.SetData(cloudevents.ApplicationJSON, getSLIEvent)
+	ev := cloudevents.NewEvent()
+	ev.SetType(keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName))
+	ev.SetSource(event.GetEventSource())
+	ev.SetDataContentType(cloudevents.ApplicationJSON)
+	ev.SetExtension("shkeptncontext", event.GetShKeptnContext(inputEvent))
+	ev.SetExtension("triggeredid", inputEvent.ID())
+	ev.SetData(cloudevents.ApplicationJSON, getSLIEvent)
 
-	return sendEvent(event)
+	return sendEvent(ev)
 }
 
 func sendGetSLIStartedEvent(inputEvent cloudevents.Event, eventData *keptnv2.GetSLITriggeredEventData) error {
@@ -541,15 +542,15 @@ func sendGetSLIStartedEvent(inputEvent cloudevents.Event, eventData *keptnv2.Get
 		return fmt.Errorf("could not determine keptnContext of input event: %s", err.Error())
 	}
 
-	event := cloudevents.NewEvent()
-	event.SetType(keptnv2.GetStartedEventType(keptnv2.GetSLITaskName))
-	event.SetSource(getEventSource())
-	event.SetDataContentType(cloudevents.ApplicationJSON)
-	event.SetExtension("shkeptncontext", keptnContext)
-	event.SetExtension("triggeredid", inputEvent.ID())
-	event.SetData(cloudevents.ApplicationJSON, getSLIStartedEvent)
+	ev := cloudevents.NewEvent()
+	ev.SetType(keptnv2.GetStartedEventType(keptnv2.GetSLITaskName))
+	ev.SetSource(event.GetEventSource())
+	ev.SetDataContentType(cloudevents.ApplicationJSON)
+	ev.SetExtension("shkeptncontext", keptnContext)
+	ev.SetExtension("triggeredid", inputEvent.ID())
+	ev.SetData(cloudevents.ApplicationJSON, getSLIStartedEvent)
 
-	return sendEvent(event)
+	return sendEvent(ev)
 }
 
 /**

@@ -1,4 +1,4 @@
-package event_handler
+package problem
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -19,14 +20,14 @@ import (
 
 type ActionHandler struct {
 	Event          cloudevents.Event
-	dtConfigGetter adapter.DynatraceConfigGetterInterface
+	DTConfigGetter adapter.DynatraceConfigGetterInterface
 }
 
 /**
  * Retrieves Dynatrace Credential information
  */
 func (eh ActionHandler) GetDynatraceCredentials(keptnEvent adapter.EventContentAdapter) (*config.DynatraceConfigFile, *credentials.DTCredentials, error) {
-	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
+	dynatraceConfig, err := eh.DTConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		log.WithError(err).Error("Failed to load Dynatrace config")
 		return nil, nil, err
@@ -77,7 +78,7 @@ func (eh ActionHandler) HandleEvent() error {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
 
-		dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
+		dynatraceConfig, err := eh.DTConfigGetter.GetDynatraceConfig(keptnEvent)
 		if err != nil {
 			log.WithError(err).Error("Failed to load Dynatrace config")
 			return err
@@ -92,7 +93,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-		dtInfoEvent := createInfoEvent(keptnEvent, dynatraceConfig)
+		dtInfoEvent := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 		dtInfoEvent.Title = "Keptn Remediation Action Triggered"
 		dtInfoEvent.Description = actionTriggeredData.Action.Action
 		dtHelper.SendEvent(dtInfoEvent)
@@ -172,12 +173,12 @@ func (eh ActionHandler) HandleEvent() error {
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionally to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 		if actionFinishedData.Status == keptnv2.StatusSucceeded {
-			dtConfigEvent := createConfigurationEvent(keptnEvent, dynatraceConfig)
+			dtConfigEvent := event.CreateConfigurationEvent(keptnEvent, dynatraceConfig)
 			dtConfigEvent.Description = "Keptn Remediation Action Finished"
 			dtConfigEvent.Configuration = "successful"
 			dtHelper.SendEvent(dtConfigEvent)
 		} else {
-			dtInfoEvent := createInfoEvent(keptnEvent, dynatraceConfig)
+			dtInfoEvent := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 			dtInfoEvent.Title = "Keptn Remediation Action Finished"
 			dtInfoEvent.Description = "error during execution"
 			dtHelper.SendEvent(dtInfoEvent)
