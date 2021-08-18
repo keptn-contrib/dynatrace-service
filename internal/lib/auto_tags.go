@@ -14,7 +14,7 @@ func (dt *DynatraceHelper) EnsureDTTaggingRulesAreSetUp() {
 
 	log.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", nil)
+	response, err := dt.SendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", nil)
 	if err != nil {
 		// Error occurred but continue
 		log.WithError(err).Error("Could not get existing tagging rules")
@@ -64,7 +64,7 @@ func (dt *DynatraceHelper) createDTTaggingRule(rule *DTTaggingRule) error {
 	if err != nil {
 		return err
 	}
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/autoTags", "POST", payload)
+	_, err = dt.SendDynatraceAPIRequest("/api/config/v1/autoTags", "POST", payload)
 	return err
 }
 

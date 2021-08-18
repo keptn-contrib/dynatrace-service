@@ -26,7 +26,7 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 		managementZone := CreateManagementZoneForProject(project)
 		mzPayload, err := json.Marshal(managementZone)
 		if err == nil {
-			_, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
+			_, err := dt.SendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
 			if err != nil {
 				// Error occurred but continue
 
@@ -67,7 +67,7 @@ func (dt *DynatraceHelper) CreateManagementZones(project string, shipyard keptnv
 			managementZone := CreateManagementZoneForStage(project, stage.Name)
 			mzPayload, err := json.Marshal(managementZone)
 			if err == nil {
-				_, err = dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
+				_, err = dt.SendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
 
 				if err != nil {
 					log.WithError(err).Error("Could not create management zone")
@@ -100,7 +100,7 @@ func getManagementZoneNameForStage(project string, stage string) string {
 }
 
 func (dt *DynatraceHelper) getManagementZones() []Values {
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", nil)
+	response, err := dt.SendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", nil)
 	if err != nil {
 		log.WithError(err).Error("Failed to retrieve management zones")
 		return nil

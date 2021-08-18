@@ -4,12 +4,13 @@ import (
 	"context"
 	"os"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/event_handler"
+	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/onboard"
+
+	log "github.com/sirupsen/logrus"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/kelseyhightower/envconfig"
@@ -45,7 +46,7 @@ func _main(args []string, env envConfig) int {
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize CredentialManager")
 		}
-		lib.ActivateServiceSynchronizer(cm)
+		onboard.ActivateServiceSynchronizer(cm)
 	}
 
 	ctx := context.Background()

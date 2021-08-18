@@ -35,7 +35,7 @@ func (dt *DynatraceHelper) CreateDashboard(project string, shipyard keptnv2.Ship
 		return
 	}
 
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", dashboardPayload)
+	_, err = dt.SendDynatraceAPIRequest("/api/config/v1/dashboards", "POST", dashboardPayload)
 	if err != nil {
 		log.WithError(err).Error("Failed to create Dynatrace dashboards")
 		dt.configuredEntities.Dashboard.Success = false
@@ -52,7 +52,7 @@ const dashboardNameSuffix = "@keptn: Digital Delivery & Operations Dashboard"
 
 // DeleteExistingDashboard deletes an existing dashboard for the provided project
 func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
-	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/dashboards", "GET", nil)
+	res, err := dt.SendDynatraceAPIRequest("/api/config/v1/dashboards", "GET", nil)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve list of existing Dynatrace dashboards: %v", err)
 	}
@@ -66,7 +66,7 @@ func (dt *DynatraceHelper) DeleteExistingDashboard(project string) error {
 
 	for _, dashboardItem := range dtDashboardsResponse.Dashboards {
 		if dashboardItem.Name == project+dashboardNameSuffix {
-			res, err = dt.sendDynatraceAPIRequest("/api/config/v1/dashboards/"+dashboardItem.ID, "DELETE", nil)
+			res, err = dt.SendDynatraceAPIRequest("/api/config/v1/dashboards/"+dashboardItem.ID, "DELETE", nil)
 			if err != nil {
 				return fmt.Errorf("Could not delete dashboard for project %s: %v", project, err)
 			}

@@ -17,7 +17,7 @@ func (dt *DynatraceHelper) SendProblemComment(problemID string, comment string) 
 
 	log.WithField("jsonPayload", jsonPayload).Info("Sending problem event")
 
-	resp, err := dt.sendDynatraceAPIRequest("/api/v1/problem/details/"+problemID+"/comments", "POST", jsonPayload)
+	resp, err := dt.SendDynatraceAPIRequest("/api/v1/problem/details/"+problemID+"/comments", "POST", jsonPayload)
 
 	log.WithField("response", resp).Info("Received response from Dynatrace API")
 	if err != nil {

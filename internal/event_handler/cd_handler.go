@@ -12,9 +12,9 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
+	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 )
 
 type CDEventHandler struct {

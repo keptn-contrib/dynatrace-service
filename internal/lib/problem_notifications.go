@@ -26,7 +26,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 		return
 	}
 
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "GET", nil)
+	response, err := dt.SendDynatraceAPIRequest("/api/config/v1/notifications", "GET", nil)
 	existingNotifications := DTAPIListResponse{}
 
 	err = json.Unmarshal([]byte(response), &existingNotifications)
@@ -36,7 +36,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 
 	for _, notification := range existingNotifications.Values {
 		if notification.Name == "Keptn Problem Notification" {
-			_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications/"+notification.ID, "DELETE", nil)
+			_, err = dt.SendDynatraceAPIRequest("/api/config/v1/notifications/"+notification.ID, "DELETE", nil)
 			if err != nil {
 				// Error occurred but continue
 				log.WithError(err).WithField("notificationId", notification.ID).Error("Failed to delete notification")
@@ -57,7 +57,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", keptnCredentials.APIToken)
 	problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
 
-	_, err = dt.sendDynatraceAPIRequest("/api/config/v1/notifications", "POST", []byte(problemNotification))
+	_, err = dt.SendDynatraceAPIRequest("/api/config/v1/notifications", "POST", []byte(problemNotification))
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
 		dt.configuredEntities.ProblemNotifications.Success = false
@@ -69,7 +69,7 @@ func (dt *DynatraceHelper) EnsureProblemNotificationsAreSetUp() {
 
 func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
 	log.Info("Checking Keptn alerting profile availability")
-	response, err := dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "GET", nil)
+	response, err := dt.SendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "GET", nil)
 	if err != nil {
 		// Error occurred but continue
 		log.WithError(err).Debug("Could not get alerting profiles")
@@ -96,7 +96,7 @@ func (dt *DynatraceHelper) setupAlertingProfile() (string, error) {
 		return "", fmt.Errorf("failed to marshal alerting profile: %v", err)
 	}
 
-	response, err = dt.sendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "POST", alertingProfilePayload)
+	response, err = dt.SendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "POST", alertingProfilePayload)
 	if err != nil {
 		return "", fmt.Errorf("failed to setup alerting profile: %v", err)
 	}

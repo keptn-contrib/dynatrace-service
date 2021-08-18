@@ -17,7 +17,7 @@ func (dt *DynatraceHelper) SendEvent(dtEvent interface{}) {
 		return
 	}
 
-	body, err := dt.sendDynatraceAPIRequest("/api/v1/events", "POST", jsonString)
+	body, err := dt.SendDynatraceAPIRequest("/api/v1/events", "POST", jsonString)
 	if err != nil {
 		log.WithError(err).Error("Failed sending Dynatrace API request")
 	} else {
