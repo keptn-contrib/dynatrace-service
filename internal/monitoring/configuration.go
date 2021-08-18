@@ -9,51 +9,6 @@ import (
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 )
 
-const DefaultOperatorVersion = "v0.8.0"
-const sliResourceURI = "dynatrace/sli.yaml"
-const Throughput = "throughput"
-const ErrorRate = "error_rate"
-const ResponseTimeP50 = "response_time_p50"
-const ResponseTimeP90 = "response_time_p90"
-const ResponseTimeP95 = "response_time_p95"
-
-type CriteriaObject struct {
-	Operator        string
-	Value           float64
-	CheckPercentage bool
-	IsComparison    bool
-	CheckIncrease   bool
-}
-
-type DTAPIListResponse struct {
-	Values []Values `json:"values"`
-}
-type Values struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// ConfigResult godoc
-type ConfigResult struct {
-	Name    string
-	Success bool
-	Message string
-}
-
-// ConfiguredEntities contains information about the entities configures in Dynatrace
-type ConfiguredEntities struct {
-	TaggingRulesEnabled         bool
-	TaggingRules                []ConfigResult
-	ProblemNotificationsEnabled bool
-	ProblemNotifications        ConfigResult
-	ManagementZonesEnabled      bool
-	ManagementZones             []ConfigResult
-	DashboardEnabled            bool
-	Dashboard                   ConfigResult
-	MetricEventsEnabled         bool
-	MetricEvents                []ConfigResult
-}
-
 type Configuration struct {
 	client *dynatrace.DynatraceHelper
 }
