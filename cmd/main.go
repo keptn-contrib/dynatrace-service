@@ -4,12 +4,12 @@ import (
 	"context"
 	"os"
 
-	"github.com/keptn-contrib/dynatrace-service/pkg/credentials"
-	"github.com/keptn-contrib/dynatrace-service/pkg/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/keptn-contrib/dynatrace-service/pkg/common"
-	"github.com/keptn-contrib/dynatrace-service/pkg/event_handler"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/event_handler"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/kelseyhightower/envconfig"
