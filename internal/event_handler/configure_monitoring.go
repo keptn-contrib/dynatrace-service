@@ -10,6 +10,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/gorilla/websocket"
@@ -207,15 +208,15 @@ func (eh *ConfigureMonitoringEventHandler) sendConfigureMonitoringFinishedEvent(
 		},
 	}
 
-	event := cloudevents.NewEvent()
-	event.SetSource("dynatrace-service")
-	event.SetDataContentType(cloudevents.ApplicationJSON)
-	event.SetType(keptnv2.GetFinishedEventType(keptnv2.ConfigureMonitoringTaskName))
-	event.SetData(cloudevents.ApplicationJSON, cmFinishedEvent)
-	event.SetExtension("shkeptncontext", getShKeptnContext(eh.Event))
-	event.SetExtension("triggeredid", eh.Event.Context.GetID())
+	ev := cloudevents.NewEvent()
+	ev.SetSource("dynatrace-service")
+	ev.SetDataContentType(cloudevents.ApplicationJSON)
+	ev.SetType(keptnv2.GetFinishedEventType(keptnv2.ConfigureMonitoringTaskName))
+	ev.SetData(cloudevents.ApplicationJSON, cmFinishedEvent)
+	ev.SetExtension("shkeptncontext", event.GetShKeptnContext(eh.Event))
+	ev.SetExtension("triggeredid", eh.Event.Context.GetID())
 
-	if err := eh.KeptnHandler.SendCloudEvent(event); err != nil {
+	if err := eh.KeptnHandler.SendCloudEvent(ev); err != nil {
 		return fmt.Errorf("could not send %s event: %s", keptnv2.GetFinishedEventType(keptnv2.ConfigureMonitoringTaskName), err.Error())
 	}
 

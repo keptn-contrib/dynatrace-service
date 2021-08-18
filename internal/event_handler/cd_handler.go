@@ -11,6 +11,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
@@ -22,7 +23,7 @@ type CDEventHandler struct {
 }
 
 func (eh CDEventHandler) HandleEvent() error {
-	shkeptncontext := getShKeptnContext(eh.Event)
+	shkeptncontext := event.GetShKeptnContext(eh.Event)
 
 	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
 	if err != nil {
@@ -52,7 +53,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// send Deployment Event
-		de := createDeploymentEvent(keptnEvent, dynatraceConfig)
+		de := event.CreateDeploymentEvent(keptnEvent, dynatraceConfig)
 		dtHelper.SendEvent(de)
 	} else if eh.Event.Type() == keptnv2.GetTriggeredEventType(keptnv2.TestTaskName) {
 		ttData := &keptnv2.TestTriggeredEventData{}
@@ -78,7 +79,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Annotation Event
-		ie := createAnnotationEvent(keptnEvent, dynatraceConfig)
+		ie := event.CreateAnnotationEvent(keptnEvent, dynatraceConfig)
 		if ie.AnnotationType == "" {
 			ie.AnnotationType = "Start Tests: " + ttData.Test.TestStrategy
 		}
@@ -110,7 +111,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Annotation Event
-		ie := createAnnotationEvent(keptnEvent, dynatraceConfig)
+		ie := event.CreateAnnotationEvent(keptnEvent, dynatraceConfig)
 
 		if ie.AnnotationType == "" {
 			ie.AnnotationType = "Stop Tests"
@@ -142,7 +143,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
 		// Send Info Event
-		ie := createInfoEvent(keptnEvent, dynatraceConfig)
+		ie := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 		qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", edData.Stage, edData.Result, edData.Evaluation.Score)
 		ie.Title = fmt.Sprintf("Evaluation result: %s", edData.Result)
 
@@ -190,7 +191,7 @@ func (eh CDEventHandler) HandleEvent() error {
 		}
 		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
 
-		ie := createInfoEvent(keptnEvent, dynatraceConfig)
+		ie := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 		if strategy == keptnevents.Direct && rtData.Result == keptnv2.ResultPass || rtData.Result == keptnv2.ResultWarning {
 			title := fmt.Sprintf("PROMOTING from %s to next stage", rtData.Stage)
 			ie.Title = title
