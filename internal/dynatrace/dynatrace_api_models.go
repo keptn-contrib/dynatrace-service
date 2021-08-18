@@ -25,6 +25,14 @@ const PROBLEM_NOTIFICATION_PAYLOAD string = `{
 
 const DASHBOARD_STAGE_WIDTH int = 456
 
+const keptnProject = "keptn_project"
+const keptnStage = "keptn_stage"
+const keptnService = "keptn_service"
+const keptnDeployment = "keptn_deployment"
+
+const customChartingTileType = "CUSTOM_CHARTING"
+const timeSeriesChartType = "TIMESERIES"
+
 const DefaultOperatorVersion = "v0.8.0"
 const SliResourceURI = "dynatrace/sli.yaml"
 const Throughput = "throughput"
@@ -419,7 +427,7 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 				FilterType: "TAG",
 				TagFilter: &METagFilter{
 					Context: "CONTEXTLESS",
-					Key:     "keptn_service",
+					Key:     keptnService,
 					Value:   service,
 				},
 			},
@@ -427,7 +435,7 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 				FilterType: "TAG",
 				TagFilter: &METagFilter{
 					Context: "CONTEXTLESS",
-					Key:     "keptn_deployment",
+					Key:     keptnDeployment,
 					Value:   "primary",
 				},
 			},
@@ -499,56 +507,25 @@ func CreateKeptnAlertingProfile() *AlertingProfile {
 		Metadata:    AlertingProfileMetadata{},
 		DisplayName: "Keptn",
 		Rules: []AlertingProfileRules{
-			{
-				SeverityLevel: "AVAILABILITY",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "ERROR",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "PERFORMANCE",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "RESOURCE_CONTENTION",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "CUSTOM_ALERT",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "MONITORING_UNAVAILABLE",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
+			createAlertingProfileRule("AVAILABILITY"),
+			createAlertingProfileRule("ERROR"),
+			createAlertingProfileRule("PERFORMANCE"),
+			createAlertingProfileRule("RESOURCE_CONTENTION"),
+			createAlertingProfileRule("CUSTOM_ALERT"),
+			createAlertingProfileRule("MONITORING_UNAVAILABLE"),
 		},
 		ManagementZoneID: nil,
+	}
+}
+
+func createAlertingProfileRule(severityLevel string) AlertingProfileRules {
+	return AlertingProfileRules{
+		SeverityLevel: severityLevel,
+		TagFilter: AlertingProfileTagFilter{
+			IncludeMode: "NONE",
+			TagFilters:  nil,
+		},
+		DelayInMinutes: 0,
 	}
 }
 
@@ -560,23 +537,7 @@ func CreateManagementZoneForProject(project string) *ManagementZone {
 				Type:             "SERVICE",
 				Enabled:          true,
 				PropagationTypes: []string{},
-				Conditions: []MZConditions{
-					{
-						Key: MZKey{
-							Attribute: "SERVICE_TAGS",
-						},
-						ComparisonInfo: MZComparisonInfo{
-							Type:     "TAG",
-							Operator: "EQUALS",
-							Value: MZValue{
-								Context: "CONTEXTLESS",
-								Key:     "keptn_project",
-								Value:   project,
-							},
-							Negate: false,
-						},
-					},
-				},
+				Conditions:       []MZConditions{creteManagementZoneConditionsFor(keptnProject, project)},
 			},
 		},
 	}
@@ -593,42 +554,32 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions: []MZConditions{
-					{
-						Key: MZKey{
-							Attribute: "SERVICE_TAGS",
-						},
-						ComparisonInfo: MZComparisonInfo{
-							Type:     "TAG",
-							Operator: "EQUALS",
-							Value: MZValue{
-								Context: "CONTEXTLESS",
-								Key:     "keptn_project",
-								Value:   project,
-							},
-							Negate: false,
-						},
-					},
-					{
-						Key: MZKey{
-							Attribute: "SERVICE_TAGS",
-						},
-						ComparisonInfo: MZComparisonInfo{
-							Type:     "TAG",
-							Operator: "EQUALS",
-							Value: MZValue{
-								Context: "CONTEXTLESS",
-								Key:     "keptn_stage",
-								Value:   stage,
-							},
-							Negate: false,
-						},
-					},
+					creteManagementZoneConditionsFor(keptnProject, project),
+					creteManagementZoneConditionsFor(keptnStage, stage),
 				},
 			},
 		},
 	}
 
 	return managementZone
+}
+
+func creteManagementZoneConditionsFor(key string, value string) MZConditions {
+	return MZConditions{
+		Key: MZKey{
+			Attribute: "SERVICE_TAGS",
+		},
+		ComparisonInfo: MZComparisonInfo{
+			Type:     "TAG",
+			Operator: "EQUALS",
+			Value: MZValue{
+				Context: "CONTEXTLESS",
+				Key:     key,
+				Value:   value,
+			},
+			Negate: false,
+		},
+	}
 }
 
 func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, dashboardNameSuffix string) *DynatraceDashboard {
@@ -672,7 +623,7 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, das
 			CustomName:  "Hosts",
 			DefaultName: "Hosts",
 			ChartConfig: ChartConfig{
-				Type:           "TIMESERIES",
+				Type:           timeSeriesChartType,
 				Series:         []Series{},
 				ResultMetadata: ResultMetadata{},
 			},
@@ -885,7 +836,7 @@ func createHeaderTile(name string) Tiles {
 func createServiceResponseTimeTile(project string, stage string) Tiles {
 	return Tiles{
 		Name:       "Response Time " + stage,
-		TileType:   "CUSTOM_CHARTING",
+		TileType:   customChartingTileType,
 		Configured: true,
 		TileFilter: TileFilter{
 			Timeframe:      nil,
@@ -896,7 +847,7 @@ func createServiceResponseTimeTile(project string, stage string) Tiles {
 			CustomName:  "Response Time " + stage,
 			DefaultName: "Custom Chart",
 			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
+				Type: timeSeriesChartType,
 				Series: []Series{
 					{
 						Metric:          "builtin:service.response.time",
@@ -913,7 +864,7 @@ func createServiceResponseTimeTile(project string, stage string) Tiles {
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
 		},
@@ -926,7 +877,7 @@ func createServiceResponseTimeTile(project string, stage string) Tiles {
 func createHostCPULoadTile() Tiles {
 	return Tiles{
 		Name:       "Host CPU Load",
-		TileType:   "CUSTOM_CHARTING",
+		TileType:   customChartingTileType,
 		Configured: true,
 		TileFilter: TileFilter{
 			Timeframe:      nil,
@@ -937,7 +888,7 @@ func createHostCPULoadTile() Tiles {
 			CustomName:  "CPU",
 			DefaultName: "Custom Chart",
 			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
+				Type: timeSeriesChartType,
 				Series: []Series{
 					{
 						Metric:          "builtin:host.cpu.load",
@@ -962,7 +913,7 @@ func createHostCPULoadTile() Tiles {
 func createServiceErrorRateTile(project string, stage string) Tiles {
 	return Tiles{
 		Name:       "Failure Rate " + stage,
-		TileType:   "CUSTOM_CHARTING",
+		TileType:   customChartingTileType,
 		Configured: true,
 		TileFilter: TileFilter{
 			Timeframe:      nil,
@@ -973,7 +924,7 @@ func createServiceErrorRateTile(project string, stage string) Tiles {
 			CustomName:  "Failure Rate " + stage,
 			DefaultName: "Custom Chart",
 			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
+				Type: timeSeriesChartType,
 				Series: []Series{
 					{
 						Metric:          "builtin:service.errors.server.rate",
@@ -990,7 +941,7 @@ func createServiceErrorRateTile(project string, stage string) Tiles {
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
 		},
@@ -1003,7 +954,7 @@ func createServiceErrorRateTile(project string, stage string) Tiles {
 func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
 	return Tiles{
 		Name:       "Service Calls per Test Name: " + stage,
-		TileType:   "CUSTOM_CHARTING",
+		TileType:   customChartingTileType,
 		Configured: true,
 		TileFilter: TileFilter{
 			Timeframe:      nil,
@@ -1014,7 +965,7 @@ func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
 			CustomName:  "Service Calls per Test Name: " + stage,
 			DefaultName: "Custom Chart",
 			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
+				Type: timeSeriesChartType,
 				Series: []Series{
 					{
 						Metric:      "calc:service.teststepservicecalls" + project,
@@ -1046,7 +997,7 @@ func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
 func createServiceTopAPICallsTile(project string, stage string) Tiles {
 	return Tiles{
 		Name:       "Top Service Calls per API Endpoint: " + stage,
-		TileType:   "CUSTOM_CHARTING",
+		TileType:   customChartingTileType,
 		Configured: true,
 		TileFilter: TileFilter{
 			Timeframe:      nil,
@@ -1057,7 +1008,7 @@ func createServiceTopAPICallsTile(project string, stage string) Tiles {
 			CustomName:  "Top Service Calls per API Endpoint: " + stage,
 			DefaultName: "Custom Chart",
 			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
+				Type: timeSeriesChartType,
 				Series: []Series{
 					{
 						Metric:      "calc:service.topurlservicecalls" + project,
@@ -1081,7 +1032,7 @@ func createServiceTopAPICallsTile(project string, stage string) Tiles {
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
 		},
@@ -1094,7 +1045,7 @@ func createServiceTopAPICallsTile(project string, stage string) Tiles {
 func createServiceThroughputTile(project string, stage string) Tiles {
 	return Tiles{
 		Name:       "Throughput " + stage,
-		TileType:   "CUSTOM_CHARTING",
+		TileType:   customChartingTileType,
 		Configured: true,
 		TileFilter: TileFilter{
 			Timeframe:      nil,
@@ -1105,7 +1056,7 @@ func createServiceThroughputTile(project string, stage string) Tiles {
 			CustomName:  "Throughput " + stage,
 			DefaultName: "Custom Chart",
 			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
+				Type: timeSeriesChartType,
 				Series: []Series{
 					{
 						Metric:          "builtin:service.requestCount.total",
@@ -1122,7 +1073,7 @@ func createServiceThroughputTile(project string, stage string) Tiles {
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
 		},
@@ -1146,13 +1097,13 @@ func createStageServicesTile(project string, stage string) Tiles {
 			CustomName:  "Services: " + stage,
 			DefaultName: "Services: " + stage,
 			ChartConfig: ChartConfig{
-				Type:           "TIMESERIES",
+				Type:           timeSeriesChartType,
 				Series:         []Series{},
 				ResultMetadata: ResultMetadata{},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
 		},
@@ -1161,4 +1112,16 @@ func createStageServicesTile(project string, stage string) Tiles {
 		ExcludeMaintenanceWindows: false,
 		Markdown:                  "",
 	}
+}
+
+func createTagFor(name string, value string) string {
+	return name + ":" + value
+}
+
+func createKeptnProjectTag(value string) string {
+	return createTagFor(keptnProject, value)
+}
+
+func createKeptnStageTag(value string) string {
+	return createTagFor(keptnStage, value)
 }
