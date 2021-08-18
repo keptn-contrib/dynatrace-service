@@ -3,6 +3,7 @@ package event_handler
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/monitoring"
 	"github.com/keptn-contrib/dynatrace-service/internal/problem"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -18,7 +19,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	dtConfigGetter := &adapter.DynatraceConfigGetter{}
 	switch event.Type() {
 	case keptnevents.ConfigureMonitoringEventType:
-		return &ConfigureMonitoringEventHandler{Event: event, dtConfigGetter: dtConfigGetter}, nil
+		return &monitoring.ConfigureMonitoringEventHandler{Event: event, DTConfigGetter: dtConfigGetter}, nil
 	case keptnv2.GetFinishedEventType(keptnv2.ProjectCreateTaskName):
 		return &CreateProjectEventHandler{Event: event, dtConfigGetter: dtConfigGetter}, nil
 	case keptnevents.ProblemEventType:
