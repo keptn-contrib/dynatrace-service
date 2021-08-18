@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"encoding/json"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 
@@ -27,23 +26,18 @@ func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
 
 	log.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
-	response, err := at.client.SendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", nil)
+	autoTagsClient := dynatrace.NewAutoTagClient(at.client)
+	existingDTRules, err := autoTagsClient.Get()
 	if err != nil {
 		// Error occurred but continue
-		log.WithError(err).Error("Could not get existing tagging rules")
-	}
-
-	existingDTRules := &dynatrace.DTAPIListResponse{}
-	err = json.Unmarshal([]byte(response), existingDTRules)
-	if err != nil {
-		// Error occurred but continue
-		log.WithError(err).Error("Failed to unmarshal Dynatrace tagging rules")
+		// TODO 2021-08-18: should this error just be ignored?
+		log.WithError(err).Error("Failed retrieving Dynatrace tagging rules")
 	}
 
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
 		if !taggingRuleExists(ruleName, existingDTRules) {
 			rule := createAutoTaggingRule(ruleName)
-			err = at.createDTTaggingRule(rule)
+			_, err = autoTagsClient.Create(rule)
 			if err != nil {
 				// Error occurred but continue
 				taggingRules = append(
@@ -76,17 +70,11 @@ func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
 	return taggingRules
 }
 
-func (at *AutoTagCreation) createDTTaggingRule(rule *dynatrace.DTTaggingRule) error {
-	log.WithField("name", rule.Name).Info("Creating DT tagging rule")
-	payload, err := json.Marshal(rule)
-	if err != nil {
-		return err
-	}
-	_, err = at.client.SendDynatraceAPIRequest("/api/config/v1/autoTags", "POST", payload)
-	return err
-}
-
 func taggingRuleExists(ruleName string, existingRules *dynatrace.DTAPIListResponse) bool {
+	if existingRules == nil {
+		return false
+	}
+
 	for _, rule := range existingRules.Values {
 		if rule.Name == ruleName {
 			return true

@@ -34,6 +34,14 @@ func NewDynatraceHelper(keptnHandler *keptnv2.Keptn, dynatraceCreds *credentials
 	}
 }
 
+func (dt *DynatraceHelper) Get(apiPath string) (string, error) {
+	return dt.SendDynatraceAPIRequest(apiPath, http.MethodGet, nil)
+}
+
+func (dt *DynatraceHelper) Post(apiPath string, body []byte) (string, error) {
+	return dt.SendDynatraceAPIRequest(apiPath, http.MethodPost, body)
+}
+
 // SendDynatraceAPIRequest makes an Dynatrace API request and returns the response
 func (dt *DynatraceHelper) SendDynatraceAPIRequest(apiPath string, method string, body []byte) (string, error) {
 
