@@ -121,7 +121,7 @@ func (dt *DynatraceHelper) CreateMetricEvents(project string, stage string, serv
 					}
 				}
 
-				_, err = dt.sendDynatraceAPIRequest(apiURL, apiMethod, mePayload)
+				_, err = dt.SendDynatraceAPIRequest(apiURL, apiMethod, mePayload)
 				if err != nil {
 					log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
 					continue
@@ -160,7 +160,7 @@ func (dt *DynatraceHelper) getCustomQueries(project string, stage string, servic
 }
 
 func (dt *DynatraceHelper) GetMetricEvent(eventKey string) (*MetricEvent, error) {
-	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
+	res, err := dt.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
 	if err != nil {
 		log.WithError(err).Error("Could not retrieve list of existing Dynatrace metric events")
 		return nil, err
@@ -176,7 +176,7 @@ func (dt *DynatraceHelper) GetMetricEvent(eventKey string) (*MetricEvent, error)
 
 	for _, metricEvent := range dtMetricEvents.Values {
 		if metricEvent.Name == eventKey {
-			res, err = dt.sendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents/"+metricEvent.ID, "GET", nil)
+			res, err = dt.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents/"+metricEvent.ID, "GET", nil)
 			if err != nil {
 				log.WithError(err).WithField("eventKey", eventKey).Error("Could not get existing metric event")
 				return nil, err
@@ -193,7 +193,7 @@ func (dt *DynatraceHelper) GetMetricEvent(eventKey string) (*MetricEvent, error)
 }
 
 func (dt *DynatraceHelper) DeleteExistingMetricEvent(eventKey string) error {
-	res, err := dt.sendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
+	res, err := dt.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
 	if err != nil {
 		log.WithError(err).Error("Could not retrieve list of existing Dynatrace metric events")
 		return err
@@ -209,7 +209,7 @@ func (dt *DynatraceHelper) DeleteExistingMetricEvent(eventKey string) error {
 
 	for _, metricEvent := range dtMetricEvents.Values {
 		if metricEvent.Name == eventKey {
-			res, err = dt.sendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents/"+metricEvent.ID, "DELETE", nil)
+			res, err = dt.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents/"+metricEvent.ID, "DELETE", nil)
 			if err != nil {
 				log.WithError(err).WithField("eventKey", eventKey).Error("Could not delete existing metric event")
 				return err

@@ -1,4 +1,4 @@
-package lib
+package onboard
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
@@ -120,7 +121,7 @@ type serviceSynchronizer struct {
 	resourcesAPI      *keptnapi.ResourceHandler
 	apiHandler        *keptnapi.APIHandler
 	credentialManager credentials.CredentialManagerInterface
-	DTHelper          *DynatraceHelper
+	DTHelper          *lib.DynatraceHelper
 	syncTimer         *time.Ticker
 	keptnHandler      *keptnv2.Keptn
 	servicesInKeptn   []string
@@ -142,7 +143,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 		}
 
 		serviceSynchronizerInstance.dtConfigGetter = &adapter.DynatraceConfigGetter{}
-		serviceSynchronizerInstance.DTHelper = NewDynatraceHelper(nil, nil)
+		serviceSynchronizerInstance.DTHelper = lib.NewDynatraceHelper(nil, nil)
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()
 		shipyardControllerBaseURL := common.GetShipyardControllerURL()
@@ -163,7 +164,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 }
 
 func (s *serviceSynchronizer) initializeSynchronizationTimer() {
-	syncInterval := GetServiceSyncInterval()
+	syncInterval := lib.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
 	go func() {
@@ -281,7 +282,7 @@ func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey
 	} else {
 		query = "/api/v2/entities?nextPageKey=" + nextPageKey
 	}
-	response, err := s.DTHelper.sendDynatraceAPIRequest(query, http.MethodGet, nil)
+	response, err := s.DTHelper.SendDynatraceAPIRequest(query, http.MethodGet, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not fetch service entities with 'keptn_managed' and 'keptn_service' tags: %v", err)
 	}

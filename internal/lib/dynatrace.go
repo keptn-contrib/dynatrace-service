@@ -130,10 +130,8 @@ func shouldCreateMetricEvents(stage keptnv2.Stage) bool {
 	return false
 }
 
-/**
- * if dtCredsSecretName is passed and it is not dynatrace (=default) then we try to pull the secret based on that name and is it for this API Call
- */
-func (dt *DynatraceHelper) sendDynatraceAPIRequest(apiPath string, method string, body []byte) (string, error) {
+// SendDynatraceAPIRequest makes an Dynatrace API request and returns the response
+func (dt *DynatraceHelper) SendDynatraceAPIRequest(apiPath string, method string, body []byte) (string, error) {
 
 	if common.RunLocal || common.RunLocalTest {
 		log.WithFields(
