@@ -608,18 +608,12 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, das
 		Width:  494,
 		Height: 38,
 	}
-
 	dtDashboard.Tiles = append(dtDashboard.Tiles, infrastructureHeaderTile)
 
-	hostsTile := Tiles{
-		Name:       "",
-		TileType:   "HOSTS",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	hostsTile := createTileWith(
+		"",
+		"HOSTS",
+		&FilterConfig{
 			Type:        "HOST",
 			CustomName:  "Hosts",
 			DefaultName: "Hosts",
@@ -629,18 +623,8 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, das
 				ResultMetadata: ResultMetadata{},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-		Markdown:                  "",
-		Bounds: Bounds{
-			Top:    38,
-			Left:   0,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		},
-	}
+		})
+	hostsTile.Bounds = createBounds(38, 0, 152)
 	dtDashboard.Tiles = append(dtDashboard.Tiles, hostsTile)
 
 	networkTile := Tiles{
@@ -652,165 +636,49 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, das
 			ManagementZone: nil,
 		},
 		AssignedEntities: nil,
-		Bounds: Bounds{
-			Top:    38,
-			Left:   912,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		},
+		Bounds:           createBounds(38, 912, 152),
 	}
 	dtDashboard.Tiles = append(dtDashboard.Tiles, networkTile)
 
 	cpuLoadTile := createHostCPULoadTile()
-	cpuLoadTile.Bounds = Bounds{
-		Top:    38,
-		Left:   DASHBOARD_STAGE_WIDTH,
-		Width:  DASHBOARD_STAGE_WIDTH,
-		Height: 152,
-	}
+	cpuLoadTile.Bounds = createBounds(38, DASHBOARD_STAGE_WIDTH, 152)
 	dtDashboard.Tiles = append(dtDashboard.Tiles, cpuLoadTile)
 
 	// create stage service tiles
 	for index, stage := range shipyard.Spec.Stages {
 
 		headerTile := createHeaderTile(stage.Name)
-		headerTile.Bounds = Bounds{
-			Top:    266,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 38,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, headerTile)
+		headerTile.Bounds = createBounds(266, index*DASHBOARD_STAGE_WIDTH, 38)
 
 		servicesTile := createStageServicesTile(projectName, stage.Name)
-		servicesTile.Bounds = Bounds{
-			Top:    304,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, servicesTile)
+		servicesTile.Bounds = createStandardTileBounds(304, index*DASHBOARD_STAGE_WIDTH)
 
 		throughputTile := createServiceThroughputTile(projectName, stage.Name)
-		throughputTile.Bounds = Bounds{
-			Top:    456,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, throughputTile)
+		throughputTile.Bounds = createStandardTileBounds(456, index*DASHBOARD_STAGE_WIDTH)
 
 		errorRateTile := createServiceErrorRateTile(projectName, stage.Name)
-		errorRateTile.Bounds = Bounds{
-			Top:    608,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, errorRateTile)
+		errorRateTile.Bounds = createStandardTileBounds(608, index*DASHBOARD_STAGE_WIDTH)
 
 		responseTimeTile := createServiceResponseTimeTile(projectName, stage.Name)
-		responseTimeTile.Bounds = Bounds{
-			Top:    760,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, responseTimeTile)
+		responseTimeTile.Bounds = createStandardTileBounds(760, index*DASHBOARD_STAGE_WIDTH)
+
+		dtDashboard.Tiles = append(dtDashboard.Tiles, headerTile, servicesTile, throughputTile, errorRateTile, responseTimeTile)
 	}
 
 	return dtDashboard
 }
 
-func CreateCalculatedMetric(key string, name string, baseMetric string, unit string, conditionContext string, conditionKey string, conditionValue string, dimensionName string, dimensionDefinition string, dimensionAggregate string) CalculatedMetric {
-	return CalculatedMetric{
-		TsmMetricKey:     key,
-		Name:             name,
-		Enabled:          true,
-		MetricDefinition: MetricDefinition{},
-		Unit:             unit,
-		UnitDisplayName:  "",
-		Conditions: []CalculatedMetricConditions{
-			{
-				Attribute: "SERVICE_TAG",
-				ComparisonInfo: CalculatedMetricComparisonInfo{
-					Type:       "TAG",
-					Comparison: "TAG_KEY_EQUALS",
-					Value: Value{
-						Context: conditionContext,
-						Key:     conditionKey,
-						Value:   conditionValue,
-					},
-					Negate: false,
-				},
-			},
-		},
-		DimensionDefinition: DimensionDefinition{
-			Name:            dimensionName,
-			Dimension:       dimensionDefinition,
-			Placeholders:    []string{},
-			TopX:            10,
-			TopXDirection:   "DESCENDING",
-			TopXAggregation: dimensionAggregate,
-		},
-	}
+func createStandardTileBounds(top int, left int) Bounds {
+	return createBounds(top, left, 152)
 }
 
-func CreateCalculatedTestStepMetric(key string, name string, baseMetric string, unit string, conditionContext string, conditionKey string, conditionValue string, dimensionName string, dimensionDefinition string, dimensionAggregate string) CalculatedMetric {
-	return CalculatedMetric{
-		TsmMetricKey: key,
-		Name:         name,
-		Enabled:      true,
-		MetricDefinition: MetricDefinition{
-			Metric:           baseMetric,
-			RequestAttribute: nil,
-		},
-		Unit:            unit,
-		UnitDisplayName: "",
-		Conditions: []CalculatedMetricConditions{
-			{
-				Attribute: "SERVICE_REQUEST_ATTRIBUTE",
-				ComparisonInfo: CalculatedMetricComparisonInfo{
-					Type:             "STRING_REQUEST_ATTRIBUTE",
-					Comparison:       "EXISTS",
-					Value:            Value{},
-					Negate:           false,
-					RequestAttribute: "TSN",
-					CaseSensitive:    false,
-				},
-			},
-			{
-				Attribute: "SERVICE_TAG",
-				ComparisonInfo: CalculatedMetricComparisonInfo{
-					Type:       "TAG",
-					Comparison: "TAG_KEY_EQUALS",
-					Value: Value{
-						Context: conditionContext,
-						Key:     conditionKey,
-						Value:   conditionValue,
-					},
-					Negate:           false,
-					RequestAttribute: "TSN",
-					CaseSensitive:    false,
-				},
-			},
-		},
-		DimensionDefinition: DimensionDefinition{
-			Name:            "TestStep",
-			Dimension:       "{RequestAttribute:TSN}",
-			Placeholders:    []string{},
-			TopX:            10,
-			TopXDirection:   "DESCENDING",
-			TopXAggregation: dimensionAggregate,
-		},
+func createBounds(top int, left int, height int) Bounds {
+	return Bounds{
+		Top:    top,
+		Left:   left,
+		Width:  DASHBOARD_STAGE_WIDTH,
+		Height: height,
 	}
-}
-
-func createMarkdownTile(markdown string) Tiles {
-	tile := createTileWith("Markdown", "MARKDOWN", nil)
-	tile.Markdown = markdown
-
-	return tile
 }
 
 func createHeaderTile(name string) Tiles {
@@ -894,79 +762,6 @@ func createServiceErrorRateTile(project string, stage string) Tiles {
 						Type:            "BAR",
 						EntityType:      "SERVICE",
 						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
-			FiltersPerEntityType: FiltersPerEntityType{
-				Service: &EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
-				},
-			},
-		})
-}
-
-func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
-	return createTileWith(
-		"Service Calls per Test Name: "+stage,
-		customChartingTileType,
-		&FilterConfig{
-			Type:        "MIXED",
-			CustomName:  "Service Calls per Test Name: " + stage,
-			DefaultName: customChartName,
-			ChartConfig: ChartConfig{
-				Type: timeSeriesChartType,
-				Series: []Series{
-					{
-						Metric:      "calc:service.teststepservicecalls" + project,
-						Aggregation: "NONE",
-						Percentile:  nil,
-						Type:        "BAR",
-						EntityType:  "SERVICE",
-						Dimensions: []Dimensions{
-							{
-								ID:              "1",
-								Name:            "Test Step",
-								Values:          []string{},
-								EntityDimension: false,
-							},
-						},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
-		})
-}
-
-func createServiceTopAPICallsTile(project string, stage string) Tiles {
-	return createTileWith(
-		"Top Service Calls per API Endpoint: "+stage,
-		customChartingTileType,
-		&FilterConfig{
-			Type:        "MIXED",
-			CustomName:  "Top Service Calls per API Endpoint: " + stage,
-			DefaultName: customChartName,
-			ChartConfig: ChartConfig{
-				Type: timeSeriesChartType,
-				Series: []Series{
-					{
-						Metric:      "calc:service.topurlservicecalls" + project,
-						Aggregation: "NONE",
-						Percentile:  nil,
-						Type:        "BAR",
-						EntityType:  "SERVICE",
-						Dimensions: []Dimensions{
-							{
-								ID:              "1",
-								Name:            "URL",
-								Values:          []string{},
-								EntityDimension: false,
-							},
-						},
 						SortAscending:   false,
 						SortColumn:      true,
 						AggregationRate: "TOTAL",
