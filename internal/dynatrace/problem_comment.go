@@ -1,4 +1,4 @@
-package lib
+package dynatrace
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// SendProblemComment sends a commont on a DT problem
+// SendProblemComment sends a comment on a DT problem
 func (dt *DynatraceHelper) SendProblemComment(problemID string, comment string) error {
 	dtCommentPayload := map[string]string{"comment": comment, "user": "keptn", "context": "keptn-remediation"}
 	jsonPayload, err := json.Marshal(dtCommentPayload)

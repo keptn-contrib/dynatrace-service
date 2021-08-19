@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"encoding/json"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -9,18 +10,18 @@ import (
 )
 
 type ManagementZoneCreation struct {
-	client *lib.DynatraceHelper
+	client *dynatrace.DynatraceHelper
 }
 
-func NewManagementZoneCreation(client *lib.DynatraceHelper) *ManagementZoneCreation {
+func NewManagementZoneCreation(client *dynatrace.DynatraceHelper) *ManagementZoneCreation {
 	return &ManagementZoneCreation{
 		client: client,
 	}
 }
 
 // CreateFor creates a new management zone for the project
-func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Shipyard) []lib.ConfigResult {
-	var managementZones []lib.ConfigResult
+func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Shipyard) []dynatrace.ConfigResult {
+	var managementZones []dynatrace.ConfigResult
 	if !lib.IsManagementZonesGenerationEnabled() {
 		return managementZones
 	}
@@ -35,7 +36,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 	}
 
 	if !found {
-		managementZone := lib.CreateManagementZoneForProject(project)
+		managementZone := dynatrace.CreateManagementZoneForProject(project)
 		mzPayload, err := json.Marshal(managementZone)
 		if err == nil {
 			_, err := mzc.client.SendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
@@ -46,7 +47,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 
 				managementZones = append(
 					managementZones,
-					lib.ConfigResult{
+					dynatrace.ConfigResult{
 						Name:    "Keptn: " + project,
 						Success: false,
 						Message: "failed to create management zone: " + err.Error(),
@@ -54,7 +55,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 			} else {
 				managementZones = append(
 					managementZones,
-					lib.ConfigResult{
+					dynatrace.ConfigResult{
 						Name:    "Keptn: " + project,
 						Success: true,
 					})
@@ -66,7 +67,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 	} else {
 		managementZones = append(
 			managementZones,
-			lib.ConfigResult{
+			dynatrace.ConfigResult{
 				Name:    "Keptn: " + project,
 				Success: true,
 				Message: "Management Zone 'Keptn:" + project + "' was already available in your Tenant",
@@ -82,7 +83,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 		}
 
 		if !found {
-			managementZone := lib.CreateManagementZoneForStage(project, stage.Name)
+			managementZone := dynatrace.CreateManagementZoneForStage(project, stage.Name)
 			mzPayload, err := json.Marshal(managementZone)
 			if err == nil {
 				_, err = mzc.client.SendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
@@ -91,7 +92,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 					log.WithError(err).Error("Could not create management zone")
 					managementZones = append(
 						managementZones,
-						lib.ConfigResult{
+						dynatrace.ConfigResult{
 							Name:    managementZone.Name,
 							Success: false,
 							Message: "Could not create management zone: " + err.Error(),
@@ -99,7 +100,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 				} else {
 					managementZones = append(
 						managementZones,
-						lib.ConfigResult{
+						dynatrace.ConfigResult{
 							Name:    managementZone.Name,
 							Success: true,
 						})
@@ -110,7 +111,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 		} else {
 			managementZones = append(
 				managementZones,
-				lib.ConfigResult{
+				dynatrace.ConfigResult{
 					Name:    "Keptn: " + project + " " + stage.Name,
 					Success: true,
 					Message: "Management Zone 'Keptn:" + project + " " + stage.Name + "' was already available in your Tenant",
@@ -125,13 +126,13 @@ func getManagementZoneNameForStage(project string, stage string) string {
 	return "Keptn: " + project + " " + stage
 }
 
-func (mzc *ManagementZoneCreation) getManagementZones() []lib.Values {
+func (mzc *ManagementZoneCreation) getManagementZones() []dynatrace.Values {
 	response, err := mzc.client.SendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", nil)
 	if err != nil {
 		log.WithError(err).Error("Failed to retrieve management zones")
 		return nil
 	}
-	mzs := &lib.DTAPIListResponse{}
+	mzs := &dynatrace.DTAPIListResponse{}
 
 	err = json.Unmarshal([]byte(response), mzs)
 	if err != nil {

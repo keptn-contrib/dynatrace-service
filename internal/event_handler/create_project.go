@@ -2,6 +2,7 @@ package event_handler
 
 import (
 	"encoding/base64"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/monitoring"
 
 	"github.com/keptn/go-utils/pkg/lib/keptn"
@@ -13,7 +14,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	"gopkg.in/yaml.v2"
 )
 
@@ -58,7 +58,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return err
 	}
-	config := monitoring.NewConfiguration(lib.NewDynatraceHelper(keptnHandler, creds))
+	config := monitoring.NewConfiguration(dynatrace.NewDynatraceHelper(keptnHandler, creds))
 
 	_, err = config.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {

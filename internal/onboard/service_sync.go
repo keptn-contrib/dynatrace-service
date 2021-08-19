@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -121,7 +122,7 @@ type serviceSynchronizer struct {
 	resourcesAPI      *keptnapi.ResourceHandler
 	apiHandler        *keptnapi.APIHandler
 	credentialManager credentials.CredentialManagerInterface
-	DTHelper          *lib.DynatraceHelper
+	DTHelper          *dynatrace.DynatraceHelper
 	syncTimer         *time.Ticker
 	keptnHandler      *keptnv2.Keptn
 	servicesInKeptn   []string
@@ -143,7 +144,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 		}
 
 		serviceSynchronizerInstance.dtConfigGetter = &adapter.DynatraceConfigGetter{}
-		serviceSynchronizerInstance.DTHelper = lib.NewDynatraceHelper(nil, nil)
+		serviceSynchronizerInstance.DTHelper = dynatrace.NewDynatraceHelper(nil, nil)
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()
 		shipyardControllerBaseURL := common.GetShipyardControllerURL()

@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"encoding/json"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +21,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	"github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
@@ -67,7 +67,7 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 		servicesAPI     *keptnapi.ServiceHandler
 		resourcesAPI    *keptnapi.ResourceHandler
 		apiMutex        sync.Mutex
-		DTHelper        *lib.DynatraceHelper
+		DTHelper        *dynatrace.DynatraceHelper
 		syncTimer       *time.Ticker
 		keptnHandler    *keptnv2.Keptn
 		servicesInKeptn []string
@@ -91,7 +91,7 @@ func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.
 				servicesAPI:  nil,
 				resourcesAPI: nil,
 				apiMutex:     sync.Mutex{},
-				DTHelper: lib.NewDynatraceHelper(nil, &credentials.DTCredentials{
+				DTHelper: dynatrace.NewDynatraceHelper(nil, &credentials.DTCredentials{
 					Tenant:   dtMockServer.URL,
 					ApiToken: "",
 				}),
@@ -520,7 +520,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		projectsAPI:  keptnapi.NewProjectHandler(projectsMockAPI.URL),
 		servicesAPI:  keptnapi.NewServiceHandler(servicesMockAPI.URL),
 		resourcesAPI: keptnapi.NewResourceHandler(mockCS.URL),
-		DTHelper: lib.NewDynatraceHelper(nil, &credentials.DTCredentials{
+		DTHelper: dynatrace.NewDynatraceHelper(nil, &credentials.DTCredentials{
 			Tenant:   dtMockServer.URL,
 			ApiToken: "",
 		}),
@@ -661,7 +661,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		apiHandler        *keptnapi.APIHandler
 		credentialManager credentials.CredentialManagerInterface
 		apiMutex          sync.Mutex
-		DTHelper          *lib.DynatraceHelper
+		DTHelper          *dynatrace.DynatraceHelper
 		syncTimer         *time.Ticker
 		keptnHandler      *keptnv2.Keptn
 		servicesInKeptn   []string

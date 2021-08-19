@@ -1,9 +1,10 @@
-package lib
+package dynatrace
 
 import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -17,30 +18,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
-const DefaultOperatorVersion = "v0.8.0"
-const SliResourceURI = "dynatrace/sli.yaml"
-const Throughput = "throughput"
-const ErrorRate = "error_rate"
-const ResponseTimeP50 = "response_time_p50"
-const ResponseTimeP90 = "response_time_p90"
-const ResponseTimeP95 = "response_time_p95"
-
-type CriteriaObject struct {
-	Operator        string
-	Value           float64
-	CheckPercentage bool
-	IsComparison    bool
-	CheckIncrease   bool
-}
-
-type DTAPIListResponse struct {
-	Values []Values `json:"values"`
-}
-type Values struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 type DynatraceHelper struct {
 	DynatraceCreds     *credentials.DTCredentials
 	OperatorTag        string
@@ -49,33 +26,20 @@ type DynatraceHelper struct {
 	configuredEntities *ConfiguredEntities
 }
 
-// ConfigResult godoc
-type ConfigResult struct {
-	Name    string
-	Success bool
-	Message string
-}
-
-// ConfiguredEntities contains information about the entities configures in Dynatrace
-type ConfiguredEntities struct {
-	TaggingRulesEnabled         bool
-	TaggingRules                []ConfigResult
-	ProblemNotificationsEnabled bool
-	ProblemNotifications        ConfigResult
-	ManagementZonesEnabled      bool
-	ManagementZones             []ConfigResult
-	DashboardEnabled            bool
-	Dashboard                   ConfigResult
-	MetricEventsEnabled         bool
-	MetricEvents                []ConfigResult
-}
-
 // NewDynatraceHelper creates a new DynatraceHelper
 func NewDynatraceHelper(keptnHandler *keptnv2.Keptn, dynatraceCreds *credentials.DTCredentials) *DynatraceHelper {
 	return &DynatraceHelper{
 		DynatraceCreds: dynatraceCreds,
 		KeptnHandler:   keptnHandler,
 	}
+}
+
+func (dt *DynatraceHelper) Get(apiPath string) (string, error) {
+	return dt.SendDynatraceAPIRequest(apiPath, http.MethodGet, nil)
+}
+
+func (dt *DynatraceHelper) Post(apiPath string, body []byte) (string, error) {
+	return dt.SendDynatraceAPIRequest(apiPath, http.MethodPost, body)
 }
 
 // SendDynatraceAPIRequest makes an Dynatrace API request and returns the response
@@ -132,7 +96,7 @@ func (dt *DynatraceHelper) createRequest(apiPath string, method string, body []b
 // creates http client with proxy and TLS configuration
 func (dt *DynatraceHelper) createClient(req *http.Request) (*http.Client, error) {
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !IsHttpSSLVerificationEnabled()},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	client := &http.Client{Transport: tr}

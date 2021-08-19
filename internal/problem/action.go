@@ -3,6 +3,7 @@ package problem
 import (
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -12,8 +13,6 @@ import (
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 )
@@ -89,7 +88,7 @@ func (eh ActionHandler) HandleEvent() error {
 			log.WithError(err).Error("failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
@@ -130,7 +129,7 @@ func (eh ActionHandler) HandleEvent() error {
 		}
 
 		// Create our DTHelper
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 		// Comment we push over
 		comment = fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.Event.Source())
@@ -161,7 +160,7 @@ func (eh ActionHandler) HandleEvent() error {
 			log.WithError(err).Error("Could not find problem ID for event")
 			return err
 		}
-		dtHelper := lib.NewDynatraceHelper(keptnHandler, creds)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 		// Comment text we want to push over
 		comment = fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",

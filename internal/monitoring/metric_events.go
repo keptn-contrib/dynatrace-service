@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	"regexp"
 	"strconv"
@@ -20,18 +21,18 @@ import (
 )
 
 type MetricEventCreation struct {
-	client *lib.DynatraceHelper
+	client *dynatrace.DynatraceHelper
 }
 
-func NewMetricEventCreation(client *lib.DynatraceHelper) MetricEventCreation {
+func NewMetricEventCreation(client *dynatrace.DynatraceHelper) MetricEventCreation {
 	return MetricEventCreation{
 		client: client,
 	}
 }
 
 // CreateFor creates new metric events if SLOs are specified
-func (mec MetricEventCreation) CreateFor(project string, stage string, service string) []lib.ConfigResult {
-	var metricEvents []lib.ConfigResult
+func (mec MetricEventCreation) CreateFor(project string, stage string, service string) []dynatrace.ConfigResult {
+	var metricEvents []dynatrace.ConfigResult
 	if !lib.IsMetricEventsGenerationEnabled() {
 		return metricEvents
 	}
@@ -91,7 +92,7 @@ func (mec MetricEventCreation) CreateFor(project string, stage string, service s
 					// comparison-based criteria cannot be mapped to alerts
 					continue
 				}
-				newMetricEvent, err := lib.CreateKeptnMetricEvent(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
+				newMetricEvent, err := dynatrace.CreateKeptnMetricEvent(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
 				if err != nil {
 					// Error occurred but continue
 					log.WithError(err).WithFields(
@@ -139,7 +140,7 @@ func (mec MetricEventCreation) CreateFor(project string, stage string, service s
 					continue
 				}
 				metricEvents = append(metricEvents,
-					lib.ConfigResult{
+					dynatrace.ConfigResult{
 						Name:    newMetricEvent.Name,
 						Success: true,
 					})
@@ -166,7 +167,7 @@ func (mec *MetricEventCreation) getCustomQueries(project string, stage string, s
 	if mec.client.KeptnHandler == nil {
 		return nil, errors.New("Could not retrieve SLI config: No KeptnHandler initialized")
 	}
-	customQueries, err := mec.client.KeptnHandler.GetSLIConfiguration(project, stage, service, lib.SliResourceURI)
+	customQueries, err := mec.client.KeptnHandler.GetSLIConfiguration(project, stage, service, dynatrace.SliResourceURI)
 	if err != nil {
 		return nil, err
 	}
@@ -174,14 +175,14 @@ func (mec *MetricEventCreation) getCustomQueries(project string, stage string, s
 	return customQueries, nil
 }
 
-func (mec *MetricEventCreation) GetMetricEvent(eventKey string) (*lib.MetricEvent, error) {
+func (mec *MetricEventCreation) GetMetricEvent(eventKey string) (*dynatrace.MetricEvent, error) {
 	res, err := mec.client.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
 	if err != nil {
 		log.WithError(err).Error("Could not retrieve list of existing Dynatrace metric events")
 		return nil, err
 	}
 
-	dtMetricEvents := &lib.DTAPIListResponse{}
+	dtMetricEvents := &dynatrace.DTAPIListResponse{}
 	err = json.Unmarshal([]byte(res), dtMetricEvents)
 
 	if err != nil {
@@ -196,7 +197,7 @@ func (mec *MetricEventCreation) GetMetricEvent(eventKey string) (*lib.MetricEven
 				log.WithError(err).WithField("eventKey", eventKey).Error("Could not get existing metric event")
 				return nil, err
 			}
-			retrievedMetricEvent := &lib.MetricEvent{}
+			retrievedMetricEvent := &dynatrace.MetricEvent{}
 			err = json.Unmarshal([]byte(res), retrievedMetricEvent)
 			if err != nil {
 				return nil, err
@@ -214,7 +215,7 @@ func (mec *MetricEventCreation) DeleteExistingMetricEvent(eventKey string) error
 		return err
 	}
 
-	dtMetricEvents := &lib.DTAPIListResponse{}
+	dtMetricEvents := &dynatrace.DTAPIListResponse{}
 	err = json.Unmarshal([]byte(res), dtMetricEvents)
 
 	if err != nil {
@@ -260,22 +261,22 @@ func getTimeseriesConfig(metric string, customQueries map[string]string) (string
 
 	// default config
 	switch metric {
-	case lib.Throughput:
+	case dynatrace.Throughput:
 		return "builtin:service.requestCount.total:merge(0):count?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case lib.ErrorRate:
+	case dynatrace.ErrorRate:
 		return "builtin:service.errors.total.rate:merge(0):avg?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case lib.ResponseTimeP50:
+	case dynatrace.ResponseTimeP50:
 		return "builtin:service.response.time:merge(0):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case lib.ResponseTimeP90:
+	case dynatrace.ResponseTimeP90:
 		return "builtin:service.response.time:merge(0):percentile(90)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case lib.ResponseTimeP95:
+	case dynatrace.ResponseTimeP95:
 		return "builtin:service.response.time:merge(0):percentile(95)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
 	default:
 		return "", fmt.Errorf("unsupported SLI metric %s", metric)
 	}
 }
 
-func parseCriteriaString(criteria string) (*lib.CriteriaObject, error) {
+func parseCriteriaString(criteria string) (*dynatrace.CriteriaObject, error) {
 	// example values: <+15%, <500, >-8%, =0
 	// possible operators: <, <=, =, >, >=
 	// regex: ^([<|<=|=|>|>=]{1,2})([+|-]{0,1}\\d*\.?\d*)([%]{0,1})
@@ -290,7 +291,7 @@ func parseCriteriaString(criteria string) (*lib.CriteriaObject, error) {
 		return nil, errors.New("invalid criteria string")
 	}
 
-	c := &lib.CriteriaObject{}
+	c := &dynatrace.CriteriaObject{}
 
 	if strings.HasSuffix(criteria, "%") {
 		c.CheckPercentage = true

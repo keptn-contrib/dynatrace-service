@@ -1,53 +1,48 @@
 package monitoring
 
 import (
-	"encoding/json"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 
 	log "github.com/sirupsen/logrus"
 )
 
 type AutoTagCreation struct {
-	client *lib.DynatraceHelper
+	client *dynatrace.DynatraceHelper
 }
 
-func NewAutoTagCreation(client *lib.DynatraceHelper) *AutoTagCreation {
+func NewAutoTagCreation(client *dynatrace.DynatraceHelper) *AutoTagCreation {
 	return &AutoTagCreation{
 		client: client,
 	}
 }
 
 // Create creates auto-tags in Dynatrace and returns the tagging rules
-func (at *AutoTagCreation) Create() []lib.ConfigResult {
-	var taggingRules []lib.ConfigResult
+func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
+	var taggingRules []dynatrace.ConfigResult
 	if !lib.IsTaggingRulesGenerationEnabled() {
 		return taggingRules
 	}
 
 	log.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
-	response, err := at.client.SendDynatraceAPIRequest("/api/config/v1/autoTags", "GET", nil)
+	autoTagsClient := dynatrace.NewAutoTagClient(at.client)
+	existingDTRules, err := autoTagsClient.Get()
 	if err != nil {
 		// Error occurred but continue
-		log.WithError(err).Error("Could not get existing tagging rules")
-	}
-
-	existingDTRules := &lib.DTAPIListResponse{}
-	err = json.Unmarshal([]byte(response), existingDTRules)
-	if err != nil {
-		// Error occurred but continue
-		log.WithError(err).Error("Failed to unmarshal Dynatrace tagging rules")
+		// TODO 2021-08-18: should this error just be ignored?
+		log.WithError(err).Error("Failed retrieving Dynatrace tagging rules")
 	}
 
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
-		if taggingRuleExists(ruleName, existingDTRules) {
+		if !taggingRuleExists(ruleName, existingDTRules) {
 			rule := createAutoTaggingRule(ruleName)
-			err = at.createDTTaggingRule(rule)
+			_, err = autoTagsClient.Create(rule)
 			if err != nil {
 				// Error occurred but continue
 				taggingRules = append(
 					taggingRules,
-					lib.ConfigResult{
+					dynatrace.ConfigResult{
 						Name:    ruleName,
 						Success: false,
 						Message: "Could not create auto tagging rule: " + err.Error(),
@@ -56,7 +51,7 @@ func (at *AutoTagCreation) Create() []lib.ConfigResult {
 			} else {
 				taggingRules = append(
 					taggingRules,
-					lib.ConfigResult{
+					dynatrace.ConfigResult{
 						Name:    ruleName,
 						Success: true,
 					})
@@ -65,7 +60,7 @@ func (at *AutoTagCreation) Create() []lib.ConfigResult {
 			log.WithField("ruleName", ruleName).Info("Tagging rule already exists")
 			taggingRules = append(
 				taggingRules,
-				lib.ConfigResult{
+				dynatrace.ConfigResult{
 					Name:    ruleName,
 					Message: "Tagging rule " + ruleName + " already exists",
 					Success: true,
@@ -75,17 +70,11 @@ func (at *AutoTagCreation) Create() []lib.ConfigResult {
 	return taggingRules
 }
 
-func (at *AutoTagCreation) createDTTaggingRule(rule *lib.DTTaggingRule) error {
-	log.WithField("name", rule.Name).Info("Creating DT tagging rule")
-	payload, err := json.Marshal(rule)
-	if err != nil {
-		return err
+func taggingRuleExists(ruleName string, existingRules *dynatrace.DTAPIListResponse) bool {
+	if existingRules == nil {
+		return false
 	}
-	_, err = at.client.SendDynatraceAPIRequest("/api/config/v1/autoTags", "POST", payload)
-	return err
-}
 
-func taggingRuleExists(ruleName string, existingRules *lib.DTAPIListResponse) bool {
 	for _, rule := range existingRules.Values {
 		if rule.Name == ruleName {
 			return true
@@ -94,26 +83,26 @@ func taggingRuleExists(ruleName string, existingRules *lib.DTAPIListResponse) bo
 	return false
 }
 
-func createAutoTaggingRule(ruleName string) *lib.DTTaggingRule {
-	return &lib.DTTaggingRule{
+func createAutoTaggingRule(ruleName string) *dynatrace.DTTaggingRule {
+	return &dynatrace.DTTaggingRule{
 		Name: ruleName,
-		Rules: []lib.Rules{
+		Rules: []dynatrace.Rules{
 			{
 				Type:             "SERVICE",
 				Enabled:          true,
 				ValueFormat:      "{ProcessGroup:Environment:" + ruleName + "}",
 				PropagationTypes: []string{"SERVICE_TO_PROCESS_GROUP_LIKE"},
-				Conditions: []lib.Conditions{
+				Conditions: []dynatrace.Conditions{
 					{
-						Key: lib.Key{
+						Key: dynatrace.Key{
 							Attribute: "PROCESS_GROUP_CUSTOM_METADATA",
-							DynamicKey: lib.DynamicKey{
+							DynamicKey: dynatrace.DynamicKey{
 								Source: "ENVIRONMENT",
 								Key:    ruleName,
 							},
 							Type: "PROCESS_CUSTOM_METADATA_KEY",
 						},
-						ComparisonInfo: lib.ComparisonInfo{
+						ComparisonInfo: dynatrace.ComparisonInfo{
 							Type:          "STRING",
 							Operator:      "EXISTS",
 							Value:         nil,

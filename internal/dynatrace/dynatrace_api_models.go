@@ -1,4 +1,4 @@
-package lib
+package dynatrace
 
 import (
 	"errors"
@@ -24,6 +24,60 @@ const PROBLEM_NOTIFICATION_PAYLOAD string = `{
       }`
 
 const DASHBOARD_STAGE_WIDTH int = 456
+
+const keptnProject = "keptn_project"
+const keptnStage = "keptn_stage"
+const keptnService = "keptn_service"
+const keptnDeployment = "keptn_deployment"
+
+const customChartingTileType = "CUSTOM_CHARTING"
+const customChartName = "Custom Chart"
+const timeSeriesChartType = "TIMESERIES"
+const serviceEntityType = "SERVICE"
+
+const DefaultOperatorVersion = "v0.8.0"
+const SliResourceURI = "dynatrace/sli.yaml"
+const Throughput = "throughput"
+const ErrorRate = "error_rate"
+const ResponseTimeP50 = "response_time_p50"
+const ResponseTimeP90 = "response_time_p90"
+const ResponseTimeP95 = "response_time_p95"
+
+type CriteriaObject struct {
+	Operator        string
+	Value           float64
+	CheckPercentage bool
+	IsComparison    bool
+	CheckIncrease   bool
+}
+
+type DTAPIListResponse struct {
+	Values []Values `json:"values"`
+}
+type Values struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type ConfigResult struct {
+	Name    string
+	Success bool
+	Message string
+}
+
+// ConfiguredEntities contains information about the entities configures in Dynatrace
+type ConfiguredEntities struct {
+	TaggingRulesEnabled         bool
+	TaggingRules                []ConfigResult
+	ProblemNotificationsEnabled bool
+	ProblemNotifications        ConfigResult
+	ManagementZonesEnabled      bool
+	ManagementZones             []ConfigResult
+	DashboardEnabled            bool
+	Dashboard                   ConfigResult
+	MetricEventsEnabled         bool
+	MetricEvents                []ConfigResult
+}
 
 // ALERTING PROFILE TYPES
 type AlertingProfile struct {
@@ -375,7 +429,7 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 				FilterType: "TAG",
 				TagFilter: &METagFilter{
 					Context: "CONTEXTLESS",
-					Key:     "keptn_service",
+					Key:     keptnService,
 					Value:   service,
 				},
 			},
@@ -383,7 +437,7 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 				FilterType: "TAG",
 				TagFilter: &METagFilter{
 					Context: "CONTEXTLESS",
-					Key:     "keptn_deployment",
+					Key:     keptnDeployment,
 					Value:   "primary",
 				},
 			},
@@ -455,56 +509,25 @@ func CreateKeptnAlertingProfile() *AlertingProfile {
 		Metadata:    AlertingProfileMetadata{},
 		DisplayName: "Keptn",
 		Rules: []AlertingProfileRules{
-			{
-				SeverityLevel: "AVAILABILITY",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "ERROR",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "PERFORMANCE",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "RESOURCE_CONTENTION",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "CUSTOM_ALERT",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
-			{
-				SeverityLevel: "MONITORING_UNAVAILABLE",
-				TagFilter: AlertingProfileTagFilter{
-					IncludeMode: "NONE",
-					TagFilters:  nil,
-				},
-				DelayInMinutes: 0,
-			},
+			createAlertingProfileRule("AVAILABILITY"),
+			createAlertingProfileRule("ERROR"),
+			createAlertingProfileRule("PERFORMANCE"),
+			createAlertingProfileRule("RESOURCE_CONTENTION"),
+			createAlertingProfileRule("CUSTOM_ALERT"),
+			createAlertingProfileRule("MONITORING_UNAVAILABLE"),
 		},
 		ManagementZoneID: nil,
+	}
+}
+
+func createAlertingProfileRule(severityLevel string) AlertingProfileRules {
+	return AlertingProfileRules{
+		SeverityLevel: severityLevel,
+		TagFilter: AlertingProfileTagFilter{
+			IncludeMode: "NONE",
+			TagFilters:  nil,
+		},
+		DelayInMinutes: 0,
 	}
 }
 
@@ -513,26 +536,10 @@ func CreateManagementZoneForProject(project string) *ManagementZone {
 		Name: "Keptn: " + project,
 		Rules: []MZRules{
 			{
-				Type:             "SERVICE",
+				Type:             serviceEntityType,
 				Enabled:          true,
 				PropagationTypes: []string{},
-				Conditions: []MZConditions{
-					{
-						Key: MZKey{
-							Attribute: "SERVICE_TAGS",
-						},
-						ComparisonInfo: MZComparisonInfo{
-							Type:     "TAG",
-							Operator: "EQUALS",
-							Value: MZValue{
-								Context: "CONTEXTLESS",
-								Key:     "keptn_project",
-								Value:   project,
-							},
-							Negate: false,
-						},
-					},
-				},
+				Conditions:       []MZConditions{creteManagementZoneConditionsFor(keptnProject, project)},
 			},
 		},
 	}
@@ -545,46 +552,36 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 		Name: "Keptn: " + project + " " + stage,
 		Rules: []MZRules{
 			{
-				Type:             "SERVICE",
+				Type:             serviceEntityType,
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions: []MZConditions{
-					{
-						Key: MZKey{
-							Attribute: "SERVICE_TAGS",
-						},
-						ComparisonInfo: MZComparisonInfo{
-							Type:     "TAG",
-							Operator: "EQUALS",
-							Value: MZValue{
-								Context: "CONTEXTLESS",
-								Key:     "keptn_project",
-								Value:   project,
-							},
-							Negate: false,
-						},
-					},
-					{
-						Key: MZKey{
-							Attribute: "SERVICE_TAGS",
-						},
-						ComparisonInfo: MZComparisonInfo{
-							Type:     "TAG",
-							Operator: "EQUALS",
-							Value: MZValue{
-								Context: "CONTEXTLESS",
-								Key:     "keptn_stage",
-								Value:   stage,
-							},
-							Negate: false,
-						},
-					},
+					creteManagementZoneConditionsFor(keptnProject, project),
+					creteManagementZoneConditionsFor(keptnStage, stage),
 				},
 			},
 		},
 	}
 
 	return managementZone
+}
+
+func creteManagementZoneConditionsFor(key string, value string) MZConditions {
+	return MZConditions{
+		Key: MZKey{
+			Attribute: "SERVICE_TAGS",
+		},
+		ComparisonInfo: MZComparisonInfo{
+			Type:     "TAG",
+			Operator: "EQUALS",
+			Value: MZValue{
+				Context: "CONTEXTLESS",
+				Key:     key,
+				Value:   value,
+			},
+			Negate: false,
+		},
+	}
 }
 
 func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, dashboardNameSuffix string) *DynatraceDashboard {
@@ -612,39 +609,23 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, das
 		Width:  494,
 		Height: 38,
 	}
-
 	dtDashboard.Tiles = append(dtDashboard.Tiles, infrastructureHeaderTile)
 
-	hostsTile := Tiles{
-		Name:       "",
-		TileType:   "HOSTS",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	hostsTile := createTileWith(
+		"",
+		"HOSTS",
+		&FilterConfig{
 			Type:        "HOST",
 			CustomName:  "Hosts",
 			DefaultName: "Hosts",
 			ChartConfig: ChartConfig{
-				Type:           "TIMESERIES",
+				Type:           timeSeriesChartType,
 				Series:         []Series{},
 				ResultMetadata: ResultMetadata{},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-		Markdown:                  "",
-		Bounds: Bounds{
-			Top:    38,
-			Left:   0,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		},
-	}
+		})
+	hostsTile.Bounds = createBounds(38, 0, 152)
 	dtDashboard.Tiles = append(dtDashboard.Tiles, hostsTile)
 
 	networkTile := Tiles{
@@ -656,465 +637,187 @@ func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, das
 			ManagementZone: nil,
 		},
 		AssignedEntities: nil,
-		Bounds: Bounds{
-			Top:    38,
-			Left:   912,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		},
+		Bounds:           createBounds(38, 912, 152),
 	}
 	dtDashboard.Tiles = append(dtDashboard.Tiles, networkTile)
 
 	cpuLoadTile := createHostCPULoadTile()
-	cpuLoadTile.Bounds = Bounds{
-		Top:    38,
-		Left:   DASHBOARD_STAGE_WIDTH,
-		Width:  DASHBOARD_STAGE_WIDTH,
-		Height: 152,
-	}
+	cpuLoadTile.Bounds = createBounds(38, DASHBOARD_STAGE_WIDTH, 152)
 	dtDashboard.Tiles = append(dtDashboard.Tiles, cpuLoadTile)
 
 	// create stage service tiles
 	for index, stage := range shipyard.Spec.Stages {
 
 		headerTile := createHeaderTile(stage.Name)
-		headerTile.Bounds = Bounds{
-			Top:    266,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 38,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, headerTile)
+		headerTile.Bounds = createBounds(266, index*DASHBOARD_STAGE_WIDTH, 38)
 
 		servicesTile := createStageServicesTile(projectName, stage.Name)
-		servicesTile.Bounds = Bounds{
-			Top:    304,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, servicesTile)
+		servicesTile.Bounds = createStandardTileBounds(304, index*DASHBOARD_STAGE_WIDTH)
 
 		throughputTile := createServiceThroughputTile(projectName, stage.Name)
-		throughputTile.Bounds = Bounds{
-			Top:    456,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, throughputTile)
+		throughputTile.Bounds = createStandardTileBounds(456, index*DASHBOARD_STAGE_WIDTH)
 
 		errorRateTile := createServiceErrorRateTile(projectName, stage.Name)
-		errorRateTile.Bounds = Bounds{
-			Top:    608,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, errorRateTile)
+		errorRateTile.Bounds = createStandardTileBounds(608, index*DASHBOARD_STAGE_WIDTH)
 
 		responseTimeTile := createServiceResponseTimeTile(projectName, stage.Name)
-		responseTimeTile.Bounds = Bounds{
-			Top:    760,
-			Left:   index * DASHBOARD_STAGE_WIDTH,
-			Width:  DASHBOARD_STAGE_WIDTH,
-			Height: 152,
-		}
-		dtDashboard.Tiles = append(dtDashboard.Tiles, responseTimeTile)
+		responseTimeTile.Bounds = createStandardTileBounds(760, index*DASHBOARD_STAGE_WIDTH)
+
+		dtDashboard.Tiles = append(dtDashboard.Tiles, headerTile, servicesTile, throughputTile, errorRateTile, responseTimeTile)
 	}
 
 	return dtDashboard
 }
 
-func CreateCalculatedMetric(key string, name string, baseMetric string, unit string, conditionContext string, conditionKey string, conditionValue string, dimensionName string, dimensionDefinition string, dimensionAggregate string) CalculatedMetric {
-	return CalculatedMetric{
-		TsmMetricKey:     key,
-		Name:             name,
-		Enabled:          true,
-		MetricDefinition: MetricDefinition{},
-		Unit:             unit,
-		UnitDisplayName:  "",
-		Conditions: []CalculatedMetricConditions{
-			{
-				Attribute: "SERVICE_TAG",
-				ComparisonInfo: CalculatedMetricComparisonInfo{
-					Type:       "TAG",
-					Comparison: "TAG_KEY_EQUALS",
-					Value: Value{
-						Context: conditionContext,
-						Key:     conditionKey,
-						Value:   conditionValue,
-					},
-					Negate: false,
-				},
-			},
-		},
-		DimensionDefinition: DimensionDefinition{
-			Name:            dimensionName,
-			Dimension:       dimensionDefinition,
-			Placeholders:    []string{},
-			TopX:            10,
-			TopXDirection:   "DESCENDING",
-			TopXAggregation: dimensionAggregate,
-		},
-	}
+func createStandardTileBounds(top int, left int) Bounds {
+	return createBounds(top, left, 152)
 }
 
-func CreateCalculatedTestStepMetric(key string, name string, baseMetric string, unit string, conditionContext string, conditionKey string, conditionValue string, dimensionName string, dimensionDefinition string, dimensionAggregate string) CalculatedMetric {
-	return CalculatedMetric{
-		TsmMetricKey: key,
-		Name:         name,
-		Enabled:      true,
-		MetricDefinition: MetricDefinition{
-			Metric:           baseMetric,
-			RequestAttribute: nil,
-		},
-		Unit:            unit,
-		UnitDisplayName: "",
-		Conditions: []CalculatedMetricConditions{
-			{
-				Attribute: "SERVICE_REQUEST_ATTRIBUTE",
-				ComparisonInfo: CalculatedMetricComparisonInfo{
-					Type:             "STRING_REQUEST_ATTRIBUTE",
-					Comparison:       "EXISTS",
-					Value:            Value{},
-					Negate:           false,
-					RequestAttribute: "TSN",
-					CaseSensitive:    false,
-				},
-			},
-			{
-				Attribute: "SERVICE_TAG",
-				ComparisonInfo: CalculatedMetricComparisonInfo{
-					Type:       "TAG",
-					Comparison: "TAG_KEY_EQUALS",
-					Value: Value{
-						Context: conditionContext,
-						Key:     conditionKey,
-						Value:   conditionValue,
-					},
-					Negate:           false,
-					RequestAttribute: "TSN",
-					CaseSensitive:    false,
-				},
-			},
-		},
-		DimensionDefinition: DimensionDefinition{
-			Name:            "TestStep",
-			Dimension:       "{RequestAttribute:TSN}",
-			Placeholders:    []string{},
-			TopX:            10,
-			TopXDirection:   "DESCENDING",
-			TopXAggregation: dimensionAggregate,
-		},
-	}
-}
-
-func createMarkdownTile(markdown string) Tiles {
-	return Tiles{
-		Name:       "Markdown",
-		TileType:   "MARKDOWN",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		Markdown: markdown,
+func createBounds(top int, left int, height int) Bounds {
+	return Bounds{
+		Top:    top,
+		Left:   left,
+		Width:  DASHBOARD_STAGE_WIDTH,
+		Height: height,
 	}
 }
 
 func createHeaderTile(name string) Tiles {
-	return Tiles{
-		Name:       name,
-		TileType:   "HEADER",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+	return createTileWith(name, "HEADER", nil)
 }
 
 func createServiceResponseTimeTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Response Time " + stage,
-		TileType:   "CUSTOM_CHARTING",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	name := "Response Time " + stage
+	return createTileWith(
+		name,
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
-			CustomName:  "Response Time " + stage,
-			DefaultName: "Custom Chart",
-			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
-				Series: []Series{
-					{
-						Metric:          "builtin:service.response.time",
-						Aggregation:     "AVG",
-						Percentile:      nil,
-						Type:            "LINE",
-						EntityType:      "SERVICE",
-						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
+			CustomName:  name,
+			DefaultName: customChartName,
+			ChartConfig: createTimeSeriesChartConfig("builtin:service.response.time", "AVG", "LINE", serviceEntityType),
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+		})
 }
 
 func createHostCPULoadTile() Tiles {
-	return Tiles{
-		Name:       "Host CPU Load",
-		TileType:   "CUSTOM_CHARTING",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	return createTileWith(
+		"Host CPU Load",
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
 			CustomName:  "CPU",
-			DefaultName: "Custom Chart",
-			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
-				Series: []Series{
-					{
-						Metric:          "builtin:host.cpu.load",
-						Aggregation:     "AVG",
-						Percentile:      nil,
-						Type:            "LINE",
-						EntityType:      "HOST",
-						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+			DefaultName: customChartName,
+			ChartConfig: createTimeSeriesChartConfig("builtin:host.cpu.load", "AVG", "LINE", "HOST"),
+		})
 }
 
 func createServiceErrorRateTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Failure Rate " + stage,
-		TileType:   "CUSTOM_CHARTING",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	name := "Failure Rate " + stage
+	return createTileWith(
+		name,
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
-			CustomName:  "Failure Rate " + stage,
-			DefaultName: "Custom Chart",
-			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
-				Series: []Series{
-					{
-						Metric:          "builtin:service.errors.server.rate",
-						Aggregation:     "AVG",
-						Percentile:      nil,
-						Type:            "BAR",
-						EntityType:      "SERVICE",
-						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
+			CustomName:  name,
+			DefaultName: customChartName,
+			ChartConfig: createTimeSeriesChartConfig("builtin:service.errors.server.rate", "AVG", "BAR", serviceEntityType),
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
-}
-
-func createServiceTestStepTopAPICallsTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Service Calls per Test Name: " + stage,
-		TileType:   "CUSTOM_CHARTING",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
-			Type:        "MIXED",
-			CustomName:  "Service Calls per Test Name: " + stage,
-			DefaultName: "Custom Chart",
-			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
-				Series: []Series{
-					{
-						Metric:      "calc:service.teststepservicecalls" + project,
-						Aggregation: "NONE",
-						Percentile:  nil,
-						Type:        "BAR",
-						EntityType:  "SERVICE",
-						Dimensions: []Dimensions{
-							{
-								ID:              "1",
-								Name:            "Test Step",
-								Values:          []string{},
-								EntityDimension: false,
-							},
-						},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
-}
-
-func createServiceTopAPICallsTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Top Service Calls per API Endpoint: " + stage,
-		TileType:   "CUSTOM_CHARTING",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
-			Type:        "MIXED",
-			CustomName:  "Top Service Calls per API Endpoint: " + stage,
-			DefaultName: "Custom Chart",
-			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
-				Series: []Series{
-					{
-						Metric:      "calc:service.topurlservicecalls" + project,
-						Aggregation: "NONE",
-						Percentile:  nil,
-						Type:        "BAR",
-						EntityType:  "SERVICE",
-						Dimensions: []Dimensions{
-							{
-								ID:              "1",
-								Name:            "URL",
-								Values:          []string{},
-								EntityDimension: false,
-							},
-						},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
-			FiltersPerEntityType: FiltersPerEntityType{
-				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
-				},
-			},
-		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-	}
+		})
 }
 
 func createServiceThroughputTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Throughput " + stage,
-		TileType:   "CUSTOM_CHARTING",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
+	name := "Throughput " + stage
+	return createTileWith(
+		name,
+		customChartingTileType,
+		&FilterConfig{
 			Type:        "MIXED",
-			CustomName:  "Throughput " + stage,
-			DefaultName: "Custom Chart",
-			ChartConfig: ChartConfig{
-				Type: "TIMESERIES",
-				Series: []Series{
-					{
-						Metric:          "builtin:service.requestCount.total",
-						Aggregation:     "NONE",
-						Percentile:      nil,
-						Type:            "BAR",
-						EntityType:      "SERVICE",
-						Dimensions:      []Dimensions{},
-						SortAscending:   false,
-						SortColumn:      true,
-						AggregationRate: "TOTAL",
-					},
-				},
-			},
+			CustomName:  name,
+			DefaultName: customChartName,
+			ChartConfig: createTimeSeriesChartConfig("builtin:service.requestCount.total", "NONE", "BAR", serviceEntityType),
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
+		})
+}
+
+func createTimeSeriesChartConfig(metric string, aggregation string, seriesType string, entity string) ChartConfig {
+	return ChartConfig{
+		Type: timeSeriesChartType,
+		Series: []Series{
+			{
+				Metric:          metric,
+				Aggregation:     aggregation,
+				Percentile:      nil,
+				Type:            seriesType,
+				EntityType:      entity,
+				Dimensions:      []Dimensions{},
+				SortAscending:   false,
+				SortColumn:      true,
+				AggregationRate: "TOTAL",
+			},
 		},
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
 	}
 }
 
 func createStageServicesTile(project string, stage string) Tiles {
-	return Tiles{
-		Name:       "Services: " + stage,
-		TileType:   "SERVICES",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig: &FilterConfig{
-			Type:        "SERVICE",
-			CustomName:  "Services: " + stage,
-			DefaultName: "Services: " + stage,
+	name := "Services: " + stage
+	return createTileWith(
+		name,
+		"SERVICES",
+		&FilterConfig{
+			Type:        serviceEntityType,
+			CustomName:  name,
+			DefaultName: name,
 			ChartConfig: ChartConfig{
-				Type:           "TIMESERIES",
+				Type:           timeSeriesChartType,
 				Series:         []Series{},
 				ResultMetadata: ResultMetadata{},
 			},
 			FiltersPerEntityType: FiltersPerEntityType{
 				Service: &EntityFilter{
-					AutoTags: []string{"keptn_project:" + project, "keptn_stage:" + stage},
+					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
 				},
 			},
+		})
+}
+
+func createTileWith(name string, tileType string, filterConfig *FilterConfig) Tiles {
+	return Tiles{
+		Name:       name,
+		TileType:   tileType,
+		Configured: true,
+		TileFilter: TileFilter{
+			Timeframe:      nil,
+			ManagementZone: nil,
 		},
+		FilterConfig:              filterConfig,
 		ChartVisible:              true,
 		AssignedEntities:          nil,
 		ExcludeMaintenanceWindows: false,
 		Markdown:                  "",
 	}
+}
+
+func createTagFor(name string, value string) string {
+	return name + ":" + value
+}
+
+func createKeptnProjectTag(value string) string {
+	return createTagFor(keptnProject, value)
+}
+
+func createKeptnStageTag(value string) string {
+	return createTagFor(keptnStage, value)
 }

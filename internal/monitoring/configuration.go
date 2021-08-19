@@ -2,81 +2,37 @@ package monitoring
 
 import (
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 )
 
-const DefaultOperatorVersion = "v0.8.0"
-const sliResourceURI = "dynatrace/sli.yaml"
-const Throughput = "throughput"
-const ErrorRate = "error_rate"
-const ResponseTimeP50 = "response_time_p50"
-const ResponseTimeP90 = "response_time_p90"
-const ResponseTimeP95 = "response_time_p95"
-
-type CriteriaObject struct {
-	Operator        string
-	Value           float64
-	CheckPercentage bool
-	IsComparison    bool
-	CheckIncrease   bool
-}
-
-type DTAPIListResponse struct {
-	Values []Values `json:"values"`
-}
-type Values struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// ConfigResult godoc
-type ConfigResult struct {
-	Name    string
-	Success bool
-	Message string
-}
-
-// ConfiguredEntities contains information about the entities configures in Dynatrace
-type ConfiguredEntities struct {
-	TaggingRulesEnabled         bool
-	TaggingRules                []ConfigResult
-	ProblemNotificationsEnabled bool
-	ProblemNotifications        ConfigResult
-	ManagementZonesEnabled      bool
-	ManagementZones             []ConfigResult
-	DashboardEnabled            bool
-	Dashboard                   ConfigResult
-	MetricEventsEnabled         bool
-	MetricEvents                []ConfigResult
-}
-
 type Configuration struct {
-	client *lib.DynatraceHelper
+	client *dynatrace.DynatraceHelper
 }
 
-func NewConfiguration(client *lib.DynatraceHelper) *Configuration {
+func NewConfiguration(client *dynatrace.DynatraceHelper) *Configuration {
 	return &Configuration{
 		client: client,
 	}
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*lib.ConfiguredEntities, error) {
+func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*dynatrace.ConfiguredEntities, error) {
 
-	configuredEntities := &lib.ConfiguredEntities{
+	configuredEntities := &dynatrace.ConfiguredEntities{
 		TaggingRulesEnabled:         lib.IsTaggingRulesGenerationEnabled(),
 		TaggingRules:                NewAutoTagCreation(mc.client).Create(),
 		ProblemNotificationsEnabled: lib.IsProblemNotificationsGenerationEnabled(),
 		ProblemNotifications:        NewProblemNotificationCreation(mc.client).Create(),
 		ManagementZonesEnabled:      lib.IsManagementZonesGenerationEnabled(),
-		ManagementZones:             []lib.ConfigResult{},
+		ManagementZones:             []dynatrace.ConfigResult{},
 		DashboardEnabled:            lib.IsDashboardsGenerationEnabled(),
-		Dashboard:                   lib.ConfigResult{},
+		Dashboard:                   dynatrace.ConfigResult{},
 		MetricEventsEnabled:         lib.IsMetricEventsGenerationEnabled(),
-		MetricEvents:                []lib.ConfigResult{},
+		MetricEvents:                []dynatrace.ConfigResult{},
 	}
 
 	if project != "" && shipyard != nil {
@@ -85,7 +41,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 
 		configHandler := keptnutils.NewServiceHandler("shipyard-controller:8080")
 
-		var metricEvents []lib.ConfigResult
+		var metricEvents []dynatrace.ConfigResult
 		// try to create metric events - if one fails, don't fail the whole setup
 		for _, stage := range shipyard.Spec.Stages {
 			if shouldCreateMetricEvents(stage) {
