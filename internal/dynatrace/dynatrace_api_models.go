@@ -53,6 +53,17 @@ type Values struct {
 	Name string `json:"name"`
 }
 
+func (response *DTAPIListResponse) ToStringSetWith(mapper func(Values) string) *StringSet {
+	stringSet := &StringSet{
+		values: make(map[string]struct{}, len(response.Values)),
+	}
+	for _, rule := range response.Values {
+		stringSet.values[mapper(rule)] = struct{}{}
+	}
+
+	return stringSet
+}
+
 type ConfigResult struct {
 	Name    string
 	Success bool
@@ -409,58 +420,5 @@ func createAlertingProfileRule(severityLevel string) AlertingProfileRules {
 			TagFilters:  nil,
 		},
 		DelayInMinutes: 0,
-	}
-}
-
-func CreateManagementZoneForProject(project string) *ManagementZone {
-	managementZone := &ManagementZone{
-		Name: "Keptn: " + project,
-		Rules: []MZRules{
-			{
-				Type:             ServiceEntityType,
-				Enabled:          true,
-				PropagationTypes: []string{},
-				Conditions:       []MZConditions{creteManagementZoneConditionsFor(KeptnProject, project)},
-			},
-		},
-	}
-
-	return managementZone
-}
-
-func CreateManagementZoneForStage(project string, stage string) *ManagementZone {
-	managementZone := &ManagementZone{
-		Name: "Keptn: " + project + " " + stage,
-		Rules: []MZRules{
-			{
-				Type:             ServiceEntityType,
-				Enabled:          true,
-				PropagationTypes: []string{},
-				Conditions: []MZConditions{
-					creteManagementZoneConditionsFor(KeptnProject, project),
-					creteManagementZoneConditionsFor(KeptnStage, stage),
-				},
-			},
-		},
-	}
-
-	return managementZone
-}
-
-func creteManagementZoneConditionsFor(key string, value string) MZConditions {
-	return MZConditions{
-		Key: MZKey{
-			Attribute: "SERVICE_TAGS",
-		},
-		ComparisonInfo: MZComparisonInfo{
-			Type:     "TAG",
-			Operator: "EQUALS",
-			Value: MZValue{
-				Context: "CONTEXTLESS",
-				Key:     key,
-				Value:   value,
-			},
-			Negate: false,
-		},
 	}
 }

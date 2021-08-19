@@ -53,22 +53,19 @@ func (mec MetricEventCreation) CreateFor(project string, stage string, service s
 		return metricEvents
 	}
 
-	managementZones := NewManagementZoneCreation(mec.client).getManagementZones()
+	managementZones, err := dynatrace.NewManagementZonesClient(mec.client).GetAll()
 	var mzId int64 = -1
-	for _, mz := range managementZones {
-		if mz.Name == getManagementZoneNameForStage(project, stage) {
-			mzId, err = strconv.ParseInt(mz.ID, 10, 64)
-			if err != nil {
-				log.WithError(err).Warn("Could not parse management zone ID")
-			}
-		}
-	}
-	if mzId < 0 {
-		log.WithFields(log.Fields{
-			"project": project,
-			"stage":   stage,
-		}).Error("No management zone found")
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Error("Could not retrieve management zones")
 		return metricEvents
+	}
+
+	if zone, wasFound := managementZones.GetBy(GetManagementZoneNameForProjectAndStage(project, stage)); wasFound {
+		mzId, err = strconv.ParseInt(zone.ID, 10, 64)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Warn("Could not parse management zone ID")
+			return metricEvents
+		}
 	}
 
 	metricEventCreated := false
