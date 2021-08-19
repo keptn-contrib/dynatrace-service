@@ -5,6 +5,15 @@ import (
 	"strings"
 )
 
+type StringSet struct {
+	values map[string]struct{}
+}
+
+func (tn *StringSet) Contains(value string) bool {
+	_, exists := tn.values[value]
+	return exists
+}
+
 func CheckForUnexpectedHTMLResponseError(err error) error {
 	// TODO 2021-08-19: should this be needed elsewhere as well?
 

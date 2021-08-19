@@ -40,12 +40,7 @@ type Rules struct {
 }
 
 type TagNames struct {
-	values map[string]struct{}
-}
-
-func (tn *TagNames) Contains(tagName string) bool {
-	_, exists := tn.values[tagName]
-	return exists
+	*StringSet
 }
 
 type AutoTagsClient struct {
@@ -81,16 +76,8 @@ func (atc *AutoTagsClient) GetAllTagNames() (*TagNames, error) {
 		return nil, err
 	}
 
-	return transformToTagNames(existingDTRules), nil
-}
-
-func transformToTagNames(response *DTAPIListResponse) *TagNames {
-	tagNames := &TagNames{
-		values: make(map[string]struct{}, len(response.Values)),
-	}
-	for _, rule := range response.Values {
-		tagNames.values[rule.Name] = struct{}{}
-	}
-
-	return tagNames
+	return &TagNames{
+		existingDTRules.ToStringSetWith(
+			func(values Values) string { return values.Name }),
+	}, nil
 }
