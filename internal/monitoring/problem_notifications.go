@@ -124,7 +124,7 @@ func (pn *ProblemNotificationCreation) setupAlertingProfile() (string, error) {
 
 	err = json.Unmarshal([]byte(response), createdItem)
 	if err != nil {
-		err = checkForUnexpectedHTMLResponseError(err)
+		err = dynatrace.CheckForUnexpectedHTMLResponseError(err)
 		return "", fmt.Errorf("failed to unmarshal alerting profile: %v", err)
 	}
 	log.Info("Alerting profile created successfully.")

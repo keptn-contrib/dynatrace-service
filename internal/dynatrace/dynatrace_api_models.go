@@ -2,7 +2,6 @@ package dynatrace
 
 import (
 	"errors"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"strings"
 )
 
@@ -23,17 +22,12 @@ const PROBLEM_NOTIFICATION_PAYLOAD string = `{
 
       }`
 
-const DASHBOARD_STAGE_WIDTH int = 456
+const KeptnProject = "keptn_project"
+const KeptnStage = "keptn_stage"
+const KeptnService = "keptn_service"
+const KeptnDeployment = "keptn_deployment"
 
-const keptnProject = "keptn_project"
-const keptnStage = "keptn_stage"
-const keptnService = "keptn_service"
-const keptnDeployment = "keptn_deployment"
-
-const customChartingTileType = "CUSTOM_CHARTING"
-const customChartName = "Custom Chart"
-const timeSeriesChartType = "TIMESERIES"
-const serviceEntityType = "SERVICE"
+const ServiceEntityType = "SERVICE"
 
 const DefaultOperatorVersion = "v0.8.0"
 const SliResourceURI = "dynatrace/sli.yaml"
@@ -155,86 +149,6 @@ type DimensionDefinition struct {
 	TopX            int      `json:"topX"`
 	TopXDirection   string   `json:"topXDirection"`
 	TopXAggregation string   `json:"topXAggregation"`
-}
-
-// DASHBOARD TYPES
-type DynatraceDashboard struct {
-	DashboardMetadata DashboardMetadata `json:"dashboardMetadata"`
-	Tiles             []Tiles           `json:"tiles"`
-}
-type SharingDetails struct {
-	LinkShared bool `json:"linkShared"`
-	Published  bool `json:"published"`
-}
-type DashboardFilter struct {
-	Timeframe      string      `json:"timeframe"`
-	ManagementZone interface{} `json:"managementZone"`
-}
-type DashboardMetadata struct {
-	Name            string          `json:"name"`
-	Shared          bool            `json:"shared"`
-	Owner           string          `json:"owner"`
-	SharingDetails  SharingDetails  `json:"sharingDetails"`
-	DashboardFilter DashboardFilter `json:"dashboardFilter"`
-}
-type Bounds struct {
-	Top    int `json:"top"`
-	Left   int `json:"left"`
-	Width  int `json:"width"`
-	Height int `json:"height"`
-}
-type TileFilter struct {
-	Timeframe      interface{} `json:"timeframe"`
-	ManagementZone interface{} `json:"managementZone"`
-}
-type ResultMetadata struct {
-}
-type ChartConfig struct {
-	Type           string         `json:"type"`
-	Series         []Series       `json:"series"`
-	ResultMetadata ResultMetadata `json:"resultMetadata"`
-}
-type Series struct {
-	Metric          string       `json:"metric"`
-	Aggregation     string       `json:"aggregation"`
-	Percentile      interface{}  `json:"percentile"`
-	Type            string       `json:"type"`
-	EntityType      string       `json:"entityType"`
-	Dimensions      []Dimensions `json:"dimensions"`
-	SortAscending   bool         `json:"sortAscending"`
-	SortColumn      bool         `json:"sortColumn"`
-	AggregationRate string       `json:"aggregationRate"`
-}
-type Dimensions struct {
-	ID              string   `json:"id"`
-	Name            string   `json:"name"`
-	Values          []string `json:"values"`
-	EntityDimension bool     `json:"entityDimension"`
-}
-type FiltersPerEntityType struct {
-	Service *EntityFilter `json:"SERVICE,omitempty"`
-}
-type EntityFilter struct {
-	AutoTags []string `json:"AUTO_TAGS,omitempty"`
-}
-type FilterConfig struct {
-	Type                 string               `json:"type"`
-	CustomName           string               `json:"customName"`
-	DefaultName          string               `json:"defaultName"`
-	ChartConfig          ChartConfig          `json:"chartConfig"`
-	FiltersPerEntityType FiltersPerEntityType `json:"filtersPerEntityType"`
-}
-type Tiles struct {
-	Name                      string        `json:"name"`
-	TileType                  string        `json:"tileType"`
-	Configured                bool          `json:"configured"`
-	Bounds                    Bounds        `json:"bounds"`
-	TileFilter                TileFilter    `json:"tileFilter"`
-	FilterConfig              *FilterConfig `json:"filterConfig,omitempty"`
-	ChartVisible              bool          `json:"chartVisible,omitempty"`
-	AssignedEntities          []string      `json:"assignedEntities,omitempty"`
-	ExcludeMaintenanceWindows bool          `json:"excludeMaintenanceWindows,omitempty"`
-	Markdown                  string        `json:"markdown,omitempty"`
 }
 
 // MANAGEMENT ZONE TYPES
@@ -396,7 +310,7 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 				FilterType: "TAG",
 				TagFilter: &METagFilter{
 					Context: "CONTEXTLESS",
-					Key:     keptnService,
+					Key:     KeptnService,
 					Value:   service,
 				},
 			},
@@ -404,7 +318,7 @@ func CreateKeptnMetricEvent(project string, stage string, service string, metric
 				FilterType: "TAG",
 				TagFilter: &METagFilter{
 					Context: "CONTEXTLESS",
-					Key:     keptnDeployment,
+					Key:     KeptnDeployment,
 					Value:   "primary",
 				},
 			},
@@ -503,10 +417,10 @@ func CreateManagementZoneForProject(project string) *ManagementZone {
 		Name: "Keptn: " + project,
 		Rules: []MZRules{
 			{
-				Type:             serviceEntityType,
+				Type:             ServiceEntityType,
 				Enabled:          true,
 				PropagationTypes: []string{},
-				Conditions:       []MZConditions{creteManagementZoneConditionsFor(keptnProject, project)},
+				Conditions:       []MZConditions{creteManagementZoneConditionsFor(KeptnProject, project)},
 			},
 		},
 	}
@@ -519,12 +433,12 @@ func CreateManagementZoneForStage(project string, stage string) *ManagementZone 
 		Name: "Keptn: " + project + " " + stage,
 		Rules: []MZRules{
 			{
-				Type:             serviceEntityType,
+				Type:             ServiceEntityType,
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions: []MZConditions{
-					creteManagementZoneConditionsFor(keptnProject, project),
-					creteManagementZoneConditionsFor(keptnStage, stage),
+					creteManagementZoneConditionsFor(KeptnProject, project),
+					creteManagementZoneConditionsFor(KeptnStage, stage),
 				},
 			},
 		},
@@ -549,242 +463,4 @@ func creteManagementZoneConditionsFor(key string, value string) MZConditions {
 			Negate: false,
 		},
 	}
-}
-
-func CreateDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard, dashboardNameSuffix string) *DynatraceDashboard {
-	dtDashboard := &DynatraceDashboard{
-		DashboardMetadata: DashboardMetadata{
-			Name:   projectName + dashboardNameSuffix,
-			Shared: true,
-			Owner:  "",
-			SharingDetails: SharingDetails{
-				LinkShared: true,
-				Published:  false,
-			},
-			DashboardFilter: DashboardFilter{
-				Timeframe:      "l_7_DAYS",
-				ManagementZone: nil,
-			},
-		},
-		Tiles: []Tiles{},
-	}
-
-	infrastructureHeaderTile := createHeaderTile("Infrastructure")
-	infrastructureHeaderTile.Bounds = Bounds{
-		Top:    0,
-		Left:   0,
-		Width:  494,
-		Height: 38,
-	}
-	dtDashboard.Tiles = append(dtDashboard.Tiles, infrastructureHeaderTile)
-
-	hostsTile := createTileWith(
-		"",
-		"HOSTS",
-		&FilterConfig{
-			Type:        "HOST",
-			CustomName:  "Hosts",
-			DefaultName: "Hosts",
-			ChartConfig: ChartConfig{
-				Type:           timeSeriesChartType,
-				Series:         []Series{},
-				ResultMetadata: ResultMetadata{},
-			},
-			FiltersPerEntityType: FiltersPerEntityType{},
-		})
-	hostsTile.Bounds = createBounds(38, 0, 152)
-	dtDashboard.Tiles = append(dtDashboard.Tiles, hostsTile)
-
-	networkTile := Tiles{
-		Name:       "Network Status",
-		TileType:   "NETWORK_MEDIUM",
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		AssignedEntities: nil,
-		Bounds:           createBounds(38, 912, 152),
-	}
-	dtDashboard.Tiles = append(dtDashboard.Tiles, networkTile)
-
-	cpuLoadTile := createHostCPULoadTile()
-	cpuLoadTile.Bounds = createBounds(38, DASHBOARD_STAGE_WIDTH, 152)
-	dtDashboard.Tiles = append(dtDashboard.Tiles, cpuLoadTile)
-
-	// create stage service tiles
-	for index, stage := range shipyard.Spec.Stages {
-
-		headerTile := createHeaderTile(stage.Name)
-		headerTile.Bounds = createBounds(266, index*DASHBOARD_STAGE_WIDTH, 38)
-
-		servicesTile := createStageServicesTile(projectName, stage.Name)
-		servicesTile.Bounds = createStandardTileBounds(304, index*DASHBOARD_STAGE_WIDTH)
-
-		throughputTile := createServiceThroughputTile(projectName, stage.Name)
-		throughputTile.Bounds = createStandardTileBounds(456, index*DASHBOARD_STAGE_WIDTH)
-
-		errorRateTile := createServiceErrorRateTile(projectName, stage.Name)
-		errorRateTile.Bounds = createStandardTileBounds(608, index*DASHBOARD_STAGE_WIDTH)
-
-		responseTimeTile := createServiceResponseTimeTile(projectName, stage.Name)
-		responseTimeTile.Bounds = createStandardTileBounds(760, index*DASHBOARD_STAGE_WIDTH)
-
-		dtDashboard.Tiles = append(dtDashboard.Tiles, headerTile, servicesTile, throughputTile, errorRateTile, responseTimeTile)
-	}
-
-	return dtDashboard
-}
-
-func createStandardTileBounds(top int, left int) Bounds {
-	return createBounds(top, left, 152)
-}
-
-func createBounds(top int, left int, height int) Bounds {
-	return Bounds{
-		Top:    top,
-		Left:   left,
-		Width:  DASHBOARD_STAGE_WIDTH,
-		Height: height,
-	}
-}
-
-func createHeaderTile(name string) Tiles {
-	return createTileWith(name, "HEADER", nil)
-}
-
-func createServiceResponseTimeTile(project string, stage string) Tiles {
-	name := "Response Time " + stage
-	return createTileWith(
-		name,
-		customChartingTileType,
-		&FilterConfig{
-			Type:        "MIXED",
-			CustomName:  name,
-			DefaultName: customChartName,
-			ChartConfig: createTimeSeriesChartConfig("builtin:service.response.time", "AVG", "LINE", serviceEntityType),
-			FiltersPerEntityType: FiltersPerEntityType{
-				Service: &EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
-				},
-			},
-		})
-}
-
-func createHostCPULoadTile() Tiles {
-	return createTileWith(
-		"Host CPU Load",
-		customChartingTileType,
-		&FilterConfig{
-			Type:        "MIXED",
-			CustomName:  "CPU",
-			DefaultName: customChartName,
-			ChartConfig: createTimeSeriesChartConfig("builtin:host.cpu.load", "AVG", "LINE", "HOST"),
-		})
-}
-
-func createServiceErrorRateTile(project string, stage string) Tiles {
-	name := "Failure Rate " + stage
-	return createTileWith(
-		name,
-		customChartingTileType,
-		&FilterConfig{
-			Type:        "MIXED",
-			CustomName:  name,
-			DefaultName: customChartName,
-			ChartConfig: createTimeSeriesChartConfig("builtin:service.errors.server.rate", "AVG", "BAR", serviceEntityType),
-			FiltersPerEntityType: FiltersPerEntityType{
-				Service: &EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
-				},
-			},
-		})
-}
-
-func createServiceThroughputTile(project string, stage string) Tiles {
-	name := "Throughput " + stage
-	return createTileWith(
-		name,
-		customChartingTileType,
-		&FilterConfig{
-			Type:        "MIXED",
-			CustomName:  name,
-			DefaultName: customChartName,
-			ChartConfig: createTimeSeriesChartConfig("builtin:service.requestCount.total", "NONE", "BAR", serviceEntityType),
-			FiltersPerEntityType: FiltersPerEntityType{
-				Service: &EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
-				},
-			},
-		})
-}
-
-func createTimeSeriesChartConfig(metric string, aggregation string, seriesType string, entity string) ChartConfig {
-	return ChartConfig{
-		Type: timeSeriesChartType,
-		Series: []Series{
-			{
-				Metric:          metric,
-				Aggregation:     aggregation,
-				Percentile:      nil,
-				Type:            seriesType,
-				EntityType:      entity,
-				Dimensions:      []Dimensions{},
-				SortAscending:   false,
-				SortColumn:      true,
-				AggregationRate: "TOTAL",
-			},
-		},
-	}
-}
-
-func createStageServicesTile(project string, stage string) Tiles {
-	name := "Services: " + stage
-	return createTileWith(
-		name,
-		"SERVICES",
-		&FilterConfig{
-			Type:        serviceEntityType,
-			CustomName:  name,
-			DefaultName: name,
-			ChartConfig: ChartConfig{
-				Type:           timeSeriesChartType,
-				Series:         []Series{},
-				ResultMetadata: ResultMetadata{},
-			},
-			FiltersPerEntityType: FiltersPerEntityType{
-				Service: &EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
-				},
-			},
-		})
-}
-
-func createTileWith(name string, tileType string, filterConfig *FilterConfig) Tiles {
-	return Tiles{
-		Name:       name,
-		TileType:   tileType,
-		Configured: true,
-		TileFilter: TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
-		FilterConfig:              filterConfig,
-		ChartVisible:              true,
-		AssignedEntities:          nil,
-		ExcludeMaintenanceWindows: false,
-		Markdown:                  "",
-	}
-}
-
-func createTagFor(name string, value string) string {
-	return name + ":" + value
-}
-
-func createKeptnProjectTag(value string) string {
-	return createTagFor(keptnProject, value)
-}
-
-func createKeptnStageTag(value string) string {
-	return createTagFor(keptnStage, value)
 }

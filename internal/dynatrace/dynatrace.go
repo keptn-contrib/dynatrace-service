@@ -42,6 +42,10 @@ func (dt *DynatraceHelper) Post(apiPath string, body []byte) (string, error) {
 	return dt.SendDynatraceAPIRequest(apiPath, http.MethodPost, body)
 }
 
+func (dt *DynatraceHelper) Delete(apiPath string) (string, error) {
+	return dt.SendDynatraceAPIRequest(apiPath, http.MethodDelete, nil)
+}
+
 // SendDynatraceAPIRequest makes an Dynatrace API request and returns the response
 func (dt *DynatraceHelper) SendDynatraceAPIRequest(apiPath string, method string, body []byte) (string, error) {
 
