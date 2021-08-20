@@ -8,6 +8,14 @@ import (
 
 const dashboardsPath = "/api/config/v1/dashboards"
 
+type Dashboards struct {
+	Dashboards []struct {
+		ID    string `json:"id"`
+		Name  string `json:"name"`
+		Owner string `json:"owner"`
+	} `json:"dashboards"`
+}
+
 type DynatraceDashboard struct {
 	DashboardMetadata DashboardMetadata `json:"dashboardMetadata"`
 	Tiles             []Tiles           `json:"tiles"`
@@ -97,20 +105,20 @@ func NewDashboardsClient(client *DynatraceHelper) *DashboardsClient {
 	}
 }
 
-func (dc *DashboardsClient) GetAll() (*DTDashboardsResponse, error) {
+func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 	res, err := dc.client.Get(dashboardsPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve list of existing Dynatrace dashboards: %v", err)
 	}
 
-	dtDashboardsResponse := &DTDashboardsResponse{}
-	err = json.Unmarshal([]byte(res), dtDashboardsResponse)
+	dashboards := &Dashboards{}
+	err = json.Unmarshal([]byte(res), dashboards)
 	if err != nil {
 		err = CheckForUnexpectedHTMLResponseError(err)
 		return nil, fmt.Errorf("failed to unmarshal list of existing Dynatrace dashboards: %v", err)
 	}
 
-	return dtDashboardsResponse, nil
+	return dashboards, nil
 }
 
 func (dc *DashboardsClient) Create(dashboard *DynatraceDashboard) (string, error) {

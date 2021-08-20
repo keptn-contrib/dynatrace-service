@@ -110,14 +110,6 @@ type DimensionDefinition struct {
 	TopXAggregation string   `json:"topXAggregation"`
 }
 
-type DTDashboardsResponse struct {
-	Dashboards []struct {
-		ID    string `json:"id"`
-		Name  string `json:"name"`
-		Owner string `json:"owner"`
-	} `json:"dashboards"`
-}
-
 // CUSTOM METRIC EVENT
 type MetricEvent struct {
 	Metadata          MEMetadata        `json:"metadata"`
