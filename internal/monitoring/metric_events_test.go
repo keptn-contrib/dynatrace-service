@@ -55,13 +55,13 @@ func Test_getAlertCondition(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getAlertCondition(tt.args.condition)
+			got, err := parseAlertCondition(tt.args.condition)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("getAlertCondition() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("parseAlertCondition() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("getAlertCondition() got = %v, want %v", got, tt.want)
+				t.Errorf("parseAlertCondition() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

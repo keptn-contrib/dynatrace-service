@@ -58,7 +58,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return err
 	}
-	config := monitoring.NewConfiguration(dynatrace.NewDynatraceHelper(keptnHandler, creds))
+	config := monitoring.NewConfiguration(dynatrace.NewDynatraceHelper(keptnHandler, creds), keptnHandler)
 
 	_, err = config.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {

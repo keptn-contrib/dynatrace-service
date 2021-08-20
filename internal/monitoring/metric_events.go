@@ -1,42 +1,30 @@
 package monitoring
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"regexp"
 	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-
-	"gopkg.in/yaml.v2"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-
-	configutils "github.com/keptn/go-utils/pkg/api/utils"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 )
-
-const sliResourceURI = "dynatrace/sli.yaml"
-const throughput = "throughput"
-const errorRate = "error_rate"
-const responseTimeP50 = "response_time_p50"
-const responseTimeP90 = "response_time_p90"
-const responseTimeP95 = "response_time_p95"
 
 const keptnService = "keptn_service"
 const keptnDeployment = "keptn_deployment"
 
 type MetricEventCreation struct {
-	client *dynatrace.DynatraceHelper
+	dtClient *dynatrace.DynatraceHelper
+	kClient  *keptnv2.Keptn
 }
 
-func NewMetricEventCreation(client *dynatrace.DynatraceHelper) MetricEventCreation {
+func NewMetricEventCreation(dynatraceClient *dynatrace.DynatraceHelper, keptnClient *keptnv2.Keptn) MetricEventCreation {
 	return MetricEventCreation{
-		client: client,
+		dtClient: dynatraceClient,
+		kClient:  keptnClient,
 	}
 }
 
@@ -48,7 +36,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 
 	log.Info("Creating custom metric events for project SLIs")
-	slos, err := retrieveSLOs(project, stage, service)
+	slos, err := keptn.NewConfigResourceClient().GetSLOs(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithFields(
 			log.Fields{
@@ -57,13 +45,14 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 		return metricEvents
 	}
 	// get custom metrics for project
-	projectCustomQueries, err := mec.getCustomQueries(project, stage, service)
+
+	projectCustomQueries, err := keptn.NewClient(mec.kClient).GetCustomQueries(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithField("project", project).Error("Failed to get custom queries for project")
 		return metricEvents
 	}
 
-	managementZones, err := dynatrace.NewManagementZonesClient(mec.client).GetAll()
+	managementZones, err := dynatrace.NewManagementZonesClient(mec.dtClient).GetAll()
 	var mzId int64 = -1
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Error("Could not retrieve management zones")
@@ -82,13 +71,21 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 
 	metricEventCreated := false
+	metricEventsClient := dynatrace.NewMetricEventsClient(mec.dtClient)
 	// try to create metric events using best effort.
 	for _, objective := range slos.Objectives {
-		config, err := getTimeseriesConfig(objective.SLI, projectCustomQueries)
+		config, err := projectCustomQueries.GetQueryByNameOrDefault(objective.SLI)
 		if err != nil {
 			// Error occurred but continue
 			log.WithField("sli", objective.SLI).Error("Could not find query for SLI")
+
+			// if .GetQueryByNameOrDefault(...) would fail, it would return an empty string. So we would do all the work
+			// in the two for loops below until we come to the point in createKeptnMetricEvent where it would be checked
+			// whether 'config' not equals to "" and return an error, log error and continue for each iteration.
+			// therefore, continue
+			continue
 		}
+
 		for _, criteria := range objective.Pass {
 			for _, crit := range criteria.Criteria {
 				// criteria.Criteria
@@ -113,42 +110,19 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 					continue
 				}
 
-				event, err := mec.GetMetricEvent(newMetricEvent.Name)
+				existingMetricEvent, err := metricEventsClient.GetMetricEventByName(newMetricEvent.Name)
 				if err != nil {
 					// Error occurred but continue
 					log.WithError(err).Error("Could not get metric event")
 					continue
 				}
 
-				apiURL := "/api/config/v1/anomalyDetection/metricEvents"
-				apiMethod := "POST"
-
-				mePayload, err := json.Marshal(newMetricEvent)
-				if err != nil {
-					// Error occurred but continue
-					log.WithError(err).Error("Could not marshal metric event")
-					continue
-				}
-
-				if event != nil {
-					// adapt all properties that have initially been defaulted to some value from previous (potentially modified event)
-					event.Threshold = newMetricEvent.Threshold
-					event.TagFilters = nil
-					apiURL = apiURL + "/" + event.ID
-					apiMethod = "PUT"
-					mePayload, err = json.Marshal(event)
-					if err != nil {
-						// Error occurred but continue
-						log.WithError(err).Error("Could not marshal metric event")
-						continue
-					}
-				}
-
-				_, err = mec.client.SendDynatraceAPIRequest(apiURL, apiMethod, mePayload)
+				err = createOrUpdateMetricEvent(metricEventsClient, newMetricEvent, existingMetricEvent)
 				if err != nil {
 					log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
 					continue
 				}
+
 				metricEvents = append(metricEvents,
 					dynatrace.ConfigResult{
 						Name:    newMetricEvent.Name,
@@ -166,124 +140,34 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 
 	if metricEventCreated {
 		// TODO: improve this?
-		log.Info("To review and enable the generated custom metric events, please go to: https://" + mec.client.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
+		log.Info("To review and enable the generated custom metric events, please go to: https://" + mec.dtClient.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
 	}
 
 	return metricEvents
 }
 
-func (mec *MetricEventCreation) getCustomQueries(project string, stage string, service string) (map[string]string, error) {
+func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEvent *dynatrace.MetricEvent, existingMetricEvent *dynatrace.MetricEvent) error {
+	if existingMetricEvent != nil {
+		// adapt all properties that have initially been defaulted to some value from previous (potentially modified event)
+		existingMetricEvent.Threshold = newMetricEvent.Threshold
+		existingMetricEvent.TagFilters = nil
 
-	if mec.client.KeptnHandler == nil {
-		return nil, errors.New("Could not retrieve SLI config: No KeptnHandler initialized")
-	}
-	customQueries, err := mec.client.KeptnHandler.GetSLIConfiguration(project, stage, service, sliResourceURI)
-	if err != nil {
-		return nil, err
-	}
-
-	return customQueries, nil
-}
-
-func (mec *MetricEventCreation) GetMetricEvent(eventKey string) (*dynatrace.MetricEvent, error) {
-	res, err := mec.client.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
-	if err != nil {
-		log.WithError(err).Error("Could not retrieve list of existing Dynatrace metric events")
-		return nil, err
-	}
-
-	dtMetricEvents := &dynatrace.DTAPIListResponse{}
-	err = json.Unmarshal([]byte(res), dtMetricEvents)
-
-	if err != nil {
-		log.WithError(err).Error("Could not parse list of existing Dynatrace metric events")
-		return nil, err
-	}
-
-	for _, metricEvent := range dtMetricEvents.Values {
-		if metricEvent.Name == eventKey {
-			res, err = mec.client.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents/"+metricEvent.ID, "GET", nil)
-			if err != nil {
-				log.WithError(err).WithField("eventKey", eventKey).Error("Could not get existing metric event")
-				return nil, err
-			}
-			retrievedMetricEvent := &dynatrace.MetricEvent{}
-			err = json.Unmarshal([]byte(res), retrievedMetricEvent)
-			if err != nil {
-				return nil, err
-			}
-			return retrievedMetricEvent, nil
+		_, err := client.Update(existingMetricEvent)
+		if err != nil {
+			log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not update metric event")
+			return err
 		}
-	}
-	return nil, nil
-}
 
-func (mec *MetricEventCreation) DeleteExistingMetricEvent(eventKey string) error {
-	res, err := mec.client.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents", "GET", nil)
+		return nil
+	}
+
+	_, err := client.Create(newMetricEvent)
 	if err != nil {
-		log.WithError(err).Error("Could not retrieve list of existing Dynatrace metric events")
+		log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
 		return err
 	}
 
-	dtMetricEvents := &dynatrace.DTAPIListResponse{}
-	err = json.Unmarshal([]byte(res), dtMetricEvents)
-
-	if err != nil {
-		log.WithError(err).Error("Could not parse list of existing Dynatrace metric events")
-		return err
-	}
-
-	for _, metricEvent := range dtMetricEvents.Values {
-		if metricEvent.Name == eventKey {
-			res, err = mec.client.SendDynatraceAPIRequest("/api/config/v1/anomalyDetection/metricEvents/"+metricEvent.ID, "DELETE", nil)
-			if err != nil {
-				log.WithError(err).WithField("eventKey", eventKey).Error("Could not delete existing metric event")
-				return err
-			}
-		}
-	}
 	return nil
-}
-
-func retrieveSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error) {
-	resourceHandler := configutils.NewResourceHandler(common.GetConfigurationServiceURL())
-
-	resource, err := resourceHandler.GetServiceResource(project, stage, service, "slo.yaml")
-	if err != nil || resource.ResourceContent == "" {
-		return nil, errors.New("No SLO file available for service " + service + " in stage " + stage)
-	}
-	var slos keptn.ServiceLevelObjectives
-
-	err = yaml.Unmarshal([]byte(resource.ResourceContent), &slos)
-
-	if err != nil {
-		return nil, errors.New("Invalid SLO file format")
-	}
-
-	return &slos, nil
-}
-
-// based on the requested metric a dynatrace timeseries with its aggregation type is returned
-func getTimeseriesConfig(metric string, customQueries map[string]string) (string, error) {
-	if val, ok := customQueries[metric]; ok {
-		return val, nil
-	}
-
-	// default config
-	switch metric {
-	case throughput:
-		return "builtin:service.requestCount.total:merge(0):count?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case errorRate:
-		return "builtin:service.errors.total.rate:merge(0):avg?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case responseTimeP50:
-		return "builtin:service.response.time:merge(0):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case responseTimeP90:
-		return "builtin:service.response.time:merge(0):percentile(90)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case responseTimeP95:
-		return "builtin:service.response.time:merge(0):percentile(95)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	default:
-		return "", fmt.Errorf("unsupported SLI metric %s", metric)
-	}
 }
 
 func parseCriteriaString(criteria string) (*dynatrace.CriteriaObject, error) {
@@ -395,7 +279,7 @@ func createKeptnMetricEvent(project string, stage string, service string, metric
 		}
 	*/
 
-	meAlertCondition, err := getAlertCondition(condition)
+	meAlertCondition, err := parseAlertCondition(condition)
 	if err != nil {
 		return nil, err
 	}
@@ -451,7 +335,7 @@ func createKeptnMetricEvent(project string, stage string, service string, metric
 	return metricEvent, nil
 }
 
-func getAlertCondition(condition string) (string, error) {
+func parseAlertCondition(condition string) (string, error) {
 	meAlertCondition := ""
 	if strings.Contains(condition, "+") || strings.Contains(condition, "-") || strings.Contains(condition, "%") {
 		return "", errors.New("unsupported condition. only fixed thresholds are supported")
