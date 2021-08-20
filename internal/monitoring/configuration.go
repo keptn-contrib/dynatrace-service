@@ -52,7 +52,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 				for _, service := range services {
 					metricEvents = append(
 						metricEvents,
-						NewMetricEventCreation(mc.client).CreateFor(project, stage.Name, service.ServiceName)...)
+						NewMetricEventCreation(mc.client).Create(project, stage.Name, service.ServiceName)...)
 				}
 			}
 		}

@@ -30,8 +30,8 @@ func NewMetricEventCreation(client *dynatrace.DynatraceHelper) MetricEventCreati
 	}
 }
 
-// CreateFor creates new metric events if SLOs are specified
-func (mec MetricEventCreation) CreateFor(project string, stage string, service string) []dynatrace.ConfigResult {
+// Create creates new metric events if SLOs are specified
+func (mec MetricEventCreation) Create(project string, stage string, service string) []dynatrace.ConfigResult {
 	var metricEvents []dynatrace.ConfigResult
 	if !lib.IsMetricEventsGenerationEnabled() {
 		return metricEvents
