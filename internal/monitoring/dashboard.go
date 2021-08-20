@@ -25,8 +25,8 @@ func NewDashboardCreation(client *dynatrace.DynatraceHelper) *DashboardCreation 
 	}
 }
 
-// CreateFor creates a new dashboard for the provided project
-func (dc *DashboardCreation) CreateFor(project string, shipyard keptnv2.Shipyard) dynatrace.ConfigResult {
+// Create creates a new dashboard for the provided project
+func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) dynatrace.ConfigResult {
 	if !lib.IsDashboardsGenerationEnabled() {
 		return dynatrace.ConfigResult{}
 	}
