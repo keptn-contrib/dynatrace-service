@@ -60,7 +60,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 
 	// TODO 2021-08-20: check the logic below - if parsing management zone id does not work, we will continue anyway?
-	if zone, wasFound := managementZones.GetBy(GetManagementZoneNameForProjectAndStage(project, stage)); wasFound {
+	if zone, wasFound := managementZones.GetByName(GetManagementZoneNameForProjectAndStage(project, stage)); wasFound {
 		mzId, err = strconv.ParseInt(zone.ID, 10, 64)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Warn("Could not parse management zone ID")
