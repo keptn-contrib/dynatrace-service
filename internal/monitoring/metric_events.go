@@ -20,6 +20,16 @@ import (
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
+const sliResourceURI = "dynatrace/sli.yaml"
+const throughput = "throughput"
+const errorRate = "error_rate"
+const responseTimeP50 = "response_time_p50"
+const responseTimeP90 = "response_time_p90"
+const responseTimeP95 = "response_time_p95"
+
+const keptnService = "keptn_service"
+const keptnDeployment = "keptn_deployment"
+
 type MetricEventCreation struct {
 	client *dynatrace.DynatraceHelper
 }
@@ -92,7 +102,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 					// comparison-based criteria cannot be mapped to alerts
 					continue
 				}
-				newMetricEvent, err := dynatrace.CreateKeptnMetricEvent(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
+				newMetricEvent, err := createKeptnMetricEvent(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
 				if err != nil {
 					// Error occurred but continue
 					log.WithError(err).WithFields(
@@ -167,7 +177,7 @@ func (mec *MetricEventCreation) getCustomQueries(project string, stage string, s
 	if mec.client.KeptnHandler == nil {
 		return nil, errors.New("Could not retrieve SLI config: No KeptnHandler initialized")
 	}
-	customQueries, err := mec.client.KeptnHandler.GetSLIConfiguration(project, stage, service, dynatrace.SliResourceURI)
+	customQueries, err := mec.client.KeptnHandler.GetSLIConfiguration(project, stage, service, sliResourceURI)
 	if err != nil {
 		return nil, err
 	}
@@ -261,15 +271,15 @@ func getTimeseriesConfig(metric string, customQueries map[string]string) (string
 
 	// default config
 	switch metric {
-	case dynatrace.Throughput:
+	case throughput:
 		return "builtin:service.requestCount.total:merge(0):count?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case dynatrace.ErrorRate:
+	case errorRate:
 		return "builtin:service.errors.total.rate:merge(0):avg?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case dynatrace.ResponseTimeP50:
+	case responseTimeP50:
 		return "builtin:service.response.time:merge(0):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case dynatrace.ResponseTimeP90:
+	case responseTimeP90:
 		return "builtin:service.response.time:merge(0):percentile(90)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case dynatrace.ResponseTimeP95:
+	case responseTimeP95:
 		return "builtin:service.response.time:merge(0):percentile(95)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
 	default:
 		return "", fmt.Errorf("unsupported SLI metric %s", metric)
@@ -328,4 +338,163 @@ func parseCriteriaString(criteria string) (*dynatrace.CriteriaObject, error) {
 	c.Value = floatValue
 
 	return c, nil
+}
+
+var supportedAggregations = [...]string{"avg", "max", "min", "count", "sum", "value", "percentile"}
+
+func createKeptnMetricEvent(project string, stage string, service string, metric string, query string, condition string, threshold float64, managementZoneID int64) (*dynatrace.MetricEvent, error) {
+
+	/*
+		need to map queries used by SLI-service to metric event definition.
+		example: builtin:service.response.time:merge(0):percentile(90)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)
+
+		1. split by '?' and get first part => builtin:service.response.time:merge(0):percentile(90)
+		2. split by ':' => builtin:service.response.time | merge(0) | percentile(90) => merge(0) is not needed
+		3. first part is the metricId and can be used for the Metric Event API => builtin:service.response.time
+		4. Aggregation is limited to: AVG, COUNT, MAX, MEDIAN, MIN, OF_INTEREST, OF_INTEREST_RATIO, OTHER, OTHER_RATIO, P90, SUM, VALUE
+	*/
+
+	if project == "" || stage == "" || service == "" || metric == "" || query == "" {
+		return nil, errors.New("missing input parameter values")
+	}
+
+	query = strings.TrimPrefix(query, "metricSelector=")
+	// 1. split by '?' and get first part => builtin:service.response.time:merge(0):percentile(90)
+	split := strings.Split(query, "?")
+
+	// 2. split by ':' => builtin:service.response.time | merge(0) | percentile(90) => merge(0) is not needed/supported by MetricEvent API
+	splittedQuery := strings.Split(split[0], ":")
+
+	if len(splittedQuery) < 2 {
+		return nil, errors.New("invalid metricId")
+	}
+	metricId := splittedQuery[0] + ":" + splittedQuery[1]
+	meAggregation := ""
+	for _, transformation := range splittedQuery {
+		isSupportedAggregation := false
+		for _, aggregationType := range supportedAggregations {
+			if strings.Contains(strings.ToLower(transformation), aggregationType) {
+				isSupportedAggregation = true
+			}
+		}
+
+		if isSupportedAggregation {
+			meAggregation = getMetricEventAggregation(transformation)
+
+			/*
+				if meAggregation == "" {
+					return nil, errors.New("unsupported aggregation type: " + transformation)
+				}
+
+			*/
+		}
+	}
+	/*
+		if meAggregation == "" {
+			return nil, errors.New("no aggregation provided in query")
+		}
+	*/
+
+	meAlertCondition, err := getAlertCondition(condition)
+	if err != nil {
+		return nil, err
+	}
+
+	metricEvent := &dynatrace.MetricEvent{
+		Metadata:          dynatrace.MEMetadata{},
+		MetricID:          metricId,
+		Name:              metric + " (Keptn." + project + "." + stage + "." + service + ")",
+		Description:       "Keptn SLI violated: The {metricname} value of {severity} was {alert_condition} your custom threshold of {threshold}.",
+		EventType:         "CUSTOM_ALERT",
+		Severity:          "CUSTOM_ALERT",
+		AlertCondition:    meAlertCondition,
+		Samples:           5, // taken from default value of custom metric events
+		ViolatingSamples:  3, // taken from default value of custom metric events
+		DealertingSamples: 5, // taken from default value of custom metric events
+		Threshold:         threshold,
+		Enabled:           false,
+		TagFilters:        nil, // not used anymore by MetricEvents API, replaced by AlertingScope
+		AlertingScope: []dynatrace.MEAlertingScope{
+			// LIMITATION: currently only a maximum of 3 tag filters is supported
+			{
+				FilterType:       "MANAGEMENT_ZONE",
+				ManagementZoneID: managementZoneID,
+			},
+			{
+				FilterType: "TAG",
+				TagFilter: &dynatrace.METagFilter{
+					Context: "CONTEXTLESS",
+					Key:     keptnService,
+					Value:   service,
+				},
+			},
+			{
+				FilterType: "TAG",
+				TagFilter: &dynatrace.METagFilter{
+					Context: "CONTEXTLESS",
+					Key:     keptnDeployment,
+					Value:   "primary",
+				},
+			},
+		},
+	}
+
+	// LIMITATION: currently we do not have the possibility of specifying units => assume MILLI_SECONDS for response time metrics
+	if strings.Contains(metric, "time") {
+		metricEvent.Unit = "MILLI_SECOND"
+	}
+
+	if meAggregation != "" {
+		metricEvent.AggregationType = meAggregation
+	}
+
+	return metricEvent, nil
+}
+
+func getAlertCondition(condition string) (string, error) {
+	meAlertCondition := ""
+	if strings.Contains(condition, "+") || strings.Contains(condition, "-") || strings.Contains(condition, "%") {
+		return "", errors.New("unsupported condition. only fixed thresholds are supported")
+	}
+
+	if strings.Contains(condition, ">") {
+		meAlertCondition = "BELOW"
+	} else if strings.Contains(condition, "<") {
+		meAlertCondition = "ABOVE"
+	} else {
+		return "", errors.New("unsupported condition. only fixed thresholds are supported")
+	}
+	return meAlertCondition, nil
+}
+
+func getMetricEventAggregation(metricAPIAgg string) string {
+	// LIMITATION: currently, only single aggregations are supported, so, e.g. not (min,max)
+	metricAPIAgg = strings.ToLower(metricAPIAgg)
+
+	if strings.Contains(metricAPIAgg, "percentile") {
+		// only MEDIAN and P90 are supported for MetricEvents
+		// => if the percentile in the query is >= 90, use P90, otherwise assume MEDIAN
+		if strings.Contains(metricAPIAgg, "(9") {
+			return "P90"
+		} else {
+			return "MEDIAN"
+		}
+	}
+	// due to incompatibilities between metrics and metric event API it's safer to not pass an aggregation in the MetricEvent definition in most cases
+	// the Metric Event API will default it to an appropriate aggregation
+	/*else if strings.Contains(metricAPIAgg, "min") {
+		return "MIN"
+	} else if strings.Contains(metricAPIAgg, "max") {
+		return "MAX"
+	} else if strings.Contains(metricAPIAgg, "count") {
+		return "COUNT"
+	} else if strings.Contains(metricAPIAgg, "sum") {
+		return "SUM"
+	} else if strings.Contains(metricAPIAgg, "value") {
+		return "VALUE"
+	} else if strings.Contains(metricAPIAgg, "avg") {
+		return "AVG"
+	}
+	*/
+	return ""
 }

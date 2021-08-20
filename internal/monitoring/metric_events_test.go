@@ -1,4 +1,4 @@
-package dynatrace
+package monitoring
 
 import "testing"
 
