@@ -46,6 +46,7 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) d
 	dashboard := createDynatraceDashboard(project, shipyard)
 	_, err = dashboardClient.Create(dashboard)
 	if err != nil {
+		log.WithError(err).Error("Failed to create Dynatrace dashboards")
 		return dynatrace.ConfigResult{
 			Success: false,
 			Message: err.Error(),

@@ -3,7 +3,6 @@ package dynatrace
 import (
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 )
 
 const dashboardsPath = "/api/config/v1/dashboards"
@@ -124,13 +123,11 @@ func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 func (dc *DashboardsClient) Create(dashboard *DynatraceDashboard) (string, error) {
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
-		log.WithError(err).Error("Failed to unmarshal Dynatrace dashboards")
 		return "", fmt.Errorf("failed to unmarshal Dynatrace dashboards: %v", err)
 	}
 
 	res, err := dc.client.Post(dashboardsPath, dashboardPayload)
 	if err != nil {
-		log.WithError(err).Error("Failed to create Dynatrace dashboards")
 		return "", fmt.Errorf("failed to create Dynatrace dashboards: %v", err)
 	}
 
