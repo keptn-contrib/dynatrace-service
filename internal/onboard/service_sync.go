@@ -6,12 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -122,7 +122,7 @@ type serviceSynchronizer struct {
 	resourcesAPI      *keptnapi.ResourceHandler
 	apiHandler        *keptnapi.APIHandler
 	credentialManager credentials.CredentialManagerInterface
-	DTHelper          *dynatrace.DynatraceHelper
+	EntitiesClient    *dynatrace.EntitiesClient
 	syncTimer         *time.Ticker
 	keptnHandler      *keptnv2.Keptn
 	servicesInKeptn   []string
@@ -144,7 +144,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 		}
 
 		serviceSynchronizerInstance.dtConfigGetter = &adapter.DynatraceConfigGetter{}
-		serviceSynchronizerInstance.DTHelper = dynatrace.NewDynatraceHelper(nil, nil)
+		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewDynatraceHelper(nil, nil))
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()
 		shipyardControllerBaseURL := common.GetShipyardControllerURL()
@@ -190,27 +190,20 @@ func (s *serviceSynchronizer) synchronizeServices() {
 	}
 
 	log.Info("Fetching service entities with tags 'keptn_managed' and 'keptn_service'")
-	nextPageKey := ""
-	pageSize := 50
-	for {
-		entitiesResponse, err := s.fetchKeptnManagedServicesFromDynatrace(nextPageKey, pageSize)
-		if err != nil {
-			log.WithError(err).Error("Error fetching keptn managed services from dynatrace")
-			return
-		}
 
-		for _, entity := range entitiesResponse.Entities {
-			s.synchronizeEntity(entity)
-		}
-
-		if entitiesResponse.NextPageKey == "" {
-			break
-		}
-		nextPageKey = entitiesResponse.NextPageKey
+	entities, err := s.EntitiesClient.GetKeptnManagedServices()
+	if err != nil {
+		log.WithError(err).Error("Error fetching keptn managed services from dynatrace")
+		return
 	}
+
+	for _, entity := range entities {
+		s.synchronizeEntity(entity)
+	}
+
 }
 
-func (s *serviceSynchronizer) synchronizeEntity(entity entity) {
+func (s *serviceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
 	log.WithField("entityId", entity.EntityID).Debug("Synchronizing entity")
 
 	serviceName, err := getKeptnServiceName(entity)
@@ -245,7 +238,7 @@ func (s *serviceSynchronizer) establishDTAPIConnection() error {
 		return fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
 	}
 
-	s.DTHelper.DynatraceCreds = creds
+	s.EntitiesClient.Client.DynatraceCreds = creds
 	return nil
 }
 
@@ -276,27 +269,7 @@ func (s *serviceSynchronizer) fetchExistingServices() error {
 	return nil
 }
 
-func (s *serviceSynchronizer) fetchKeptnManagedServicesFromDynatrace(nextPageKey string, pageSize int) (*dtEntityListResponse, error) {
-	var query string
-	if nextPageKey == "" {
-		query = "/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=" + strconv.FormatInt(int64(pageSize), 10)
-	} else {
-		query = "/api/v2/entities?nextPageKey=" + nextPageKey
-	}
-	response, err := s.DTHelper.SendDynatraceAPIRequest(query, http.MethodGet, nil)
-	if err != nil {
-		return nil, fmt.Errorf("could not fetch service entities with 'keptn_managed' and 'keptn_service' tags: %v", err)
-	}
-
-	dtEntities := &dtEntityListResponse{}
-	err = json.Unmarshal([]byte(response), dtEntities)
-	if err != nil {
-		return nil, fmt.Errorf("could not decode response from Dynatrace API: %v", err)
-	}
-	return dtEntities, nil
-}
-
-func getKeptnServiceName(entity entity) (string, error) {
+func getKeptnServiceName(entity dynatrace.Entity) (string, error) {
 	if entity.Tags != nil {
 		for _, tag := range entity.Tags {
 			if tag.Key == "keptn_service" && tag.Value != "" {
@@ -425,24 +398,4 @@ func (s *serviceSynchronizer) createSLIResource(serviceName string) error {
 	}
 
 	return nil
-}
-
-type dtEntityListResponse struct {
-	TotalCount  int      `json:"totalCount"`
-	PageSize    int      `json:"pageSize"`
-	NextPageKey string   `json:"nextPageKey"`
-	Entities    []entity `json:"entities"`
-}
-
-type tags struct {
-	Context              string `json:"context"`
-	Key                  string `json:"key"`
-	StringRepresentation string `json:"stringRepresentation"`
-	Value                string `json:"value,omitempty"`
-}
-
-type entity struct {
-	EntityID    string `json:"entityId"`
-	DisplayName string `json:"displayName"`
-	Tags        []tags `json:"tags"`
 }
