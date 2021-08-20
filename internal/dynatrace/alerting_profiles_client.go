@@ -68,8 +68,8 @@ func (apc *AlertingProfilesClient) getAll() (*DTAPIListResponse, error) {
 	return alertingProfiles, nil
 }
 
-// GetProfileIDFor returns the profile ID for the given profileName if found, an empty string otherwise
-func (apc *AlertingProfilesClient) GetProfileIDFor(profileName string) (string, error) {
+// GetProfileID returns the profile ID for the given profileName if found, an empty string otherwise
+func (apc *AlertingProfilesClient) GetProfileID(profileName string) (string, error) {
 	res, err := apc.getAll()
 	if err != nil {
 		return "", err

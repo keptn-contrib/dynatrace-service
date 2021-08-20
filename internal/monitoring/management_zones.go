@@ -102,7 +102,7 @@ func createManagementZoneForProject(project string) *dynatrace.ManagementZone {
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions: []dynatrace.MZConditions{
-					createManagementZoneConditionsFor(dynatrace.KeptnProject, project),
+					createManagementZoneConditions(dynatrace.KeptnProject, project),
 				},
 			},
 		},
@@ -120,8 +120,8 @@ func createManagementZoneForStage(project string, stage string) *dynatrace.Manag
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions: []dynatrace.MZConditions{
-					createManagementZoneConditionsFor(dynatrace.KeptnProject, project),
-					createManagementZoneConditionsFor(dynatrace.KeptnStage, stage),
+					createManagementZoneConditions(dynatrace.KeptnProject, project),
+					createManagementZoneConditions(dynatrace.KeptnStage, stage),
 				},
 			},
 		},
@@ -130,7 +130,7 @@ func createManagementZoneForStage(project string, stage string) *dynatrace.Manag
 	return managementZone
 }
 
-func createManagementZoneConditionsFor(key string, value string) dynatrace.MZConditions {
+func createManagementZoneConditions(key string, value string) dynatrace.MZConditions {
 	return dynatrace.MZConditions{
 		Key: dynatrace.MZKey{
 			Attribute: "SERVICE_TAGS",
