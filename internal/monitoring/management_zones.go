@@ -33,17 +33,17 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 		log.WithError(err).Error("Could not retrieve management zones")
 	}
 
-	managementZone := checkForManagementZone(
+	managementZoneResult := getOrCreateManagementZone(
 		managementZoneClient,
 		GetManagementZoneNameForProject(project),
 		func() *dynatrace.ManagementZone {
 			return createManagementZoneForProject(project)
 		},
 		managementZoneNames)
-	managementZones = append(managementZones, managementZone)
+	managementZones = append(managementZones, managementZoneResult)
 
 	for _, stage := range shipyard.Spec.Stages {
-		managementZone := checkForManagementZone(
+		managementZone := getOrCreateManagementZone(
 			managementZoneClient,
 			GetManagementZoneNameForProjectAndStage(project, stage.Name),
 			func() *dynatrace.ManagementZone {
@@ -56,7 +56,7 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 	return managementZones
 }
 
-func checkForManagementZone(
+func getOrCreateManagementZone(
 	managementZoneClient *dynatrace.ManagementZonesClient,
 	managementZoneName string,
 	managementZoneFunc func() *dynatrace.ManagementZone,
