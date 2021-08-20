@@ -38,7 +38,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 	}
 
 	if project != "" && shipyard != nil {
-		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).CreateFor(project, *shipyard)
+		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(project, *shipyard)
 		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).CreateFor(project, *shipyard)
 
 		configHandler := keptnutils.NewServiceHandler("shipyard-controller:8080")

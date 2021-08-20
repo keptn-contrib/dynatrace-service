@@ -18,8 +18,8 @@ func NewManagementZoneCreation(client *dynatrace.DynatraceHelper) *ManagementZon
 	}
 }
 
-// CreateFor creates a new management zone for the project
-func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Shipyard) []dynatrace.ConfigResult {
+// Create creates a new management zone for the project
+func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipyard) []dynatrace.ConfigResult {
 	var managementZones []dynatrace.ConfigResult
 	if !lib.IsManagementZonesGenerationEnabled() {
 		return managementZones
