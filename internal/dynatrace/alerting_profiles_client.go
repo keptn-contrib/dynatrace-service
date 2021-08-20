@@ -54,7 +54,7 @@ func NewAlertingProfilesClient(client *DynatraceHelper) *AlertingProfilesClient 
 }
 
 func (apc *AlertingProfilesClient) getAll() (*DTAPIListResponse, error) {
-	response, err := apc.client.Get(notificationsPath)
+	response, err := apc.client.Get(alertingProfilesPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve alerting profiles: %v", err)
 	}
