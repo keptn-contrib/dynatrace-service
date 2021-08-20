@@ -7,21 +7,6 @@ import (
 
 // PROBLEM NOTIFICATION
 
-const PROBLEM_NOTIFICATION_PAYLOAD string = `{ 
-      "type": "WEBHOOK", 
-      "name": "Keptn Problem Notification", 
-      "alertingProfile": "$ALERTING_PROFILE_ID", 
-      "active": true, 
-      "url": "$KEPTN_DNS/v1/event", 
-      "acceptAnyCertificate": true, 
-      "headers": [ 
-        { "name": "x-token", "value": "$KEPTN_TOKEN" },
-        { "name": "Content-Type", "value": "application/cloudevents+json" }
-      ],
-      "payload": "{\n    \"specversion\":\"1.0\",\n    \"type\":\"sh.keptn.events.problem\",\n    \"shkeptncontext\":\"{PID}\",\n    \"source\":\"dynatrace\",\n    \"id\":\"{PID}\",\n    \"time\":\"\",\n    \"contenttype\":\"application/json\",\n    \"data\": {\n        \"State\":\"{State}\",\n        \"ProblemID\":\"{ProblemID}\",\n        \"PID\":\"{PID}\",\n        \"ProblemTitle\":\"{ProblemTitle}\",\n        \"ProblemURL\":\"{ProblemURL}\",\n        \"ProblemDetails\":{ProblemDetailsJSON},\n        \"Tags\":\"{Tags}\",\n        \"ImpactedEntities\":{ImpactedEntities},\n        \"ImpactedEntity\":\"{ImpactedEntity}\"\n    }\n}\n" 
-
-      }`
-
 const KeptnProject = "keptn_project"
 const KeptnStage = "keptn_stage"
 const KeptnService = "keptn_service"
@@ -82,43 +67,6 @@ type ConfiguredEntities struct {
 	Dashboard                   ConfigResult
 	MetricEventsEnabled         bool
 	MetricEvents                []ConfigResult
-}
-
-// ALERTING PROFILE TYPES
-type AlertingProfile struct {
-	Metadata         AlertingProfileMetadata           `json:"metadata"`
-	ID               string                            `json:"id"`
-	DisplayName      string                            `json:"displayName"`
-	Rules            []AlertingProfileRules            `json:"rules"`
-	ManagementZoneID interface{}                       `json:"managementZoneId"`
-	EventTypeFilters []*AlertingProfileEventTypeFilter `json:"eventTypeFilters,omitempty"`
-}
-type AlertingProfileMetadata struct {
-	ConfigurationVersions []int  `json:"configurationVersions"`
-	ClusterVersion        string `json:"clusterVersion"`
-}
-type AlertingProfileTagFilter struct {
-	IncludeMode string   `json:"includeMode"`
-	TagFilters  []string `json:"tagFilters"`
-}
-type AlertingProfileRules struct {
-	SeverityLevel  string                   `json:"severityLevel"`
-	TagFilter      AlertingProfileTagFilter `json:"tagFilter"`
-	DelayInMinutes int                      `json:"delayInMinutes"`
-}
-
-type AlertingProfileEventTypeFilter struct {
-	CustomEventFilter CustomEventFilter `json:"customEventFilter"`
-}
-type CustomTitleFilter struct {
-	Enabled         bool   `json:"enabled"`
-	Value           string `json:"value"`
-	Operator        string `json:"operator"`
-	Negate          bool   `json:"negate"`
-	CaseInsensitive bool   `json:"caseInsensitive"`
-}
-type CustomEventFilter struct {
-	CustomTitleFilter CustomTitleFilter `json:"customTitleFilter"`
 }
 
 // CALCULATED METRIC TYPES
@@ -394,31 +342,4 @@ func getMetricEventAggregation(metricAPIAgg string) string {
 	}
 	*/
 	return ""
-}
-
-func CreateKeptnAlertingProfile() *AlertingProfile {
-	return &AlertingProfile{
-		Metadata:    AlertingProfileMetadata{},
-		DisplayName: "Keptn",
-		Rules: []AlertingProfileRules{
-			createAlertingProfileRule("AVAILABILITY"),
-			createAlertingProfileRule("ERROR"),
-			createAlertingProfileRule("PERFORMANCE"),
-			createAlertingProfileRule("RESOURCE_CONTENTION"),
-			createAlertingProfileRule("CUSTOM_ALERT"),
-			createAlertingProfileRule("MONITORING_UNAVAILABLE"),
-		},
-		ManagementZoneID: nil,
-	}
-}
-
-func createAlertingProfileRule(severityLevel string) AlertingProfileRules {
-	return AlertingProfileRules{
-		SeverityLevel: severityLevel,
-		TagFilter: AlertingProfileTagFilter{
-			IncludeMode: "NONE",
-			TagFilters:  nil,
-		},
-		DelayInMinutes: 0,
-	}
 }
