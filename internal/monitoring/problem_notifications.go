@@ -69,13 +69,13 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 
 func getOrCreateKeptnAlertingProfile(alertingProfilesClient *dynatrace.AlertingProfilesClient) (string, error) {
 	log.Info("Checking Keptn alerting profile availability")
-	alertingProfileId, err := alertingProfilesClient.GetProfileID("Keptn")
+	alertingProfileID, err := alertingProfilesClient.GetProfileID("Keptn")
 	if err != nil {
 		log.WithError(err).Error("Could not get alerting profiles")
 	}
-	if alertingProfileId != "" {
+	if alertingProfileID != "" {
 		log.Info("Keptn alerting profile available")
-		return alertingProfileId, nil
+		return alertingProfileID, nil
 	}
 
 	log.Info("Creating Keptn alerting profile.")
