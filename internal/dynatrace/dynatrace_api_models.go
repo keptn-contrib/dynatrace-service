@@ -69,47 +69,6 @@ type ConfiguredEntities struct {
 	MetricEvents                []ConfigResult
 }
 
-// CALCULATED METRIC TYPES
-type CalculatedMetric struct {
-	TsmMetricKey        string                       `json:"tsmMetricKey"`
-	Name                string                       `json:"name"`
-	Enabled             bool                         `json:"enabled"`
-	MetricDefinition    MetricDefinition             `json:"metricDefinition"`
-	Unit                string                       `json:"unit"`
-	UnitDisplayName     string                       `json:"unitDisplayName"`
-	Conditions          []CalculatedMetricConditions `json:"conditions"`
-	DimensionDefinition DimensionDefinition          `json:"dimensionDefinition"`
-}
-type MetricDefinition struct {
-	Metric           string      `json:"metric"`
-	RequestAttribute interface{} `json:"requestAttribute"`
-}
-type Value struct {
-	Context string `json:"context"`
-	Key     string `json:"key"`
-	Value   string `json:"value"`
-}
-type CalculatedMetricConditions struct {
-	Attribute      string                         `json:"attribute"`
-	ComparisonInfo CalculatedMetricComparisonInfo `json:"comparisonInfo"`
-}
-type CalculatedMetricComparisonInfo struct {
-	Type             string `json:"type"`
-	Comparison       string `json:"comparison"`
-	Value            Value  `json:"value"`
-	Negate           bool   `json:"negate"`
-	RequestAttribute string `json:"requestAttribute"`
-	CaseSensitive    bool   `json:"caseSensitive"`
-}
-type DimensionDefinition struct {
-	Name            string   `json:"name"`
-	Dimension       string   `json:"dimension"`
-	Placeholders    []string `json:"placeholders"`
-	TopX            int      `json:"topX"`
-	TopXDirection   string   `json:"topXDirection"`
-	TopXAggregation string   `json:"topXAggregation"`
-}
-
 // CUSTOM METRIC EVENT
 type MetricEvent struct {
 	Metadata          MEMetadata        `json:"metadata"`
