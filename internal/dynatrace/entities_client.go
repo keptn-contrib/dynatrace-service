@@ -47,6 +47,8 @@ func NewEntitiesClient(client *DynatraceHelper) *EntitiesClient {
 func (ec *EntitiesClient) GetKeptnManagedServices() ([]Entity, error) {
 	entities := []Entity{}
 	nextPageKey := ""
+
+	// TODO 2021-08-20: Investigate if pageSize should be optimized or removed
 	pageSize := 50
 	for {
 		var response string
