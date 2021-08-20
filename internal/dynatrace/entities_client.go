@@ -8,6 +8,7 @@ import (
 
 const entitiesPath = "/api/v2/entities"
 
+// EntitiesResponse represents the response from Dynatrace entities endpoints
 type EntitiesResponse struct {
 	TotalCount  int      `json:"totalCount"`
 	PageSize    int      `json:"pageSize"`
@@ -15,6 +16,7 @@ type EntitiesResponse struct {
 	Entities    []Entity `json:"entities"`
 }
 
+// Tag represents a tag applied to a Dynatrace entity
 type Tag struct {
 	Context              string `json:"context"`
 	Key                  string `json:"key"`
@@ -22,16 +24,19 @@ type Tag struct {
 	Value                string `json:"value,omitempty"`
 }
 
+// Entitiy represents a Dynatrace entity
 type Entity struct {
 	EntityID    string `json:"entityId"`
 	DisplayName string `json:"displayName"`
 	Tags        []Tag  `json:"tags"`
 }
 
+// EntitiesClient is a client for interacting with the Dynatrace entities endpoints
 type EntitiesClient struct {
 	Client *DynatraceHelper
 }
 
+// NewEntitiesClient creates a new EntitiesClient
 func NewEntitiesClient(client *DynatraceHelper) *EntitiesClient {
 	return &EntitiesClient{
 		Client: client,
