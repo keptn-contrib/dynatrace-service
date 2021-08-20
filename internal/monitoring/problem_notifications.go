@@ -1,13 +1,10 @@
 package monitoring
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
-	"strings"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -30,7 +27,8 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 
 	log.Info("Setting up problem notifications in Dynatrace Tenant")
 
-	alertingProfileId, err := pn.setupAlertingProfile()
+	alertingProfileId, err := getOrCreateKeptnAlertingProfile(
+		dynatrace.NewAlertingProfilesClient(pn.client))
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
 		return dynatrace.ConfigResult{
@@ -39,22 +37,10 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 		}
 	}
 
-	response, err := pn.client.SendDynatraceAPIRequest("/api/config/v1/notifications", "GET", nil)
-	existingNotifications := dynatrace.DTAPIListResponse{}
-
-	err = json.Unmarshal([]byte(response), &existingNotifications)
+	notificationsClient := dynatrace.NewNotificationsClient(pn.client)
+	err = notificationsClient.DeleteExistingKeptnProblemNotifications()
 	if err != nil {
-		log.WithError(err).Error("Failed to unmarshal notifications")
-	}
-
-	for _, notification := range existingNotifications.Values {
-		if notification.Name == "Keptn Problem Notification" {
-			_, err = pn.client.SendDynatraceAPIRequest("/api/config/v1/notifications/"+notification.ID, "DELETE", nil)
-			if err != nil {
-				// Error occurred but continue
-				log.WithError(err).WithField("notificationId", notification.ID).Error("Failed to delete notification")
-			}
-		}
+		log.WithError(err).Error("failed to delete existing notifications")
 	}
 
 	keptnCredentials, err := credentials.GetKeptnCredentials()
@@ -66,12 +52,7 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 		}
 	}
 
-	problemNotification := dynatrace.PROBLEM_NOTIFICATION_PAYLOAD
-	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_DNS", keptnCredentials.APIURL)
-	problemNotification = strings.ReplaceAll(problemNotification, "$KEPTN_TOKEN", keptnCredentials.APIToken)
-	problemNotification = strings.ReplaceAll(problemNotification, "$ALERTING_PROFILE_ID", alertingProfileId)
-
-	_, err = pn.client.SendDynatraceAPIRequest("/api/config/v1/notifications", "POST", []byte(problemNotification))
+	_, err = notificationsClient.CreateFor(keptnCredentials, alertingProfileId)
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
 		return dynatrace.ConfigResult{
@@ -86,47 +67,51 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 	}
 }
 
-func (pn *ProblemNotificationCreation) setupAlertingProfile() (string, error) {
+func getOrCreateKeptnAlertingProfile(alertingProfilesClient *dynatrace.AlertingProfilesClient) (string, error) {
 	log.Info("Checking Keptn alerting profile availability")
-	response, err := pn.client.SendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "GET", nil)
+	alertingProfileId, err := alertingProfilesClient.GetProfileIDFor("Keptn")
 	if err != nil {
-		// Error occurred but continue
-		log.WithError(err).Debug("Could not get alerting profiles")
-	} else {
-		existingAlertingProfiles := dynatrace.DTAPIListResponse{}
-
-		err = json.Unmarshal([]byte(response), &existingAlertingProfiles)
-		if err != nil {
-			// Error occurred but continue
-			log.WithError(err).Error("Failed to unmarshal alerting profiles")
-		}
-		for _, ap := range existingAlertingProfiles.Values {
-			if ap.Name == "Keptn" {
-				log.Info("Keptn alerting profile available")
-				return ap.ID, nil
-			}
-		}
+		log.WithError(err).Error("Could not get alerting profiles")
+	}
+	if alertingProfileId != "" {
+		log.Info("Keptn alerting profile available")
+		return alertingProfileId, nil
 	}
 
 	log.Info("Creating Keptn alerting profile.")
-	alertingProfile := dynatrace.CreateKeptnAlertingProfile()
-	alertingProfilePayload, err := json.Marshal(alertingProfile)
+	alertingProfile := createKeptnAlertingProfile()
+	profileID, err := alertingProfilesClient.Create(alertingProfile)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal alerting profile: %v", err)
+		return "", fmt.Errorf("failed to create Keptn alerting profile: %v", err)
 	}
 
-	response, err = pn.client.SendDynatraceAPIRequest("/api/config/v1/alertingProfiles", "POST", alertingProfilePayload)
-	if err != nil {
-		return "", fmt.Errorf("failed to setup alerting profile: %v", err)
-	}
-
-	createdItem := &dynatrace.Values{}
-
-	err = json.Unmarshal([]byte(response), createdItem)
-	if err != nil {
-		err = checkForUnexpectedHTMLResponseError(err)
-		return "", fmt.Errorf("failed to unmarshal alerting profile: %v", err)
-	}
 	log.Info("Alerting profile created successfully.")
-	return createdItem.ID, nil
+	return profileID, nil
+}
+
+func createKeptnAlertingProfile() *dynatrace.AlertingProfile {
+	return &dynatrace.AlertingProfile{
+		Metadata:    dynatrace.AlertingProfileMetadata{},
+		DisplayName: "Keptn",
+		Rules: []dynatrace.AlertingProfileRules{
+			createAlertingProfileRule("AVAILABILITY"),
+			createAlertingProfileRule("ERROR"),
+			createAlertingProfileRule("PERFORMANCE"),
+			createAlertingProfileRule("RESOURCE_CONTENTION"),
+			createAlertingProfileRule("CUSTOM_ALERT"),
+			createAlertingProfileRule("MONITORING_UNAVAILABLE"),
+		},
+		ManagementZoneID: nil,
+	}
+}
+
+func createAlertingProfileRule(severityLevel string) dynatrace.AlertingProfileRules {
+	return dynatrace.AlertingProfileRules{
+		SeverityLevel: severityLevel,
+		TagFilter: dynatrace.AlertingProfileTagFilter{
+			IncludeMode: "NONE",
+			TagFilters:  nil,
+		},
+		DelayInMinutes: 0,
+	}
 }

@@ -27,7 +27,7 @@ func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
 	log.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
 	autoTagsClient := dynatrace.NewAutoTagClient(at.client)
-	existingDTRules, err := autoTagsClient.Get()
+	existingDTRuleNames, err := autoTagsClient.GetAllTagNames()
 	if err != nil {
 		// Error occurred but continue
 		// TODO 2021-08-18: should this error just be ignored?
@@ -35,7 +35,7 @@ func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
 	}
 
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
-		if !taggingRuleExists(ruleName, existingDTRules) {
+		if !existingDTRuleNames.Contains(ruleName) {
 			rule := createAutoTaggingRule(ruleName)
 			_, err = autoTagsClient.Create(rule)
 			if err != nil {
@@ -68,19 +68,6 @@ func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
 		}
 	}
 	return taggingRules
-}
-
-func taggingRuleExists(ruleName string, existingRules *dynatrace.DTAPIListResponse) bool {
-	if existingRules == nil {
-		return false
-	}
-
-	for _, rule := range existingRules.Values {
-		if rule.Name == ruleName {
-			return true
-		}
-	}
-	return false
 }
 
 func createAutoTaggingRule(ruleName string) *dynatrace.DTTaggingRule {

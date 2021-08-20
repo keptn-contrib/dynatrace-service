@@ -1,7 +1,6 @@
 package monitoring
 
 import (
-	"encoding/json"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 
@@ -25,119 +24,126 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 	if !lib.IsManagementZonesGenerationEnabled() {
 		return managementZones
 	}
+
 	// get existing management zones
-	mzs := mzc.getManagementZones()
-
-	found := false
-	for _, mz := range mzs {
-		if mz.Name == "Keptn: "+project {
-			found = true
-		}
+	managementZoneClient := dynatrace.NewManagementZonesClient(mzc.client)
+	managementZoneNames, err := managementZoneClient.GetAll()
+	if err != nil {
+		// continue
+		log.WithError(err).Error("Could not retrieve management zones")
 	}
 
-	if !found {
-		managementZone := dynatrace.CreateManagementZoneForProject(project)
-		mzPayload, err := json.Marshal(managementZone)
-		if err == nil {
-			_, err := mzc.client.SendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
-			if err != nil {
-				// Error occurred but continue
-
-				log.WithError(err).Error("Failed to create management zone")
-
-				managementZones = append(
-					managementZones,
-					dynatrace.ConfigResult{
-						Name:    "Keptn: " + project,
-						Success: false,
-						Message: "failed to create management zone: " + err.Error(),
-					})
-			} else {
-				managementZones = append(
-					managementZones,
-					dynatrace.ConfigResult{
-						Name:    "Keptn: " + project,
-						Success: true,
-					})
-			}
-		} else {
-			// Error occurred but continue
-			log.WithError(err).Warn("Failed to marshal management zone for project")
-		}
-	} else {
-		managementZones = append(
-			managementZones,
-			dynatrace.ConfigResult{
-				Name:    "Keptn: " + project,
-				Success: true,
-				Message: "Management Zone 'Keptn:" + project + "' was already available in your Tenant",
-			})
-	}
+	managementZone := checkForManagementZone(
+		managementZoneClient,
+		GetManagementZoneNameForProject(project),
+		func() *dynatrace.ManagementZone {
+			return createManagementZoneForProject(project)
+		},
+		managementZoneNames)
+	managementZones = append(managementZones, managementZone)
 
 	for _, stage := range shipyard.Spec.Stages {
-		found := false
-		for _, mz := range mzs {
-			if mz.Name == getManagementZoneNameForStage(project, stage.Name) {
-				found = true
-			}
-		}
-
-		if !found {
-			managementZone := dynatrace.CreateManagementZoneForStage(project, stage.Name)
-			mzPayload, err := json.Marshal(managementZone)
-			if err == nil {
-				_, err = mzc.client.SendDynatraceAPIRequest("/api/config/v1/managementZones", "POST", mzPayload)
-
-				if err != nil {
-					log.WithError(err).Error("Could not create management zone")
-					managementZones = append(
-						managementZones,
-						dynatrace.ConfigResult{
-							Name:    managementZone.Name,
-							Success: false,
-							Message: "Could not create management zone: " + err.Error(),
-						})
-				} else {
-					managementZones = append(
-						managementZones,
-						dynatrace.ConfigResult{
-							Name:    managementZone.Name,
-							Success: true,
-						})
-				}
-			} else {
-				log.WithError(err).Warn("Failed to marshal management zone for stage")
-			}
-		} else {
-			managementZones = append(
-				managementZones,
-				dynatrace.ConfigResult{
-					Name:    "Keptn: " + project + " " + stage.Name,
-					Success: true,
-					Message: "Management Zone 'Keptn:" + project + " " + stage.Name + "' was already available in your Tenant",
-				})
-		}
+		managementZone := checkForManagementZone(
+			managementZoneClient,
+			GetManagementZoneNameForProjectAndStage(project, stage.Name),
+			func() *dynatrace.ManagementZone {
+				return createManagementZoneForStage(project, stage.Name)
+			},
+			managementZoneNames)
+		managementZones = append(managementZones, managementZone)
 	}
 
 	return managementZones
 }
 
-func getManagementZoneNameForStage(project string, stage string) string {
-	return "Keptn: " + project + " " + stage
+func checkForManagementZone(
+	managementZoneClient *dynatrace.ManagementZonesClient,
+	managementZoneName string,
+	managementZoneFunc func() *dynatrace.ManagementZone,
+	managementZoneNames *dynatrace.ManagementZones) dynatrace.ConfigResult {
+	if managementZoneNames != nil && managementZoneNames.Contains(managementZoneName) {
+		return dynatrace.ConfigResult{
+			Name:    managementZoneName,
+			Success: true,
+			Message: "Management Zone '" + managementZoneName + "' was already available in your Tenant",
+		}
+	}
+
+	_, err := managementZoneClient.Create(managementZoneFunc())
+	if err != nil {
+		log.WithError(err).Error("Failed to create management zone")
+		return dynatrace.ConfigResult{
+			Name:    managementZoneName,
+			Success: false,
+			Message: "failed to create management zone: " + err.Error(),
+		}
+	}
+
+	return dynatrace.ConfigResult{
+		Name:    managementZoneName,
+		Success: true,
+	}
 }
 
-func (mzc *ManagementZoneCreation) getManagementZones() []dynatrace.Values {
-	response, err := mzc.client.SendDynatraceAPIRequest("/api/config/v1/managementZones", "GET", nil)
-	if err != nil {
-		log.WithError(err).Error("Failed to retrieve management zones")
-		return nil
-	}
-	mzs := &dynatrace.DTAPIListResponse{}
+func GetManagementZoneNameForProjectAndStage(project string, stage string) string {
+	return GetManagementZoneNameForProject(project) + " " + stage
+}
 
-	err = json.Unmarshal([]byte(response), mzs)
-	if err != nil {
-		log.WithError(err).Error("Failed to parse management zones list")
-		return nil
+func GetManagementZoneNameForProject(project string) string {
+	return "Keptn: " + project
+}
+
+func createManagementZoneForProject(project string) *dynatrace.ManagementZone {
+	managementZone := &dynatrace.ManagementZone{
+		Name: GetManagementZoneNameForProject(project),
+		Rules: []dynatrace.MZRules{
+			{
+				Type:             dynatrace.ServiceEntityType,
+				Enabled:          true,
+				PropagationTypes: []string{},
+				Conditions: []dynatrace.MZConditions{
+					creteManagementZoneConditionsFor(dynatrace.KeptnProject, project),
+				},
+			},
+		},
 	}
-	return mzs.Values
+
+	return managementZone
+}
+
+func createManagementZoneForStage(project string, stage string) *dynatrace.ManagementZone {
+	managementZone := &dynatrace.ManagementZone{
+		Name: GetManagementZoneNameForProjectAndStage(project, stage),
+		Rules: []dynatrace.MZRules{
+			{
+				Type:             dynatrace.ServiceEntityType,
+				Enabled:          true,
+				PropagationTypes: []string{},
+				Conditions: []dynatrace.MZConditions{
+					creteManagementZoneConditionsFor(dynatrace.KeptnProject, project),
+					creteManagementZoneConditionsFor(dynatrace.KeptnStage, stage),
+				},
+			},
+		},
+	}
+
+	return managementZone
+}
+
+func creteManagementZoneConditionsFor(key string, value string) dynatrace.MZConditions {
+	return dynatrace.MZConditions{
+		Key: dynatrace.MZKey{
+			Attribute: "SERVICE_TAGS",
+		},
+		ComparisonInfo: dynatrace.MZComparisonInfo{
+			Type:     "TAG",
+			Operator: "EQUALS",
+			Value: dynatrace.MZValue{
+				Context: "CONTEXTLESS",
+				Key:     key,
+				Value:   value,
+			},
+			Negate: false,
+		},
+	}
 }
