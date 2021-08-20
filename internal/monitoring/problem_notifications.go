@@ -52,7 +52,7 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 		}
 	}
 
-	_, err = notificationsClient.CreateFor(keptnCredentials, alertingProfileId)
+	_, err = notificationsClient.Create(keptnCredentials, alertingProfileId)
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
 		return dynatrace.ConfigResult{
