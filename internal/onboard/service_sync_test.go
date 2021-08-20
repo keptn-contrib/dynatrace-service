@@ -2,7 +2,6 @@ package onboard
 
 import (
 	"encoding/json"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +11,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-test/deep"
@@ -50,138 +51,6 @@ const testDTEntityQueryResponse = `{
         }
     ]
 }`
-
-func Test_serviceSynchronizer_fetchKeptnManagedServicesFromDynatrace(t *testing.T) {
-
-	var returnedEntitiesResponse dtEntityListResponse
-	dtMockServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		marshal, _ := json.Marshal(returnedEntitiesResponse)
-		writer.WriteHeader(200)
-		writer.Write(marshal)
-	}))
-
-	defer dtMockServer.Close()
-
-	type fields struct {
-		projectsAPI     *keptnapi.ProjectHandler
-		servicesAPI     *keptnapi.ServiceHandler
-		resourcesAPI    *keptnapi.ResourceHandler
-		apiMutex        sync.Mutex
-		DTHelper        *dynatrace.DynatraceHelper
-		syncTimer       *time.Ticker
-		keptnHandler    *keptnv2.Keptn
-		servicesInKeptn []string
-	}
-	type args struct {
-		nextPageKey string
-		pageSize    int
-	}
-	tests := []struct {
-		name                         string
-		fields                       fields
-		args                         args
-		want                         *dtEntityListResponse
-		returnedEntitiesListResponse dtEntityListResponse
-		wantErr                      bool
-	}{
-		{
-			name: "",
-			fields: fields{
-				projectsAPI:  nil,
-				servicesAPI:  nil,
-				resourcesAPI: nil,
-				apiMutex:     sync.Mutex{},
-				DTHelper: dynatrace.NewDynatraceHelper(nil, &credentials.DTCredentials{
-					Tenant:   dtMockServer.URL,
-					ApiToken: "",
-				}),
-				syncTimer:       nil,
-				keptnHandler:    nil,
-				servicesInKeptn: nil,
-			},
-			args: args{
-				nextPageKey: "",
-				pageSize:    1,
-			},
-			want: &dtEntityListResponse{
-				TotalCount:  1,
-				PageSize:    1,
-				NextPageKey: "",
-				Entities: []entity{
-					{
-						EntityID:    "1",
-						DisplayName: "name",
-						Tags: []tags{
-							{
-								Context:              "CONTEXTLESS",
-								Key:                  "keptn_managed",
-								StringRepresentation: "keptn_managed",
-								Value:                "",
-							},
-							{
-								Context:              "CONTEXTLESS",
-								Key:                  "keptn_service",
-								StringRepresentation: "keptn_service:my-service",
-								Value:                "my-service",
-							},
-						},
-					},
-				},
-			},
-			returnedEntitiesListResponse: dtEntityListResponse{
-				TotalCount:  1,
-				PageSize:    1,
-				NextPageKey: "",
-				Entities: []entity{
-					{
-						EntityID:    "1",
-						DisplayName: "name",
-						Tags: []tags{
-							{
-								Context:              "CONTEXTLESS",
-								Key:                  "keptn_managed",
-								StringRepresentation: "keptn_managed",
-								Value:                "",
-							},
-							{
-								Context:              "CONTEXTLESS",
-								Key:                  "keptn_service",
-								StringRepresentation: "keptn_service:my-service",
-								Value:                "my-service",
-							},
-						},
-					},
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &serviceSynchronizer{
-				projectsAPI:     tt.fields.projectsAPI,
-				servicesAPI:     tt.fields.servicesAPI,
-				resourcesAPI:    tt.fields.resourcesAPI,
-				DTHelper:        tt.fields.DTHelper,
-				syncTimer:       tt.fields.syncTimer,
-				keptnHandler:    tt.fields.keptnHandler,
-				servicesInKeptn: tt.fields.servicesInKeptn,
-			}
-			returnedEntitiesResponse = tt.returnedEntitiesListResponse
-			got, err := s.fetchKeptnManagedServicesFromDynatrace(tt.args.nextPageKey, tt.args.pageSize)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("fetchKeptnManagedServicesFromDynatrace() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if diff := deep.Equal(got, tt.want); len(diff) > 0 {
-				t.Errorf("fetchKeptnManagedServicesFromDynatrace() got = %v, want %v", got, tt.want)
-				for _, d := range diff {
-					t.Log(d)
-				}
-			}
-		})
-	}
-}
 
 func Test_doesServiceExist(t *testing.T) {
 	type args struct {
@@ -373,15 +242,15 @@ func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Serv
 
 func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 
-	firstDTResponse := dtEntityListResponse{
+	firstDTResponse := dynatrace.EntitiesResponse{
 		TotalCount:  3,
 		PageSize:    2,
 		NextPageKey: "next-page-key",
-		Entities: []entity{
+		Entities: []dynatrace.Entity{
 			{
 				EntityID:    "1",
 				DisplayName: "name",
-				Tags: []tags{
+				Tags: []dynatrace.Tag{
 					{
 						Context:              "CONTEXTLESS",
 						Key:                  "keptn_managed",
@@ -399,7 +268,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 			{
 				EntityID:    "1-2",
 				DisplayName: "name",
-				Tags: []tags{
+				Tags: []dynatrace.Tag{
 					{
 						Context:              "CONTEXTLESS",
 						Key:                  "keptn_managed",
@@ -417,15 +286,15 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		},
 	}
 
-	secondDTResponse := dtEntityListResponse{
+	secondDTResponse := dynatrace.EntitiesResponse{
 		TotalCount:  2,
 		PageSize:    1,
 		NextPageKey: "",
-		Entities: []entity{
+		Entities: []dynatrace.Entity{
 			{
 				EntityID:    "2",
 				DisplayName: "name",
-				Tags: []tags{
+				Tags: []dynatrace.Tag{
 					{
 						Context:              "CONTEXTLESS",
 						Key:                  "keptn_managed",
@@ -520,10 +389,10 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		projectsAPI:  keptnapi.NewProjectHandler(projectsMockAPI.URL),
 		servicesAPI:  keptnapi.NewServiceHandler(servicesMockAPI.URL),
 		resourcesAPI: keptnapi.NewResourceHandler(mockCS.URL),
-		DTHelper: dynatrace.NewDynatraceHelper(nil, &credentials.DTCredentials{
+		EntitiesClient: dynatrace.NewEntitiesClient(dynatrace.NewDynatraceHelper(nil, &credentials.DTCredentials{
 			Tenant:   dtMockServer.URL,
 			ApiToken: "",
-		}),
+		})),
 		syncTimer:       nil,
 		keptnHandler:    k,
 		servicesInKeptn: []string{},
@@ -586,7 +455,7 @@ func checkReceivedEntities(t *testing.T, channel chan string, expected []string)
 
 func Test_getKeptnServiceName(t *testing.T) {
 	type args struct {
-		entity entity
+		entity dynatrace.Entity
 	}
 	tests := []struct {
 		name    string
@@ -597,7 +466,7 @@ func Test_getKeptnServiceName(t *testing.T) {
 		{
 			name: "error due to missing tag",
 			args: args{
-				entity: entity{
+				entity: dynatrace.Entity{
 					EntityID:    "entity-id",
 					DisplayName: ":10999",
 					Tags:        nil,
@@ -609,10 +478,10 @@ func Test_getKeptnServiceName(t *testing.T) {
 		{
 			name: "use keptn_service tag",
 			args: args{
-				entity: entity{
+				entity: dynatrace.Entity{
 					EntityID:    "entity-id",
 					DisplayName: ":10999",
-					Tags: []tags{
+					Tags: []dynatrace.Tag{
 						{
 							Context:              "CONTEXTLESS",
 							Key:                  "keptn_service",
@@ -661,7 +530,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		apiHandler        *keptnapi.APIHandler
 		credentialManager credentials.CredentialManagerInterface
 		apiMutex          sync.Mutex
-		DTHelper          *dynatrace.DynatraceHelper
+		EntitiesClient    *dynatrace.EntitiesClient
 		syncTimer         *time.Ticker
 		keptnHandler      *keptnv2.Keptn
 		servicesInKeptn   []string
@@ -684,7 +553,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 				servicesAPI:     keptnapi.NewServiceHandler(servicesMockAPI.URL),
 				resourcesAPI:    keptnapi.NewResourceHandler(mockCS.URL),
 				apiMutex:        sync.Mutex{},
-				DTHelper:        nil,
+				EntitiesClient:  nil,
 				syncTimer:       nil,
 				keptnHandler:    k,
 				servicesInKeptn: []string{},
@@ -703,7 +572,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 				resourcesAPI:      tt.fields.resourcesAPI,
 				apiHandler:        tt.fields.apiHandler,
 				credentialManager: tt.fields.credentialManager,
-				DTHelper:          tt.fields.DTHelper,
+				EntitiesClient:    tt.fields.EntitiesClient,
 				syncTimer:         tt.fields.syncTimer,
 				keptnHandler:      tt.fields.keptnHandler,
 				servicesInKeptn:   tt.fields.servicesInKeptn,
