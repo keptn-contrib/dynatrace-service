@@ -24,7 +24,7 @@ type Tag struct {
 	Value                string `json:"value,omitempty"`
 }
 
-// Entitiy represents a Dynatrace entity
+// Entity represents a Dynatrace entity
 type Entity struct {
 	EntityID    string `json:"entityId"`
 	DisplayName string `json:"displayName"`
