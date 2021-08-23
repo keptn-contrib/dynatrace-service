@@ -80,7 +80,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 			log.WithField("sli", objective.SLI).Error("Could not find query for SLI")
 
 			// if .GetQueryByNameOrDefault(...) would fail, it would return an empty string. So we would do all the work
-			// in the two for loops below until we come to the point in createKeptnMetricEvent where it would be checked
+			// in the two for loops below until we come to the point in createKeptnMetricEventDTO where it would be checked
 			// whether 'config' not equals to "" and return an error, log error and continue for each iteration.
 			// therefore, continue
 			continue
@@ -95,11 +95,13 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 					log.WithError(err).WithField("criteria", crit).Error("Could not parse criteria")
 					continue
 				}
+
 				if criteriaObject.IsComparison {
 					// comparison-based criteria cannot be mapped to alerts
 					continue
 				}
-				newMetricEvent, err := createKeptnMetricEvent(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
+
+				newMetricEvent, err := createKeptnMetricEventDTO(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
 				if err != nil {
 					// Error occurred but continue
 					log.WithError(err).WithFields(
@@ -110,14 +112,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 					continue
 				}
 
-				existingMetricEvent, err := metricEventsClient.GetMetricEventByName(newMetricEvent.Name)
-				if err != nil {
-					// Error occurred but continue
-					log.WithError(err).Error("Could not get metric event")
-					continue
-				}
-
-				err = createOrUpdateMetricEvent(metricEventsClient, newMetricEvent, existingMetricEvent)
+				err = createOrUpdateMetricEvent(metricEventsClient, newMetricEvent)
 				if err != nil {
 					log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
 					continue
@@ -146,7 +141,12 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	return metricEventsResult
 }
 
-func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEvent *dynatrace.MetricEvent, existingMetricEvent *dynatrace.MetricEvent) error {
+func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEvent *dynatrace.MetricEvent) error {
+	existingMetricEvent, err := client.GetMetricEventByName(newMetricEvent.Name)
+	if err != nil {
+		return err
+	}
+
 	if existingMetricEvent != nil {
 		// adapt all properties that have initially been defaulted to some value from previous (potentially modified event)
 		existingMetricEvent.Threshold = newMetricEvent.Threshold
@@ -154,16 +154,14 @@ func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEv
 
 		_, err := client.Update(existingMetricEvent)
 		if err != nil {
-			log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not update metric event")
 			return err
 		}
 
 		return nil
 	}
 
-	_, err := client.Create(newMetricEvent)
+	_, err = client.Create(newMetricEvent)
 	if err != nil {
-		log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
 		return err
 	}
 
@@ -226,7 +224,7 @@ func parseCriteriaString(criteria string) (*dynatrace.CriteriaObject, error) {
 
 var supportedAggregations = [...]string{"avg", "max", "min", "count", "sum", "value", "percentile"}
 
-func createKeptnMetricEvent(project string, stage string, service string, metric string, query string, condition string, threshold float64, managementZoneID int64) (*dynatrace.MetricEvent, error) {
+func createKeptnMetricEventDTO(project string, stage string, service string, metric string, query string, condition string, threshold float64, managementZoneID int64) (*dynatrace.MetricEvent, error) {
 
 	/*
 		need to map queries used by SLI-service to metric event definition.
