@@ -188,6 +188,7 @@ func (eh ActionHandler) HandleEvent() error {
 	return nil
 }
 
+// AddProblemComment adds a comment to a problem
 func AddProblemComment(dtHelper *dynatrace.DynatraceHelper, pid string, comment string) {
 	log.WithField("comment", comment).Info("Adding problem comment")
 	problemClient := dynatrace.NewProblemsClient(dtHelper)
