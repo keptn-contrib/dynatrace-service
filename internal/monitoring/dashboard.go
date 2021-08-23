@@ -25,8 +25,8 @@ func NewDashboardCreation(client *dynatrace.DynatraceHelper) *DashboardCreation 
 	}
 }
 
-// CreateFor creates a new dashboard for the provided project
-func (dc *DashboardCreation) CreateFor(project string, shipyard keptnv2.Shipyard) dynatrace.ConfigResult {
+// Create creates a new dashboard for the provided project
+func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) dynatrace.ConfigResult {
 	if !lib.IsDashboardsGenerationEnabled() {
 		return dynatrace.ConfigResult{}
 	}
@@ -46,6 +46,7 @@ func (dc *DashboardCreation) CreateFor(project string, shipyard keptnv2.Shipyard
 	dashboard := createDynatraceDashboard(project, shipyard)
 	_, err = dashboardClient.Create(dashboard)
 	if err != nil {
+		log.WithError(err).Error("Failed to create Dynatrace dashboards")
 		return dynatrace.ConfigResult{
 			Success: false,
 			Message: err.Error(),
@@ -66,7 +67,7 @@ func deleteExistingDashboard(project string, dashboardClient *dynatrace.Dashboar
 	}
 
 	for _, dashboardItem := range response.Dashboards {
-		if dashboardItem.Name == createDashboardNameFor(project) {
+		if dashboardItem.Name == getDashboardName(project) {
 			_, err = dashboardClient.Delete(dashboardItem.ID)
 			if err != nil {
 				return fmt.Errorf("could not delete dashboard for project %s: %v", project, err)
@@ -76,7 +77,7 @@ func deleteExistingDashboard(project string, dashboardClient *dynatrace.Dashboar
 	return nil
 }
 
-func createDashboardNameFor(projectName string) string {
+func getDashboardName(projectName string) string {
 	return projectName + dashboardNameSuffix
 }
 
@@ -85,7 +86,7 @@ func createDashboardNameFor(projectName string) string {
 func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *dynatrace.DynatraceDashboard {
 	dtDashboard := &dynatrace.DynatraceDashboard{
 		DashboardMetadata: dynatrace.DashboardMetadata{
-			Name:   createDashboardNameFor(projectName),
+			Name:   getDashboardName(projectName),
 			Shared: true,
 			Owner:  "",
 			SharingDetails: dynatrace.SharingDetails{
@@ -196,7 +197,7 @@ func createServiceResponseTimeTile(project string, stage string) dynatrace.Tiles
 			ChartConfig: createTimeSeriesChartConfig("builtin:service.response.time", "AVG", "LINE", dynatrace.ServiceEntityType),
 			FiltersPerEntityType: dynatrace.FiltersPerEntityType{
 				Service: &dynatrace.EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
+					AutoTags: []string{getKeptnProjectTag(project), getKeptnStageTag(stage)},
 				},
 			},
 		})
@@ -226,7 +227,7 @@ func createServiceErrorRateTile(project string, stage string) dynatrace.Tiles {
 			ChartConfig: createTimeSeriesChartConfig("builtin:service.errors.server.rate", "AVG", "BAR", dynatrace.ServiceEntityType),
 			FiltersPerEntityType: dynatrace.FiltersPerEntityType{
 				Service: &dynatrace.EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
+					AutoTags: []string{getKeptnProjectTag(project), getKeptnStageTag(stage)},
 				},
 			},
 		})
@@ -244,7 +245,7 @@ func createServiceThroughputTile(project string, stage string) dynatrace.Tiles {
 			ChartConfig: createTimeSeriesChartConfig("builtin:service.requestCount.total", "NONE", "BAR", dynatrace.ServiceEntityType),
 			FiltersPerEntityType: dynatrace.FiltersPerEntityType{
 				Service: &dynatrace.EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
+					AutoTags: []string{getKeptnProjectTag(project), getKeptnStageTag(stage)},
 				},
 			},
 		})
@@ -285,7 +286,7 @@ func createStageServicesTile(project string, stage string) dynatrace.Tiles {
 			},
 			FiltersPerEntityType: dynatrace.FiltersPerEntityType{
 				Service: &dynatrace.EntityFilter{
-					AutoTags: []string{createKeptnProjectTag(project), createKeptnStageTag(stage)},
+					AutoTags: []string{getKeptnProjectTag(project), getKeptnStageTag(stage)},
 				},
 			},
 		})
@@ -308,14 +309,14 @@ func createTileWith(name string, tileType string, filterConfig *dynatrace.Filter
 	}
 }
 
-func createTagFor(name string, value string) string {
+func getTag(name string, value string) string {
 	return name + ":" + value
 }
 
-func createKeptnProjectTag(value string) string {
-	return createTagFor(dynatrace.KeptnProject, value)
+func getKeptnProjectTag(value string) string {
+	return getTag(dynatrace.KeptnProject, value)
 }
 
-func createKeptnStageTag(value string) string {
-	return createTagFor(dynatrace.KeptnStage, value)
+func getKeptnStageTag(value string) string {
+	return getTag(dynatrace.KeptnStage, value)
 }

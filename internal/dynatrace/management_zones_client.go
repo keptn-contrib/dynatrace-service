@@ -41,13 +41,13 @@ type ManagementZones struct {
 	values map[string]Values
 }
 
-func (mz *ManagementZones) GetBy(name string) (Values, bool) {
+func (mz *ManagementZones) GetByName(name string) (Values, bool) {
 	value, exists := mz.values[name]
 	return value, exists
 }
 
 func (mz *ManagementZones) Contains(name string) bool {
-	_, exists := mz.GetBy(name)
+	_, exists := mz.GetByName(name)
 	return exists
 }
 

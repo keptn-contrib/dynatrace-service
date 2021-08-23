@@ -109,7 +109,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		msg := fmt.Sprintf("failed to load Dynatrace credentials: %v", err)
 		return eh.handleError(e, msg)
 	}
-	config := NewConfiguration(dynatrace.NewDynatraceHelper(keptnHandler, creds))
+	config := NewConfiguration(dynatrace.NewDynatraceHelper(keptnHandler, creds), keptnHandler)
 
 	configuredEntities, err := config.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {

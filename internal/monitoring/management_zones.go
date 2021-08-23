@@ -18,8 +18,8 @@ func NewManagementZoneCreation(client *dynatrace.DynatraceHelper) *ManagementZon
 	}
 }
 
-// CreateFor creates a new management zone for the project
-func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Shipyard) []dynatrace.ConfigResult {
+// Create creates a new management zone for the project
+func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipyard) []dynatrace.ConfigResult {
 	var managementZones []dynatrace.ConfigResult
 	if !lib.IsManagementZonesGenerationEnabled() {
 		return managementZones
@@ -33,17 +33,17 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 		log.WithError(err).Error("Could not retrieve management zones")
 	}
 
-	managementZone := checkForManagementZone(
+	managementZoneResult := getOrCreateManagementZone(
 		managementZoneClient,
 		GetManagementZoneNameForProject(project),
 		func() *dynatrace.ManagementZone {
 			return createManagementZoneForProject(project)
 		},
 		managementZoneNames)
-	managementZones = append(managementZones, managementZone)
+	managementZones = append(managementZones, managementZoneResult)
 
 	for _, stage := range shipyard.Spec.Stages {
-		managementZone := checkForManagementZone(
+		managementZone := getOrCreateManagementZone(
 			managementZoneClient,
 			GetManagementZoneNameForProjectAndStage(project, stage.Name),
 			func() *dynatrace.ManagementZone {
@@ -56,7 +56,7 @@ func (mzc *ManagementZoneCreation) CreateFor(project string, shipyard keptnv2.Sh
 	return managementZones
 }
 
-func checkForManagementZone(
+func getOrCreateManagementZone(
 	managementZoneClient *dynatrace.ManagementZonesClient,
 	managementZoneName string,
 	managementZoneFunc func() *dynatrace.ManagementZone,
@@ -102,7 +102,7 @@ func createManagementZoneForProject(project string) *dynatrace.ManagementZone {
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions: []dynatrace.MZConditions{
-					creteManagementZoneConditionsFor(dynatrace.KeptnProject, project),
+					createManagementZoneConditions(dynatrace.KeptnProject, project),
 				},
 			},
 		},
@@ -120,8 +120,8 @@ func createManagementZoneForStage(project string, stage string) *dynatrace.Manag
 				Enabled:          true,
 				PropagationTypes: []string{},
 				Conditions: []dynatrace.MZConditions{
-					creteManagementZoneConditionsFor(dynatrace.KeptnProject, project),
-					creteManagementZoneConditionsFor(dynatrace.KeptnStage, stage),
+					createManagementZoneConditions(dynatrace.KeptnProject, project),
+					createManagementZoneConditions(dynatrace.KeptnStage, stage),
 				},
 			},
 		},
@@ -130,7 +130,7 @@ func createManagementZoneForStage(project string, stage string) *dynatrace.Manag
 	return managementZone
 }
 
-func creteManagementZoneConditionsFor(key string, value string) dynatrace.MZConditions {
+func createManagementZoneConditions(key string, value string) dynatrace.MZConditions {
 	return dynatrace.MZConditions{
 		Key: dynatrace.MZKey{
 			Attribute: "SERVICE_TAGS",

@@ -10,12 +10,14 @@ import (
 )
 
 type Configuration struct {
-	client *dynatrace.DynatraceHelper
+	dtClient *dynatrace.DynatraceHelper
+	kClient  *keptnv2.Keptn
 }
 
-func NewConfiguration(client *dynatrace.DynatraceHelper) *Configuration {
+func NewConfiguration(dynatraceClient *dynatrace.DynatraceHelper, keptnClient *keptnv2.Keptn) *Configuration {
 	return &Configuration{
-		client: client,
+		dtClient: dynatraceClient,
+		kClient:  keptnClient,
 	}
 }
 
@@ -24,9 +26,9 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 
 	configuredEntities := &dynatrace.ConfiguredEntities{
 		TaggingRulesEnabled:         lib.IsTaggingRulesGenerationEnabled(),
-		TaggingRules:                NewAutoTagCreation(mc.client).Create(),
+		TaggingRules:                NewAutoTagCreation(mc.dtClient).Create(),
 		ProblemNotificationsEnabled: lib.IsProblemNotificationsGenerationEnabled(),
-		ProblemNotifications:        NewProblemNotificationCreation(mc.client).Create(),
+		ProblemNotifications:        NewProblemNotificationCreation(mc.dtClient).Create(),
 		ManagementZonesEnabled:      lib.IsManagementZonesGenerationEnabled(),
 		ManagementZones:             []dynatrace.ConfigResult{},
 		DashboardEnabled:            lib.IsDashboardsGenerationEnabled(),
@@ -36,8 +38,8 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 	}
 
 	if project != "" && shipyard != nil {
-		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.client).CreateFor(project, *shipyard)
-		configuredEntities.Dashboard = NewDashboardCreation(mc.client).CreateFor(project, *shipyard)
+		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(project, *shipyard)
+		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(project, *shipyard)
 
 		configHandler := keptnutils.NewServiceHandler("shipyard-controller:8080")
 
@@ -52,7 +54,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 				for _, service := range services {
 					metricEvents = append(
 						metricEvents,
-						NewMetricEventCreation(mc.client).CreateFor(project, stage.Name, service.ServiceName)...)
+						NewMetricEventCreation(mc.dtClient, mc.kClient).Create(project, stage.Name, service.ServiceName)...)
 				}
 			}
 		}

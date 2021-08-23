@@ -52,9 +52,9 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 		}
 	}
 
-	_, err = notificationsClient.CreateFor(keptnCredentials, alertingProfileId)
+	_, err = notificationsClient.Create(keptnCredentials, alertingProfileId)
 	if err != nil {
-		log.WithError(err).Error("Failed to set up problem notification")
+		log.WithError(err).Error("Failed to create problem notification")
 		return dynatrace.ConfigResult{
 			Success: false,
 			Message: "failed to set up problem notification: " + err.Error(),
@@ -69,13 +69,13 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 
 func getOrCreateKeptnAlertingProfile(alertingProfilesClient *dynatrace.AlertingProfilesClient) (string, error) {
 	log.Info("Checking Keptn alerting profile availability")
-	alertingProfileId, err := alertingProfilesClient.GetProfileIDFor("Keptn")
+	alertingProfileID, err := alertingProfilesClient.GetProfileID("Keptn")
 	if err != nil {
 		log.WithError(err).Error("Could not get alerting profiles")
 	}
-	if alertingProfileId != "" {
+	if alertingProfileID != "" {
 		log.Info("Keptn alerting profile available")
-		return alertingProfileId, nil
+		return alertingProfileID, nil
 	}
 
 	log.Info("Creating Keptn alerting profile.")
