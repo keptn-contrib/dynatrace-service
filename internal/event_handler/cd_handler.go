@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/problem"
 
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
@@ -160,8 +161,7 @@ func (eh CDEventHandler) HandleEvent() error {
 				comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], edData.Result, edData.Evaluation.Score)
 
 				// this is posting the Event on the problem as a comment
-				problemClient := dynatrace.NewProblemsClient(dtHelper)
-				err = problemClient.SendProblemComment(pid, comment)
+				problem.AddProblemComment(dtHelper, pid, comment)
 			}
 		}
 		ie.Description = qualityGateDescription
