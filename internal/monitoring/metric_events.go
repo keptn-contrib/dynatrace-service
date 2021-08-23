@@ -2,9 +2,11 @@ package monitoring
 
 import (
 	"errors"
+	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	keptnlib "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"regexp"
 	"strconv"
@@ -30,9 +32,8 @@ func NewMetricEventCreation(dynatraceClient *dynatrace.DynatraceHelper, keptnCli
 
 // Create creates new metric events if SLOs are specified
 func (mec MetricEventCreation) Create(project string, stage string, service string) []dynatrace.ConfigResult {
-	var metricEventsResult []dynatrace.ConfigResult
 	if !lib.IsMetricEventsGenerationEnabled() {
-		return metricEventsResult
+		return nil
 	}
 
 	log.Info("Creating custom metric events for project SLIs")
@@ -42,21 +43,21 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 			log.Fields{
 				"service": service,
 				"stage":   stage}).Info("No SLOs defined for service. Skipping creation of custom metric events.")
-		return metricEventsResult
+		return nil
 	}
 	// get custom metrics for project
 
 	projectCustomQueries, err := keptn.NewClient(mec.kClient).GetCustomQueries(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithField("project", project).Error("Failed to get custom queries for project")
-		return metricEventsResult
+		return nil
 	}
 
 	managementZones, err := dynatrace.NewManagementZonesClient(mec.dtClient).GetAll()
 	var mzId int64 = -1
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Error("Could not retrieve management zones")
-		return metricEventsResult
+		return nil
 	}
 
 	// TODO 2021-08-20: check the logic below - if parsing management zone id does not work, we will continue anyway?
@@ -67,14 +68,14 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 		}
 	} else {
 		log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Warn("Could not find management zone")
-		return metricEventsResult
+		return nil
 	}
 
-	metricEventCreated := false
 	metricEventsClient := dynatrace.NewMetricEventsClient(mec.dtClient)
+	var metricsEventResults []dynatrace.ConfigResult
 	// try to create metric events using best effort.
 	for _, objective := range slos.Objectives {
-		config, err := projectCustomQueries.GetQueryByNameOrDefault(objective.SLI)
+		query, err := projectCustomQueries.GetQueryByNameOrDefault(objective.SLI)
 		if err != nil {
 			// Error occurred but continue
 			log.WithField("sli", objective.SLI).Error("Could not find query for SLI")
@@ -86,59 +87,73 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 			continue
 		}
 
-		for _, criteria := range objective.Pass {
-			for _, crit := range criteria.Criteria {
-				// criteria.Criteria
-				criteriaObject, err := parseCriteriaString(crit)
-				if err != nil {
-					// Error occurred but continue
-					log.WithError(err).WithField("criteria", crit).Error("Could not parse criteria")
-					continue
-				}
+		metricsEventResults = append(
+			metricsEventResults,
+			setupAllMetricEvents(metricEventsClient, project, stage, service, objective, query, mzId)...)
 
-				if criteriaObject.IsComparison {
-					// comparison-based criteria cannot be mapped to alerts
-					continue
-				}
-
-				newMetricEvent, err := createKeptnMetricEventDTO(project, stage, service, objective.SLI, config, crit, criteriaObject.Value, mzId)
-				if err != nil {
-					// Error occurred but continue
-					log.WithError(err).WithFields(
-						log.Fields{
-							"sli":      objective.SLI,
-							"criteria": crit,
-						}).Error("Could not create metric event definition for criteria")
-					continue
-				}
-
-				err = createOrUpdateMetricEvent(metricEventsClient, newMetricEvent)
-				if err != nil {
-					log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
-					continue
-				}
-
-				metricEventsResult = append(metricEventsResult,
-					dynatrace.ConfigResult{
-						Name:    newMetricEvent.Name,
-						Success: true,
-					})
-				log.WithFields(
-					log.Fields{
-						"name":     newMetricEvent.Name,
-						"criteria": crit,
-					}).Info("Created metric event")
-				metricEventCreated = true
-			}
-		}
 	}
 
-	if metricEventCreated {
+	if len(metricsEventResults) > 0 {
 		// TODO: improve this?
 		log.Info("To review and enable the generated custom metric events, please go to: https://" + mec.dtClient.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
 	}
 
-	return metricEventsResult
+	return metricsEventResults
+}
+
+func setupAllMetricEvents(client *dynatrace.MetricEventsClient, project string, stage string, service string, slo *keptnlib.SLO, query string, managementZoneID int64) []dynatrace.ConfigResult {
+	var metricEventsResults []dynatrace.ConfigResult
+	for _, criteria := range slo.Pass {
+		for _, crit := range criteria.Criteria {
+
+			metricEventsResult, err := setupSingleMetricEvent(client, project, stage, service, slo.SLI, query, crit, managementZoneID)
+			if err != nil {
+				continue
+			}
+
+			metricEventsResults = append(metricEventsResults, *metricEventsResult)
+		}
+	}
+
+	return metricEventsResults
+}
+
+func setupSingleMetricEvent(client *dynatrace.MetricEventsClient, project string, stage string, service string, metric string, query string, crit string, managementZoneID int64) (*dynatrace.ConfigResult, error) {
+	// criteria.Criteria
+	criteriaObject, err := parseCriteriaString(crit)
+	if err != nil {
+		// Error occurred but continue
+		log.WithError(err).WithField("criteria", crit).Error("Could not parse criteria")
+		return nil, fmt.Errorf("could not parse criteria: %s", crit)
+	}
+
+	if criteriaObject.IsComparison {
+		// comparison-based criteria cannot be mapped to alerts
+		return nil, fmt.Errorf("comparison-based criteria cannot be mapped to alerts")
+	}
+
+	newMetricEvent, err := createKeptnMetricEventDTO(project, stage, service, metric, query, crit, criteriaObject.Value, managementZoneID)
+	if err != nil {
+		// Error occurred but continue
+		log.WithError(err).WithFields(
+			log.Fields{
+				"sli":      metric,
+				"criteria": crit,
+			}).Error("Could not create metric event definition for criteria")
+		return nil, fmt.Errorf("could not create metric event definition for criteria, sli: %s, criteria: %s", metric, crit)
+	}
+
+	err = createOrUpdateMetricEvent(client, newMetricEvent)
+	if err != nil {
+		log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
+		return nil, fmt.Errorf("could not create metric event: %s", newMetricEvent.Name)
+	}
+
+	log.WithFields(log.Fields{"name": newMetricEvent.Name, "criteria": crit}).Info("Created metric event")
+	return &dynatrace.ConfigResult{
+		Name:    newMetricEvent.Name,
+		Success: true,
+	}, nil
 }
 
 func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEvent *dynatrace.MetricEvent) error {
