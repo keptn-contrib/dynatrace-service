@@ -17,7 +17,7 @@ type EvaluationFinishedAdapter struct {
 
 // NewEvaluationDoneAdapter godoc
 func NewEvaluationDoneAdapter(event keptnv2.EvaluationFinishedEventData, shkeptncontext, source string) EvaluationFinishedAdapter {
-	return EvaluationFinishedAdapter{event: event, context: shkeptncontext}
+	return EvaluationFinishedAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext

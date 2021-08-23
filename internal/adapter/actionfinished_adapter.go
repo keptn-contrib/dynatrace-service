@@ -15,7 +15,7 @@ type ActionFinishedAdapter struct {
 
 // NewActionFinishedAdapter creates a new ActionFinishedAdapter
 func NewActionFinishedAdapter(event keptnv2.ActionFinishedEventData, shkeptncontext, source string) ActionFinishedAdapter {
-	return ActionFinishedAdapter{event: event, context: shkeptncontext}
+	return ActionFinishedAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext

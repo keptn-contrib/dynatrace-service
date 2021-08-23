@@ -15,7 +15,7 @@ type ActionTriggeredAdapter struct {
 
 // NewActionTriggeredAdapter godoc
 func NewActionTriggeredAdapter(event keptnv2.ActionTriggeredEventData, shkeptncontext, source string) ActionTriggeredAdapter {
-	return ActionTriggeredAdapter{event: event, context: shkeptncontext}
+	return ActionTriggeredAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext

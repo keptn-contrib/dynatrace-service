@@ -14,7 +14,7 @@ type TestTriggeredAdapter struct {
 
 // NewTestTriggeredAdapter godoc
 func NewTestTriggeredAdapter(event keptnv2.TestTriggeredEventData, shkeptncontext, source string) TestTriggeredAdapter {
-	return TestTriggeredAdapter{event: event, context: shkeptncontext}
+	return TestTriggeredAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext

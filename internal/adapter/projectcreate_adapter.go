@@ -13,7 +13,7 @@ type ProjectCreateAdapter struct {
 
 // NewProjectCreateAdapter godoc
 func NewProjectCreateAdapter(event keptnv2.ProjectCreateFinishedEventData, shkeptncontext, source string) ProjectCreateAdapter {
-	return ProjectCreateAdapter{event: event, context: shkeptncontext}
+	return ProjectCreateAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext
