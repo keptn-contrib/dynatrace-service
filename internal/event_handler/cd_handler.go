@@ -2,6 +2,7 @@ package event_handler
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
@@ -159,7 +160,8 @@ func (eh CDEventHandler) HandleEvent() error {
 				comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], edData.Result, edData.Evaluation.Score)
 
 				// this is posting the Event on the problem as a comment
-				err = dtHelper.SendProblemComment(pid, comment)
+				problemClient := dynatrace.NewProblemsClient(dtHelper)
+				err = problemClient.SendProblemComment(pid, comment)
 			}
 		}
 		ie.Description = qualityGateDescription

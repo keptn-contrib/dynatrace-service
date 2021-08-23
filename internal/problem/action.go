@@ -3,6 +3,7 @@ package problem
 import (
 	"errors"
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -103,7 +104,8 @@ func (eh ActionHandler) HandleEvent() error {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
 
-		err = dtHelper.SendProblemComment(pid, comment)
+		problemClient := dynatrace.NewProblemsClient(dtHelper)
+		err = problemClient.SendProblemComment(pid, comment)
 	} else if eh.Event.Type() == keptnv2.GetStartedEventType(keptnv2.ActionTaskName) {
 		actionStartedData := &keptnv2.ActionStartedEventData{}
 
@@ -128,14 +130,13 @@ func (eh ActionHandler) HandleEvent() error {
 			return err
 		}
 
-		// Create our DTHelper
-		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
+		problemClient := dynatrace.NewProblemsClient(dynatrace.NewDynatraceHelper(keptnHandler, creds))
 
 		// Comment we push over
 		comment = fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.Event.Source())
 
 		// this is posting the Event on the problem as a comment
-		err = dtHelper.SendProblemComment(pid, comment)
+		err = problemClient.SendProblemComment(pid, comment)
 	} else if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ActionTaskName) {
 		actionFinishedData := &keptnv2.ActionFinishedEventData{}
 
@@ -184,7 +185,8 @@ func (eh ActionHandler) HandleEvent() error {
 		}
 
 		// this is posting the Event on the problem as a comment
-		err = dtHelper.SendProblemComment(pid, comment)
+		problemClient := dynatrace.NewProblemsClient(dtHelper)
+		err = problemClient.SendProblemComment(pid, comment)
 	} else {
 		return errors.New("invalid event type")
 	}
