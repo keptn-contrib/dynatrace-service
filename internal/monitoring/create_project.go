@@ -1,10 +1,8 @@
-package event_handler
+package monitoring
 
 import (
 	"encoding/base64"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/monitoring"
-
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
@@ -19,7 +17,7 @@ import (
 
 type CreateProjectEventHandler struct {
 	Event          cloudevents.Event
-	dtConfigGetter adapter.DynatraceConfigGetterInterface
+	DTConfigGetter adapter.DynatraceConfigGetterInterface
 }
 
 func (eh CreateProjectEventHandler) HandleEvent() error {
@@ -48,7 +46,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 
 	keptnEvent := adapter.NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
 
-	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
+	dynatraceConfig, err := eh.DTConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		log.WithError(err).Error("failed to load Dynatrace config")
 		return err
@@ -58,7 +56,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return err
 	}
-	config := monitoring.NewConfiguration(dynatrace.NewDynatraceHelper(keptnHandler, creds), keptnHandler)
+	config := NewConfiguration(dynatrace.NewDynatraceHelper(keptnHandler, creds), keptnHandler)
 
 	_, err = config.ConfigureMonitoring(e.Project, shipyard)
 	if err != nil {
