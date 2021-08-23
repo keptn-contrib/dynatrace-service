@@ -95,7 +95,7 @@ type ActionStartedAdapter struct {
 
 // NewActionStartedAdapter creates a new ActionStartedAdapter
 func NewActionStartedAdapter(event keptnv2.ActionStartedEventData, shkeptncontext, source string) ActionStartedAdapter {
-	return ActionStartedAdapter{event: event, context: shkeptncontext}
+	return ActionStartedAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext
