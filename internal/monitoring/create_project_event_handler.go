@@ -16,14 +16,21 @@ import (
 )
 
 type CreateProjectEventHandler struct {
-	Event          cloudevents.Event
-	DTConfigGetter adapter.DynatraceConfigGetterInterface
+	event          cloudevents.Event
+	dtConfigGetter adapter.DynatraceConfigGetterInterface
+}
+
+func NewCreateProjectEventHandler(event cloudevents.Event, configGetter adapter.DynatraceConfigGetterInterface) CreateProjectEventHandler {
+	return CreateProjectEventHandler{
+		event:          event,
+		dtConfigGetter: configGetter,
+	}
 }
 
 func (eh CreateProjectEventHandler) HandleEvent() error {
 
 	e := &keptnv2.ProjectCreateFinishedEventData{}
-	err := eh.Event.DataAs(e)
+	err := eh.event.DataAs(e)
 	if err != nil {
 		log.WithError(err).Error("Could not parse event payload")
 		return err
@@ -39,14 +46,14 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		log.WithError(err).Error("Could not parse shipyard")
 	}
 
-	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptn.KeptnOpts{})
+	keptnHandler, err := keptnv2.NewKeptn(&eh.event, keptn.KeptnOpts{})
 	if err != nil {
 		log.WithError(err).Error("Could not create Keptn handler")
 	}
 
-	keptnEvent := adapter.NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.Event.Source())
+	keptnEvent := adapter.NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.event.Source())
 
-	dynatraceConfig, err := eh.DTConfigGetter.GetDynatraceConfig(keptnEvent)
+	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		log.WithError(err).Error("failed to load Dynatrace config")
 		return err
