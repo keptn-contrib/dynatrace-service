@@ -20,9 +20,8 @@ func NewManagementZoneCreation(client *dynatrace.DynatraceHelper) *ManagementZon
 
 // Create creates a new management zone for the project
 func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipyard) []dynatrace.ConfigResult {
-	var managementZones []dynatrace.ConfigResult
 	if !lib.IsManagementZonesGenerationEnabled() {
-		return managementZones
+		return nil
 	}
 
 	// get existing management zones
@@ -33,6 +32,7 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 		log.WithError(err).Error("Could not retrieve management zones")
 	}
 
+	var managementZonesResults []dynatrace.ConfigResult
 	managementZoneResult := getOrCreateManagementZone(
 		managementZoneClient,
 		GetManagementZoneNameForProject(project),
@@ -40,7 +40,7 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 			return createManagementZoneForProject(project)
 		},
 		managementZoneNames)
-	managementZones = append(managementZones, managementZoneResult)
+	managementZonesResults = append(managementZonesResults, managementZoneResult)
 
 	for _, stage := range shipyard.Spec.Stages {
 		managementZone := getOrCreateManagementZone(
@@ -50,10 +50,10 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 				return createManagementZoneForStage(project, stage.Name)
 			},
 			managementZoneNames)
-		managementZones = append(managementZones, managementZone)
+		managementZonesResults = append(managementZonesResults, managementZone)
 	}
 
-	return managementZones
+	return managementZonesResults
 }
 
 func getOrCreateManagementZone(
