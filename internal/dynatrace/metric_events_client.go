@@ -103,7 +103,7 @@ func (mec *MetricEventsClient) Update(metricEvent *MetricEvent) (string, error) 
 		return "", fmt.Errorf("could not marshal metric event: %v", err)
 	}
 
-	res, err := mec.client.Post(metricEventsPath, mePayload)
+	res, err := mec.client.Put(metricEventsPath, mePayload)
 	if err != nil {
 		return "", fmt.Errorf("could not create metric event: %v", err)
 	}
