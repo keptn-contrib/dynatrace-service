@@ -18,8 +18,8 @@ func NewProblemsClient(client *DynatraceHelper) *ProblemsClient {
 	}
 }
 
-// SendProblemComment sends a comment on a DT problem
-func (pc *ProblemsClient) SendProblemComment(problemID string, comment string) (string, error) {
+// AddProblemComment sends a comment on a DT problem
+func (pc *ProblemsClient) AddProblemComment(problemID string, comment string) (string, error) {
 	payload := map[string]string{"comment": comment, "user": "keptn", "context": "keptn-remediation"}
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
