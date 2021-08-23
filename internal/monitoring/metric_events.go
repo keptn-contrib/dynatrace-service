@@ -30,9 +30,9 @@ func NewMetricEventCreation(dynatraceClient *dynatrace.DynatraceHelper, keptnCli
 
 // Create creates new metric events if SLOs are specified
 func (mec MetricEventCreation) Create(project string, stage string, service string) []dynatrace.ConfigResult {
-	var metricEvents []dynatrace.ConfigResult
+	var metricEventsResult []dynatrace.ConfigResult
 	if !lib.IsMetricEventsGenerationEnabled() {
-		return metricEvents
+		return metricEventsResult
 	}
 
 	log.Info("Creating custom metric events for project SLIs")
@@ -42,21 +42,21 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 			log.Fields{
 				"service": service,
 				"stage":   stage}).Info("No SLOs defined for service. Skipping creation of custom metric events.")
-		return metricEvents
+		return metricEventsResult
 	}
 	// get custom metrics for project
 
 	projectCustomQueries, err := keptn.NewClient(mec.kClient).GetCustomQueries(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithField("project", project).Error("Failed to get custom queries for project")
-		return metricEvents
+		return metricEventsResult
 	}
 
 	managementZones, err := dynatrace.NewManagementZonesClient(mec.dtClient).GetAll()
 	var mzId int64 = -1
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Error("Could not retrieve management zones")
-		return metricEvents
+		return metricEventsResult
 	}
 
 	// TODO 2021-08-20: check the logic below - if parsing management zone id does not work, we will continue anyway?
@@ -67,7 +67,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 		}
 	} else {
 		log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Warn("Could not find management zone")
-		return metricEvents
+		return metricEventsResult
 	}
 
 	metricEventCreated := false
@@ -123,7 +123,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 					continue
 				}
 
-				metricEvents = append(metricEvents,
+				metricEventsResult = append(metricEventsResult,
 					dynatrace.ConfigResult{
 						Name:    newMetricEvent.Name,
 						Success: true,
@@ -143,7 +143,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 		log.Info("To review and enable the generated custom metric events, please go to: https://" + mec.dtClient.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
 	}
 
-	return metricEvents
+	return metricEventsResult
 }
 
 func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEvent *dynatrace.MetricEvent, existingMetricEvent *dynatrace.MetricEvent) error {
