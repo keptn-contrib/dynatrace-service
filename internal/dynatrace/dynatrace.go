@@ -28,30 +28,30 @@ func NewDynatraceHelper(dynatraceCreds *credentials.DTCredentials) *DynatraceHel
 }
 
 func (dt *DynatraceHelper) Get(apiPath string) (string, error) {
-	return dt.SendDynatraceAPIRequest(apiPath, http.MethodGet, nil)
+	return dt.sendRequest(apiPath, http.MethodGet, nil)
 }
 
 func (dt *DynatraceHelper) Post(apiPath string, body []byte) (string, error) {
-	return dt.SendDynatraceAPIRequest(apiPath, http.MethodPost, body)
+	return dt.sendRequest(apiPath, http.MethodPost, body)
 }
 
 func (dt *DynatraceHelper) Put(apiPath string, body []byte) (string, error) {
-	return dt.SendDynatraceAPIRequest(apiPath, http.MethodPut, body)
+	return dt.sendRequest(apiPath, http.MethodPut, body)
 }
 
 func (dt *DynatraceHelper) Delete(apiPath string) (string, error) {
-	return dt.SendDynatraceAPIRequest(apiPath, http.MethodDelete, nil)
+	return dt.sendRequest(apiPath, http.MethodDelete, nil)
 }
 
-// SendDynatraceAPIRequest makes an Dynatrace API request and returns the response
-func (dt *DynatraceHelper) SendDynatraceAPIRequest(apiPath string, method string, body []byte) (string, error) {
+// sendRequest makes an Dynatrace API request and returns the response
+func (dt *DynatraceHelper) sendRequest(apiPath string, method string, body []byte) (string, error) {
 
 	if common.RunLocal || common.RunLocalTest {
 		log.WithFields(
 			log.Fields{
 				"tenant": dt.DynatraceCreds.Tenant,
 				"body":   string(body),
-			}).Info("Dynatrace.sendDynatraceAPIRequest(RUNLOCAL) - not sending event to tenant")
+			}).Info("Dynatrace.sendRequest(RUNLOCAL) - not sending event to tenant")
 		return "", nil
 	}
 
