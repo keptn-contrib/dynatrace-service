@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"os"
 	"strings"
 	"time"
@@ -11,7 +12,6 @@ import (
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib/dynatrace"
@@ -32,7 +32,7 @@ const ProblemOpenSLI = "problem_open"
 
 type GetSLIEventHandler struct {
 	event          cloudevents.Event
-	dtConfigGetter adapter.DynatraceConfigGetterInterface
+	dtConfigGetter config.DynatraceConfigGetterInterface
 }
 
 func (eh GetSLIEventHandler) HandleEvent() error {

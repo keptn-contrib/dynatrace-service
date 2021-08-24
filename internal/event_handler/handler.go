@@ -2,7 +2,7 @@ package event_handler
 
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/deployment"
 	"github.com/keptn-contrib/dynatrace-service/internal/monitoring"
 	"github.com/keptn-contrib/dynatrace-service/internal/problem"
@@ -17,7 +17,7 @@ type DynatraceEventHandler interface {
 
 func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	log.WithField("eventType", event.Type()).Debug("Received event")
-	dtConfigGetter := &adapter.DynatraceConfigGetter{}
+	dtConfigGetter := &config.DynatraceConfigGetter{}
 	switch event.Type() {
 	case keptnevents.ConfigureMonitoringEventType:
 		return monitoring.NewConfigureMonitoringEventHandler(event, dtConfigGetter), nil

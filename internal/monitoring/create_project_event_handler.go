@@ -2,13 +2,13 @@ package monitoring
 
 import (
 	"encoding/base64"
+	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -17,10 +17,10 @@ import (
 
 type CreateProjectEventHandler struct {
 	event          cloudevents.Event
-	dtConfigGetter adapter.DynatraceConfigGetterInterface
+	dtConfigGetter config.DynatraceConfigGetterInterface
 }
 
-func NewCreateProjectEventHandler(event cloudevents.Event, configGetter adapter.DynatraceConfigGetterInterface) CreateProjectEventHandler {
+func NewCreateProjectEventHandler(event cloudevents.Event, configGetter config.DynatraceConfigGetterInterface) CreateProjectEventHandler {
 	return CreateProjectEventHandler{
 		event:          event,
 		dtConfigGetter: configGetter,

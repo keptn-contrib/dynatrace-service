@@ -20,7 +20,7 @@ import (
 
 type ActionHandler struct {
 	Event          cloudevents.Event
-	DTConfigGetter adapter.DynatraceConfigGetterInterface
+	DTConfigGetter config.DynatraceConfigGetterInterface
 }
 
 /**

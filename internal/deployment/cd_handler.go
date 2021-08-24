@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/config"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
@@ -10,7 +11,6 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
@@ -18,10 +18,10 @@ import (
 
 type CDEventHandler struct {
 	event          cloudevents.Event
-	dtConfigGetter adapter.DynatraceConfigGetterInterface
+	dtConfigGetter config.DynatraceConfigGetterInterface
 }
 
-func NewCDEventHandler(event cloudevents.Event, configGetter adapter.DynatraceConfigGetterInterface) CDEventHandler {
+func NewCDEventHandler(event cloudevents.Event, configGetter config.DynatraceConfigGetterInterface) CDEventHandler {
 	return CDEventHandler{
 		event:          event,
 		dtConfigGetter: configGetter,

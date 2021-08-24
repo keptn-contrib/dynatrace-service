@@ -536,7 +536,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		syncTimer         *time.Ticker
 		keptnHandler      *keptnv2.Keptn
 		servicesInKeptn   []string
-		dtConfigGetter    adapter.DynatraceConfigGetterInterface
+		dtConfigGetter    config.DynatraceConfigGetterInterface
 	}
 	type args struct {
 		serviceName string

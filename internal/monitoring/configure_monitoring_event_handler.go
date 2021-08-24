@@ -3,13 +3,13 @@ package monitoring
 import (
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
 
@@ -25,10 +25,10 @@ type KeptnAPIConnectionCheck struct {
 
 type ConfigureMonitoringEventHandler struct {
 	event          cloudevents.Event
-	dtConfigGetter adapter.DynatraceConfigGetterInterface
+	dtConfigGetter config.DynatraceConfigGetterInterface
 }
 
-func NewConfigureMonitoringEventHandler(event cloudevents.Event, configGetter adapter.DynatraceConfigGetterInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event cloudevents.Event, configGetter config.DynatraceConfigGetterInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
 		event:          event,
 		dtConfigGetter: configGetter,
