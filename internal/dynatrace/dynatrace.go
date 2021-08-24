@@ -12,25 +12,18 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
 type DynatraceHelper struct {
-	DynatraceCreds     *credentials.DTCredentials
-	OperatorTag        string
-	KeptnHandler       *keptnv2.Keptn
-	KeptnBridge        string
-	configuredEntities *ConfiguredEntities
+	DynatraceCreds *credentials.DTCredentials
 }
 
 // NewDynatraceHelper creates a new DynatraceHelper
-func NewDynatraceHelper(keptnHandler *keptnv2.Keptn, dynatraceCreds *credentials.DTCredentials) *DynatraceHelper {
+func NewDynatraceHelper(dynatraceCreds *credentials.DTCredentials) *DynatraceHelper {
 	return &DynatraceHelper{
 		DynatraceCreds: dynatraceCreds,
-		KeptnHandler:   keptnHandler,
 	}
 }
 

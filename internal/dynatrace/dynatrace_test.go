@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 func TestDynatraceHelper_createClient(t *testing.T) {
@@ -28,11 +27,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 		noProxy    string
 	}
 	type fields struct {
-		DynatraceCreds     *credentials.DTCredentials
-		OperatorTag        string
-		KeptnHandler       *keptnv2.Keptn
-		KeptnBridge        string
-		configuredEntities *ConfiguredEntities
+		DynatraceCreds *credentials.DTCredentials
 	}
 	type args struct {
 		req *http.Request
@@ -90,11 +85,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 			os.Setenv("NO_PROXY", tt.proxyEnvVars.noProxy)
 
 			dt := &DynatraceHelper{
-				DynatraceCreds:     tt.fields.DynatraceCreds,
-				OperatorTag:        tt.fields.OperatorTag,
-				KeptnHandler:       tt.fields.KeptnHandler,
-				KeptnBridge:        tt.fields.KeptnBridge,
-				configuredEntities: tt.fields.configuredEntities,
+				DynatraceCreds: tt.fields.DynatraceCreds,
 			}
 
 			gotClient, err := dt.createClient(tt.args.req)

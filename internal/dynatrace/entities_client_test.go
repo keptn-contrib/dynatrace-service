@@ -38,10 +38,11 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 		{
 			name: "",
 			fields: fields{
-				client: NewDynatraceHelper(nil, &credentials.DTCredentials{
-					Tenant:   dtMockServer.URL,
-					ApiToken: "",
-				}),
+				client: NewDynatraceHelper(
+					&credentials.DTCredentials{
+						Tenant:   dtMockServer.URL,
+						ApiToken: "",
+					}),
 			},
 			args: args{
 				nextPageKey: "",
