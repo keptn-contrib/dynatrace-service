@@ -19,9 +19,8 @@ func NewAutoTagCreation(client *dynatrace.DynatraceHelper) *AutoTagCreation {
 
 // Create creates auto-tags in Dynatrace and returns the tagging rules
 func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
-	var taggingRules []dynatrace.ConfigResult
 	if !lib.IsTaggingRulesGenerationEnabled() {
-		return taggingRules
+		return nil
 	}
 
 	log.Info("Setting up auto-tagging rules in Dynatrace Tenant")
@@ -34,43 +33,45 @@ func (at *AutoTagCreation) Create() []dynatrace.ConfigResult {
 		log.WithError(err).Error("Failed retrieving Dynatrace tagging rules")
 	}
 
+	var taggingRulesResults []dynatrace.ConfigResult
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
-		if !existingDTRuleNames.Contains(ruleName) {
-			rule := createAutoTaggingRule(ruleName)
-			_, err = autoTagsClient.Create(rule)
-			if err != nil {
-				// Error occurred but continue
-				taggingRules = append(
-					taggingRules,
-					dynatrace.ConfigResult{
-						Name:    ruleName,
-						Success: false,
-						Message: "Could not create auto tagging rule: " + err.Error(),
-					})
-				log.WithError(err).Error("Could not create auto tagging rule")
-			} else {
-				taggingRules = append(
-					taggingRules,
-					dynatrace.ConfigResult{
-						Name:    ruleName,
-						Success: true,
-					})
-			}
-		} else {
-			log.WithField("ruleName", ruleName).Info("Tagging rule already exists")
-			taggingRules = append(
-				taggingRules,
-				dynatrace.ConfigResult{
-					Name:    ruleName,
-					Message: "Tagging rule " + ruleName + " already exists",
-					Success: true,
-				})
-		}
+		taggingRulesResults = append(
+			taggingRulesResults,
+			createAutoTaggingRuleForRuleName(autoTagsClient, existingDTRuleNames, ruleName))
 	}
-	return taggingRules
+	return taggingRulesResults
 }
 
-func createAutoTaggingRule(ruleName string) *dynatrace.DTTaggingRule {
+func createAutoTaggingRuleForRuleName(client *dynatrace.AutoTagsClient, existingTagNames *dynatrace.TagNames, ruleName string) dynatrace.ConfigResult {
+	if !existingTagNames.Contains(ruleName) {
+		rule := createAutoTaggingRuleDTO(ruleName)
+
+		_, err := client.Create(rule)
+		if err != nil {
+			// Error occurred but continue
+			log.WithError(err).Error("Could not create auto tagging rule")
+			return dynatrace.ConfigResult{
+				Name:    ruleName,
+				Success: false,
+				Message: "Could not create auto tagging rule: " + err.Error(),
+			}
+		}
+
+		return dynatrace.ConfigResult{
+			Name:    ruleName,
+			Success: true,
+		}
+	}
+
+	log.WithField("ruleName", ruleName).Info("Tagging rule already exists")
+	return dynatrace.ConfigResult{
+		Name:    ruleName,
+		Message: "Tagging rule " + ruleName + " already exists",
+		Success: true,
+	}
+}
+
+func createAutoTaggingRuleDTO(ruleName string) *dynatrace.DTTaggingRule {
 	return &dynatrace.DTTaggingRule{
 		Name: ruleName,
 		Rules: []dynatrace.Rules{

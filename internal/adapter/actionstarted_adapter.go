@@ -6,75 +6,75 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-// ActionTriggeredAdapter godoc
-type ActionTriggeredAdapter struct {
-	event   keptnv2.ActionTriggeredEventData
+// ActionStartedAdapter is a content adaptor for events of type sh.keptn.event.action.started
+type ActionStartedAdapter struct {
+	event   keptnv2.ActionStartedEventData
 	context string
 	source  string
 }
 
-// NewActionTriggeredAdapter godoc
-func NewActionTriggeredAdapter(event keptnv2.ActionTriggeredEventData, shkeptncontext, source string) ActionTriggeredAdapter {
-	return ActionTriggeredAdapter{event: event, context: shkeptncontext, source: source}
+// NewActionStartedAdapter creates a new ActionStartedAdapter
+func NewActionStartedAdapter(event keptnv2.ActionStartedEventData, shkeptncontext, source string) ActionStartedAdapter {
+	return ActionStartedAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext
-func (a ActionTriggeredAdapter) GetShKeptnContext() string {
+func (a ActionStartedAdapter) GetShKeptnContext() string {
 	return a.context
 }
 
 // GetSource returns the source specified in the CloudEvent context
-func (a ActionTriggeredAdapter) GetSource() string {
+func (a ActionStartedAdapter) GetSource() string {
 	return a.source
 }
 
 // GetEvent returns the event type
-func (a ActionTriggeredAdapter) GetEvent() string {
-	return keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName)
+func (a ActionStartedAdapter) GetEvent() string {
+	return keptnv2.GetStartedEventType(keptnv2.ActionTaskName)
 }
 
 // GetProject returns the project
-func (a ActionTriggeredAdapter) GetProject() string {
+func (a ActionStartedAdapter) GetProject() string {
 	return a.event.Project
 }
 
 // GetStage returns the stage
-func (a ActionTriggeredAdapter) GetStage() string {
+func (a ActionStartedAdapter) GetStage() string {
 	return a.event.Stage
 }
 
 // GetService returns the service
-func (a ActionTriggeredAdapter) GetService() string {
+func (a ActionStartedAdapter) GetService() string {
 	return a.event.Service
 }
 
 // GetDeployment returns the name of the deployment
-func (a ActionTriggeredAdapter) GetDeployment() string {
+func (a ActionStartedAdapter) GetDeployment() string {
 	return ""
 }
 
 // GetTestStrategy returns the used test strategy
-func (a ActionTriggeredAdapter) GetTestStrategy() string {
+func (a ActionStartedAdapter) GetTestStrategy() string {
 	return ""
 }
 
 // GetDeploymentStrategy returns the used deployment strategy
-func (a ActionTriggeredAdapter) GetDeploymentStrategy() string {
+func (a ActionStartedAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
 // GetImage returns the deployed image
-func (a ActionTriggeredAdapter) GetImage() string {
+func (a ActionStartedAdapter) GetImage() string {
 	return ""
 }
 
 // GetTag returns the deployed tag
-func (a ActionTriggeredAdapter) GetTag() string {
+func (a ActionStartedAdapter) GetTag() string {
 	return ""
 }
 
 // GetLabels returns a map of labels
-func (a ActionTriggeredAdapter) GetLabels() map[string]string {
+func (a ActionStartedAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
 	keptnBridgeURL, err := credentials.GetKeptnBridgeURL()
 	if labels == nil {

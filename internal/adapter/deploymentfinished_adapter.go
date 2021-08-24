@@ -18,7 +18,7 @@ type DeploymentFinishedAdapter struct {
 
 // NewDeploymentFinishedAdapter godoc
 func NewDeploymentFinishedAdapter(event keptnv2.DeploymentFinishedEventData, shkeptncontext, source string) DeploymentFinishedAdapter {
-	return DeploymentFinishedAdapter{event: event, context: shkeptncontext}
+	return DeploymentFinishedAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext

@@ -15,7 +15,7 @@ type TestFinishedAdapter struct {
 
 // NewTestFinishedAdapter godoc
 func NewTestFinishedAdapter(event keptnv2.TestFinishedEventData, shkeptncontext, source string) TestFinishedAdapter {
-	return TestFinishedAdapter{event: event, context: shkeptncontext}
+	return TestFinishedAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext

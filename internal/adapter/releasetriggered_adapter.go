@@ -14,7 +14,7 @@ type ReleaseTriggeredAdapter struct {
 
 // NewReleaseTriggeredAdapter godoc
 func NewReleaseTriggeredAdapter(event keptnv2.ReleaseTriggeredEventData, shkeptncontext, source string) ReleaseTriggeredAdapter {
-	return ReleaseTriggeredAdapter{event: event, context: shkeptncontext}
+	return ReleaseTriggeredAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext

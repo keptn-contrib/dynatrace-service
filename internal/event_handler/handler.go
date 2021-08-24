@@ -19,9 +19,9 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	dtConfigGetter := &adapter.DynatraceConfigGetter{}
 	switch event.Type() {
 	case keptnevents.ConfigureMonitoringEventType:
-		return &monitoring.ConfigureMonitoringEventHandler{Event: event, DTConfigGetter: dtConfigGetter}, nil
+		return monitoring.NewConfigureMonitoringEventHandler(event, dtConfigGetter), nil
 	case keptnv2.GetFinishedEventType(keptnv2.ProjectCreateTaskName):
-		return &CreateProjectEventHandler{Event: event, dtConfigGetter: dtConfigGetter}, nil
+		return monitoring.NewCreateProjectEventHandler(event, dtConfigGetter), nil
 	case keptnevents.ProblemEventType:
 		return &problem.ProblemEventHandler{Event: event}, nil
 	case keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName):

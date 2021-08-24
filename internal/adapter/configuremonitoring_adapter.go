@@ -13,7 +13,7 @@ type ConfigureMonitoringAdapter struct {
 
 // NewConfigureMonitoringAdapter godoc
 func NewConfigureMonitoringAdapter(event keptn.ConfigureMonitoringEventData, shkeptncontext, source string) ConfigureMonitoringAdapter {
-	return ConfigureMonitoringAdapter{event: event, context: shkeptncontext}
+	return ConfigureMonitoringAdapter{event: event, context: shkeptncontext, source: source}
 }
 
 // GetShKeptnContext returns the shkeptncontext
