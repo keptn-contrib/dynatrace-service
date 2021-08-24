@@ -79,7 +79,7 @@ func (eh *CDEventHandler) handleDeploymentFinishedEvent(keptnHandler *keptnv2.Ke
 	// send Deployment Event
 	de := event.CreateDeploymentEvent(keptnEvent, dynatraceConfig)
 
-	dtHelper := dynatrace.NewDynatraceHelper(creds)
+	dtHelper := dynatrace.NewClient(creds)
 	dynatrace.NewEventsClient(dtHelper).SendEvent(de)
 
 	return nil
@@ -116,7 +116,7 @@ func (eh *CDEventHandler) handleTestTriggeredEvent(keptnHandler *keptnv2.Keptn) 
 		ie.AnnotationDescription = "Start running tests: " + ttData.Test.TestStrategy + " against " + ttData.Service
 	}
 
-	dtHelper := dynatrace.NewDynatraceHelper(creds)
+	dtHelper := dynatrace.NewClient(creds)
 	dynatrace.NewEventsClient(dtHelper).SendEvent(ie)
 
 	return nil
@@ -153,7 +153,7 @@ func (eh *CDEventHandler) handleTestFinishedEvent(keptnHandler *keptnv2.Keptn) e
 		ae.AnnotationDescription = "Stop running tests: against " + tfData.Service
 	}
 
-	dtHelper := dynatrace.NewDynatraceHelper(creds)
+	dtHelper := dynatrace.NewClient(creds)
 	dynatrace.NewEventsClient(dtHelper).SendEvent(ae)
 
 	return nil
@@ -179,7 +179,7 @@ func (eh *CDEventHandler) handleEvaluationFinishedEvent(keptnHandler *keptnv2.Ke
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return err
 	}
-	dtHelper := dynatrace.NewDynatraceHelper(creds)
+	dtHelper := dynatrace.NewClient(creds)
 
 	// Send Info Event
 	ie := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
@@ -251,7 +251,7 @@ func (eh *CDEventHandler) handleReleaseTriggeredEvent(keptnHandler *keptnv2.Kept
 		}
 	}
 
-	dtHelper := dynatrace.NewDynatraceHelper(creds)
+	dtHelper := dynatrace.NewClient(creds)
 	dynatrace.NewEventsClient(dtHelper).SendEvent(ie)
 
 	return nil

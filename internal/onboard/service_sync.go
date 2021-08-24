@@ -144,7 +144,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 		}
 
 		serviceSynchronizerInstance.dtConfigGetter = &adapter.DynatraceConfigGetter{}
-		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewDynatraceHelper(nil))
+		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewClient(nil))
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()
 		shipyardControllerBaseURL := common.GetShipyardControllerURL()

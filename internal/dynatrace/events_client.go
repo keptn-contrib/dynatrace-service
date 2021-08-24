@@ -9,11 +9,11 @@ import (
 const eventsPath = "/api/v1/events"
 
 type EventsClient struct {
-	client *DynatraceHelper
+	client *Client
 }
 
 // NewEventsClient creates a new EventsClient
-func NewEventsClient(client *DynatraceHelper) *EventsClient {
+func NewEventsClient(client *Client) *EventsClient {
 	return &EventsClient{
 		client: client,
 	}

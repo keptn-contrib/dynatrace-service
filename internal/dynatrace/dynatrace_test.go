@@ -14,7 +14,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 	mockTenant := "https://mySampleEnv.live.dynatrace.com"
 	mockReq, err := http.NewRequest("GET", mockTenant+"/api/v1/config/clusterversion", bytes.NewReader(make([]byte, 100)))
 	if err != nil {
-		t.Errorf("DynatraceHelper.createClient(): unable to make mock request: error = %v", err)
+		t.Errorf("Client.createClient(): unable to make mock request: error = %v", err)
 		return
 	}
 
@@ -84,34 +84,34 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 			os.Setenv("HTTPS_PROXY", tt.proxyEnvVars.httpsProxy)
 			os.Setenv("NO_PROXY", tt.proxyEnvVars.noProxy)
 
-			dt := &DynatraceHelper{
+			dt := &Client{
 				DynatraceCreds: tt.fields.DynatraceCreds,
 			}
 
 			gotClient, err := dt.createClient(tt.args.req)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DynatraceHelper.createClient() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Client.createClient() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
 			gotTransport := gotClient.Transport.(*http.Transport)
 			gotProxyUrl, err := gotTransport.Proxy(tt.args.req)
 			if err != nil {
-				t.Errorf("DynatraceHelper.createClient() error = %v", err)
+				t.Errorf("Client.createClient() error = %v", err)
 				return
 			}
 
 			if gotProxyUrl == nil {
 				if tt.wantProxy != "" {
-					t.Errorf("DynatraceHelper.createClient() error, got proxy is nil, wanted = %v", tt.wantProxy)
+					t.Errorf("Client.createClient() error, got proxy is nil, wanted = %v", tt.wantProxy)
 				}
 			} else {
 				gotProxy := gotProxyUrl.String()
 				if tt.wantProxy == "" {
-					t.Errorf("DynatraceHelper.createClient() error, got proxy = %v, wanted nil", gotProxy)
+					t.Errorf("Client.createClient() error, got proxy = %v, wanted nil", gotProxy)
 				} else if gotProxy != tt.wantProxy {
-					t.Errorf("DynatraceHelper.createClient() error, got proxy = %v, wanted = %v", gotProxy, tt.wantProxy)
+					t.Errorf("Client.createClient() error, got proxy = %v, wanted = %v", gotProxy, tt.wantProxy)
 				}
 			}
 

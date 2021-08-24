@@ -9,11 +9,11 @@ const problemDetailsPath = "/api/v1/problem/details"
 
 // ProblemsClient is a client for interacting with the Dynatrace problems endpoints
 type ProblemsClient struct {
-	client *DynatraceHelper
+	client *Client
 }
 
 // NewProblemsClient creates a new ProblemsClient
-func NewProblemsClient(client *DynatraceHelper) *ProblemsClient {
+func NewProblemsClient(client *Client) *ProblemsClient {
 	return &ProblemsClient{
 		client: client,
 	}

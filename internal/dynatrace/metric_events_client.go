@@ -44,10 +44,10 @@ type MEAlertingScope struct {
 }
 
 type MetricEventsClient struct {
-	client *DynatraceHelper
+	client *Client
 }
 
-func NewMetricEventsClient(client *DynatraceHelper) *MetricEventsClient {
+func NewMetricEventsClient(client *Client) *MetricEventsClient {
 	return &MetricEventsClient{
 		client: client,
 	}

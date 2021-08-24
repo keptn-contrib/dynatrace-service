@@ -16,35 +16,35 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
-type DynatraceHelper struct {
+type Client struct {
 	DynatraceCreds *credentials.DTCredentials
 }
 
-// NewDynatraceHelper creates a new DynatraceHelper
-func NewDynatraceHelper(dynatraceCreds *credentials.DTCredentials) *DynatraceHelper {
-	return &DynatraceHelper{
+// NewClient creates a new Client
+func NewClient(dynatraceCreds *credentials.DTCredentials) *Client {
+	return &Client{
 		DynatraceCreds: dynatraceCreds,
 	}
 }
 
-func (dt *DynatraceHelper) Get(apiPath string) (string, error) {
+func (dt *Client) Get(apiPath string) (string, error) {
 	return dt.sendRequest(apiPath, http.MethodGet, nil)
 }
 
-func (dt *DynatraceHelper) Post(apiPath string, body []byte) (string, error) {
+func (dt *Client) Post(apiPath string, body []byte) (string, error) {
 	return dt.sendRequest(apiPath, http.MethodPost, body)
 }
 
-func (dt *DynatraceHelper) Put(apiPath string, body []byte) (string, error) {
+func (dt *Client) Put(apiPath string, body []byte) (string, error) {
 	return dt.sendRequest(apiPath, http.MethodPut, body)
 }
 
-func (dt *DynatraceHelper) Delete(apiPath string) (string, error) {
+func (dt *Client) Delete(apiPath string) (string, error) {
 	return dt.sendRequest(apiPath, http.MethodDelete, nil)
 }
 
 // sendRequest makes an Dynatrace API request and returns the response
-func (dt *DynatraceHelper) sendRequest(apiPath string, method string, body []byte) (string, error) {
+func (dt *Client) sendRequest(apiPath string, method string, body []byte) (string, error) {
 
 	if common.RunLocal || common.RunLocalTest {
 		log.WithFields(
@@ -74,7 +74,7 @@ func (dt *DynatraceHelper) sendRequest(apiPath string, method string, body []byt
 }
 
 // creates http request for api call with appropriate headers including authorization
-func (dt *DynatraceHelper) createRequest(apiPath string, method string, body []byte) (*http.Request, error) {
+func (dt *Client) createRequest(apiPath string, method string, body []byte) (*http.Request, error) {
 	var url string
 	if !strings.HasPrefix(dt.DynatraceCreds.Tenant, "http://") && !strings.HasPrefix(dt.DynatraceCreds.Tenant, "https://") {
 		url = "https://" + dt.DynatraceCreds.Tenant + apiPath
@@ -95,7 +95,7 @@ func (dt *DynatraceHelper) createRequest(apiPath string, method string, body []b
 }
 
 // creates http client with proxy and TLS configuration
-func (dt *DynatraceHelper) createClient(req *http.Request) (*http.Client, error) {
+func (dt *Client) createClient(req *http.Request) (*http.Client, error) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
@@ -106,7 +106,7 @@ func (dt *DynatraceHelper) createClient(req *http.Request) (*http.Client, error)
 }
 
 // performs the request and reads the response
-func (dt *DynatraceHelper) doRequest(client *http.Client, req *http.Request) (string, error) {
+func (dt *Client) doRequest(client *http.Client, req *http.Request) (string, error) {
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("failed to send Dynatrace API request: %v", err)

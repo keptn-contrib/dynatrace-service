@@ -44,10 +44,10 @@ type CustomEventFilter struct {
 }
 
 type AlertingProfilesClient struct {
-	client *DynatraceHelper
+	client *Client
 }
 
-func NewAlertingProfilesClient(client *DynatraceHelper) *AlertingProfilesClient {
+func NewAlertingProfilesClient(client *Client) *AlertingProfilesClient {
 	return &AlertingProfilesClient{
 		client: client,
 	}

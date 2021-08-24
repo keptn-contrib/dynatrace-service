@@ -89,7 +89,7 @@ func (eh ActionHandler) HandleEvent() error {
 			log.WithError(err).Error("failed to load Dynatrace credentials")
 			return err
 		}
-		dtHelper := dynatrace.NewDynatraceHelper(creds)
+		dtHelper := dynatrace.NewClient(creds)
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
@@ -133,7 +133,7 @@ func (eh ActionHandler) HandleEvent() error {
 		// Comment we push over
 		comment = fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.Event.Source())
 
-		dtHelper := dynatrace.NewDynatraceHelper(creds)
+		dtHelper := dynatrace.NewClient(creds)
 		dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
 	} else if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ActionTaskName) {
 		actionFinishedData := &keptnv2.ActionFinishedEventData{}
@@ -159,7 +159,7 @@ func (eh ActionHandler) HandleEvent() error {
 			log.WithError(err).Error("Could not find problem ID for event")
 			return err
 		}
-		dtHelper := dynatrace.NewDynatraceHelper(creds)
+		dtHelper := dynatrace.NewClient(creds)
 
 		// Comment text we want to push over
 		comment = fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",

@@ -19,11 +19,11 @@ const keptnService = "keptn_service"
 const keptnDeployment = "keptn_deployment"
 
 type MetricEventCreation struct {
-	dtClient *dynatrace.DynatraceHelper
+	dtClient *dynatrace.Client
 	kClient  *keptnv2.Keptn
 }
 
-func NewMetricEventCreation(dynatraceClient *dynatrace.DynatraceHelper, keptnClient *keptnv2.Keptn) MetricEventCreation {
+func NewMetricEventCreation(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) MetricEventCreation {
 	return MetricEventCreation{
 		dtClient: dynatraceClient,
 		kClient:  keptnClient,

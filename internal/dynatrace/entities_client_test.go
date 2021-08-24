@@ -21,7 +21,7 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 	defer dtMockServer.Close()
 
 	type fields struct {
-		client *DynatraceHelper
+		client *Client
 	}
 	type args struct {
 		nextPageKey string
@@ -38,7 +38,7 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 		{
 			name: "",
 			fields: fields{
-				client: NewDynatraceHelper(
+				client: NewClient(
 					&credentials.DTCredentials{
 						Tenant:   dtMockServer.URL,
 						ApiToken: "",

@@ -390,7 +390,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		servicesAPI:  keptnapi.NewServiceHandler(servicesMockAPI.URL),
 		resourcesAPI: keptnapi.NewResourceHandler(mockCS.URL),
 		EntitiesClient: dynatrace.NewEntitiesClient(
-			dynatrace.NewDynatraceHelper(
+			dynatrace.NewClient(
 				&credentials.DTCredentials{
 					Tenant:   dtMockServer.URL,
 					ApiToken: "",

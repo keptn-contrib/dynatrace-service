@@ -16,10 +16,10 @@ const timeSeriesChartType = "TIMESERIES"
 const dashboardStageWidth int = 456
 
 type DashboardCreation struct {
-	client *dynatrace.DynatraceHelper
+	client *dynatrace.Client
 }
 
-func NewDashboardCreation(client *dynatrace.DynatraceHelper) *DashboardCreation {
+func NewDashboardCreation(client *dynatrace.Client) *DashboardCreation {
 	return &DashboardCreation{
 		client: client,
 	}
