@@ -63,7 +63,7 @@ func (eh *CDEventHandler) handleDeploymentFinishedEvent(keptnHandler *keptnv2.Ke
 	}
 
 	// initialize our objects
-	keptnEvent := adapter.NewDeploymentFinishedAdapter(*dfData, keptnHandler.KeptnContext, eh.event.Source())
+	keptnEvent := NewDeploymentFinishedAdapter(*dfData, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -94,7 +94,7 @@ func (eh *CDEventHandler) handleTestTriggeredEvent(keptnHandler *keptnv2.Keptn) 
 	}
 
 	// initialize our objects
-	keptnEvent := adapter.NewTestTriggeredAdapter(*ttData, keptnHandler.KeptnContext, eh.event.Source())
+	keptnEvent := NewTestTriggeredAdapter(*ttData, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -131,7 +131,7 @@ func (eh *CDEventHandler) handleTestFinishedEvent(keptnHandler *keptnv2.Keptn) e
 	}
 
 	// initialize our objects
-	keptnEvent := adapter.NewTestFinishedAdapter(*tfData, keptnHandler.KeptnContext, eh.event.Source())
+	keptnEvent := NewTestFinishedAdapter(*tfData, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -167,7 +167,7 @@ func (eh *CDEventHandler) handleEvaluationFinishedEvent(keptnHandler *keptnv2.Ke
 		return err
 	}
 	// initialize our objects
-	keptnEvent := adapter.NewEvaluationDoneAdapter(*edData, keptnHandler.KeptnContext, eh.event.Source())
+	keptnEvent := NewEvaluationDoneAdapter(*edData, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -216,7 +216,7 @@ func (eh *CDEventHandler) handleReleaseTriggeredEvent(keptnHandler *keptnv2.Kept
 		log.WithError(err).Error("Error while parsing JSON payload")
 		return err
 	}
-	keptnEvent := adapter.NewReleaseTriggeredAdapter(*rtData, keptnHandler.KeptnContext, eh.event.Source())
+	keptnEvent := NewReleaseTriggeredAdapter(*rtData, keptnHandler.KeptnContext, eh.event.Source())
 
 	strategy, err := keptnevents.GetDeploymentStrategy(keptnEvent.GetDeploymentStrategy())
 	if err != nil {

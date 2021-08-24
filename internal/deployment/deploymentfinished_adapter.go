@@ -1,4 +1,4 @@
-package adapter
+package deployment
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
