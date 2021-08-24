@@ -99,7 +99,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		}
 	}
 
-	keptnEvent := adapter.NewConfigureMonitoringAdapter(*e, keptnHandler.KeptnContext, eh.event.Source())
+	keptnEvent := NewConfigureMonitoringAdapter(*e, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {

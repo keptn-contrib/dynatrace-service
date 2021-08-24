@@ -1,4 +1,4 @@
-package adapter
+package monitoring
 
 import (
 	keptn "github.com/keptn/go-utils/pkg/lib"

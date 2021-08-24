@@ -51,7 +51,7 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		log.WithError(err).Error("Could not create Keptn handler")
 	}
 
-	keptnEvent := adapter.NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.event.Source())
+	keptnEvent := NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
