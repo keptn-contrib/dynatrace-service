@@ -110,10 +110,10 @@ func (eh *CDEventHandler) handleTestTriggeredEvent(keptnHandler *keptnv2.Keptn) 
 	// Send Annotation Event
 	ie := event.CreateAnnotationEvent(keptnEvent, dynatraceConfig)
 	if ie.AnnotationType == "" {
-		ie.AnnotationType = "Start Tests: " + ttData.Test.TestStrategy
+		ie.AnnotationType = "Start Tests: " + keptnEvent.GetTestStrategy()
 	}
 	if ie.AnnotationDescription == "" {
-		ie.AnnotationDescription = "Start running tests: " + ttData.Test.TestStrategy + " against " + ttData.Service
+		ie.AnnotationDescription = "Start running tests: " + keptnEvent.GetTestStrategy() + " against " + keptnEvent.GetService()
 	}
 
 	dtHelper := dynatrace.NewClient(creds)
@@ -150,7 +150,7 @@ func (eh *CDEventHandler) handleTestFinishedEvent(keptnHandler *keptnv2.Keptn) e
 		ae.AnnotationType = "Stop Tests"
 	}
 	if ae.AnnotationDescription == "" {
-		ae.AnnotationDescription = "Stop running tests: against " + tfData.Service
+		ae.AnnotationDescription = "Stop running tests: against " + keptnEvent.GetService()
 	}
 
 	dtHelper := dynatrace.NewClient(creds)
@@ -183,11 +183,11 @@ func (eh *CDEventHandler) handleEvaluationFinishedEvent(keptnHandler *keptnv2.Ke
 
 	// Send Info Event
 	ie := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
-	qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", edData.Stage, edData.Result, edData.Evaluation.Score)
-	ie.Title = fmt.Sprintf("Evaluation result: %s", edData.Result)
+	qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", keptnEvent.GetStage(), keptnEvent.GetResult(), keptnEvent.GetEvaluationScore())
+	ie.Title = fmt.Sprintf("Evaluation result: %s", keptnEvent.GetResult())
 
 	if keptnEvent.IsPartOfRemediation() {
-		if edData.Result == keptnv2.ResultPass || edData.Result == keptnv2.ResultWarning {
+		if keptnEvent.GetResult() == keptnv2.ResultPass || keptnEvent.GetResult() == keptnv2.ResultWarning {
 			ie.Title = "Remediation action successful"
 		} else {
 			ie.Title = "Remediation action not successful"
@@ -196,7 +196,7 @@ func (eh *CDEventHandler) handleEvaluationFinishedEvent(keptnHandler *keptnv2.Ke
 		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
 		if err == nil && pid != "" {
 			// Comment we push over
-			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], edData.Result, edData.Evaluation.Score)
+			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], keptnEvent.GetResult(), keptnEvent.GetEvaluationScore())
 
 			// this is posting the Event on the problem as a comment
 			dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
@@ -218,7 +218,7 @@ func (eh *CDEventHandler) handleReleaseTriggeredEvent(keptnHandler *keptnv2.Kept
 	}
 	keptnEvent := adapter.NewReleaseTriggeredAdapter(*rtData, keptnHandler.KeptnContext, eh.event.Source())
 
-	strategy, err := keptnevents.GetDeploymentStrategy(rtData.Deployment.DeploymentStrategy)
+	strategy, err := keptnevents.GetDeploymentStrategy(keptnEvent.GetDeploymentStrategy())
 	if err != nil {
 		log.WithError(err).Error("Could not determine deployment strategy")
 		return err
@@ -235,17 +235,17 @@ func (eh *CDEventHandler) handleReleaseTriggeredEvent(keptnHandler *keptnv2.Kept
 	}
 
 	ie := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
-	if strategy == keptnevents.Direct && rtData.Result == keptnv2.ResultPass || rtData.Result == keptnv2.ResultWarning {
-		title := fmt.Sprintf("PROMOTING from %s to next stage", rtData.Stage)
+	if strategy == keptnevents.Direct && keptnEvent.GetResult() == keptnv2.ResultPass || keptnEvent.GetResult() == keptnv2.ResultWarning {
+		title := fmt.Sprintf("PROMOTING from %s to next stage", keptnEvent.GetStage())
 		ie.Title = title
 		ie.Description = title
-	} else if rtData.Result == keptnv2.ResultFailed {
+	} else if keptnEvent.GetResult() == keptnv2.ResultFailed {
 		if strategy == keptnevents.Duplicate {
-			title := "Rollback Artifact (Switch Blue/Green) in " + rtData.Stage
+			title := "Rollback Artifact (Switch Blue/Green) in " + keptnEvent.GetStage()
 			ie.Title = title
 			ie.Description = title
 		} else {
-			title := fmt.Sprintf("NOT PROMOTING from %s to next stage", rtData.Stage)
+			title := fmt.Sprintf("NOT PROMOTING from %s to next stage", keptnEvent.GetStage())
 			ie.Title = title
 			ie.Description = title
 		}

@@ -108,3 +108,11 @@ func (a EvaluationFinishedAdapter) IsPartOfRemediation() bool {
 	}
 	return true
 }
+
+func (a EvaluationFinishedAdapter) GetEvaluationScore() float64 {
+	return a.event.Evaluation.Score
+}
+
+func (a EvaluationFinishedAdapter) GetResult() keptnv2.ResultType {
+	return a.event.Result
+}

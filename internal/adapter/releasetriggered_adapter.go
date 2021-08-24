@@ -84,3 +84,7 @@ func (a ReleaseTriggeredAdapter) GetLabels() map[string]string {
 	}
 	return labels
 }
+
+func (a ReleaseTriggeredAdapter) GetResult() keptnv2.ResultType {
+	return a.event.Result
+}
