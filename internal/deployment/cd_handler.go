@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/problem"
-
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -77,11 +75,12 @@ func (eh *CDEventHandler) handleDeploymentFinishedEvent(keptnHandler *keptnv2.Ke
 		log.WithError(err).Error("failed to load Dynatrace credentials")
 		return err
 	}
-	dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 	// send Deployment Event
 	de := event.CreateDeploymentEvent(keptnEvent, dynatraceConfig)
-	dtHelper.SendEvent(de)
+
+	dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
+	dynatrace.NewEventsClient(dtHelper).SendEvent(de)
 
 	return nil
 }
@@ -107,7 +106,6 @@ func (eh *CDEventHandler) handleTestTriggeredEvent(keptnHandler *keptnv2.Keptn) 
 		log.WithError(err).Error("failed to load Dynatrace credentials")
 		return err
 	}
-	dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 	// Send Annotation Event
 	ie := event.CreateAnnotationEvent(keptnEvent, dynatraceConfig)
@@ -117,7 +115,9 @@ func (eh *CDEventHandler) handleTestTriggeredEvent(keptnHandler *keptnv2.Keptn) 
 	if ie.AnnotationDescription == "" {
 		ie.AnnotationDescription = "Start running tests: " + ttData.Test.TestStrategy + " against " + ttData.Service
 	}
-	dtHelper.SendEvent(ie)
+
+	dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
+	dynatrace.NewEventsClient(dtHelper).SendEvent(ie)
 
 	return nil
 }
@@ -143,18 +143,18 @@ func (eh *CDEventHandler) handleTestFinishedEvent(keptnHandler *keptnv2.Keptn) e
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return err
 	}
-	dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 	// Send Annotation Event
-	ie := event.CreateAnnotationEvent(keptnEvent, dynatraceConfig)
+	ae := event.CreateAnnotationEvent(keptnEvent, dynatraceConfig)
+	if ae.AnnotationType == "" {
+		ae.AnnotationType = "Stop Tests"
+	}
+	if ae.AnnotationDescription == "" {
+		ae.AnnotationDescription = "Stop running tests: against " + tfData.Service
+	}
 
-	if ie.AnnotationType == "" {
-		ie.AnnotationType = "Stop Tests"
-	}
-	if ie.AnnotationDescription == "" {
-		ie.AnnotationDescription = "Stop running tests: against " + tfData.Service
-	}
-	dtHelper.SendEvent(ie)
+	dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
+	dynatrace.NewEventsClient(dtHelper).SendEvent(ae)
 
 	return nil
 }
@@ -199,11 +199,12 @@ func (eh *CDEventHandler) handleEvaluationFinishedEvent(keptnHandler *keptnv2.Ke
 			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], edData.Result, edData.Evaluation.Score)
 
 			// this is posting the Event on the problem as a comment
-			problem.AddProblemComment(dtHelper, pid, comment)
+			dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
 		}
 	}
 	ie.Description = qualityGateDescription
-	dtHelper.SendEvent(ie)
+
+	dynatrace.NewEventsClient(dtHelper).SendEvent(ie)
 
 	return nil
 }
@@ -232,7 +233,6 @@ func (eh *CDEventHandler) handleReleaseTriggeredEvent(keptnHandler *keptnv2.Kept
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return err
 	}
-	dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
 
 	ie := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 	if strategy == keptnevents.Direct && rtData.Result == keptnv2.ResultPass || rtData.Result == keptnv2.ResultWarning {
@@ -250,7 +250,9 @@ func (eh *CDEventHandler) handleReleaseTriggeredEvent(keptnHandler *keptnv2.Kept
 			ie.Description = title
 		}
 	}
-	dtHelper.SendEvent(ie)
+
+	dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
+	dynatrace.NewEventsClient(dtHelper).SendEvent(ie)
 
 	return nil
 }

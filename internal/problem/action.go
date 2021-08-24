@@ -96,7 +96,8 @@ func (eh ActionHandler) HandleEvent() error {
 		dtInfoEvent := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 		dtInfoEvent.Title = "Keptn Remediation Action Triggered"
 		dtInfoEvent.Description = actionTriggeredData.Action.Action
-		dtHelper.SendEvent(dtInfoEvent)
+
+		dynatrace.NewEventsClient(dtHelper).SendEvent(dtInfoEvent)
 
 		// this is posting the Event on the problem as a comment
 		comment = fmt.Sprintf("[Keptn triggered action](%s) %s", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], actionTriggeredData.Action.Action)
@@ -104,7 +105,7 @@ func (eh ActionHandler) HandleEvent() error {
 			comment = comment + ": " + actionTriggeredData.Action.Description
 		}
 
-		AddProblemComment(dtHelper, pid, comment)
+		dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
 	} else if eh.Event.Type() == keptnv2.GetStartedEventType(keptnv2.ActionTaskName) {
 		actionStartedData := &keptnv2.ActionStartedEventData{}
 
@@ -132,7 +133,8 @@ func (eh ActionHandler) HandleEvent() error {
 		// Comment we push over
 		comment = fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.Event.Source())
 
-		AddProblemComment(dynatrace.NewDynatraceHelper(keptnHandler, creds), pid, comment)
+		dtHelper := dynatrace.NewDynatraceHelper(keptnHandler, creds)
+		dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
 	} else if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ActionTaskName) {
 		actionFinishedData := &keptnv2.ActionFinishedEventData{}
 
@@ -172,31 +174,20 @@ func (eh ActionHandler) HandleEvent() error {
 			dtConfigEvent := event.CreateConfigurationEvent(keptnEvent, dynatraceConfig)
 			dtConfigEvent.Description = "Keptn Remediation Action Finished"
 			dtConfigEvent.Configuration = "successful"
-			dtHelper.SendEvent(dtConfigEvent)
+
+			dynatrace.NewEventsClient(dtHelper).SendEvent(dtConfigEvent)
 		} else {
 			dtInfoEvent := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 			dtInfoEvent.Title = "Keptn Remediation Action Finished"
 			dtInfoEvent.Description = "error during execution"
-			dtHelper.SendEvent(dtInfoEvent)
+
+			dynatrace.NewEventsClient(dtHelper).SendEvent(dtInfoEvent)
 		}
 
-		AddProblemComment(dtHelper, pid, comment)
+		dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
 	} else {
 		return errors.New("invalid event type")
 	}
 
 	return nil
-}
-
-// AddProblemComment adds a comment to a problem
-func AddProblemComment(dtHelper *dynatrace.DynatraceHelper, pid string, comment string) {
-	log.WithField("comment", comment).Info("Adding problem comment")
-	problemClient := dynatrace.NewProblemsClient(dtHelper)
-	response, err := problemClient.AddProblemComment(pid, comment)
-	if err != nil {
-		log.WithError(err).Error("Error adding problem comment")
-		return
-	}
-
-	log.WithField("response", response).Info("Received problem comment response")
 }
