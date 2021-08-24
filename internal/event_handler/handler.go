@@ -3,6 +3,7 @@ package event_handler
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/deployment"
 	"github.com/keptn-contrib/dynatrace-service/internal/monitoring"
 	"github.com/keptn-contrib/dynatrace-service/internal/problem"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
@@ -33,6 +34,6 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case keptnv2.GetTriggeredEventType(keptnv2.GetSLITaskName):
 		return &GetSLIEventHandler{event: event, dtConfigGetter: dtConfigGetter}, nil
 	default:
-		return &CDEventHandler{Event: event, dtConfigGetter: dtConfigGetter}, nil
+		return deployment.NewCDEventHandler(event, dtConfigGetter), nil
 	}
 }
