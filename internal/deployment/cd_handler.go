@@ -6,7 +6,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
@@ -169,12 +168,7 @@ func (eh *CDEventHandler) handleEvaluationFinishedEvent() error {
 			ie.Title = "Remediation action not successful"
 		}
 		// If evaluation was done in context of a problem remediation workflow then post comments to the Dynatrace Problem
-		keptnHandler, err := keptnv2.NewKeptn(&eh.event, keptncommon.KeptnOpts{})
-		if err != nil {
-			log.WithError(err).Error("Could not create Keptn handler")
-		}
-
-		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
+		pid, err := common.FindProblemIDForEvent(keptnEvent)
 		if err == nil && pid != "" {
 			// Comment we push over
 			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], keptnEvent.GetResult(), keptnEvent.GetEvaluationScore())

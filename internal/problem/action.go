@@ -62,7 +62,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		keptnEvent := NewActionTriggeredAdapter(*actionTriggeredData, keptnHandler.KeptnContext, eh.Event.Source())
 
-		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
+		pid, err := common.FindProblemIDForEvent(keptnEvent)
 		if err != nil {
 			log.WithError(err).Error("Could not find problem ID for event")
 			return err
@@ -117,7 +117,7 @@ func (eh ActionHandler) HandleEvent() error {
 
 		keptnEvent := NewActionStartedAdapter(*actionStartedData, keptnHandler.KeptnContext, eh.Event.Source())
 
-		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
+		pid, err := common.FindProblemIDForEvent(keptnEvent)
 		if err != nil {
 			log.WithError(err).Error("Could not find problem ID for event")
 			return err
@@ -154,7 +154,7 @@ func (eh ActionHandler) HandleEvent() error {
 		}
 
 		// lets find our dynatrace problem details for this remediaiton workflow
-		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
+		pid, err := common.FindProblemIDForEvent(keptnEvent)
 		if err != nil {
 			log.WithError(err).Error("Could not find problem ID for event")
 			return err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -93,11 +94,11 @@ type KeptnCredentials struct {
  * Finds the Problem ID that is associated with this Keptn Workflow
  * It first parses it from Problem URL label - if it cant be found there it will look for the Initial Problem Open Event and gets the ID from there!
  */
-func FindProblemIDForEvent(keptnHandler *keptnv2.Keptn, labels map[string]string) (string, error) {
+func FindProblemIDForEvent(keptnEvent adapter.EventContentAdapter) (string, error) {
 
 	// Step 1 - see if we have a Problem Url in the labels
 	// iterate through the labels and find Problem URL
-	for labelName, labelValue := range labels {
+	for labelName, labelValue := range keptnEvent.GetLabels() {
 		if labelName == PROBLEMURL_LABEL {
 			// the value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
 			// so - lets get the last part after pid=
@@ -113,9 +114,9 @@ func FindProblemIDForEvent(keptnHandler *keptnv2.Keptn, labels map[string]string
 	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
 
 	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
-		Project:      keptnHandler.KeptnBase.Event.GetProject(),
+		Project:      keptnEvent.GetProject(),
 		EventType:    keptncommon.ProblemOpenEventType,
-		KeptnContext: keptnHandler.KeptnContext,
+		KeptnContext: keptnEvent.GetShKeptnContext(),
 	})
 
 	if errObj != nil {
