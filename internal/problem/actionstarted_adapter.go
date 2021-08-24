@@ -1,8 +1,11 @@
 package problem
 
 import (
+	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -16,6 +19,18 @@ type ActionStartedAdapter struct {
 // NewActionStartedAdapter creates a new ActionStartedAdapter
 func NewActionStartedAdapter(event keptnv2.ActionStartedEventData, shkeptncontext, source string) ActionStartedAdapter {
 	return ActionStartedAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewActionStartedAdapterFromEvent creates a new ActionStartedAdapter from a cloudevents Event
+func NewActionStartedAdapterFromEvent(e cloudevents.Event) (*ActionStartedAdapter, error) {
+	asData := &keptnv2.ActionStartedEventData{}
+	err := e.DataAs(asData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse action started event payload: %v", err)
+	}
+
+	adapter := NewActionStartedAdapter(*asData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext

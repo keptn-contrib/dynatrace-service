@@ -11,7 +11,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
@@ -43,24 +42,13 @@ func (eh ActionHandler) GetDynatraceCredentials(keptnEvent adapter.EventContentA
 
 func (eh ActionHandler) HandleEvent() error {
 
-	keptnHandler, err := keptnv2.NewKeptn(&eh.Event, keptncommon.KeptnOpts{})
-	if err != nil {
-		log.WithError(err).Error("Could not initialize Keptn handler")
-		return err
-	}
-
 	var comment string
 
 	if eh.Event.Type() == keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName) {
-		actionTriggeredData := &keptnv2.ActionTriggeredEventData{}
-
-		err = eh.Event.DataAs(actionTriggeredData)
+		keptnEvent, err := NewActionTriggeredAdapterFromEvent(eh.Event)
 		if err != nil {
-			log.WithError(err).Error("Cannot parse incoming event")
 			return err
 		}
-
-		keptnEvent := NewActionTriggeredAdapter(*actionTriggeredData, keptnHandler.KeptnContext, eh.Event.Source())
 
 		pid, err := common.FindProblemIDForEvent(keptnEvent)
 		if err != nil {
@@ -107,15 +95,10 @@ func (eh ActionHandler) HandleEvent() error {
 
 		dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
 	} else if eh.Event.Type() == keptnv2.GetStartedEventType(keptnv2.ActionTaskName) {
-		actionStartedData := &keptnv2.ActionStartedEventData{}
-
-		err = eh.Event.DataAs(actionStartedData)
+		keptnEvent, err := NewActionStartedAdapterFromEvent(eh.Event)
 		if err != nil {
-			log.WithError(err).Error("Cannot parse incoming Event")
 			return err
 		}
-
-		keptnEvent := NewActionStartedAdapter(*actionStartedData, keptnHandler.KeptnContext, eh.Event.Source())
 
 		pid, err := common.FindProblemIDForEvent(keptnEvent)
 		if err != nil {
@@ -136,15 +119,10 @@ func (eh ActionHandler) HandleEvent() error {
 		dtHelper := dynatrace.NewClient(creds)
 		dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
 	} else if eh.Event.Type() == keptnv2.GetFinishedEventType(keptnv2.ActionTaskName) {
-		actionFinishedData := &keptnv2.ActionFinishedEventData{}
-
-		err = eh.Event.DataAs(actionFinishedData)
+		keptnEvent, err := NewActionFinishedAdapterFromEvent(eh.Event)
 		if err != nil {
-			log.WithError(err).Error("Cannot parse incoming Event")
 			return err
 		}
-
-		keptnEvent := NewActionFinishedAdapter(*actionFinishedData, keptnHandler.KeptnContext, eh.Event.Source())
 
 		// lets get our dynatrace credentials - if we have none - no need to continue
 		dynatraceConfig, creds, err := eh.GetDynatraceCredentials(keptnEvent)
