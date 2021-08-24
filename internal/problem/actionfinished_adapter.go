@@ -85,3 +85,11 @@ func (a ActionFinishedAdapter) GetLabels() map[string]string {
 	}
 	return labels
 }
+
+func (a ActionFinishedAdapter) GetResult() keptnv2.ResultType {
+	return a.event.Result
+}
+
+func (a ActionFinishedAdapter) GetStatus() keptnv2.StatusType {
+	return a.event.Status
+}

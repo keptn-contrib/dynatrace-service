@@ -85,3 +85,11 @@ func (a ActionTriggeredAdapter) GetLabels() map[string]string {
 	}
 	return labels
 }
+
+func (a ActionTriggeredAdapter) GetAction() string {
+	return a.event.Action.Action
+}
+
+func (a ActionTriggeredAdapter) GetActionDescription() string {
+	return a.event.Action.Description
+}

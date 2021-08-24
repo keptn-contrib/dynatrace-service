@@ -73,9 +73,9 @@ func (eh ActionHandler) HandleEvent() error {
 			return errors.New("cannot send DT problem comment: No problem ID is included in the event")
 		}
 
-		comment = "Keptn triggered action " + actionTriggeredData.Action.Action
-		if actionTriggeredData.Action.Description != "" {
-			comment = comment + ": " + actionTriggeredData.Action.Description
+		comment = "Keptn triggered action " + keptnEvent.GetAction()
+		if keptnEvent.GetActionDescription() != "" {
+			comment = comment + ": " + keptnEvent.GetActionDescription()
 		}
 
 		dynatraceConfig, err := eh.DTConfigGetter.GetDynatraceConfig(keptnEvent)
@@ -95,14 +95,14 @@ func (eh ActionHandler) HandleEvent() error {
 		// Additionall to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 		dtInfoEvent := event.CreateInfoEvent(keptnEvent, dynatraceConfig)
 		dtInfoEvent.Title = "Keptn Remediation Action Triggered"
-		dtInfoEvent.Description = actionTriggeredData.Action.Action
+		dtInfoEvent.Description = keptnEvent.GetAction()
 
 		dynatrace.NewEventsClient(dtHelper).SendEvent(dtInfoEvent)
 
 		// this is posting the Event on the problem as a comment
-		comment = fmt.Sprintf("[Keptn triggered action](%s) %s", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], actionTriggeredData.Action.Action)
-		if actionTriggeredData.Action.Description != "" {
-			comment = comment + ": " + actionTriggeredData.Action.Description
+		comment = fmt.Sprintf("[Keptn triggered action](%s) %s", keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL], keptnEvent.GetAction())
+		if keptnEvent.GetActionDescription() != "" {
+			comment = comment + ": " + keptnEvent.GetActionDescription()
 		}
 
 		dynatrace.NewProblemsClient(dtHelper).AddProblemComment(pid, comment)
@@ -165,12 +165,12 @@ func (eh ActionHandler) HandleEvent() error {
 		comment = fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
 			keptnEvent.GetLabels()[common.KEPTNSBRIDGE_LABEL],
 			eh.Event.Source(),
-			actionFinishedData.Result,
-			actionFinishedData.Status)
+			keptnEvent.GetResult(),
+			keptnEvent.GetStatus())
 
 		// https://github.com/keptn-contrib/dynatrace-service/issues/174
 		// Additionally to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-		if actionFinishedData.Status == keptnv2.StatusSucceeded {
+		if keptnEvent.GetStatus() == keptnv2.StatusSucceeded {
 			dtConfigEvent := event.CreateConfigurationEvent(keptnEvent, dynatraceConfig)
 			dtConfigEvent.Description = "Keptn Remediation Action Finished"
 			dtConfigEvent.Configuration = "successful"
