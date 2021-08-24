@@ -60,7 +60,7 @@ func (eh ActionHandler) HandleEvent() error {
 			return err
 		}
 
-		keptnEvent := adapter.NewActionTriggeredAdapter(*actionTriggeredData, keptnHandler.KeptnContext, eh.Event.Source())
+		keptnEvent := NewActionTriggeredAdapter(*actionTriggeredData, keptnHandler.KeptnContext, eh.Event.Source())
 
 		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
 		if err != nil {
@@ -115,7 +115,7 @@ func (eh ActionHandler) HandleEvent() error {
 			return err
 		}
 
-		keptnEvent := adapter.NewActionStartedAdapter(*actionStartedData, keptnHandler.KeptnContext, eh.Event.Source())
+		keptnEvent := NewActionStartedAdapter(*actionStartedData, keptnHandler.KeptnContext, eh.Event.Source())
 
 		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
 		if err != nil {
@@ -144,7 +144,7 @@ func (eh ActionHandler) HandleEvent() error {
 			return err
 		}
 
-		keptnEvent := adapter.NewActionFinishedAdapter(*actionFinishedData, keptnHandler.KeptnContext, eh.Event.Source())
+		keptnEvent := NewActionFinishedAdapter(*actionFinishedData, keptnHandler.KeptnContext, eh.Event.Source())
 
 		// lets get our dynatrace credentials - if we have none - no need to continue
 		dynatraceConfig, creds, err := eh.GetDynatraceCredentials(keptnEvent)
