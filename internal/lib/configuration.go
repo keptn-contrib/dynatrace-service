@@ -7,6 +7,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const logLevelEnvironmentVariable = "LOG_LEVEL_DYNATRACE_SERVICE"
+
+// GetLogLevel gets the log level specified by the LOG_LEVEL_DYNATRACE_SERVICE environment variable.
+// If none is specified, log.InfoLevel is assumed.
+func GetLogLevel() log.Level {
+	level, err := log.ParseLevel(os.Getenv(logLevelEnvironmentVariable))
+	if err != nil {
+		log.WithError(err).Error("Couldn't parse " + logLevelEnvironmentVariable + " environment variable")
+		return log.InfoLevel
+	}
+
+	return level
+}
+
 // IsTaggingRulesGenerationEnabled returns whether tagging rules should be generated when configuring the monitoring
 func IsTaggingRulesGenerationEnabled() bool {
 	return readEnvAsBool("GENERATE_TAGGING_RULES", false)
