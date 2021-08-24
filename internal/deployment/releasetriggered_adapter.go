@@ -1,7 +1,10 @@
 package deployment
 
 import (
+	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -12,9 +15,21 @@ type ReleaseTriggeredAdapter struct {
 	source  string
 }
 
-// NewReleaseTriggeredAdapter godoc
+// NewReleaseTriggeredAdapter creates a new ReleaseTriggeredAdapter
 func NewReleaseTriggeredAdapter(event keptnv2.ReleaseTriggeredEventData, shkeptncontext, source string) ReleaseTriggeredAdapter {
 	return ReleaseTriggeredAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewReleaseTriggeredAdapterFromEvent creates a new ReleaseTriggeredAdapter from a cloudevents Event
+func NewReleaseTriggeredAdapterFromEvent(e cloudevents.Event) (*ReleaseTriggeredAdapter, error) {
+	rtData := &keptnv2.ReleaseTriggeredEventData{}
+	err := e.DataAs(rtData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse release triggered event payload: %v", err)
+	}
+
+	adapter := NewReleaseTriggeredAdapter(*rtData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext

@@ -1,8 +1,11 @@
 package deployment
 
 import (
+	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"os"
@@ -16,9 +19,21 @@ type DeploymentFinishedAdapter struct {
 	source  string
 }
 
-// NewDeploymentFinishedAdapter godoc
+// NewDeploymentFinishedAdapter creates a new DeploymentFinishedAdapter
 func NewDeploymentFinishedAdapter(event keptnv2.DeploymentFinishedEventData, shkeptncontext, source string) DeploymentFinishedAdapter {
 	return DeploymentFinishedAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewDeploymentFinishedAdapterFromEvent creates a new DeploymentFinishedAdapter from a cloudevents Event
+func NewDeploymentFinishedAdapterFromEvent(e cloudevents.Event) (*DeploymentFinishedAdapter, error) {
+	dfData := &keptnv2.DeploymentFinishedEventData{}
+	err := e.DataAs(dfData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse deployment finished event payload: %v", err)
+	}
+
+	adapter := NewDeploymentFinishedAdapter(*dfData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext

@@ -29,22 +29,17 @@ func NewCDEventHandler(event cloudevents.Event, configGetter adapter.DynatraceCo
 }
 
 func (eh CDEventHandler) HandleEvent() error {
-	keptnHandler, err := keptnv2.NewKeptn(&eh.event, keptncommon.KeptnOpts{})
-	if err != nil {
-		log.WithError(err).Error("Could not create Keptn handler")
-	}
-
 	switch eh.event.Type() {
 	case keptnv2.GetFinishedEventType(keptnv2.DeploymentTaskName):
-		return eh.handleDeploymentFinishedEvent(keptnHandler)
+		return eh.handleDeploymentFinishedEvent()
 	case keptnv2.GetTriggeredEventType(keptnv2.TestTaskName):
-		return eh.handleTestTriggeredEvent(keptnHandler)
+		return eh.handleTestTriggeredEvent()
 	case keptnv2.GetFinishedEventType(keptnv2.TestTaskName):
-		return eh.handleTestFinishedEvent(keptnHandler)
+		return eh.handleTestFinishedEvent()
 	case keptnv2.GetFinishedEventType(keptnv2.EvaluationTaskName):
-		return eh.handleEvaluationFinishedEvent(keptnHandler)
+		return eh.handleEvaluationFinishedEvent()
 	case keptnv2.GetTriggeredEventType(keptnv2.ReleaseTaskName):
-		return eh.handleReleaseTriggeredEvent(keptnHandler)
+		return eh.handleReleaseTriggeredEvent()
 	case keptnv2.GetFinishedEventType(keptnv2.ReleaseTaskName):
 	// continue
 	default:
@@ -54,16 +49,11 @@ func (eh CDEventHandler) HandleEvent() error {
 	return nil
 }
 
-func (eh *CDEventHandler) handleDeploymentFinishedEvent(keptnHandler *keptnv2.Keptn) error {
-	dfData := &keptnv2.DeploymentFinishedEventData{}
-	err := eh.event.DataAs(dfData)
+func (eh *CDEventHandler) handleDeploymentFinishedEvent() error {
+	keptnEvent, err := NewDeploymentFinishedAdapterFromEvent(eh.event)
 	if err != nil {
-		log.WithError(err).Error("Could not parse event payload")
 		return err
 	}
-
-	// initialize our objects
-	keptnEvent := NewDeploymentFinishedAdapter(*dfData, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -85,16 +75,11 @@ func (eh *CDEventHandler) handleDeploymentFinishedEvent(keptnHandler *keptnv2.Ke
 	return nil
 }
 
-func (eh *CDEventHandler) handleTestTriggeredEvent(keptnHandler *keptnv2.Keptn) error {
-	ttData := &keptnv2.TestTriggeredEventData{}
-	err := eh.event.DataAs(ttData)
+func (eh *CDEventHandler) handleTestTriggeredEvent() error {
+	keptnEvent, err := NewTestTriggeredAdapterFromEvent(eh.event)
 	if err != nil {
-		log.WithError(err).Error("Could not parse event payload")
 		return err
 	}
-
-	// initialize our objects
-	keptnEvent := NewTestTriggeredAdapter(*ttData, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -122,16 +107,11 @@ func (eh *CDEventHandler) handleTestTriggeredEvent(keptnHandler *keptnv2.Keptn) 
 	return nil
 }
 
-func (eh *CDEventHandler) handleTestFinishedEvent(keptnHandler *keptnv2.Keptn) error {
-	tfData := &keptnv2.TestFinishedEventData{}
-	err := eh.event.DataAs(tfData)
+func (eh *CDEventHandler) handleTestFinishedEvent() error {
+	keptnEvent, err := NewTestFinishedAdapterFromEvent(eh.event)
 	if err != nil {
-		log.WithError(err).Error("Could not parse event payload")
 		return err
 	}
-
-	// initialize our objects
-	keptnEvent := NewTestFinishedAdapter(*tfData, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -159,15 +139,11 @@ func (eh *CDEventHandler) handleTestFinishedEvent(keptnHandler *keptnv2.Keptn) e
 	return nil
 }
 
-func (eh *CDEventHandler) handleEvaluationFinishedEvent(keptnHandler *keptnv2.Keptn) error {
-	edData := &keptnv2.EvaluationFinishedEventData{}
-	err := eh.event.DataAs(edData)
+func (eh *CDEventHandler) handleEvaluationFinishedEvent() error {
+	keptnEvent, err := NewEvaluationFinishedAdapterFromEvent(eh.event)
 	if err != nil {
-		log.WithError(err).Error("Error while parsing JSON payload")
 		return err
 	}
-	// initialize our objects
-	keptnEvent := NewEvaluationDoneAdapter(*edData, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -193,6 +169,11 @@ func (eh *CDEventHandler) handleEvaluationFinishedEvent(keptnHandler *keptnv2.Ke
 			ie.Title = "Remediation action not successful"
 		}
 		// If evaluation was done in context of a problem remediation workflow then post comments to the Dynatrace Problem
+		keptnHandler, err := keptnv2.NewKeptn(&eh.event, keptncommon.KeptnOpts{})
+		if err != nil {
+			log.WithError(err).Error("Could not create Keptn handler")
+		}
+
 		pid, err := common.FindProblemIDForEvent(keptnHandler, keptnEvent.GetLabels())
 		if err == nil && pid != "" {
 			// Comment we push over
@@ -209,14 +190,11 @@ func (eh *CDEventHandler) handleEvaluationFinishedEvent(keptnHandler *keptnv2.Ke
 	return nil
 }
 
-func (eh *CDEventHandler) handleReleaseTriggeredEvent(keptnHandler *keptnv2.Keptn) error {
-	rtData := &keptnv2.ReleaseTriggeredEventData{}
-	err := eh.event.DataAs(rtData)
+func (eh *CDEventHandler) handleReleaseTriggeredEvent() error {
+	keptnEvent, err := NewReleaseTriggeredAdapterFromEvent(eh.event)
 	if err != nil {
-		log.WithError(err).Error("Error while parsing JSON payload")
 		return err
 	}
-	keptnEvent := NewReleaseTriggeredAdapter(*rtData, keptnHandler.KeptnContext, eh.event.Source())
 
 	strategy, err := keptnevents.GetDeploymentStrategy(keptnEvent.GetDeploymentStrategy())
 	if err != nil {
