@@ -23,9 +23,7 @@ type envConfig struct {
 }
 
 func main() {
-	// only emit logs of info and higher in formal builds
-	// keep trace and debug for development
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(lib.GetLogLevel())
 
 	var env envConfig
 	if err := envconfig.Process("", &env); err != nil {
