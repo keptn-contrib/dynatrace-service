@@ -25,8 +25,8 @@ func NewReleaseTriggeredEventHandler(event *ReleaseTriggeredAdapter, client *dyn
 	}
 }
 
-// Handle handles an action finished event
-func (eh *ReleaseTriggeredEventHandler) Handle() error {
+// HandleEvent handles an action finished event
+func (eh *ReleaseTriggeredEventHandler) HandleEvent() error {
 	strategy, err := keptnevents.GetDeploymentStrategy(eh.event.GetDeploymentStrategy())
 	if err != nil {
 		log.WithError(err).Error("Could not determine deployment strategy")

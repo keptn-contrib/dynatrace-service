@@ -58,19 +58,19 @@ func (eh CDEventHandler) HandleEvent() error {
 	switch keptnEvent.(type) {
 	case DeploymentFinishedAdapter:
 		handler := NewDeploymentFinishedEventHandler(keptnEvent.(*DeploymentFinishedAdapter), client, dynatraceConfig)
-		return handler.Handle()
+		return handler.HandleEvent()
 	case TestTriggeredAdapter:
 		handler := NewTestTriggeredEventHandler(keptnEvent.(*TestTriggeredAdapter), client, dynatraceConfig)
-		return handler.Handle()
+		return handler.HandleEvent()
 	case TestFinishedAdapter:
 		handler := NewTestFinishedEventHandler(keptnEvent.(*TestFinishedAdapter), client, dynatraceConfig)
-		return handler.Handle()
+		return handler.HandleEvent()
 	case EvaluationFinishedAdapter:
 		handler := NewEvaluationFinishedEventHandler(keptnEvent.(*EvaluationFinishedAdapter), client, dynatraceConfig)
-		return handler.Handle()
+		return handler.HandleEvent()
 	case ReleaseTriggeredAdapter:
 		handler := NewReleaseTriggeredEventHandler(keptnEvent.(*ReleaseTriggeredAdapter), client, dynatraceConfig)
-		return handler.Handle()
+		return handler.HandleEvent()
 	case nil:
 		// in case 'getEventAdapter()' would not return a known type
 		log.WithField("EventType", eh.event.Type()).Info("Ignoring event")

@@ -21,8 +21,8 @@ func NewDeploymentFinishedEventHandler(event *DeploymentFinishedAdapter, client 
 	}
 }
 
-// Handle handles an action finished event
-func (eh *DeploymentFinishedEventHandler) Handle() error {
+// HandleEvent handles an action finished event
+func (eh *DeploymentFinishedEventHandler) HandleEvent() error {
 	// send Deployment Event
 	de := event.CreateDeploymentEvent(eh.event, eh.config)
 

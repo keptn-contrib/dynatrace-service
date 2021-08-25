@@ -24,8 +24,8 @@ func NewEvaluationFinishedEventHandler(event *EvaluationFinishedAdapter, client 
 	}
 }
 
-// Handle handles an action finished event
-func (eh *EvaluationFinishedEventHandler) Handle() error {
+// HandleEvent handles an action finished event
+func (eh *EvaluationFinishedEventHandler) HandleEvent() error {
 	// Send Info Event
 	ie := event.CreateInfoEvent(eh.event, eh.config)
 	qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore())

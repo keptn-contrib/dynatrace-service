@@ -21,8 +21,8 @@ func NewTestTriggeredEventHandler(event *TestTriggeredAdapter, client *dynatrace
 	}
 }
 
-// Handle handles an action finished event
-func (eh *TestTriggeredEventHandler) Handle() error {
+// HandleEvent handles an action finished event
+func (eh *TestTriggeredEventHandler) HandleEvent() error {
 	// Send Annotation Event
 	ie := event.CreateAnnotationEvent(eh.event, eh.config)
 	if ie.AnnotationType == "" {

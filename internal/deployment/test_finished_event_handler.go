@@ -21,8 +21,8 @@ func NewTestFinishedEventHandler(event *TestFinishedAdapter, client *dynatrace.C
 	}
 }
 
-// Handle handles an action finished event
-func (eh *TestFinishedEventHandler) Handle() error {
+// HandleEvent handles an action finished event
+func (eh *TestFinishedEventHandler) HandleEvent() error {
 	// Send Annotation Event
 	ae := event.CreateAnnotationEvent(eh.event, eh.config)
 	if ae.AnnotationType == "" {
