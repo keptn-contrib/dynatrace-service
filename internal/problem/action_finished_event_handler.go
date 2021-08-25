@@ -27,8 +27,8 @@ func NewActionFinishedEventHandler(event *ActionFinishedAdapter, client *dynatra
 	}
 }
 
-// Handle handles an action finished event
-func (eh *ActionFinishedEventHandler) Handle() error {
+// HandleEvent handles an action finished event
+func (eh *ActionFinishedEventHandler) HandleEvent() error {
 	// lets find our dynatrace problem details for this remediaiton workflow
 	pid, err := common.FindProblemIDForEvent(eh.event)
 	if err != nil {

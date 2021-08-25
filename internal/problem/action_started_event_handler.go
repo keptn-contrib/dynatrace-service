@@ -22,8 +22,8 @@ func NewActionStartedEventHandler(event *ActionStartedAdapter, client *dynatrace
 	}
 }
 
-// Handle handles an action started event
-func (eh *ActionStartedEventHandler) Handle() error {
+// HandleEvent handles an action started event
+func (eh *ActionStartedEventHandler) HandleEvent() error {
 	pid, err := common.FindProblemIDForEvent(eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")

@@ -52,13 +52,13 @@ func (eh ActionHandler) HandleEvent() error {
 	switch keptnEvent.(type) {
 	case ActionTriggeredAdapter:
 		handler := NewActionTriggeredEventHandler(keptnEvent.(*ActionTriggeredAdapter), client, dynatraceConfig)
-		return handler.Handle()
+		return handler.HandleEvent()
 	case ActionStartedAdapter:
 		handler := NewActionStartedEventHandler(keptnEvent.(*ActionStartedAdapter), client, eh.Event.Source())
-		return handler.Handle()
+		return handler.HandleEvent()
 	case ActionFinishedAdapter:
 		handler := NewActionFinishedEventHandler(keptnEvent.(*ActionFinishedAdapter), client, dynatraceConfig, eh.Event.Source())
-		return handler.Handle()
+		return handler.HandleEvent()
 	default:
 		return fmt.Errorf("invalid event type: %s", eh.Event.Type())
 	}

@@ -25,8 +25,8 @@ func NewActionTriggeredEventHandler(event *ActionTriggeredAdapter, client *dynat
 	}
 }
 
-// Handle handles an action triggered event
-func (eh *ActionTriggeredEventHandler) Handle() error {
+// HandleEvent handles an action triggered event
+func (eh *ActionTriggeredEventHandler) HandleEvent() error {
 	pid, err := common.FindProblemIDForEvent(eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")
