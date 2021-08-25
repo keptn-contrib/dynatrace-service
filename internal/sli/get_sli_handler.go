@@ -1,4 +1,4 @@
-package event_handler
+package sli
 
 import (
 	"encoding/json"
@@ -31,14 +31,14 @@ import (
 const ProblemOpenSLI = "problem_open"
 
 type GetSLIEventHandler struct {
-	event          cloudevents.Event
-	dtConfigGetter config.DynatraceConfigGetterInterface
+	Event          cloudevents.Event
+	DTConfigGetter config.DynatraceConfigGetterInterface
 }
 
 func (eh GetSLIEventHandler) HandleEvent() error {
 	// prepare event
 	eventData := &keptnv2.GetSLITriggeredEventData{}
-	err := eh.event.DataAs(eventData)
+	err := eh.Event.DataAs(eventData)
 	if err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (eh GetSLIEventHandler) HandleEvent() error {
 		return nil
 	}
 
-	go retrieveMetrics(eh.event, eventData)
+	go retrieveMetrics(eh.Event, eventData)
 
 	return nil
 }
