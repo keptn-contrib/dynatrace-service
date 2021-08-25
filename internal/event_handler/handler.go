@@ -1,7 +1,6 @@
 package event_handler
 
 import (
-	"errors"
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -55,7 +54,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 
 	client := dynatrace.NewClient(dynatraceCredentials)
 
-	switch keptnEvent.(type) {
+	switch aType := keptnEvent.(type) {
 	case monitoring.ConfigureMonitoringAdapter:
 		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), client, event), nil
 	case monitoring.ProjectCreateAdapter:
@@ -85,7 +84,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		// in case 'getEventAdapter()' would return a type we would ignore
 		return LoggingNoOpHandler{event: event}, nil
 	default:
-		return ErrorHandler{err: errors.New("this should not have happened")}, nil
+		return ErrorHandler{err: fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType)}, nil
 	}
 }
 
