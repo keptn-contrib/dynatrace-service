@@ -45,7 +45,13 @@ type DTProblemDetails struct {
 }
 
 type ProblemEventHandler struct {
-	Event cloudevents.Event
+	event *ProblemAdapter
+}
+
+func NewProblemEventHandler(event *ProblemAdapter) ProblemEventHandler {
+	return ProblemEventHandler{
+		event: event,
+	}
 }
 
 type remediationTriggeredEventData struct {
@@ -77,53 +83,47 @@ type ProblemDetails struct {
 const eventbroker = "EVENTBROKER"
 
 func (eh ProblemEventHandler) HandleEvent() error {
-	keptnEvent, err := NewProblemAdapterFromEvent(eh.Event)
-	if err != nil {
-		log.WithError(err).Error("Could not unmarshal problem event")
-		return err
-	}
-
-	if keptnEvent.IsNotFromDynatrace() {
-		log.WithField("eventSource", keptnEvent.GetSource()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
+	if eh.event.IsNotFromDynatrace() {
+		log.WithField("eventSource", eh.event.GetSource()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
 		return nil
 	}
 
 	// Log the problem ID and state for better troubleshooting
 	log.WithFields(
 		log.Fields{
-			"PID":       keptnEvent.GetPID(),
-			"problemId": keptnEvent.GetProblemID(),
-			"state":     keptnEvent.GetState(),
+			"PID":       eh.event.GetPID(),
+			"problemId": eh.event.GetProblemID(),
+			"state":     eh.event.GetState(),
 		}).Info("Received event")
 
 	// ignore problem events if they are closed
-	if keptnEvent.IsResolved() {
-		return eh.handleClosedProblemFromDT(keptnEvent)
+	if eh.event.IsResolved() {
+		return eh.handleClosedProblemFromDT()
 	}
 
-	return eh.handleOpenedProblemFromDT(keptnEvent)
+	return eh.handleOpenedProblemFromDT()
 }
 
-func (eh ProblemEventHandler) handleClosedProblemFromDT(keptnEvent *ProblemAdapter) error {
+func (eh ProblemEventHandler) handleClosedProblemFromDT() error {
 
-	err := createAndSendCE(keptnEvent.getClosedProblemEventData(), keptnEvent.GetShKeptnContext(), keptnEvent.GetEvent())
+	err := createAndSendCE(eh.event.getClosedProblemEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
 	if err != nil {
 		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
-	log.WithField("PID", keptnEvent.GetPID()).Debug("Successfully sent Keptn PROBLEM CLOSED event")
+	log.WithField("PID", eh.event.GetPID()).Debug("Successfully sent Keptn PROBLEM CLOSED event")
 	return nil
 }
 
-func (eh ProblemEventHandler) handleOpenedProblemFromDT(keptnEvent *ProblemAdapter) error {
+func (eh ProblemEventHandler) handleOpenedProblemFromDT() error {
 
 	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
-	err := createAndSendCE(keptnEvent.getRemediationTriggeredEventData(), keptnEvent.GetShKeptnContext(), keptnEvent.GetEvent())
+	err := createAndSendCE(eh.event.getRemediationTriggeredEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
 	if err != nil {
 		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
-	log.WithField("PID", keptnEvent.GetPID()).Debug("Successfully sent Keptn PROBLEM OPEN event")
+	log.WithField("PID", eh.event.GetPID()).Debug("Successfully sent Keptn PROBLEM OPEN event")
 	return nil
 }
 

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"os"
 	"strings"
 	"time"
@@ -32,23 +31,26 @@ import (
 const ProblemOpenSLI = "problem_open"
 
 type GetSLIEventHandler struct {
-	Event          cloudevents.Event
-	DTConfigGetter config.DynatraceConfigGetterInterface
+	event         *GetSLITriggeredAdapter
+	incomingEvent cloudevents.Event
+}
+
+func NewGetSLITriggeredHandler(event *GetSLITriggeredAdapter, incomingEvent cloudevents.Event) GetSLIEventHandler {
+	return GetSLIEventHandler{
+		event:         event,
+		incomingEvent: incomingEvent,
+	}
 }
 
 func (eh GetSLIEventHandler) HandleEvent() error {
 	// prepare event
-	keptnEvent, err := NewGetSLITriggeredAdapterFromEvent(eh.Event)
-	if err != nil {
-		return err
-	}
 
 	// do not continue if SLIProvider is not dynatrace
-	if keptnEvent.IsNotForDynatrace() {
+	if eh.event.IsNotForDynatrace() {
 		return nil
 	}
 
-	go retrieveMetrics(eh.Event, keptnEvent)
+	go retrieveMetrics(eh.incomingEvent, eh.event)
 
 	return nil
 }
