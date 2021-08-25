@@ -2,14 +2,13 @@ package dynatrace
 
 import (
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"strings"
 	"testing"
 )
 
 type dashboardTestConfig struct {
 	testDescription     string
-	keptnEvent          *common.BaseKeptnEvent
+	keptnEvent          *BaseKeptnEvent
 	dashboards          DynatraceDashboards
 	expectedDashboardID string
 }
@@ -21,7 +20,7 @@ func TestDynatraceDashboards_SearchForDashboardMatching(t *testing.T) {
 
 	const desiredDashboardID = "311f4aa7-5257-41d7-abd1-70420500e1c8"
 
-	event := &common.BaseKeptnEvent{Project: project, Service: service, Stage: stage}
+	event := &BaseKeptnEvent{Project: project, Service: service, Stage: stage}
 	exactNameMatchForEvent := createDashboardNameFor(project, service, stage)
 	matchingDashboard := createDashboard(desiredDashboardID, exactNameMatchForEvent)
 

@@ -3,6 +3,7 @@ package dynatrace
 import (
 	"bytes"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"io"
 	"io/ioutil"
 	"os"
@@ -131,8 +132,8 @@ func testingDynatraceHTTPClient() (*http.Client, string, func()) {
 /**
  * Creates a new Keptn Event
  */
-func testingGetKeptnEvent(project string, stage string, service string, deployment string, test string) *common.BaseKeptnEvent {
-	keptnEvent := &common.BaseKeptnEvent{}
+func testingGetKeptnEvent(project string, stage string, service string, deployment string, test string) adapter.EventContentAdapter {
+	keptnEvent := &BaseKeptnEvent{}
 	keptnEvent.Project = project
 	keptnEvent.Stage = stage
 	keptnEvent.Service = service
@@ -147,7 +148,7 @@ func testingGetKeptnEvent(project string, stage string, service string, deployme
  * It returns the Dynatrace Handler as well as the httpClient, mocked server url and the teardown method
  * ATTENTION: When using this method you have to call the "teardown" method that is returned in the last parameter
  */
-func testingGetDynatraceHandler(keptnEvent *common.BaseKeptnEvent) (*Handler, *http.Client, string, func()) {
+func testingGetDynatraceHandler(keptnEvent adapter.EventContentAdapter) (*Handler, *http.Client, string, func()) {
 	httpClient, url, teardown := testingDynatraceHTTPClient()
 
 	dh := NewDynatraceHandler(url, keptnEvent, map[string]string{"Authorization": "Api-Token " + "test"}, nil)
@@ -515,19 +516,19 @@ func TestCreateNewDynatraceHandler(t *testing.T) {
 		t.Errorf("dh.ApiURL=%s; want %s", dh.ApiURL, url)
 	}
 
-	if dh.KeptnEvent.Project != "sockshop" {
-		t.Errorf("dh.Project=%s; want sockshop", dh.KeptnEvent.Project)
+	if dh.KeptnEvent.GetProject() != "sockshop" {
+		t.Errorf("dh.Project=%s; want sockshop", dh.KeptnEvent.GetProject())
 	}
 
-	if dh.KeptnEvent.Stage != "dev" {
-		t.Errorf("dh.Stage=%s; want dev", dh.KeptnEvent.Stage)
+	if dh.KeptnEvent.GetStage() != "dev" {
+		t.Errorf("dh.Stage=%s; want dev", dh.KeptnEvent.GetStage())
 	}
 
-	if dh.KeptnEvent.Service != "carts" {
-		t.Errorf("dh.Service=%s; want carts", dh.KeptnEvent.Service)
+	if dh.KeptnEvent.GetService() != "carts" {
+		t.Errorf("dh.Service=%s; want carts", dh.KeptnEvent.GetService())
 	}
-	if dh.KeptnEvent.DeploymentStrategy != "direct" {
-		t.Errorf("dh.Deployment=%s; want direct", dh.KeptnEvent.DeploymentStrategy)
+	if dh.KeptnEvent.GetDeploymentStrategy() != "direct" {
+		t.Errorf("dh.Deployment=%s; want direct", dh.KeptnEvent.GetDeploymentStrategy())
 	}
 }
 
@@ -551,7 +552,7 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 
 	type args struct {
 		apiURL        string // this is really the tenant
-		keptnEvent    *common.BaseKeptnEvent
+		keptnEvent    adapter.EventContentAdapter
 		headers       map[string]string
 		customFilters []*keptnv2.SLIFilter
 		keptnContext  string

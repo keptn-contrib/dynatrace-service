@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -37,7 +38,7 @@ type Handler struct {
 	ApiURL        string
 	Username      string
 	Password      string
-	KeptnEvent    *common.BaseKeptnEvent
+	KeptnEvent    adapter.EventContentAdapter
 	HTTPClient    *http.Client
 	Headers       map[string]string
 	CustomQueries map[string]string
@@ -45,7 +46,7 @@ type Handler struct {
 }
 
 // NewDynatraceHandler returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewDynatraceHandler(apiURL string, keptnEvent *common.BaseKeptnEvent, headers map[string]string, customFilters []*keptnv2.SLIFilter) *Handler {
+func NewDynatraceHandler(apiURL string, keptnEvent adapter.EventContentAdapter, headers map[string]string, customFilters []*keptnv2.SLIFilter) *Handler {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
@@ -155,7 +156,7 @@ func isValidUUID(uuid string) bool {
 // findDynatraceDashboard Queries all Dynatrace Dashboards and returns the dashboard ID that matches the following name pattern:
 //   KQG;project=%project%;service=%service%;stage=%stage%;xxx
 // It returns the UUID of the dashboard that was found. If no dashboard was found it returns ""
-func (ph *Handler) findDynatraceDashboard(keptnEvent *common.BaseKeptnEvent) (string, error) {
+func (ph *Handler) findDynatraceDashboard(keptnEvent adapter.EventContentAdapter) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
 	body, err := ph.getForPath("/api/config/v1/dashboards", nil, "Dashboards API")
@@ -178,7 +179,7 @@ func (ph *Handler) findDynatraceDashboard(keptnEvent *common.BaseKeptnEvent) (st
 //   - dashboard-ID: if this is a valid dashboard ID it will query the dashboard with this ID, e.g: ddb6a571-4bda-4e8b-a9c0-4a3e02c2e14a, or
 //   - <empty>:      it will not query any dashboard.
 // It returns a parsed Dynatrace Dashboard and the actual dashboard ID in case we queried a dashboard.
-func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, dashboard string) (*DynatraceDashboard, string, error) {
+func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter, dashboard string) (*DynatraceDashboard, string, error) {
 
 	// Option 1: there is no dashboard we should query
 	if dashboard == "" {
@@ -192,9 +193,9 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, das
 		if dashboard == "" || err != nil {
 			log.WithError(err).WithFields(
 				log.Fields{
-					"project": keptnEvent.Project,
-					"stage":   keptnEvent.Stage,
-					"service": keptnEvent.Service,
+					"project": keptnEvent.GetProject(),
+					"stage":   keptnEvent.GetStage(),
+					"service": keptnEvent.GetService(),
 				}).Debug("Dashboard option query but couldnt find KQG dashboard")
 
 			// TODO 2021-08-03: should this really return no error, if querying dashboards found no match?
@@ -204,9 +205,9 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent *common.BaseKeptnEvent, das
 
 		log.WithFields(
 			log.Fields{
-				"project":   keptnEvent.Project,
-				"stage":     keptnEvent.Stage,
-				"service":   keptnEvent.Service,
+				"project":   keptnEvent.GetProject(),
+				"stage":     keptnEvent.GetStage(),
+				"service":   keptnEvent.GetService(),
 				"dashboard": dashboard,
 			}).Debug("Dashboard option query found for dashboard")
 	}
@@ -1086,7 +1087,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 //  #3: ServiceLevelObjectives
 //  #4: SLIResult
 //  #5: Error
-func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent *common.BaseKeptnEvent, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardQueryResult, error) {
+func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventContentAdapter, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardQueryResult, error) {
 
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
 	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior

@@ -175,24 +175,6 @@ type DTCredentials struct {
 	PaaSToken string `json:"DT_PAAS_TOKEN" yaml:"DT_PAAS_TOKEN"`
 }
 
-type BaseKeptnEvent struct {
-	Context string
-	Source  string
-	Event   string
-
-	Project            string
-	Stage              string
-	Service            string
-	Deployment         string
-	TestStrategy       string
-	DeploymentStrategy string
-
-	Image string
-	Tag   string
-
-	Labels map[string]string
-}
-
 var namespace = getPodNamespace()
 
 func getPodNamespace() string {
@@ -213,23 +195,23 @@ func getPodNamespace() string {
 // $ENV.XXXX    -> will replace that with an env variable called XXXX
 // $SECRET.YYYY -> will replace that with the k8s secret called YYYY
 //
-func ReplaceKeptnPlaceholders(input string, keptnEvent *BaseKeptnEvent) string {
+func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapter) string {
 	result := input
 
 	// FIXING on 27.5.2020: URL Escaping of parameters as described in https://github.com/keptn-contrib/dynatrace-sli-service/issues/54
 
 	// first we do the regular keptn values
-	result = strings.Replace(result, "$CONTEXT", url.QueryEscape(keptnEvent.Context), -1)
-	result = strings.Replace(result, "$EVENT", url.QueryEscape(keptnEvent.Event), -1)
-	result = strings.Replace(result, "$SOURCE", url.QueryEscape(keptnEvent.Source), -1)
-	result = strings.Replace(result, "$PROJECT", url.QueryEscape(keptnEvent.Project), -1)
-	result = strings.Replace(result, "$STAGE", url.QueryEscape(keptnEvent.Stage), -1)
-	result = strings.Replace(result, "$SERVICE", url.QueryEscape(keptnEvent.Service), -1)
-	result = strings.Replace(result, "$DEPLOYMENT", url.QueryEscape(keptnEvent.Deployment), -1)
-	result = strings.Replace(result, "$TESTSTRATEGY", url.QueryEscape(keptnEvent.TestStrategy), -1)
+	result = strings.Replace(result, "$CONTEXT", url.QueryEscape(keptnEvent.GetShKeptnContext()), -1)
+	result = strings.Replace(result, "$EVENT", url.QueryEscape(keptnEvent.GetEvent()), -1)
+	result = strings.Replace(result, "$SOURCE", url.QueryEscape(keptnEvent.GetSource()), -1)
+	result = strings.Replace(result, "$PROJECT", url.QueryEscape(keptnEvent.GetProject()), -1)
+	result = strings.Replace(result, "$STAGE", url.QueryEscape(keptnEvent.GetStage()), -1)
+	result = strings.Replace(result, "$SERVICE", url.QueryEscape(keptnEvent.GetService()), -1)
+	result = strings.Replace(result, "$DEPLOYMENT", url.QueryEscape(keptnEvent.GetDeployment()), -1)
+	result = strings.Replace(result, "$TESTSTRATEGY", url.QueryEscape(keptnEvent.GetTestStrategy()), -1)
 
 	// now we do the labels
-	for key, value := range keptnEvent.Labels {
+	for key, value := range keptnEvent.GetLabels() {
 		result = strings.Replace(result, "$LABEL."+key, url.QueryEscape(value), -1)
 	}
 
@@ -248,7 +230,7 @@ func ReplaceKeptnPlaceholders(input string, keptnEvent *BaseKeptnEvent) string {
 // Downloads a resource from the Keptn Configuration Repo based on the level (Project, Stage, Service)
 // In RunLocal mode it gets it from the local disk
 //
-func GetKeptnResourceOnConfigLevel(keptnEvent *BaseKeptnEvent, resourceURI string, level string) (string, error) {
+func GetKeptnResourceOnConfigLevel(keptnEvent adapter.EventContentAdapter, resourceURI string, level string) (string, error) {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	var fileContent string
@@ -259,9 +241,9 @@ func GetKeptnResourceOnConfigLevel(keptnEvent *BaseKeptnEvent, resourceURI strin
 			log.WithFields(
 				log.Fields{
 					"resourceURI": resourceURI,
-					"service":     keptnEvent.Service,
-					"stage":       keptnEvent.Stage,
-					"project":     keptnEvent.Project,
+					"service":     keptnEvent.GetService(),
+					"stage":       keptnEvent.GetStage(),
+					"project":     keptnEvent.GetProject(),
 				}).Info("File not found locally")
 			return "", nil
 		}
@@ -273,11 +255,11 @@ func GetKeptnResourceOnConfigLevel(keptnEvent *BaseKeptnEvent, resourceURI strin
 		var keptnResourceContent *keptnmodels.Resource
 		var err error
 		if strings.Compare(level, ConfigLevelProject) == 0 {
-			keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.Project, resourceURI)
+			keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.GetProject(), resourceURI)
 		} else if strings.Compare(level, ConfigLevelStage) == 0 {
-			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.Project, keptnEvent.Stage, resourceURI)
+			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.GetProject(), keptnEvent.GetStage(), resourceURI)
 		} else if strings.Compare(level, ConfigLevelService) == 0 {
-			keptnResourceContent, err = resourceHandler.GetServiceResource(keptnEvent.Project, keptnEvent.Stage, keptnEvent.Service, resourceURI)
+			keptnResourceContent, err = resourceHandler.GetServiceResource(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resourceURI)
 		} else {
 			return "", errors.New("Config level not valid: " + level)
 		}
@@ -301,7 +283,7 @@ func GetKeptnResourceOnConfigLevel(keptnEvent *BaseKeptnEvent, resourceURI strin
 // In RunLocal mode it gets it from the local disk
 // In normal mode it first tries to find it on service level, then stage and then project level
 //
-func GetKeptnResource(keptnEvent *BaseKeptnEvent, resourceURI string) (string, error) {
+func GetKeptnResource(keptnEvent adapter.EventContentAdapter, resourceURI string) (string, error) {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	var fileContent string
@@ -311,9 +293,9 @@ func GetKeptnResource(keptnEvent *BaseKeptnEvent, resourceURI string) (string, e
 			log.WithFields(
 				log.Fields{
 					"resourceURI": resourceURI,
-					"service":     keptnEvent.Service,
-					"stage":       keptnEvent.Stage,
-					"project":     keptnEvent.Project,
+					"service":     keptnEvent.GetService(),
+					"stage":       keptnEvent.GetStage(),
+					"project":     keptnEvent.GetProject(),
 				}).Info("File not found locally")
 			return "", nil
 		}
@@ -323,13 +305,13 @@ func GetKeptnResource(keptnEvent *BaseKeptnEvent, resourceURI string) (string, e
 		resourceHandler := keptnapi.NewResourceHandler(GetConfigurationServiceURL())
 
 		// Lets search on SERVICE-LEVEL
-		keptnResourceContent, err := resourceHandler.GetServiceResource(keptnEvent.Project, keptnEvent.Stage, keptnEvent.Service, resourceURI)
+		keptnResourceContent, err := resourceHandler.GetServiceResource(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resourceURI)
 		if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
 			// Lets search on STAGE-LEVEL
-			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.Project, keptnEvent.Stage, resourceURI)
+			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.GetProject(), keptnEvent.GetStage(), resourceURI)
 			if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
 				// Lets search on PROJECT-LEVEL
-				keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.Project, resourceURI)
+				keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.GetProject(), resourceURI)
 				if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
 					// log.Debugf("No Keptn Resource found: %s/%s/%s/%s - %s", keptnEvent.Project, keptnEvent.Stage, keptnEvent.Service, resourceURI, err)
 					return "", err
@@ -338,23 +320,23 @@ func GetKeptnResource(keptnEvent *BaseKeptnEvent, resourceURI string) (string, e
 				log.WithFields(
 					log.Fields{
 						"resourceURI": resourceURI,
-						"project":     keptnEvent.Project,
+						"project":     keptnEvent.GetProject(),
 					}).Debug("Found resource on project level")
 			} else {
 				log.WithFields(
 					log.Fields{
 						"resourceURI": resourceURI,
-						"project":     keptnEvent.Project,
-						"stage":       keptnEvent.Stage,
+						"project":     keptnEvent.GetProject(),
+						"stage":       keptnEvent.GetStage(),
 					}).Debug("Found resource on stage level")
 			}
 		} else {
 			log.WithFields(
 				log.Fields{
 					"resourceURI": resourceURI,
-					"project":     keptnEvent.Project,
-					"stage":       keptnEvent.Stage,
-					"service":     keptnEvent.Service,
+					"project":     keptnEvent.GetProject(),
+					"stage":       keptnEvent.GetStage(),
+					"service":     keptnEvent.GetService(),
 				}).Debug("Found resource on service level")
 		}
 		fileContent = keptnResourceContent.ResourceContent
@@ -393,7 +375,7 @@ func addResourceContentToSLIMap(SLIs map[string]string, sliFileContent string) (
  * getCustomQueries loads custom SLIs from dynatrace/sli.yaml
  * if there is no sli.yaml it will just return an empty map
  */
-func GetCustomQueries(keptnEvent *BaseKeptnEvent) map[string]string {
+func GetCustomQueries(keptnEvent adapter.EventContentAdapter) map[string]string {
 	var sliMap = map[string]string{}
 	/*if common.RunLocal || common.RunLocalTest {
 		sliMap, _ = AddResourceContentToSLIMap(sliMap, "dynatrace/sli.yaml", "")
@@ -447,16 +429,16 @@ func GetCustomQueries(keptnEvent *BaseKeptnEvent) map[string]string {
 	if len(sliMap) == 0 {
 		log.WithFields(
 			log.Fields{
-				"project": keptnEvent.Project,
-				"stage":   keptnEvent.Stage,
-				"service": keptnEvent.Service,
+				"project": keptnEvent.GetProject(),
+				"stage":   keptnEvent.GetStage(),
+				"service": keptnEvent.GetService(),
 			}).Info("No custom SLI queries found as no dynatrace/sli.yaml in repo, using defaults")
 	} else {
 		log.WithFields(
 			log.Fields{
-				"project":   keptnEvent.Project,
-				"stage":     keptnEvent.Stage,
-				"service":   keptnEvent.Service,
+				"project":   keptnEvent.GetProject(),
+				"stage":     keptnEvent.GetStage(),
+				"service":   keptnEvent.GetService(),
 				"count":     len(sliMap),
 				"locations": foundLocation,
 			}).Info("Found SLI queries in dynatrace/sli.yaml")
@@ -467,7 +449,7 @@ func GetCustomQueries(keptnEvent *BaseKeptnEvent) map[string]string {
 
 // GetDynatraceConfig loads dynatrace.conf for the current service.
 // If none is found, it returns a default configuration.
-func GetDynatraceConfig(keptnEvent *BaseKeptnEvent) DynatraceConfigFile {
+func GetDynatraceConfig(keptnEvent adapter.EventContentAdapter) DynatraceConfigFile {
 	dynatraceConfFile := getBaseDynatraceConfig(keptnEvent)
 	if dynatraceConfFile.DtCreds == "" {
 		dynatraceConfFile.DtCreds = "dynatrace"
@@ -477,7 +459,7 @@ func GetDynatraceConfig(keptnEvent *BaseKeptnEvent) DynatraceConfigFile {
 	return dynatraceConfFile
 }
 
-func getBaseDynatraceConfig(keptnEvent *BaseKeptnEvent) DynatraceConfigFile {
+func getBaseDynatraceConfig(keptnEvent adapter.EventContentAdapter) DynatraceConfigFile {
 
 	var defaultDynatraceConfigFile = DynatraceConfigFile{
 		SpecVersion: "0.1.0",
@@ -489,9 +471,9 @@ func getBaseDynatraceConfig(keptnEvent *BaseKeptnEvent) DynatraceConfigFile {
 	if err != nil {
 		log.WithError(err).WithFields(
 			log.Fields{
-				"service": keptnEvent.Service,
-				"stage":   keptnEvent.Stage,
-				"project": keptnEvent.Project,
+				"service": keptnEvent.GetService(),
+				"stage":   keptnEvent.GetStage(),
+				"project": keptnEvent.GetProject(),
 			}).Debug("Error getting keptn resource")
 		return defaultDynatraceConfigFile
 	}
@@ -500,9 +482,9 @@ func getBaseDynatraceConfig(keptnEvent *BaseKeptnEvent) DynatraceConfigFile {
 		log.WithError(err).WithFields(
 			log.Fields{
 				"yaml":    yamlString,
-				"service": keptnEvent.Service,
-				"stage":   keptnEvent.Stage,
-				"project": keptnEvent.Project,
+				"service": keptnEvent.GetService(),
+				"stage":   keptnEvent.GetStage(),
+				"project": keptnEvent.GetProject(),
 			}).Error("Error parsing DynatraceConfigFile, using default configuration")
 		return defaultDynatraceConfigFile
 	}
@@ -510,7 +492,7 @@ func getBaseDynatraceConfig(keptnEvent *BaseKeptnEvent) DynatraceConfigFile {
 }
 
 // UploadKeptnResource uploads a file to the Keptn Configuration Service
-func UploadKeptnResource(contentToUpload []byte, remoteResourceURI string, keptnEvent *BaseKeptnEvent) error {
+func UploadKeptnResource(contentToUpload []byte, remoteResourceURI string, keptnEvent adapter.EventContentAdapter) error {
 
 	// if we run in a runlocal mode we are just getting the file from the local disk
 	if RunLocal || RunLocalTest {
@@ -524,7 +506,7 @@ func UploadKeptnResource(contentToUpload []byte, remoteResourceURI string, keptn
 
 		// lets upload it
 		resources := []*keptnmodels.Resource{{ResourceContent: string(contentToUpload), ResourceURI: &remoteResourceURI}}
-		_, err := resourceHandler.CreateResources(keptnEvent.Project, keptnEvent.Stage, keptnEvent.Service, resources)
+		_, err := resourceHandler.CreateResources(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resources)
 		if err != nil {
 			return fmt.Errorf("Couldnt upload remote resource %s: %s", remoteResourceURI, *err.Message)
 		}
