@@ -1,18 +1,15 @@
 package monitoring
 
 import (
-	"encoding/base64"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"gopkg.in/yaml.v2"
 )
 
 type CreateProjectEventHandler struct {
@@ -28,30 +25,15 @@ func NewCreateProjectEventHandler(event cloudevents.Event, configGetter config.D
 }
 
 func (eh CreateProjectEventHandler) HandleEvent() error {
-
-	e := &keptnv2.ProjectCreateFinishedEventData{}
-	err := eh.event.DataAs(e)
+	keptnEvent, err := NewProjectCreateAdapterFromEvent(eh.event)
 	if err != nil {
-		log.WithError(err).Error("Could not parse event payload")
 		return err
 	}
 
-	shipyard := &keptnv2.Shipyard{}
-	decodedShipyard, err := base64.StdEncoding.DecodeString(e.CreatedProject.Shipyard)
+	shipyard, err := keptnEvent.GetShipyard()
 	if err != nil {
-		log.WithError(err).Error("Could not decode shipyard")
+		log.WithError(err).Error("Could not load Keptn shipyard file")
 	}
-	err = yaml.Unmarshal(decodedShipyard, shipyard)
-	if err != nil {
-		log.WithError(err).Error("Could not parse shipyard")
-	}
-
-	keptnHandler, err := keptnv2.NewKeptn(&eh.event, keptn.KeptnOpts{})
-	if err != nil {
-		log.WithError(err).Error("Could not create Keptn handler")
-	}
-
-	keptnEvent := NewProjectCreateAdapter(*e, keptnHandler.KeptnContext, eh.event.Source())
 
 	dynatraceConfig, err := eh.dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
@@ -63,9 +45,14 @@ func (eh CreateProjectEventHandler) HandleEvent() error {
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return err
 	}
-	config := NewConfiguration(dynatrace.NewClient(creds), keptnHandler)
+	keptnHandler, err := keptnv2.NewKeptn(&eh.event, keptn.KeptnOpts{})
+	if err != nil {
+		log.WithError(err).Error("Could not create Keptn handler")
+	}
 
-	_, err = config.ConfigureMonitoring(e.Project, shipyard)
+	cfg := NewConfiguration(dynatrace.NewClient(creds), keptnHandler)
+
+	_, err = cfg.ConfigureMonitoring(keptnEvent.GetProject(), shipyard)
 	if err != nil {
 		return err
 	}
