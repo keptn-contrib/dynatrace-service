@@ -3,13 +3,8 @@ package problem
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"strings"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -21,30 +16,32 @@ type DTProblemEvent struct {
 		Name   string `json:"name"`
 		Type   string `json:"type"`
 	} `json:"ImpactedEntities"`
-	ImpactedEntity string `json:"ImpactedEntity"`
-	PID            string `json:"PID"`
-	ProblemDetails struct {
-		DisplayName   string `json:"displayName"`
-		EndTime       int    `json:"endTime"`
-		HasRootCause  bool   `json:"hasRootCause"`
-		ID            string `json:"id"`
-		ImpactLevel   string `json:"impactLevel"`
-		SeverityLevel string `json:"severityLevel"`
-		StartTime     int64  `json:"startTime"`
-		Status        string `json:"status"`
-	} `json:"ProblemDetails"`
-	ProblemID    string `json:"ProblemID"`
-	ProblemTitle string `json:"ProblemTitle"`
-	ProblemURL   string `json:"ProblemURL"`
-	State        string `json:"State"`
-	Tags         string `json:"Tags"`
-	EventContext struct {
+	ImpactedEntity string           `json:"ImpactedEntity"`
+	PID            string           `json:"PID"`
+	ProblemDetails DTProblemDetails `json:"ProblemDetails"`
+	ProblemID      string           `json:"ProblemID"`
+	ProblemTitle   string           `json:"ProblemTitle"`
+	ProblemURL     string           `json:"ProblemURL"`
+	State          string           `json:"State"`
+	Tags           string           `json:"Tags"`
+	EventContext   struct {
 		KeptnContext string `json:"keptnContext"`
 		Token        string `json:"token"`
 	} `json:"eventContext"`
 	KeptnProject string `json:"KeptnProject"`
 	KeptnService string `json:"KeptnService"`
 	KeptnStage   string `json:"KeptnStage"`
+}
+
+type DTProblemDetails struct {
+	DisplayName   string `json:"displayName"`
+	EndTime       int    `json:"endTime"`
+	HasRootCause  bool   `json:"hasRootCause"`
+	ID            string `json:"id"`
+	ImpactLevel   string `json:"impactLevel"`
+	SeverityLevel string `json:"severityLevel"`
+	StartTime     int64  `json:"startTime"`
+	Status        string `json:"status"`
 }
 
 type ProblemEventHandler struct {
@@ -57,8 +54,6 @@ type remediationTriggeredEventData struct {
 	// Problem contains details about the problem
 	Problem ProblemDetails `json:"problem"`
 }
-
-const remediationTaskName = "remediation"
 
 type ProblemDetails struct {
 	// State is the state of the problem; possible values are: OPEN, RESOLVED
@@ -82,141 +77,57 @@ type ProblemDetails struct {
 const eventbroker = "EVENTBROKER"
 
 func (eh ProblemEventHandler) HandleEvent() error {
-
-	if eh.Event.Source() != "dynatrace" {
-		log.WithField("eventSource", eh.Event.Source()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
-		return nil
+	keptnEvent, err := NewProblemAdapterFromEvent(eh.Event)
+	if err != nil {
+		log.WithError(err).Error("Could not unmarshal problem event")
+		return err
 	}
 
-	shkeptncontext := event.GetShKeptnContext(eh.Event)
-
-	dtProblemEvent := &DTProblemEvent{}
-	err := eh.Event.DataAs(dtProblemEvent)
-
-	if err != nil {
-		log.WithError(err).Error("Could not map received event to datastructure")
-		return err
+	if keptnEvent.IsNotFromDynatrace() {
+		log.WithField("eventSource", keptnEvent.GetSource()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
+		return nil
 	}
 
 	// Log the problem ID and state for better troubleshooting
 	log.WithFields(
 		log.Fields{
-			"PID":       dtProblemEvent.PID,
-			"problemId": dtProblemEvent.ProblemID,
-			"state":     dtProblemEvent.State,
+			"PID":       keptnEvent.GetPID(),
+			"problemId": keptnEvent.GetProblemID(),
+			"state":     keptnEvent.GetState(),
 		}).Info("Received event")
 
 	// ignore problem events if they are closed
-	if dtProblemEvent.State == "RESOLVED" {
-		return eh.handleClosedProblemFromDT(dtProblemEvent, shkeptncontext)
+	if keptnEvent.IsResolved() {
+		return eh.handleClosedProblemFromDT(keptnEvent)
 	}
 
-	return eh.handleOpenedProblemFromDT(dtProblemEvent, shkeptncontext)
+	return eh.handleOpenedProblemFromDT(keptnEvent)
 }
 
-func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProblemEvent, shkeptncontext string) error {
-	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
+func (eh ProblemEventHandler) handleClosedProblemFromDT(keptnEvent *ProblemAdapter) error {
 
-	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
-
-	newProblemData := keptn.ProblemEventData{
-		State:          "CLOSED",
-		PID:            dtProblemEvent.PID,
-		ProblemID:      dtProblemEvent.ProblemID,
-		ProblemTitle:   dtProblemEvent.ProblemTitle,
-		ProblemDetails: json.RawMessage(problemDetailsString),
-		ProblemURL:     dtProblemEvent.ProblemURL,
-		ImpactedEntity: dtProblemEvent.ImpactedEntity,
-		Tags:           dtProblemEvent.Tags,
-		Project:        project,
-		Stage:          stage,
-		Service:        service,
-	}
-
-	// https://github.com/keptn-contrib/dynatrace-service/issues/176
-	// add problem URL as label so it becomes clickable
-	newProblemData.Labels = make(map[string]string)
-	newProblemData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
-
-	err = createAndSendCE(newProblemData, shkeptncontext, keptn.ProblemEventType)
+	err := createAndSendCE(keptnEvent.getClosedProblemEventData(), keptnEvent.GetShKeptnContext(), keptnEvent.GetEvent())
 	if err != nil {
 		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
-	log.WithField("PID", dtProblemEvent.PID).Debug("Successfully sent Keptn PROBLEM CLOSED event")
+	log.WithField("PID", keptnEvent.GetPID()).Debug("Successfully sent Keptn PROBLEM CLOSED event")
 	return nil
 }
 
-func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProblemEvent, shkeptncontext string) error {
-	problemDetailsString, err := json.Marshal(dtProblemEvent.ProblemDetails)
-
-	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
-
-	remediationEventData := remediationTriggeredEventData{
-		EventData: keptnv2.EventData{
-			Project: project,
-			Stage:   stage,
-			Service: service,
-		},
-		Problem: ProblemDetails{
-			State:          "OPEN",
-			PID:            dtProblemEvent.PID,
-			ProblemID:      dtProblemEvent.ProblemID,
-			ProblemTitle:   dtProblemEvent.ProblemTitle,
-			ProblemDetails: json.RawMessage(problemDetailsString),
-			ProblemURL:     dtProblemEvent.ProblemURL,
-			ImpactedEntity: dtProblemEvent.ImpactedEntity,
-			Tags:           dtProblemEvent.Tags,
-		},
-	}
-
-	// https://github.com/keptn-contrib/dynatrace-service/issues/176
-	// add problem URL as label so it becomes clickable
-	remediationEventData.Labels = make(map[string]string)
-	remediationEventData.Labels[common.PROBLEMURL_LABEL] = dtProblemEvent.ProblemURL
+func (eh ProblemEventHandler) handleOpenedProblemFromDT(keptnEvent *ProblemAdapter) error {
 
 	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
-	err = createAndSendCE(remediationEventData, shkeptncontext, keptnv2.GetTriggeredEventType(
-		fmt.Sprintf("%s.%s", stage, remediationTaskName),
-	))
+	err := createAndSendCE(keptnEvent.getRemediationTriggeredEventData(), keptnEvent.GetShKeptnContext(), keptnEvent.GetEvent())
 	if err != nil {
 		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
-	log.WithField("PID", dtProblemEvent.PID).Debug("Successfully sent Keptn PROBLEM OPEN event")
+	log.WithField("PID", keptnEvent.GetPID()).Debug("Successfully sent Keptn PROBLEM OPEN event")
 	return nil
-}
-
-func (eh ProblemEventHandler) extractContextFromDynatraceProblem(dtProblemEvent *DTProblemEvent) (string, string, string) {
-
-	// First we look if project, stage and service was passed in via the problem data fields and use them as defaults
-	project := dtProblemEvent.KeptnProject
-	stage := dtProblemEvent.KeptnStage
-	service := dtProblemEvent.KeptnService
-
-	// Second we analyze the tag list as its possible that the problem was raised for a specific monitored service that has keptn tags
-	splittedTags := strings.Split(dtProblemEvent.Tags, ",")
-
-	for _, tag := range splittedTags {
-		tag = strings.TrimSpace(tag)
-		split := strings.Split(tag, ":")
-		if len(split) > 1 {
-			if split[0] == "keptn_project" {
-				project = split[1]
-			}
-			if split[0] == "keptn_stage" {
-				stage = split[1]
-			}
-			if split[0] == "keptn_service" {
-				service = split[1]
-			}
-		}
-	}
-	return project, stage, service
 }
 
 func createAndSendCE(problemData interface{}, shkeptncontext string, eventType string) error {
-
 	ce := cloudevents.NewEvent()
 	ce.SetType(eventType)
 	ce.SetSource(event.GetEventSource())
