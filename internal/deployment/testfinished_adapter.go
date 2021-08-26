@@ -1,8 +1,11 @@
-package adapter
+package deployment
 
 import (
+	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -13,9 +16,21 @@ type TestFinishedAdapter struct {
 	source  string
 }
 
-// NewTestFinishedAdapter godoc
+// NewTestFinishedAdapter creates a new TestFinishedAdapter
 func NewTestFinishedAdapter(event keptnv2.TestFinishedEventData, shkeptncontext, source string) TestFinishedAdapter {
 	return TestFinishedAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewTestFinishedAdapterFromEvent creates a new TestFinishedAdapter from a cloudevents Event
+func NewTestFinishedAdapterFromEvent(e cloudevents.Event) (*TestFinishedAdapter, error) {
+	tfData := &keptnv2.TestFinishedEventData{}
+	err := e.DataAs(tfData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse test finished event payload: %v", err)
+	}
+
+	adapter := NewTestFinishedAdapter(*tfData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext

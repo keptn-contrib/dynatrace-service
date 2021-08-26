@@ -33,11 +33,11 @@ type Entity struct {
 
 // EntitiesClient is a client for interacting with the Dynatrace entities endpoints
 type EntitiesClient struct {
-	Client *DynatraceHelper
+	Client *Client
 }
 
 // NewEntitiesClient creates a new EntitiesClient
-func NewEntitiesClient(client *DynatraceHelper) *EntitiesClient {
+func NewEntitiesClient(client *Client) *EntitiesClient {
 	return &EntitiesClient{
 		Client: client,
 	}

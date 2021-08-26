@@ -52,10 +52,10 @@ func (mz *ManagementZones) Contains(name string) bool {
 }
 
 type ManagementZonesClient struct {
-	client *DynatraceHelper
+	client *Client
 }
 
-func NewManagementZonesClient(client *DynatraceHelper) *ManagementZonesClient {
+func NewManagementZonesClient(client *Client) *ManagementZonesClient {
 	return &ManagementZonesClient{
 		client: client,
 	}

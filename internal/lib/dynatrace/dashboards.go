@@ -1,7 +1,7 @@
 package dynatrace
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
@@ -20,11 +20,11 @@ type DashboardEntry struct {
 
 // SearchForDashboardMatching searches for a dashboard that exactly matches project, service and stage
 // It returns the id of the dashboard on success or an error otherwise
-func (dashboards *DynatraceDashboards) SearchForDashboardMatching(keptnEvent *common.BaseKeptnEvent) string {
+func (dashboards *DynatraceDashboards) SearchForDashboardMatching(keptnEvent adapter.EventContentAdapter) string {
 	keyValuePairs := []string{
-		strings.ToLower("project=" + keptnEvent.Project),
-		strings.ToLower("service=" + keptnEvent.Service),
-		strings.ToLower("stage=" + keptnEvent.Stage),
+		strings.ToLower("project=" + keptnEvent.GetProject()),
+		strings.ToLower("service=" + keptnEvent.GetService()),
+		strings.ToLower("stage=" + keptnEvent.GetStage()),
 	}
 
 	for _, dashboard := range dashboards.Dashboards {
@@ -55,9 +55,9 @@ func (dashboards *DynatraceDashboards) SearchForDashboardMatching(keptnEvent *co
 
 	log.WithFields(
 		log.Fields{
-			"project":        keptnEvent.Project,
-			"stage":          keptnEvent.Stage,
-			"service":        keptnEvent.Service,
+			"project":        keptnEvent.GetProject(),
+			"stage":          keptnEvent.GetStage(),
+			"service":        keptnEvent.GetService(),
 			"dashboardCount": len(dashboards.Dashboards),
 		}).Warn("Found dashboards but none matched the name specification")
 

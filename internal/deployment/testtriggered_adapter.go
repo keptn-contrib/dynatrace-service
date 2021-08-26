@@ -1,7 +1,10 @@
-package adapter
+package deployment
 
 import (
+	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -12,9 +15,21 @@ type TestTriggeredAdapter struct {
 	source  string
 }
 
-// NewTestTriggeredAdapter godoc
+// NewTestTriggeredAdapter creates a new TestTriggeredAdapter
 func NewTestTriggeredAdapter(event keptnv2.TestTriggeredEventData, shkeptncontext, source string) TestTriggeredAdapter {
 	return TestTriggeredAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewTestTriggeredAdapterFromEvent creates a new TestTriggeredAdapter from a cloudevents Event
+func NewTestTriggeredAdapterFromEvent(e cloudevents.Event) (*TestTriggeredAdapter, error) {
+	ttData := &keptnv2.TestTriggeredEventData{}
+	err := e.DataAs(ttData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse test triggered event payload: %v", err)
+	}
+
+	adapter := NewTestTriggeredAdapter(*ttData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext

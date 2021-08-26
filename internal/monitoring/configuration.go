@@ -10,11 +10,11 @@ import (
 )
 
 type Configuration struct {
-	dtClient *dynatrace.DynatraceHelper
+	dtClient *dynatrace.Client
 	kClient  *keptnv2.Keptn
 }
 
-func NewConfiguration(dynatraceClient *dynatrace.DynatraceHelper, keptnClient *keptnv2.Keptn) *Configuration {
+func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) *Configuration {
 	return &Configuration{
 		dtClient: dynatraceClient,
 		kClient:  keptnClient,

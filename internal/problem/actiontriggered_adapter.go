@@ -1,8 +1,11 @@
-package adapter
+package problem
 
 import (
+	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -13,9 +16,21 @@ type ActionTriggeredAdapter struct {
 	source  string
 }
 
-// NewActionTriggeredAdapter godoc
+// NewActionTriggeredAdapter creates a new ActionTriggeredAdapter
 func NewActionTriggeredAdapter(event keptnv2.ActionTriggeredEventData, shkeptncontext, source string) ActionTriggeredAdapter {
 	return ActionTriggeredAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewActionTriggeredAdapterFromEvent creates a new ActionTriggeredAdapter from a cloudevents Event
+func NewActionTriggeredAdapterFromEvent(e cloudevents.Event) (*ActionTriggeredAdapter, error) {
+	atData := &keptnv2.ActionTriggeredEventData{}
+	err := e.DataAs(atData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse action triggered event payload: %v", err)
+	}
+
+	adapter := NewActionTriggeredAdapter(*atData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
@@ -84,4 +99,12 @@ func (a ActionTriggeredAdapter) GetLabels() map[string]string {
 		labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
 	return labels
+}
+
+func (a ActionTriggeredAdapter) GetAction() string {
+	return a.event.Action.Action
+}
+
+func (a ActionTriggeredAdapter) GetActionDescription() string {
+	return a.event.Action.Description
 }

@@ -1,8 +1,10 @@
-package adapter
+package deployment
 
 import (
 	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"os"
@@ -15,9 +17,21 @@ type EvaluationFinishedAdapter struct {
 	source  string
 }
 
-// NewEvaluationDoneAdapter godoc
-func NewEvaluationDoneAdapter(event keptnv2.EvaluationFinishedEventData, shkeptncontext, source string) EvaluationFinishedAdapter {
+// NewEvaluationFinishedAdapter creates a new EvaluationFinishedAdapter
+func NewEvaluationFinishedAdapter(event keptnv2.EvaluationFinishedEventData, shkeptncontext, source string) EvaluationFinishedAdapter {
 	return EvaluationFinishedAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewEvaluationFinishedAdapterFromEvent creates a new EvaluationFinishedAdapter from a cloudevents Event
+func NewEvaluationFinishedAdapterFromEvent(e cloudevents.Event) (*EvaluationFinishedAdapter, error) {
+	efData := &keptnv2.EvaluationFinishedEventData{}
+	err := e.DataAs(efData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse evaluation finished event payload: %v", err)
+	}
+
+	adapter := NewEvaluationFinishedAdapter(*efData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
@@ -107,4 +121,12 @@ func (a EvaluationFinishedAdapter) IsPartOfRemediation() bool {
 		return false
 	}
 	return true
+}
+
+func (a EvaluationFinishedAdapter) GetEvaluationScore() float64 {
+	return a.event.Evaluation.Score
+}
+
+func (a EvaluationFinishedAdapter) GetResult() keptnv2.ResultType {
+	return a.event.Result
 }

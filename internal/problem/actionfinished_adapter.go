@@ -1,8 +1,11 @@
-package adapter
+package problem
 
 import (
+	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -16,6 +19,18 @@ type ActionFinishedAdapter struct {
 // NewActionFinishedAdapter creates a new ActionFinishedAdapter
 func NewActionFinishedAdapter(event keptnv2.ActionFinishedEventData, shkeptncontext, source string) ActionFinishedAdapter {
 	return ActionFinishedAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewActionFinishedAdapterFromEvent creates a new ActionFinishedAdapter from a cloudevents Event
+func NewActionFinishedAdapterFromEvent(e cloudevents.Event) (*ActionFinishedAdapter, error) {
+	afData := &keptnv2.ActionFinishedEventData{}
+	err := e.DataAs(afData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse action finished event payload: %v", err)
+	}
+
+	adapter := NewActionFinishedAdapter(*afData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
@@ -84,4 +99,12 @@ func (a ActionFinishedAdapter) GetLabels() map[string]string {
 		labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
 	return labels
+}
+
+func (a ActionFinishedAdapter) GetResult() keptnv2.ResultType {
+	return a.event.Result
+}
+
+func (a ActionFinishedAdapter) GetStatus() keptnv2.StatusType {
+	return a.event.Status
 }

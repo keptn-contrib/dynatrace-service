@@ -95,10 +95,10 @@ type Tiles struct {
 }
 
 type DashboardsClient struct {
-	client *DynatraceHelper
+	client *Client
 }
 
-func NewDashboardsClient(client *DynatraceHelper) *DashboardsClient {
+func NewDashboardsClient(client *Client) *DashboardsClient {
 	return &DashboardsClient{
 		client: client,
 	}

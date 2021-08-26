@@ -1,6 +1,9 @@
-package adapter
+package monitoring
 
 import (
+	"fmt"
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
@@ -11,9 +14,21 @@ type ConfigureMonitoringAdapter struct {
 	source  string
 }
 
-// NewConfigureMonitoringAdapter godoc
+// NewConfigureMonitoringAdapter creates a new ConfigureMonitoringAdapter
 func NewConfigureMonitoringAdapter(event keptn.ConfigureMonitoringEventData, shkeptncontext, source string) ConfigureMonitoringAdapter {
 	return ConfigureMonitoringAdapter{event: event, context: shkeptncontext, source: source}
+}
+
+// NewConfigureMonitoringAdapterFromEvent creates a new ConfigureMonitoringAdapter from a cloudevents Event
+func NewConfigureMonitoringAdapterFromEvent(e cloudevents.Event) (*ConfigureMonitoringAdapter, error) {
+	cmData := &keptn.ConfigureMonitoringEventData{}
+	err := e.DataAs(cmData)
+	if err != nil {
+		return nil, fmt.Errorf("could not parse deployment finished event payload: %v", err)
+	}
+
+	adapter := NewConfigureMonitoringAdapter(*cmData, event.GetShKeptnContext(e), e.Source())
+	return &adapter, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
@@ -74,4 +89,8 @@ func (a ConfigureMonitoringAdapter) GetTag() string {
 // GetLabels returns a map of labels
 func (a ConfigureMonitoringAdapter) GetLabels() map[string]string {
 	return nil
+}
+
+func (a ConfigureMonitoringAdapter) IsNotForDynatrace() bool {
+	return a.event.Type != "dynatrace"
 }

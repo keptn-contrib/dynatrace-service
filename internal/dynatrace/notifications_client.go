@@ -46,10 +46,10 @@ func (ne *NotificationsError) Error() string {
 const notificationsPath = "/api/config/v1/notifications"
 
 type NotificationsClient struct {
-	client *DynatraceHelper
+	client *Client
 }
 
-func NewNotificationsClient(client *DynatraceHelper) *NotificationsClient {
+func NewNotificationsClient(client *Client) *NotificationsClient {
 	return &NotificationsClient{
 		client: client,
 	}

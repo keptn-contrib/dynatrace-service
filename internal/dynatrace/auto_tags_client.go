@@ -44,10 +44,10 @@ type TagNames struct {
 }
 
 type AutoTagsClient struct {
-	client *DynatraceHelper
+	client *Client
 }
 
-func NewAutoTagClient(client *DynatraceHelper) *AutoTagsClient {
+func NewAutoTagClient(client *Client) *AutoTagsClient {
 	return &AutoTagsClient{
 		client: client,
 	}

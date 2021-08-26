@@ -389,10 +389,12 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		projectsAPI:  keptnapi.NewProjectHandler(projectsMockAPI.URL),
 		servicesAPI:  keptnapi.NewServiceHandler(servicesMockAPI.URL),
 		resourcesAPI: keptnapi.NewResourceHandler(mockCS.URL),
-		EntitiesClient: dynatrace.NewEntitiesClient(dynatrace.NewDynatraceHelper(nil, &credentials.DTCredentials{
-			Tenant:   dtMockServer.URL,
-			ApiToken: "",
-		})),
+		EntitiesClient: dynatrace.NewEntitiesClient(
+			dynatrace.NewClient(
+				&credentials.DTCredentials{
+					Tenant:   dtMockServer.URL,
+					ApiToken: "",
+				})),
 		syncTimer:       nil,
 		keptnHandler:    k,
 		servicesInKeptn: []string{},
@@ -534,7 +536,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		syncTimer         *time.Ticker
 		keptnHandler      *keptnv2.Keptn
 		servicesInKeptn   []string
-		dtConfigGetter    adapter.DynatraceConfigGetterInterface
+		dtConfigGetter    config.DynatraceConfigGetterInterface
 	}
 	type args struct {
 		serviceName string

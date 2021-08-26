@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -91,7 +90,7 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	keptnEvent := &common.BaseKeptnEvent{}
+	keptnEvent := &BaseKeptnEvent{}
 	keptnEvent.Project = "sockshop"
 	keptnEvent.Stage = "dev"
 	keptnEvent.Service = "carts"
@@ -198,7 +197,7 @@ func runGetSLIValueTest(okResponse string) (float64, error) {
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	keptnEvent := &common.BaseKeptnEvent{}
+	keptnEvent := &BaseKeptnEvent{}
 	keptnEvent.Project = "sockshop"
 	keptnEvent.Stage = "dev"
 	keptnEvent.Service = "carts"
@@ -231,7 +230,7 @@ func TestGetSLIValueWithMV2Prefix(t *testing.T) {
 /*
 // Tests what happens if the end-time is in the future
 func TestGetSLIEndTimeFuture(t *testing.T) {
-	keptnEvent := &common.BaseKeptnEvent{}
+	keptnEvent := &BaseKeptnEvent{}
 	keptnEvent.Project = "sockshop"
 	keptnEvent.Stage = "dev"
 	keptnEvent.Service = "carts"
@@ -260,7 +259,7 @@ func TestGetSLIEndTimeFuture(t *testing.T) {
 
 // Tests what happens if start-time is after end-time
 func TestGetSLIStartTimeAfterEndTime(t *testing.T) {
-	keptnEvent := &common.BaseKeptnEvent{}
+	keptnEvent := &BaseKeptnEvent{}
 	keptnEvent.Project = "sockshop"
 	keptnEvent.Stage = "dev"
 	keptnEvent.Service = "carts"
@@ -309,7 +308,7 @@ func TestGetSLISleep(t *testing.T) {
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	keptnEvent := &common.BaseKeptnEvent{}
+	keptnEvent := &BaseKeptnEvent{}
 	keptnEvent.Project = "sockshop"
 	keptnEvent.Stage = "dev"
 	keptnEvent.Service = "carts"
@@ -337,7 +336,7 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 	httpClient, teardown := testingHTTPClient(h)
 	defer teardown()
 
-	keptnEvent := &common.BaseKeptnEvent{}
+	keptnEvent := &BaseKeptnEvent{}
 	keptnEvent.Project = "sockshop"
 	keptnEvent.Stage = "dev"
 	keptnEvent.Service = "carts"

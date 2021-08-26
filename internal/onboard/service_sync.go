@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/lib"
@@ -126,7 +126,7 @@ type serviceSynchronizer struct {
 	syncTimer         *time.Ticker
 	keptnHandler      *keptnv2.Keptn
 	servicesInKeptn   []string
-	dtConfigGetter    adapter.DynatraceConfigGetterInterface
+	dtConfigGetter    config.DynatraceConfigGetterInterface
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
@@ -143,8 +143,8 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 			credentialManager: c,
 		}
 
-		serviceSynchronizerInstance.dtConfigGetter = &adapter.DynatraceConfigGetter{}
-		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewDynatraceHelper(nil, nil))
+		serviceSynchronizerInstance.dtConfigGetter = &config.DynatraceConfigGetter{}
+		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewClient(nil))
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()
 		shipyardControllerBaseURL := common.GetShipyardControllerURL()
