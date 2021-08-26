@@ -82,7 +82,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), client, dynatraceConfig), nil
 	case nil:
 		// in case 'getEventAdapter()' would return a type we would ignore
-		return LoggingNoOpHandler{event: event}, nil
+		return NoOpHandler{event: event}, nil
 	default:
 		return ErrorHandler{err: fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType)}, nil
 	}
@@ -163,9 +163,10 @@ func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 		}
 		return keptnEvent, nil
 	case keptnv2.GetFinishedEventType(keptnv2.ReleaseTaskName):
-		//do nothing, ignore the type
+		//do nothing, ignore the type, don't even log
 		return nil, nil
 	default:
-		return nil, fmt.Errorf("invalid event type: %s", e.Type())
+		log.WithField("EventType", e.Type()).Debug("Ignoring event")
+		return nil, nil
 	}
 }
