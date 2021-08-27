@@ -11,19 +11,17 @@ import (
 )
 
 type ActionFinishedEventHandler struct {
-	event       *ActionFinishedAdapter
-	client      *dynatrace.Client
-	config      *config.DynatraceConfigFile
-	eventSource string
+	event  *ActionFinishedAdapter
+	client *dynatrace.Client
+	config *config.DynatraceConfigFile
 }
 
 // NewActionFinishedEventHandler creates a new ActionFinishedEventHandler
-func NewActionFinishedEventHandler(event *ActionFinishedAdapter, client *dynatrace.Client, config *config.DynatraceConfigFile, eventSource string) *ActionFinishedEventHandler {
+func NewActionFinishedEventHandler(event *ActionFinishedAdapter, client *dynatrace.Client, config *config.DynatraceConfigFile) *ActionFinishedEventHandler {
 	return &ActionFinishedEventHandler{
-		event:       event,
-		client:      client,
-		config:      config,
-		eventSource: eventSource,
+		event:  event,
+		client: client,
+		config: config,
 	}
 }
 
@@ -39,7 +37,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent() error {
 	// Comment text we want to push over
 	comment := fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
 		eh.event.GetLabels()[common.KEPTNSBRIDGE_LABEL],
-		eh.eventSource,
+		eh.event.GetSource(),
 		eh.event.GetResult(),
 		eh.event.GetStatus())
 

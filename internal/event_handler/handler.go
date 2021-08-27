@@ -64,9 +64,9 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case problem.ActionTriggeredAdapter:
 		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), client, dynatraceConfig), nil
 	case problem.ActionStartedAdapter:
-		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), client, event.Source()), nil
+		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), client), nil
 	case problem.ActionFinishedAdapter:
-		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), client, dynatraceConfig, event.Source()), nil
+		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), client, dynatraceConfig), nil
 	case sli.GetSLITriggeredAdapter:
 		// TODO 2021-08-25: consolidate dynatrace client and config file retrieval in GetSLIEventHandler
 		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), event), nil

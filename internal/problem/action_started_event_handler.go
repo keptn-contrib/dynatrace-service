@@ -8,17 +8,15 @@ import (
 )
 
 type ActionStartedEventHandler struct {
-	event       *ActionStartedAdapter
-	client      *dynatrace.Client
-	eventSource string
+	event  *ActionStartedAdapter
+	client *dynatrace.Client
 }
 
 // NewActionStartedEventHandler creates a new ActionStartedEventHandler
-func NewActionStartedEventHandler(event *ActionStartedAdapter, client *dynatrace.Client, eventSource string) *ActionStartedEventHandler {
+func NewActionStartedEventHandler(event *ActionStartedAdapter, client *dynatrace.Client) *ActionStartedEventHandler {
 	return &ActionStartedEventHandler{
-		event:       event,
-		client:      client,
-		eventSource: eventSource,
+		event:  event,
+		client: client,
 	}
 }
 
@@ -31,7 +29,7 @@ func (eh *ActionStartedEventHandler) HandleEvent() error {
 	}
 
 	// Comment we push over
-	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", eh.event.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.eventSource)
+	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", eh.event.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.event.GetSource())
 
 	dynatrace.NewProblemsClient(eh.client).AddProblemComment(pid, comment)
 
