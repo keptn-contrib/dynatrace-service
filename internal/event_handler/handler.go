@@ -88,7 +88,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, dynatraceConfig), nil
 	case nil:
 		// in case 'getEventAdapter()' would return a type we would ignore
-		return NoOpHandler{event: event}, nil
+		return NoOpHandler{}, nil
 	default:
 		return ErrorHandler{err: fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType)}, nil
 	}
