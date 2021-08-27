@@ -3,20 +3,14 @@ package monitoring
 import (
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 // ConfigureMonitoringAdapter godoc
 type ConfigureMonitoringAdapter struct {
-	event   keptn.ConfigureMonitoringEventData
-	context string
-	source  string
-}
-
-// NewConfigureMonitoringAdapter creates a new ConfigureMonitoringAdapter
-func NewConfigureMonitoringAdapter(event keptn.ConfigureMonitoringEventData, shkeptncontext, source string) ConfigureMonitoringAdapter {
-	return ConfigureMonitoringAdapter{event: event, context: shkeptncontext, source: source}
+	event      keptn.ConfigureMonitoringEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewConfigureMonitoringAdapterFromEvent creates a new ConfigureMonitoringAdapter from a cloudevents Event
@@ -27,18 +21,20 @@ func NewConfigureMonitoringAdapterFromEvent(e cloudevents.Event) (*ConfigureMoni
 		return nil, fmt.Errorf("could not parse deployment finished event payload: %v", err)
 	}
 
-	adapter := NewConfigureMonitoringAdapter(*cmData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &ConfigureMonitoringAdapter{
+		event:      *cmData,
+		cloudEvent: adapter.NewCloudEventAdapter(e),
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ConfigureMonitoringAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.Context()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ConfigureMonitoringAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
@@ -93,4 +89,8 @@ func (a ConfigureMonitoringAdapter) GetLabels() map[string]string {
 
 func (a ConfigureMonitoringAdapter) IsNotForDynatrace() bool {
 	return a.event.Type != "dynatrace"
+}
+
+func (a ConfigureMonitoringAdapter) GetEventID() string {
+	return a.cloudEvent.ID()
 }
