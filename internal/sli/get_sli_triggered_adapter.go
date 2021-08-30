@@ -3,42 +3,38 @@ package sli
 import (
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 // GetSLITriggeredAdapter is a content adaptor for events of type sh.keptn.event.action.started
 type GetSLITriggeredAdapter struct {
-	event   keptnv2.GetSLITriggeredEventData
-	context string
-	source  string
-}
-
-// NewGetSLITriggeredAdapter creates a new GetSLITriggeredAdapter
-func NewGetSLITriggeredAdapter(event keptnv2.GetSLITriggeredEventData, shkeptncontext, source string) GetSLITriggeredAdapter {
-	return GetSLITriggeredAdapter{event: event, context: shkeptncontext, source: source}
+	event      keptnv2.GetSLITriggeredEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewGetSLITriggeredAdapterFromEvent creates a new GetSLITriggeredAdapter from a cloudevents Event
 func NewGetSLITriggeredAdapterFromEvent(e cloudevents.Event) (*GetSLITriggeredAdapter, error) {
-	asData := &keptnv2.GetSLITriggeredEventData{}
-	err := e.DataAs(asData)
+	stData := &keptnv2.GetSLITriggeredEventData{}
+	err := e.DataAs(stData)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse action started event payload: %v", err)
 	}
 
-	adapter := NewGetSLITriggeredAdapter(*asData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &GetSLITriggeredAdapter{
+		event:      *stData,
+		cloudEvent: adapter.NewCloudEventAdapter(e),
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a GetSLITriggeredAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.Context()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a GetSLITriggeredAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
@@ -109,6 +105,10 @@ func (a GetSLITriggeredAdapter) GetIndicators() []string {
 
 func (a GetSLITriggeredAdapter) GetCustomSLIFilters() []*keptnv2.SLIFilter {
 	return a.event.GetSLI.CustomFilters
+}
+
+func (a GetSLITriggeredAdapter) GetEventID() string {
+	return a.cloudEvent.ID()
 }
 
 func (a *GetSLITriggeredAdapter) addLabel(name string, value string) {

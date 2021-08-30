@@ -12,6 +12,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/problem"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
+	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -52,37 +53,42 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		return ErrorHandler{err: err}, nil
 	}
 
-	client := dynatrace.NewClient(dynatraceCredentials)
+	dtClient := dynatrace.NewClient(dynatraceCredentials)
+	kClient, err := keptnv2.NewKeptn(&event, keptn.KeptnOpts{})
+	if err != nil {
+		log.WithError(err).Error("Could not get create Keptn client")
+		return ErrorHandler{err: err}, nil
+	}
 
 	switch aType := keptnEvent.(type) {
 	case monitoring.ConfigureMonitoringAdapter:
-		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), client, event), nil
+		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient), nil
 	case monitoring.ProjectCreateAdapter:
-		return monitoring.NewCreateProjectEventHandler(keptnEvent.(*monitoring.ProjectCreateAdapter), client, event), nil
+		return monitoring.NewCreateProjectEventHandler(keptnEvent.(*monitoring.ProjectCreateAdapter), dtClient, kClient), nil
 	case problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter)), nil
 	case problem.ActionTriggeredAdapter:
-		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), client, dynatraceConfig), nil
+		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, dynatraceConfig), nil
 	case problem.ActionStartedAdapter:
-		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), client, event.Source()), nil
+		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), dtClient), nil
 	case problem.ActionFinishedAdapter:
-		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), client, dynatraceConfig, event.Source()), nil
+		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, dynatraceConfig), nil
 	case sli.GetSLITriggeredAdapter:
 		// TODO 2021-08-25: consolidate dynatrace client and config file retrieval in GetSLIEventHandler
-		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), event), nil
+		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter)), nil
 	case deployment.DeploymentFinishedAdapter:
-		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), client, dynatraceConfig), nil
+		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, dynatraceConfig), nil
 	case deployment.TestTriggeredAdapter:
-		return deployment.NewTestTriggeredEventHandler(keptnEvent.(*deployment.TestTriggeredAdapter), client, dynatraceConfig), nil
+		return deployment.NewTestTriggeredEventHandler(keptnEvent.(*deployment.TestTriggeredAdapter), dtClient, dynatraceConfig), nil
 	case deployment.TestFinishedAdapter:
-		return deployment.NewTestFinishedEventHandler(keptnEvent.(*deployment.TestFinishedAdapter), client, dynatraceConfig), nil
+		return deployment.NewTestFinishedEventHandler(keptnEvent.(*deployment.TestFinishedAdapter), dtClient, dynatraceConfig), nil
 	case deployment.EvaluationFinishedAdapter:
-		return deployment.NewEvaluationFinishedEventHandler(keptnEvent.(*deployment.EvaluationFinishedAdapter), client, dynatraceConfig), nil
+		return deployment.NewEvaluationFinishedEventHandler(keptnEvent.(*deployment.EvaluationFinishedAdapter), dtClient, dynatraceConfig), nil
 	case deployment.ReleaseTriggeredAdapter:
-		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), client, dynatraceConfig), nil
+		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, dynatraceConfig), nil
 	case nil:
 		// in case 'getEventAdapter()' would return a type we would ignore
-		return NoOpHandler{event: event}, nil
+		return NoOpHandler{}, nil
 	default:
 		return ErrorHandler{err: fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType)}, nil
 	}
