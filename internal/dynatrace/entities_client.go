@@ -55,7 +55,7 @@ func (ec *EntitiesClient) GetKeptnManagedServices() ([]Entity, error) {
 		var err error
 
 		if nextPageKey == "" {
-			response, err = ec.Client.Get(entitiesPath + "entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=" + strconv.FormatInt(int64(pageSize), 10))
+			response, err = ec.Client.Get(entitiesPath + "?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=" + strconv.FormatInt(int64(pageSize), 10))
 		} else {
 			response, err = ec.Client.Get(entitiesPath + "?nextPageKey=" + nextPageKey)
 		}
