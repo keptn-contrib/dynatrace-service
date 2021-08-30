@@ -166,7 +166,7 @@ func TestExecuteDynatraceREST(t *testing.T) {
 	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	resp, body, err := dh.executeDynatraceREST("GET", url+"/api/config/v1/dashboards", nil)
+	resp, body, err := dh.executeDynatraceREST("GET", url+"/api/config/v1/dashboards")
 
 	if resp == nil || resp.StatusCode != 200 {
 		t.Errorf("Dynatrace REST not returning http 200 status")
@@ -186,7 +186,7 @@ func TestExecuteDynatraceRESTBadRequest(t *testing.T) {
 	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	resp, _, _ := dh.executeDynatraceREST("GET", url+"/BADAPI", nil)
+	resp, _, _ := dh.executeDynatraceREST("GET", url+"/BADAPI")
 
 	if resp == nil || resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("Dynatrace REST not returning http 400")

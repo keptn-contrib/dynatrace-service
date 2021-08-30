@@ -62,7 +62,7 @@ func NewDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, credentials
  * addHeaders allows you to pass additional HTTP Headers
  * Returns the Response Object, the body byte array, error
  */
-func (ph *Handler) executeDynatraceREST(httpMethod string, requestUrl string, addHeaders map[string]string) (*http.Response, []byte, error) {
+func (ph *Handler) executeDynatraceREST(httpMethod string, requestUrl string) (*http.Response, []byte, error) {
 
 	// new request to our URL
 	req, err := http.NewRequest(httpMethod, requestUrl, nil)
@@ -73,13 +73,6 @@ func (ph *Handler) executeDynatraceREST(httpMethod string, requestUrl string, ad
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Api-Token "+ph.credentials.ApiToken)
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
-
-	// add any additionally passed headers
-	if addHeaders != nil {
-		for addHeaderName, addHeaderValue := range addHeaders {
-			req.Header.Set(addHeaderName, addHeaderValue)
-		}
-	}
 
 	// perform the request
 	resp, err := ph.HTTPClient.Do(req)
@@ -120,14 +113,14 @@ func checkApiResponse(resp *http.Response, body []byte) error {
 // getForPath sends a HTTP GET request to the specified apiPath and adds optional headers to the request.
 // The apiPath is appended to the base URL of the Handler
 // It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
-func (ph *Handler) getForPath(apiPath string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
-	return ph.get(ph.credentials.Tenant+apiPath, additionalHeaders, errorContext)
+func (ph *Handler) getForPath(apiPath string, errorContext string) ([]byte, error) {
+	return ph.get(ph.credentials.Tenant+apiPath, errorContext)
 }
 
 // get sends a HTTP GET request to the specified request URL and adds optional headers to the request.
 // It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
-func (ph *Handler) get(requestURL string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
-	resp, body, err := ph.executeDynatraceREST(http.MethodGet, requestURL, additionalHeaders)
+func (ph *Handler) get(requestURL string, errorContext string) ([]byte, error) {
+	resp, body, err := ph.executeDynatraceREST(http.MethodGet, requestURL)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +145,7 @@ func isValidUUID(uuid string) bool {
 func (ph *Handler) findDynatraceDashboard(keptnEvent adapter.EventContentAdapter) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
-	body, err := ph.getForPath("/api/config/v1/dashboards", nil, "Dashboards API")
+	body, err := ph.getForPath("/api/config/v1/dashboards", "Dashboards API")
 	if err != nil {
 		return "", err
 	}
@@ -213,7 +206,7 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 
 	// We have a valid Dashboard UUID - now lets query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
-	body, err := ph.getForPath("/api/config/v1/dashboards/"+dashboard, nil, "Dashboards API")
+	body, err := ph.getForPath("/api/config/v1/dashboards/"+dashboard, "Dashboards API")
 	if err != nil {
 		return nil, dashboard, err
 	}
@@ -236,7 +229,6 @@ func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, end
 			sloID,
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix)),
-		nil,
 		"SLO API")
 	if err != nil {
 		return nil, err
@@ -266,7 +258,6 @@ func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix ti
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
 			problemQuery),
-		nil,
 		"Problems API")
 	if err != nil {
 		return nil, err
@@ -290,7 +281,6 @@ func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, star
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
 			problemQuery),
-		nil,
 		"Security Problems API")
 	if err != nil {
 		return nil, err
@@ -308,7 +298,7 @@ func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, star
 
 // executeMetricAPIDescribe Calls the /metrics/<metricID> API call to retrieve Metric Definition Details.
 func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition, error) {
-	body, err := ph.getForPath("/api/v2/metrics/"+metricId, nil, "Metrics API")
+	body, err := ph.getForPath("/api/v2/metrics/"+metricId, "Metrics API")
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +315,7 @@ func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition,
 
 // executeMetricsAPIQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetricsQueryResult, error) {
-	body, err := ph.get(metricsQuery, map[string]string{"Content-Type": "application/json"}, "Metrics API")
+	body, err := ph.get(metricsQuery, "Metrics API")
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +337,7 @@ func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetric
 
 // ExecuteGetDynatraceProblemById Calls the /problems/<problemId> API call to retrieve Problem Details
 func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceProblem, error) {
-	body, err := ph.getForPath("/api/v2/problems/"+problemId, nil, "Problems API")
+	body, err := ph.getForPath("/api/v2/problems/"+problemId, "Problems API")
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +354,7 @@ func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceP
 
 // executeGetDynatraceUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*DTUSQLResult, error) {
-	body, err := ph.get(usql, map[string]string{"Content-Type": "application/json"}, "USQL API")
+	body, err := ph.get(usql, "USQL API")
 	if err != nil {
 		return nil, err
 	}
