@@ -72,7 +72,7 @@ spec:
             - name: HTTPS_PROXY
               value: '{{ .Values.dynatraceService.config.httpsProxy }}'
             - name: NO_PROXY
-              value: '127.0.0.1'
+              value: '{{ .Values.dynatraceService.config.noProxy }}'
             - name: KEPTN_API_URL
               value: '{{ .Values.dynatraceService.config.keptnApiUrl }}'
             - name: KEPTN_BRIDGE_URL

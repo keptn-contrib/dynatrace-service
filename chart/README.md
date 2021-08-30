@@ -25,6 +25,7 @@ The following table lists the configurable parameters of the *dynatrace-service*
 | `dynatraceService.config.httpSSLVerify` | Verify HTTPS SSL certificates | `true` |
 | `dynatraceService.config.httpProxy` | Proxy for HTTP requests | `""` |
 | `dynatraceService.config.httpsProxy` | Proxy for HTTPS requests | `""` |
+| `dynatraceService.config.noProxy` | Proxy exceptions for HTTP and HTTPS requests | `"127.0.0.1,mongodb-datastore,configuration-service,shipyard-controller"` |
 | `distributor.stageFilter` | Sets the stage this *dynatrace-service* belongs to | `""` |
 | `distributor.serviceFilter` | Sets the service this *dynatrace-service* belongs to | `""` |
 | `distributor.projectFilter` | Sets the project this *dynatrace-service* belongs to | `""` |

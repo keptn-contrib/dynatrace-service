@@ -14,8 +14,9 @@ dynatraceService:
     synchronizeDynatraceServices: true       # Synchronize Service Entities between Dynatrace and Keptn
     synchronizeDynatraceServicesIntervalSeconds: 60       # Synchronization Interval
     httpSSLVerify: true                      # Verify HTTPS SSL certificates
-    httpProxy: ""
-    httpsProxy: ""
+    httpProxy: ""                            # Proxy for HTTP requests
+    httpsProxy: ""                           # Proxy for HTTPS requests
+    noProxy: "127.0.0.1,mongodb-datastore,configuration-service,shipyard-controller"      # Proxy exceptions for HTTP and HTTPS requests
     keptnApiUrl: ""                          # URL of keptn API
     keptnBridgeUrl: ""                       # URL of keptn bridge
 
