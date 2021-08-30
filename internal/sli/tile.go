@@ -1,4 +1,4 @@
-package dynatrace
+package sli
 
 type Tile struct {
 	Name       string `json:"name"`

@@ -1,4 +1,4 @@
-package dynatrace
+package sli
 
 import (
 	keptn "github.com/keptn/go-utils/pkg/lib"

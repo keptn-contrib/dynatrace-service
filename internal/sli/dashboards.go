@@ -1,4 +1,4 @@
-package dynatrace
+package sli
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"

@@ -1,4 +1,4 @@
-package dynatrace
+package sli
 
 type MetricQueryResultNumbers struct {
 	Dimensions   []string          `json:"dimensions"`

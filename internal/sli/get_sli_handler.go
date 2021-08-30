@@ -12,11 +12,9 @@ import (
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 
+	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib/dynatrace"
-
-	cloudevents "github.com/cloudevents/sdk-go/v2"
 
 	"gopkg.in/yaml.v2"
 
@@ -156,7 +154,7 @@ func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) err
 /**
  * Tries to find a dynatrace dashboard that matches our project. If so - returns the SLI, SLO and SLIResults
  */
-func getDataFromDynatraceDashboard(dynatraceHandler *dynatrace.Handler, keptnEvent adapter.EventContentAdapter, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*dynatrace.DashboardLink, []*keptnv2.SLIResult, error) {
+func getDataFromDynatraceDashboard(dynatraceHandler *Handler, keptnEvent adapter.EventContentAdapter, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*DashboardLink, []*keptnv2.SLIResult, error) {
 
 	//
 	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
@@ -287,7 +285,7 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 
 	//
 	// creating Dynatrace Handler which allows us to call the Dynatrace API
-	dynatraceHandler := dynatrace.NewDynatraceHandler(
+	dynatraceHandler := NewDynatraceHandler(
 		dtCredentials.Tenant,
 		eventData,
 		map[string]string{

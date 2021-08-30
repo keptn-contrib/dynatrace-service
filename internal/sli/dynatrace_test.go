@@ -1,4 +1,4 @@
-package dynatrace
+package sli
 
 import (
 	"bytes"
