@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"os"
 	"strings"
 	"time"
 
@@ -288,10 +287,7 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 	dynatraceHandler := NewDynatraceHandler(
 		dtCredentials.Tenant,
 		eventData,
-		map[string]string{
-			"Authorization": "Api-Token " + dtCredentials.ApiToken,
-			"User-Agent":    "keptn-contrib/dynatrace-service:" + os.Getenv("version"),
-		})
+		dtCredentials)
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps

@@ -149,7 +149,12 @@ func testingGetKeptnEvent(project string, stage string, service string, deployme
 func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Handler, *http.Client, string, func()) {
 	httpClient, url, teardown := testingDynatraceHTTPClient()
 
-	dh := NewDynatraceHandler(url, keptnEvent, map[string]string{"Authorization": "Api-Token " + "test"})
+	credentials := &common.DTCredentials{
+		Tenant:   url,
+		ApiToken: "test",
+	}
+
+	dh := NewDynatraceHandler(url, keptnEvent, credentials)
 
 	dh.HTTPClient = httpClient
 
@@ -551,7 +556,6 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 	type args struct {
 		apiURL       string // this is really the tenant
 		keptnEvent   GetSLITriggeredAdapterInterface
-		headers      map[string]string
 		keptnContext string
 		eventID      string
 	}
@@ -575,7 +579,6 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 			args: args{
 				apiURL:       mockTenant,
 				keptnEvent:   nil,
-				headers:      nil,
 				keptnContext: "",
 				eventID:      "",
 			},
@@ -615,7 +618,7 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 			gotHandler := NewDynatraceHandler(
 				tt.args.apiURL,
 				tt.args.keptnEvent,
-				tt.args.headers)
+				nil)
 
 			gotTransport := gotHandler.HTTPClient.Transport.(*http.Transport)
 			gotProxyURL, err := gotTransport.Proxy(tt.request)

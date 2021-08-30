@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -35,23 +36,23 @@ const MetricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatr
 
 // Handler interacts with a dynatrace API endpoint
 type Handler struct {
-	ApiURL     string
-	KeptnEvent GetSLITriggeredAdapterInterface
-	HTTPClient *http.Client
-	Headers    map[string]string
+	ApiURL      string
+	KeptnEvent  GetSLITriggeredAdapterInterface
+	HTTPClient  *http.Client
+	credentials *common.DTCredentials
 }
 
 // NewDynatraceHandler returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewDynatraceHandler(apiURL string, keptnEvent GetSLITriggeredAdapterInterface, headers map[string]string) *Handler {
+func NewDynatraceHandler(apiURL string, keptnEvent GetSLITriggeredAdapterInterface, credentials *common.DTCredentials) *Handler {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	ph := &Handler{
-		ApiURL:     strings.TrimSuffix(apiURL, "/"),
-		KeptnEvent: keptnEvent,
-		HTTPClient: &http.Client{Transport: tr},
-		Headers:    headers,
+		ApiURL:      strings.TrimSuffix(apiURL, "/"),
+		KeptnEvent:  keptnEvent,
+		HTTPClient:  &http.Client{Transport: tr},
+		credentials: credentials,
 	}
 
 	return ph
@@ -71,10 +72,9 @@ func (ph *Handler) executeDynatraceREST(httpMethod string, requestUrl string, ad
 		return nil, nil, err
 	}
 
-	// add our default headers, e.g: authentication
-	for headerName, headerValue := range ph.Headers {
-		req.Header.Set(headerName, headerValue)
-	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Api-Token "+ph.credentials.ApiToken)
+	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
 
 	// add any additionally passed headers
 	if addHeaders != nil {
