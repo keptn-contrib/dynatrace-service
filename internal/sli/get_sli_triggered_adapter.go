@@ -7,6 +7,17 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
+type GetSLITriggeredAdapterInterface interface {
+	adapter.EventContentAdapter
+
+	IsNotForDynatrace() bool
+	GetSLIStart() string
+	GetSLIEnd() string
+	GetIndicators() []string
+	GetCustomSLIFilters() []*keptnv2.SLIFilter
+	GetEventID() string
+}
+
 // GetSLITriggeredAdapter is a content adaptor for events of type sh.keptn.event.action.started
 type GetSLITriggeredAdapter struct {
 	event      keptnv2.GetSLITriggeredEventData
