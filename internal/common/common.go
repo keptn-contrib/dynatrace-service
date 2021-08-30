@@ -564,6 +564,8 @@ func GetDTCredentials(dynatraceSecretName string) (*DTCredentials, error) {
 		dtCreds.Tenant = "https://" + dtCreds.Tenant
 	}
 
+	dtCreds.Tenant = strings.TrimSuffix(dtCreds.Tenant, "/")
+
 	return dtCreds, nil
 }
 
