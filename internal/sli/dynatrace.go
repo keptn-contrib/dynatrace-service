@@ -354,7 +354,10 @@ func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceP
 
 // executeGetDynatraceUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*DTUSQLResult, error) {
-	body, err := ph.get(usql, "USQL API")
+	path := "/api/v1/userSessionQueryLanguage/table?" + usql
+	log.WithField("query", ph.credentials.Tenant+path).Debug("Final USQL Query")
+
+	body, err := ph.getForPath(path, "USQL API")
 	if err != nil {
 		return nil, err
 	}
@@ -391,26 +394,12 @@ func (ph *Handler) buildDynatraceUSQLQuery(query string, startUnix time.Time, en
 		"endTimestamp":      common.TimestampToString(endUnix),
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v1/userSessionQueryLanguage/table", ph.credentials.Tenant)
-
-	// append queryParams to targetURL
-	u, err := url.Parse(targetURL)
-	if err != nil {
-		log.WithError(err).Warn("Error parsing targetUrl")
-	}
-	q, err := url.ParseQuery(u.RawQuery)
-	if err != nil {
-		log.WithError(err).Warn("Error parsing targetUrl raw query")
-	}
-
+	q := make(url.Values)
 	for param, value := range queryParams {
 		q.Add(param, value)
 	}
 
-	u.RawQuery = q.Encode()
-	log.WithField("query", u.String()).Debug("Final USQL Query")
-
-	return u.String()
+	return q.Encode()
 }
 
 // buildDynatraceMetricsQuery builds the complete query string based on start, end and filters
