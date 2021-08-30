@@ -328,18 +328,13 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 		// get custom metrics for project if they exist
 		projectCustomQueries := common.GetCustomQueries(eventData)
 
-		// set our list of queries on the handler
-		if projectCustomQueries != nil {
-			dynatraceHandler.CustomQueries = projectCustomQueries
-		}
-
 		// query all indicators
 		for _, indicator := range eventData.GetIndicators() {
 			if strings.Compare(indicator, ProblemOpenSLI) == 0 {
 				log.WithField("indicator", indicator).Info("Skipping indicator as it is handled later")
 			} else {
 				log.WithField("indicator", indicator).Info("Fetching indicator")
-				sliValue, err := dynatraceHandler.GetSLIValue(indicator, startUnix, endUnix)
+				sliValue, err := dynatraceHandler.GetSLIValue(indicator, startUnix, endUnix, projectCustomQueries)
 				if err != nil {
 					log.WithError(err).Error("GetSLIValue failed")
 					// failed to fetch metric

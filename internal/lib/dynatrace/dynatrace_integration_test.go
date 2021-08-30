@@ -100,34 +100,34 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 	dh.HTTPClient = httpClient
 
 	// overwrite custom queries with the new format (starting with metricSelector=)
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries[ResponseTimeP50] = "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
+	customQueries := make(map[string]string)
+	customQueries[ResponseTimeP50] = "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err := dh.GetSLIValue(ResponseTimeP50, start, end, customQueries)
 
 	assert.EqualValues(t, nil, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
 
 	// now do the same but with the new format but with ?metricSelector= in front (the ? is not needed/wanted)
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries[ResponseTimeP50] = "?metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
+	customQueries = make(map[string]string)
+	customQueries[ResponseTimeP50] = "?metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
 
 	start = time.Unix(1571649084, 0).UTC()
 	end = time.Unix(1571649085, 0).UTC()
-	value, err = dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err = dh.GetSLIValue(ResponseTimeP50, start, end, customQueries)
 
 	assert.EqualValues(t, nil, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
 
 	// now do the same but with the old format ($metricName?scope=...)
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries[ResponseTimeP50] = "builtin:service.response.time:merge(0):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)"
+	customQueries = make(map[string]string)
+	customQueries[ResponseTimeP50] = "builtin:service.response.time:merge(0):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)"
 
 	start = time.Unix(1571649084, 0).UTC()
 	end = time.Unix(1571649085, 0).UTC()
-	value, err = dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err = dh.GetSLIValue(ResponseTimeP50, start, end, customQueries)
 
 	assert.EqualValues(t, nil, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
@@ -209,7 +209,7 @@ func runGetSLIValueTest(okResponse string) (float64, error) {
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
 
-	return dh.GetSLIValue(ResponseTimeP50, start, end)
+	return dh.GetSLIValue(ResponseTimeP50, start, end, nil)
 }
 
 func TestGetSLIValueWithMV2Prefix(t *testing.T) {
@@ -320,7 +320,7 @@ func TestGetSLISleep(t *testing.T) {
 	start := time.Now().Add(-5 * time.Minute)
 	// artificially increase end time to be in the future
 	end := time.Now().Add(-80 * time.Second)
-	value, err := dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err := dh.GetSLIValue(ResponseTimeP50, start, end, nil)
 
 	assert.InDelta(t, 8.43340, value, 0.001)
 	assert.Nil(t, err)
@@ -347,7 +347,7 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(Throughput, start, end)
+	value, err := dh.GetSLIValue(Throughput, start, end, nil)
 
 	assert.EqualValues(t, 0.0, value)
 	assert.NotNil(t, err, nil)

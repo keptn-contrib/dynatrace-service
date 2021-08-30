@@ -397,13 +397,13 @@ func TestGetSLIValueWithSLOPrefix(t *testing.T) {
 	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries["RT_faster_500ms"] = "SLO;524ca177-849b-3e8c-8175-42b93fbc33c5"
+	customQueries := make(map[string]string)
+	customQueries["RT_faster_500ms"] = "SLO;524ca177-849b-3e8c-8175-42b93fbc33c5"
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 
-	_, err := dh.GetSLIValue("RT_faster_500ms", startTime, endTime)
+	_, err := dh.GetSLIValue("RT_faster_500ms", startTime, endTime, customQueries)
 
 	if err != nil {
 		t.Error(err)
@@ -475,13 +475,13 @@ func TestGetSLIValueWithPV2Prefix(t *testing.T) {
 	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries["problems"] = "PV2;problemEntity=status(open)"
+	customQueries := make(map[string]string)
+	customQueries["problems"] = "PV2;problemEntity=status(open)"
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 
-	_, err := dh.GetSLIValue("problems", startTime, endTime)
+	_, err := dh.GetSLIValue("problems", startTime, endTime, customQueries)
 
 	if err != nil {
 		t.Error(err)
@@ -494,13 +494,13 @@ func TestGetSLIValueWithSECPV2Prefix(t *testing.T) {
 	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries["security_problems"] = "SECPV2;problemEntity=status(open)"
+	customQueries := make(map[string]string)
+	customQueries["security_problems"] = "SECPV2;problemEntity=status(open)"
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 
-	_, err := dh.GetSLIValue("security_problems", startTime, endTime)
+	_, err := dh.GetSLIValue("security_problems", startTime, endTime, customQueries)
 
 	if err != nil {
 		t.Error(err)
@@ -651,7 +651,7 @@ func TestGetTimeseriesUnsupportedSLI(t *testing.T) {
 	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	got, err := dh.getSLIQuery("foobar")
+	got, err := dh.getSLIQuery("foobar", nil)
 
 	if got != "" {
 		t.Errorf("dh.getTimeseriesConfig() returned (\"%s\"), expected(\"\")", got)

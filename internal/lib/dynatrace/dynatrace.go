@@ -41,7 +41,6 @@ type Handler struct {
 	KeptnEvent    adapter.EventContentAdapter
 	HTTPClient    *http.Client
 	Headers       map[string]string
-	CustomQueries map[string]string
 	CustomFilters []*keptnv2.SLIFilter
 }
 
@@ -1393,10 +1392,10 @@ func (ph *Handler) addSLIAndSLOToResultFromUserSessionQueryTile(tile *Tile, star
 
 // GetSLIValue queries a single metric value from Dynatrace API.
 // Can handle both Metric Queries as well as USQL
-func (ph *Handler) GetSLIValue(name string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (ph *Handler) GetSLIValue(name string, startUnix time.Time, endUnix time.Time, customQueries map[string]string) (float64, error) {
 
 	// first we get the query from the SLI configuration based on its logical name
-	query, err := ph.getSLIQuery(name)
+	query, err := ph.getSLIQuery(name, customQueries)
 	if err != nil {
 		return 0, fmt.Errorf("Error when fetching SLI config for %s %s.", name, err.Error())
 	}
@@ -1607,9 +1606,11 @@ func (ph *Handler) replaceQueryParameters(query string) string {
 }
 
 // get query associated with an SLI name
-func (ph *Handler) getSLIQuery(name string) (string, error) {
-	if val, ok := ph.CustomQueries[name]; ok {
-		return val, nil
+func (ph *Handler) getSLIQuery(name string, customQueries map[string]string) (string, error) {
+	if customQueries != nil {
+		if val, ok := customQueries[name]; ok {
+			return val, nil
+		}
 	}
 
 	log.WithField("name", name).Debug("No custom SLI found - Looking in defaults")
