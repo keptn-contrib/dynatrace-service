@@ -36,20 +36,18 @@ const MetricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatr
 
 // Handler interacts with a dynatrace API endpoint
 type Handler struct {
-	ApiURL      string
 	KeptnEvent  GetSLITriggeredAdapterInterface
 	HTTPClient  *http.Client
 	credentials *common.DTCredentials
 }
 
 // NewDynatraceHandler returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewDynatraceHandler(apiURL string, keptnEvent GetSLITriggeredAdapterInterface, credentials *common.DTCredentials) *Handler {
+func NewDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, credentials *common.DTCredentials) *Handler {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	ph := &Handler{
-		ApiURL:      strings.TrimSuffix(apiURL, "/"),
 		KeptnEvent:  keptnEvent,
 		HTTPClient:  &http.Client{Transport: tr},
 		credentials: credentials,
@@ -123,7 +121,7 @@ func checkApiResponse(resp *http.Response, body []byte) error {
 // The apiPath is appended to the base URL of the Handler
 // It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
 func (ph *Handler) getForPath(apiPath string, additionalHeaders map[string]string, errorContext string) ([]byte, error) {
-	return ph.get(ph.ApiURL+apiPath, additionalHeaders, errorContext)
+	return ph.get(ph.credentials.Tenant+apiPath, additionalHeaders, errorContext)
 }
 
 // get sends a HTTP GET request to the specified request URL and adds optional headers to the request.
@@ -403,7 +401,7 @@ func (ph *Handler) buildDynatraceUSQLQuery(query string, startUnix time.Time, en
 		"endTimestamp":      common.TimestampToString(endUnix),
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v1/userSessionQueryLanguage/table", ph.ApiURL)
+	targetURL := fmt.Sprintf("%s/api/v1/userSessionQueryLanguage/table", ph.credentials.Tenant)
 
 	// append queryParams to targetURL
 	u, err := url.Parse(targetURL)
@@ -467,7 +465,7 @@ func (ph *Handler) buildDynatraceMetricsQuery(metricQuery string, startUnix time
 		metricQueryParams = fmt.Sprintf("metricSelector=%s&%s", querySplit[0], querySplit[1])
 	}
 
-	targetURL := ph.ApiURL + fmt.Sprintf("/api/v2/metrics/query/?%s", metricQueryParams)
+	targetURL := fmt.Sprintf("%s/api/v2/metrics/query/?%s", ph.credentials.Tenant, metricQueryParams)
 
 	// default query params that are required: resolution, from and to
 	queryParams := map[string]string{
@@ -1104,7 +1102,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventConten
 	}
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewDashboardLink(ph.ApiURL, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
+	dashboardLinkAsLabel := NewDashboardLink(ph.credentials.Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details

@@ -284,10 +284,7 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 
 	//
 	// creating Dynatrace Handler which allows us to call the Dynatrace API
-	dynatraceHandler := NewDynatraceHandler(
-		dtCredentials.Tenant,
-		eventData,
-		dtCredentials)
+	dynatraceHandler := NewDynatraceHandler(eventData, dtCredentials)
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps

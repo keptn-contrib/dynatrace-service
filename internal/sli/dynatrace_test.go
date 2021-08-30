@@ -154,7 +154,7 @@ func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Ha
 		ApiToken: "test",
 	}
 
-	dh := NewDynatraceHandler(url, keptnEvent, credentials)
+	dh := NewDynatraceHandler(keptnEvent, credentials)
 
 	dh.HTTPClient = httpClient
 
@@ -515,8 +515,8 @@ func TestCreateNewDynatraceHandler(t *testing.T) {
 	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	if dh.ApiURL != url {
-		t.Errorf("dh.ApiURL=%s; want %s", dh.ApiURL, url)
+	if dh.credentials.Tenant != url {
+		t.Errorf("dh.credentials.Tenant=%s; want %s", dh.credentials.Tenant, url)
 	}
 
 	if dh.KeptnEvent.GetProject() != "sockshop" {
@@ -616,9 +616,8 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 			}()
 
 			gotHandler := NewDynatraceHandler(
-				tt.args.apiURL,
 				tt.args.keptnEvent,
-				nil)
+				&common.DTCredentials{Tenant: tt.args.apiURL})
 
 			gotTransport := gotHandler.HTTPClient.Transport.(*http.Transport)
 			gotProxyURL, err := gotTransport.Proxy(tt.request)
