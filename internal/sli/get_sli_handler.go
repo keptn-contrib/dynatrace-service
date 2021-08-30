@@ -291,8 +291,7 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 		map[string]string{
 			"Authorization": "Api-Token " + dtCredentials.ApiToken,
 			"User-Agent":    "keptn-contrib/dynatrace-service:" + os.Getenv("version"),
-		},
-		eventData.GetCustomSLIFilters())
+		})
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps

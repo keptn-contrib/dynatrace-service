@@ -1,5 +1,7 @@
 package sli
 
+import keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
 type BaseKeptnEvent struct {
 	Context string
 	Source  string
@@ -16,6 +18,13 @@ type BaseKeptnEvent struct {
 	Tag   string
 
 	Labels map[string]string
+
+	IsForDynatrace bool
+	SLIStart       string
+	SLIEnd         string
+	Indicators     []string
+	ID             string
+	SLIFilters     []*keptnv2.SLIFilter
 }
 
 // GetShKeptnContext returns the shkeptncontext
@@ -76,4 +85,28 @@ func (e BaseKeptnEvent) GetTag() string {
 // GetLabels returns a map of labels
 func (e BaseKeptnEvent) GetLabels() map[string]string {
 	return e.Labels
+}
+
+func (e BaseKeptnEvent) IsNotForDynatrace() bool {
+	return e.IsForDynatrace
+}
+
+func (e BaseKeptnEvent) GetSLIStart() string {
+	return e.SLIStart
+}
+
+func (e BaseKeptnEvent) GetSLIEnd() string {
+	return e.SLIEnd
+}
+
+func (e BaseKeptnEvent) GetIndicators() []string {
+	return e.Indicators
+}
+
+func (e BaseKeptnEvent) GetCustomSLIFilters() []*keptnv2.SLIFilter {
+	return e.SLIFilters
+}
+
+func (e BaseKeptnEvent) GetEventID() string {
+	return e.ID
 }

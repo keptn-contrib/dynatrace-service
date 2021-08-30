@@ -35,27 +35,25 @@ const MetricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatr
 
 // Handler interacts with a dynatrace API endpoint
 type Handler struct {
-	ApiURL        string
-	Username      string
-	Password      string
-	KeptnEvent    adapter.EventContentAdapter
-	HTTPClient    *http.Client
-	Headers       map[string]string
-	CustomFilters []*keptnv2.SLIFilter
+	ApiURL     string
+	Username   string
+	Password   string
+	KeptnEvent GetSLITriggeredAdapterInterface
+	HTTPClient *http.Client
+	Headers    map[string]string
 }
 
 // NewDynatraceHandler returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewDynatraceHandler(apiURL string, keptnEvent adapter.EventContentAdapter, headers map[string]string, customFilters []*keptnv2.SLIFilter) *Handler {
+func NewDynatraceHandler(apiURL string, keptnEvent GetSLITriggeredAdapterInterface, headers map[string]string) *Handler {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	ph := &Handler{
-		ApiURL:        strings.TrimSuffix(apiURL, "/"),
-		KeptnEvent:    keptnEvent,
-		HTTPClient:    &http.Client{Transport: tr},
-		Headers:       headers,
-		CustomFilters: customFilters,
+		ApiURL:     strings.TrimSuffix(apiURL, "/"),
+		KeptnEvent: keptnEvent,
+		HTTPClient: &http.Client{Transport: tr},
+		Headers:    headers,
 	}
 
 	return ph
@@ -1585,7 +1583,7 @@ func scaleData(metricID string, unit string, value float64) float64 {
 
 func (ph *Handler) replaceQueryParameters(query string) string {
 	// apply customfilters
-	for _, filter := range ph.CustomFilters {
+	for _, filter := range ph.KeptnEvent.GetCustomSLIFilters() {
 		filter.Value = strings.Replace(filter.Value, "'", "", -1)
 		filter.Value = strings.Replace(filter.Value, "\"", "", -1)
 
