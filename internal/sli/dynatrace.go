@@ -36,8 +36,6 @@ const MetricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatr
 // Handler interacts with a dynatrace API endpoint
 type Handler struct {
 	ApiURL     string
-	Username   string
-	Password   string
 	KeptnEvent GetSLITriggeredAdapterInterface
 	HTTPClient *http.Client
 	Headers    map[string]string
