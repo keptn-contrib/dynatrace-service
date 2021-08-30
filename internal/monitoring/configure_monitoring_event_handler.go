@@ -69,10 +69,6 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		}
 	}
 
-	if err != nil {
-		return fmt.Errorf("could not create Keptn handler: %v", err)
-	}
-
 	var shipyard *keptnv2.Shipyard
 	if eh.event.GetProject() != "" {
 		shipyard, err = eh.kClient.GetShipyard()
