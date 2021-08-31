@@ -2,6 +2,7 @@ package event_handler
 
 import (
 	"fmt"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
@@ -61,30 +62,30 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	}
 
 	switch aType := keptnEvent.(type) {
-	case monitoring.ConfigureMonitoringAdapter:
+	case *monitoring.ConfigureMonitoringAdapter:
 		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient), nil
-	case monitoring.ProjectCreateAdapter:
+	case *monitoring.ProjectCreateAdapter:
 		return monitoring.NewCreateProjectEventHandler(keptnEvent.(*monitoring.ProjectCreateAdapter), dtClient, kClient), nil
-	case problem.ProblemAdapter:
+	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter)), nil
-	case problem.ActionTriggeredAdapter:
+	case *problem.ActionTriggeredAdapter:
 		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, dynatraceConfig), nil
-	case problem.ActionStartedAdapter:
+	case *problem.ActionStartedAdapter:
 		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), dtClient), nil
-	case problem.ActionFinishedAdapter:
+	case *problem.ActionFinishedAdapter:
 		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, dynatraceConfig), nil
-	case sli.GetSLITriggeredAdapter:
+	case *sli.GetSLITriggeredAdapter:
 		// TODO 2021-08-25: consolidate dynatrace client and config file retrieval in GetSLIEventHandler
 		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter)), nil
-	case deployment.DeploymentFinishedAdapter:
+	case *deployment.DeploymentFinishedAdapter:
 		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, dynatraceConfig), nil
-	case deployment.TestTriggeredAdapter:
+	case *deployment.TestTriggeredAdapter:
 		return deployment.NewTestTriggeredEventHandler(keptnEvent.(*deployment.TestTriggeredAdapter), dtClient, dynatraceConfig), nil
-	case deployment.TestFinishedAdapter:
+	case *deployment.TestFinishedAdapter:
 		return deployment.NewTestFinishedEventHandler(keptnEvent.(*deployment.TestFinishedAdapter), dtClient, dynatraceConfig), nil
-	case deployment.EvaluationFinishedAdapter:
+	case *deployment.EvaluationFinishedAdapter:
 		return deployment.NewEvaluationFinishedEventHandler(keptnEvent.(*deployment.EvaluationFinishedAdapter), dtClient, dynatraceConfig), nil
-	case deployment.ReleaseTriggeredAdapter:
+	case *deployment.ReleaseTriggeredAdapter:
 		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, dynatraceConfig), nil
 	case nil:
 		// in case 'getEventAdapter()' would return a type we would ignore
