@@ -11,17 +11,17 @@ import (
 )
 
 type ReleaseTriggeredEventHandler struct {
-	event  *ReleaseTriggeredAdapter
-	client *dynatrace.Client
-	config *config.DynatraceConfigFile
+	event       *ReleaseTriggeredAdapter
+	client      *dynatrace.Client
+	attachRules *config.DtAttachRules
 }
 
 // NewReleaseTriggeredEventHandler creates a new ReleaseTriggeredEventHandler
-func NewReleaseTriggeredEventHandler(event *ReleaseTriggeredAdapter, client *dynatrace.Client, config *config.DynatraceConfigFile) *ReleaseTriggeredEventHandler {
+func NewReleaseTriggeredEventHandler(event *ReleaseTriggeredAdapter, client *dynatrace.Client, attachRules *config.DtAttachRules) *ReleaseTriggeredEventHandler {
 	return &ReleaseTriggeredEventHandler{
-		event:  event,
-		client: client,
-		config: config,
+		event:       event,
+		client:      client,
+		attachRules: attachRules,
 	}
 }
 
@@ -33,7 +33,7 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent() error {
 		return err
 	}
 
-	ie := event.CreateInfoEvent(eh.event, eh.config)
+	ie := event.CreateInfoEvent(eh.event, eh.attachRules)
 	if strategy == keptnevents.Direct && eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
 		title := fmt.Sprintf("PROMOTING from %s to next stage", eh.event.GetStage())
 		ie.Title = title

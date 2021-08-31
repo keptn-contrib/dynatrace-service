@@ -10,24 +10,24 @@ import (
 )
 
 type EvaluationFinishedEventHandler struct {
-	event  *EvaluationFinishedAdapter
-	client *dynatrace.Client
-	config *config.DynatraceConfigFile
+	event       *EvaluationFinishedAdapter
+	client      *dynatrace.Client
+	attachRules *config.DtAttachRules
 }
 
 // NewEvaluationFinishedEventHandler creates a new EvaluationFinishedEventHandler
-func NewEvaluationFinishedEventHandler(event *EvaluationFinishedAdapter, client *dynatrace.Client, config *config.DynatraceConfigFile) *EvaluationFinishedEventHandler {
+func NewEvaluationFinishedEventHandler(event *EvaluationFinishedAdapter, client *dynatrace.Client, attachRules *config.DtAttachRules) *EvaluationFinishedEventHandler {
 	return &EvaluationFinishedEventHandler{
-		event:  event,
-		client: client,
-		config: config,
+		event:       event,
+		client:      client,
+		attachRules: attachRules,
 	}
 }
 
 // HandleEvent handles an action finished event
 func (eh *EvaluationFinishedEventHandler) HandleEvent() error {
 	// Send Info Event
-	ie := event.CreateInfoEvent(eh.event, eh.config)
+	ie := event.CreateInfoEvent(eh.event, eh.attachRules)
 	qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore())
 	ie.Title = fmt.Sprintf("Evaluation result: %s", eh.event.GetResult())
 
