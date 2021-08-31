@@ -380,21 +380,13 @@ func (ph *Handler) buildDynatraceUSQLQuery(query string, startUnix time.Time, en
 	log.WithField("query", query).Debug("Finalize USQL query")
 
 	// replace query params (e.g., $PROJECT, $STAGE, $SERVICE ...)
-	usql := ph.replaceQueryParameters(query)
-
 	// default query params that are required: resolution, from and to
-	queryParams := map[string]string{
-		"query":             usql,
-		"explain":           "false",
-		"addDeepLinkFields": "false",
-		"startTimestamp":    common.TimestampToString(startUnix),
-		"endTimestamp":      common.TimestampToString(endUnix),
-	}
-
 	q := make(url.Values)
-	for param, value := range queryParams {
-		q.Add(param, value)
-	}
+	q.Add("query", ph.replaceQueryParameters(query))
+	q.Add("explain", "false")
+	q.Add("addDeepLinkFields", "false")
+	q.Add("startTimestamp", common.TimestampToString(startUnix))
+	q.Add("endTimestamp", common.TimestampToString(endUnix))
 
 	return q.Encode()
 }
