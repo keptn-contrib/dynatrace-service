@@ -105,6 +105,9 @@
             },
             "httpsProxy": {
               "type": "string"
+            },
+            "noProxy": {
+              "type": "string"
             }
 
           }
