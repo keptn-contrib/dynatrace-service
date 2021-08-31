@@ -53,13 +53,15 @@ func NewAutoTagClient(client *Client) *AutoTagsClient {
 	}
 }
 
-func (atc *AutoTagsClient) Create(rule *DTTaggingRule) (string, error) {
+func (atc *AutoTagsClient) Create(rule *DTTaggingRule) error {
 	log.WithField("name", rule.Name).Info("Creating DT tagging rule")
 	payload, err := json.Marshal(rule)
 	if err != nil {
-		return "", err
+		return err
 	}
-	return atc.client.Post(autoTagsPath, payload)
+
+	_, err = atc.client.Post(autoTagsPath, payload)
+	return err
 }
 
 func (atc *AutoTagsClient) GetAllTagNames() (*TagNames, error) {
@@ -70,7 +72,7 @@ func (atc *AutoTagsClient) GetAllTagNames() (*TagNames, error) {
 	}
 
 	existingDTRules := &DTAPIListResponse{}
-	err = json.Unmarshal([]byte(response), existingDTRules)
+	err = json.Unmarshal(response, existingDTRules)
 	if err != nil {
 		log.WithError(err).Error("Failed to unmarshal Dynatrace tagging rules")
 		return nil, err

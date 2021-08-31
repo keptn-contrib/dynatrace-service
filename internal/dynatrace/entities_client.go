@@ -51,7 +51,7 @@ func (ec *EntitiesClient) GetKeptnManagedServices() ([]Entity, error) {
 	// TODO 2021-08-20: Investigate if pageSize should be optimized or removed
 	pageSize := 50
 	for {
-		var response string
+		var response []byte
 		var err error
 
 		if nextPageKey == "" {
@@ -64,7 +64,7 @@ func (ec *EntitiesClient) GetKeptnManagedServices() ([]Entity, error) {
 		}
 
 		entitiesResponse := &EntitiesResponse{}
-		err = json.Unmarshal([]byte(response), entitiesResponse)
+		err = json.Unmarshal(response, entitiesResponse)
 		if err != nil {
 			return nil, fmt.Errorf("could not deserialize EntitiesResponse: %v", err)
 		}

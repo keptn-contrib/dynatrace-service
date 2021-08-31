@@ -27,24 +27,24 @@ func NewClient(dynatraceCreds *credentials.DTCredentials) *Client {
 	}
 }
 
-func (dt *Client) Get(apiPath string) (string, error) {
+func (dt *Client) Get(apiPath string) ([]byte, error) {
 	return dt.sendRequest(apiPath, http.MethodGet, nil)
 }
 
-func (dt *Client) Post(apiPath string, body []byte) (string, error) {
+func (dt *Client) Post(apiPath string, body []byte) ([]byte, error) {
 	return dt.sendRequest(apiPath, http.MethodPost, body)
 }
 
-func (dt *Client) Put(apiPath string, body []byte) (string, error) {
+func (dt *Client) Put(apiPath string, body []byte) ([]byte, error) {
 	return dt.sendRequest(apiPath, http.MethodPut, body)
 }
 
-func (dt *Client) Delete(apiPath string) (string, error) {
+func (dt *Client) Delete(apiPath string) ([]byte, error) {
 	return dt.sendRequest(apiPath, http.MethodDelete, nil)
 }
 
 // sendRequest makes an Dynatrace API request and returns the response
-func (dt *Client) sendRequest(apiPath string, method string, body []byte) (string, error) {
+func (dt *Client) sendRequest(apiPath string, method string, body []byte) ([]byte, error) {
 
 	if common.RunLocal || common.RunLocalTest {
 		log.WithFields(
@@ -52,22 +52,22 @@ func (dt *Client) sendRequest(apiPath string, method string, body []byte) (strin
 				"tenant": dt.DynatraceCreds.Tenant,
 				"body":   string(body),
 			}).Info("Dynatrace.sendRequest(RUNLOCAL) - not sending event to tenant")
-		return "", nil
+		return nil, nil
 	}
 
 	req, err := dt.createRequest(apiPath, method, body)
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %v", err)
+		return nil, fmt.Errorf("failed to create request: %v", err)
 	}
 
 	client, err := dt.createClient(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to create client: %v", err)
+		return nil, fmt.Errorf("failed to create client: %v", err)
 	}
 
 	response, err := dt.doRequest(client, req)
 	if err != nil {
-		return "", fmt.Errorf("failed to do request: %v", err)
+		return response, fmt.Errorf("failed to do request: %v", err)
 	}
 
 	return response, nil
@@ -106,21 +106,21 @@ func (dt *Client) createClient(req *http.Request) (*http.Client, error) {
 }
 
 // performs the request and reads the response
-func (dt *Client) doRequest(client *http.Client, req *http.Request) (string, error) {
+func (dt *Client) doRequest(client *http.Client, req *http.Request) ([]byte, error) {
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to send Dynatrace API request: %v", err)
+		return nil, fmt.Errorf("failed to send Dynatrace API request: %v", err)
 	}
 
 	defer resp.Body.Close()
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response body: %v", err)
+		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return string(responseBody), fmt.Errorf("api request failed with status %s and response %s", resp.Status, string(responseBody))
+		return responseBody, fmt.Errorf("api request failed with status %s and response %s", resp.Status, string(responseBody))
 	}
 
-	return string(responseBody), nil
+	return responseBody, nil
 }

@@ -44,7 +44,7 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) d
 
 	log.WithField("project", project).Info("Creating Dashboard for project")
 	dashboard := createDynatraceDashboard(project, shipyard)
-	_, err = dashboardClient.Create(dashboard)
+	err = dashboardClient.Create(dashboard)
 	if err != nil {
 		log.WithError(err).Error("Failed to create Dynatrace dashboards")
 		return dynatrace.ConfigResult{
@@ -68,7 +68,7 @@ func deleteExistingDashboard(project string, dashboardClient *dynatrace.Dashboar
 
 	for _, dashboardItem := range response.Dashboards {
 		if dashboardItem.Name == getDashboardName(project) {
-			_, err = dashboardClient.Delete(dashboardItem.ID)
+			err = dashboardClient.Delete(dashboardItem.ID)
 			if err != nil {
 				return fmt.Errorf("could not delete dashboard for project %s: %v", project, err)
 			}

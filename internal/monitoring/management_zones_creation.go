@@ -69,7 +69,7 @@ func getOrCreateManagementZone(
 		}
 	}
 
-	_, err := managementZoneClient.Create(managementZoneFunc())
+	err := managementZoneClient.Create(managementZoneFunc())
 	if err != nil {
 		log.WithError(err).Error("Failed to create management zone")
 		return dynatrace.ConfigResult{

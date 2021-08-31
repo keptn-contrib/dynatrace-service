@@ -167,7 +167,7 @@ func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEv
 		existingMetricEvent.Threshold = newMetricEvent.Threshold
 		existingMetricEvent.TagFilters = nil
 
-		_, err := client.Update(existingMetricEvent)
+		err := client.Update(existingMetricEvent)
 		if err != nil {
 			return err
 		}
@@ -175,7 +175,7 @@ func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEv
 		return nil
 	}
 
-	_, err = client.Create(newMetricEvent)
+	err = client.Create(newMetricEvent)
 	if err != nil {
 		return err
 	}

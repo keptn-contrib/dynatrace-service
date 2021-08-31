@@ -62,7 +62,7 @@ func (nc *NotificationsClient) getAll() (*DTAPIListResponse, error) {
 	}
 
 	existingNotifications := &DTAPIListResponse{}
-	err = json.Unmarshal([]byte(response), existingNotifications)
+	err = json.Unmarshal(response, existingNotifications)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal notifications: %v", err)
 	}
@@ -79,7 +79,7 @@ func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications() error {
 	notificationError := &NotificationsError{}
 	for _, notification := range existingNotifications.Values {
 		if notification.Name == keptnProblemNotificationName {
-			_, err := nc.deleteBy(notification.ID)
+			err := nc.deleteBy(notification.ID)
 			if err != nil {
 				// Error occurred but continue
 				notificationError.errors = append(
@@ -97,26 +97,26 @@ func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications() error {
 }
 
 // Create creates a new default notification for the given KeptnAPICredentials and the alertingProfileID
-func (nc *NotificationsClient) Create(credentials *credentials.KeptnAPICredentials, alertingProfileID string) (string, error) {
+func (nc *NotificationsClient) Create(credentials *credentials.KeptnAPICredentials, alertingProfileID string) error {
 	notification := problemNotificationPayload
 	notification = strings.ReplaceAll(notification, "$KEPTN_DNS", credentials.APIURL)
 	notification = strings.ReplaceAll(notification, "$KEPTN_TOKEN", credentials.APIToken)
 	notification = strings.ReplaceAll(notification, "$ALERTING_PROFILE_ID", alertingProfileID)
 	notification = strings.ReplaceAll(notification, "$KEPTN_PROBLEM_NOTIFICATION_NAME", keptnProblemNotificationName)
 
-	res, err := nc.client.Post(notificationsPath, []byte(notification))
+	_, err := nc.client.Post(notificationsPath, []byte(notification))
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return res, nil
+	return nil
 }
 
-func (nc *NotificationsClient) deleteBy(id string) (string, error) {
-	res, err := nc.client.Delete(notificationsPath + "/" + id)
+func (nc *NotificationsClient) deleteBy(id string) error {
+	_, err := nc.client.Delete(notificationsPath + "/" + id)
 	if err != nil {
-		return "", nil
+		return nil
 	}
 
-	return res, nil
+	return nil
 }

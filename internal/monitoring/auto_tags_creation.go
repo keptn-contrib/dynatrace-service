@@ -46,7 +46,7 @@ func createAutoTaggingRuleForRuleName(client *dynatrace.AutoTagsClient, existing
 	if !existingTagNames.Contains(ruleName) {
 		rule := createAutoTaggingRuleDTO(ruleName)
 
-		_, err := client.Create(rule)
+		err := client.Create(rule)
 		if err != nil {
 			// Error occurred but continue
 			log.WithError(err).Error("Could not create auto tagging rule")

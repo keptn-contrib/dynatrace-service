@@ -111,7 +111,7 @@ func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 	}
 
 	dashboards := &Dashboards{}
-	err = json.Unmarshal([]byte(res), dashboards)
+	err = json.Unmarshal(res, dashboards)
 	if err != nil {
 		err = CheckForUnexpectedHTMLResponseError(err)
 		return nil, fmt.Errorf("failed to unmarshal list of existing Dynatrace dashboards: %v", err)
@@ -120,25 +120,25 @@ func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 	return dashboards, nil
 }
 
-func (dc *DashboardsClient) Create(dashboard *DynatraceDashboard) (string, error) {
+func (dc *DashboardsClient) Create(dashboard *DynatraceDashboard) error {
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
-		return "", fmt.Errorf("failed to unmarshal Dynatrace dashboards: %v", err)
+		return fmt.Errorf("failed to unmarshal Dynatrace dashboards: %v", err)
 	}
 
-	res, err := dc.client.Post(dashboardsPath, dashboardPayload)
+	_, err = dc.client.Post(dashboardsPath, dashboardPayload)
 	if err != nil {
-		return "", fmt.Errorf("failed to create Dynatrace dashboards: %v", err)
+		return fmt.Errorf("failed to create Dynatrace dashboards: %v", err)
 	}
 
-	return res, nil
+	return nil
 }
 
-func (dc *DashboardsClient) Delete(dashboardID string) (string, error) {
-	res, err := dc.client.Delete(dashboardsPath + "/" + dashboardID)
+func (dc *DashboardsClient) Delete(dashboardID string) error {
+	_, err := dc.client.Delete(dashboardsPath + "/" + dashboardID)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return res, nil
+	return nil
 }

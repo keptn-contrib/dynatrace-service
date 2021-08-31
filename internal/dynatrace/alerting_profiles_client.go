@@ -60,7 +60,7 @@ func (apc *AlertingProfilesClient) getAll() (*DTAPIListResponse, error) {
 	}
 
 	alertingProfiles := &DTAPIListResponse{}
-	err = json.Unmarshal([]byte(response), alertingProfiles)
+	err = json.Unmarshal(response, alertingProfiles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal alerting profiles: %v", err)
 	}
@@ -96,7 +96,7 @@ func (apc *AlertingProfilesClient) Create(alertingProfile *AlertingProfile) (str
 	}
 
 	createdItem := &Values{}
-	err = json.Unmarshal([]byte(response), createdItem)
+	err = json.Unmarshal(response, createdItem)
 	if err != nil {
 		err = CheckForUnexpectedHTMLResponseError(err)
 		return "", fmt.Errorf("failed to unmarshal alerting profile: %v", err)
