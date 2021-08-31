@@ -68,8 +68,13 @@ func gotEvent(ctx context.Context, event cloudevents.Event) error {
 	dynatraceEventHandler, err := event_handler.NewEventHandler(event)
 
 	if err != nil {
+		log.WithError(err).Error("NewEventHandler() returned an error")
 		return err
 	}
 
-	return dynatraceEventHandler.HandleEvent()
+	err = dynatraceEventHandler.HandleEvent()
+	if err != nil {
+		log.WithError(err).Error("HandleEvent() returned an error")
+	}
+	return err
 }
