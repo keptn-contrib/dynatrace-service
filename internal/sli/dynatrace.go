@@ -315,7 +315,10 @@ func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition,
 
 // executeMetricsAPIQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetricsQueryResult, error) {
-	body, err := ph.get(metricsQuery, "Metrics API")
+	path := "/api/v2/metrics/query?" + metricsQuery
+	log.WithField("query", ph.credentials.Tenant+path).Debug("Final Query")
+
+	body, err := ph.getForPath(path, "Metrics API")
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +408,7 @@ func (ph *Handler) buildDynatraceUSQLQuery(query string, startUnix time.Time, en
 // buildDynatraceMetricsQuery builds the complete query string based on start, end and filters
 // metricQuery should contain metricSelector and entitySelector
 // Returns:
-//  #1: Finalized Dynatrace API Query
+//  #1: Dynatrace API metric query string
 //  #2: Metric selector that this query will return, e.g: builtin:host.cpu
 //  #3: error
 func (ph *Handler) buildDynatraceMetricsQuery(metricQuery string, startUnix time.Time, endUnix time.Time) (string, string, error) {
@@ -444,27 +447,14 @@ func (ph *Handler) buildDynatraceMetricsQuery(metricQuery string, startUnix time
 		metricQueryParams = fmt.Sprintf("metricSelector=%s&%s", querySplit[0], querySplit[1])
 	}
 
-	targetURL := fmt.Sprintf("%s/api/v2/metrics/query/?%s", ph.credentials.Tenant, metricQueryParams)
-
-	// default query params that are required: resolution, from and to
-	queryParams := map[string]string{
-		"resolution": "Inf", // resolution=Inf means that we only get 1 datapoint (per service)
-		"from":       common.TimestampToString(startUnix),
-		"to":         common.TimestampToString(endUnix),
-	}
-	// append queryParams to targetURL
-	u, err := url.Parse(targetURL)
-	if err != nil {
-		return "", "", fmt.Errorf("could not parse metrics URL: %s", err.Error())
-	}
-	q, err := url.ParseQuery(u.RawQuery)
+	q, err := url.ParseQuery(metricQueryParams)
 	if err != nil {
 		return "", "", fmt.Errorf("could not parse metrics URL: %s", err.Error())
 	}
 
-	for param, value := range queryParams {
-		q.Add(param, value)
-	}
+	q.Add("resolution", "Inf") // resolution=Inf means that we only get 1 datapoint (per service)
+	q.Add("from", common.TimestampToString(startUnix))
+	q.Add("to", common.TimestampToString(endUnix))
 
 	// check if q contains "scope"
 	scopeData := q.Get("scope")
@@ -486,10 +476,7 @@ func (ph *Handler) buildDynatraceMetricsQuery(metricQuery string, startUnix time
 		metricSelector = q.Get("metricSelector")
 	}
 
-	u.RawQuery = q.Encode()
-	log.WithField("query", u.String()).Debug("Final Query")
-
-	return u.String(), metricSelector, nil
+	return q.Encode(), metricSelector, nil
 }
 
 /**
@@ -788,7 +775,7 @@ func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQue
 		metricID:                      metricID,
 		metricUnit:                    metricDefinition.Unit,
 		metricQuery:                   metricQuery,
-		fullMetricQuery:               fullMetricQuery,
+		fullMetricQueryString:         fullMetricQuery,
 		entitySelectorSLIDefinition:   entitySelectorSLIDefinition,
 		filterSLIDefinitionAggregator: filterSLIDefinitionAggregator,
 	}, nil
@@ -909,7 +896,7 @@ func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManageme
 		metricID:                      metricID,
 		metricUnit:                    metricDefinition.Unit,
 		metricQuery:                   metricQuery,
-		fullMetricQuery:               fullMetricQuery,
+		fullMetricQueryString:         fullMetricQuery,
 		entitySelectorSLIDefinition:   entitySelectorSLIDefinition,
 		filterSLIDefinitionAggregator: filterSLIDefinitionAggregator,
 	}, nil
@@ -924,7 +911,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 	var sliResults []*keptnv2.SLIResult
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := ph.executeMetricsAPIQuery(metricQueryComponents.fullMetricQuery)
+	queryResult, err := ph.executeMetricsAPIQuery(metricQueryComponents.fullMetricQueryString)
 	if err != nil {
 		log.WithError(err).Debug("No result for query")
 
