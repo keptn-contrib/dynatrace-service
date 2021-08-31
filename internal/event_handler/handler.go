@@ -48,6 +48,11 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		return ErrorHandler{err: err}, nil
 	}
 
+	// in case 'getEventAdapter()' would return a type we would ignore, handle it explicitly here
+	if keptnEvent == nil {
+		return NoOpHandler{}, nil
+	}
+
 	dynatraceConfig, dynatraceCredentials, err := getDynatraceCredentialsAndConfig(keptnEvent, dtConfigGetter)
 	if err != nil {
 		log.WithError(err).Error("Could not get dynatrace credentials and config")
@@ -87,9 +92,6 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		return deployment.NewEvaluationFinishedEventHandler(keptnEvent.(*deployment.EvaluationFinishedAdapter), dtClient, dynatraceConfig), nil
 	case *deployment.ReleaseTriggeredAdapter:
 		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, dynatraceConfig), nil
-	case nil:
-		// in case 'getEventAdapter()' would return a type we would ignore
-		return NoOpHandler{}, nil
 	default:
 		return ErrorHandler{err: fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType)}, nil
 	}
