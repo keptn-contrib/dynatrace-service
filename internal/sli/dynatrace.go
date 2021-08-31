@@ -110,24 +110,18 @@ func checkApiResponse(resp *http.Response, body []byte) error {
 	return fmt.Errorf("Dynatrace API returned error %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
 }
 
-// getForPath sends a HTTP GET request to the specified apiPath and adds optional headers to the request.
-// The apiPath is appended to the base URL of the Handler
+// get sends a HTTP GET request to the specified request URL. The apiPath is appended to the base URL of the Handler
 // It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
-func (ph *Handler) getForPath(apiPath string, errorContext string) ([]byte, error) {
-	return ph.get(ph.credentials.Tenant+apiPath, errorContext)
-}
-
-// get sends a HTTP GET request to the specified request URL and adds optional headers to the request.
-// It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
-func (ph *Handler) get(requestURL string, errorContext string) ([]byte, error) {
-	resp, body, err := ph.executeDynatraceREST(http.MethodGet, requestURL)
+func (ph *Handler) get(apiPath string, errorContext string) ([]byte, error) {
+	url := ph.credentials.Tenant + apiPath
+	resp, body, err := ph.executeDynatraceREST(http.MethodGet, url)
 	if err != nil {
 		return nil, err
 	}
 
 	// TODO 2021-08-03: remove the variable `errorContext` as soon as we are sure, that there is no logic based on error messages
 	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("%s request %s was not successful: %w", errorContext, requestURL, err)
+		return nil, fmt.Errorf("%s request %s was not successful: %w", errorContext, url, err)
 	}
 
 	return body, nil
@@ -145,7 +139,7 @@ func isValidUUID(uuid string) bool {
 func (ph *Handler) findDynatraceDashboard(keptnEvent adapter.EventContentAdapter) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
-	body, err := ph.getForPath("/api/config/v1/dashboards", "Dashboards API")
+	body, err := ph.get("/api/config/v1/dashboards", "Dashboards API")
 	if err != nil {
 		return "", err
 	}
@@ -206,7 +200,7 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 
 	// We have a valid Dashboard UUID - now lets query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
-	body, err := ph.getForPath("/api/config/v1/dashboards/"+dashboard, "Dashboards API")
+	body, err := ph.get("/api/config/v1/dashboards/"+dashboard, "Dashboards API")
 	if err != nil {
 		return nil, dashboard, err
 	}
@@ -224,7 +218,7 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 // executeGetDynatraceSLO Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
 // It returns a DynatraceSLOResult object on success, an error otherwise
 func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*DynatraceSLOResult, error) {
-	body, err := ph.getForPath(
+	body, err := ph.get(
 		fmt.Sprintf("/api/v2/slo/%s?from=%s&to=%s",
 			sloID,
 			common.TimestampToString(startUnix),
@@ -253,7 +247,7 @@ func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, end
 // executeGetDynatraceProblems Calls the /problems/ API call to retrieve the the list of problems for that timeframe
 // It returns a DynatraceProblemQueryResult object on success, an error otherwise
 func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceProblemQueryResult, error) {
-	body, err := ph.getForPath(
+	body, err := ph.get(
 		fmt.Sprintf("/api/v2/problems?from=%s&to=%s&%s",
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
@@ -276,7 +270,7 @@ func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix ti
 // executeGetDynatraceSecurityProblems Calls the /securityProblems/ API call to retrieve the list of security problems for that timeframe.
 // It returns a DynatraceSecurityProblemQueryResult object on success, an error otherwise.
 func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceSecurityProblemQueryResult, error) {
-	body, err := ph.getForPath(
+	body, err := ph.get(
 		fmt.Sprintf("/api/v2/securityProblems?from=%s&to=%s&%s",
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
@@ -298,7 +292,7 @@ func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, star
 
 // executeMetricAPIDescribe Calls the /metrics/<metricID> API call to retrieve Metric Definition Details.
 func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition, error) {
-	body, err := ph.getForPath("/api/v2/metrics/"+metricId, "Metrics API")
+	body, err := ph.get("/api/v2/metrics/"+metricId, "Metrics API")
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +312,7 @@ func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetric
 	path := "/api/v2/metrics/query?" + metricsQuery
 	log.WithField("query", ph.credentials.Tenant+path).Debug("Final Query")
 
-	body, err := ph.getForPath(path, "Metrics API")
+	body, err := ph.get(path, "Metrics API")
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +334,7 @@ func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetric
 
 // ExecuteGetDynatraceProblemById Calls the /problems/<problemId> API call to retrieve Problem Details
 func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceProblem, error) {
-	body, err := ph.getForPath("/api/v2/problems/"+problemId, "Problems API")
+	body, err := ph.get("/api/v2/problems/"+problemId, "Problems API")
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +354,7 @@ func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*DTUSQLResult, err
 	path := "/api/v1/userSessionQueryLanguage/table?" + usql
 	log.WithField("query", ph.credentials.Tenant+path).Debug("Final USQL Query")
 
-	body, err := ph.getForPath(path, "USQL API")
+	body, err := ph.get(path, "USQL API")
 	if err != nil {
 		return nil, err
 	}
