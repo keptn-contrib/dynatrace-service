@@ -135,7 +135,7 @@ const shipyardController = "SHIPYARD_CONTROLLER"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 
 // ActivateServiceSynchronizer godoc
-func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynchronizer {
+func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serviceSynchronizer {
 	if serviceSynchronizerInstance == nil {
 
 		encodedDefaultSLOFile = b64.StdEncoding.EncodeToString([]byte(defaultSLOFile))
@@ -233,7 +233,7 @@ func (s *serviceSynchronizer) establishDTAPIConnection() error {
 		return fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
 	}
 
-	creds, err := s.credentialManager.GetDynatraceCredentials(dynatraceConfig)
+	creds, err := s.credentialManager.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
 		return fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
 	}

@@ -399,7 +399,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		keptnHandler:    k,
 		servicesInKeptn: []string{},
 		credentialManager: &credentials_mock.CredentialManagerInterfaceMock{
-			GetDynatraceCredentialsFunc: func(dynatraceConfig *config.DynatraceConfigFile) (*credentials.DTCredentials, error) {
+			GetDynatraceCredentialsFunc: func(secretName string) (*credentials.DTCredentials, error) {
 				return &credentials.DTCredentials{
 					Tenant:   dtMockServer.URL,
 					ApiToken: "",

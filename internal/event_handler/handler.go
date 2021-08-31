@@ -2,7 +2,6 @@ package event_handler
 
 import (
 	"fmt"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
@@ -29,7 +28,14 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 		log.WithError(err).Error("Failed to load Dynatrace config")
 		return nil, nil, err
 	}
-	creds, err := credentials.GetDynatraceCredentials(dynatraceConfig)
+
+	cm, err := credentials.NewCredentialManager(nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	fallbackDecorator := credentials.NewCredentialManagerDefaultFallbackDecorator(cm)
+
+	creds, err := fallbackDecorator.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
 		return nil, nil, err

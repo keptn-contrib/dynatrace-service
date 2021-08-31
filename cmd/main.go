@@ -44,7 +44,8 @@ func _main(args []string, env envConfig) int {
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize CredentialManager")
 		}
-		onboard.ActivateServiceSynchronizer(cm)
+		onboard.ActivateServiceSynchronizer(
+			credentials.NewCredentialManagerDefaultFallbackDecorator(cm))
 	}
 
 	ctx := context.Background()

@@ -12,7 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -85,7 +84,7 @@ func (OSEnvCredentialReader) ReadSecret(secretName, namespace, secretKey string)
 
 //go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/credential_manager_mock.go . CredentialManagerInterface
 type CredentialManagerInterface interface {
-	GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*DTCredentials, error)
+	GetDynatraceCredentials(secretName string) (*DTCredentials, error)
 	GetKeptnAPICredentials() (*KeptnAPICredentials, error)
 }
 
@@ -109,12 +108,7 @@ func NewCredentialManager(sr SecretReader) (*CredentialManager, error) {
 	return cm, nil
 }
 
-func (cm *CredentialManager) GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*DTCredentials, error) {
-	secretName := "dynatrace"
-	if dynatraceConfig != nil && len(dynatraceConfig.DtCreds) > 0 {
-		secretName = dynatraceConfig.DtCreds
-	}
-
+func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*DTCredentials, error) {
 	dtTenant, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_TENANT")
 	if err != nil {
 		return nil, fmt.Errorf("key DT_TENANT was not found in secret \"%s\"", secretName)
@@ -180,17 +174,6 @@ func getCleanURL(url string) string {
 
 func getCleanToken(token string) string {
 	return strings.Trim(token, "\n")
-}
-
-// GetDynatraceCredentials reads the Dynatrace credentials from the secret. Therefore, it first checks
-// if a secret is specified in the dynatrace.conf.yaml and if not defaults to the secret "dynatrace"
-func GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*DTCredentials, error) {
-
-	cm, err := NewCredentialManager(nil)
-	if err != nil {
-		return nil, err
-	}
-	return cm.GetDynatraceCredentials(dynatraceConfig)
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret

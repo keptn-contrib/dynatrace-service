@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -216,7 +215,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 	dynatraceOtherSecret := createDynatraceDTSecret("dynatrace_other", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123")
 
 	type args struct {
-		dynatraceConfig *config.DynatraceConfigFile
+		secretName string
 	}
 	tests := []struct {
 		name    string
@@ -229,7 +228,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			name:   "with no secret, no config",
 			secret: &v1.Secret{},
 			args: args{
-				dynatraceConfig: nil,
+				secretName: "",
 			},
 			wantErr: true,
 		},
@@ -237,7 +236,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			name:   "with dynatrace secret, no config",
 			secret: dynatraceSecret,
 			args: args{
-				dynatraceConfig: nil,
+				secretName: "",
 			},
 			want: &DTCredentials{
 				Tenant:   "https://mySampleEnv.live.dynatrace.com",
@@ -249,9 +248,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			name:   "with dynatrace_other secret, with good config",
 			secret: dynatraceOtherSecret,
 			args: args{
-				dynatraceConfig: &config.DynatraceConfigFile{
-					DtCreds: "dynatrace_other",
-				},
+				secretName: "dynatrace_other",
 			},
 			want: &DTCredentials{
 				Tenant:   "https://mySampleEnv.live.dynatrace.com",
@@ -263,9 +260,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			name:   "with dynatrace_other secret, with bad config",
 			secret: dynatraceOtherSecret,
 			args: args{
-				dynatraceConfig: &config.DynatraceConfigFile{
-					DtCreds: "dynatrace_other2",
-				},
+				secretName: "dynatrace_other2",
 			},
 			wantErr: true,
 		},
@@ -273,7 +268,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			name:   "with dynatrace_other secret, no config",
 			secret: dynatraceOtherSecret,
 			args: args{
-				dynatraceConfig: nil,
+				secretName: "",
 			},
 			wantErr: true,
 		},
@@ -289,8 +284,9 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			if err != nil {
 				t.Fatalf("NewCredentialManager() error = %v", err)
 			}
+			decorator := NewCredentialManagerDefaultFallbackDecorator(cm)
 
-			got, err := cm.GetDynatraceCredentials(tt.args.dynatraceConfig)
+			got, err := decorator.GetDynatraceCredentials(tt.args.secretName)
 			if (err != nil) && tt.wantErr {
 				return
 			} else if (err != nil) != tt.wantErr {
