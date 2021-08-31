@@ -8,11 +8,12 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/deployment"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/monitoring"
 	"github.com/keptn-contrib/dynatrace-service/internal/problem"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
-	"github.com/keptn/go-utils/pkg/lib/keptn"
+	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -46,7 +47,7 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 
 func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	log.WithField("eventType", event.Type()).Debug("Received event")
-	dtConfigGetter := &config.DynatraceConfigGetter{}
+	dtConfigGetter := config.NewDynatraceConfigGetter(keptn.NewConfigResourceClient())
 
 	keptnEvent, err := getEventAdapter(event)
 	if err != nil {
@@ -66,7 +67,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	}
 
 	dtClient := dynatrace.NewClient(dynatraceCredentials)
-	kClient, err := keptnv2.NewKeptn(&event, keptn.KeptnOpts{})
+	kClient, err := keptnv2.NewKeptn(&event, keptnapi.KeptnOpts{})
 	if err != nil {
 		log.WithError(err).Error("Could not get create Keptn client")
 		return ErrorHandler{err: err}, nil

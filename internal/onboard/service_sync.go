@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -143,7 +144,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 			credentialManager: c,
 		}
 
-		serviceSynchronizerInstance.dtConfigGetter = &config.DynatraceConfigGetter{}
+		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewConfigResourceClient())
 		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewClient(nil))
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()

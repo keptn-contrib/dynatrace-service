@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io/ioutil"
 	"os"
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	api "github.com/keptn/go-utils/pkg/api/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -20,6 +20,13 @@ type DynatraceConfigGetterInterface interface {
 }
 
 type DynatraceConfigGetter struct {
+	resourceClient keptn.ResourceClientInterface
+}
+
+func NewDynatraceConfigGetter(client keptn.ResourceClientInterface) *DynatraceConfigGetter {
+	return &DynatraceConfigGetter{
+		resourceClient: client,
+	}
 }
 
 // GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo
@@ -43,7 +50,7 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 		fileContent = string(localFileContent)
 	} else {
 		var err error
-		fileContent, err = getDynatraceConfigResource(event)
+		fileContent, err = d.resourceClient.GetResource(event, DynatraceConfigFilename)
 		if err != nil {
 			return nil, err
 		}
@@ -66,69 +73,6 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 	}
 
 	return dynatraceConfFile, nil
-}
-
-func getDynatraceConfigResource(event adapter.EventContentAdapter) (string, error) {
-
-	resourceHandler := api.NewResourceHandler(common.GetConfigurationServiceURL())
-
-	// Lets search on SERVICE-LEVEL
-	if len(event.GetProject()) > 0 && len(event.GetStage()) > 0 && len(event.GetService()) > 0 {
-		keptnResourceContent, err := resourceHandler.GetServiceResource(event.GetProject(), event.GetStage(), event.GetService(), DynatraceConfigFilename)
-		if err == api.ResourceNotFoundError {
-			log.WithFields(
-				log.Fields{
-					"project": event.GetProject(),
-					"stage":   event.GetStage(),
-					"service": event.GetService(),
-				}).Debug("No dynatrace.conf.yaml available for service")
-		} else if err != nil {
-			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s at stage %s for service %s: %v", event.GetProject(), event.GetStage(), event.GetService(), err)
-		} else {
-			log.WithFields(
-				log.Fields{
-					"project": event.GetProject(),
-					"stage":   event.GetStage(),
-					"service": event.GetService(),
-				}).Info("Found dynatrace.conf.yaml for service")
-			return keptnResourceContent.ResourceContent, nil
-		}
-	}
-
-	if len(event.GetProject()) > 0 && len(event.GetStage()) > 0 {
-		keptnResourceContent, err := resourceHandler.GetStageResource(event.GetProject(), event.GetStage(), DynatraceConfigFilename)
-		if err == api.ResourceNotFoundError {
-			log.WithFields(
-				log.Fields{
-					"project": event.GetProject(),
-					"stage":   event.GetStage(),
-				}).Debug("No dynatrace.conf.yaml available for stage")
-		} else if err != nil {
-			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s at stage %s: %v", event.GetProject(), event.GetStage(), err)
-		} else {
-			log.WithFields(
-				log.Fields{
-					"project": event.GetProject(),
-					"stage":   event.GetStage(),
-				}).Info("Found dynatrace.conf.yaml for stage")
-			return keptnResourceContent.ResourceContent, nil
-		}
-	}
-
-	if len(event.GetProject()) > 0 {
-		keptnResourceContent, err := resourceHandler.GetProjectResource(event.GetProject(), DynatraceConfigFilename)
-		if err == api.ResourceNotFoundError {
-			log.WithField("project", event.GetProject()).Debug("No dynatrace.conf.yaml available for project")
-		} else if err != nil {
-			return "", fmt.Errorf("failed to retrieve dynatrace.conf.yaml in project %s: %v", event.GetProject(), err)
-		} else {
-			log.WithField("project", event.GetProject()).Info("Found dynatrace.conf.yaml for project")
-			return keptnResourceContent.ResourceContent, nil
-		}
-	}
-
-	log.Info("No dynatrace.conf.yaml found")
-	return "", nil
 }
 
 //
