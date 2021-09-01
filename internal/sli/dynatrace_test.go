@@ -3,6 +3,8 @@ package sli
 import (
 	"bytes"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"io"
 	"io/ioutil"
 	"os"
@@ -149,28 +151,23 @@ func testingGetKeptnEvent(project string, stage string, service string, deployme
 func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Handler, *http.Client, string, func()) {
 	httpClient, url, teardown := testingDynatraceHTTPClient()
 
-	credentials := &common.DTCredentials{
+	dtCredentials := &credentials.DTCredentials{
 		Tenant:   url,
 		ApiToken: "test",
 	}
 
-	dh := NewDynatraceHandler(keptnEvent, credentials)
-
-	dh.HTTPClient = httpClient
+	dh := NewDynatraceHandler(keptnEvent, dynatrace.NewClient(dtCredentials))
+	dh.client.HTTPClient = httpClient
 
 	return dh, httpClient, url, teardown
 }
 
 func TestExecuteDynatraceREST(t *testing.T) {
 	keptnEvent := testingGetKeptnEvent("sockshop", "dev", "carts", "", "")
-	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
+	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	resp, body, err := dh.executeDynatraceREST("GET", url+"/api/config/v1/dashboards")
-
-	if resp == nil || resp.StatusCode != 200 {
-		t.Errorf("Dynatrace REST not returning http 200 status")
-	}
+	body, err := dh.client.Get("/api/config/v1/dashboards")
 
 	if body == nil {
 		t.Errorf("No body returned by Dynatrace REST")
@@ -183,12 +180,13 @@ func TestExecuteDynatraceREST(t *testing.T) {
 
 func TestExecuteDynatraceRESTBadRequest(t *testing.T) {
 	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
+	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	resp, _, _ := dh.executeDynatraceREST("GET", url+"/BADAPI")
+	_, err := dh.client.Get("/BADAPI")
 
-	if resp == nil || resp.StatusCode != http.StatusBadRequest {
+	// TODO 2021-08-31: check for Dynatrace API status
+	if err == nil {
 		t.Errorf("Dynatrace REST not returning http 400")
 	}
 }
@@ -441,7 +439,7 @@ func TestExecuteGetDynatraceProblems(t *testing.T) {
 	}
 
 	if problemResult == nil {
-		t.Errorf("No Problem Result returned for " + problemQuery)
+		t.Fatal("No Problem Result returned for " + problemQuery)
 	}
 
 	if problemResult.TotalCount != 1 {
@@ -464,7 +462,7 @@ func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
 	}
 
 	if problemResult == nil {
-		t.Errorf("No Problem Result returned for " + problemQuery)
+		t.Fatal("No Problem Result returned for " + problemQuery)
 	}
 
 	if problemResult.TotalCount != 0 {
@@ -515,8 +513,8 @@ func TestCreateNewDynatraceHandler(t *testing.T) {
 	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	if dh.credentials.Tenant != url {
-		t.Errorf("dh.credentials.Tenant=%s; want %s", dh.credentials.Tenant, url)
+	if dh.client.DynatraceCreds.Tenant != url {
+		t.Errorf("dh.client.DynatraceCreds.Tenant=%s; want %s", dh.client.DynatraceCreds.Tenant, url)
 	}
 
 	if dh.KeptnEvent.GetProject() != "sockshop" {
@@ -617,9 +615,10 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 
 			gotHandler := NewDynatraceHandler(
 				tt.args.keptnEvent,
-				&common.DTCredentials{Tenant: tt.args.apiURL})
+				dynatrace.NewClient(
+					&credentials.DTCredentials{Tenant: tt.args.apiURL}))
 
-			gotTransport := gotHandler.HTTPClient.Transport.(*http.Transport)
+			gotTransport := gotHandler.client.HTTPClient.Transport.(*http.Transport)
 			gotProxyURL, err := gotTransport.Proxy(tt.request)
 			if err != nil {
 				t.Fatalf("error = %v", err)

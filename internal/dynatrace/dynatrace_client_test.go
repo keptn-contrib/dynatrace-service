@@ -84,18 +84,9 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 			os.Setenv("HTTPS_PROXY", tt.proxyEnvVars.httpsProxy)
 			os.Setenv("NO_PROXY", tt.proxyEnvVars.noProxy)
 
-			dt := &Client{
-				DynatraceCreds: tt.fields.DynatraceCreds,
-			}
+			dt := NewClient(tt.fields.DynatraceCreds)
 
-			gotClient, err := dt.createClient(tt.args.req)
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Client.createClient() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			gotTransport := gotClient.Transport.(*http.Transport)
+			gotTransport := dt.HTTPClient.Transport.(*http.Transport)
 			gotProxyUrl, err := gotTransport.Proxy(tt.args.req)
 			if err != nil {
 				t.Errorf("Client.createClient() error = %v", err)

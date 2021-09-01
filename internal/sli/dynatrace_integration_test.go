@@ -2,7 +2,8 @@ package sli
 
 import (
 	"errors"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -97,8 +98,7 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler(keptnEvent, &common.DTCredentials{Tenant: "http://dynatrace"})
-	dh.HTTPClient = httpClient
+	dh := createDynatraceHandler(keptnEvent, httpClient)
 
 	// overwrite custom queries with the new format (starting with metricSelector=)
 	customQueries := make(map[string]string)
@@ -204,8 +204,7 @@ func runGetSLIValueTest(okResponse string) (float64, error) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler(keptnEvent, &common.DTCredentials{Tenant: "http://dynatrace"})
-	dh.HTTPClient = httpClient
+	dh := createDynatraceHandler(keptnEvent, httpClient)
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
@@ -315,8 +314,7 @@ func TestGetSLISleep(t *testing.T) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler(keptnEvent, &common.DTCredentials{Tenant: "http://dynatrace"})
-	dh.HTTPClient = httpClient
+	dh := createDynatraceHandler(keptnEvent, httpClient)
 
 	start := time.Now().Add(-5 * time.Minute)
 	// artificially increase end time to be in the future
@@ -343,8 +341,7 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler(keptnEvent, &common.DTCredentials{Tenant: "http://dynatrace"})
-	dh.HTTPClient = httpClient
+	dh := createDynatraceHandler(keptnEvent, httpClient)
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
@@ -352,4 +349,14 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	assert.EqualValues(t, 0.0, value)
 	assert.NotNil(t, err, nil)
+}
+
+func createDynatraceHandler(keptnEvent *BaseKeptnEvent, httpClient *http.Client) *Handler {
+	dh := NewDynatraceHandler(
+		keptnEvent,
+		dynatrace.NewClient(
+			&credentials.DTCredentials{Tenant: "http://dynatrace"}))
+	dh.client.HTTPClient = httpClient
+
+	return dh
 }

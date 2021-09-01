@@ -1,7 +1,6 @@
 package common
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -15,8 +14,6 @@ import (
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	log "github.com/sirupsen/logrus"
 
@@ -159,32 +156,7 @@ const ConfigLevelService = "Service"
 /**
  * Defines the Dynatrace Configuration File structure and supporting Constants
  */
-const DynatraceConfigFilename = "dynatrace/dynatrace.conf.yaml"
-const DynatraceConfigFilenameLOCAL = "dynatrace/_dynatrace.conf.yaml"
 const DynatraceConfigDashboardQUERY = "query"
-
-type DynatraceConfigFile struct {
-	SpecVersion string `json:"spec_version" yaml:"spec_version"`
-	DtCreds     string `json:"dtCreds,omitempty" yaml:"dtCreds,omitempty"`
-	Dashboard   string `json:"dashboard,omitempty" yaml:"dashboard,omitempty"`
-}
-
-type DTCredentials struct {
-	Tenant    string `json:"DT_TENANT" yaml:"DT_TENANT"`
-	ApiToken  string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
-	PaaSToken string `json:"DT_PAAS_TOKEN" yaml:"DT_PAAS_TOKEN"`
-}
-
-var namespace = getPodNamespace()
-
-func getPodNamespace() string {
-	ns := os.Getenv("POD_NAMESPACE")
-	if ns == "" {
-		return "keptn"
-	}
-
-	return ns
-}
 
 //
 // replaces $ placeholders with actual values
@@ -447,50 +419,6 @@ func GetCustomQueries(keptnEvent adapter.EventContentAdapter) map[string]string 
 	return sliMap
 }
 
-// GetDynatraceConfig loads dynatrace.conf for the current service.
-// If none is found, it returns a default configuration.
-func GetDynatraceConfig(keptnEvent adapter.EventContentAdapter) DynatraceConfigFile {
-	dynatraceConfFile := getBaseDynatraceConfig(keptnEvent)
-	if dynatraceConfFile.DtCreds == "" {
-		dynatraceConfFile.DtCreds = "dynatrace"
-	}
-	// implementing https://github.com/keptn-contrib/dynatrace-sli-service/issues/90
-	dynatraceConfFile.DtCreds = ReplaceKeptnPlaceholders(dynatraceConfFile.DtCreds, keptnEvent)
-	return dynatraceConfFile
-}
-
-func getBaseDynatraceConfig(keptnEvent adapter.EventContentAdapter) DynatraceConfigFile {
-
-	var defaultDynatraceConfigFile = DynatraceConfigFile{
-		SpecVersion: "0.1.0",
-		DtCreds:     "dynatrace",
-		Dashboard:   "",
-	}
-
-	yamlString, err := GetKeptnResource(keptnEvent, DynatraceConfigFilename)
-	if err != nil {
-		log.WithError(err).WithFields(
-			log.Fields{
-				"service": keptnEvent.GetService(),
-				"stage":   keptnEvent.GetStage(),
-				"project": keptnEvent.GetProject(),
-			}).Debug("Error getting keptn resource")
-		return defaultDynatraceConfigFile
-	}
-	dynatraceConfFile, err := parseDynatraceConfigFile(yamlString)
-	if err != nil {
-		log.WithError(err).WithFields(
-			log.Fields{
-				"yaml":    yamlString,
-				"service": keptnEvent.GetService(),
-				"stage":   keptnEvent.GetStage(),
-				"project": keptnEvent.GetProject(),
-			}).Error("Error parsing DynatraceConfigFile, using default configuration")
-		return defaultDynatraceConfigFile
-	}
-	return dynatraceConfFile
-}
-
 // UploadKeptnResource uploads a file to the Keptn Configuration Service
 func UploadKeptnResource(contentToUpload []byte, remoteResourceURI string, keptnEvent adapter.EventContentAdapter) error {
 
@@ -515,58 +443,6 @@ func UploadKeptnResource(contentToUpload []byte, remoteResourceURI string, keptn
 	}
 
 	return nil
-}
-
-/**
- * parses the dynatrace.conf.yaml file that is passed as parameter
- */
-func parseDynatraceConfigFile(yamlString string) (DynatraceConfigFile, error) {
-	dynatraceConfFile := DynatraceConfigFile{}
-	err := yaml.Unmarshal([]byte(yamlString), &dynatraceConfFile)
-	return dynatraceConfFile, err
-}
-
-/**
- * Pulls the Dynatrace Credentials from the passed secret
- */
-func GetDTCredentials(dynatraceSecretName string) (*DTCredentials, error) {
-	if dynatraceSecretName == "" {
-		return nil, nil
-	}
-
-	dtCreds := &DTCredentials{}
-	if RunLocal || RunLocalTest {
-		// if we RunLocal we take it from the env-variables
-		dtCreds.Tenant = os.Getenv("DT_TENANT")
-		dtCreds.ApiToken = os.Getenv("DT_API_TOKEN")
-	} else {
-		kubeAPI, err := GetKubernetesClient()
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving Dynatrace credentials: could not initialize Kubernetes client: %v", err)
-		}
-		secret, err := kubeAPI.CoreV1().Secrets(namespace).Get(context.TODO(), dynatraceSecretName, metav1.GetOptions{})
-
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving Dynatrace credentials: could not retrieve secret %s.%s: %v", namespace, dynatraceSecretName, err)
-		}
-
-		// grabnerandi: remove check on DT_PAAS_TOKEN as it is not relevant for quality-gate-only use case
-		if string(secret.Data["DT_TENANT"]) == "" || string(secret.Data["DT_API_TOKEN"]) == "" { //|| string(secret.Data["DT_PAAS_TOKEN"]) == "" {
-			return nil, errors.New("invalid or no Dynatrace credentials found. Need DT_TENANT & DT_API_TOKEN stored in secret!")
-		}
-
-		dtCreds.Tenant = string(secret.Data["DT_TENANT"])
-		dtCreds.ApiToken = string(secret.Data["DT_API_TOKEN"])
-	}
-
-	// ensure URL always has http or https in front
-	if !(strings.HasPrefix(dtCreds.Tenant, "https://") || strings.HasPrefix(dtCreds.Tenant, "http://")) {
-		dtCreds.Tenant = "https://" + dtCreds.Tenant
-	}
-
-	dtCreds.Tenant = strings.TrimSuffix(dtCreds.Tenant, "/")
-
-	return dtCreds, nil
 }
 
 // ParseUnixTimestamp parses a time stamp into Unix foramt

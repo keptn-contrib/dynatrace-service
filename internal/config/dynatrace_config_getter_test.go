@@ -1,4 +1,4 @@
-package common
+package config
 
 import (
 	"reflect"
@@ -9,13 +9,13 @@ func Test_parseDynatraceConfigFile(t *testing.T) {
 	tests := []struct {
 		name       string
 		yamlString string
-		want       DynatraceConfigFile
+		want       *DynatraceConfigFile
 		wantErr    bool
 	}{
 		{
 			name:       "empty string",
 			yamlString: "",
-			want:       DynatraceConfigFile{},
+			want:       &DynatraceConfigFile{},
 			wantErr:    false,
 		},
 		{
@@ -23,7 +23,7 @@ func Test_parseDynatraceConfigFile(t *testing.T) {
 			yamlString: `
 spec_version: '0.1.0'
 dtCreds: dyna`,
-			want: DynatraceConfigFile{
+			want: &DynatraceConfigFile{
 				SpecVersion: "0.1.0",
 				DtCreds:     "dyna",
 			},
@@ -35,7 +35,7 @@ dtCreds: dyna`,
 spec_version: '0.1.0'
 dtCreds: dyna
 dashboard: dash`,
-			want: DynatraceConfigFile{
+			want: &DynatraceConfigFile{
 				SpecVersion: "0.1.0",
 				DtCreds:     "dyna",
 				Dashboard:   "dash",
@@ -48,7 +48,7 @@ dashboard: dash`,
 spec_version: '0.1.0'
 dtCreds: dyna
 dashboard: ****`,
-			want:    DynatraceConfigFile{},
+			want:    nil,
 			wantErr: true,
 		},
 		{
@@ -57,7 +57,7 @@ dashboard: ****`,
 spec_version: '0.1.0'
 dtCreds: dyna
 dashboard: '****'`,
-			want: DynatraceConfigFile{
+			want: &DynatraceConfigFile{
 				SpecVersion: "0.1.0",
 				DtCreds:     "dyna",
 				Dashboard:   "****",
@@ -67,7 +67,7 @@ dashboard: '****'`,
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseDynatraceConfigFile(tt.yamlString)
+			got, err := parseDynatraceConfigFile([]byte(tt.yamlString))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("parseDynatraceConfigFile() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -23,26 +23,34 @@ type DynatraceEventHandler interface {
 }
 
 // Retrieves Dynatrace Credential information
-func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dtConfigGetter config.DynatraceConfigGetterInterface) (*config.DynatraceConfigFile, *credentials.DTCredentials, error) {
+func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dtConfigGetter config.DynatraceConfigGetterInterface) (*config.DynatraceConfigFile, *credentials.DTCredentials, string, error) {
 	dynatraceConfig, err := dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		log.WithError(err).Error("Failed to load Dynatrace config")
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 
 	cm, err := credentials.NewCredentialManager(nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, "", err
 	}
-	fallbackDecorator := credentials.NewCredentialManagerDefaultFallbackDecorator(cm)
+
+	// TODO 2021-09-01: remove temporary fallback behaviour later on
+	var fallbackDecorator *credentials.CredentialManagerFallbackDecorator
+	switch keptnEvent.(type) {
+	case *sli.GetSLITriggeredAdapter:
+		fallbackDecorator = credentials.NewCredentialManagerSLIServiceFallbackDecorator(cm, keptnEvent.GetProject())
+	default:
+		fallbackDecorator = credentials.NewCredentialManagerDefaultFallbackDecorator(cm)
+	}
 
 	creds, err := fallbackDecorator.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
 		log.WithError(err).Error("Failed to load Dynatrace credentials")
-		return nil, nil, err
+		return nil, nil, "", err
 	}
 
-	return dynatraceConfig, creds, nil
+	return dynatraceConfig, creds, fallbackDecorator.GetSecretName(), nil
 }
 
 func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
@@ -60,7 +68,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		return NoOpHandler{}, nil
 	}
 
-	dynatraceConfig, dynatraceCredentials, err := getDynatraceCredentialsAndConfig(keptnEvent, dtConfigGetter)
+	dynatraceConfig, dynatraceCredentials, secretName, err := getDynatraceCredentialsAndConfig(keptnEvent, dtConfigGetter)
 	if err != nil {
 		log.WithError(err).Error("Could not get dynatrace credentials and config")
 		return ErrorHandler{err: err}, nil
@@ -87,8 +95,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case *problem.ActionFinishedAdapter:
 		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
-		// TODO 2021-08-25: consolidate dynatrace client and config file retrieval in GetSLIEventHandler
-		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter)), nil
+		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, secretName, dynatraceConfig.Dashboard), nil
 	case *deployment.DeploymentFinishedAdapter:
 		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, dynatraceConfig.AttachRules), nil
 	case *deployment.TestTriggeredAdapter:

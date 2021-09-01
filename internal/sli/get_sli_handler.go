@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"strings"
 	"time"
 
@@ -28,12 +29,18 @@ import (
 const ProblemOpenSLI = "problem_open"
 
 type GetSLIEventHandler struct {
-	event *GetSLITriggeredAdapter
+	event      *GetSLITriggeredAdapter
+	dtClient   *dynatrace.Client
+	secretName string
+	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event *GetSLITriggeredAdapter) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event *GetSLITriggeredAdapter, dtClient *dynatrace.Client, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
-		event: event,
+		event:      event,
+		dtClient:   dtClient,
+		secretName: secretName,
+		dashboard:  dashboard,
 	}
 }
 
@@ -45,7 +52,7 @@ func (eh GetSLIEventHandler) HandleEvent() error {
 		return nil
 	}
 
-	go retrieveMetrics(eh.event)
+	go eh.retrieveMetrics()
 
 	return nil
 }
@@ -255,43 +262,32 @@ func getDynatraceProblemContext(eventData *GetSLITriggeredAdapter) string {
 //
 // First tries to find a Dynatrace dashboard and then parses it for SLIs and SLOs
 // Second will go to parse the SLI.yaml and returns the SLI as passed in by the event
-func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
-	// extract keptn context id
-
+func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	// send get-sli.started event
-	if err := sendGetSLIStartedEvent(eventData); err != nil {
-		return sendGetSLIFinishedEvent(eventData, nil, err)
+	if err := sendGetSLIStartedEvent(eh.event); err != nil {
+		return sendGetSLIFinishedEvent(eh.event, nil, err)
 	}
 
 	log.WithFields(
 		log.Fields{
-			"project": eventData.GetProject(),
-			"stage":   eventData.GetStage(),
-			"service": eventData.GetService(),
+			"project": eh.event.GetProject(),
+			"stage":   eh.event.GetStage(),
+			"service": eh.event.GetService(),
 		}).Info("Processing sh.keptn.internal.event.get-sli")
 
-	dynatraceConfigFile := common.GetDynatraceConfig(eventData)
-
 	// Adding DtCreds as a label so users know which DtCreds was used
-	eventData.addLabel("DtCreds", dynatraceConfigFile.DtCreds)
-
-	dtCredentials, err := getDynatraceCredentials(dynatraceConfigFile.DtCreds, eventData.GetProject())
-	if err != nil {
-		log.WithError(err).Error("Failed to fetch Dynatrace credentials")
-		// Implementing: https://github.com/keptn-contrib/dynatrace-sli-service/issues/49
-		return sendGetSLIFinishedEvent(eventData, nil, err)
-	}
+	eh.event.addLabel("DtCreds", eh.secretName)
 
 	//
 	// creating Dynatrace Handler which allows us to call the Dynatrace API
-	dynatraceHandler := NewDynatraceHandler(eventData, dtCredentials)
+	dynatraceHandler := NewDynatraceHandler(eh.event, eh.dtClient)
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps
-	startUnix, endUnix, err := ensureRightTimestamps(eventData.GetSLIStart(), eventData.GetSLIEnd())
+	startUnix, endUnix, err := ensureRightTimestamps(eh.event.GetSLIStart(), eh.event.GetSLIEnd())
 	if err != nil {
 		log.WithError(err).Error("ensureRightTimestamps failed")
-		return sendGetSLIFinishedEvent(eventData, nil, err)
+		return sendGetSLIFinishedEvent(eh.event, nil, err)
 	}
 
 	//
@@ -301,7 +297,7 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 
 	//
 	// Option 1 - see if we can get the data from a Dynatrace Dashboard
-	dashboardLinkAsLabel, sliResults, err := getDataFromDynatraceDashboard(dynatraceHandler, eventData, startUnix, endUnix, dynatraceConfigFile.Dashboard)
+	dashboardLinkAsLabel, sliResults, err := getDataFromDynatraceDashboard(dynatraceHandler, eh.event, startUnix, endUnix, eh.dashboard)
 	if err != nil {
 		// log the error, but continue with loading sli.yaml
 		log.WithError(err).Error("getDataFromDynatraceDashboard failed")
@@ -309,17 +305,17 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 
 	// add link to dynatrace dashboard to labels
 	if dashboardLinkAsLabel != nil {
-		eventData.addLabel("Dashboard Link", dashboardLinkAsLabel.String())
+		eh.event.addLabel("Dashboard Link", dashboardLinkAsLabel.String())
 	}
 
 	//
 	// Option 2: If we have not received any data via a Dynatrace Dashboard lets query the SLIs based on the SLI.yaml definition
 	if sliResults == nil {
 		// get custom metrics for project if they exist
-		projectCustomQueries := common.GetCustomQueries(eventData)
+		projectCustomQueries := common.GetCustomQueries(eh.event)
 
 		// query all indicators
-		for _, indicator := range eventData.GetIndicators() {
+		for _, indicator := range eh.event.GetIndicators() {
 			if strings.Compare(indicator, ProblemOpenSLI) == 0 {
 				log.WithField("indicator", indicator).Info("Skipping indicator as it is handled later")
 			} else {
@@ -354,7 +350,7 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 	//
 	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
 	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
-	problemID := getDynatraceProblemContext(eventData)
+	problemID := getDynatraceProblemContext(eh.event)
 	if problemID != "" {
 		problemIndicator := ProblemOpenSLI
 		openProblemValue := 0.0
@@ -387,7 +383,7 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 		sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", problemIndicator)
 		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
-		errAddSlo := addSLO(eventData, sloDefinition)
+		errAddSlo := addSLO(eh.event, sloDefinition)
 		if errAddSlo != nil {
 			// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
 			log.WithError(errAddSlo).Error("problem while adding SLOs")
@@ -402,35 +398,7 @@ func retrieveMetrics(eventData *GetSLITriggeredAdapter) error {
 
 	log.Info("Finished fetching metrics; Sending SLIDone event now ...")
 
-	return sendGetSLIFinishedEvent(eventData, sliResults, err)
-}
-
-/**
- * returns the DTCredentials
- * First looks at the passed secretName. If null, validates if there is a dynatrace-credentials-%PROJECT% - if not - defaults to "dynatrace" global secret
- */
-func getDynatraceCredentials(secretName string, project string) (*common.DTCredentials, error) {
-
-	secretNames := []string{secretName, fmt.Sprintf("dynatrace-credentials-%s", project), "dynatrace-credentials", "dynatrace"}
-
-	for _, secret := range secretNames {
-		if secret == "" {
-			continue
-		}
-
-		dtCredentials, err := common.GetDTCredentials(secret)
-		if err == nil && dtCredentials != nil {
-
-			log.WithFields(
-				log.Fields{
-					"secret": secret,
-					"tenant": dtCredentials.Tenant,
-				}).Info("Found secret with credentials")
-			return dtCredentials, nil
-		}
-	}
-
-	return nil, errors.New("Could not find any Dynatrace specific secrets with the following names: " + strings.Join(secretNames, ","))
+	return sendGetSLIFinishedEvent(eh.event, sliResults, err)
 }
 
 /**

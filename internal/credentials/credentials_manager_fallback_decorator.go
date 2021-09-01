@@ -9,17 +9,22 @@ import (
 type CredentialManagerFallbackDecorator struct {
 	credentialManager   CredentialManagerInterface
 	fallbackSecretNames []string
+	secretName          string
 }
 
-func NewCredentialManagerFallbackDecorator(cm CredentialManagerInterface, secretNames []string) CredentialManagerInterface {
+func NewCredentialManagerFallbackDecorator(cm CredentialManagerInterface, secretNames []string) *CredentialManagerFallbackDecorator {
 	return &CredentialManagerFallbackDecorator{
 		credentialManager:   cm,
 		fallbackSecretNames: secretNames,
 	}
 }
 
-func NewCredentialManagerDefaultFallbackDecorator(cm CredentialManagerInterface) CredentialManagerInterface {
+func NewCredentialManagerDefaultFallbackDecorator(cm CredentialManagerInterface) *CredentialManagerFallbackDecorator {
 	return NewCredentialManagerFallbackDecorator(cm, []string{"dynatrace"})
+}
+
+func NewCredentialManagerSLIServiceFallbackDecorator(cm CredentialManagerInterface, project string) *CredentialManagerFallbackDecorator {
+	return NewCredentialManagerFallbackDecorator(cm, []string{fmt.Sprintf("dynatrace-credentials-%s", project), "dynatrace-credentials", "dynatrace"})
 }
 
 func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName string) (*DTCredentials, error) {
@@ -39,6 +44,7 @@ func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName
 					"secret": secret,
 					"tenant": dtCredentials.Tenant,
 				}).Info("Found secret with credentials")
+			cm.secretName = secret
 			return dtCredentials, nil
 		}
 	}
@@ -48,4 +54,8 @@ func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName
 
 func (cm *CredentialManagerFallbackDecorator) GetKeptnAPICredentials() (*KeptnAPICredentials, error) {
 	return cm.credentialManager.GetKeptnAPICredentials()
+}
+
+func (cm *CredentialManagerFallbackDecorator) GetSecretName() string {
+	return cm.secretName
 }

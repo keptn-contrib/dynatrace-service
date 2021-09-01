@@ -13,6 +13,19 @@ type CriteriaObject struct {
 	CheckIncrease   bool
 }
 
+type EnvironmentAPIv2Error struct {
+	Error struct {
+		Code                 int    `json:"code"`
+		Message              string `json:"message"`
+		ConstraintViolations []struct {
+			Path              string `json:"path"`
+			Message           string `json:"message"`
+			ParameterLocation string `json:"parameterLocation"`
+			Location          string `json:"location"`
+		} `json:"constraintViolations"`
+	} `json:"error"`
+}
+
 type DTAPIListResponse struct {
 	Values []Values `json:"values"`
 }

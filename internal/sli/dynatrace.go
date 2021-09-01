@@ -1,15 +1,12 @@
 package sli
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"io/ioutil"
-	"net/http"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"net/url"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -20,8 +17,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
-
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 )
 
@@ -36,95 +31,16 @@ const MetricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatr
 
 // Handler interacts with a dynatrace API endpoint
 type Handler struct {
-	KeptnEvent  GetSLITriggeredAdapterInterface
-	HTTPClient  *http.Client
-	credentials *common.DTCredentials
+	KeptnEvent GetSLITriggeredAdapterInterface
+	client     *dynatrace.Client
 }
 
 // NewDynatraceHandler returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, credentials *common.DTCredentials) *Handler {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
-		Proxy:           http.ProxyFromEnvironment,
+func NewDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, client *dynatrace.Client) *Handler {
+	return &Handler{
+		KeptnEvent: keptnEvent,
+		client:     client,
 	}
-	ph := &Handler{
-		KeptnEvent:  keptnEvent,
-		HTTPClient:  &http.Client{Transport: tr},
-		credentials: credentials,
-	}
-
-	return ph
-}
-
-/**
- * exeucteDynatraceREST
- * Executes a call to the Dynatrace REST API Endpoint - taking care of setting all required headers
- * addHeaders allows you to pass additional HTTP Headers
- * Returns the Response Object, the body byte array, error
- */
-func (ph *Handler) executeDynatraceREST(httpMethod string, requestUrl string) (*http.Response, []byte, error) {
-
-	// new request to our URL
-	req, err := http.NewRequest(httpMethod, requestUrl, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Api-Token "+ph.credentials.ApiToken)
-	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
-
-	// perform the request
-	resp, err := ph.HTTPClient.Do(req)
-	if err != nil {
-		return resp, nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return resp, nil, fmt.Errorf("failed to read response body: %v", err)
-	}
-
-	return resp, body, nil
-}
-
-/**
- * Helper function to check response from API REST request and formulate an error if needed
- */
-func checkApiResponse(resp *http.Response, body []byte) error {
-	if resp == nil {
-		return fmt.Errorf("Dynatrace API did not return a response")
-	}
-
-	// no error if the status code from the API is 200
-	if resp.StatusCode == 200 {
-		return nil
-	}
-
-	dtApiv2Error := &DtEnvAPIv2Error{}
-	err := json.Unmarshal(body, dtApiv2Error)
-	if err != nil {
-		return fmt.Errorf("Dynatrace API returned status code %d", resp.StatusCode)
-	}
-	return fmt.Errorf("Dynatrace API returned error %d: %s", dtApiv2Error.Error.Code, dtApiv2Error.Error.Message)
-}
-
-// get sends a HTTP GET request to the specified request URL. The apiPath is appended to the base URL of the Handler
-// It returns the body of the HTTP response and a nil error in case of success or a nil slice and an error otherwise
-func (ph *Handler) get(apiPath string, errorContext string) ([]byte, error) {
-	url := ph.credentials.Tenant + apiPath
-	resp, body, err := ph.executeDynatraceREST(http.MethodGet, url)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO 2021-08-03: remove the variable `errorContext` as soon as we are sure, that there is no logic based on error messages
-	if err := checkApiResponse(resp, body); err != nil {
-		return nil, fmt.Errorf("%s request %s was not successful: %w", errorContext, url, err)
-	}
-
-	return body, nil
 }
 
 // isValidUUID Helper function to validate whether string is a valid UUID in version 4, variant 1
@@ -139,7 +55,7 @@ func isValidUUID(uuid string) bool {
 func (ph *Handler) findDynatraceDashboard(keptnEvent adapter.EventContentAdapter) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
-	body, err := ph.get("/api/config/v1/dashboards", "Dashboards API")
+	body, err := ph.client.Get("/api/config/v1/dashboards")
 	if err != nil {
 		return "", err
 	}
@@ -200,7 +116,7 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 
 	// We have a valid Dashboard UUID - now lets query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
-	body, err := ph.get("/api/config/v1/dashboards/"+dashboard, "Dashboards API")
+	body, err := ph.client.Get("/api/config/v1/dashboards/" + dashboard)
 	if err != nil {
 		return nil, dashboard, err
 	}
@@ -218,12 +134,11 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 // executeGetDynatraceSLO Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
 // It returns a DynatraceSLOResult object on success, an error otherwise
 func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*DynatraceSLOResult, error) {
-	body, err := ph.get(
+	body, err := ph.client.Get(
 		fmt.Sprintf("/api/v2/slo/%s?from=%s&to=%s",
 			sloID,
 			common.TimestampToString(startUnix),
-			common.TimestampToString(endUnix)),
-		"SLO API")
+			common.TimestampToString(endUnix)))
 	if err != nil {
 		return nil, err
 	}
@@ -247,12 +162,11 @@ func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, end
 // executeGetDynatraceProblems Calls the /problems/ API call to retrieve the the list of problems for that timeframe
 // It returns a DynatraceProblemQueryResult object on success, an error otherwise
 func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceProblemQueryResult, error) {
-	body, err := ph.get(
+	body, err := ph.client.Get(
 		fmt.Sprintf("/api/v2/problems?from=%s&to=%s&%s",
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
-			problemQuery),
-		"Problems API")
+			problemQuery))
 	if err != nil {
 		return nil, err
 	}
@@ -270,12 +184,11 @@ func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix ti
 // executeGetDynatraceSecurityProblems Calls the /securityProblems/ API call to retrieve the list of security problems for that timeframe.
 // It returns a DynatraceSecurityProblemQueryResult object on success, an error otherwise.
 func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceSecurityProblemQueryResult, error) {
-	body, err := ph.get(
+	body, err := ph.client.Get(
 		fmt.Sprintf("/api/v2/securityProblems?from=%s&to=%s&%s",
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
-			problemQuery),
-		"Security Problems API")
+			problemQuery))
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +205,7 @@ func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, star
 
 // executeMetricAPIDescribe Calls the /metrics/<metricID> API call to retrieve Metric Definition Details.
 func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition, error) {
-	body, err := ph.get("/api/v2/metrics/"+metricId, "Metrics API")
+	body, err := ph.client.Get("/api/v2/metrics/" + metricId)
 	if err != nil {
 		return nil, err
 	}
@@ -310,9 +223,9 @@ func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition,
 // executeMetricsAPIQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetricsQueryResult, error) {
 	path := "/api/v2/metrics/query?" + metricsQuery
-	log.WithField("query", ph.credentials.Tenant+path).Debug("Final Query")
+	log.WithField("query", ph.client.DynatraceCreds.Tenant+path).Debug("Final Query")
 
-	body, err := ph.get(path, "Metrics API")
+	body, err := ph.client.Get(path)
 	if err != nil {
 		return nil, err
 	}
@@ -334,7 +247,7 @@ func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetric
 
 // ExecuteGetDynatraceProblemById Calls the /problems/<problemId> API call to retrieve Problem Details
 func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceProblem, error) {
-	body, err := ph.get("/api/v2/problems/"+problemId, "Problems API")
+	body, err := ph.client.Get("/api/v2/problems/" + problemId)
 	if err != nil {
 		return nil, err
 	}
@@ -352,9 +265,9 @@ func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceP
 // executeGetDynatraceUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*DTUSQLResult, error) {
 	path := "/api/v1/userSessionQueryLanguage/table?" + usql
-	log.WithField("query", ph.credentials.Tenant+path).Debug("Final USQL Query")
+	log.WithField("query", ph.client.DynatraceCreds.Tenant+path).Debug("Final USQL Query")
 
-	body, err := ph.get(path, "USQL API")
+	body, err := ph.client.Get(path)
 	if err != nil {
 		return nil, err
 	}
@@ -1054,7 +967,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventConten
 	}
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewDashboardLink(ph.credentials.Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
+	dashboardLinkAsLabel := NewDashboardLink(ph.client.DynatraceCreds.Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
@@ -1551,7 +1464,7 @@ func (ph *Handler) replaceQueryParameters(query string) string {
 	return query
 }
 
-// get query associated with an SLI name
+// getSLIQuery get query associated with an SLI name
 func (ph *Handler) getSLIQuery(name string, customQueries map[string]string) (string, error) {
 	if customQueries != nil {
 		if val, ok := customQueries[name]; ok {
