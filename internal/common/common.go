@@ -81,12 +81,6 @@ func getKeptnServiceURL(servicename, defaultURL string) string {
 	return baseURL
 }
 
-// KeptnCredentials contains the credentials for the Keptn API
-type KeptnCredentials struct {
-	ApiURL   string
-	ApiToken string
-}
-
 /**
  * Finds the Problem ID that is associated with this Keptn Workflow
  * It first parses it from Problem URL label - if it cant be found there it will look for the Initial Problem Open Event and gets the ID from there!
