@@ -25,26 +25,6 @@ type SLI struct {
 	Indicators  map[string]string `yaml:"indicators"`
 }
 
-// MetricDefinition defines the output of /metrics/<metricID>
-type MetricDefinition struct {
-	MetricID           string   `json:"metricId"`
-	DisplayName        string   `json:"displayName"`
-	Description        string   `json:"description"`
-	Unit               string   `json:"unit"`
-	AggregationTypes   []string `json:"aggregationTypes"`
-	Transformations    []string `json:"transformations"`
-	DefaultAggregation struct {
-		Type string `json:"type"`
-	} `json:"defaultAggregation"`
-	DimensionDefinitions []struct {
-		Name        string `json:"name"`
-		Type        string `json:"type"`
-		Key         string `json:"key"`
-		DisplayName string `json:"displayName"`
-	} `json:"dimensionDefinitions"`
-	EntityType []string `json:"entityType"`
-}
-
 // MetricsQueryResult is struct for /metrics/query
 type MetricsQueryResult struct {
 	TotalCount  int                       `json:"totalCount"`

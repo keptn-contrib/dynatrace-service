@@ -111,48 +111,6 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 	return dynatraceDashboard, dashboard, nil
 }
 
-// executeMetricAPIDescribe Calls the /metrics/<metricID> API call to retrieve Metric Definition Details.
-func (ph *Handler) executeMetricAPIDescribe(metricId string) (*dynatrace.MetricDefinition, error) {
-	body, err := ph.dtClient.Get("/api/v2/metrics/" + metricId)
-	if err != nil {
-		return nil, err
-	}
-
-	// parse response json if we have a 200
-	var result dynatrace.MetricDefinition
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
-// executeMetricsAPIQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*dynatrace.MetricsQueryResult, error) {
-	path := "/api/v2/metrics/query?" + metricsQuery
-	log.WithField("query", ph.dtClient.DynatraceCreds.Tenant+path).Debug("Final Query")
-
-	body, err := ph.dtClient.Get(path)
-	if err != nil {
-		return nil, err
-	}
-
-	// parse response json
-	var result dynatrace.MetricsQueryResult
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(result.Result) == 0 {
-		// datapoints is empty - try again?
-		return nil, errors.New("Dynatrace Metrics API returned no DataPoints")
-	}
-
-	return &result, nil
-}
-
 // executeGetDynatraceUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*dynatrace.DTUSQLResult, error) {
 	path := "/api/v1/userSessionQueryLanguage/table?" + usql
@@ -482,7 +440,7 @@ func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery dynatrace.DataE
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
-	metricDefinition, err := ph.executeMetricAPIDescribe(dataQuery.Metric)
+	metricDefinition, err := dynatrace.NewMetricsClient(ph.dtClient).GetByID(dataQuery.Metric)
 	if err != nil {
 		log.WithError(err).WithField("metric", dataQuery.Metric).Debug("Error retrieving metric description")
 		return nil, err
@@ -584,7 +542,7 @@ func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery dynatrace.DataE
 func (ph *Handler) generateMetricQueryFromChart(series dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (*MetricQueryComponents, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
-	metricDefinition, err := ph.executeMetricAPIDescribe(series.Metric)
+	metricDefinition, err := dynatrace.NewMetricsClient(ph.dtClient).GetByID(series.Metric)
 	if err != nil {
 		log.WithError(err).WithField("metric", series.Metric).Debug("Error retrieving metric description")
 		return nil, err
@@ -701,7 +659,7 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 	var sliResults []*keptnv2.SLIResult
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := ph.executeMetricsAPIQuery(metricQueryComponents.fullMetricQueryString)
+	queryResult, err := dynatrace.NewMetricsClient(ph.dtClient).GetByQuery(metricQueryComponents.fullMetricQueryString)
 	if err != nil {
 		log.WithError(err).Debug("No result for query")
 
@@ -1296,7 +1254,7 @@ func (ph *Handler) executeMetricsQuery(metricsQuery string, unit string, startUn
 	if err != nil {
 		return 0, err
 	}
-	result, err := ph.executeMetricsAPIQuery(metricsQuery)
+	result, err := dynatrace.NewMetricsClient(ph.dtClient).GetByQuery(metricsQuery)
 
 	if err != nil {
 		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %s. This was the query executed: %s", err.Error(), metricsQuery)
