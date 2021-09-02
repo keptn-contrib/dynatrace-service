@@ -26,12 +26,6 @@ const configurationService = "CONFIGURATION_SERVICE"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 const defaultConfigurationServiceURL = "http://configuration-service:8080"
 
-// RunLocal is true if the "ENV"-environment variable is set to local
-var RunLocal = os.Getenv("ENV") == "local"
-
-// RunLocalTest is true if the "ENV"-environment variable is set to localtest
-var RunLocalTest = os.Getenv("ENV") == "localtest"
-
 // GetConfigurationServiceURL Returns the endpoint to the configuration-service
 func GetConfigurationServiceURL() string {
 	/*

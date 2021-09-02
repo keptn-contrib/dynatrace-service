@@ -12,7 +12,6 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -105,8 +104,6 @@ func NewCredentialManager(sr SecretReader) (*CredentialManager, error) {
 	cm := &CredentialManager{}
 	if sr != nil {
 		cm.SecretReader = sr
-	} else if common.RunLocal || common.RunLocalTest {
-		cm.SecretReader = &OSEnvCredentialReader{}
 	} else {
 		sr, err := NewK8sCredentialReader(nil)
 		if err != nil {

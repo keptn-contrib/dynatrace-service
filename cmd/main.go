@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/event_handler"
@@ -28,10 +27,6 @@ func main() {
 	var env envConfig
 	if err := envconfig.Process("", &env); err != nil {
 		log.WithError(err).Fatal("Failed to process env var")
-	}
-
-	if common.RunLocal || common.RunLocalTest {
-		log.Info("env=runlocal: Running with local filesystem to fetch resources")
 	}
 
 	os.Exit(_main(os.Args[1:], env))

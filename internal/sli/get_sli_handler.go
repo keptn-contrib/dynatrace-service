@@ -202,15 +202,6 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
 		}
 	}
 
-	// lets also write the result to a local file in local test mode
-	if result.SLIResults() != nil && (common.RunLocal || common.RunLocalTest) {
-		err = keptn.NewLocalResourceClient().UploadSLIResults(result.SLIResults())
-		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), err
-		}
-
-	}
-
 	return result.DashboardLink(), result.SLIResults(), nil
 }
 
@@ -327,11 +318,6 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 					})
 				}
 			}
-		}
-
-		if common.RunLocal || common.RunLocalTest {
-			log.WithField("sliResults", sliResults).Print("(RunLocal Output) sliResults")
-			return nil
 		}
 	}
 

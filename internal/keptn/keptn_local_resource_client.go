@@ -1,15 +1,11 @@
 package keptn
 
 import (
-	"encoding/json"
 	"fmt"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"strings"
 )
-
-const sliResultFilename = "sliresult.json"
 
 // is the local test resource path for the dynatrace.conf.yaml
 const localConfigFilename = "dynatrace/_dynatrace.conf.yaml"
@@ -23,21 +19,6 @@ func NewLocalResourceClient() *LocalResourceClient {
 
 func (c *LocalResourceClient) GetDynatraceConfig(project string, stage string, service string) (string, error) {
 	return c.GetResource(project, stage, service, configFilename)
-}
-
-func (c *LocalResourceClient) UploadSLIResults(sliResults []*keptnv2.SLIResult) error {
-	log.Info("(RunLocal Output) Write SLIResult to sliresult.json")
-	jsonAsByteArray, err := json.MarshalIndent(sliResults, "", "  ")
-	if err != nil {
-		return fmt.Errorf("could not convert sliResults to JSON: %s", err)
-	}
-
-	err = c.UploadKeptnResource(jsonAsByteArray, sliResultFilename)
-	if err != nil {
-		return fmt.Errorf("could not store %s : %v", sliResultFilename, err)
-	}
-
-	return nil
 }
 
 func (c *LocalResourceClient) GetResource(project string, stage string, service string, resourceURI string) (string, error) {
