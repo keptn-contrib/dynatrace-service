@@ -46,25 +46,15 @@ func isValidUUID(uuid string) bool {
 	return r.MatchString(uuid)
 }
 
-// findDynatraceDashboard Queries all Dynatrace Dashboards and returns the dashboard ID that matches the following name pattern:
-//   KQG;project=%project%;service=%service%;stage=%stage%;xxx
-// It returns the UUID of the dashboard that was found. If no dashboard was found it returns ""
 func (ph *Handler) findDynatraceDashboard(keptnEvent adapter.EventContentAdapter) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
-	body, err := ph.dtClient.Get("/api/config/v1/dashboards")
+	dashboards, err := dynatrace.NewDashboardsClient(ph.dtClient).GetAll()
 	if err != nil {
 		return "", err
 	}
 
-	// parse json
-	dashboards := &dynatrace.Dashboards{}
-	err = json.Unmarshal(body, &dashboards)
-	if err != nil {
-		return "", err
-	}
-
-	return dashboards.SearchForDashboardMatching(keptnEvent), nil
+	return dashboards.SearchForDashboardMatching(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService()), nil
 }
 
 // loadDynatraceDashboard Depending on the dashboard parameter which is pulled from dynatrace.conf.yaml:dashboard this method either
@@ -89,7 +79,7 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 					"project": keptnEvent.GetProject(),
 					"stage":   keptnEvent.GetStage(),
 					"service": keptnEvent.GetService(),
-				}).Debug("Dashboard option query but couldnt find KQG dashboard")
+				}).Debug("Dashboard option query but could not find KQG dashboard")
 
 			// TODO 2021-08-03: should this really return no error, if querying dashboards found no match?
 			// this would be the same result as option 1 then
@@ -113,16 +103,9 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 
 	// We have a valid Dashboard UUID - now lets query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
-	body, err := ph.dtClient.Get("/api/config/v1/dashboards/" + dashboard)
+	dynatraceDashboard, err := dynatrace.NewDashboardsClient(ph.dtClient).GetByID(dashboard)
 	if err != nil {
 		return nil, dashboard, err
-	}
-
-	// parse json
-	dynatraceDashboard := &dynatrace.Dashboard{}
-	err = json.Unmarshal(body, &dynatraceDashboard)
-	if err != nil {
-		return nil, dashboard, fmt.Errorf("could not decode response payload: %v", err)
 	}
 
 	return dynatraceDashboard, dashboard, nil

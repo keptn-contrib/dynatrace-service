@@ -33,6 +33,22 @@ func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 	return dashboards, nil
 }
 
+func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
+	body, err := dc.client.Get(dashboardsPath + "/" + dashboardID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve Dynatrace dashboard with ID %s: %v", dashboardID, err)
+	}
+
+	// parse json
+	dynatraceDashboard := &Dashboard{}
+	err = json.Unmarshal(body, &dynatraceDashboard)
+	if err != nil {
+		return nil, fmt.Errorf("could not decode unmarshal dashboard payload: %v", err)
+	}
+
+	return dynatraceDashboard, nil
+}
+
 func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {

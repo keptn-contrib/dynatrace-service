@@ -1,7 +1,6 @@
 package dynatrace
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
@@ -19,12 +18,13 @@ type DashboardEntry struct {
 }
 
 // SearchForDashboardMatching searches for a dashboard that exactly matches project, service and stage
-// It returns the id of the dashboard on success or an error otherwise
-func (dashboards *Dashboards) SearchForDashboardMatching(keptnEvent adapter.EventContentAdapter) string {
+// 	KQG;project=%project%;service=%service%;stage=%stage%;xxx
+// It returns the id of the dashboard on success or an empty string otherwise
+func (dashboards *Dashboards) SearchForDashboardMatching(project string, stage string, service string) string {
 	keyValuePairs := []string{
-		strings.ToLower("project=" + keptnEvent.GetProject()),
-		strings.ToLower("service=" + keptnEvent.GetService()),
-		strings.ToLower("stage=" + keptnEvent.GetStage()),
+		strings.ToLower("project=" + project),
+		strings.ToLower("stage=" + stage),
+		strings.ToLower("service=" + service),
 	}
 
 	for _, dashboard := range dashboards.Dashboards {
@@ -55,9 +55,9 @@ func (dashboards *Dashboards) SearchForDashboardMatching(keptnEvent adapter.Even
 
 	log.WithFields(
 		log.Fields{
-			"project":        keptnEvent.GetProject(),
-			"stage":          keptnEvent.GetStage(),
-			"service":        keptnEvent.GetService(),
+			"project":        project,
+			"stage":          stage,
+			"service":        service,
 			"dashboardCount": len(dashboards.Dashboards),
 		}).Warn("Found dashboards but none matched the name specification")
 
