@@ -45,6 +45,12 @@ func (response *DTAPIListResponse) ToStringSetWith(mapper func(Values) string) *
 	return stringSet
 }
 
+// SLI struct for SLI.yaml
+type SLI struct {
+	SpecVersion string            `yaml:"spec_version"`
+	Indicators  map[string]string `yaml:"indicators"`
+}
+
 type ConfigResult struct {
 	Name    string
 	Success bool
