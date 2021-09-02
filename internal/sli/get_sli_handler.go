@@ -161,13 +161,13 @@ func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) err
 /**
  * Tries to find a dynatrace dashboard that matches our project. If so - returns the SLI, SLO and SLIResults
  */
-func getDataFromDynatraceDashboard(dynatraceHandler *Handler, keptnEvent adapter.EventContentAdapter, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*DashboardLink, []*keptnv2.SLIResult, error) {
+func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.EventContentAdapter, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*DashboardLink, []*keptnv2.SLIResult, error) {
 
 	//
 	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
 	// ==============================================================================
 	// Lets see if we have a Dashboard in Dynatrace that we should parse
-	result, err := dynatraceHandler.QueryDynatraceDashboardForSLIs(keptnEvent, dashboardConfig, startUnix, endUnix)
+	result, err := sliRetrieval.QueryDynatraceDashboardForSLIs(keptnEvent, dashboardConfig, startUnix, endUnix)
 	if result == nil && err == nil {
 		return nil, nil, nil
 	}
@@ -262,8 +262,8 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	eh.event.addLabel("DtCreds", eh.secretName)
 
 	//
-	// creating Dynatrace Handler which allows us to call the Dynatrace API
-	dynatraceHandler := NewDynatraceHandler(eh.event, eh.dtClient, eh.kClient)
+	// creating Dynatrace Retrieval which allows us to call the Dynatrace API
+	sliRetrieval := NewRetrieval(eh.event, eh.dtClient, eh.kClient)
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps
@@ -280,7 +280,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	//
 	// Option 1 - see if we can get the data from a Dynatrace Dashboard
-	dashboardLinkAsLabel, sliResults, err := getDataFromDynatraceDashboard(dynatraceHandler, eh.event, startUnix, endUnix, eh.dashboard)
+	dashboardLinkAsLabel, sliResults, err := getDataFromDynatraceDashboard(sliRetrieval, eh.event, startUnix, endUnix, eh.dashboard)
 	if err != nil {
 		// log the error, but continue with loading sli.yaml
 		log.WithError(err).Error("getDataFromDynatraceDashboard failed")
@@ -308,7 +308,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 				log.WithField("indicator", indicator).Info("Skipping indicator as it is handled later")
 			} else {
 				log.WithField("indicator", indicator).Info("Fetching indicator")
-				sliValue, err := dynatraceHandler.GetSLIValue(indicator, startUnix, endUnix, projectCustomQueries)
+				sliValue, err := sliRetrieval.GetSLIValue(indicator, startUnix, endUnix, projectCustomQueries)
 				if err != nil {
 					log.WithError(err).Error("GetSLIValue failed")
 					// failed to fetch metric

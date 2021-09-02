@@ -143,10 +143,10 @@ func testingGetKeptnEvent(project string, stage string, service string, deployme
 
 /**
  * This function will create a new HTTP Server for handling Dynatrace REST Calls.
- * It returns the Dynatrace Handler as well as the httpClient, mocked server url and the teardown method
+ * It returns the Dynatrace Retrieval as well as the httpClient, mocked server url and the teardown method
  * ATTENTION: When using this method you have to call the "teardown" method that is returned in the last parameter
  */
-func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Handler, *http.Client, string, func()) {
+func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Retrieval, *http.Client, string, func()) {
 	httpClient, url, teardown := testingDynatraceHTTPClient()
 
 	dtCredentials := &credentials.DTCredentials{
@@ -154,7 +154,7 @@ func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Ha
 		ApiToken: "test",
 	}
 
-	dh := NewDynatraceHandler(
+	dh := NewRetrieval(
 		keptnEvent,
 		dynatrace.NewClient(dtCredentials),
 		KeptnClientMock{})
@@ -444,7 +444,7 @@ func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
 	endTime := time.Unix(1571649085, 0).UTC()
 	problemQuery := "problemEntity=status(OPEN)"
 
-	// TODO 2021-09-02: fix dependency on sli/Handler below!
+	// TODO 2021-09-02: fix dependency on sli/Retrieval below!
 	problemResult, err := dynatrace.NewSecurityProblemsClient(dh.dtClient).GetByQuery(problemQuery, startTime, endTime)
 
 	if err != nil {
@@ -603,7 +603,7 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 				os.Unsetenv("NO_PROXY")
 			}()
 
-			gotHandler := NewDynatraceHandler(
+			gotHandler := NewRetrieval(
 				tt.args.keptnEvent,
 				dynatrace.NewClient(
 					&credentials.DTCredentials{Tenant: tt.args.apiURL}),

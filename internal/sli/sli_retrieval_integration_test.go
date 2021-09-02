@@ -246,7 +246,7 @@ func TestGetSLIEndTimeFuture(t *testing.T) {
 	)
 	defer ts.Close()
 
-	dh := NewDynatraceHandler(ts.URL, keptnEvent, nil, nil)
+	dh := NewRetrieval(ts.URL, keptnEvent, nil, nil)
 
 	start := time.Now()
 	// artificially increase end time to be in the future
@@ -266,7 +266,7 @@ func TestGetSLIStartTimeAfterEndTime(t *testing.T) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler("http://dynatrace", keptnEvent, nil, nil)
+	dh := NewRetrieval("http://dynatrace", keptnEvent, nil, nil)
 
 	start := time.Now()
 	// artificially increase end time to be in the future
@@ -352,8 +352,8 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 	assert.NotNil(t, err, nil)
 }
 
-func createDynatraceHandler(keptnEvent *BaseKeptnEvent, httpClient *http.Client) *Handler {
-	dh := NewDynatraceHandler(
+func createDynatraceHandler(keptnEvent *BaseKeptnEvent, httpClient *http.Client) *Retrieval {
+	dh := NewRetrieval(
 		keptnEvent,
 		dynatrace.NewClient(
 			&credentials.DTCredentials{Tenant: "http://dynatrace"}),
