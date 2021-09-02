@@ -443,7 +443,9 @@ func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 	problemQuery := "problemEntity=status(OPEN)"
-	problemResult, err := dh.executeGetDynatraceSecurityProblems(problemQuery, startTime, endTime)
+
+	// TODO 2021-09-02: fix dependency on sli/Handler below!
+	problemResult, err := dynatrace.NewSecurityProblemsClient(dh.dtClient).GetByQuery(problemQuery, startTime, endTime)
 
 	if err != nil {
 		t.Error(err)
