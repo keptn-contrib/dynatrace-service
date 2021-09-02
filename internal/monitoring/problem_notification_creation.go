@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -21,7 +21,7 @@ func NewProblemNotificationCreation(client *dynatrace.Client) *ProblemNotificati
 
 // Create sets up/updates the DT problem notification and returns it
 func (pn *ProblemNotificationCreation) Create() ConfigResult {
-	if !lib.IsProblemNotificationsGenerationEnabled() {
+	if !env.IsProblemNotificationsGenerationEnabled() {
 		return ConfigResult{}
 	}
 

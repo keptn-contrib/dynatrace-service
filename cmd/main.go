@@ -6,8 +6,8 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/event_handler"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	"github.com/keptn-contrib/dynatrace-service/internal/onboard"
 
 	log "github.com/sirupsen/logrus"
@@ -23,7 +23,7 @@ type envConfig struct {
 }
 
 func main() {
-	log.SetLevel(lib.GetLogLevel())
+	log.SetLevel(env.GetLogLevel())
 
 	var env envConfig
 	if err := envconfig.Process("", &env); err != nil {
@@ -37,9 +37,9 @@ func main() {
 	os.Exit(_main(os.Args[1:], env))
 }
 
-func _main(args []string, env envConfig) int {
+func _main(args []string, envCfg envConfig) int {
 
-	if lib.IsServiceSyncEnabled() {
+	if env.IsServiceSyncEnabled() {
 		cm, err := credentials.NewCredentialManager(nil)
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize CredentialManager")
@@ -51,7 +51,7 @@ func _main(args []string, env envConfig) int {
 	ctx := context.Background()
 	ctx = cloudevents.WithEncodingStructured(ctx)
 
-	p, err := cloudevents.NewHTTP(cloudevents.WithPath(env.Path), cloudevents.WithPort(env.Port))
+	p, err := cloudevents.NewHTTP(cloudevents.WithPath(envCfg.Path), cloudevents.WithPort(envCfg.Port))
 	if err != nil {
 		log.WithError(err).Fatal("Failed to create client")
 	}

@@ -3,7 +3,7 @@ package monitoring
 import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
@@ -45,15 +45,15 @@ func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Ke
 func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*ConfiguredEntities, error) {
 
 	configuredEntities := &ConfiguredEntities{
-		TaggingRulesEnabled:         lib.IsTaggingRulesGenerationEnabled(),
+		TaggingRulesEnabled:         env.IsTaggingRulesGenerationEnabled(),
 		TaggingRules:                NewAutoTagCreation(mc.dtClient).Create(),
-		ProblemNotificationsEnabled: lib.IsProblemNotificationsGenerationEnabled(),
+		ProblemNotificationsEnabled: env.IsProblemNotificationsGenerationEnabled(),
 		ProblemNotifications:        NewProblemNotificationCreation(mc.dtClient).Create(),
-		ManagementZonesEnabled:      lib.IsManagementZonesGenerationEnabled(),
+		ManagementZonesEnabled:      env.IsManagementZonesGenerationEnabled(),
 		ManagementZones:             []ConfigResult{},
-		DashboardEnabled:            lib.IsDashboardsGenerationEnabled(),
+		DashboardEnabled:            env.IsDashboardsGenerationEnabled(),
 		Dashboard:                   ConfigResult{},
-		MetricEventsEnabled:         lib.IsMetricEventsGenerationEnabled(),
+		MetricEventsEnabled:         env.IsMetricEventsGenerationEnabled(),
 		MetricEvents:                []ConfigResult{},
 	}
 

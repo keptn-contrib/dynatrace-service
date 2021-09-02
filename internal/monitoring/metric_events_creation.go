@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"regexp"
@@ -40,7 +40,7 @@ func NewMetricEventCreation(dynatraceClient *dynatrace.Client, keptnClient *kept
 
 // Create creates new metric events if SLOs are specified
 func (mec MetricEventCreation) Create(project string, stage string, service string) []ConfigResult {
-	if !lib.IsMetricEventsGenerationEnabled() {
+	if !env.IsMetricEventsGenerationEnabled() {
 		return nil
 	}
 

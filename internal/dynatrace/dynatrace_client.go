@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -35,7 +35,7 @@ type Client struct {
 // NewClient creates a new Client
 func NewClient(dynatraceCreds *credentials.DTCredentials) *Client {
 	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !env.IsHttpSSLVerificationEnabled()},
 		Proxy:           http.ProxyFromEnvironment,
 	}
 	return &Client{

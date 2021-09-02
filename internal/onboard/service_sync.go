@@ -17,7 +17,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
@@ -166,7 +166,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 }
 
 func (s *serviceSynchronizer) initializeSynchronizationTimer() {
-	syncInterval := lib.GetServiceSyncInterval()
+	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
 	go func() {

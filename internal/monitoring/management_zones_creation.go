@@ -2,7 +2,7 @@ package monitoring
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -20,7 +20,7 @@ func NewManagementZoneCreation(client *dynatrace.Client) *ManagementZoneCreation
 
 // Create creates a new management zone for the project
 func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipyard) []ConfigResult {
-	if !lib.IsManagementZonesGenerationEnabled() {
+	if !env.IsManagementZonesGenerationEnabled() {
 		return nil
 	}
 

@@ -3,7 +3,7 @@ package monitoring
 import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -27,7 +27,7 @@ func NewDashboardCreation(client *dynatrace.Client) *DashboardCreation {
 
 // Create creates a new dashboard for the provided project
 func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) ConfigResult {
-	if !lib.IsDashboardsGenerationEnabled() {
+	if !env.IsDashboardsGenerationEnabled() {
 		return ConfigResult{}
 	}
 

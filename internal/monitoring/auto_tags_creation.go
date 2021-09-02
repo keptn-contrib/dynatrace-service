@@ -2,7 +2,7 @@ package monitoring
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -19,7 +19,7 @@ func NewAutoTagCreation(client *dynatrace.Client) *AutoTagCreation {
 
 // Create creates auto-tags in Dynatrace and returns the tagging rules
 func (at *AutoTagCreation) Create() []ConfigResult {
-	if !lib.IsTaggingRulesGenerationEnabled() {
+	if !env.IsTaggingRulesGenerationEnabled() {
 		return nil
 	}
 
