@@ -1,6 +1,9 @@
 package sli
 
-import keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+import (
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+)
 
 type BaseKeptnEvent struct {
 	Context string
@@ -109,4 +112,10 @@ func (e BaseKeptnEvent) GetCustomSLIFilters() []*keptnv2.SLIFilter {
 
 func (e BaseKeptnEvent) GetEventID() string {
 	return e.ID
+}
+
+type KeptnClientMock struct{}
+
+func (KeptnClientMock) GetCustomQueries(project string, stage string, service string) (*keptn.CustomQueries, error) {
+	return keptn.NewEmptyCustomQueries(), nil
 }

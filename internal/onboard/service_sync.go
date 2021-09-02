@@ -144,7 +144,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 			credentialManager: c,
 		}
 
-		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewConfigResourceClient())
+		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewResourceClient())
 		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewClient(nil))
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()

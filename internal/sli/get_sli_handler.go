@@ -1,11 +1,12 @@
 package sli
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
 	"strings"
 	"time"
 
@@ -16,9 +17,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
 
-	"gopkg.in/yaml.v2"
-
-	"github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	// configutils "github.com/keptn/go-utils/pkg/configuration-service/utils"
 	// keptnevents "github.com/keptn/go-utils/pkg/events"
@@ -31,14 +29,16 @@ const ProblemOpenSLI = "problem_open"
 type GetSLIEventHandler struct {
 	event      *GetSLITriggeredAdapter
 	dtClient   *dynatrace.Client
+	kClient    *keptn.Client
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event *GetSLITriggeredAdapter, dtClient *dynatrace.Client, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event *GetSLITriggeredAdapter, dtClient *dynatrace.Client, kClient *keptn.Client, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:      event,
 		dtClient:   dtClient,
+		kClient:    kClient,
 		secretName: secretName,
 		dashboard:  dashboard,
 	}
@@ -117,19 +117,27 @@ func ensureRightTimestamps(start string, end string) (time.Time, time.Time, erro
  */
 func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) error {
 
-	// this is the default SLO in case none has yet been uploaded
-	dashboardSLO := &keptncommon.ServiceLevelObjectives{
-		Objectives: []*keptncommon.SLO{},
-		TotalScore: &keptncommon.SLOScore{Pass: "90%", Warning: "75%"},
-		Comparison: &keptncommon.SLOComparison{CompareWith: "single_result", IncludeResultWithScore: "pass", NumberOfComparisonResults: 1, AggregateFunction: "avg"},
-	}
+	resourceClient := keptn.NewResourceClient()
 
 	// first - lets load the SLO.yaml from the config repo
-	sloContent, err := common.GetKeptnResource(keptnEvent, common.KeptnSLOFilename)
-	if err == nil && sloContent != "" {
-		err := json.Unmarshal([]byte(sloContent), dashboardSLO)
-		if err != nil {
-			return fmt.Errorf("Couldnt parse existing SLO.yaml: %v", err)
+	dashboardSLO, err := resourceClient.GetSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
+	if err != nil {
+		var rnfErr *keptn.ResourceNotFoundError
+		if !errors.As(err, &rnfErr) {
+			return err
+		}
+
+		// this is the default SLO in case none has yet been uploaded
+		dashboardSLO = &keptncommon.ServiceLevelObjectives{
+			Objectives: []*keptncommon.SLO{},
+			TotalScore: &keptncommon.SLOScore{
+				Pass:    "90%",
+				Warning: "75%"},
+			Comparison: &keptncommon.SLOComparison{
+				CompareWith:               "single_result",
+				IncludeResultWithScore:    "pass",
+				NumberOfComparisonResults: 1,
+				AggregateFunction:         "avg"},
 		}
 	}
 
@@ -142,16 +150,9 @@ func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) err
 
 	// now - lets add our newSLO to the list
 	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
-
-	// and now we save it back to Keptn
-	yamlAsByteArray, err := yaml.Marshal(dashboardSLO)
+	err = resourceClient.UploadSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), dashboardSLO)
 	if err != nil {
 		return err
-	}
-
-	err = common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
-	if err != nil {
-		return fmt.Errorf("could not store %s : %v", common.KeptnSLOFilename, err)
 	}
 
 	return nil
@@ -175,57 +176,39 @@ func getDataFromDynatraceDashboard(dynatraceHandler *Handler, keptnEvent adapter
 		return nil, nil, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
 	}
 
+	resourceClient := keptn.NewResourceClient()
+
 	// lets store the dashboard as well
 	if result.Dashboard() != nil {
-		jsonAsByteArray, err := json.MarshalIndent(result.Dashboard(), "", "  ")
+		err = resourceClient.UploadDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.Dashboard())
 		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not convert dashboard to JSON: %s", err)
-		}
-		err = common.UploadKeptnResource(jsonAsByteArray, common.DynatraceDashboardFilename, keptnEvent)
-		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not store %s : %v", common.DynatraceDashboardFilename, err)
+			return result.DashboardLink(), result.SLIResults(), err
 		}
 	}
 
 	// lets write the SLI to the config repo
 	if result.SLI() != nil {
-		yamlAsByteArray, err := yaml.Marshal(result.SLI())
+		err = resourceClient.UploadSLI(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLI())
 		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not convert dashboardSLI to JSON: %s", err)
-		}
-
-		err = common.UploadKeptnResource(yamlAsByteArray, common.DynatraceSLIFilename, keptnEvent)
-		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not store %s : %v", common.DynatraceSLIFilename, err)
+			return result.DashboardLink(), result.SLIResults(), err
 		}
 	}
 
 	// lets write the SLO to the config repo
 	if result.SLO() != nil {
-		yamlAsByteArray, err := yaml.Marshal(result.SLO())
+		err = resourceClient.UploadSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLO())
 		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not convert dashboardSLO to JSON: %s", err)
-		}
-		err = common.UploadKeptnResource(yamlAsByteArray, common.KeptnSLOFilename, keptnEvent)
-		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not store %s : %v", common.KeptnSLOFilename, err)
+			return result.DashboardLink(), result.SLIResults(), err
 		}
 	}
 
 	// lets also write the result to a local file in local test mode
-	if result.SLIResults() != nil {
-		if common.RunLocal || common.RunLocalTest {
-			log.Info("(RunLocal Output) Write SLIResult to sliresult.json")
-			jsonAsByteArray, err := json.MarshalIndent(result.SLIResults(), "", "  ")
-			if err != nil {
-				return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not convert sliResults to JSON: %s", err)
-			}
-
-			err = common.UploadKeptnResource(jsonAsByteArray, common.KeptnSLIResultFilename, keptnEvent)
-			if err != nil {
-				return result.DashboardLink(), result.SLIResults(), fmt.Errorf("could not store %s : %v", common.KeptnSLIResultFilename, err)
-			}
+	if result.SLIResults() != nil && (common.RunLocal || common.RunLocalTest) {
+		err = keptn.NewLocalResourceClient().UploadSLIResults(result.SLIResults())
+		if err != nil {
+			return result.DashboardLink(), result.SLIResults(), err
 		}
+
 	}
 
 	return result.DashboardLink(), result.SLIResults(), nil
@@ -280,7 +263,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	//
 	// creating Dynatrace Handler which allows us to call the Dynatrace API
-	dynatraceHandler := NewDynatraceHandler(eh.event, eh.dtClient)
+	dynatraceHandler := NewDynatraceHandler(eh.event, eh.dtClient, eh.kClient)
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps
@@ -312,7 +295,12 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	// Option 2: If we have not received any data via a Dynatrace Dashboard lets query the SLIs based on the SLI.yaml definition
 	if sliResults == nil {
 		// get custom metrics for project if they exist
-		projectCustomQueries := common.GetCustomQueries(eh.event)
+		projectCustomQueries, err := eh.kClient.GetCustomQueries(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+		if err != nil {
+			// if we cannot retrieve any, we continue anyway
+			log.WithError(err).Errorf("could not retrieve custom queries: %v", err)
+			projectCustomQueries = keptn.NewEmptyCustomQueries()
+		}
 
 		// query all indicators
 		for _, indicator := range eh.event.GetIndicators() {
@@ -494,7 +482,7 @@ func sendGetSLIStartedEvent(eventData *GetSLITriggeredAdapter) error {
  */
 func sendEvent(event cloudevents.Event) error {
 
-	keptnHandler, err := keptnv2.NewKeptn(&event, keptn.KeptnOpts{})
+	keptnHandler, err := keptnv2.NewKeptn(&event, keptnapi.KeptnOpts{})
 	if err != nil {
 		return err
 	}

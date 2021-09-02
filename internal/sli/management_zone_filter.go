@@ -1,15 +1,18 @@
 package sli
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+)
 
 type ManagementZoneFilter struct {
-	dashboardFilter    *DashboardFilter
-	tileManagementZone *ManagementZone
+	dashboardFilter    *dynatrace.DashboardFilter
+	tileManagementZone *dynatrace.ManagementZoneEntry
 }
 
 func NewManagementZoneFilter(
-	dashboardManagementZone *DashboardFilter,
-	tileManagementZone *ManagementZone,
+	dashboardManagementZone *dynatrace.DashboardFilter,
+	tileManagementZone *dynatrace.ManagementZoneEntry,
 ) *ManagementZoneFilter {
 	return &ManagementZoneFilter{
 		dashboardFilter:    dashboardManagementZone,

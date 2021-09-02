@@ -2,22 +2,18 @@ package common
 
 import (
 	"errors"
-	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	log "github.com/sirupsen/logrus"
 
-	keptnmodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
@@ -138,14 +134,6 @@ func FindProblemIDForEvent(keptnEvent adapter.EventContentAdapter) (string, erro
 /**
  * Constants for supporting resource files in keptn repo
  */
-const DynatraceDashboardFilename = "dynatrace/dashboard.json"
-const DynatraceSLIFilename = "dynatrace/sli.yaml"
-const KeptnSLOFilename = "slo.yaml"
-const KeptnSLIResultFilename = "sliresult.json"
-
-const ConfigLevelProject = "Project"
-const ConfigLevelStage = "Stage"
-const ConfigLevelService = "Service"
 
 /**
  * Defines the Dynatrace Configuration File structure and supporting Constants
@@ -190,253 +178,6 @@ func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapt
 	// TODO: iterate through k8s secrets!
 
 	return result
-}
-
-//
-// Downloads a resource from the Keptn Configuration Repo based on the level (Project, Stage, Service)
-// In RunLocal mode it gets it from the local disk
-//
-func GetKeptnResourceOnConfigLevel(keptnEvent adapter.EventContentAdapter, resourceURI string, level string) (string, error) {
-
-	// if we run in a runlocal mode we are just getting the file from the local disk
-	var fileContent string
-	if RunLocal {
-		resourceURI = strings.ToLower(strings.ReplaceAll(resourceURI, "dynatrace/", "../../../dynatrace/"+level+"_"))
-		localFileContent, err := ioutil.ReadFile(resourceURI)
-		if err != nil {
-			log.WithFields(
-				log.Fields{
-					"resourceURI": resourceURI,
-					"service":     keptnEvent.GetService(),
-					"stage":       keptnEvent.GetStage(),
-					"project":     keptnEvent.GetProject(),
-				}).Info("File not found locally")
-			return "", nil
-		}
-		log.WithField("resourceURI", resourceURI).Info("Loaded LOCAL file")
-		fileContent = string(localFileContent)
-	} else {
-		resourceHandler := keptnapi.NewResourceHandler(GetConfigurationServiceURL())
-
-		var keptnResourceContent *keptnmodels.Resource
-		var err error
-		if strings.Compare(level, ConfigLevelProject) == 0 {
-			keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.GetProject(), resourceURI)
-		} else if strings.Compare(level, ConfigLevelStage) == 0 {
-			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.GetProject(), keptnEvent.GetStage(), resourceURI)
-		} else if strings.Compare(level, ConfigLevelService) == 0 {
-			keptnResourceContent, err = resourceHandler.GetServiceResource(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resourceURI)
-		} else {
-			return "", errors.New("Config level not valid: " + level)
-		}
-
-		if err != nil {
-			return "", err
-		}
-
-		if keptnResourceContent == nil {
-			return "", errors.New("Found resource " + resourceURI + " on level " + level + " but didnt contain content")
-		}
-
-		fileContent = keptnResourceContent.ResourceContent
-	}
-
-	return fileContent, nil
-}
-
-//
-// Downloads a resource from the Keptn Configuration Repo
-// In RunLocal mode it gets it from the local disk
-// In normal mode it first tries to find it on service level, then stage and then project level
-//
-func GetKeptnResource(keptnEvent adapter.EventContentAdapter, resourceURI string) (string, error) {
-
-	// if we run in a runlocal mode we are just getting the file from the local disk
-	var fileContent string
-	if RunLocal {
-		localFileContent, err := ioutil.ReadFile(resourceURI)
-		if err != nil {
-			log.WithFields(
-				log.Fields{
-					"resourceURI": resourceURI,
-					"service":     keptnEvent.GetService(),
-					"stage":       keptnEvent.GetStage(),
-					"project":     keptnEvent.GetProject(),
-				}).Info("File not found locally")
-			return "", nil
-		}
-		log.WithField("resourceURI", resourceURI).Info("Loaded LOCAL file")
-		fileContent = string(localFileContent)
-	} else {
-		resourceHandler := keptnapi.NewResourceHandler(GetConfigurationServiceURL())
-
-		// Lets search on SERVICE-LEVEL
-		keptnResourceContent, err := resourceHandler.GetServiceResource(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resourceURI)
-		if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
-			// Lets search on STAGE-LEVEL
-			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.GetProject(), keptnEvent.GetStage(), resourceURI)
-			if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
-				// Lets search on PROJECT-LEVEL
-				keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.GetProject(), resourceURI)
-				if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
-					// log.Debugf("No Keptn Resource found: %s/%s/%s/%s - %s", keptnEvent.Project, keptnEvent.Stage, keptnEvent.Service, resourceURI, err)
-					return "", err
-				}
-
-				log.WithFields(
-					log.Fields{
-						"resourceURI": resourceURI,
-						"project":     keptnEvent.GetProject(),
-					}).Debug("Found resource on project level")
-			} else {
-				log.WithFields(
-					log.Fields{
-						"resourceURI": resourceURI,
-						"project":     keptnEvent.GetProject(),
-						"stage":       keptnEvent.GetStage(),
-					}).Debug("Found resource on stage level")
-			}
-		} else {
-			log.WithFields(
-				log.Fields{
-					"resourceURI": resourceURI,
-					"project":     keptnEvent.GetProject(),
-					"stage":       keptnEvent.GetStage(),
-					"service":     keptnEvent.GetService(),
-				}).Debug("Found resource on service level")
-		}
-		fileContent = keptnResourceContent.ResourceContent
-	}
-
-	return fileContent, nil
-}
-
-/**
- * Loads SLIs from a local file and adds it to the SLI map
- */
-func addResourceContentToSLIMap(SLIs map[string]string, sliFileContent string) (map[string]string, error) {
-
-	if sliFileContent != "" {
-		sliConfig := keptn.SLIConfig{}
-		err := yaml.Unmarshal([]byte(sliFileContent), &sliConfig)
-		if err != nil {
-			return nil, err
-		}
-
-		for key, value := range sliConfig.Indicators {
-
-			if _, keyPresent := SLIs[key]; keyPresent {
-				log.WithFields(
-					log.Fields{"key": key,
-						"value": value,
-					}).Warn("Overwriting SLI in SLIMap")
-			}
-			SLIs[key] = value
-		}
-	}
-	return SLIs, nil
-}
-
-/**
- * getCustomQueries loads custom SLIs from dynatrace/sli.yaml
- * if there is no sli.yaml it will just return an empty map
- */
-func GetCustomQueries(keptnEvent adapter.EventContentAdapter) map[string]string {
-	var sliMap = map[string]string{}
-	/*if common.RunLocal || common.RunLocalTest {
-		sliMap, _ = AddResourceContentToSLIMap(sliMap, "dynatrace/sli.yaml", "")
-		return sliMap, nil
-	}*/
-
-	// We need to load sli.yaml in the sequence of project, stage then service level where service level will overwrite stage & project and stage will overwrite project level sli defintions
-	// details can be found here: https://github.com/keptn-contrib/dynatrace-sli-service/issues/112
-
-	// Step 1: Load Project Level
-	foundLocation := ""
-	sliContent, err := GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelProject)
-	if err != nil {
-		log.WithError(err).Debug("Could not load SLIs on project level")
-	} else {
-		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
-		if err != nil {
-			log.WithError(err).Debug("Could not add SLIs to SLIMap on project level")
-		} else {
-			foundLocation = "project,"
-		}
-	}
-
-	// Step 2: Load Stage Level
-	sliContent, err = GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelStage)
-	if err != nil {
-		log.WithError(err).Debug("Could not load SLIs on stage level")
-	} else {
-		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
-		if err != nil {
-			log.WithError(err).Debug("Could not add SLIs to SLIMap on stage level")
-		} else {
-			foundLocation = foundLocation + "stage,"
-		}
-	}
-
-	// Step 3: Load Service Level
-	sliContent, err = GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelService)
-	if err != nil {
-		log.WithError(err).Debug("Could not load SLIs on service level")
-	} else {
-		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
-		if err != nil {
-			log.WithError(err).Debug("Could not add SLIs to SLIMap on service level")
-		} else {
-			foundLocation = foundLocation + "service"
-		}
-	}
-
-	// couldnt load any SLIs
-	if len(sliMap) == 0 {
-		log.WithFields(
-			log.Fields{
-				"project": keptnEvent.GetProject(),
-				"stage":   keptnEvent.GetStage(),
-				"service": keptnEvent.GetService(),
-			}).Info("No custom SLI queries found as no dynatrace/sli.yaml in repo, using defaults")
-	} else {
-		log.WithFields(
-			log.Fields{
-				"project":   keptnEvent.GetProject(),
-				"stage":     keptnEvent.GetStage(),
-				"service":   keptnEvent.GetService(),
-				"count":     len(sliMap),
-				"locations": foundLocation,
-			}).Info("Found SLI queries in dynatrace/sli.yaml")
-	}
-
-	return sliMap
-}
-
-// UploadKeptnResource uploads a file to the Keptn Configuration Service
-func UploadKeptnResource(contentToUpload []byte, remoteResourceURI string, keptnEvent adapter.EventContentAdapter) error {
-
-	// if we run in a runlocal mode we are just getting the file from the local disk
-	if RunLocal || RunLocalTest {
-		err := ioutil.WriteFile(remoteResourceURI, contentToUpload, 0644)
-		if err != nil {
-			return fmt.Errorf("Couldnt write local file %s: %v", remoteResourceURI, err)
-		}
-		log.WithField("remoteResourceURI", remoteResourceURI).Info("Local file written")
-	} else {
-		resourceHandler := keptnapi.NewResourceHandler(GetConfigurationServiceURL())
-
-		// lets upload it
-		resources := []*keptnmodels.Resource{{ResourceContent: string(contentToUpload), ResourceURI: &remoteResourceURI}}
-		_, err := resourceHandler.CreateResources(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resources)
-		if err != nil {
-			return fmt.Errorf("Couldnt upload remote resource %s: %s", remoteResourceURI, *err.Message)
-		}
-
-		log.WithField("remoteResourceURI", remoteResourceURI).Info("Uploaded file")
-	}
-
-	return nil
 }
 
 // ParseUnixTimestamp parses a time stamp into Unix foramt

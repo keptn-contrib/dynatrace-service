@@ -1,11 +1,5 @@
 package config
 
-// DynatraceConfigFilename is the resource path for the dynatrace.conf.yaml
-const DynatraceConfigFilename = "dynatrace/dynatrace.conf.yaml"
-
-// DynatraceConfigFilenameLOCAL is the local test resource path for the dynatrace.conf.yaml
-const DynatraceConfigFilenameLOCAL = "dynatrace/_dynatrace.conf.yaml"
-
 // DtTag defines a Dynatrace configuration structure
 type DtTag struct {
 	Context string `json:"context" yaml:"context"`

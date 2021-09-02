@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -20,26 +21,22 @@ import (
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 )
 
-const Throughput = "throughput"
-const ErrorRate = "error_rate"
-const ResponseTimeP50 = "response_time_p50"
-const ResponseTimeP90 = "response_time_p90"
-const ResponseTimeP95 = "response_time_p95"
-
 // store url to the metrics api format migration document
 const MetricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatrace-sli-service/blob/master/docs/CustomQueryFormatMigration.md"
 
 // Handler interacts with a dynatrace API endpoint
 type Handler struct {
 	KeptnEvent GetSLITriggeredAdapterInterface
-	client     *dynatrace.Client
+	dtClient   *dynatrace.Client
+	kClient    keptn.ClientInterface
 }
 
 // NewDynatraceHandler returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, client *dynatrace.Client) *Handler {
+func NewDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, dtClient *dynatrace.Client, kClient keptn.ClientInterface) *Handler {
 	return &Handler{
 		KeptnEvent: keptnEvent,
-		client:     client,
+		dtClient:   dtClient,
+		kClient:    kClient,
 	}
 }
 
@@ -55,13 +52,13 @@ func isValidUUID(uuid string) bool {
 func (ph *Handler) findDynatraceDashboard(keptnEvent adapter.EventContentAdapter) (string, error) {
 	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
 	// create dashboard query URL and set additional headers
-	body, err := ph.client.Get("/api/config/v1/dashboards")
+	body, err := ph.dtClient.Get("/api/config/v1/dashboards")
 	if err != nil {
 		return "", err
 	}
 
 	// parse json
-	dashboards := &DynatraceDashboards{}
+	dashboards := &dynatrace.Dashboards{}
 	err = json.Unmarshal(body, &dashboards)
 	if err != nil {
 		return "", err
@@ -75,7 +72,7 @@ func (ph *Handler) findDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 //   - dashboard-ID: if this is a valid dashboard ID it will query the dashboard with this ID, e.g: ddb6a571-4bda-4e8b-a9c0-4a3e02c2e14a, or
 //   - <empty>:      it will not query any dashboard.
 // It returns a parsed Dynatrace Dashboard and the actual dashboard ID in case we queried a dashboard.
-func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter, dashboard string) (*DynatraceDashboard, string, error) {
+func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter, dashboard string) (*dynatrace.Dashboard, string, error) {
 
 	// Option 1: there is no dashboard we should query
 	if dashboard == "" {
@@ -116,13 +113,13 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 
 	// We have a valid Dashboard UUID - now lets query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
-	body, err := ph.client.Get("/api/config/v1/dashboards/" + dashboard)
+	body, err := ph.dtClient.Get("/api/config/v1/dashboards/" + dashboard)
 	if err != nil {
 		return nil, dashboard, err
 	}
 
 	// parse json
-	dynatraceDashboard := &DynatraceDashboard{}
+	dynatraceDashboard := &dynatrace.Dashboard{}
 	err = json.Unmarshal(body, &dynatraceDashboard)
 	if err != nil {
 		return nil, dashboard, fmt.Errorf("could not decode response payload: %v", err)
@@ -132,9 +129,9 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 }
 
 // executeGetDynatraceSLO Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
-// It returns a DynatraceSLOResult object on success, an error otherwise
-func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*DynatraceSLOResult, error) {
-	body, err := ph.client.Get(
+// It returns a SLOResult object on success, an error otherwise
+func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*dynatrace.SLOResult, error) {
+	body, err := ph.dtClient.Get(
 		fmt.Sprintf("/api/v2/slo/%s?from=%s&to=%s",
 			sloID,
 			common.TimestampToString(startUnix),
@@ -144,7 +141,7 @@ func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, end
 	}
 
 	// parse response json
-	var result DynatraceSLOResult
+	var result dynatrace.SLOResult
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
@@ -160,9 +157,9 @@ func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, end
 }
 
 // executeGetDynatraceProblems Calls the /problems/ API call to retrieve the the list of problems for that timeframe
-// It returns a DynatraceProblemQueryResult object on success, an error otherwise
-func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceProblemQueryResult, error) {
-	body, err := ph.client.Get(
+// It returns a ProblemQueryResult object on success, an error otherwise
+func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*dynatrace.ProblemQueryResult, error) {
+	body, err := ph.dtClient.Get(
 		fmt.Sprintf("/api/v2/problems?from=%s&to=%s&%s",
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
@@ -172,7 +169,7 @@ func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix ti
 	}
 
 	// parse response json
-	var result DynatraceProblemQueryResult
+	var result dynatrace.ProblemQueryResult
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
@@ -182,9 +179,9 @@ func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix ti
 }
 
 // executeGetDynatraceSecurityProblems Calls the /securityProblems/ API call to retrieve the list of security problems for that timeframe.
-// It returns a DynatraceSecurityProblemQueryResult object on success, an error otherwise.
-func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*DynatraceSecurityProblemQueryResult, error) {
-	body, err := ph.client.Get(
+// It returns a SecurityProblemQueryResult object on success, an error otherwise.
+func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*dynatrace.SecurityProblemQueryResult, error) {
+	body, err := ph.dtClient.Get(
 		fmt.Sprintf("/api/v2/securityProblems?from=%s&to=%s&%s",
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix),
@@ -194,7 +191,7 @@ func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, star
 	}
 
 	// parse response json
-	var result DynatraceSecurityProblemQueryResult
+	var result dynatrace.SecurityProblemQueryResult
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
@@ -204,14 +201,14 @@ func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, star
 }
 
 // executeMetricAPIDescribe Calls the /metrics/<metricID> API call to retrieve Metric Definition Details.
-func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition, error) {
-	body, err := ph.client.Get("/api/v2/metrics/" + metricId)
+func (ph *Handler) executeMetricAPIDescribe(metricId string) (*dynatrace.MetricDefinition, error) {
+	body, err := ph.dtClient.Get("/api/v2/metrics/" + metricId)
 	if err != nil {
 		return nil, err
 	}
 
 	// parse response json if we have a 200
-	var result MetricDefinition
+	var result dynatrace.MetricDefinition
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
@@ -221,17 +218,17 @@ func (ph *Handler) executeMetricAPIDescribe(metricId string) (*MetricDefinition,
 }
 
 // executeMetricsAPIQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetricsQueryResult, error) {
+func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*dynatrace.MetricsQueryResult, error) {
 	path := "/api/v2/metrics/query?" + metricsQuery
-	log.WithField("query", ph.client.DynatraceCreds.Tenant+path).Debug("Final Query")
+	log.WithField("query", ph.dtClient.DynatraceCreds.Tenant+path).Debug("Final Query")
 
-	body, err := ph.client.Get(path)
+	body, err := ph.dtClient.Get(path)
 	if err != nil {
 		return nil, err
 	}
 
 	// parse response json
-	var result DynatraceMetricsQueryResult
+	var result dynatrace.MetricsQueryResult
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
@@ -246,14 +243,14 @@ func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*DynatraceMetric
 }
 
 // ExecuteGetDynatraceProblemById Calls the /problems/<problemId> API call to retrieve Problem Details
-func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceProblem, error) {
-	body, err := ph.client.Get("/api/v2/problems/" + problemId)
+func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*dynatrace.Problem, error) {
+	body, err := ph.dtClient.Get("/api/v2/problems/" + problemId)
 	if err != nil {
 		return nil, err
 	}
 
 	// parse response json
-	var result DynatraceProblem
+	var result dynatrace.Problem
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
@@ -263,17 +260,17 @@ func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*DynatraceP
 }
 
 // executeGetDynatraceUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*DTUSQLResult, error) {
+func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*dynatrace.DTUSQLResult, error) {
 	path := "/api/v1/userSessionQueryLanguage/table?" + usql
-	log.WithField("query", ph.client.DynatraceCreds.Tenant+path).Debug("Final USQL Query")
+	log.WithField("query", ph.dtClient.DynatraceCreds.Tenant+path).Debug("Final USQL Query")
 
-	body, err := ph.client.Get(path)
+	body, err := ph.dtClient.Get(path)
 	if err != nil {
 		return nil, err
 	}
 
 	// parse response json
-	var result DTUSQLResult
+	var result dynatrace.DTUSQLResult
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
@@ -586,7 +583,7 @@ func (ph *Handler) processOpenSecurityProblemTile(securityProblemSelector string
 //   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter, startUnix time.Time, endUnix time.Time) (*MetricQueryComponents, error) {
+func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery dynatrace.DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter, startUnix time.Time, endUnix time.Time) (*MetricQueryComponents, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
@@ -690,7 +687,7 @@ func (ph *Handler) generateMetricQueryFromDataExplorer(dataQuery DataExplorerQue
 //   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (*MetricQueryComponents, error) {
+func (ph *Handler) generateMetricQueryFromChart(series dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (*MetricQueryComponents, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := ph.executeMetricAPIDescribe(series.Metric)
@@ -803,7 +800,7 @@ func (ph *Handler) generateMetricQueryFromChart(series ChartSeries, tileManageme
 
 // Generates the relevant SLIs & SLO definitions based on the metric query
 // noOfDimensionsInChart: how many dimensions did we have in the chart definition
-func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *MetricQueryComponents, dashboardSLI *SLI, dashboardSLO *keptncommon.ServiceLevelObjectives) []*keptnv2.SLIResult {
+func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *MetricQueryComponents, dashboardSLI *dynatrace.SLI, dashboardSLO *keptncommon.ServiceLevelObjectives) []*keptnv2.SLIResult {
 
 	// TODO 2021-08-04: there are too many parameters and many of them have the same type
 
@@ -947,10 +944,12 @@ func (ph *Handler) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int, 
 //  #5: Error
 func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventContentAdapter, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardQueryResult, error) {
 
+	resourceClient := keptn.NewResourceClient()
+
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
 	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
 	// If a dashboard.json exists and dashboard property is empty we default to QUERY - which is the old default behavior
-	existingDashboardContent, err := common.GetKeptnResource(keptnEvent, common.DynatraceDashboardFilename)
+	existingDashboardContent, err := resourceClient.GetDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
 	if err == nil && existingDashboardContent != "" && dashboard == "" {
 		log.Debug("Set dashboard=query for backward compatibility as dashboard.json was present!")
 		dashboard = common.DynatraceConfigDashboardQUERY
@@ -967,11 +966,11 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventConten
 	}
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewDashboardLink(ph.client.DynatraceCreds.Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
+	dashboardLinkAsLabel := NewDashboardLink(ph.dtClient.DynatraceCreds.Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
-	if dashboardJSON.isTheSameAs(existingDashboardContent) {
+	if dashboardJSON.IsTheSameAs(existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
 		return NewDashboardQueryResultFrom(dashboardLinkAsLabel), nil
 	}
@@ -980,7 +979,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventConten
 	result := &DashboardQueryResult{
 		dashboardLink: dashboardLinkAsLabel,
 		dashboard:     dashboardJSON,
-		sli: &SLI{
+		sli: &dynatrace.SLI{
 			SpecVersion: "0.1.4",
 			Indicators:  make(map[string]string),
 		},
@@ -1029,7 +1028,7 @@ func (ph *Handler) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventConten
 	return result, nil
 }
 
-func (ph *Handler) addSLIAndSLOToResultFromMarkdownTile(tile *Tile, result *DashboardQueryResult) {
+func (ph *Handler) addSLIAndSLOToResultFromMarkdownTile(tile *dynatrace.Tile, result *DashboardQueryResult) {
 	// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
 	// if we find KQG. we process the markdown
 	if strings.Contains(tile.Markdown, "KQG.") {
@@ -1037,7 +1036,7 @@ func (ph *Handler) addSLIAndSLOToResultFromMarkdownTile(tile *Tile, result *Dash
 	}
 }
 
-func (ph *Handler) addSLIAndSLOToResultFromSLOTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Handler) addSLIAndSLOToResultFromSLOTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
 	// we will take the SLO definition from Dynatrace
 	for _, sloEntity := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
@@ -1054,7 +1053,7 @@ func (ph *Handler) addSLIAndSLOToResultFromSLOTile(tile *Tile, startUnix time.Ti
 	}
 }
 
-func (ph *Handler) addSLIAndSLOToResultFromOpenProblemsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Handler) addSLIAndSLOToResultFromOpenProblemsTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(
@@ -1075,7 +1074,7 @@ func (ph *Handler) addSLIAndSLOToResultFromOpenProblemsTile(tile *Tile, startUni
 	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 }
 
-func (ph *Handler) addSLIAndSLOToResultFromOpenSecurityProblemsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Handler) addSLIAndSLOToResultFromOpenSecurityProblemsTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(
@@ -1096,7 +1095,7 @@ func (ph *Handler) addSLIAndSLOToResultFromOpenSecurityProblemsTile(tile *Tile, 
 	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
 }
 
-func (ph *Handler) addSLIAndSLOToResultFromDataExplorerTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Handler) addSLIAndSLOToResultFromDataExplorerTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(
@@ -1128,7 +1127,7 @@ func (ph *Handler) addSLIAndSLOToResultFromDataExplorerTile(tile *Tile, startUni
 	}
 }
 
-func (ph *Handler) addSLIAndSLOToResultFromCustomChartsTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Handler) addSLIAndSLOToResultFromCustomChartsTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
 	tileTitle := tile.Title()
 
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
@@ -1150,6 +1149,10 @@ func (ph *Handler) addSLIAndSLOToResultFromCustomChartsTile(tile *Tile, startUni
 		result.dashboard.DashboardMetadata.DashboardFilter,
 		tile.TileFilter.ManagementZone)
 
+	if tile.FilterConfig == nil {
+		return
+	}
+
 	// we can potentially have multiple series on that chart
 	for _, series := range tile.FilterConfig.ChartConfig.Series {
 
@@ -1167,7 +1170,7 @@ func (ph *Handler) addSLIAndSLOToResultFromCustomChartsTile(tile *Tile, startUni
 	}
 }
 
-func (ph *Handler) addSLIAndSLOToResultFromUserSessionQueryTile(tile *Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Handler) addSLIAndSLOToResultFromUserSessionQueryTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
 	// for Dynatrace Query Language we currently support the following
 	// SINGLE_VALUE: we just take the one value that comes back
 	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
@@ -1251,12 +1254,12 @@ func (ph *Handler) addSLIAndSLOToResultFromUserSessionQueryTile(tile *Tile, star
 
 // GetSLIValue queries a single metric value from Dynatrace API.
 // Can handle both Metric Queries as well as USQL
-func (ph *Handler) GetSLIValue(name string, startUnix time.Time, endUnix time.Time, customQueries map[string]string) (float64, error) {
+func (ph *Handler) GetSLIValue(name string, startUnix time.Time, endUnix time.Time, customQueries *keptn.CustomQueries) (float64, error) {
 
 	// first we get the query from the SLI configuration based on its logical name
-	query, err := ph.getSLIQuery(name, customQueries)
+	query, err := customQueries.GetQueryByNameOrDefault(name)
 	if err != nil {
-		return 0, fmt.Errorf("Error when fetching SLI config for %s %s.", name, err.Error())
+		return 0, fmt.Errorf("error when fetching SLI config for %s %s", name, err.Error())
 	}
 
 	log.WithFields(
@@ -1462,32 +1465,4 @@ func (ph *Handler) replaceQueryParameters(query string) string {
 	query = common.ReplaceKeptnPlaceholders(query, ph.KeptnEvent)
 
 	return query
-}
-
-// getSLIQuery get query associated with an SLI name
-func (ph *Handler) getSLIQuery(name string, customQueries map[string]string) (string, error) {
-	if customQueries != nil {
-		if val, ok := customQueries[name]; ok {
-			return val, nil
-		}
-	}
-
-	log.WithField("name", name).Debug("No custom SLI found - Looking in defaults")
-
-	// default SLI configs
-	// Switched to new metric v2 query language as discussed here: https://github.com/keptn-contrib/dynatrace-sli-service/issues/91
-	switch name {
-	case Throughput:
-		return "metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case ErrorRate:
-		return "metricSelector=builtin:service.errors.total.rate:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case ResponseTimeP50:
-		return "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case ResponseTimeP90:
-		return "metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	case ResponseTimeP95:
-		return "metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)", nil
-	default:
-		return "", fmt.Errorf("Unsupported SLI %s", name)
-	}
 }

@@ -1,4 +1,4 @@
-package sli
+package dynatrace
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// DynatraceDashboards is the data structure for /dashboards endpoint
-type DynatraceDashboards struct {
+// Dashboards is the data structure for /dashboards endpoint
+type Dashboards struct {
 	Dashboards []DashboardEntry `json:"dashboards"`
 }
 
@@ -20,7 +20,7 @@ type DashboardEntry struct {
 
 // SearchForDashboardMatching searches for a dashboard that exactly matches project, service and stage
 // It returns the id of the dashboard on success or an error otherwise
-func (dashboards *DynatraceDashboards) SearchForDashboardMatching(keptnEvent adapter.EventContentAdapter) string {
+func (dashboards *Dashboards) SearchForDashboardMatching(keptnEvent adapter.EventContentAdapter) string {
 	keyValuePairs := []string{
 		strings.ToLower("project=" + keptnEvent.GetProject()),
 		strings.ToLower("service=" + keptnEvent.GetService()),

@@ -83,8 +83,8 @@ func getDashboardName(projectName string) string {
 
 // Dashboard creation stuff below
 
-func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *dynatrace.DynatraceDashboard {
-	dtDashboard := &dynatrace.DynatraceDashboard{
+func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *dynatrace.Dashboard {
+	dtDashboard := &dynatrace.Dashboard{
 		DashboardMetadata: dynatrace.DashboardMetadata{
 			Name:   getDashboardName(projectName),
 			Shared: true,
@@ -93,12 +93,12 @@ func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *dy
 				LinkShared: true,
 				Published:  false,
 			},
-			DashboardFilter: dynatrace.DashboardFilter{
+			DashboardFilter: &dynatrace.DashboardFilter{
 				Timeframe:      "l_7_DAYS",
 				ManagementZone: nil,
 			},
 		},
-		Tiles: []dynatrace.Tiles{},
+		Tiles: []dynatrace.Tile{},
 	}
 
 	infrastructureHeaderTile := createHeaderTile("Infrastructure")
@@ -122,19 +122,16 @@ func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *dy
 				Series:         []dynatrace.Series{},
 				ResultMetadata: dynatrace.ResultMetadata{},
 			},
-			FiltersPerEntityType: dynatrace.FiltersPerEntityType{},
+			FiltersPerEntityType: nil,
 		})
 	hostsTile.Bounds = createBounds(38, 0, 152)
 	dtDashboard.Tiles = append(dtDashboard.Tiles, hostsTile)
 
-	networkTile := dynatrace.Tiles{
-		Name:       "Network Status",
-		TileType:   "NETWORK_MEDIUM",
-		Configured: true,
-		TileFilter: dynatrace.TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
+	networkTile := dynatrace.Tile{
+		Name:             "Network Status",
+		TileType:         "NETWORK_MEDIUM",
+		Configured:       true,
+		TileFilter:       dynatrace.TileFilter{},
 		AssignedEntities: nil,
 		Bounds:           createBounds(38, 912, 152),
 	}
@@ -181,29 +178,25 @@ func createBounds(top int, left int, height int) dynatrace.Bounds {
 	}
 }
 
-func createHeaderTile(name string) dynatrace.Tiles {
+func createHeaderTile(name string) dynatrace.Tile {
 	return createTileWith(name, "HEADER", nil)
 }
 
-func createServiceResponseTimeTile(project string, stage string) dynatrace.Tiles {
+func createServiceResponseTimeTile(project string, stage string) dynatrace.Tile {
 	name := "Response Time " + stage
 	return createTileWith(
 		name,
 		customChartingTileType,
 		&dynatrace.FilterConfig{
-			Type:        "MIXED",
-			CustomName:  name,
-			DefaultName: customChartName,
-			ChartConfig: createTimeSeriesChartConfig("builtin:service.response.time", "AVG", "LINE", dynatrace.ServiceEntityType),
-			FiltersPerEntityType: dynatrace.FiltersPerEntityType{
-				Service: &dynatrace.EntityFilter{
-					AutoTags: []string{getKeptnProjectTag(project), getKeptnStageTag(stage)},
-				},
-			},
+			Type:                 "MIXED",
+			CustomName:           name,
+			DefaultName:          customChartName,
+			ChartConfig:          createTimeSeriesChartConfig("builtin:service.response.time", "AVG", "LINE", dynatrace.ServiceEntityType),
+			FiltersPerEntityType: createServiceAutoTagsEntityFilter(project, stage),
 		})
 }
 
-func createHostCPULoadTile() dynatrace.Tiles {
+func createHostCPULoadTile() dynatrace.Tile {
 	return createTileWith(
 		"Host CPU Load",
 		customChartingTileType,
@@ -215,39 +208,31 @@ func createHostCPULoadTile() dynatrace.Tiles {
 		})
 }
 
-func createServiceErrorRateTile(project string, stage string) dynatrace.Tiles {
+func createServiceErrorRateTile(project string, stage string) dynatrace.Tile {
 	name := "Failure Rate " + stage
 	return createTileWith(
 		name,
 		customChartingTileType,
 		&dynatrace.FilterConfig{
-			Type:        "MIXED",
-			CustomName:  name,
-			DefaultName: customChartName,
-			ChartConfig: createTimeSeriesChartConfig("builtin:service.errors.server.rate", "AVG", "BAR", dynatrace.ServiceEntityType),
-			FiltersPerEntityType: dynatrace.FiltersPerEntityType{
-				Service: &dynatrace.EntityFilter{
-					AutoTags: []string{getKeptnProjectTag(project), getKeptnStageTag(stage)},
-				},
-			},
+			Type:                 "MIXED",
+			CustomName:           name,
+			DefaultName:          customChartName,
+			ChartConfig:          createTimeSeriesChartConfig("builtin:service.errors.server.rate", "AVG", "BAR", dynatrace.ServiceEntityType),
+			FiltersPerEntityType: createServiceAutoTagsEntityFilter(project, stage),
 		})
 }
 
-func createServiceThroughputTile(project string, stage string) dynatrace.Tiles {
+func createServiceThroughputTile(project string, stage string) dynatrace.Tile {
 	name := "Throughput " + stage
 	return createTileWith(
 		name,
 		customChartingTileType,
 		&dynatrace.FilterConfig{
-			Type:        "MIXED",
-			CustomName:  name,
-			DefaultName: customChartName,
-			ChartConfig: createTimeSeriesChartConfig("builtin:service.requestCount.total", "NONE", "BAR", dynatrace.ServiceEntityType),
-			FiltersPerEntityType: dynatrace.FiltersPerEntityType{
-				Service: &dynatrace.EntityFilter{
-					AutoTags: []string{getKeptnProjectTag(project), getKeptnStageTag(stage)},
-				},
-			},
+			Type:                 "MIXED",
+			CustomName:           name,
+			DefaultName:          customChartName,
+			ChartConfig:          createTimeSeriesChartConfig("builtin:service.requestCount.total", "NONE", "BAR", dynatrace.ServiceEntityType),
+			FiltersPerEntityType: createServiceAutoTagsEntityFilter(project, stage),
 		})
 }
 
@@ -270,7 +255,7 @@ func createTimeSeriesChartConfig(metric string, aggregation string, seriesType s
 	}
 }
 
-func createStageServicesTile(project string, stage string) dynatrace.Tiles {
+func createStageServicesTile(project string, stage string) dynatrace.Tile {
 	name := "Services: " + stage
 	return createTileWith(
 		name,
@@ -284,29 +269,33 @@ func createStageServicesTile(project string, stage string) dynatrace.Tiles {
 				Series:         []dynatrace.Series{},
 				ResultMetadata: dynatrace.ResultMetadata{},
 			},
-			FiltersPerEntityType: dynatrace.FiltersPerEntityType{
-				Service: &dynatrace.EntityFilter{
-					AutoTags: []string{getKeptnProjectTag(project), getKeptnStageTag(stage)},
-				},
-			},
+			FiltersPerEntityType: createServiceAutoTagsEntityFilter(project, stage),
 		})
 }
 
-func createTileWith(name string, tileType string, filterConfig *dynatrace.FilterConfig) dynatrace.Tiles {
-	return dynatrace.Tiles{
-		Name:       name,
-		TileType:   tileType,
-		Configured: true,
-		TileFilter: dynatrace.TileFilter{
-			Timeframe:      nil,
-			ManagementZone: nil,
-		},
+func createTileWith(name string, tileType string, filterConfig *dynatrace.FilterConfig) dynatrace.Tile {
+	return dynatrace.Tile{
+		Name:                      name,
+		TileType:                  tileType,
+		Configured:                true,
+		TileFilter:                dynatrace.TileFilter{},
 		FilterConfig:              filterConfig,
 		ChartVisible:              true,
 		AssignedEntities:          nil,
 		ExcludeMaintenanceWindows: false,
 		Markdown:                  "",
 	}
+}
+
+func createServiceAutoTagsEntityFilter(project string, stage string) map[string]map[string][]string {
+	const service = "SERVICE"
+	const autoTags = "AUTO_TAGS"
+
+	result := make(map[string]map[string][]string)
+	result[service] = make(map[string][]string)
+	result[service][autoTags] = []string{getKeptnProjectTag(project), getKeptnStageTag(stage)}
+
+	return result
 }
 
 func getTag(name string, value string) string {

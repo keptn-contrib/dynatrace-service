@@ -2,9 +2,9 @@ package sli
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io"
 	"io/ioutil"
 	"os"
@@ -14,8 +14,6 @@ import (
 	"testing"
 	"time"
 
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
-
 	"crypto/tls"
 	"crypto/x509"
 	"log"
@@ -24,7 +22,7 @@ import (
 	"net/http/httptest"
 
 	_ "github.com/keptn/go-utils/pkg/lib"
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	"golang.org/x/net/context"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -156,8 +154,11 @@ func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Ha
 		ApiToken: "test",
 	}
 
-	dh := NewDynatraceHandler(keptnEvent, dynatrace.NewClient(dtCredentials))
-	dh.client.HTTPClient = httpClient
+	dh := NewDynatraceHandler(
+		keptnEvent,
+		dynatrace.NewClient(dtCredentials),
+		KeptnClientMock{})
+	dh.dtClient.HTTPClient = httpClient
 
 	return dh, httpClient, url, teardown
 }
@@ -167,7 +168,7 @@ func TestExecuteDynatraceREST(t *testing.T) {
 	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	body, err := dh.client.Get("/api/config/v1/dashboards")
+	body, err := dh.dtClient.Get("/api/config/v1/dashboards")
 
 	if body == nil {
 		t.Errorf("No body returned by Dynatrace REST")
@@ -183,7 +184,7 @@ func TestExecuteDynatraceRESTBadRequest(t *testing.T) {
 	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	_, err := dh.client.Get("/BADAPI")
+	_, err := dh.dtClient.Get("/BADAPI")
 
 	// TODO 2021-08-31: check for Dynatrace API status
 	if err == nil {
@@ -404,23 +405,10 @@ func TestGetSLIValueWithSLOPrefix(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 
-	_, err := dh.GetSLIValue("RT_faster_500ms", startTime, endTime, customQueries)
+	_, err := dh.GetSLIValue("RT_faster_500ms", startTime, endTime, keptn.NewCustomQueries(customQueries))
 
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-func TestGetCustomQueries(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	keptncommon.NewLogger("test-context", "test-event", "dynatrace-service-testing")
-
-	common.RunLocal = true
-
-	customQueries := common.GetCustomQueries(keptnEvent)
-
-	for k, v := range customQueries {
-		fmt.Printf("%s: %s\n", k, v)
 	}
 }
 
@@ -482,7 +470,7 @@ func TestGetSLIValueWithPV2Prefix(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 
-	_, err := dh.GetSLIValue("problems", startTime, endTime, customQueries)
+	_, err := dh.GetSLIValue("problems", startTime, endTime, keptn.NewCustomQueries(customQueries))
 
 	if err != nil {
 		t.Error(err)
@@ -501,7 +489,7 @@ func TestGetSLIValueWithSECPV2Prefix(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 
-	_, err := dh.GetSLIValue("security_problems", startTime, endTime, customQueries)
+	_, err := dh.GetSLIValue("security_problems", startTime, endTime, keptn.NewCustomQueries(customQueries))
 
 	if err != nil {
 		t.Error(err)
@@ -513,8 +501,8 @@ func TestCreateNewDynatraceHandler(t *testing.T) {
 	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	if dh.client.DynatraceCreds.Tenant != url {
-		t.Errorf("dh.client.DynatraceCreds.Tenant=%s; want %s", dh.client.DynatraceCreds.Tenant, url)
+	if dh.dtClient.DynatraceCreds.Tenant != url {
+		t.Errorf("dh.client.DynatraceCreds.Tenant=%s; want %s", dh.dtClient.DynatraceCreds.Tenant, url)
 	}
 
 	if dh.KeptnEvent.GetProject() != "sockshop" {
@@ -616,9 +604,10 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 			gotHandler := NewDynatraceHandler(
 				tt.args.keptnEvent,
 				dynatrace.NewClient(
-					&credentials.DTCredentials{Tenant: tt.args.apiURL}))
+					&credentials.DTCredentials{Tenant: tt.args.apiURL}),
+				KeptnClientMock{})
 
-			gotTransport := gotHandler.client.HTTPClient.Transport.(*http.Transport)
+			gotTransport := gotHandler.dtClient.HTTPClient.Transport.(*http.Transport)
 			gotProxyURL, err := gotTransport.Proxy(tt.request)
 			if err != nil {
 				t.Fatalf("error = %v", err)
@@ -638,29 +627,6 @@ func TestNewDynatraceHandlerProxy(t *testing.T) {
 			}
 
 		})
-	}
-}
-
-// Test that unsupported metrics return an error
-func TestGetTimeseriesUnsupportedSLI(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent("sockshop", "dev", "carts", "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
-	defer teardown()
-
-	got, err := dh.getSLIQuery("foobar", nil)
-
-	if got != "" {
-		t.Errorf("dh.getTimeseriesConfig() returned (\"%s\"), expected(\"\")", got)
-	}
-
-	expected := "Unsupported SLI foobar"
-
-	if err == nil {
-		t.Errorf("dh.getTimeseriesConfig() did not return an error")
-	} else {
-		if err.Error() != expected {
-			t.Errorf("dh.getTimeseriesConfig() returned error %s, expected %s", err.Error(), expected)
-		}
 	}
 }
 
@@ -690,7 +656,7 @@ func TestParseValidUnixTimestamp(t *testing.T) {
 	got, err := common.ParseUnixTimestamp("2019-10-24T15:44:27.152330783Z")
 
 	if err != nil {
-		t.Errorf("parseUnixTimestamp(\"2019-10-24T15:44:27.152330783Z\") returned error %s", err.Error())
+		t.Fatalf("parseUnixTimestamp(\"2019-10-24T15:44:27.152330783Z\") returned error %s", err.Error())
 	}
 
 	if got.Year() != 2019 {
@@ -733,17 +699,17 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want keptn.SLO
+		want keptnapi.SLO
 	}{
 		{
 			name: "simple test",
 			args: args{
 				customName: "Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true",
 			},
-			want: keptn.SLO{
+			want: keptnapi.SLO{
 				SLI:     "teststep_rt",
-				Pass:    []*keptn.SLOCriteria{{Criteria: []string{"<500ms", "<+10%"}}},
-				Warning: []*keptn.SLOCriteria{{Criteria: []string{"<1000ms", "<+20%"}}},
+				Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{"<500ms", "<+10%"}}},
+				Warning: []*keptnapi.SLOCriteria{{Criteria: []string{"<1000ms", "<+20%"}}},
 				Weight:  1,
 				KeySLI:  true,
 			},
@@ -753,10 +719,10 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 			args: args{
 				customName: "Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false",
 			},
-			want: keptn.SLO{
+			want: keptnapi.SLO{
 				SLI:     "host_disk_queue",
-				Pass:    []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
-				Warning: []*keptn.SLOCriteria{{Criteria: []string{"<1"}}},
+				Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{"<=0"}}},
+				Warning: []*keptnapi.SLOCriteria{{Criteria: []string{"<1"}}},
 				Weight:  1,
 				KeySLI:  false,
 			},
@@ -766,10 +732,10 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 			args: args{
 				customName: "Host CPU %;sli=host_cpu;pass=<20;warning=<50;key=false;weight=2",
 			},
-			want: keptn.SLO{
+			want: keptnapi.SLO{
 				SLI:     "host_cpu",
-				Pass:    []*keptn.SLOCriteria{{Criteria: []string{"<20"}}},
-				Warning: []*keptn.SLOCriteria{{Criteria: []string{"<50"}}},
+				Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{"<20"}}},
+				Warning: []*keptnapi.SLOCriteria{{Criteria: []string{"<50"}}},
 				Weight:  2,
 				KeySLI:  false,
 			},
@@ -799,10 +765,10 @@ func TestParsePassAndWarningFromString(t *testing.T) {
 
 func TestParseMarkdownConfiguration(t *testing.T) {
 
-	dashboardSLO1 := &keptn.ServiceLevelObjectives{
-		Objectives: []*keptn.SLO{},
-		TotalScore: &keptn.SLOScore{Pass: "", Warning: ""},
-		Comparison: &keptn.SLOComparison{CompareWith: "", IncludeResultWithScore: "", NumberOfComparisonResults: 0, AggregateFunction: ""},
+	dashboardSLO1 := &keptnapi.ServiceLevelObjectives{
+		Objectives: []*keptnapi.SLO{},
+		TotalScore: &keptnapi.SLOScore{Pass: "", Warning: ""},
+		Comparison: &keptnapi.SLOComparison{CompareWith: "", IncludeResultWithScore: "", NumberOfComparisonResults: 0, AggregateFunction: ""},
 	}
 
 	// first run - single result
@@ -828,10 +794,10 @@ func TestParseMarkdownConfiguration(t *testing.T) {
 	}
 
 	// second run - multiple results
-	dashboardSLO2 := &keptn.ServiceLevelObjectives{
-		Objectives: []*keptn.SLO{},
-		TotalScore: &keptn.SLOScore{Pass: "", Warning: ""},
-		Comparison: &keptn.SLOComparison{CompareWith: "", IncludeResultWithScore: "", NumberOfComparisonResults: 0, AggregateFunction: ""},
+	dashboardSLO2 := &keptnapi.ServiceLevelObjectives{
+		Objectives: []*keptnapi.SLO{},
+		TotalScore: &keptnapi.SLOScore{Pass: "", Warning: ""},
+		Comparison: &keptnapi.SLOComparison{CompareWith: "", IncludeResultWithScore: "", NumberOfComparisonResults: 0, AggregateFunction: ""},
 	}
 	common.ParseMarkdownConfiguration("KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p50", dashboardSLO2)
 
@@ -855,10 +821,10 @@ func TestParseMarkdownConfiguration(t *testing.T) {
 	}
 
 	// third run - invalid functionresults
-	dashboardSLO3 := &keptn.ServiceLevelObjectives{
-		Objectives: []*keptn.SLO{},
-		TotalScore: &keptn.SLOScore{Pass: "", Warning: ""},
-		Comparison: &keptn.SLOComparison{CompareWith: "", IncludeResultWithScore: "", NumberOfComparisonResults: 0, AggregateFunction: ""},
+	dashboardSLO3 := &keptnapi.ServiceLevelObjectives{
+		Objectives: []*keptnapi.SLO{},
+		TotalScore: &keptnapi.SLOScore{Pass: "", Warning: ""},
+		Comparison: &keptnapi.SLOComparison{CompareWith: "", IncludeResultWithScore: "", NumberOfComparisonResults: 0, AggregateFunction: ""},
 	}
 	common.ParseMarkdownConfiguration("KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=INVALID", dashboardSLO3)
 

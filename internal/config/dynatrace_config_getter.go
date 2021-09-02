@@ -1,15 +1,12 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	"io/ioutil"
 	"os"
 	"strings"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -20,10 +17,10 @@ type DynatraceConfigGetterInterface interface {
 }
 
 type DynatraceConfigGetter struct {
-	resourceClient keptn.ResourceClientInterface
+	resourceClient keptn.DynatraceConfigResourceClientInterface
 }
 
-func NewDynatraceConfigGetter(client keptn.ResourceClientInterface) *DynatraceConfigGetter {
+func NewDynatraceConfigGetter(client keptn.DynatraceConfigResourceClientInterface) *DynatraceConfigGetter {
 	return &DynatraceConfigGetter{
 		resourceClient: client,
 	}
@@ -32,28 +29,9 @@ func NewDynatraceConfigGetter(client keptn.ResourceClientInterface) *DynatraceCo
 // GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo
 func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfigFile, error) {
 
-	// if we run in a runlocal mode we are just getting the file from the local disk
-	var fileContent string
-	if common.RunLocal {
-		localFileContent, err := ioutil.ReadFile(DynatraceConfigFilenameLOCAL)
-		if err != nil {
-
-			log.WithError(err).WithFields(log.Fields{
-				"dynatraceConfigFilename": DynatraceConfigFilenameLOCAL,
-				"service":                 event.GetService(),
-				"stage":                   event.GetStage(),
-				"project":                 event.GetProject(),
-			}).Info("No configuration file was found LOCALLY")
-			return nil, nil
-		}
-		log.WithField("dynatraceConfigFilename", DynatraceConfigFilenameLOCAL).Info("Loaded LOCAL configuration file")
-		fileContent = string(localFileContent)
-	} else {
-		var err error
-		fileContent, err = d.resourceClient.GetResource(event, DynatraceConfigFilename)
-		if err != nil {
-			return nil, err
-		}
+	fileContent, err := d.resourceClient.GetDynatraceConfig(event.GetProject(), event.GetStage(), event.GetService())
+	if err != nil {
+		return nil, err
 	}
 
 	if len(fileContent) > 0 {
@@ -67,9 +45,7 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 	// unmarshal the file
 	dynatraceConfFile, err := parseDynatraceConfigFile([]byte(fileContent))
 	if err != nil {
-		errMsg := fmt.Sprintf("failed to parse %s file found for service %s in stage %s in project %s: %s",
-			DynatraceConfigFilename, event.GetService(), event.GetStage(), event.GetProject(), err.Error())
-		return nil, errors.New(errMsg)
+		return nil, fmt.Errorf("failed to parse dynatrace config file found for service %s in stage %s in project %s: %s", event.GetService(), event.GetStage(), event.GetProject(), err.Error())
 	}
 
 	return dynatraceConfFile, nil

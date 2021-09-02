@@ -2,6 +2,7 @@ package sli
 
 import (
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"strings"
 	"testing"
 )
@@ -9,7 +10,7 @@ import (
 type dashboardTestConfig struct {
 	testDescription     string
 	keptnEvent          *BaseKeptnEvent
-	dashboards          DynatraceDashboards
+	dashboards          dynatrace.Dashboards
 	expectedDashboardID string
 }
 
@@ -139,21 +140,21 @@ func createDashboardNameFor(project string, service string, stage string) string
 	return dashboardName + "something-else"
 }
 
-func createDashboardWith(dashboardID string, project string, service string, stage string) DashboardEntry {
+func createDashboardWith(dashboardID string, project string, service string, stage string) dynatrace.DashboardEntry {
 	return createDashboard(
 		dashboardID,
 		createDashboardNameFor(project, service, stage))
 }
 
-func createDashboard(dashboardID string, dashboardName string) DashboardEntry {
-	return DashboardEntry{
+func createDashboard(dashboardID string, dashboardName string) dynatrace.DashboardEntry {
+	return dynatrace.DashboardEntry{
 		ID:   dashboardID,
 		Name: dashboardName,
 	}
 }
 
-func createDashboards(dashboards ...DashboardEntry) DynatraceDashboards {
-	return DynatraceDashboards{
+func createDashboards(dashboards ...dynatrace.DashboardEntry) dynatrace.Dashboards {
+	return dynatrace.Dashboards{
 		Dashboards: dashboards,
 	}
 }

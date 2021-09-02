@@ -1,4 +1,4 @@
-package sli
+package dynatrace
 
 type MetricQueryResultNumbers struct {
 	Dimensions   []string          `json:"dimensions"`
@@ -45,7 +45,7 @@ type MetricDefinition struct {
 	EntityType []string `json:"entityType"`
 }
 
-type DynatraceSLOResult struct {
+type SLOResult struct {
 	ID                  string  `json:"id"`
 	Enabled             bool    `json:"enabled"`
 	Name                string  `json:"name"`
@@ -67,38 +67,15 @@ type DynatraceSLOResult struct {
 	Filter              string  `json:"filter"`
 }
 
-/**
-{
-    "totalCount": 8,
-    "nextPageKey": null,
-    "result": [
-        {
-            "metricId": "builtin:service.response.time:percentile(50):merge(0)",
-            "data": [
-                {
-                    "dimensions": [],
-                    "timestamps": [
-                        1579097520000
-                    ],
-                    "values": [
-                        65005.48481639812
-                    ]
-                }
-            ]
-        }
-    ]
-}
-*/
-
-// DynatraceMetricsQueryResult is struct for /metrics/query
-type DynatraceMetricsQueryResult struct {
+// MetricsQueryResult is struct for /metrics/query
+type MetricsQueryResult struct {
 	TotalCount  int                       `json:"totalCount"`
 	NextPageKey string                    `json:"nextPageKey"`
 	Result      []MetricQueryResultValues `json:"result"`
 }
 
-// DynatraceProblem Problem Detail returned by /api/v2/problems
-type DynatraceProblem struct {
+// Problem Problem Detail returned by /api/v2/problems
+type Problem struct {
 	ProblemID        string `json:"problemId"`
 	DisplayID        string `json:"displayId"`
 	Title            string `json:"title"`
@@ -141,8 +118,8 @@ type DynatraceProblem struct {
 	EndTime   int64 `json:"endTime"`
 }
 
-// DynatraceSecurityProblem Problem Detail returned by /api/v2/securityProblems
-type DynatraceSecurityProblem struct {
+// SecurityProblem Problem Detail returned by /api/v2/securityProblems
+type SecurityProblem struct {
 	SecurityProblemID    string `json:"securityProblemId"`
 	DisplayID            int    `json:"displayId"`
 	State                string `json:"state"`
@@ -190,17 +167,17 @@ type DynatraceSecurityProblem struct {
 	} `json:"affectedEntities"`
 }
 
-// DynatraceProblemQueryResult Result of /api/v1/problems
-type DynatraceProblemQueryResult struct {
-	TotalCount int                `json:"totalCount"`
-	PageSize   int                `json:"pageSize"`
-	Problems   []DynatraceProblem `json:"problems"`
+// ProblemQueryResult Result of /api/v1/problems
+type ProblemQueryResult struct {
+	TotalCount int       `json:"totalCount"`
+	PageSize   int       `json:"pageSize"`
+	Problems   []Problem `json:"problems"`
 }
 
-// DynatraceSecurityProblemQueryResult Result of/api/v2/securityProblems
-type DynatraceSecurityProblemQueryResult struct {
-	TotalCount       int                        `json:"totalCount"`
-	PageSize         int                        `json:"pageSize"`
-	NextPageKey      string                     `json:"nextPageKey"`
-	SecurityProblems []DynatraceSecurityProblem `json:"securityProblems"`
+// SecurityProblemQueryResult Result of/api/v2/securityProblems
+type SecurityProblemQueryResult struct {
+	TotalCount       int               `json:"totalCount"`
+	PageSize         int               `json:"pageSize"`
+	NextPageKey      string            `json:"nextPageKey"`
+	SecurityProblems []SecurityProblem `json:"securityProblems"`
 }
