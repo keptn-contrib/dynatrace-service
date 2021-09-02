@@ -45,28 +45,6 @@ type MetricDefinition struct {
 	EntityType []string `json:"entityType"`
 }
 
-type SLOResult struct {
-	ID                  string  `json:"id"`
-	Enabled             bool    `json:"enabled"`
-	Name                string  `json:"name"`
-	Description         string  `json:"description"`
-	EvaluatedPercentage float64 `json:"evaluatedPercentage"`
-	ErrorBudget         float64 `json:"errorBudget"`
-	Status              string  `json:"status"`
-	Error               string  `json:"error"`
-	UseRateMetric       bool    `json:"useRateMetric"`
-	MetricRate          string  `json:"metricRate"`
-	MetricNumerator     string  `json:"metricNumerator"`
-	MetricDenominator   string  `json:"metricDenominator"`
-	TargetSuccessOLD    float64 `json:"targetSuccess"`
-	TargetWarningOLD    float64 `json:"targetWarning"`
-	Target              float64 `json:"target"`
-	Warning             float64 `json:"warning"`
-	EvaluationType      string  `json:"evaluationType"`
-	TimeWindow          string  `json:"timeWindow"`
-	Filter              string  `json:"filter"`
-}
-
 // MetricsQueryResult is struct for /metrics/query
 type MetricsQueryResult struct {
 	TotalCount  int                       `json:"totalCount"`

@@ -378,7 +378,7 @@ func TestExecuteGetDynatraceSLO(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 	sloID := "524ca177-849b-3e8c-8175-42b93fbc33c5"
-	sloResult, err := dh.executeGetDynatraceSLO(sloID, startTime, endTime)
+	sloResult, err := dynatrace.NewSLOClient(dh.dtClient).Get(sloID, startTime, endTime)
 
 	if err != nil {
 		t.Error(err)

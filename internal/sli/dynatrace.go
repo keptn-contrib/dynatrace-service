@@ -111,34 +111,6 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 	return dynatraceDashboard, dashboard, nil
 }
 
-// executeGetDynatraceSLO Calls the /slo/{sloId} API call to retrieve the values of the Dynatrace SLO for that timeframe
-// It returns a SLOResult object on success, an error otherwise
-func (ph *Handler) executeGetDynatraceSLO(sloID string, startUnix time.Time, endUnix time.Time) (*dynatrace.SLOResult, error) {
-	body, err := ph.dtClient.Get(
-		fmt.Sprintf("/api/v2/slo/%s?from=%s&to=%s",
-			sloID,
-			common.TimestampToString(startUnix),
-			common.TimestampToString(endUnix)))
-	if err != nil {
-		return nil, err
-	}
-
-	// parse response json
-	var result dynatrace.SLOResult
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	// for SLO - its also possible that there is an HTTP 200 but there is an error text in the error property!
-	// Since Sprint 206 the error property is always there - but - will have the value "NONE" in case there is no actual error retrieving the value
-	if result.Error != "NONE" {
-		return nil, fmt.Errorf("Dynatrace API returned an error: %s", result.Error)
-	}
-
-	return &result, nil
-}
-
 // executeGetDynatraceProblems Calls the /problems/ API call to retrieve the the list of problems for that timeframe
 // It returns a ProblemQueryResult object on success, an error otherwise
 func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*dynatrace.ProblemQueryResult, error) {
@@ -424,7 +396,7 @@ func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]map[strin
 func (ph *Handler) processSLOTile(sloID string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
-	sloResult, err := ph.executeGetDynatraceSLO(sloID, startUnix, endUnix)
+	sloResult, err := dynatrace.NewSLOClient(ph.dtClient).Get(sloID, startUnix, endUnix)
 	if err != nil {
 		return nil, "", "", nil, err
 	}
@@ -1324,9 +1296,9 @@ func (ph *Handler) executeSLOQuery(metricsQuery string, startUnix time.Time, end
 	}
 
 	sloID := querySplits[1]
-	sloResult, err := ph.executeGetDynatraceSLO(sloID, startUnix, endUnix)
+	sloResult, err := dynatrace.NewSLOClient(ph.dtClient).Get(sloID, startUnix, endUnix)
 	if err != nil {
-		return 0, fmt.Errorf("Error executing SLO Dynatrace Query %v", err)
+		return 0, err
 	}
 
 	return sloResult.EvaluatedPercentage, nil
