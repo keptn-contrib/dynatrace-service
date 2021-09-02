@@ -2,7 +2,6 @@ package sli
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -109,32 +108,6 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 	}
 
 	return dynatraceDashboard, dashboard, nil
-}
-
-// executeGetDynatraceUSQLQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (ph *Handler) executeGetDynatraceUSQLQuery(usql string) (*dynatrace.DTUSQLResult, error) {
-	path := "/api/v1/userSessionQueryLanguage/table?" + usql
-	log.WithField("query", ph.dtClient.DynatraceCreds.Tenant+path).Debug("Final USQL Query")
-
-	body, err := ph.dtClient.Get(path)
-	if err != nil {
-		return nil, err
-	}
-
-	// parse response json
-	var result dynatrace.DTUSQLResult
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	// if no data comes back
-	if len(result.Values) == 0 {
-		// datapoints is empty - try again?
-		return nil, errors.New("Dynatrace USQL Query didnt return any DataPoints")
-	}
-
-	return &result, nil
 }
 
 // buildDynatraceUSQLQuery builds a USQL query based on the incoming values
@@ -1029,7 +1002,7 @@ func (ph *Handler) addSLIAndSLOToResultFromUserSessionQueryTile(tile *dynatrace.
 	// TABLE: we assume the first column is the dimension and the last is the value
 
 	usql := ph.buildDynatraceUSQLQuery(tile.Query, startUnix, endUnix)
-	usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
+	usqlResult, err := dynatrace.NewUSQLClient(ph.dtClient).GetByQuery(usql)
 	if err != nil {
 		log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
 		return
@@ -1149,7 +1122,7 @@ func (ph *Handler) executeUSQLQuery(metricsQuery string, startUnix time.Time, en
 	usqlRawQuery := querySplits[3]
 
 	usql := ph.buildDynatraceUSQLQuery(usqlRawQuery, startUnix, endUnix)
-	usqlResult, err := ph.executeGetDynatraceUSQLQuery(usql)
+	usqlResult, err := dynatrace.NewUSQLClient(ph.dtClient).GetByQuery(usql)
 
 	if err != nil {
 		return 0, fmt.Errorf("Error executing USQL Query %v", err)

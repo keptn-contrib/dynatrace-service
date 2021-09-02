@@ -12,13 +12,6 @@ type MetricQueryResultValues struct {
 	Data     []MetricQueryResultNumbers `json:"data"`
 }
 
-// DTUSQLResult struct
-type DTUSQLResult struct {
-	ExtrapolationLevel int             `json:"extrapolationLevel"`
-	ColumnNames        []string        `json:"columnNames"`
-	Values             [][]interface{} `json:"values"`
-}
-
 // SLI struct for SLI.yaml
 type SLI struct {
 	SpecVersion string            `yaml:"spec_version"`
