@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"k8s.io/client-go/rest"
 	"net/http"
 	"os"
 	"strings"
@@ -30,6 +31,14 @@ var namespace = getPodNamespace()
 
 var ErrSecretNotFound = errors.New("secret not found")
 
+func getKubernetesClient() (*kubernetes.Clientset, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, err
+	}
+	return kubernetes.NewForConfig(config)
+}
+
 func getPodNamespace() string {
 	ns := os.Getenv("POD_NAMESPACE")
 	if ns == "" {
@@ -52,7 +61,7 @@ func NewK8sCredentialReader(k8sClient kubernetes.Interface) (*K8sCredentialReade
 	if k8sClient != nil {
 		k8sCredentialReader.K8sClient = k8sClient
 	} else {
-		client, err := common.GetKubernetesClient()
+		client, err := getKubernetesClient()
 		if err != nil {
 			return nil, fmt.Errorf("could not initialize K8sCredentialReader: %s", err.Error())
 		}

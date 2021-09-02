@@ -9,9 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-
 	log "github.com/sirupsen/logrus"
 
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
@@ -34,18 +31,6 @@ var RunLocal = os.Getenv("ENV") == "local"
 
 // RunLocalTest is true if the "ENV"-environment variable is set to localtest
 var RunLocalTest = os.Getenv("ENV") == "localtest"
-
-func GetKubernetesClient() (*kubernetes.Clientset, error) {
-	if RunLocal || RunLocalTest {
-		return nil, nil
-	}
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	return kubernetes.NewForConfig(config)
-}
 
 // GetConfigurationServiceURL Returns the endpoint to the configuration-service
 func GetConfigurationServiceURL() string {
