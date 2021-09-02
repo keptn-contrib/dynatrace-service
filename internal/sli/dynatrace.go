@@ -111,28 +111,6 @@ func (ph *Handler) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapter
 	return dynatraceDashboard, dashboard, nil
 }
 
-// executeGetDynatraceProblems Calls the /problems/ API call to retrieve the the list of problems for that timeframe
-// It returns a ProblemQueryResult object on success, an error otherwise
-func (ph *Handler) executeGetDynatraceProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*dynatrace.ProblemQueryResult, error) {
-	body, err := ph.dtClient.Get(
-		fmt.Sprintf("/api/v2/problems?from=%s&to=%s&%s",
-			common.TimestampToString(startUnix),
-			common.TimestampToString(endUnix),
-			problemQuery))
-	if err != nil {
-		return nil, err
-	}
-
-	// parse response json
-	var result dynatrace.ProblemQueryResult
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
-	}
-
-	return &result, nil
-}
-
 // executeGetDynatraceSecurityProblems Calls the /securityProblems/ API call to retrieve the list of security problems for that timeframe.
 // It returns a SecurityProblemQueryResult object on success, an error otherwise.
 func (ph *Handler) executeGetDynatraceSecurityProblems(problemQuery string, startUnix time.Time, endUnix time.Time) (*dynatrace.SecurityProblemQueryResult, error) {
@@ -192,23 +170,6 @@ func (ph *Handler) executeMetricsAPIQuery(metricsQuery string) (*dynatrace.Metri
 	if len(result.Result) == 0 {
 		// datapoints is empty - try again?
 		return nil, errors.New("Dynatrace Metrics API returned no DataPoints")
-	}
-
-	return &result, nil
-}
-
-// ExecuteGetDynatraceProblemById Calls the /problems/<problemId> API call to retrieve Problem Details
-func (ph *Handler) ExecuteGetDynatraceProblemById(problemId string) (*dynatrace.Problem, error) {
-	body, err := ph.dtClient.Get("/api/v2/problems/" + problemId)
-	if err != nil {
-		return nil, err
-	}
-
-	// parse response json
-	var result dynatrace.Problem
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return nil, err
 	}
 
 	return &result, nil
@@ -451,7 +412,7 @@ func (ph *Handler) processOpenProblemTile(problemSelector string, startUnix time
 	}
 
 	// Step 1: Query the Dynatrace API to get the number of actual problems matching that query and timeframe
-	problemQueryResult, err := ph.executeGetDynatraceProblems(problemQuery, startUnix, endUnix)
+	problemQueryResult, err := dynatrace.NewProblemsV2Client(ph.dtClient).GetByQuery(problemQuery, startUnix, endUnix)
 	if err != nil {
 		return nil, "", "", nil, err
 	}
@@ -1312,7 +1273,7 @@ func (ph *Handler) executeProblemQuery(metricsQuery string, startUnix time.Time,
 	}
 
 	problemQuery := querySplits[1]
-	problemQueryResult, err := ph.executeGetDynatraceProblems(problemQuery, startUnix, endUnix)
+	problemQueryResult, err := dynatrace.NewProblemsV2Client(ph.dtClient).GetByQuery(problemQuery, startUnix, endUnix)
 	if err != nil {
 		return 0, fmt.Errorf("Error executing Dynatrace Problem v2 Query %v", err)
 	}

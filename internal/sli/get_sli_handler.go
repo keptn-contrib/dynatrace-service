@@ -346,7 +346,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		message := ""
 
 		// lets query the status of this problem and add it to the SLI Result
-		dynatraceProblem, err := dynatraceHandler.ExecuteGetDynatraceProblemById(problemID)
+		dynatraceProblem, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetById(problemID)
 		if err != nil {
 			message = err.Error()
 		}

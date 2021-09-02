@@ -420,7 +420,7 @@ func TestExecuteGetDynatraceProblems(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 	problemQuery := "problemEntity=status(open)"
-	problemResult, err := dh.executeGetDynatraceProblems(problemQuery, startTime, endTime)
+	problemResult, err := dynatrace.NewProblemsV2Client(dh.dtClient).GetByQuery(problemQuery, startTime, endTime)
 
 	if err != nil {
 		t.Error(err)

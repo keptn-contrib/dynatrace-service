@@ -52,50 +52,6 @@ type MetricsQueryResult struct {
 	Result      []MetricQueryResultValues `json:"result"`
 }
 
-// Problem Problem Detail returned by /api/v2/problems
-type Problem struct {
-	ProblemID        string `json:"problemId"`
-	DisplayID        string `json:"displayId"`
-	Title            string `json:"title"`
-	ImpactLevel      string `json:"impactLevel"`
-	SeverityLevel    string `json:"severityLevel"`
-	Status           string `json:"status"`
-	AffectedEntities []struct {
-		EntityID struct {
-			ID   string `json:"id"`
-			Type string `json:"type"`
-		} `json:"entityId"`
-		Name string `json:"name"`
-	} `json:"affectedEntities"`
-	ImpactedEntities []struct {
-		EntityID struct {
-			ID   string `json:"id"`
-			Type string `json:"type"`
-		} `json:"entityId"`
-		Name string `json:"name"`
-	} `json:"impactedEntities"`
-	RootCauseEntity struct {
-		EntityID struct {
-			ID   string `json:"id"`
-			Type string `json:"type"`
-		} `json:"entityId"`
-		Name string `json:"name"`
-	} `json:"rootCauseEntity"`
-	ManagementZones []interface{} `json:"managementZones"`
-	EntityTags      []struct {
-		Context              string `json:"context"`
-		Key                  string `json:"key"`
-		Value                string `json:"value"`
-		StringRepresentation string `json:"stringRepresentation"`
-	} `json:"entityTags"`
-	ProblemFilters []struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"problemFilters"`
-	StartTime int64 `json:"startTime"`
-	EndTime   int64 `json:"endTime"`
-}
-
 // SecurityProblem Problem Detail returned by /api/v2/securityProblems
 type SecurityProblem struct {
 	SecurityProblemID    string `json:"securityProblemId"`
@@ -143,13 +99,6 @@ type SecurityProblem struct {
 		} `json:"hosts"`
 		Databases []string `json:"databases"`
 	} `json:"affectedEntities"`
-}
-
-// ProblemQueryResult Result of /api/v1/problems
-type ProblemQueryResult struct {
-	TotalCount int       `json:"totalCount"`
-	PageSize   int       `json:"pageSize"`
-	Problems   []Problem `json:"problems"`
 }
 
 // SecurityProblemQueryResult Result of/api/v2/securityProblems
