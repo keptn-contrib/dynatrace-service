@@ -18,6 +18,14 @@ import (
 const keptnService = "keptn_service"
 const keptnDeployment = "keptn_deployment"
 
+type CriteriaObject struct {
+	Operator        string
+	Value           float64
+	CheckPercentage bool
+	IsComparison    bool
+	CheckIncrease   bool
+}
+
 type MetricEventCreation struct {
 	dtClient *dynatrace.Client
 	kClient  *keptnv2.Keptn
@@ -31,7 +39,7 @@ func NewMetricEventCreation(dynatraceClient *dynatrace.Client, keptnClient *kept
 }
 
 // Create creates new metric events if SLOs are specified
-func (mec MetricEventCreation) Create(project string, stage string, service string) []dynatrace.ConfigResult {
+func (mec MetricEventCreation) Create(project string, stage string, service string) []ConfigResult {
 	if !lib.IsMetricEventsGenerationEnabled() {
 		return nil
 	}
@@ -72,7 +80,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 
 	metricEventsClient := dynatrace.NewMetricEventsClient(mec.dtClient)
-	var metricsEventResults []dynatrace.ConfigResult
+	var metricsEventResults []ConfigResult
 	// try to create metric events using best effort.
 	for _, objective := range slos.Objectives {
 		query, err := projectCustomQueries.GetQueryByNameOrDefault(objective.SLI)
@@ -101,8 +109,8 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	return metricsEventResults
 }
 
-func setupAllMetricEvents(client *dynatrace.MetricEventsClient, project string, stage string, service string, slo *keptnlib.SLO, query string, managementZoneID int64) []dynatrace.ConfigResult {
-	var metricEventsResults []dynatrace.ConfigResult
+func setupAllMetricEvents(client *dynatrace.MetricEventsClient, project string, stage string, service string, slo *keptnlib.SLO, query string, managementZoneID int64) []ConfigResult {
+	var metricEventsResults []ConfigResult
 	for _, criteria := range slo.Pass {
 		for _, crit := range criteria.Criteria {
 
@@ -118,7 +126,7 @@ func setupAllMetricEvents(client *dynatrace.MetricEventsClient, project string, 
 	return metricEventsResults
 }
 
-func setupSingleMetricEvent(client *dynatrace.MetricEventsClient, project string, stage string, service string, metric string, query string, crit string, managementZoneID int64) (*dynatrace.ConfigResult, error) {
+func setupSingleMetricEvent(client *dynatrace.MetricEventsClient, project string, stage string, service string, metric string, query string, crit string, managementZoneID int64) (*ConfigResult, error) {
 	// criteria.Criteria
 	criteriaObject, err := parseCriteriaString(crit)
 	if err != nil {
@@ -150,7 +158,7 @@ func setupSingleMetricEvent(client *dynatrace.MetricEventsClient, project string
 	}
 
 	log.WithFields(log.Fields{"name": newMetricEvent.Name, "criteria": crit}).Info("Created metric event")
-	return &dynatrace.ConfigResult{
+	return &ConfigResult{
 		Name:    newMetricEvent.Name,
 		Success: true,
 	}, nil
@@ -183,7 +191,7 @@ func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEv
 	return nil
 }
 
-func parseCriteriaString(criteria string) (*dynatrace.CriteriaObject, error) {
+func parseCriteriaString(criteria string) (*CriteriaObject, error) {
 	// example values: <+15%, <500, >-8%, =0
 	// possible operators: <, <=, =, >, >=
 	// regex: ^([<|<=|=|>|>=]{1,2})([+|-]{0,1}\\d*\.?\d*)([%]{0,1})
@@ -198,7 +206,7 @@ func parseCriteriaString(criteria string) (*dynatrace.CriteriaObject, error) {
 		return nil, errors.New("invalid criteria string")
 	}
 
-	c := &dynatrace.CriteriaObject{}
+	c := &CriteriaObject{}
 
 	if strings.HasSuffix(criteria, "%") {
 		c.CheckPercentage = true

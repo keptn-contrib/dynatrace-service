@@ -26,9 +26,9 @@ func NewDashboardCreation(client *dynatrace.Client) *DashboardCreation {
 }
 
 // Create creates a new dashboard for the provided project
-func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) dynatrace.ConfigResult {
+func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) ConfigResult {
 	if !lib.IsDashboardsGenerationEnabled() {
-		return dynatrace.ConfigResult{}
+		return ConfigResult{}
 	}
 
 	// first, check if dashboard for this project already exists and delete that
@@ -36,7 +36,7 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) d
 	err := deleteExistingDashboard(project, dashboardClient)
 	if err != nil {
 		log.WithError(err).Error("Could not delete existing dashboard")
-		return dynatrace.ConfigResult{
+		return ConfigResult{
 			Success: false,
 			Message: "Could not delete existing dashboard: " + err.Error(),
 		}
@@ -47,13 +47,13 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) d
 	err = dashboardClient.Create(dashboard)
 	if err != nil {
 		log.WithError(err).Error("Failed to create Dynatrace dashboards")
-		return dynatrace.ConfigResult{
+		return ConfigResult{
 			Success: false,
 			Message: err.Error(),
 		}
 	}
 	log.WithField("dashboardUrl", "https://"+dc.client.DynatraceCreds.Tenant+"/#dashboards").Info("Dynatrace dashboard created successfully")
-	return dynatrace.ConfigResult{
+	return ConfigResult{
 		Success: true, // I guess this should be true not false?
 		Message: "Dynatrace dashboard created successfully. You can view it here: https://" + dc.client.DynatraceCreds.Tenant + "/#dashboards",
 	}

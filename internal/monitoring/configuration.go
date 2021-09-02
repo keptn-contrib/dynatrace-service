@@ -17,15 +17,21 @@ type Configuration struct {
 // ConfiguredEntities contains information about the entities configures in Dynatrace
 type ConfiguredEntities struct {
 	TaggingRulesEnabled         bool
-	TaggingRules                []dynatrace.ConfigResult
+	TaggingRules                []ConfigResult
 	ProblemNotificationsEnabled bool
-	ProblemNotifications        dynatrace.ConfigResult
+	ProblemNotifications        ConfigResult
 	ManagementZonesEnabled      bool
-	ManagementZones             []dynatrace.ConfigResult
+	ManagementZones             []ConfigResult
 	DashboardEnabled            bool
-	Dashboard                   dynatrace.ConfigResult
+	Dashboard                   ConfigResult
 	MetricEventsEnabled         bool
-	MetricEvents                []dynatrace.ConfigResult
+	MetricEvents                []ConfigResult
+}
+
+type ConfigResult struct {
+	Name    string
+	Success bool
+	Message string
 }
 
 func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) *Configuration {
@@ -44,11 +50,11 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 		ProblemNotificationsEnabled: lib.IsProblemNotificationsGenerationEnabled(),
 		ProblemNotifications:        NewProblemNotificationCreation(mc.dtClient).Create(),
 		ManagementZonesEnabled:      lib.IsManagementZonesGenerationEnabled(),
-		ManagementZones:             []dynatrace.ConfigResult{},
+		ManagementZones:             []ConfigResult{},
 		DashboardEnabled:            lib.IsDashboardsGenerationEnabled(),
-		Dashboard:                   dynatrace.ConfigResult{},
+		Dashboard:                   ConfigResult{},
 		MetricEventsEnabled:         lib.IsMetricEventsGenerationEnabled(),
-		MetricEvents:                []dynatrace.ConfigResult{},
+		MetricEvents:                []ConfigResult{},
 	}
 
 	if project != "" && shipyard != nil {
@@ -57,7 +63,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 
 		configHandler := keptnutils.NewServiceHandler("shipyard-controller:8080")
 
-		var metricEvents []dynatrace.ConfigResult
+		var metricEvents []ConfigResult
 		// try to create metric events - if one fails, don't fail the whole setup
 		for _, stage := range shipyard.Spec.Stages {
 			if shouldCreateMetricEvents(stage) {

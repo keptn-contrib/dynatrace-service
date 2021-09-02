@@ -19,7 +19,7 @@ func NewManagementZoneCreation(client *dynatrace.Client) *ManagementZoneCreation
 }
 
 // Create creates a new management zone for the project
-func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipyard) []dynatrace.ConfigResult {
+func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipyard) []ConfigResult {
 	if !lib.IsManagementZonesGenerationEnabled() {
 		return nil
 	}
@@ -32,7 +32,7 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 		log.WithError(err).Error("Could not retrieve management zones")
 	}
 
-	var managementZonesResults []dynatrace.ConfigResult
+	var managementZonesResults []ConfigResult
 	managementZoneResult := getOrCreateManagementZone(
 		managementZoneClient,
 		GetManagementZoneNameForProject(project),
@@ -60,9 +60,9 @@ func getOrCreateManagementZone(
 	managementZoneClient *dynatrace.ManagementZonesClient,
 	managementZoneName string,
 	managementZoneFunc func() *dynatrace.ManagementZone,
-	managementZoneNames *dynatrace.ManagementZones) dynatrace.ConfigResult {
+	managementZoneNames *dynatrace.ManagementZones) ConfigResult {
 	if managementZoneNames != nil && managementZoneNames.Contains(managementZoneName) {
-		return dynatrace.ConfigResult{
+		return ConfigResult{
 			Name:    managementZoneName,
 			Success: true,
 			Message: "Management Zone '" + managementZoneName + "' was already available in your Tenant",
@@ -72,14 +72,14 @@ func getOrCreateManagementZone(
 	err := managementZoneClient.Create(managementZoneFunc())
 	if err != nil {
 		log.WithError(err).Error("Failed to create management zone")
-		return dynatrace.ConfigResult{
+		return ConfigResult{
 			Name:    managementZoneName,
 			Success: false,
 			Message: "failed to create management zone: " + err.Error(),
 		}
 	}
 
-	return dynatrace.ConfigResult{
+	return ConfigResult{
 		Name:    managementZoneName,
 		Success: true,
 	}

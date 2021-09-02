@@ -5,27 +5,6 @@ const KeptnStage = "keptn_stage"
 
 const ServiceEntityType = "SERVICE"
 
-type CriteriaObject struct {
-	Operator        string
-	Value           float64
-	CheckPercentage bool
-	IsComparison    bool
-	CheckIncrease   bool
-}
-
-type EnvironmentAPIv2Error struct {
-	Error struct {
-		Code                 int    `json:"code"`
-		Message              string `json:"message"`
-		ConstraintViolations []struct {
-			Path              string `json:"path"`
-			Message           string `json:"message"`
-			ParameterLocation string `json:"parameterLocation"`
-			Location          string `json:"location"`
-		} `json:"constraintViolations"`
-	} `json:"error"`
-}
-
 type DTAPIListResponse struct {
 	Values []Values `json:"values"`
 }
@@ -49,10 +28,4 @@ func (response *DTAPIListResponse) ToStringSetWith(mapper func(Values) string) *
 type SLI struct {
 	SpecVersion string            `yaml:"spec_version"`
 	Indicators  map[string]string `yaml:"indicators"`
-}
-
-type ConfigResult struct {
-	Name    string
-	Success bool
-	Message string
 }

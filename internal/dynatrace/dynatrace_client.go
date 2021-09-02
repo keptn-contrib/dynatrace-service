@@ -14,6 +14,19 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
+type EnvironmentAPIv2Error struct {
+	Error struct {
+		Code                 int    `json:"code"`
+		Message              string `json:"message"`
+		ConstraintViolations []struct {
+			Path              string `json:"path"`
+			Message           string `json:"message"`
+			ParameterLocation string `json:"parameterLocation"`
+			Location          string `json:"location"`
+		} `json:"constraintViolations"`
+	} `json:"error"`
+}
+
 type Client struct {
 	DynatraceCreds *credentials.DTCredentials
 	HTTPClient     *http.Client
