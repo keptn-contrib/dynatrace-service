@@ -28,6 +28,25 @@ type MetricDefinition struct {
 	EntityType []string `json:"entityType"`
 }
 
+// MetricsQueryResult is struct for /metrics/query
+type MetricsQueryResult struct {
+	TotalCount  int                       `json:"totalCount"`
+	NextPageKey string                    `json:"nextPageKey"`
+	Result      []MetricQueryResultValues `json:"result"`
+}
+
+type MetricQueryResultValues struct {
+	MetricID string                     `json:"metricId"`
+	Data     []MetricQueryResultNumbers `json:"data"`
+}
+
+type MetricQueryResultNumbers struct {
+	Dimensions   []string          `json:"dimensions"`
+	DimensionMap map[string]string `json:"dimensionMap,omitempty"`
+	Timestamps   []int64           `json:"timestamps"`
+	Values       []float64         `json:"values"`
+}
+
 // MetricsClient is a client for interacting with the Dynatrace problems endpoints
 type MetricsClient struct {
 	client *Client
