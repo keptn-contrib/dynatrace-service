@@ -14,6 +14,20 @@ type Configuration struct {
 	kClient  *keptnv2.Keptn
 }
 
+// ConfiguredEntities contains information about the entities configures in Dynatrace
+type ConfiguredEntities struct {
+	TaggingRulesEnabled         bool
+	TaggingRules                []dynatrace.ConfigResult
+	ProblemNotificationsEnabled bool
+	ProblemNotifications        dynatrace.ConfigResult
+	ManagementZonesEnabled      bool
+	ManagementZones             []dynatrace.ConfigResult
+	DashboardEnabled            bool
+	Dashboard                   dynatrace.ConfigResult
+	MetricEventsEnabled         bool
+	MetricEvents                []dynatrace.ConfigResult
+}
+
 func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) *Configuration {
 	return &Configuration{
 		dtClient: dynatraceClient,
@@ -22,9 +36,9 @@ func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Ke
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*dynatrace.ConfiguredEntities, error) {
+func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*ConfiguredEntities, error) {
 
-	configuredEntities := &dynatrace.ConfiguredEntities{
+	configuredEntities := &ConfiguredEntities{
 		TaggingRulesEnabled:         lib.IsTaggingRulesGenerationEnabled(),
 		TaggingRules:                NewAutoTagCreation(mc.dtClient).Create(),
 		ProblemNotificationsEnabled: lib.IsProblemNotificationsGenerationEnabled(),

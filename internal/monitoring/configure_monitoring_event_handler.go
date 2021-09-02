@@ -93,7 +93,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 	return nil
 }
 
-func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, entities *dynatrace.ConfiguredEntities) string {
+func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, entities *ConfiguredEntities) string {
 	if entities == nil {
 		return ""
 	}

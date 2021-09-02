@@ -56,17 +56,3 @@ type ConfigResult struct {
 	Success bool
 	Message string
 }
-
-// ConfiguredEntities contains information about the entities configures in Dynatrace
-type ConfiguredEntities struct {
-	TaggingRulesEnabled         bool
-	TaggingRules                []ConfigResult
-	ProblemNotificationsEnabled bool
-	ProblemNotifications        ConfigResult
-	ManagementZonesEnabled      bool
-	ManagementZones             []ConfigResult
-	DashboardEnabled            bool
-	Dashboard                   ConfigResult
-	MetricEventsEnabled         bool
-	MetricEvents                []ConfigResult
-}
