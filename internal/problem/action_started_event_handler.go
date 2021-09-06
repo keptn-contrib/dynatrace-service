@@ -8,12 +8,12 @@ import (
 )
 
 type ActionStartedEventHandler struct {
-	event  *ActionStartedAdapter
+	event  ActionStartedAdapterInterface
 	client *dynatrace.Client
 }
 
 // NewActionStartedEventHandler creates a new ActionStartedEventHandler
-func NewActionStartedEventHandler(event *ActionStartedAdapter, client *dynatrace.Client) *ActionStartedEventHandler {
+func NewActionStartedEventHandler(event ActionStartedAdapterInterface, client *dynatrace.Client) *ActionStartedEventHandler {
 	return &ActionStartedEventHandler{
 		event:  event,
 		client: client,
