@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -14,41 +14,51 @@ import (
 
 const remediationTaskName = "remediation"
 
-// ProblemAdapter is a content adaptor for events of type sh.keptn.event.action.finished
-type ProblemAdapter struct {
-	event   DTProblemEvent
-	context string
-	source  string
+type ProblemAdapterInterface interface {
+	adapter.EventContentAdapter
+
+	IsNotFromDynatrace() bool
+	GetState() string
+	GetPID() string
+	GetProblemID() string
+	IsResolved() bool
+	GetClosedProblemEventData() keptn.ProblemEventData
+	GetRemediationTriggeredEventData() RemediationTriggeredEventData
 }
 
-// NewProblemAdapter creates a new ProblemAdapter
-func NewProblemAdapter(event DTProblemEvent, shkeptncontext, source string) ProblemAdapter {
-
-	// we need to set the project, stage and service names also from tags, if available
-	setProjectStageAndServiceFromTags(&event)
-	return ProblemAdapter{event: event, context: shkeptncontext, source: source}
+// ProblemAdapter is a content adaptor for events of type sh.keptn.event.action.finished
+type ProblemAdapter struct {
+	event      DTProblemEvent
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewProblemAdapterFromEvent creates a new ProblemAdapter from a cloudevents Event
 func NewProblemAdapterFromEvent(e cloudevents.Event) (*ProblemAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	pData := &DTProblemEvent{}
-	err := e.DataAs(pData)
+	err := ceAdapter.PayloadAs(pData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse problem event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewProblemAdapter(*pData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	// we need to set the project, stage and service names also from tags, if available
+	setProjectStageAndServiceFromTags(pData)
+
+	return &ProblemAdapter{
+		event:      *pData,
+		cloudEvent: ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ProblemAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.Context()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ProblemAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
@@ -107,7 +117,7 @@ func (a ProblemAdapter) GetLabels() map[string]string {
 }
 
 func (a ProblemAdapter) IsNotFromDynatrace() bool {
-	return a.source != "dynatrace"
+	return a.cloudEvent.Source() != "dynatrace"
 }
 
 func (a ProblemAdapter) GetState() string {
@@ -126,7 +136,7 @@ func (a ProblemAdapter) IsResolved() bool {
 	return a.GetState() == "RESOLVED"
 }
 
-func (a ProblemAdapter) getClosedProblemEventData() keptn.ProblemEventData {
+func (a ProblemAdapter) GetClosedProblemEventData() keptn.ProblemEventData {
 	problemData := keptn.ProblemEventData{
 		State:          "CLOSED",
 		PID:            a.GetPID(),
@@ -149,8 +159,8 @@ func (a ProblemAdapter) getClosedProblemEventData() keptn.ProblemEventData {
 	return problemData
 }
 
-func (a ProblemAdapter) getRemediationTriggeredEventData() remediationTriggeredEventData {
-	remediationEventData := remediationTriggeredEventData{
+func (a ProblemAdapter) GetRemediationTriggeredEventData() RemediationTriggeredEventData {
+	remediationEventData := RemediationTriggeredEventData{
 		EventData: keptnv2.EventData{
 			Project: a.GetProject(),
 			Stage:   a.GetStage(),

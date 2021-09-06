@@ -45,16 +45,16 @@ type DTProblemDetails struct {
 }
 
 type ProblemEventHandler struct {
-	event *ProblemAdapter
+	event ProblemAdapterInterface
 }
 
-func NewProblemEventHandler(event *ProblemAdapter) ProblemEventHandler {
+func NewProblemEventHandler(event ProblemAdapterInterface) ProblemEventHandler {
 	return ProblemEventHandler{
 		event: event,
 	}
 }
 
-type remediationTriggeredEventData struct {
+type RemediationTriggeredEventData struct {
 	keptnv2.EventData
 
 	// Problem contains details about the problem
@@ -80,8 +80,6 @@ type ProblemDetails struct {
 	Tags string `json:"Tags,omitempty"`
 }
 
-const eventbroker = "EVENTBROKER"
-
 func (eh ProblemEventHandler) HandleEvent() error {
 	if eh.event.IsNotFromDynatrace() {
 		log.WithField("eventSource", eh.event.GetSource()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
@@ -106,7 +104,7 @@ func (eh ProblemEventHandler) HandleEvent() error {
 
 func (eh ProblemEventHandler) handleClosedProblemFromDT() error {
 
-	err := createAndSendCE(eh.event.getClosedProblemEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
+	err := createAndSendCE(eh.event.GetClosedProblemEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
 	if err != nil {
 		log.WithError(err).Error("Could not send cloud event")
 		return err
@@ -118,7 +116,7 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT() error {
 func (eh ProblemEventHandler) handleOpenedProblemFromDT() error {
 
 	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
-	err := createAndSendCE(eh.event.getRemediationTriggeredEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
+	err := createAndSendCE(eh.event.GetRemediationTriggeredEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
 	if err != nil {
 		log.WithError(err).Error("Could not send cloud event")
 		return err
