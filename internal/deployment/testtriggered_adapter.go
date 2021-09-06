@@ -1,45 +1,46 @@
 package deployment
 
 import (
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-// TestTriggeredAdapter godoc
-type TestTriggeredAdapter struct {
-	event   keptnv2.TestTriggeredEventData
-	context string
-	source  string
+type TestTriggeredAdapterInterface interface {
+	adapter.EventContentAdapter
 }
 
-// NewTestTriggeredAdapter creates a new TestTriggeredAdapter
-func NewTestTriggeredAdapter(event keptnv2.TestTriggeredEventData, shkeptncontext, source string) TestTriggeredAdapter {
-	return TestTriggeredAdapter{event: event, context: shkeptncontext, source: source}
+// TestTriggeredAdapter is a content adaptor for events of type sh.keptn.event.test.triggered
+type TestTriggeredAdapter struct {
+	event      keptnv2.TestTriggeredEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewTestTriggeredAdapterFromEvent creates a new TestTriggeredAdapter from a cloudevents Event
 func NewTestTriggeredAdapterFromEvent(e cloudevents.Event) (*TestTriggeredAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	ttData := &keptnv2.TestTriggeredEventData{}
-	err := e.DataAs(ttData)
+	err := ceAdapter.PayloadAs(ttData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse test triggered event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewTestTriggeredAdapter(*ttData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &TestTriggeredAdapter{
+		event:      *ttData,
+		cloudEvent: ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a TestTriggeredAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.Context()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a TestTriggeredAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
