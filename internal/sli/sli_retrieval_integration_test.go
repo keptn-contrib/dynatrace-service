@@ -355,10 +355,10 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 func createDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, httpClient *http.Client) *Retrieval {
 	dh := NewRetrieval(
 		keptnEvent,
-		dynatrace.NewClient(
-			&credentials.DTCredentials{Tenant: "http://dynatrace"}),
+		dynatrace.NewClientWithHTTP(
+			&credentials.DTCredentials{Tenant: "http://dynatrace"},
+			httpClient),
 		&KeptnClientMock{})
-	dh.dtClient.HTTPClient = httpClient
 
 	return dh
 }

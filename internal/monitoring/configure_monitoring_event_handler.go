@@ -20,12 +20,12 @@ type KeptnAPIConnectionCheck struct {
 
 type ConfigureMonitoringEventHandler struct {
 	event    ConfigureMonitoringAdapterInterface
-	dtClient *dynatrace.Client
+	dtClient dynatrace.ClientInterface
 	kClient  *keptnv2.Keptn
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient *dynatrace.Client, kClient *keptnv2.Keptn) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient *keptnv2.Keptn) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
 		event:    event,
 		dtClient: dtClient,

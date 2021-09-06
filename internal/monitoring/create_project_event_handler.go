@@ -8,12 +8,12 @@ import (
 
 type CreateProjectEventHandler struct {
 	event    ProjectCreateAdapterInterface
-	dtClient *dynatrace.Client
+	dtClient dynatrace.ClientInterface
 	kClient  *keptnv2.Keptn
 }
 
 // NewCreateProjectEventHandler creates a new CreateProjectEventHandler
-func NewCreateProjectEventHandler(event ProjectCreateAdapterInterface, dtClient *dynatrace.Client, kClient *keptnv2.Keptn) CreateProjectEventHandler {
+func NewCreateProjectEventHandler(event ProjectCreateAdapterInterface, dtClient dynatrace.ClientInterface, kClient *keptnv2.Keptn) CreateProjectEventHandler {
 	return CreateProjectEventHandler{
 		event:    event,
 		dtClient: dtClient,

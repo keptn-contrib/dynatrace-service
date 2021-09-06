@@ -8,10 +8,10 @@ import (
 const dashboardsPath = "/api/config/v1/dashboards"
 
 type DashboardsClient struct {
-	client *Client
+	client ClientInterface
 }
 
-func NewDashboardsClient(client *Client) *DashboardsClient {
+func NewDashboardsClient(client ClientInterface) *DashboardsClient {
 	return &DashboardsClient{
 		client: client,
 	}

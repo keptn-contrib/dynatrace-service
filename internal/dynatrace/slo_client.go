@@ -32,10 +32,10 @@ type SLOResult struct {
 }
 
 type SLOClient struct {
-	client *Client
+	client ClientInterface
 }
 
-func NewSLOClient(client *Client) *SLOClient {
+func NewSLOClient(client ClientInterface) *SLOClient {
 	return &SLOClient{
 		client: client,
 	}

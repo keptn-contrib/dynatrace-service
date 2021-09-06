@@ -86,7 +86,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 
 			dt := NewClient(tt.fields.DynatraceCreds)
 
-			gotTransport := dt.HTTPClient.Transport.(*http.Transport)
+			gotTransport := dt.httpClient.Transport.(*http.Transport)
 			gotProxyUrl, err := gotTransport.Proxy(tt.args.req)
 			if err != nil {
 				t.Errorf("Client.createClient() error = %v", err)

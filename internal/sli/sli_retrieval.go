@@ -26,12 +26,12 @@ const MetricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatr
 // Retrieval interacts with a dynatrace API endpoint
 type Retrieval struct {
 	KeptnEvent GetSLITriggeredAdapterInterface
-	dtClient   *dynatrace.Client
+	dtClient   dynatrace.ClientInterface
 	kClient    keptn.ClientInterface
 }
 
 // NewRetrieval returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewRetrieval(keptnEvent GetSLITriggeredAdapterInterface, dtClient *dynatrace.Client, kClient keptn.ClientInterface) *Retrieval {
+func NewRetrieval(keptnEvent GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface) *Retrieval {
 	return &Retrieval{
 		KeptnEvent: keptnEvent,
 		dtClient:   dtClient,
@@ -791,7 +791,7 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 	}
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewDashboardLink(ph.dtClient.DynatraceCreds.Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
+	dashboardLinkAsLabel := NewDashboardLink(ph.dtClient.Credentials().Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details

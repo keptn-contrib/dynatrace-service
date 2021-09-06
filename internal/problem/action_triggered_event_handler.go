@@ -12,12 +12,12 @@ import (
 
 type ActionTriggeredEventHandler struct {
 	event       ActionTriggeredAdapterInterface
-	client      *dynatrace.Client
+	client      dynatrace.ClientInterface
 	attachRules *config.DtAttachRules
 }
 
 // NewActionTriggeredEventHandler creates a new ActionTriggeredEventHandler
-func NewActionTriggeredEventHandler(event ActionTriggeredAdapterInterface, client *dynatrace.Client, attachRules *config.DtAttachRules) *ActionTriggeredEventHandler {
+func NewActionTriggeredEventHandler(event ActionTriggeredAdapterInterface, client dynatrace.ClientInterface, attachRules *config.DtAttachRules) *ActionTriggeredEventHandler {
 	return &ActionTriggeredEventHandler{
 		event:       event,
 		client:      client,

@@ -27,11 +27,11 @@ type CriteriaObject struct {
 }
 
 type MetricEventCreation struct {
-	dtClient *dynatrace.Client
+	dtClient dynatrace.ClientInterface
 	kClient  *keptnv2.Keptn
 }
 
-func NewMetricEventCreation(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) MetricEventCreation {
+func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient *keptnv2.Keptn) MetricEventCreation {
 	return MetricEventCreation{
 		dtClient: dynatraceClient,
 		kClient:  keptnClient,
@@ -103,7 +103,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 
 	if len(metricsEventResults) > 0 {
 		// TODO: improve this?
-		log.Info("To review and enable the generated custom metric events, please go to: https://" + mec.dtClient.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
+		log.Info("To review and enable the generated custom metric events, please go to: https://" + mec.dtClient.Credentials().Tenant + "/#settings/anomalydetection/metricevents")
 	}
 
 	return metricsEventResults

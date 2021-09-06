@@ -8,12 +8,12 @@ import (
 
 type DeploymentFinishedEventHandler struct {
 	event       DeploymentFinishedAdapterInterface
-	client      *dynatrace.Client
+	client      dynatrace.ClientInterface
 	attachRules *config.DtAttachRules
 }
 
 // NewDeploymentFinishedEventHandler creates a new DeploymentFinishedEventHandler
-func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, client *dynatrace.Client, attachRules *config.DtAttachRules) *DeploymentFinishedEventHandler {
+func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *config.DtAttachRules) *DeploymentFinishedEventHandler {
 	return &DeploymentFinishedEventHandler{
 		event:       event,
 		client:      client,

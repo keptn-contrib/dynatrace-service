@@ -44,10 +44,10 @@ type CustomEventFilter struct {
 }
 
 type AlertingProfilesClient struct {
-	client *Client
+	client ClientInterface
 }
 
-func NewAlertingProfilesClient(client *Client) *AlertingProfilesClient {
+func NewAlertingProfilesClient(client ClientInterface) *AlertingProfilesClient {
 	return &AlertingProfilesClient{
 		client: client,
 	}

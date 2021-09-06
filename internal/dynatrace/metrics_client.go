@@ -49,11 +49,11 @@ type MetricQueryResultNumbers struct {
 
 // MetricsClient is a client for interacting with the Dynatrace problems endpoints
 type MetricsClient struct {
-	client *Client
+	client ClientInterface
 }
 
 // NewMetricsClient creates a new MetricsClient
-func NewMetricsClient(client *Client) *MetricsClient {
+func NewMetricsClient(client ClientInterface) *MetricsClient {
 	return &MetricsClient{
 		client: client,
 	}
@@ -78,7 +78,7 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (mc *MetricsClient) GetByQuery(metricsQuery string) (*MetricsQueryResult, error) {
 	path := metricsPath + "/query?" + metricsQuery
-	log.WithField("query", mc.client.DynatraceCreds.Tenant+path).Debug("Final Query")
+	log.WithField("query", mc.client.Credentials().Tenant+path).Debug("Final Query")
 
 	body, err := mc.client.Get(path)
 	if err != nil {

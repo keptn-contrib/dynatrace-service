@@ -9,11 +9,11 @@ import (
 const eventsPath = "/api/v1/events"
 
 type EventsClient struct {
-	client *Client
+	client ClientInterface
 }
 
 // NewEventsClient creates a new EventsClient
-func NewEventsClient(client *Client) *EventsClient {
+func NewEventsClient(client ClientInterface) *EventsClient {
 	return &EventsClient{
 		client: client,
 	}

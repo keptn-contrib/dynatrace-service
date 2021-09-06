@@ -12,12 +12,12 @@ import (
 
 type ReleaseTriggeredEventHandler struct {
 	event       ReleaseTriggeredAdapterInterface
-	client      *dynatrace.Client
+	client      dynatrace.ClientInterface
 	attachRules *config.DtAttachRules
 }
 
 // NewReleaseTriggeredEventHandler creates a new ReleaseTriggeredEventHandler
-func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, client *dynatrace.Client, attachRules *config.DtAttachRules) *ReleaseTriggeredEventHandler {
+func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, client dynatrace.ClientInterface, attachRules *config.DtAttachRules) *ReleaseTriggeredEventHandler {
 	return &ReleaseTriggeredEventHandler{
 		event:       event,
 		client:      client,

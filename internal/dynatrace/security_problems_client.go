@@ -68,11 +68,11 @@ type SecurityProblem struct {
 
 // SecurityProblemsClient is a client for interacting with the Dynatrace security problems endpoints
 type SecurityProblemsClient struct {
-	client *Client
+	client ClientInterface
 }
 
 // NewSecurityProblemsClient creates a new SecurityProblemsClient
-func NewSecurityProblemsClient(client *Client) *SecurityProblemsClient {
+func NewSecurityProblemsClient(client ClientInterface) *SecurityProblemsClient {
 	return &SecurityProblemsClient{
 		client: client,
 	}

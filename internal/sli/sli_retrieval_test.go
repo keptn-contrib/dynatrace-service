@@ -1,13 +1,11 @@
 package sli
 
 import (
-	"bytes"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io"
 	"io/ioutil"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -156,9 +154,8 @@ func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Re
 
 	dh := NewRetrieval(
 		keptnEvent,
-		dynatrace.NewClient(dtCredentials),
+		dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
 		KeptnClientMock{})
-	dh.dtClient.HTTPClient = httpClient
 
 	return dh, httpClient, url, teardown
 }
@@ -503,8 +500,8 @@ func TestCreateNewDynatraceHandler(t *testing.T) {
 	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
 	defer teardown()
 
-	if dh.dtClient.DynatraceCreds.Tenant != url {
-		t.Errorf("dh.client.DynatraceCreds.Tenant=%s; want %s", dh.dtClient.DynatraceCreds.Tenant, url)
+	if dh.dtClient.Credentials().Tenant != url {
+		t.Errorf("dh.client.DynatraceCreds.Tenant=%s; want %s", dh.dtClient.Credentials().Tenant, url)
 	}
 
 	if dh.KeptnEvent.GetProject() != "sockshop" {

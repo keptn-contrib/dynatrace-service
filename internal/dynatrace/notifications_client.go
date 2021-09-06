@@ -46,10 +46,10 @@ func (ne *NotificationsError) Error() string {
 const notificationsPath = "/api/config/v1/notifications"
 
 type NotificationsClient struct {
-	client *Client
+	client ClientInterface
 }
 
-func NewNotificationsClient(client *Client) *NotificationsClient {
+func NewNotificationsClient(client ClientInterface) *NotificationsClient {
 	return &NotificationsClient{
 		client: client,
 	}

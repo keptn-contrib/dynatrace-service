@@ -28,13 +28,13 @@ const ProblemOpenSLI = "problem_open"
 
 type GetSLIEventHandler struct {
 	event      GetSLITriggeredAdapterInterface
-	dtClient   *dynatrace.Client
+	dtClient   dynatrace.ClientInterface
 	kClient    *keptn.Client
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient *dynatrace.Client, kClient *keptn.Client, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient *keptn.Client, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:      event,
 		dtClient:   dtClient,

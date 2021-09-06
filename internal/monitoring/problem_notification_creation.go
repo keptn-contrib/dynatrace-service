@@ -10,10 +10,10 @@ import (
 )
 
 type ProblemNotificationCreation struct {
-	client *dynatrace.Client
+	client dynatrace.ClientInterface
 }
 
-func NewProblemNotificationCreation(client *dynatrace.Client) *ProblemNotificationCreation {
+func NewProblemNotificationCreation(client dynatrace.ClientInterface) *ProblemNotificationCreation {
 	return &ProblemNotificationCreation{
 		client: client,
 	}

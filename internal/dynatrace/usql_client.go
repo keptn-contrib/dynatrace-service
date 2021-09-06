@@ -16,10 +16,10 @@ type DTUSQLResult struct {
 }
 
 type USQLClient struct {
-	client *Client
+	client ClientInterface
 }
 
-func NewUSQLClient(client *Client) *USQLClient {
+func NewUSQLClient(client ClientInterface) *USQLClient {
 	return &USQLClient{
 		client: client,
 	}
@@ -28,7 +28,7 @@ func NewUSQLClient(client *Client) *USQLClient {
 // GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set
 func (uc *USQLClient) GetByQuery(usql string) (*DTUSQLResult, error) {
 	path := usqlPath + "?" + usql
-	log.WithField("query", uc.client.DynatraceCreds.Tenant+path).Debug("Final USQL Query")
+	log.WithField("query", uc.client.Credentials().Tenant+path).Debug("Final USQL Query")
 
 	body, err := uc.client.Get(path)
 	if err != nil {

@@ -118,16 +118,16 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 }
 
 type serviceSynchronizer struct {
-	projectsAPI       *keptnapi.ProjectHandler
-	servicesAPI       *keptnapi.ServiceHandler
-	resourcesAPI      *keptnapi.ResourceHandler
-	apiHandler        *keptnapi.APIHandler
-	credentialManager credentials.CredentialManagerInterface
-	EntitiesClient    *dynatrace.EntitiesClient
-	syncTimer         *time.Ticker
-	keptnHandler      *keptnv2.Keptn
-	servicesInKeptn   []string
-	dtConfigGetter    config.DynatraceConfigGetterInterface
+	projectsAPI        *keptnapi.ProjectHandler
+	servicesAPI        *keptnapi.ServiceHandler
+	resourcesAPI       *keptnapi.ResourceHandler
+	apiHandler         *keptnapi.APIHandler
+	credentialManager  credentials.CredentialManagerInterface
+	EntitiesClientFunc func(dtCredentials *credentials.DTCredentials) *dynatrace.EntitiesClient
+	syncTimer          *time.Ticker
+	keptnHandler       *keptnv2.Keptn
+	servicesInKeptn    []string
+	dtConfigGetter     config.DynatraceConfigGetterInterface
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
@@ -145,7 +145,11 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 		}
 
 		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewResourceClient())
-		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewClient(nil))
+		serviceSynchronizerInstance.EntitiesClientFunc =
+			func(credentials *credentials.DTCredentials) *dynatrace.EntitiesClient {
+				dtClient := dynatrace.NewClient(credentials)
+				return dynatrace.NewEntitiesClient(dtClient)
+			}
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()
 		shipyardControllerBaseURL := common.GetShipyardControllerURL()
@@ -179,7 +183,8 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 }
 
 func (s *serviceSynchronizer) synchronizeServices() {
-	if err := s.establishDTAPIConnection(); err != nil {
+	creds, err := s.establishDTAPIConnection()
+	if err != nil {
 		log.WithError(err).Error("Could not establish Dynatrace API connection")
 		return
 	}
@@ -192,7 +197,8 @@ func (s *serviceSynchronizer) synchronizeServices() {
 
 	log.Info("Fetching service entities with tags 'keptn_managed' and 'keptn_service'")
 
-	entities, err := s.EntitiesClient.GetKeptnManagedServices()
+	entitiesClient := s.EntitiesClientFunc(creds)
+	entities, err := entitiesClient.GetKeptnManagedServices()
 	if err != nil {
 		log.WithError(err).Error("Error fetching keptn managed services from dynatrace")
 		return
@@ -228,19 +234,18 @@ func (s *serviceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
 	}
 }
 
-func (s *serviceSynchronizer) establishDTAPIConnection() error {
+func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.DTCredentials, error) {
 	dynatraceConfig, err := s.dtConfigGetter.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
-		return fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
+		return nil, fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
 	}
 
 	creds, err := s.credentialManager.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
-		return fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
+		return nil, fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
 	}
 
-	s.EntitiesClient.Client.DynatraceCreds = creds
-	return nil
+	return creds, nil
 }
 
 func (s *serviceSynchronizer) fetchExistingServices() error {

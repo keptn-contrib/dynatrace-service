@@ -10,7 +10,7 @@ import (
 )
 
 type Configuration struct {
-	dtClient *dynatrace.Client
+	dtClient dynatrace.ClientInterface
 	kClient  *keptnv2.Keptn
 }
 
@@ -34,7 +34,7 @@ type ConfigResult struct {
 	Message string
 }
 
-func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) *Configuration {
+func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient *keptnv2.Keptn) *Configuration {
 	return &Configuration{
 		dtClient: dynatraceClient,
 		kClient:  keptnClient,

@@ -8,10 +8,10 @@ import (
 )
 
 type AutoTagCreation struct {
-	client *dynatrace.Client
+	client dynatrace.ClientInterface
 }
 
-func NewAutoTagCreation(client *dynatrace.Client) *AutoTagCreation {
+func NewAutoTagCreation(client dynatrace.ClientInterface) *AutoTagCreation {
 	return &AutoTagCreation{
 		client: client,
 	}
