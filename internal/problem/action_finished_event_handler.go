@@ -11,13 +11,13 @@ import (
 )
 
 type ActionFinishedEventHandler struct {
-	event       *ActionFinishedAdapter
+	event       ActionFinishedAdapterInterface
 	client      *dynatrace.Client
 	attachRules *config.DtAttachRules
 }
 
 // NewActionFinishedEventHandler creates a new ActionFinishedEventHandler
-func NewActionFinishedEventHandler(event *ActionFinishedAdapter, client *dynatrace.Client, attachRules *config.DtAttachRules) *ActionFinishedEventHandler {
+func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, client *dynatrace.Client, attachRules *config.DtAttachRules) *ActionFinishedEventHandler {
 	return &ActionFinishedEventHandler{
 		event:       event,
 		client:      client,
