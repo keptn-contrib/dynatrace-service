@@ -1,45 +1,48 @@
 package deployment
 
 import (
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-// ReleaseTriggeredAdapter godoc
-type ReleaseTriggeredAdapter struct {
-	event   keptnv2.ReleaseTriggeredEventData
-	context string
-	source  string
+type ReleaseTriggeredAdapterInterface interface {
+	adapter.EventContentAdapter
+
+	GetResult() keptnv2.ResultType
 }
 
-// NewReleaseTriggeredAdapter creates a new ReleaseTriggeredAdapter
-func NewReleaseTriggeredAdapter(event keptnv2.ReleaseTriggeredEventData, shkeptncontext, source string) ReleaseTriggeredAdapter {
-	return ReleaseTriggeredAdapter{event: event, context: shkeptncontext, source: source}
+// ReleaseTriggeredAdapter is a content adaptor for events of type sh.keptn.event.release.triggered
+type ReleaseTriggeredAdapter struct {
+	event      keptnv2.ReleaseTriggeredEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewReleaseTriggeredAdapterFromEvent creates a new ReleaseTriggeredAdapter from a cloudevents Event
 func NewReleaseTriggeredAdapterFromEvent(e cloudevents.Event) (*ReleaseTriggeredAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	rtData := &keptnv2.ReleaseTriggeredEventData{}
-	err := e.DataAs(rtData)
+	err := ceAdapter.PayloadAs(rtData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse release triggered event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewReleaseTriggeredAdapter(*rtData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &ReleaseTriggeredAdapter{
+		event:      *rtData,
+		cloudEvent: ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ReleaseTriggeredAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.Context()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ReleaseTriggeredAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
