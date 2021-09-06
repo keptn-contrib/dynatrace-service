@@ -3,12 +3,13 @@ package problem
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 const remediationTaskName = "remediation"
@@ -26,6 +27,10 @@ type ProblemAdapterInterface interface {
 	GetImpactedEntity() string
 	GetProblemTags() string
 	GetProblemDetails() json.RawMessage
+	GetProblemDetailsHTML() string
+	GetProblemDetailsText() string
+	GetProblemImpact() string
+	GetProblemSeverity() string
 }
 
 // ProblemAdapter is a content adaptor for events of type sh.keptn.event.action.finished
@@ -142,6 +147,28 @@ func (a ProblemAdapter) GetProblemTags() string {
 
 func (a ProblemAdapter) GetProblemDetails() json.RawMessage {
 	return marshalProblemDetails(a.event.ProblemDetails)
+}
+
+// GetProblemDetailsHTML returns all problem event details including root cause as an HTML-formatted string
+func (a ProblemAdapter) GetProblemDetailsHTML() string {
+	return a.event.ProblemDetailsHTML
+}
+
+// GetProblemDetailsText returns all problem event details including root cause as a text-formatted string
+func (a ProblemAdapter) GetProblemDetailsText() string {
+	return a.event.ProblemDetailsText
+}
+
+// GetProblemImpact return the impact level of the problem.
+// Possible values are APPLICATION, SERVICE, or INFRASTRUCTURE.
+func (a ProblemAdapter) GetProblemImpact() string {
+	return a.event.ProblemImpact
+}
+
+// GetProblemSeverity returns the severity level of the problem.
+// Possible values are AVAILABILITY, ERROR, PERFORMANCE, RESOURCE_CONTENTION, or CUSTOM_ALERT.
+func (a ProblemAdapter) GetProblemSeverity() string {
+	return a.event.ProblemSeverity
 }
 
 func (a ProblemAdapter) IsResolved() bool {
