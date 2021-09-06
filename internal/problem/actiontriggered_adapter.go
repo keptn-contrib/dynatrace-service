@@ -1,46 +1,50 @@
 package problem
 
 import (
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-// ActionTriggeredAdapter godoc
-type ActionTriggeredAdapter struct {
-	event   keptnv2.ActionTriggeredEventData
-	context string
-	source  string
+type ActionTriggeredAdapterInterface interface {
+	adapter.EventContentAdapter
+
+	GetAction() string
+	GetActionDescription() string
 }
 
-// NewActionTriggeredAdapter creates a new ActionTriggeredAdapter
-func NewActionTriggeredAdapter(event keptnv2.ActionTriggeredEventData, shkeptncontext, source string) ActionTriggeredAdapter {
-	return ActionTriggeredAdapter{event: event, context: shkeptncontext, source: source}
+// ActionTriggeredAdapter encapsulates a cloud event and its parsed payload
+type ActionTriggeredAdapter struct {
+	event      keptnv2.ActionTriggeredEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewActionTriggeredAdapterFromEvent creates a new ActionTriggeredAdapter from a cloudevents Event
 func NewActionTriggeredAdapterFromEvent(e cloudevents.Event) (*ActionTriggeredAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	atData := &keptnv2.ActionTriggeredEventData{}
-	err := e.DataAs(atData)
+	err := ceAdapter.PayloadAs(atData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse action triggered event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewActionTriggeredAdapter(*atData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &ActionTriggeredAdapter{
+		event:      *atData,
+		cloudEvent: ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ActionTriggeredAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.Context()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ActionTriggeredAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
