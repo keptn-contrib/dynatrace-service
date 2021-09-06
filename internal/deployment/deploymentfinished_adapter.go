@@ -1,49 +1,50 @@
 package deployment
 
 import (
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"os"
 	"strings"
 )
 
-// DeploymentFinishedAdapter godoc
-type DeploymentFinishedAdapter struct {
-	event   keptnv2.DeploymentFinishedEventData
-	context string
-	source  string
+type DeploymentFinishedAdapterInterface interface {
+	adapter.EventContentAdapter
 }
 
-// NewDeploymentFinishedAdapter creates a new DeploymentFinishedAdapter
-func NewDeploymentFinishedAdapter(event keptnv2.DeploymentFinishedEventData, shkeptncontext, source string) DeploymentFinishedAdapter {
-	return DeploymentFinishedAdapter{event: event, context: shkeptncontext, source: source}
+// DeploymentFinishedAdapter godoc
+type DeploymentFinishedAdapter struct {
+	event      keptnv2.DeploymentFinishedEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewDeploymentFinishedAdapterFromEvent creates a new DeploymentFinishedAdapter from a cloudevents Event
 func NewDeploymentFinishedAdapterFromEvent(e cloudevents.Event) (*DeploymentFinishedAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	dfData := &keptnv2.DeploymentFinishedEventData{}
-	err := e.DataAs(dfData)
+	err := ceAdapter.PayloadAs(dfData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse deployment finished event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewDeploymentFinishedAdapter(*dfData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &DeploymentFinishedAdapter{
+		event:      *dfData,
+		cloudEvent: ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a DeploymentFinishedAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.Context()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a DeploymentFinishedAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
@@ -100,7 +101,7 @@ func (a DeploymentFinishedAdapter) getImageAndTag() string {
 		Stage:        a.GetStage(),
 		Service:      a.GetService(),
 		EventType:    keptnv2.GetTriggeredEventType(keptnv2.DeploymentTaskName),
-		KeptnContext: a.context,
+		KeptnContext: a.GetShKeptnContext(),
 	})
 	if errObj != nil || events == nil || len(events) == 0 {
 		return notAvailable
