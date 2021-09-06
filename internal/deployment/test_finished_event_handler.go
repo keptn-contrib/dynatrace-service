@@ -7,11 +7,11 @@ import (
 type TestFinishedEventHandler struct {
 	event       TestFinishedAdapterInterface
 	client      dynatrace.ClientInterface
-	attachRules *dynatrace.DtAttachRules
+	attachRules *dynatrace.AttachRules
 }
 
 // NewTestFinishedEventHandler creates a new TestFinishedEventHandler
-func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.DtAttachRules) *TestFinishedEventHandler {
+func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.AttachRules) *TestFinishedEventHandler {
 	return &TestFinishedEventHandler{
 		event:       event,
 		client:      client,

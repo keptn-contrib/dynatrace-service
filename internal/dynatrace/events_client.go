@@ -9,10 +9,10 @@ import (
 
 const eventsPath = "/api/v1/events"
 
-type DTConfigurationEvent struct {
-	EventType   string        `json:"eventType"`
-	Source      string        `json:"source"`
-	AttachRules DtAttachRules `json:"attachRules"`
+type ConfigurationEvent struct {
+	EventType   string      `json:"eventType"`
+	Source      string      `json:"source"`
+	AttachRules AttachRules `json:"attachRules"`
 	// CustomProperties  dtCustomProperties `json:"customProperties"`
 	CustomProperties map[string]string `json:"customProperties"`
 	Description      string            `json:"description"`
@@ -20,10 +20,10 @@ type DTConfigurationEvent struct {
 	Original         string            `json:"original,omitempty"`
 }
 
-type DTDeploymentEvent struct {
-	EventType   string        `json:"eventType"`
-	Source      string        `json:"source"`
-	AttachRules DtAttachRules `json:"attachRules"`
+type DeploymentEvent struct {
+	EventType   string      `json:"eventType"`
+	Source      string      `json:"source"`
+	AttachRules AttachRules `json:"attachRules"`
 	// CustomProperties  dtCustomProperties `json:"customProperties"`
 	CustomProperties  map[string]string `json:"customProperties"`
 	DeploymentVersion string            `json:"deploymentVersion"`
@@ -33,57 +33,57 @@ type DTDeploymentEvent struct {
 	RemediationAction string            `json:"remediationAction,omitempty"`
 }
 
-type DTInfoEvent struct {
-	EventType   string        `json:"eventType"`
-	Source      string        `json:"source"`
-	AttachRules DtAttachRules `json:"attachRules"`
+type InfoEvent struct {
+	EventType   string      `json:"eventType"`
+	Source      string      `json:"source"`
+	AttachRules AttachRules `json:"attachRules"`
 	// CustomProperties  dtCustomProperties `json:"customProperties"`
 	CustomProperties map[string]string `json:"customProperties"`
 	Description      string            `json:"description"`
 	Title            string            `json:"title"`
 }
 
-type DTAnnotationEvent struct {
-	EventType   string        `json:"eventType"`
-	Source      string        `json:"source"`
-	AttachRules DtAttachRules `json:"attachRules"`
+type AnnotationEvent struct {
+	EventType   string      `json:"eventType"`
+	Source      string      `json:"source"`
+	AttachRules AttachRules `json:"attachRules"`
 	// CustomProperties  dtCustomProperties `json:"customProperties"`
 	CustomProperties      map[string]string `json:"customProperties"`
 	AnnotationDescription string            `json:"annotationDescription"`
 	AnnotationType        string            `json:"annotationType"`
 }
 
-// DtTag defines a Dynatrace configuration structure
-type DtTag struct {
+// TagEntry defines a Dynatrace configuration structure
+type TagEntry struct {
 	Context string `json:"context" yaml:"context"`
 	Key     string `json:"key" yaml:"key"`
 	Value   string `json:"value,omitempty" yaml:"value,omitempty"`
 }
 
-// DtTagRule defines a Dynatrace configuration structure
-type DtTagRule struct {
-	MeTypes []string `json:"meTypes" yaml:"meTypes"`
-	Tags    []DtTag  `json:"tags" yaml:"tags"`
+// TagRule defines a Dynatrace configuration structure
+type TagRule struct {
+	MeTypes []string   `json:"meTypes" yaml:"meTypes"`
+	Tags    []TagEntry `json:"tags" yaml:"tags"`
 }
 
-// DtAttachRules defines a Dynatrace configuration structure
-type DtAttachRules struct {
-	TagRule []DtTagRule `json:"tagRule" yaml:"tagRule"`
+// AttachRules defines a Dynatrace configuration structure
+type AttachRules struct {
+	TagRule []TagRule `json:"tagRule" yaml:"tagRule"`
 }
 
 /**
  * Changes in #115_116: Parse Tags from dynatrace.conf.yaml and only fall back to default behavior if it doesnt exist
  */
-func createAttachRules(a adapter.EventContentAdapter, attachRules *DtAttachRules) DtAttachRules {
+func createAttachRules(a adapter.EventContentAdapter, attachRules *AttachRules) AttachRules {
 	if attachRules != nil {
 		return *attachRules
 	}
 
-	ar := DtAttachRules{
-		TagRule: []DtTagRule{
+	ar := AttachRules{
+		TagRule: []TagRule{
 			{
 				MeTypes: []string{"SERVICE"},
-				Tags: []DtTag{
+				Tags: []TagEntry{
 					{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_project",
@@ -141,10 +141,10 @@ func createCustomProperties(a adapter.EventContentAdapter) map[string]string {
 }
 
 // CreateInfoEventDTO creates a new Dynatrace CUSTOM_INFO event
-func CreateInfoEventDTO(a adapter.EventContentAdapter, attachRules *DtAttachRules) DTInfoEvent {
+func CreateInfoEventDTO(a adapter.EventContentAdapter, attachRules *AttachRules) InfoEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
-	var ie DTInfoEvent
+	var ie InfoEvent
 	ie.EventType = "CUSTOM_INFO"
 	ie.Source = "Keptn dynatrace-service"
 	ie.Title = a.GetLabels()["title"]
@@ -162,10 +162,10 @@ func CreateInfoEventDTO(a adapter.EventContentAdapter, attachRules *DtAttachRule
 }
 
 // CreateAnnotationEventDTO creates a Dynatrace CUSTOM_ANNOTATION event
-func CreateAnnotationEventDTO(a adapter.EventContentAdapter, attachRules *DtAttachRules) DTAnnotationEvent {
+func CreateAnnotationEventDTO(a adapter.EventContentAdapter, attachRules *AttachRules) AnnotationEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
-	var ie DTAnnotationEvent
+	var ie AnnotationEvent
 	ie.EventType = "CUSTOM_ANNOTATION"
 	ie.Source = "Keptn dynatrace-service"
 	ie.AnnotationType = a.GetLabels()["type"]
@@ -191,10 +191,10 @@ func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue 
 }
 
 // CreateDeploymentEventDTO creates a Dynatrace CUSTOM_DEPLOYMENT event
-func CreateDeploymentEventDTO(a adapter.EventContentAdapter, attachRules *DtAttachRules) DTDeploymentEvent {
+func CreateDeploymentEventDTO(a adapter.EventContentAdapter, attachRules *AttachRules) DeploymentEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
-	var de DTDeploymentEvent
+	var de DeploymentEvent
 	de.EventType = "CUSTOM_DEPLOYMENT"
 	de.Source = "Keptn dynatrace-service"
 	de.DeploymentName = getValueFromLabels(a, "deploymentName", "Deploy "+a.GetService()+" "+a.GetTag()+" with strategy "+a.GetDeploymentStrategy())
@@ -216,10 +216,10 @@ func CreateDeploymentEventDTO(a adapter.EventContentAdapter, attachRules *DtAtta
 }
 
 // CreateConfigurationEventDTO creates a Dynatrace CUSTOM_CONFIGURATION event
-func CreateConfigurationEventDTO(a adapter.EventContentAdapter, attachRules *DtAttachRules) DTConfigurationEvent {
+func CreateConfigurationEventDTO(a adapter.EventContentAdapter, attachRules *AttachRules) ConfigurationEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
-	var de DTConfigurationEvent
+	var de ConfigurationEvent
 	de.EventType = "CUSTOM_CONFIGURATION"
 	de.Source = "Keptn dynatrace-service"
 
@@ -274,21 +274,21 @@ func (ec *EventsClient) addEventAndLog(dtEvent interface{}) {
 }
 
 // AddDeploymentEvent sends a deployment event to the Dynatrace events API
-func (ec *EventsClient) AddDeploymentEvent(de DTDeploymentEvent) {
+func (ec *EventsClient) AddDeploymentEvent(de DeploymentEvent) {
 	ec.addEventAndLog(de)
 }
 
 // AddInfoEvent sends an info event to the Dynatrace events API
-func (ec *EventsClient) AddInfoEvent(ie DTInfoEvent) {
+func (ec *EventsClient) AddInfoEvent(ie InfoEvent) {
 	ec.addEventAndLog(ie)
 }
 
 // AddAnnotationEvent sends an annotation event to the Dynatrace events API
-func (ec *EventsClient) AddAnnotationEvent(ae DTAnnotationEvent) {
+func (ec *EventsClient) AddAnnotationEvent(ae AnnotationEvent) {
 	ec.addEventAndLog(ae)
 }
 
 // AddConfigurationEvent sends a configuration event to the Dynatrace events API
-func (ec *EventsClient) AddConfigurationEvent(ce DTConfigurationEvent) {
+func (ec *EventsClient) AddConfigurationEvent(ce ConfigurationEvent) {
 	ec.addEventAndLog(ce)
 }

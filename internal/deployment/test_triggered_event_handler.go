@@ -7,11 +7,11 @@ import (
 type TestTriggeredEventHandler struct {
 	event       TestTriggeredAdapterInterface
 	client      dynatrace.ClientInterface
-	attachRules *dynatrace.DtAttachRules
+	attachRules *dynatrace.AttachRules
 }
 
 // NewTestTriggeredEventHandler creates a new TestTriggeredEventHandler
-func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.DtAttachRules) *TestTriggeredEventHandler {
+func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.AttachRules) *TestTriggeredEventHandler {
 	return &TestTriggeredEventHandler{
 		event:       event,
 		client:      client,
