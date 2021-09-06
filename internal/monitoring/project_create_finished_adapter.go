@@ -10,20 +10,20 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type ProjectCreateAdapterInterface interface {
+type ProjectCreateFinishedAdapterInterface interface {
 	adapter.EventContentAdapter
 
 	GetShipyard() (*keptnv2.Shipyard, error)
 }
 
-// ProjectCreateAdapter encapsulates a cloud event and its parsed payload
-type ProjectCreateAdapter struct {
+// ProjectCreateFinishedAdapter encapsulates a cloud event and its parsed payload
+type ProjectCreateFinishedAdapter struct {
 	event      keptnv2.ProjectCreateFinishedEventData
 	cloudEvent adapter.CloudEventAdapter
 }
 
-// NewProjectCreateAdapterFromEvent creates a new ProjectCreateAdapter from a cloudevents Event
-func NewProjectCreateAdapterFromEvent(e cloudevents.Event) (*ProjectCreateAdapter, error) {
+// NewProjectCreateFinishedAdapterFromEvent creates a new ProjectCreateFinishedAdapter from a cloudevents Event
+func NewProjectCreateFinishedAdapterFromEvent(e cloudevents.Event) (*ProjectCreateFinishedAdapter, error) {
 	ceAdapter := adapter.NewCloudEventAdapter(e)
 
 	pcData := &keptnv2.ProjectCreateFinishedEventData{}
@@ -32,73 +32,73 @@ func NewProjectCreateAdapterFromEvent(e cloudevents.Event) (*ProjectCreateAdapte
 		return nil, err
 	}
 
-	return &ProjectCreateAdapter{
+	return &ProjectCreateFinishedAdapter{
 		*pcData,
 		ceAdapter,
 	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
-func (a ProjectCreateAdapter) GetShKeptnContext() string {
+func (a ProjectCreateFinishedAdapter) GetShKeptnContext() string {
 	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
-func (a ProjectCreateAdapter) GetSource() string {
+func (a ProjectCreateFinishedAdapter) GetSource() string {
 	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
-func (a ProjectCreateAdapter) GetEvent() string {
+func (a ProjectCreateFinishedAdapter) GetEvent() string {
 	return keptnv2.GetFinishedEventType(keptnv2.ProjectCreateTaskName)
 }
 
 // GetProject returns the project
-func (a ProjectCreateAdapter) GetProject() string {
+func (a ProjectCreateFinishedAdapter) GetProject() string {
 	return a.event.Project
 }
 
 // GetStage returns the stage
-func (a ProjectCreateAdapter) GetStage() string {
+func (a ProjectCreateFinishedAdapter) GetStage() string {
 	return ""
 }
 
 // GetService returns the service
-func (a ProjectCreateAdapter) GetService() string {
+func (a ProjectCreateFinishedAdapter) GetService() string {
 	return ""
 }
 
 // GetDeployment returns the name of the deployment
-func (a ProjectCreateAdapter) GetDeployment() string {
+func (a ProjectCreateFinishedAdapter) GetDeployment() string {
 	return ""
 }
 
 // GetTestStrategy returns the used test strategy
-func (a ProjectCreateAdapter) GetTestStrategy() string {
+func (a ProjectCreateFinishedAdapter) GetTestStrategy() string {
 	return ""
 }
 
 // GetDeploymentStrategy returns the used deployment strategy
-func (a ProjectCreateAdapter) GetDeploymentStrategy() string {
+func (a ProjectCreateFinishedAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
 // GetImage returns the deployed image
-func (a ProjectCreateAdapter) GetImage() string {
+func (a ProjectCreateFinishedAdapter) GetImage() string {
 	return ""
 }
 
 // GetTag returns the deployed tag
-func (a ProjectCreateAdapter) GetTag() string {
+func (a ProjectCreateFinishedAdapter) GetTag() string {
 	return ""
 }
 
 // GetLabels returns a map of labels
-func (a ProjectCreateAdapter) GetLabels() map[string]string {
+func (a ProjectCreateFinishedAdapter) GetLabels() map[string]string {
 	return nil
 }
 
-func (a ProjectCreateAdapter) GetShipyard() (*keptnv2.Shipyard, error) {
+func (a ProjectCreateFinishedAdapter) GetShipyard() (*keptnv2.Shipyard, error) {
 	shipyard := &keptnv2.Shipyard{}
 	decodedShipyard, err := base64.StdEncoding.DecodeString(a.event.CreatedProject.Shipyard)
 	if err != nil {

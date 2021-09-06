@@ -84,8 +84,8 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	switch aType := keptnEvent.(type) {
 	case *monitoring.ConfigureMonitoringAdapter:
 		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient), nil
-	case *monitoring.ProjectCreateAdapter:
-		return monitoring.NewCreateProjectEventHandler(keptnEvent.(*monitoring.ProjectCreateAdapter), dtClient, kClient), nil
+	case *monitoring.ProjectCreateFinishedAdapter:
+		return monitoring.NewProjectCreateFinishedEventHandler(keptnEvent.(*monitoring.ProjectCreateFinishedAdapter), dtClient, kClient), nil
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter)), nil
 	case *problem.ActionTriggeredAdapter:
@@ -120,7 +120,7 @@ func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 		}
 		return keptnEvent, nil
 	case keptnv2.GetFinishedEventType(keptnv2.ProjectCreateTaskName):
-		keptnEvent, err := monitoring.NewProjectCreateAdapterFromEvent(e)
+		keptnEvent, err := monitoring.NewProjectCreateFinishedAdapterFromEvent(e)
 		if err != nil {
 			return nil, err
 		}

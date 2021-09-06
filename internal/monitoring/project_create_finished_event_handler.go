@@ -6,22 +6,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type CreateProjectEventHandler struct {
-	event    ProjectCreateAdapterInterface
+type ProjectCreateFinishedEventHandler struct {
+	event    ProjectCreateFinishedAdapterInterface
 	dtClient dynatrace.ClientInterface
 	kClient  *keptnv2.Keptn
 }
 
-// NewCreateProjectEventHandler creates a new CreateProjectEventHandler
-func NewCreateProjectEventHandler(event ProjectCreateAdapterInterface, dtClient dynatrace.ClientInterface, kClient *keptnv2.Keptn) CreateProjectEventHandler {
-	return CreateProjectEventHandler{
+// NewProjectCreateFinishedEventHandler creates a new ProjectCreateFinishedEventHandler
+func NewProjectCreateFinishedEventHandler(event ProjectCreateFinishedAdapterInterface, dtClient dynatrace.ClientInterface, kClient *keptnv2.Keptn) ProjectCreateFinishedEventHandler {
+	return ProjectCreateFinishedEventHandler{
 		event:    event,
 		dtClient: dtClient,
 		kClient:  kClient,
 	}
 }
 
-func (eh CreateProjectEventHandler) HandleEvent() error {
+func (eh ProjectCreateFinishedEventHandler) HandleEvent() error {
 	shipyard, err := eh.event.GetShipyard()
 	if err != nil {
 		log.WithError(err).Error("Could not load Keptn shipyard file")
