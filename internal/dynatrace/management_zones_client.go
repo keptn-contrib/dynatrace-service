@@ -68,7 +68,7 @@ func (mzc *ManagementZonesClient) GetAll() (*ManagementZones, error) {
 	}
 
 	mzs := &DTAPIListResponse{}
-	err = json.Unmarshal([]byte(response), mzs)
+	err = json.Unmarshal(response, mzs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse management zones list: %v", err)
 	}
@@ -87,16 +87,16 @@ func transformToManagementZones(response *DTAPIListResponse) *ManagementZones {
 	return managementZones
 }
 
-func (mzc *ManagementZonesClient) Create(managementZone *ManagementZone) (string, error) {
+func (mzc *ManagementZonesClient) Create(managementZone *ManagementZone) error {
 	mzPayload, err := json.Marshal(managementZone)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal management zone for project: %v", err)
+		return fmt.Errorf("failed to marshal management zone for project: %v", err)
 	}
 
-	res, err := mzc.client.Post(managementZonesPath, mzPayload)
+	_, err = mzc.client.Post(managementZonesPath, mzPayload)
 	if err != nil {
-		return "", fmt.Errorf("failed to create management zone: %v", err)
+		return fmt.Errorf("failed to create management zone: %v", err)
 	}
 
-	return res, nil
+	return nil
 }

@@ -1,26 +1,16 @@
 package common
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	log "github.com/sirupsen/logrus"
 
-	keptnmodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
@@ -35,24 +25,6 @@ const shipyardController = "SHIPYARD_CONTROLLER"
 const configurationService = "CONFIGURATION_SERVICE"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 const defaultConfigurationServiceURL = "http://configuration-service:8080"
-
-// RunLocal is true if the "ENV"-environment variable is set to local
-var RunLocal = os.Getenv("ENV") == "local"
-
-// RunLocalTest is true if the "ENV"-environment variable is set to localtest
-var RunLocalTest = os.Getenv("ENV") == "localtest"
-
-func GetKubernetesClient() (*kubernetes.Clientset, error) {
-	if RunLocal || RunLocalTest {
-		return nil, nil
-	}
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	return kubernetes.NewForConfig(config)
-}
 
 // GetConfigurationServiceURL Returns the endpoint to the configuration-service
 func GetConfigurationServiceURL() string {
@@ -82,12 +54,6 @@ func getKeptnServiceURL(servicename, defaultURL string) string {
 		baseURL = defaultURL
 	}
 	return baseURL
-}
-
-// KeptnCredentials contains the credentials for the Keptn API
-type KeptnCredentials struct {
-	ApiURL   string
-	ApiToken string
 }
 
 /**
@@ -147,44 +113,11 @@ func FindProblemIDForEvent(keptnEvent adapter.EventContentAdapter) (string, erro
 /**
  * Constants for supporting resource files in keptn repo
  */
-const DynatraceDashboardFilename = "dynatrace/dashboard.json"
-const DynatraceSLIFilename = "dynatrace/sli.yaml"
-const KeptnSLOFilename = "slo.yaml"
-const KeptnSLIResultFilename = "sliresult.json"
-
-const ConfigLevelProject = "Project"
-const ConfigLevelStage = "Stage"
-const ConfigLevelService = "Service"
 
 /**
  * Defines the Dynatrace Configuration File structure and supporting Constants
  */
-const DynatraceConfigFilename = "dynatrace/dynatrace.conf.yaml"
-const DynatraceConfigFilenameLOCAL = "dynatrace/_dynatrace.conf.yaml"
 const DynatraceConfigDashboardQUERY = "query"
-
-type DynatraceConfigFile struct {
-	SpecVersion string `json:"spec_version" yaml:"spec_version"`
-	DtCreds     string `json:"dtCreds,omitempty" yaml:"dtCreds,omitempty"`
-	Dashboard   string `json:"dashboard,omitempty" yaml:"dashboard,omitempty"`
-}
-
-type DTCredentials struct {
-	Tenant    string `json:"DT_TENANT" yaml:"DT_TENANT"`
-	ApiToken  string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
-	PaaSToken string `json:"DT_PAAS_TOKEN" yaml:"DT_PAAS_TOKEN"`
-}
-
-var namespace = getPodNamespace()
-
-func getPodNamespace() string {
-	ns := os.Getenv("POD_NAMESPACE")
-	if ns == "" {
-		return "keptn"
-	}
-
-	return ns
-}
 
 //
 // replaces $ placeholders with actual values
@@ -224,347 +157,6 @@ func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapt
 	// TODO: iterate through k8s secrets!
 
 	return result
-}
-
-//
-// Downloads a resource from the Keptn Configuration Repo based on the level (Project, Stage, Service)
-// In RunLocal mode it gets it from the local disk
-//
-func GetKeptnResourceOnConfigLevel(keptnEvent adapter.EventContentAdapter, resourceURI string, level string) (string, error) {
-
-	// if we run in a runlocal mode we are just getting the file from the local disk
-	var fileContent string
-	if RunLocal {
-		resourceURI = strings.ToLower(strings.ReplaceAll(resourceURI, "dynatrace/", "../../../dynatrace/"+level+"_"))
-		localFileContent, err := ioutil.ReadFile(resourceURI)
-		if err != nil {
-			log.WithFields(
-				log.Fields{
-					"resourceURI": resourceURI,
-					"service":     keptnEvent.GetService(),
-					"stage":       keptnEvent.GetStage(),
-					"project":     keptnEvent.GetProject(),
-				}).Info("File not found locally")
-			return "", nil
-		}
-		log.WithField("resourceURI", resourceURI).Info("Loaded LOCAL file")
-		fileContent = string(localFileContent)
-	} else {
-		resourceHandler := keptnapi.NewResourceHandler(GetConfigurationServiceURL())
-
-		var keptnResourceContent *keptnmodels.Resource
-		var err error
-		if strings.Compare(level, ConfigLevelProject) == 0 {
-			keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.GetProject(), resourceURI)
-		} else if strings.Compare(level, ConfigLevelStage) == 0 {
-			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.GetProject(), keptnEvent.GetStage(), resourceURI)
-		} else if strings.Compare(level, ConfigLevelService) == 0 {
-			keptnResourceContent, err = resourceHandler.GetServiceResource(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resourceURI)
-		} else {
-			return "", errors.New("Config level not valid: " + level)
-		}
-
-		if err != nil {
-			return "", err
-		}
-
-		if keptnResourceContent == nil {
-			return "", errors.New("Found resource " + resourceURI + " on level " + level + " but didnt contain content")
-		}
-
-		fileContent = keptnResourceContent.ResourceContent
-	}
-
-	return fileContent, nil
-}
-
-//
-// Downloads a resource from the Keptn Configuration Repo
-// In RunLocal mode it gets it from the local disk
-// In normal mode it first tries to find it on service level, then stage and then project level
-//
-func GetKeptnResource(keptnEvent adapter.EventContentAdapter, resourceURI string) (string, error) {
-
-	// if we run in a runlocal mode we are just getting the file from the local disk
-	var fileContent string
-	if RunLocal {
-		localFileContent, err := ioutil.ReadFile(resourceURI)
-		if err != nil {
-			log.WithFields(
-				log.Fields{
-					"resourceURI": resourceURI,
-					"service":     keptnEvent.GetService(),
-					"stage":       keptnEvent.GetStage(),
-					"project":     keptnEvent.GetProject(),
-				}).Info("File not found locally")
-			return "", nil
-		}
-		log.WithField("resourceURI", resourceURI).Info("Loaded LOCAL file")
-		fileContent = string(localFileContent)
-	} else {
-		resourceHandler := keptnapi.NewResourceHandler(GetConfigurationServiceURL())
-
-		// Lets search on SERVICE-LEVEL
-		keptnResourceContent, err := resourceHandler.GetServiceResource(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resourceURI)
-		if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
-			// Lets search on STAGE-LEVEL
-			keptnResourceContent, err = resourceHandler.GetStageResource(keptnEvent.GetProject(), keptnEvent.GetStage(), resourceURI)
-			if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
-				// Lets search on PROJECT-LEVEL
-				keptnResourceContent, err = resourceHandler.GetProjectResource(keptnEvent.GetProject(), resourceURI)
-				if err != nil || keptnResourceContent == nil || keptnResourceContent.ResourceContent == "" {
-					// log.Debugf("No Keptn Resource found: %s/%s/%s/%s - %s", keptnEvent.Project, keptnEvent.Stage, keptnEvent.Service, resourceURI, err)
-					return "", err
-				}
-
-				log.WithFields(
-					log.Fields{
-						"resourceURI": resourceURI,
-						"project":     keptnEvent.GetProject(),
-					}).Debug("Found resource on project level")
-			} else {
-				log.WithFields(
-					log.Fields{
-						"resourceURI": resourceURI,
-						"project":     keptnEvent.GetProject(),
-						"stage":       keptnEvent.GetStage(),
-					}).Debug("Found resource on stage level")
-			}
-		} else {
-			log.WithFields(
-				log.Fields{
-					"resourceURI": resourceURI,
-					"project":     keptnEvent.GetProject(),
-					"stage":       keptnEvent.GetStage(),
-					"service":     keptnEvent.GetService(),
-				}).Debug("Found resource on service level")
-		}
-		fileContent = keptnResourceContent.ResourceContent
-	}
-
-	return fileContent, nil
-}
-
-/**
- * Loads SLIs from a local file and adds it to the SLI map
- */
-func addResourceContentToSLIMap(SLIs map[string]string, sliFileContent string) (map[string]string, error) {
-
-	if sliFileContent != "" {
-		sliConfig := keptn.SLIConfig{}
-		err := yaml.Unmarshal([]byte(sliFileContent), &sliConfig)
-		if err != nil {
-			return nil, err
-		}
-
-		for key, value := range sliConfig.Indicators {
-
-			if _, keyPresent := SLIs[key]; keyPresent {
-				log.WithFields(
-					log.Fields{"key": key,
-						"value": value,
-					}).Warn("Overwriting SLI in SLIMap")
-			}
-			SLIs[key] = value
-		}
-	}
-	return SLIs, nil
-}
-
-/**
- * getCustomQueries loads custom SLIs from dynatrace/sli.yaml
- * if there is no sli.yaml it will just return an empty map
- */
-func GetCustomQueries(keptnEvent adapter.EventContentAdapter) map[string]string {
-	var sliMap = map[string]string{}
-	/*if common.RunLocal || common.RunLocalTest {
-		sliMap, _ = AddResourceContentToSLIMap(sliMap, "dynatrace/sli.yaml", "")
-		return sliMap, nil
-	}*/
-
-	// We need to load sli.yaml in the sequence of project, stage then service level where service level will overwrite stage & project and stage will overwrite project level sli defintions
-	// details can be found here: https://github.com/keptn-contrib/dynatrace-sli-service/issues/112
-
-	// Step 1: Load Project Level
-	foundLocation := ""
-	sliContent, err := GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelProject)
-	if err != nil {
-		log.WithError(err).Debug("Could not load SLIs on project level")
-	} else {
-		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
-		if err != nil {
-			log.WithError(err).Debug("Could not add SLIs to SLIMap on project level")
-		} else {
-			foundLocation = "project,"
-		}
-	}
-
-	// Step 2: Load Stage Level
-	sliContent, err = GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelStage)
-	if err != nil {
-		log.WithError(err).Debug("Could not load SLIs on stage level")
-	} else {
-		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
-		if err != nil {
-			log.WithError(err).Debug("Could not add SLIs to SLIMap on stage level")
-		} else {
-			foundLocation = foundLocation + "stage,"
-		}
-	}
-
-	// Step 3: Load Service Level
-	sliContent, err = GetKeptnResourceOnConfigLevel(keptnEvent, DynatraceSLIFilename, ConfigLevelService)
-	if err != nil {
-		log.WithError(err).Debug("Could not load SLIs on service level")
-	} else {
-		sliMap, err = addResourceContentToSLIMap(sliMap, sliContent)
-		if err != nil {
-			log.WithError(err).Debug("Could not add SLIs to SLIMap on service level")
-		} else {
-			foundLocation = foundLocation + "service"
-		}
-	}
-
-	// couldnt load any SLIs
-	if len(sliMap) == 0 {
-		log.WithFields(
-			log.Fields{
-				"project": keptnEvent.GetProject(),
-				"stage":   keptnEvent.GetStage(),
-				"service": keptnEvent.GetService(),
-			}).Info("No custom SLI queries found as no dynatrace/sli.yaml in repo, using defaults")
-	} else {
-		log.WithFields(
-			log.Fields{
-				"project":   keptnEvent.GetProject(),
-				"stage":     keptnEvent.GetStage(),
-				"service":   keptnEvent.GetService(),
-				"count":     len(sliMap),
-				"locations": foundLocation,
-			}).Info("Found SLI queries in dynatrace/sli.yaml")
-	}
-
-	return sliMap
-}
-
-// GetDynatraceConfig loads dynatrace.conf for the current service.
-// If none is found, it returns a default configuration.
-func GetDynatraceConfig(keptnEvent adapter.EventContentAdapter) DynatraceConfigFile {
-	dynatraceConfFile := getBaseDynatraceConfig(keptnEvent)
-	if dynatraceConfFile.DtCreds == "" {
-		dynatraceConfFile.DtCreds = "dynatrace"
-	}
-	// implementing https://github.com/keptn-contrib/dynatrace-sli-service/issues/90
-	dynatraceConfFile.DtCreds = ReplaceKeptnPlaceholders(dynatraceConfFile.DtCreds, keptnEvent)
-	return dynatraceConfFile
-}
-
-func getBaseDynatraceConfig(keptnEvent adapter.EventContentAdapter) DynatraceConfigFile {
-
-	var defaultDynatraceConfigFile = DynatraceConfigFile{
-		SpecVersion: "0.1.0",
-		DtCreds:     "dynatrace",
-		Dashboard:   "",
-	}
-
-	yamlString, err := GetKeptnResource(keptnEvent, DynatraceConfigFilename)
-	if err != nil {
-		log.WithError(err).WithFields(
-			log.Fields{
-				"service": keptnEvent.GetService(),
-				"stage":   keptnEvent.GetStage(),
-				"project": keptnEvent.GetProject(),
-			}).Debug("Error getting keptn resource")
-		return defaultDynatraceConfigFile
-	}
-	dynatraceConfFile, err := parseDynatraceConfigFile(yamlString)
-	if err != nil {
-		log.WithError(err).WithFields(
-			log.Fields{
-				"yaml":    yamlString,
-				"service": keptnEvent.GetService(),
-				"stage":   keptnEvent.GetStage(),
-				"project": keptnEvent.GetProject(),
-			}).Error("Error parsing DynatraceConfigFile, using default configuration")
-		return defaultDynatraceConfigFile
-	}
-	return dynatraceConfFile
-}
-
-// UploadKeptnResource uploads a file to the Keptn Configuration Service
-func UploadKeptnResource(contentToUpload []byte, remoteResourceURI string, keptnEvent adapter.EventContentAdapter) error {
-
-	// if we run in a runlocal mode we are just getting the file from the local disk
-	if RunLocal || RunLocalTest {
-		err := ioutil.WriteFile(remoteResourceURI, contentToUpload, 0644)
-		if err != nil {
-			return fmt.Errorf("Couldnt write local file %s: %v", remoteResourceURI, err)
-		}
-		log.WithField("remoteResourceURI", remoteResourceURI).Info("Local file written")
-	} else {
-		resourceHandler := keptnapi.NewResourceHandler(GetConfigurationServiceURL())
-
-		// lets upload it
-		resources := []*keptnmodels.Resource{{ResourceContent: string(contentToUpload), ResourceURI: &remoteResourceURI}}
-		_, err := resourceHandler.CreateResources(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), resources)
-		if err != nil {
-			return fmt.Errorf("Couldnt upload remote resource %s: %s", remoteResourceURI, *err.Message)
-		}
-
-		log.WithField("remoteResourceURI", remoteResourceURI).Info("Uploaded file")
-	}
-
-	return nil
-}
-
-/**
- * parses the dynatrace.conf.yaml file that is passed as parameter
- */
-func parseDynatraceConfigFile(yamlString string) (DynatraceConfigFile, error) {
-	dynatraceConfFile := DynatraceConfigFile{}
-	err := yaml.Unmarshal([]byte(yamlString), &dynatraceConfFile)
-	return dynatraceConfFile, err
-}
-
-/**
- * Pulls the Dynatrace Credentials from the passed secret
- */
-func GetDTCredentials(dynatraceSecretName string) (*DTCredentials, error) {
-	if dynatraceSecretName == "" {
-		return nil, nil
-	}
-
-	dtCreds := &DTCredentials{}
-	if RunLocal || RunLocalTest {
-		// if we RunLocal we take it from the env-variables
-		dtCreds.Tenant = os.Getenv("DT_TENANT")
-		dtCreds.ApiToken = os.Getenv("DT_API_TOKEN")
-	} else {
-		kubeAPI, err := GetKubernetesClient()
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving Dynatrace credentials: could not initialize Kubernetes client: %v", err)
-		}
-		secret, err := kubeAPI.CoreV1().Secrets(namespace).Get(context.TODO(), dynatraceSecretName, metav1.GetOptions{})
-
-		if err != nil {
-			return nil, fmt.Errorf("error retrieving Dynatrace credentials: could not retrieve secret %s.%s: %v", namespace, dynatraceSecretName, err)
-		}
-
-		// grabnerandi: remove check on DT_PAAS_TOKEN as it is not relevant for quality-gate-only use case
-		if string(secret.Data["DT_TENANT"]) == "" || string(secret.Data["DT_API_TOKEN"]) == "" { //|| string(secret.Data["DT_PAAS_TOKEN"]) == "" {
-			return nil, errors.New("invalid or no Dynatrace credentials found. Need DT_TENANT & DT_API_TOKEN stored in secret!")
-		}
-
-		dtCreds.Tenant = string(secret.Data["DT_TENANT"])
-		dtCreds.ApiToken = string(secret.Data["DT_API_TOKEN"])
-	}
-
-	// ensure URL always has http or https in front
-	if !(strings.HasPrefix(dtCreds.Tenant, "https://") || strings.HasPrefix(dtCreds.Tenant, "http://")) {
-		dtCreds.Tenant = "https://" + dtCreds.Tenant
-	}
-
-	return dtCreds, nil
 }
 
 // ParseUnixTimestamp parses a time stamp into Unix foramt

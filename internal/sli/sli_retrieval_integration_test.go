@@ -1,7 +1,10 @@
-package dynatrace
+package sli
 
 import (
 	"errors"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -96,38 +99,37 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler("http://dynatrace", keptnEvent, nil, nil)
-	dh.HTTPClient = httpClient
+	dh := createDynatraceHandler(keptnEvent, httpClient)
 
 	// overwrite custom queries with the new format (starting with metricSelector=)
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries[ResponseTimeP50] = "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
+	customQueries := make(map[string]string)
+	customQueries[keptn.ResponseTimeP50] = "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err := dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewCustomQueries(customQueries))
 
 	assert.EqualValues(t, nil, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
 
 	// now do the same but with the new format but with ?metricSelector= in front (the ? is not needed/wanted)
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries[ResponseTimeP50] = "?metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
+	customQueries = make(map[string]string)
+	customQueries[keptn.ResponseTimeP50] = "?metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
 
 	start = time.Unix(1571649084, 0).UTC()
 	end = time.Unix(1571649085, 0).UTC()
-	value, err = dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err = dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewCustomQueries(customQueries))
 
 	assert.EqualValues(t, nil, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
 
 	// now do the same but with the old format ($metricName?scope=...)
-	dh.CustomQueries = make(map[string]string)
-	dh.CustomQueries[ResponseTimeP50] = "builtin:service.response.time:merge(0):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)"
+	customQueries = make(map[string]string)
+	customQueries[keptn.ResponseTimeP50] = "builtin:service.response.time:merge(0):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)"
 
 	start = time.Unix(1571649084, 0).UTC()
 	end = time.Unix(1571649085, 0).UTC()
-	value, err = dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err = dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewCustomQueries(customQueries))
 
 	assert.EqualValues(t, nil, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
@@ -203,13 +205,12 @@ func runGetSLIValueTest(okResponse string) (float64, error) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler("http://dynatrace", keptnEvent, nil, nil)
-	dh.HTTPClient = httpClient
+	dh := createDynatraceHandler(keptnEvent, httpClient)
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
 
-	return dh.GetSLIValue(ResponseTimeP50, start, end)
+	return dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewEmptyCustomQueries())
 }
 
 func TestGetSLIValueWithMV2Prefix(t *testing.T) {
@@ -245,7 +246,7 @@ func TestGetSLIEndTimeFuture(t *testing.T) {
 	)
 	defer ts.Close()
 
-	dh := NewDynatraceHandler(ts.URL, keptnEvent, nil, nil)
+	dh := NewRetrieval(ts.URL, keptnEvent, nil, nil)
 
 	start := time.Now()
 	// artificially increase end time to be in the future
@@ -265,7 +266,7 @@ func TestGetSLIStartTimeAfterEndTime(t *testing.T) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler("http://dynatrace", keptnEvent, nil, nil)
+	dh := NewRetrieval("http://dynatrace", keptnEvent, nil, nil)
 
 	start := time.Now()
 	// artificially increase end time to be in the future
@@ -314,13 +315,12 @@ func TestGetSLISleep(t *testing.T) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler("http://dynatrace", keptnEvent, nil, nil)
-	dh.HTTPClient = httpClient
+	dh := createDynatraceHandler(keptnEvent, httpClient)
 
 	start := time.Now().Add(-5 * time.Minute)
 	// artificially increase end time to be in the future
 	end := time.Now().Add(-80 * time.Second)
-	value, err := dh.GetSLIValue(ResponseTimeP50, start, end)
+	value, err := dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewEmptyCustomQueries())
 
 	assert.InDelta(t, 8.43340, value, 0.001)
 	assert.Nil(t, err)
@@ -342,13 +342,23 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 	keptnEvent.Service = "carts"
 	keptnEvent.DeploymentStrategy = ""
 
-	dh := NewDynatraceHandler("http://dynatrace", keptnEvent, nil, nil)
-	dh.HTTPClient = httpClient
+	dh := createDynatraceHandler(keptnEvent, httpClient)
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(Throughput, start, end)
+	value, err := dh.GetSLIValue(keptn.Throughput, start, end, keptn.NewEmptyCustomQueries())
 
 	assert.EqualValues(t, 0.0, value)
 	assert.NotNil(t, err, nil)
+}
+
+func createDynatraceHandler(keptnEvent *BaseKeptnEvent, httpClient *http.Client) *Retrieval {
+	dh := NewRetrieval(
+		keptnEvent,
+		dynatrace.NewClient(
+			&credentials.DTCredentials{Tenant: "http://dynatrace"}),
+		&KeptnClientMock{})
+	dh.dtClient.HTTPClient = httpClient
+
+	return dh
 }

@@ -3,7 +3,7 @@ package monitoring
 import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
@@ -14,6 +14,26 @@ type Configuration struct {
 	kClient  *keptnv2.Keptn
 }
 
+// ConfiguredEntities contains information about the entities configures in Dynatrace
+type ConfiguredEntities struct {
+	TaggingRulesEnabled         bool
+	TaggingRules                []ConfigResult
+	ProblemNotificationsEnabled bool
+	ProblemNotifications        ConfigResult
+	ManagementZonesEnabled      bool
+	ManagementZones             []ConfigResult
+	DashboardEnabled            bool
+	Dashboard                   ConfigResult
+	MetricEventsEnabled         bool
+	MetricEvents                []ConfigResult
+}
+
+type ConfigResult struct {
+	Name    string
+	Success bool
+	Message string
+}
+
 func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) *Configuration {
 	return &Configuration{
 		dtClient: dynatraceClient,
@@ -22,19 +42,19 @@ func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Ke
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*dynatrace.ConfiguredEntities, error) {
+func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*ConfiguredEntities, error) {
 
-	configuredEntities := &dynatrace.ConfiguredEntities{
-		TaggingRulesEnabled:         lib.IsTaggingRulesGenerationEnabled(),
+	configuredEntities := &ConfiguredEntities{
+		TaggingRulesEnabled:         env.IsTaggingRulesGenerationEnabled(),
 		TaggingRules:                NewAutoTagCreation(mc.dtClient).Create(),
-		ProblemNotificationsEnabled: lib.IsProblemNotificationsGenerationEnabled(),
+		ProblemNotificationsEnabled: env.IsProblemNotificationsGenerationEnabled(),
 		ProblemNotifications:        NewProblemNotificationCreation(mc.dtClient).Create(),
-		ManagementZonesEnabled:      lib.IsManagementZonesGenerationEnabled(),
-		ManagementZones:             []dynatrace.ConfigResult{},
-		DashboardEnabled:            lib.IsDashboardsGenerationEnabled(),
-		Dashboard:                   dynatrace.ConfigResult{},
-		MetricEventsEnabled:         lib.IsMetricEventsGenerationEnabled(),
-		MetricEvents:                []dynatrace.ConfigResult{},
+		ManagementZonesEnabled:      env.IsManagementZonesGenerationEnabled(),
+		ManagementZones:             []ConfigResult{},
+		DashboardEnabled:            env.IsDashboardsGenerationEnabled(),
+		Dashboard:                   ConfigResult{},
+		MetricEventsEnabled:         env.IsMetricEventsGenerationEnabled(),
+		MetricEvents:                []ConfigResult{},
 	}
 
 	if project != "" && shipyard != nil {
@@ -43,7 +63,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 
 		configHandler := keptnutils.NewServiceHandler("shipyard-controller:8080")
 
-		var metricEvents []dynatrace.ConfigResult
+		var metricEvents []ConfigResult
 		// try to create metric events - if one fails, don't fail the whole setup
 		for _, stage := range shipyard.Spec.Stages {
 			if shouldCreateMetricEvents(stage) {

@@ -57,9 +57,9 @@ type DTAnnotationEvent struct {
 /**
  * Changes in #115_116: Parse Tags from dynatrace.conf.yaml and only fall back to default behavior if it doesnt exist
  */
-func createAttachRules(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) config.DtAttachRules {
-	if dynatraceConfig != nil && dynatraceConfig.AttachRules != nil {
-		return *dynatraceConfig.AttachRules
+func createAttachRules(a adapter.EventContentAdapter, attachRules *config.DtAttachRules) config.DtAttachRules {
+	if attachRules != nil {
+		return *attachRules
 	}
 
 	ar := config.DtAttachRules{
@@ -124,7 +124,7 @@ func createCustomProperties(a adapter.EventContentAdapter) map[string]string {
 }
 
 // CreateInfoEvent creates a new Info event
-func CreateInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) DTInfoEvent {
+func CreateInfoEvent(a adapter.EventContentAdapter, attachRules *config.DtAttachRules) DTInfoEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
 	var ie DTInfoEvent
@@ -134,7 +134,7 @@ func CreateInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.Dyna
 	ie.Description = a.GetLabels()["description"]
 
 	// now we create our attach rules
-	ar := createAttachRules(a, dynatraceConfig)
+	ar := createAttachRules(a, attachRules)
 	ie.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
@@ -145,7 +145,7 @@ func CreateInfoEvent(a adapter.EventContentAdapter, dynatraceConfig *config.Dyna
 }
 
 // CreateAnnotationEvent creates a Dynatrace ANNOTATION event
-func CreateAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) DTAnnotationEvent {
+func CreateAnnotationEvent(a adapter.EventContentAdapter, attachRules *config.DtAttachRules) DTAnnotationEvent {
 
 	// we fill the Dynatrace Info Event with values from the labels or use our defaults
 	var ie DTAnnotationEvent
@@ -155,7 +155,7 @@ func CreateAnnotationEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	ie.AnnotationDescription = a.GetLabels()["description"]
 
 	// now we create our attach rules
-	ar := createAttachRules(a, dynatraceConfig)
+	ar := createAttachRules(a, attachRules)
 	ie.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
@@ -173,7 +173,7 @@ func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue 
 	return defaultValue
 }
 
-func CreateDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) DTDeploymentEvent {
+func CreateDeploymentEvent(a adapter.EventContentAdapter, attachRules *config.DtAttachRules) DTDeploymentEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
 	var de DTDeploymentEvent
@@ -186,7 +186,7 @@ func CreateDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	de.RemediationAction = getValueFromLabels(a, "remediationAction", "")
 
 	// now we create our attach rules
-	ar := createAttachRules(a, dynatraceConfig)
+	ar := createAttachRules(a, attachRules)
 	de.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties
@@ -197,7 +197,7 @@ func CreateDeploymentEvent(a adapter.EventContentAdapter, dynatraceConfig *confi
 	return de
 }
 
-func CreateConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *config.DynatraceConfigFile) DTConfigurationEvent {
+func CreateConfigurationEvent(a adapter.EventContentAdapter, attachRules *config.DtAttachRules) DTConfigurationEvent {
 
 	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
 	var de DTConfigurationEvent
@@ -205,7 +205,7 @@ func CreateConfigurationEvent(a adapter.EventContentAdapter, dynatraceConfig *co
 	de.Source = "Keptn dynatrace-service"
 
 	// now we create our attach rules
-	ar := createAttachRules(a, dynatraceConfig)
+	ar := createAttachRules(a, attachRules)
 	de.AttachRules = ar
 
 	// and add the rest of the labels and info as custom properties

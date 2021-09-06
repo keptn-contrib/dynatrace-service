@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -16,7 +17,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
@@ -135,7 +136,7 @@ const shipyardController = "SHIPYARD_CONTROLLER"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 
 // ActivateServiceSynchronizer godoc
-func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynchronizer {
+func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serviceSynchronizer {
 	if serviceSynchronizerInstance == nil {
 
 		encodedDefaultSLOFile = b64.StdEncoding.EncodeToString([]byte(defaultSLOFile))
@@ -143,7 +144,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 			credentialManager: c,
 		}
 
-		serviceSynchronizerInstance.dtConfigGetter = &config.DynatraceConfigGetter{}
+		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewResourceClient())
 		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewClient(nil))
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()
@@ -165,7 +166,7 @@ func ActivateServiceSynchronizer(c *credentials.CredentialManager) *serviceSynch
 }
 
 func (s *serviceSynchronizer) initializeSynchronizationTimer() {
-	syncInterval := lib.GetServiceSyncInterval()
+	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
 	go func() {
@@ -233,7 +234,7 @@ func (s *serviceSynchronizer) establishDTAPIConnection() error {
 		return fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
 	}
 
-	creds, err := s.credentialManager.GetDynatraceCredentials(dynatraceConfig)
+	creds, err := s.credentialManager.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
 		return fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
 	}

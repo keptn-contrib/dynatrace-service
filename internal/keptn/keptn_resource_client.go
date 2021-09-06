@@ -1,39 +1,93 @@
 package keptn
 
 import (
+	"encoding/json"
 	"errors"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	api "github.com/keptn/go-utils/pkg/api/utils"
+	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	"gopkg.in/yaml.v2"
 )
 
-type ResourceClientInterface interface {
+type SLOResourceClientInterface interface {
 	GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error)
+	UploadSLOs(project string, stage string, service string, dashboardSLOs *keptn.ServiceLevelObjectives) error
+}
+type DashboardResourceClientInterface interface {
+	UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error
+	GetDashboard(project string, stage string, service string) (string, error)
+}
+type SLIResourceClientInterface interface {
+	UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error
+}
+type DynatraceConfigResourceClientInterface interface {
+	GetDynatraceConfig(project string, stage string, service string) (string, error)
 }
 
+const sloFilename = "slo.yaml"
+const sliFilename = "dynatrace/sli.yaml"
+const dashboardFilename = "dynatrace/dashboard.json"
+const configFilename = "dynatrace/dynatrace.conf.yaml"
+
+// ResourceClient is the default implementation for the *ResourceClientInterfaces using a ConfigResourceClientInterface
 type ResourceClient struct {
-	handler *api.ResourceHandler
+	client ConfigResourceClientInterface
 }
 
-func NewConfigResourceClient() *ResourceClient {
+// NewResourceClient creates a new ResourceClient with a Keptn resource handler for the configuration service
+func NewResourceClient() *ResourceClient {
 	return &ResourceClient{
-		handler: api.NewResourceHandler(
-			common.GetConfigurationServiceURL()),
+		client: NewConfigResourceClient(),
 	}
 }
 
 func (rc *ResourceClient) GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error) {
-	resource, err := rc.handler.GetServiceResource(project, stage, service, "slo.yaml")
-	if err != nil || resource.ResourceContent == "" {
-		return nil, errors.New("No SLO file available for service " + service + " in stage " + stage)
+	resource, err := rc.client.GetServiceResource(project, stage, service, sloFilename)
+	if err != nil {
+		return nil, err
 	}
 
 	slos := &keptn.ServiceLevelObjectives{}
-	err = yaml.Unmarshal([]byte(resource.ResourceContent), slos)
+	err = yaml.Unmarshal([]byte(resource), slos)
 	if err != nil {
 		return nil, errors.New("invalid SLO file format")
 	}
 
 	return slos, nil
+}
+
+func (rc *ResourceClient) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptn.ServiceLevelObjectives) error {
+	// and now we save it back to Keptn
+	yamlAsByteArray, err := yaml.Marshal(dashboardSLOs)
+	if err != nil {
+		return fmt.Errorf("could not convert SLOs to YAML: %s", err)
+	}
+
+	return rc.client.UploadResource(yamlAsByteArray, sloFilename, project, stage, service)
+}
+
+func (rc *ResourceClient) GetDashboard(project string, stage string, service string) (string, error) {
+	return rc.client.GetServiceResource(project, stage, service, dashboardFilename)
+}
+
+func (rc *ResourceClient) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
+	jsonAsByteArray, err := json.MarshalIndent(dashboard, "", "  ")
+	if err != nil {
+		return fmt.Errorf("could not convert dashboard to JSON: %s", err)
+	}
+
+	return rc.client.UploadResource(jsonAsByteArray, dashboardFilename, project, stage, service)
+}
+
+func (rc *ResourceClient) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
+	yamlAsByteArray, err := yaml.Marshal(sli)
+	if err != nil {
+		return fmt.Errorf("could not convert dashboardSLI to YAML: %s", err)
+	}
+
+	return rc.client.UploadResource(yamlAsByteArray, sliFilename, project, stage, service)
+}
+
+func (rc *ResourceClient) GetDynatraceConfig(project string, stage string, service string) (string, error) {
+	return rc.client.GetResource(project, stage, service, configFilename)
 }

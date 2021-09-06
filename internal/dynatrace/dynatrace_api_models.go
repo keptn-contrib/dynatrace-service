@@ -5,14 +5,6 @@ const KeptnStage = "keptn_stage"
 
 const ServiceEntityType = "SERVICE"
 
-type CriteriaObject struct {
-	Operator        string
-	Value           float64
-	CheckPercentage bool
-	IsComparison    bool
-	CheckIncrease   bool
-}
-
 type DTAPIListResponse struct {
 	Values []Values `json:"values"`
 }
@@ -32,22 +24,8 @@ func (response *DTAPIListResponse) ToStringSetWith(mapper func(Values) string) *
 	return stringSet
 }
 
-type ConfigResult struct {
-	Name    string
-	Success bool
-	Message string
-}
-
-// ConfiguredEntities contains information about the entities configures in Dynatrace
-type ConfiguredEntities struct {
-	TaggingRulesEnabled         bool
-	TaggingRules                []ConfigResult
-	ProblemNotificationsEnabled bool
-	ProblemNotifications        ConfigResult
-	ManagementZonesEnabled      bool
-	ManagementZones             []ConfigResult
-	DashboardEnabled            bool
-	Dashboard                   ConfigResult
-	MetricEventsEnabled         bool
-	MetricEvents                []ConfigResult
+// SLI struct for SLI.yaml
+type SLI struct {
+	SpecVersion string            `yaml:"spec_version"`
+	Indicators  map[string]string `yaml:"indicators"`
 }

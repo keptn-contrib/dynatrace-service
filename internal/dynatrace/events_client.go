@@ -31,7 +31,7 @@ func (ec *EventsClient) sendEvent(dtEvent interface{}) (string, error) {
 		return "", fmt.Errorf("could not create event: %v", err)
 	}
 
-	return body, nil
+	return string(body), nil
 }
 
 // SendEvent sends an event to the Dynatrace events API and logs errors if necessary

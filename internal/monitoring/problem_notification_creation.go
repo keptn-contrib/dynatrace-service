@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -20,9 +20,9 @@ func NewProblemNotificationCreation(client *dynatrace.Client) *ProblemNotificati
 }
 
 // Create sets up/updates the DT problem notification and returns it
-func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
-	if !lib.IsProblemNotificationsGenerationEnabled() {
-		return dynatrace.ConfigResult{}
+func (pn *ProblemNotificationCreation) Create() ConfigResult {
+	if !env.IsProblemNotificationsGenerationEnabled() {
+		return ConfigResult{}
 	}
 
 	log.Info("Setting up problem notifications in Dynatrace Tenant")
@@ -31,7 +31,7 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 		dynatrace.NewAlertingProfilesClient(pn.client))
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
-		return dynatrace.ConfigResult{
+		return ConfigResult{
 			Success: false,
 			Message: "failed to set up problem notification: " + err.Error(),
 		}
@@ -46,22 +46,22 @@ func (pn *ProblemNotificationCreation) Create() dynatrace.ConfigResult {
 	keptnCredentials, err := credentials.GetKeptnCredentials()
 	if err != nil {
 		log.WithError(err).Error("Failed to retrieve Keptn API credentials")
-		return dynatrace.ConfigResult{
+		return ConfigResult{
 			Success: false,
 			Message: "failed to retrieve Keptn API credentials: " + err.Error(),
 		}
 	}
 
-	_, err = notificationsClient.Create(keptnCredentials, alertingProfileId)
+	err = notificationsClient.Create(keptnCredentials, alertingProfileId)
 	if err != nil {
 		log.WithError(err).Error("Failed to create problem notification")
-		return dynatrace.ConfigResult{
+		return ConfigResult{
 			Success: false,
 			Message: "failed to set up problem notification: " + err.Error(),
 		}
 	}
 
-	return dynatrace.ConfigResult{
+	return ConfigResult{
 		Success: true,
 		Message: "Successfully set up Keptn Alerting Profile and Problem Notifications",
 	}

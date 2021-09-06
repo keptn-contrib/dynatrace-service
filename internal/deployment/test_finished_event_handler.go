@@ -7,24 +7,24 @@ import (
 )
 
 type TestFinishedEventHandler struct {
-	event  *TestFinishedAdapter
-	client *dynatrace.Client
-	config *config.DynatraceConfigFile
+	event       *TestFinishedAdapter
+	client      *dynatrace.Client
+	attachRules *config.DtAttachRules
 }
 
 // NewTestFinishedEventHandler creates a new TestFinishedEventHandler
-func NewTestFinishedEventHandler(event *TestFinishedAdapter, client *dynatrace.Client, config *config.DynatraceConfigFile) *TestFinishedEventHandler {
+func NewTestFinishedEventHandler(event *TestFinishedAdapter, client *dynatrace.Client, attachRules *config.DtAttachRules) *TestFinishedEventHandler {
 	return &TestFinishedEventHandler{
-		event:  event,
-		client: client,
-		config: config,
+		event:       event,
+		client:      client,
+		attachRules: attachRules,
 	}
 }
 
 // HandleEvent handles an action finished event
 func (eh *TestFinishedEventHandler) HandleEvent() error {
 	// Send Annotation Event
-	ae := event.CreateAnnotationEvent(eh.event, eh.config)
+	ae := event.CreateAnnotationEvent(eh.event, eh.attachRules)
 	if ae.AnnotationType == "" {
 		ae.AnnotationType = "Stop Tests"
 	}

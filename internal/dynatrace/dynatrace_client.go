@@ -3,71 +3,74 @@ package dynatrace
 import (
 	"bytes"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
+type EnvironmentAPIv2Error struct {
+	Error struct {
+		Code                 int    `json:"code"`
+		Message              string `json:"message"`
+		ConstraintViolations []struct {
+			Path              string `json:"path"`
+			Message           string `json:"message"`
+			ParameterLocation string `json:"parameterLocation"`
+			Location          string `json:"location"`
+		} `json:"constraintViolations"`
+	} `json:"error"`
+}
+
 type Client struct {
 	DynatraceCreds *credentials.DTCredentials
+	HTTPClient     *http.Client
 }
 
 // NewClient creates a new Client
 func NewClient(dynatraceCreds *credentials.DTCredentials) *Client {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !env.IsHttpSSLVerificationEnabled()},
+		Proxy:           http.ProxyFromEnvironment,
+	}
 	return &Client{
 		DynatraceCreds: dynatraceCreds,
+		HTTPClient:     &http.Client{Transport: tr},
 	}
 }
 
-func (dt *Client) Get(apiPath string) (string, error) {
+func (dt *Client) Get(apiPath string) ([]byte, error) {
 	return dt.sendRequest(apiPath, http.MethodGet, nil)
 }
 
-func (dt *Client) Post(apiPath string, body []byte) (string, error) {
+func (dt *Client) Post(apiPath string, body []byte) ([]byte, error) {
 	return dt.sendRequest(apiPath, http.MethodPost, body)
 }
 
-func (dt *Client) Put(apiPath string, body []byte) (string, error) {
+func (dt *Client) Put(apiPath string, body []byte) ([]byte, error) {
 	return dt.sendRequest(apiPath, http.MethodPut, body)
 }
 
-func (dt *Client) Delete(apiPath string) (string, error) {
+func (dt *Client) Delete(apiPath string) ([]byte, error) {
 	return dt.sendRequest(apiPath, http.MethodDelete, nil)
 }
 
 // sendRequest makes an Dynatrace API request and returns the response
-func (dt *Client) sendRequest(apiPath string, method string, body []byte) (string, error) {
-
-	if common.RunLocal || common.RunLocalTest {
-		log.WithFields(
-			log.Fields{
-				"tenant": dt.DynatraceCreds.Tenant,
-				"body":   string(body),
-			}).Info("Dynatrace.sendRequest(RUNLOCAL) - not sending event to tenant")
-		return "", nil
-	}
+func (dt *Client) sendRequest(apiPath string, method string, body []byte) ([]byte, error) {
 
 	req, err := dt.createRequest(apiPath, method, body)
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %v", err)
+		return nil, fmt.Errorf("failed to create request: %v", err)
 	}
 
-	client, err := dt.createClient(req)
+	response, err := dt.doRequest(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to create client: %v", err)
-	}
-
-	response, err := dt.doRequest(client, req)
-	if err != nil {
-		return "", fmt.Errorf("failed to do request: %v", err)
+		return response, fmt.Errorf("failed to do request: %v", err)
 	}
 
 	return response, nil
@@ -94,33 +97,29 @@ func (dt *Client) createRequest(apiPath string, method string, body []byte) (*ht
 	return req, nil
 }
 
-// creates http client with proxy and TLS configuration
-func (dt *Client) createClient(req *http.Request) (*http.Client, error) {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !lib.IsHttpSSLVerificationEnabled()},
-		Proxy:           http.ProxyFromEnvironment,
-	}
-	client := &http.Client{Transport: tr}
-
-	return client, nil
-}
-
 // performs the request and reads the response
-func (dt *Client) doRequest(client *http.Client, req *http.Request) (string, error) {
-	resp, err := client.Do(req)
+func (dt *Client) doRequest(req *http.Request) ([]byte, error) {
+	resp, err := dt.HTTPClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to send Dynatrace API request: %v", err)
+		return nil, fmt.Errorf("failed to send Dynatrace API request: %v", err)
 	}
 
 	defer resp.Body.Close()
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to read response body: %v", err)
+		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return string(responseBody), fmt.Errorf("api request failed with status %s and response %s", resp.Status, string(responseBody))
+
+		// try to get the error information
+		dtAPIError := &EnvironmentAPIv2Error{}
+		err := json.Unmarshal(responseBody, dtAPIError)
+		if err != nil {
+			return responseBody, fmt.Errorf("request to Dynatrace API returned status code %d and response %s", resp.StatusCode, string(responseBody))
+		}
+		return responseBody, fmt.Errorf("request to Dynatrace API returned error %d: %s", dtAPIError.Error.Code, dtAPIError.Error.Message)
 	}
 
-	return string(responseBody), nil
+	return responseBody, nil
 }

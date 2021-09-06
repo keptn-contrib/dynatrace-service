@@ -4,7 +4,6 @@
 package credentials_mock
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"sync"
 )
@@ -15,7 +14,7 @@ import (
 //
 // 		// make and configure a mocked credentials.CredentialManagerInterface
 // 		mockedCredentialManagerInterface := &CredentialManagerInterfaceMock{
-// 			GetDynatraceCredentialsFunc: func(dynatraceConfig *config.DynatraceConfigFile) (*credentials.DTCredentials, error) {
+// 			GetDynatraceCredentialsFunc: func(secretName string) (*credentials.DTCredentials, error) {
 // 				panic("mock out the GetDynatraceCredentials method")
 // 			},
 // 			GetKeptnAPICredentialsFunc: func() (*credentials.KeptnAPICredentials, error) {
@@ -29,7 +28,7 @@ import (
 // 	}
 type CredentialManagerInterfaceMock struct {
 	// GetDynatraceCredentialsFunc mocks the GetDynatraceCredentials method.
-	GetDynatraceCredentialsFunc func(dynatraceConfig *config.DynatraceConfigFile) (*credentials.DTCredentials, error)
+	GetDynatraceCredentialsFunc func(secretName string) (*credentials.DTCredentials, error)
 
 	// GetKeptnAPICredentialsFunc mocks the GetKeptnAPICredentials method.
 	GetKeptnAPICredentialsFunc func() (*credentials.KeptnAPICredentials, error)
@@ -38,8 +37,8 @@ type CredentialManagerInterfaceMock struct {
 	calls struct {
 		// GetDynatraceCredentials holds details about calls to the GetDynatraceCredentials method.
 		GetDynatraceCredentials []struct {
-			// DynatraceConfig is the dynatraceConfig argument value.
-			DynatraceConfig *config.DynatraceConfigFile
+			// SecretName is the secretName argument value.
+			SecretName string
 		}
 		// GetKeptnAPICredentials holds details about calls to the GetKeptnAPICredentials method.
 		GetKeptnAPICredentials []struct {
@@ -50,29 +49,29 @@ type CredentialManagerInterfaceMock struct {
 }
 
 // GetDynatraceCredentials calls GetDynatraceCredentialsFunc.
-func (mock *CredentialManagerInterfaceMock) GetDynatraceCredentials(dynatraceConfig *config.DynatraceConfigFile) (*credentials.DTCredentials, error) {
+func (mock *CredentialManagerInterfaceMock) GetDynatraceCredentials(secretName string) (*credentials.DTCredentials, error) {
 	if mock.GetDynatraceCredentialsFunc == nil {
 		panic("CredentialManagerInterfaceMock.GetDynatraceCredentialsFunc: method is nil but CredentialManagerInterface.GetDynatraceCredentials was just called")
 	}
 	callInfo := struct {
-		DynatraceConfig *config.DynatraceConfigFile
+		SecretName string
 	}{
-		DynatraceConfig: dynatraceConfig,
+		SecretName: secretName,
 	}
 	mock.lockGetDynatraceCredentials.Lock()
 	mock.calls.GetDynatraceCredentials = append(mock.calls.GetDynatraceCredentials, callInfo)
 	mock.lockGetDynatraceCredentials.Unlock()
-	return mock.GetDynatraceCredentialsFunc(dynatraceConfig)
+	return mock.GetDynatraceCredentialsFunc(secretName)
 }
 
 // GetDynatraceCredentialsCalls gets all the calls that were made to GetDynatraceCredentials.
 // Check the length with:
 //     len(mockedCredentialManagerInterface.GetDynatraceCredentialsCalls())
 func (mock *CredentialManagerInterfaceMock) GetDynatraceCredentialsCalls() []struct {
-	DynatraceConfig *config.DynatraceConfigFile
+	SecretName string
 } {
 	var calls []struct {
-		DynatraceConfig *config.DynatraceConfigFile
+		SecretName string
 	}
 	mock.lockGetDynatraceCredentials.RLock()
 	calls = mock.calls.GetDynatraceCredentials

@@ -20,14 +20,14 @@ func NewProblemsClient(client *Client) *ProblemsClient {
 }
 
 // addProblemComment sends a comment on a DT problem
-func (pc *ProblemsClient) addProblemComment(problemID string, comment string) (string, error) {
+func (pc *ProblemsClient) addProblemComment(problemID string, comment string) ([]byte, error) {
 	payload := map[string]string{"comment": comment, "user": "keptn", "context": "keptn-remediation"}
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return pc.client.Post(problemDetailsPath+"/"+problemID+"/comments", []byte(jsonPayload))
+	return pc.client.Post(problemDetailsPath+"/"+problemID+"/comments", jsonPayload)
 }
 
 // AddProblemComment sends a comment on a DT problem and logs errors if necessary
@@ -39,5 +39,5 @@ func (pc *ProblemsClient) AddProblemComment(pid string, comment string) {
 		return
 	}
 
-	log.WithField("response", response).Info("Received problem comment response")
+	log.WithField("response", string(response)).Info("Received problem comment response")
 }

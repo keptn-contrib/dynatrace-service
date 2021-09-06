@@ -1,8 +1,9 @@
-package dynatrace
+package sli
 
 import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"time"
 )
 
@@ -11,7 +12,7 @@ type DashboardLink struct {
 	startTimestamp  time.Time
 	endTimestamp    time.Time
 	dashboardID     string
-	dashboardFilter *DashboardFilter
+	dashboardFilter *dynatrace.DashboardFilter
 }
 
 func NewDashboardLink(
@@ -19,7 +20,7 @@ func NewDashboardLink(
 	startTimestamp time.Time,
 	endTimestamp time.Time,
 	dashboardID string,
-	dashboardFilter *DashboardFilter) *DashboardLink {
+	dashboardFilter *dynatrace.DashboardFilter) *DashboardLink {
 	return &DashboardLink{
 		apiURL:          apiURL,
 		startTimestamp:  startTimestamp,

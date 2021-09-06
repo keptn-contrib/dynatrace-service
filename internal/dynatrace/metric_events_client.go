@@ -60,7 +60,7 @@ func (mec *MetricEventsClient) getAll() (*DTAPIListResponse, error) {
 	}
 
 	response := &DTAPIListResponse{}
-	err = json.Unmarshal([]byte(res), response)
+	err = json.Unmarshal(res, response)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse list of existing Dynatrace metric events: %v", err)
 	}
@@ -75,7 +75,7 @@ func (mec *MetricEventsClient) getByID(metricEventID string) (*MetricEvent, erro
 	}
 
 	retrievedMetricEvent := &MetricEvent{}
-	err = json.Unmarshal([]byte(res), retrievedMetricEvent)
+	err = json.Unmarshal(res, retrievedMetricEvent)
 	if err != nil {
 		return nil, err
 	}
@@ -83,41 +83,41 @@ func (mec *MetricEventsClient) getByID(metricEventID string) (*MetricEvent, erro
 	return retrievedMetricEvent, nil
 }
 
-func (mec *MetricEventsClient) Create(metricEvent *MetricEvent) (string, error) {
+func (mec *MetricEventsClient) Create(metricEvent *MetricEvent) error {
 	mePayload, err := json.Marshal(metricEvent)
 	if err != nil {
-		return "", fmt.Errorf("could not marshal metric event: %v", err)
+		return fmt.Errorf("could not marshal metric event: %v", err)
 	}
 
-	res, err := mec.client.Post(metricEventsPath, mePayload)
+	_, err = mec.client.Post(metricEventsPath, mePayload)
 	if err != nil {
-		return "", fmt.Errorf("could not create metric event: %v", err)
+		return fmt.Errorf("could not create metric event: %v", err)
 	}
 
-	return res, nil
+	return nil
 }
 
-func (mec *MetricEventsClient) Update(metricEvent *MetricEvent) (string, error) {
+func (mec *MetricEventsClient) Update(metricEvent *MetricEvent) error {
 	mePayload, err := json.Marshal(metricEvent)
 	if err != nil {
-		return "", fmt.Errorf("could not marshal metric event: %v", err)
+		return fmt.Errorf("could not marshal metric event: %v", err)
 	}
 
-	res, err := mec.client.Put(metricEventsPath, mePayload)
+	_, err = mec.client.Put(metricEventsPath, mePayload)
 	if err != nil {
-		return "", fmt.Errorf("could not create metric event: %v", err)
+		return fmt.Errorf("could not create metric event: %v", err)
 	}
 
-	return res, nil
+	return nil
 }
 
-func (mec *MetricEventsClient) deleteByID(metricEventID string) (string, error) {
-	res, err := mec.client.Delete(metricEventsPath + "/" + metricEventID)
+func (mec *MetricEventsClient) deleteByID(metricEventID string) error {
+	_, err := mec.client.Delete(metricEventsPath + "/" + metricEventID)
 	if err != nil {
-		return "", fmt.Errorf("could not delete metric event with ID: %s, %v", metricEventID, err)
+		return fmt.Errorf("could not delete metric event with ID: %s, %v", metricEventID, err)
 	}
 
-	return res, nil
+	return nil
 }
 
 // GetMetricEventByName retrieves the MetricEvent identified by metricEventName, or nil if not found
@@ -151,7 +151,7 @@ func (mec *MetricEventsClient) DeleteMetricEventByName(metricEventName string) e
 
 	for _, metricEvent := range res.Values {
 		if metricEvent.Name == metricEventName {
-			_, err := mec.deleteByID(metricEvent.ID)
+			err := mec.deleteByID(metricEvent.ID)
 			if err != nil {
 				log.WithError(err).WithField("eventKey", metricEventName).Error("Could not delete existing metric event")
 				return err

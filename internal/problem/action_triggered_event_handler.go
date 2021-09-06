@@ -11,17 +11,17 @@ import (
 )
 
 type ActionTriggeredEventHandler struct {
-	event  *ActionTriggeredAdapter
-	client *dynatrace.Client
-	config *config.DynatraceConfigFile
+	event       *ActionTriggeredAdapter
+	client      *dynatrace.Client
+	attachRules *config.DtAttachRules
 }
 
 // NewActionTriggeredEventHandler creates a new ActionTriggeredEventHandler
-func NewActionTriggeredEventHandler(event *ActionTriggeredAdapter, client *dynatrace.Client, config *config.DynatraceConfigFile) *ActionTriggeredEventHandler {
+func NewActionTriggeredEventHandler(event *ActionTriggeredAdapter, client *dynatrace.Client, attachRules *config.DtAttachRules) *ActionTriggeredEventHandler {
 	return &ActionTriggeredEventHandler{
-		event:  event,
-		client: client,
-		config: config,
+		event:       event,
+		client:      client,
+		attachRules: attachRules,
 	}
 }
 
@@ -45,7 +45,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent() error {
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// In addition to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-	dtInfoEvent := event.CreateInfoEvent(eh.event, eh.config)
+	dtInfoEvent := event.CreateInfoEvent(eh.event, eh.attachRules)
 	dtInfoEvent.Title = "Keptn Remediation Action Triggered"
 	dtInfoEvent.Description = eh.event.GetAction()
 
