@@ -55,13 +55,13 @@ func NewNotificationsClient(client ClientInterface) *NotificationsClient {
 	}
 }
 
-func (nc *NotificationsClient) getAll() (*DTAPIListResponse, error) {
+func (nc *NotificationsClient) getAll() (*listResponse, error) {
 	response, err := nc.client.Get(notificationsPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve notifications: %v", err)
 	}
 
-	existingNotifications := &DTAPIListResponse{}
+	existingNotifications := &listResponse{}
 	err = json.Unmarshal(response, existingNotifications)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal notifications: %v", err)

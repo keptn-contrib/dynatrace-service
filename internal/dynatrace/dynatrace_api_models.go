@@ -5,15 +5,15 @@ const KeptnStage = "keptn_stage"
 
 const ServiceEntityType = "SERVICE"
 
-type DTAPIListResponse struct {
-	Values []Values `json:"values"`
+type listResponse struct {
+	Values []values `json:"values"`
 }
-type Values struct {
+type values struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
-func (response *DTAPIListResponse) ToStringSetWith(mapper func(Values) string) *StringSet {
+func (response *listResponse) ToStringSetWith(mapper func(values) string) *StringSet {
 	stringSet := &StringSet{
 		values: make(map[string]struct{}, len(response.Values)),
 	}

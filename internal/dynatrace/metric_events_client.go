@@ -53,13 +53,13 @@ func NewMetricEventsClient(client ClientInterface) *MetricEventsClient {
 	}
 }
 
-func (mec *MetricEventsClient) getAll() (*DTAPIListResponse, error) {
+func (mec *MetricEventsClient) getAll() (*listResponse, error) {
 	res, err := mec.client.Get(metricEventsPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve list of existing Dynatrace metric events: %v", err)
 	}
 
-	response := &DTAPIListResponse{}
+	response := &listResponse{}
 	err = json.Unmarshal(res, response)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse list of existing Dynatrace metric events: %v", err)
