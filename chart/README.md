@@ -26,6 +26,7 @@ The following table lists the configurable parameters of the *dynatrace-service*
 | `dynatraceService.config.httpProxy` | Proxy for HTTP requests | `""` |
 | `dynatraceService.config.httpsProxy` | Proxy for HTTPS requests | `""` |
 | `dynatraceService.config.noProxy` | Proxy exceptions for HTTP and HTTPS requests | `"127.0.0.1,mongodb-datastore,configuration-service,shipyard-controller"` |
+| `dynatraceService.config.logLevel`| Minimum log level to log | `info` |
 | `distributor.stageFilter` | Sets the stage this *dynatrace-service* belongs to | `""` |
 | `distributor.serviceFilter` | Sets the service this *dynatrace-service* belongs to | `""` |
 | `distributor.projectFilter` | Sets the project this *dynatrace-service* belongs to | `""` |
