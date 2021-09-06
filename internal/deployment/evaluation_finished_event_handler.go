@@ -10,13 +10,13 @@ import (
 )
 
 type EvaluationFinishedEventHandler struct {
-	event       *EvaluationFinishedAdapter
+	event       EvaluationFinishedAdapterInterface
 	client      *dynatrace.Client
 	attachRules *config.DtAttachRules
 }
 
 // NewEvaluationFinishedEventHandler creates a new EvaluationFinishedEventHandler
-func NewEvaluationFinishedEventHandler(event *EvaluationFinishedAdapter, client *dynatrace.Client, attachRules *config.DtAttachRules) *EvaluationFinishedEventHandler {
+func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface, client *dynatrace.Client, attachRules *config.DtAttachRules) *EvaluationFinishedEventHandler {
 	return &EvaluationFinishedEventHandler{
 		event:       event,
 		client:      client,
