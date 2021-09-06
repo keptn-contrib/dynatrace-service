@@ -5,13 +5,13 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"k8s.io/client-go/rest"
 	"net/http"
 	"os"
 	"strings"
 
 	"k8s.io/client-go/kubernetes"
 
+	keptnkubeutils "github.com/keptn/kubernetes-utils/pkg"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,11 +31,8 @@ var namespace = getPodNamespace()
 var ErrSecretNotFound = errors.New("secret not found")
 
 func getKubernetesClient() (*kubernetes.Clientset, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	return kubernetes.NewForConfig(config)
+	useInClusterConfig := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
+	return keptnkubeutils.GetClientset(useInClusterConfig)
 }
 
 func getPodNamespace() string {

@@ -73,6 +73,8 @@ spec:
               value: '{{ .Values.dynatraceService.config.httpsProxy }}'
             - name: NO_PROXY
               value: '{{ .Values.dynatraceService.config.noProxy }}'
+            - name: LOG_LEVEL_DYNATRACE_SERVICE
+              value: '{{ .Values.dynatraceService.config.logLevel }}'
             - name: KEPTN_API_URL
               value: '{{ .Values.dynatraceService.config.keptnApiUrl }}'
             - name: KEPTN_BRIDGE_URL

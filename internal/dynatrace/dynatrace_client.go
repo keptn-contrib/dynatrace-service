@@ -5,11 +5,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
@@ -84,6 +86,8 @@ func (dt *Client) createRequest(apiPath string, method string, body []byte) (*ht
 	} else {
 		url = dt.DynatraceCreds.Tenant + apiPath
 	}
+
+	log.WithFields(log.Fields{"method": method, "url": url}).Debug("creating Dynatrace API request")
 
 	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 	if err != nil {

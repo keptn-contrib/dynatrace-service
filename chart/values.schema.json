@@ -108,8 +108,10 @@
             },
             "noProxy": {
               "type": "string"
+            },
+            "logLevel": {
+              "type": "string"
             }
-
           }
         }
       }
