@@ -3,9 +3,7 @@ package problem
 import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -13,11 +11,11 @@ import (
 type ActionFinishedEventHandler struct {
 	event       ActionFinishedAdapterInterface
 	client      dynatrace.ClientInterface
-	attachRules *config.DtAttachRules
+	attachRules *dynatrace.DtAttachRules
 }
 
 // NewActionFinishedEventHandler creates a new ActionFinishedEventHandler
-func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *config.DtAttachRules) *ActionFinishedEventHandler {
+func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.DtAttachRules) *ActionFinishedEventHandler {
 	return &ActionFinishedEventHandler{
 		event:       event,
 		client:      client,
@@ -44,17 +42,17 @@ func (eh *ActionFinishedEventHandler) HandleEvent() error {
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// Additionally to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 	if eh.event.GetStatus() == keptnv2.StatusSucceeded {
-		dtConfigEvent := event.CreateConfigurationEvent(eh.event, eh.attachRules)
+		dtConfigEvent := dynatrace.CreateConfigurationEventDTO(eh.event, eh.attachRules)
 		dtConfigEvent.Description = "Keptn Remediation Action Finished"
 		dtConfigEvent.Configuration = "successful"
 
-		dynatrace.NewEventsClient(eh.client).SendEvent(dtConfigEvent)
+		dynatrace.NewEventsClient(eh.client).AddConfigurationEvent(dtConfigEvent)
 	} else {
-		dtInfoEvent := event.CreateInfoEvent(eh.event, eh.attachRules)
+		dtInfoEvent := dynatrace.CreateInfoEventDTO(eh.event, eh.attachRules)
 		dtInfoEvent.Title = "Keptn Remediation Action Finished"
 		dtInfoEvent.Description = "error during execution"
 
-		dynatrace.NewEventsClient(eh.client).SendEvent(dtInfoEvent)
+		dynatrace.NewEventsClient(eh.client).AddInfoEvent(dtInfoEvent)
 	}
 
 	dynatrace.NewProblemsClient(eh.client).AddProblemComment(pid, comment)

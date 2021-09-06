@@ -1,19 +1,17 @@
 package deployment
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 )
 
 type DeploymentFinishedEventHandler struct {
 	event       DeploymentFinishedAdapterInterface
 	client      dynatrace.ClientInterface
-	attachRules *config.DtAttachRules
+	attachRules *dynatrace.DtAttachRules
 }
 
 // NewDeploymentFinishedEventHandler creates a new DeploymentFinishedEventHandler
-func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *config.DtAttachRules) *DeploymentFinishedEventHandler {
+func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.DtAttachRules) *DeploymentFinishedEventHandler {
 	return &DeploymentFinishedEventHandler{
 		event:       event,
 		client:      client,
@@ -24,9 +22,9 @@ func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface,
 // HandleEvent handles an action finished event
 func (eh *DeploymentFinishedEventHandler) HandleEvent() error {
 	// send Deployment Event
-	de := event.CreateDeploymentEvent(eh.event, eh.attachRules)
+	de := dynatrace.CreateDeploymentEventDTO(eh.event, eh.attachRules)
 
-	dynatrace.NewEventsClient(eh.client).SendEvent(de)
+	dynatrace.NewEventsClient(eh.client).AddDeploymentEvent(de)
 
 	return nil
 }

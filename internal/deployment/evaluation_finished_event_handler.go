@@ -3,20 +3,18 @@ package deployment
 import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 type EvaluationFinishedEventHandler struct {
 	event       EvaluationFinishedAdapterInterface
 	client      dynatrace.ClientInterface
-	attachRules *config.DtAttachRules
+	attachRules *dynatrace.DtAttachRules
 }
 
 // NewEvaluationFinishedEventHandler creates a new EvaluationFinishedEventHandler
-func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *config.DtAttachRules) *EvaluationFinishedEventHandler {
+func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.DtAttachRules) *EvaluationFinishedEventHandler {
 	return &EvaluationFinishedEventHandler{
 		event:       event,
 		client:      client,
@@ -27,7 +25,7 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 // HandleEvent handles an action finished event
 func (eh *EvaluationFinishedEventHandler) HandleEvent() error {
 	// Send Info Event
-	ie := event.CreateInfoEvent(eh.event, eh.attachRules)
+	ie := dynatrace.CreateInfoEventDTO(eh.event, eh.attachRules)
 	qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore())
 	ie.Title = fmt.Sprintf("Evaluation result: %s", eh.event.GetResult())
 
@@ -49,7 +47,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent() error {
 	}
 	ie.Description = qualityGateDescription
 
-	dynatrace.NewEventsClient(eh.client).SendEvent(ie)
+	dynatrace.NewEventsClient(eh.client).AddInfoEvent(ie)
 
 	return nil
 }
