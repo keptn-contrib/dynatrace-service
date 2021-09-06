@@ -352,7 +352,7 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 	assert.NotNil(t, err, nil)
 }
 
-func createDynatraceHandler(keptnEvent *BaseKeptnEvent, httpClient *http.Client) *Retrieval {
+func createDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, httpClient *http.Client) *Retrieval {
 	dh := NewRetrieval(
 		keptnEvent,
 		dynatrace.NewClient(

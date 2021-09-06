@@ -27,14 +27,14 @@ import (
 const ProblemOpenSLI = "problem_open"
 
 type GetSLIEventHandler struct {
-	event      *GetSLITriggeredAdapter
+	event      GetSLITriggeredAdapterInterface
 	dtClient   *dynatrace.Client
 	kClient    *keptn.Client
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event *GetSLITriggeredAdapter, dtClient *dynatrace.Client, kClient *keptn.Client, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient *dynatrace.Client, kClient *keptn.Client, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:      event,
 		dtClient:   dtClient,
@@ -210,7 +210,7 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
  *
  * Will evaluate the event and - if it finds a dynatrace problem ID - will return this - otherwise it will return 0
  */
-func getDynatraceProblemContext(eventData *GetSLITriggeredAdapter) string {
+func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) string {
 
 	// iterate through the labels and find Problem URL
 	if eventData.GetLabels() == nil || len(eventData.GetLabels()) == 0 {
@@ -250,7 +250,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		}).Info("Processing sh.keptn.internal.event.get-sli")
 
 	// Adding DtCreds as a label so users know which DtCreds was used
-	eh.event.addLabel("DtCreds", eh.secretName)
+	eh.event.AddLabel("DtCreds", eh.secretName)
 
 	//
 	// creating Dynatrace Retrieval which allows us to call the Dynatrace API
@@ -279,7 +279,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	// add link to dynatrace dashboard to labels
 	if dashboardLinkAsLabel != nil {
-		eh.event.addLabel("Dashboard Link", dashboardLinkAsLabel.String())
+		eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
 	}
 
 	//
@@ -378,7 +378,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 /**
  * Sends the SLI Done Event. If err != nil it will send an error message
  */
-func sendGetSLIFinishedEvent(eventData *GetSLITriggeredAdapter, indicatorValues []*keptnv2.SLIResult, err error) error {
+func sendGetSLIFinishedEvent(eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) error {
 
 	// if an error was set - the indicators will be set to failed and error message is set to each
 	indicatorValues = resetIndicatorsInCaseOfError(err, eventData, indicatorValues)
@@ -411,7 +411,7 @@ func sendGetSLIFinishedEvent(eventData *GetSLITriggeredAdapter, indicatorValues 
 	return sendEvent(ev)
 }
 
-func resetIndicatorsInCaseOfError(err error, eventData *GetSLITriggeredAdapter, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
+func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
 	if err != nil {
 		indicators := eventData.GetIndicators()
 		if (indicatorValues == nil) || (len(indicatorValues) == 0) {
@@ -439,7 +439,7 @@ func resetIndicatorsInCaseOfError(err error, eventData *GetSLITriggeredAdapter, 
 	return indicatorValues
 }
 
-func sendGetSLIStartedEvent(eventData *GetSLITriggeredAdapter) error {
+func sendGetSLIStartedEvent(eventData GetSLITriggeredAdapterInterface) error {
 
 	getSLIStartedEvent := keptnv2.GetSLIStartedEventData{
 		EventData: keptnv2.EventData{

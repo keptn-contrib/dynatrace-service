@@ -31,42 +31,42 @@ type BaseKeptnEvent struct {
 }
 
 // GetShKeptnContext returns the shkeptncontext
-func (e BaseKeptnEvent) GetShKeptnContext() string {
+func (e *BaseKeptnEvent) GetShKeptnContext() string {
 	return e.Context
 }
 
 // GetSource returns the source specified in the CloudEvent context
-func (e BaseKeptnEvent) GetSource() string {
+func (e *BaseKeptnEvent) GetSource() string {
 	return e.Source
 }
 
 // GetEvent returns the event type
-func (e BaseKeptnEvent) GetEvent() string {
+func (e *BaseKeptnEvent) GetEvent() string {
 	return e.Event
 }
 
 // GetProject returns the project
-func (e BaseKeptnEvent) GetProject() string {
+func (e *BaseKeptnEvent) GetProject() string {
 	return e.Project
 }
 
 // GetStage returns the stage
-func (e BaseKeptnEvent) GetStage() string {
+func (e *BaseKeptnEvent) GetStage() string {
 	return e.Stage
 }
 
 // GetService returns the service
-func (e BaseKeptnEvent) GetService() string {
+func (e *BaseKeptnEvent) GetService() string {
 	return e.Service
 }
 
 // GetDeployment returns the name of the deployment
-func (e BaseKeptnEvent) GetDeployment() string {
+func (e *BaseKeptnEvent) GetDeployment() string {
 	return e.Deployment
 }
 
 // GetTestStrategy returns the used test strategy
-func (e BaseKeptnEvent) GetTestStrategy() string {
+func (e *BaseKeptnEvent) GetTestStrategy() string {
 	return e.TestStrategy
 }
 
@@ -76,42 +76,50 @@ func (e BaseKeptnEvent) GetDeploymentStrategy() string {
 }
 
 // GetImage returns the deployed image
-func (e BaseKeptnEvent) GetImage() string {
+func (e *BaseKeptnEvent) GetImage() string {
 	return e.Image
 }
 
 // GetTag returns the deployed tag
-func (e BaseKeptnEvent) GetTag() string {
+func (e *BaseKeptnEvent) GetTag() string {
 	return e.Tag
 }
 
 // GetLabels returns a map of labels
-func (e BaseKeptnEvent) GetLabels() map[string]string {
+func (e *BaseKeptnEvent) GetLabels() map[string]string {
 	return e.Labels
 }
 
-func (e BaseKeptnEvent) IsNotForDynatrace() bool {
+func (e *BaseKeptnEvent) IsNotForDynatrace() bool {
 	return e.IsForDynatrace
 }
 
-func (e BaseKeptnEvent) GetSLIStart() string {
+func (e *BaseKeptnEvent) GetSLIStart() string {
 	return e.SLIStart
 }
 
-func (e BaseKeptnEvent) GetSLIEnd() string {
+func (e *BaseKeptnEvent) GetSLIEnd() string {
 	return e.SLIEnd
 }
 
-func (e BaseKeptnEvent) GetIndicators() []string {
+func (e *BaseKeptnEvent) GetIndicators() []string {
 	return e.Indicators
 }
 
-func (e BaseKeptnEvent) GetCustomSLIFilters() []*keptnv2.SLIFilter {
+func (e *BaseKeptnEvent) GetCustomSLIFilters() []*keptnv2.SLIFilter {
 	return e.SLIFilters
 }
 
-func (e BaseKeptnEvent) GetEventID() string {
+func (e *BaseKeptnEvent) GetEventID() string {
 	return e.ID
+}
+
+func (e *BaseKeptnEvent) AddLabel(key string, value string) {
+	if e.Labels == nil {
+		e.Labels = make(map[string]string)
+	}
+
+	e.Labels[key] = value
 }
 
 type KeptnClientMock struct{}
