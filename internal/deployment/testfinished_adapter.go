@@ -36,7 +36,7 @@ func NewTestFinishedAdapterFromEvent(e cloudevents.Event) (*TestFinishedAdapter,
 
 // GetShKeptnContext returns the shkeptncontext
 func (a TestFinishedAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.Context()
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context

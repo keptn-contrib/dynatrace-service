@@ -40,7 +40,7 @@ func NewProjectCreateAdapterFromEvent(e cloudevents.Event) (*ProjectCreateAdapte
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ProjectCreateAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.Context()
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context

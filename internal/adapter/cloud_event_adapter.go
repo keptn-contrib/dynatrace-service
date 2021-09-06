@@ -25,8 +25,7 @@ func NewCloudEventAdapter(ce cloudevents.Event) CloudEventAdapter {
 	return CloudEventAdapter{ce: ce}
 }
 
-func (a CloudEventAdapter) Context() string {
-	// TODO 2021-08-27: remove event/helper.go GetShKeptnContext() later on
+func (a CloudEventAdapter) ShKeptnContext() string {
 	context, err := types.ToString(a.ce.Context.GetExtensions()[shKeptnContext])
 	if err != nil {
 		log.WithError(err).Debug("Event does not contain " + shKeptnContext)

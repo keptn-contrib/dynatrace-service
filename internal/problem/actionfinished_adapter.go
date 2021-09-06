@@ -39,7 +39,7 @@ func NewActionFinishedAdapterFromEvent(e cloudevents.Event) (*ActionFinishedAdap
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ActionFinishedAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.Context()
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context

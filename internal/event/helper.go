@@ -3,11 +3,8 @@ package event
 import (
 	"net/url"
 
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/cloudevents/sdk-go/v2/types"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
-	log "github.com/sirupsen/logrus"
 )
 
 type DTConfigurationEvent struct {
@@ -214,15 +211,6 @@ func CreateConfigurationEvent(a adapter.EventContentAdapter, attachRules *config
 	de.CustomProperties = customProperties
 
 	return de
-}
-
-// GetShKeptnContext extracts the keptn context from a CloudEvent
-func GetShKeptnContext(event cloudevents.Event) string {
-	shkeptncontext, err := types.ToString(event.Context.GetExtensions()["shkeptncontext"])
-	if err != nil {
-		log.WithError(err).Debug("Event does not contain shkeptncontext")
-	}
-	return shkeptncontext
 }
 
 // GetEventSource gets the source to be used for CloudEvents originating from the dynatrace-service

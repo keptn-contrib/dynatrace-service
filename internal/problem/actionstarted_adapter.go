@@ -36,7 +36,7 @@ func NewActionStartedAdapterFromEvent(e cloudevents.Event) (*ActionStartedAdapte
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ActionStartedAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.Context()
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
