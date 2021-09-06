@@ -1,12 +1,21 @@
 package adapter
 
 import (
+	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/types"
 	log "github.com/sirupsen/logrus"
 )
 
 const shKeptnContext = "shkeptncontext"
+
+type CloudEventPayloadParseError struct {
+	cause error
+}
+
+func (e *CloudEventPayloadParseError) Error() string {
+	return fmt.Sprintf("could not parse cloud event payload: %v", e.cause)
+}
 
 type CloudEventAdapter struct {
 	ce cloudevents.Event
@@ -35,4 +44,15 @@ func (a CloudEventAdapter) ID() string {
 
 func (a CloudEventAdapter) Type() string {
 	return a.ce.Type()
+}
+
+// PayloadAs attempts to populate the provided content object with the event payload. Will return an error otherwise.
+// content should be a pointer type.
+func (a CloudEventAdapter) PayloadAs(content interface{}) error {
+	err := a.ce.DataAs(content)
+	if err != nil {
+		return &CloudEventPayloadParseError{cause: err}
+	}
+
+	return nil
 }
