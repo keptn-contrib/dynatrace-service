@@ -3,46 +3,49 @@ package monitoring
 import (
 	"encoding/base64"
 	"errors"
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
-// ProjectCreateAdapter godoc
-type ProjectCreateAdapter struct {
-	event   keptnv2.ProjectCreateFinishedEventData
-	context string
-	source  string
+type ProjectCreateAdapterInterface interface {
+	adapter.EventContentAdapter
+
+	GetShipyard() (*keptnv2.Shipyard, error)
 }
 
-// NewProjectCreateAdapter godoc
-func NewProjectCreateAdapter(event keptnv2.ProjectCreateFinishedEventData, shkeptncontext, source string) ProjectCreateAdapter {
-	return ProjectCreateAdapter{event: event, context: shkeptncontext, source: source}
+// ProjectCreateAdapter encapsulates a cloud event and its parsed payload
+type ProjectCreateAdapter struct {
+	event      keptnv2.ProjectCreateFinishedEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewProjectCreateAdapterFromEvent creates a new ProjectCreateAdapter from a cloudevents Event
 func NewProjectCreateAdapterFromEvent(e cloudevents.Event) (*ProjectCreateAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	pcData := &keptnv2.ProjectCreateFinishedEventData{}
-	err := e.DataAs(pcData)
+	err := ceAdapter.PayloadAs(pcData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse project create event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewProjectCreateAdapter(*pcData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &ProjectCreateAdapter{
+		*pcData,
+		ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ProjectCreateAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.Context()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ProjectCreateAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
