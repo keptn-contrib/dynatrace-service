@@ -8,9 +8,9 @@ import (
 
 type ConfigureMonitoringAdapterInterface interface {
 	adapter.EventContentAdapter
+	adapter.CloudEventContentAdapter
 
 	IsNotForDynatrace() bool
-	GetEventID() string
 }
 
 // ConfigureMonitoringAdapter encapsulates a cloud event and its parsed payload

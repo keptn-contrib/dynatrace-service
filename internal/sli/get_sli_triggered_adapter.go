@@ -8,13 +8,13 @@ import (
 
 type GetSLITriggeredAdapterInterface interface {
 	adapter.EventContentAdapter
+	adapter.CloudEventContentAdapter
 
 	IsNotForDynatrace() bool
 	GetSLIStart() string
 	GetSLIEnd() string
 	GetIndicators() []string
 	GetCustomSLIFilters() []*keptnv2.SLIFilter
-	GetEventID() string
 	AddLabel(name string, value string)
 }
 

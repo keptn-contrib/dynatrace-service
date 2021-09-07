@@ -9,6 +9,11 @@ import (
 
 const shKeptnContext = "shkeptncontext"
 
+type CloudEventContentAdapter interface {
+	GetShKeptnContext() string
+	GetEventID() string
+}
+
 type CloudEventPayloadParseError struct {
 	cause error
 }

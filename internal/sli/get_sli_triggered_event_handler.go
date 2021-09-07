@@ -6,17 +6,13 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
 	"strings"
 	"time"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 
-	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
-
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	// configutils "github.com/keptn/go-utils/pkg/configuration-service/utils"
 	// keptnevents "github.com/keptn/go-utils/pkg/events"
@@ -29,12 +25,12 @@ const ProblemOpenSLI = "problem_open"
 type GetSLIEventHandler struct {
 	event      GetSLITriggeredAdapterInterface
 	dtClient   dynatrace.ClientInterface
-	kClient    *keptn.Client
+	kClient    keptn.ClientInterface
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient *keptn.Client, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:      event,
 		dtClient:   dtClient,
@@ -238,8 +234,8 @@ func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) strin
 // Second will go to parse the SLI.yaml and returns the SLI as passed in by the event
 func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	// send get-sli.started event
-	if err := sendGetSLIStartedEvent(eh.event); err != nil {
-		return sendGetSLIFinishedEvent(eh.event, nil, err)
+	if err := eh.sendGetSLIStartedEvent(); err != nil {
+		return eh.sendGetSLIFinishedEvent(nil, err)
 	}
 
 	log.WithFields(
@@ -261,7 +257,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	startUnix, endUnix, err := ensureRightTimestamps(eh.event.GetSLIStart(), eh.event.GetSLIEnd())
 	if err != nil {
 		log.WithError(err).Error("ensureRightTimestamps failed")
-		return sendGetSLIFinishedEvent(eh.event, nil, err)
+		return eh.sendGetSLIFinishedEvent(nil, err)
 	}
 
 	//
@@ -372,43 +368,18 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	log.Info("Finished fetching metrics; Sending SLIDone event now ...")
 
-	return sendGetSLIFinishedEvent(eh.event, sliResults, err)
+	return eh.sendGetSLIFinishedEvent(sliResults, err)
 }
 
 /**
  * Sends the SLI Done Event. If err != nil it will send an error message
  */
-func sendGetSLIFinishedEvent(eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) error {
+func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(indicatorValues []*keptnv2.SLIResult, err error) error {
 
 	// if an error was set - the indicators will be set to failed and error message is set to each
-	indicatorValues = resetIndicatorsInCaseOfError(err, eventData, indicatorValues)
+	indicatorValues = resetIndicatorsInCaseOfError(err, eh.event, indicatorValues)
 
-	getSLIEvent := keptnv2.GetSLIFinishedEventData{
-		EventData: keptnv2.EventData{
-			Project: eventData.GetProject(),
-			Stage:   eventData.GetStage(),
-			Service: eventData.GetService(),
-			Labels:  eventData.GetLabels(),
-			Status:  keptnv2.StatusSucceeded,
-			Result:  keptnv2.ResultPass,
-		},
-
-		GetSLI: keptnv2.GetSLIFinished{
-			IndicatorValues: indicatorValues,
-			Start:           eventData.GetSLIStart(),
-			End:             eventData.GetSLIEnd(),
-		},
-	}
-
-	ev := cloudevents.NewEvent()
-	ev.SetType(keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName))
-	ev.SetSource(event.GetEventSource())
-	ev.SetDataContentType(cloudevents.ApplicationJSON)
-	ev.SetExtension("shkeptncontext", eventData.GetShKeptnContext())
-	ev.SetExtension("triggeredid", eventData.GetEventID())
-	ev.SetData(cloudevents.ApplicationJSON, getSLIEvent)
-
-	return sendEvent(ev)
+	return eh.sendEvent(NewGetSLIFinishedEventFactory(eh.event, indicatorValues))
 }
 
 func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
@@ -439,39 +410,19 @@ func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInt
 	return indicatorValues
 }
 
-func sendGetSLIStartedEvent(eventData GetSLITriggeredAdapterInterface) error {
-
-	getSLIStartedEvent := keptnv2.GetSLIStartedEventData{
-		EventData: keptnv2.EventData{
-			Project: eventData.GetProject(),
-			Stage:   eventData.GetStage(),
-			Service: eventData.GetService(),
-			Labels:  eventData.GetLabels(),
-			Status:  keptnv2.StatusSucceeded,
-			Result:  keptnv2.ResultPass,
-		},
-	}
-
-	ev := cloudevents.NewEvent()
-	ev.SetType(keptnv2.GetStartedEventType(keptnv2.GetSLITaskName))
-	ev.SetSource(event.GetEventSource())
-	ev.SetDataContentType(cloudevents.ApplicationJSON)
-	ev.SetExtension("shkeptncontext", eventData.GetShKeptnContext())
-	ev.SetExtension("triggeredid", eventData.GetEventID())
-	ev.SetData(cloudevents.ApplicationJSON, getSLIStartedEvent)
-
-	return sendEvent(ev)
+func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
+	return eh.sendEvent(NewGetSliStartedEventFactory(eh.event))
 }
 
 /**
  * sends cloud event back to keptn
  */
-func sendEvent(event cloudevents.Event) error {
-
-	keptnHandler, err := keptnv2.NewKeptn(&event, keptnapi.KeptnOpts{})
+func (eh *GetSLIEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {
+	err := eh.kClient.SendCloudEvent(factory)
 	if err != nil {
+		log.WithError(err).Error("Could not send get sli cloud event")
 		return err
 	}
 
-	return keptnHandler.SendCloudEvent(event)
+	return nil
 }
