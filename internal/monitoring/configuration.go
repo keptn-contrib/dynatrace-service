@@ -4,15 +4,11 @@ import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 )
-
-type Configuration struct {
-	dtClient dynatrace.ClientInterface
-	kClient  *keptnv2.Keptn
-}
 
 // ConfiguredEntities contains information about the entities configures in Dynatrace
 type ConfiguredEntities struct {
@@ -34,7 +30,12 @@ type ConfigResult struct {
 	Message string
 }
 
-func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient *keptnv2.Keptn) *Configuration {
+type Configuration struct {
+	dtClient dynatrace.ClientInterface
+	kClient  keptn.ClientInterface
+}
+
+func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface) *Configuration {
 	return &Configuration{
 		dtClient: dynatraceClient,
 		kClient:  keptnClient,

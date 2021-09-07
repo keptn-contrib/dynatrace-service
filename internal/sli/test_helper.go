@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
@@ -126,4 +127,12 @@ type KeptnClientMock struct{}
 
 func (KeptnClientMock) GetCustomQueries(project string, stage string, service string) (*keptn.CustomQueries, error) {
 	return keptn.NewEmptyCustomQueries(), nil
+}
+
+func (KeptnClientMock) GetShipyard() (*keptnv2.Shipyard, error) {
+	return &keptnv2.Shipyard{}, nil
+}
+
+func (KeptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
+	return nil
 }

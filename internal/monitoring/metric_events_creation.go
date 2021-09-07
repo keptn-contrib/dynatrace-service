@@ -7,7 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"regexp"
 	"strconv"
 	"strings"
@@ -28,10 +27,10 @@ type CriteriaObject struct {
 
 type MetricEventCreation struct {
 	dtClient dynatrace.ClientInterface
-	kClient  *keptnv2.Keptn
+	kClient  keptn.ClientInterface
 }
 
-func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient *keptnv2.Keptn) MetricEventCreation {
+func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface) MetricEventCreation {
 	return MetricEventCreation{
 		dtClient: dynatraceClient,
 		kClient:  keptnClient,
@@ -55,7 +54,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 	// get custom metrics for project
 
-	projectCustomQueries, err := keptn.NewClient(mec.kClient).GetCustomQueries(project, stage, service)
+	projectCustomQueries, err := mec.kClient.GetCustomQueries(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithField("project", project).Error("Failed to get custom queries for project")
 		return nil

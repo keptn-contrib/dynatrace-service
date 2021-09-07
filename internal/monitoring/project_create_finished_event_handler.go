@@ -2,18 +2,18 @@ package monitoring
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	log "github.com/sirupsen/logrus"
 )
 
 type ProjectCreateFinishedEventHandler struct {
 	event    ProjectCreateFinishedAdapterInterface
 	dtClient dynatrace.ClientInterface
-	kClient  *keptnv2.Keptn
+	kClient  keptn.ClientInterface
 }
 
 // NewProjectCreateFinishedEventHandler creates a new ProjectCreateFinishedEventHandler
-func NewProjectCreateFinishedEventHandler(event ProjectCreateFinishedAdapterInterface, dtClient dynatrace.ClientInterface, kClient *keptnv2.Keptn) ProjectCreateFinishedEventHandler {
+func NewProjectCreateFinishedEventHandler(event ProjectCreateFinishedAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface) ProjectCreateFinishedEventHandler {
 	return ProjectCreateFinishedEventHandler{
 		event:    event,
 		dtClient: dtClient,

@@ -1,14 +1,14 @@
 package monitoring
 
 import (
-	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
-	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
@@ -21,11 +21,11 @@ type KeptnAPIConnectionCheck struct {
 type ConfigureMonitoringEventHandler struct {
 	event    ConfigureMonitoringAdapterInterface
 	dtClient dynatrace.ClientInterface
-	kClient  *keptnv2.Keptn
+	kClient  keptn.ClientInterface
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient *keptnv2.Keptn) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
 		event:    event,
 		dtClient: dtClient,
@@ -73,8 +73,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 	if eh.event.GetProject() != "" {
 		shipyard, err = eh.kClient.GetShipyard()
 		if err != nil {
-			msg := fmt.Sprintf("failed to retrieve shipyard for project %s: %v", eh.event.GetProject(), err)
-			return eh.handleError(msg)
+			return eh.handleError(err)
 		}
 	}
 
@@ -82,15 +81,11 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	configuredEntities, err := cfg.ConfigureMonitoring(eh.event.GetProject(), shipyard)
 	if err != nil {
-		return eh.handleError(err.Error())
+		return eh.handleError(err)
 	}
 
 	log.Info("Dynatrace Monitoring setup done")
-
-	if err := eh.sendConfigureMonitoringFinishedEvent(keptnv2.StatusSucceeded, keptnv2.ResultPass, getConfigureMonitoringResultMessage(keptnAPICheck, configuredEntities)); err != nil {
-		log.WithError(err).Error("Failed to send configure monitoring finished event")
-	}
-	return nil
+	return eh.handleSuccess(getConfigureMonitoringResultMessage(keptnAPICheck, configuredEntities))
 }
 
 func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, entities *ConfiguredEntities) string {
@@ -157,36 +152,19 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 	return msg
 }
 
-func (eh *ConfigureMonitoringEventHandler) handleError(msg string) error {
-	log.Error(msg)
-	if err := eh.sendConfigureMonitoringFinishedEvent(keptnv2.StatusErrored, keptnv2.ResultFailed, msg); err != nil {
-		log.WithError(err).Error("Failed to send configure monitoring finished event")
-	}
-	return errors.New(msg)
+func (eh *ConfigureMonitoringEventHandler) handleError(err error) error {
+	log.Error(err)
+	return eh.sendConfigureMonitoringFinishedEvent(NewFailureEventFactory(err.Error()))
 }
 
-func (eh *ConfigureMonitoringEventHandler) sendConfigureMonitoringFinishedEvent(status keptnv2.StatusType, result keptnv2.ResultType, message string) error {
+func (eh *ConfigureMonitoringEventHandler) handleSuccess(message string) error {
+	return eh.sendConfigureMonitoringFinishedEvent(NewSuccessEventFactory(message))
+}
 
-	cmFinishedEvent := &keptnv2.ConfigureMonitoringFinishedEventData{
-		EventData: keptnv2.EventData{
-			Project: eh.event.GetProject(),
-			Service: eh.event.GetService(),
-			Status:  status,
-			Result:  result,
-			Message: message,
-		},
-	}
-
-	ev := cloudevents.NewEvent()
-	ev.SetSource("dynatrace-service")
-	ev.SetDataContentType(cloudevents.ApplicationJSON)
-	ev.SetType(keptnv2.GetFinishedEventType(keptnv2.ConfigureMonitoringTaskName))
-	ev.SetData(cloudevents.ApplicationJSON, cmFinishedEvent)
-	ev.SetExtension("shkeptncontext", eh.event.GetShKeptnContext())
-	ev.SetExtension("triggeredid", eh.event.GetEventID())
-
-	if err := eh.kClient.SendCloudEvent(ev); err != nil {
-		return fmt.Errorf("could not send %s event: %s", keptnv2.GetFinishedEventType(keptnv2.ConfigureMonitoringTaskName), err.Error())
+func (eh *ConfigureMonitoringEventHandler) sendConfigureMonitoringFinishedEvent(factory adapter.CloudEventFactoryInterface) error {
+	if err := eh.kClient.SendCloudEvent(factory); err != nil {
+		log.WithError(err).Error("Failed to send configure monitoring finished event")
+		return err
 	}
 
 	return nil
