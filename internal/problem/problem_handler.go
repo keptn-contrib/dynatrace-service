@@ -1,7 +1,6 @@
 package problem
 
 import (
-	"encoding/json"
 	"errors"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/event"
@@ -11,37 +10,9 @@ import (
 )
 
 type DTProblemEvent struct {
-	ImpactedEntities []struct {
-		Entity string `json:"entity"`
-		Name   string `json:"name"`
-		Type   string `json:"type"`
-	} `json:"ImpactedEntities"`
-	ImpactedEntity string           `json:"ImpactedEntity"`
-	PID            string           `json:"PID"`
-	ProblemDetails DTProblemDetails `json:"ProblemDetails"`
-	ProblemID      string           `json:"ProblemID"`
-	ProblemTitle   string           `json:"ProblemTitle"`
-	ProblemURL     string           `json:"ProblemURL"`
-	State          string           `json:"State"`
-	Tags           string           `json:"Tags"`
-	EventContext   struct {
-		KeptnContext string `json:"keptnContext"`
-		Token        string `json:"token"`
-	} `json:"eventContext"`
-	KeptnProject string `json:"KeptnProject"`
-	KeptnService string `json:"KeptnService"`
-	KeptnStage   string `json:"KeptnStage"`
-}
-
-type DTProblemDetails struct {
-	DisplayName   string `json:"displayName"`
-	EndTime       int    `json:"endTime"`
-	HasRootCause  bool   `json:"hasRootCause"`
-	ID            string `json:"id"`
-	ImpactLevel   string `json:"impactLevel"`
-	SeverityLevel string `json:"severityLevel"`
-	StartTime     int64  `json:"startTime"`
-	Status        string `json:"status"`
+	State      string `json:"State"`
+	ProblemURL string `json:"ProblemURL"`
+	Tags       string `json:"Tags"`
 }
 
 type ProblemEventHandler struct {
@@ -54,33 +25,12 @@ func NewProblemEventHandler(event *ProblemAdapter) ProblemEventHandler {
 	}
 }
 
-type remediationTriggeredEventData struct {
+type problemEventData struct {
 	keptnv2.EventData
 
 	// Problem contains details about the problem
-	Problem ProblemDetails `json:"problem"`
+	Problem interface{} `json:"problem"`
 }
-
-type ProblemDetails struct {
-	// State is the state of the problem; possible values are: OPEN, RESOLVED
-	State string `json:"State,omitempty" jsonschema:"enum=open,enum=resolved"`
-	// ProblemID is a unique system identifier of the reported problem
-	ProblemID string `json:"ProblemID"`
-	// ProblemTitle is the display number of the reported problem.
-	ProblemTitle string `json:"ProblemTitle"`
-	// ProblemDetails are all problem event details including root cause
-	ProblemDetails json.RawMessage `json:"ProblemDetails"`
-	// PID is a unique system identifier of the reported problem.
-	PID string `json:"PID"`
-	// ImpactedEntity is an identifier of the impacted entity
-	// ProblemURL is a back link to the original problem
-	ProblemURL     string `json:"ProblemURL,omitempty"`
-	ImpactedEntity string `json:"ImpactedEntity,omitempty"`
-	// Tags is a comma separated list of tags that are defined for all impacted entities.
-	Tags string `json:"Tags,omitempty"`
-}
-
-const eventbroker = "EVENTBROKER"
 
 func (eh ProblemEventHandler) HandleEvent() error {
 	if eh.event.IsNotFromDynatrace() {
@@ -88,42 +38,12 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		return nil
 	}
 
-	// Log the problem ID and state for better troubleshooting
-	log.WithFields(
-		log.Fields{
-			"PID":       eh.event.GetPID(),
-			"problemId": eh.event.GetProblemID(),
-			"state":     eh.event.GetState(),
-		}).Info("Received event")
-
-	// ignore problem events if they are closed
-	if eh.event.IsResolved() {
-		return eh.handleClosedProblemFromDT()
-	}
-
-	return eh.handleOpenedProblemFromDT()
-}
-
-func (eh ProblemEventHandler) handleClosedProblemFromDT() error {
-
-	err := createAndSendCE(eh.event.getClosedProblemEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
-	if err != nil {
-		log.WithError(err).Error("Could not send cloud event")
-		return err
-	}
-	log.WithField("PID", eh.event.GetPID()).Debug("Successfully sent Keptn PROBLEM CLOSED event")
-	return nil
-}
-
-func (eh ProblemEventHandler) handleOpenedProblemFromDT() error {
-
 	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
-	err := createAndSendCE(eh.event.getRemediationTriggeredEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
+	err := createAndSendCE(eh.event.getProblemEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
 	if err != nil {
 		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
-	log.WithField("PID", eh.event.GetPID()).Debug("Successfully sent Keptn PROBLEM OPEN event")
 	return nil
 }
 
