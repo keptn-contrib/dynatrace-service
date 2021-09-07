@@ -3,6 +3,7 @@ package deployment
 import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -10,15 +11,17 @@ import (
 
 type ReleaseTriggeredEventHandler struct {
 	event       ReleaseTriggeredAdapterInterface
-	client      dynatrace.ClientInterface
+	dtClient    dynatrace.ClientInterface
+	eClient     keptn.EventClientInterface
 	attachRules *dynatrace.AttachRules
 }
 
 // NewReleaseTriggeredEventHandler creates a new ReleaseTriggeredEventHandler
-func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.AttachRules) *ReleaseTriggeredEventHandler {
+func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *ReleaseTriggeredEventHandler {
 	return &ReleaseTriggeredEventHandler{
 		event:       event,
-		client:      client,
+		dtClient:    dtClient,
+		eClient:     eClient,
 		attachRules: attachRules,
 	}
 }
@@ -31,7 +34,9 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent() error {
 		return err
 	}
 
-	ie := dynatrace.CreateInfoEventDTO(eh.event, eh.attachRules)
+	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+
+	ie := dynatrace.CreateInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
 	if strategy == keptnevents.Direct && eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
 		title := fmt.Sprintf("PROMOTING from %s to next stage", eh.event.GetStage())
 		ie.Title = title
@@ -48,7 +53,7 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent() error {
 		}
 	}
 
-	dynatrace.NewEventsClient(eh.client).AddInfoEvent(ie)
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ie)
 
 	return nil
 }

@@ -4,21 +4,24 @@ import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
 type ActionFinishedEventHandler struct {
 	event       ActionFinishedAdapterInterface
-	client      dynatrace.ClientInterface
+	dtClient    dynatrace.ClientInterface
+	eClient     keptn.EventClientInterface
 	attachRules *dynatrace.AttachRules
 }
 
 // NewActionFinishedEventHandler creates a new ActionFinishedEventHandler
-func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.AttachRules) *ActionFinishedEventHandler {
+func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *ActionFinishedEventHandler {
 	return &ActionFinishedEventHandler{
 		event:       event,
-		client:      client,
+		dtClient:    dtClient,
+		eClient:     eClient,
 		attachRules: attachRules,
 	}
 }
@@ -26,7 +29,7 @@ func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, client 
 // HandleEvent handles an action finished event
 func (eh *ActionFinishedEventHandler) HandleEvent() error {
 	// lets find our dynatrace problem details for this remediation workflow
-	pid, err := common.FindProblemIDForEvent(eh.event)
+	pid, err := eh.eClient.FindProblemID(eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")
 		return err
@@ -39,23 +42,26 @@ func (eh *ActionFinishedEventHandler) HandleEvent() error {
 		eh.event.GetResult(),
 		eh.event.GetStatus())
 
+	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// Additionally to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 	if eh.event.GetStatus() == keptnv2.StatusSucceeded {
-		dtConfigEvent := dynatrace.CreateConfigurationEventDTO(eh.event, eh.attachRules)
+
+		dtConfigEvent := dynatrace.CreateConfigurationEventDTO(eh.event, imageAndTag, eh.attachRules)
 		dtConfigEvent.Description = "Keptn Remediation Action Finished"
 		dtConfigEvent.Configuration = "successful"
 
-		dynatrace.NewEventsClient(eh.client).AddConfigurationEvent(dtConfigEvent)
+		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(dtConfigEvent)
 	} else {
-		dtInfoEvent := dynatrace.CreateInfoEventDTO(eh.event, eh.attachRules)
+		dtInfoEvent := dynatrace.CreateInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
 		dtInfoEvent.Title = "Keptn Remediation Action Finished"
 		dtInfoEvent.Description = "error during execution"
 
-		dynatrace.NewEventsClient(eh.client).AddInfoEvent(dtInfoEvent)
+		dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(dtInfoEvent)
 	}
 
-	dynatrace.NewProblemsClient(eh.client).AddProblemComment(pid, comment)
+	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(pid, comment)
 
 	return nil
 }

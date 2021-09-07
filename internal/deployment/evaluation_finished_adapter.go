@@ -5,15 +5,12 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"os"
 )
 
 type EvaluationFinishedAdapterInterface interface {
 	adapter.EventContentAdapter
 
-	IsPartOfRemediation() bool
 	GetEvaluationScore() float64
 	GetResult() keptnv2.ResultType
 }
@@ -110,23 +107,6 @@ func (a EvaluationFinishedAdapter) GetLabels() map[string]string {
 	labels["Evaluation Start"] = a.event.Evaluation.TimeStart
 	labels["Evaluation End"] = a.event.Evaluation.TimeEnd
 	return labels
-}
-
-// IsPartOfRemediation checks whether the evaluation.finished event is part of a remediation task sequence
-func (a EvaluationFinishedAdapter) IsPartOfRemediation() bool {
-	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
-
-	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
-		Project:      a.GetProject(),
-		Stage:        a.GetStage(),
-		Service:      a.GetService(),
-		EventType:    keptnv2.GetTriggeredEventType("remediation"),
-		KeptnContext: a.GetShKeptnContext(),
-	})
-	if errObj != nil || events == nil || len(events) == 0 {
-		return false
-	}
-	return true
 }
 
 func (a EvaluationFinishedAdapter) GetEvaluationScore() float64 {

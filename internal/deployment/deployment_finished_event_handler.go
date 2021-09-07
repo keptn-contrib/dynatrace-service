@@ -2,29 +2,34 @@ package deployment
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 type DeploymentFinishedEventHandler struct {
 	event       DeploymentFinishedAdapterInterface
-	client      dynatrace.ClientInterface
+	dtClient    dynatrace.ClientInterface
+	eClient     keptn.EventClientInterface
 	attachRules *dynatrace.AttachRules
 }
 
 // NewDeploymentFinishedEventHandler creates a new DeploymentFinishedEventHandler
-func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.AttachRules) *DeploymentFinishedEventHandler {
+func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *DeploymentFinishedEventHandler {
 	return &DeploymentFinishedEventHandler{
 		event:       event,
-		client:      client,
+		dtClient:    dtClient,
+		eClient:     eClient,
 		attachRules: attachRules,
 	}
 }
 
 // HandleEvent handles an action finished event
 func (eh *DeploymentFinishedEventHandler) HandleEvent() error {
-	// send Deployment Event
-	de := dynatrace.CreateDeploymentEventDTO(eh.event, eh.attachRules)
 
-	dynatrace.NewEventsClient(eh.client).AddDeploymentEvent(de)
+	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+
+	de := dynatrace.CreateDeploymentEventDTO(eh.event, imageAndTag, eh.attachRules)
+
+	dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(de)
 
 	return nil
 }

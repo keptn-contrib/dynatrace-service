@@ -2,27 +2,32 @@ package deployment
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 type TestFinishedEventHandler struct {
 	event       TestFinishedAdapterInterface
-	client      dynatrace.ClientInterface
+	dtClient    dynatrace.ClientInterface
+	eClient     keptn.EventClientInterface
 	attachRules *dynatrace.AttachRules
 }
 
 // NewTestFinishedEventHandler creates a new TestFinishedEventHandler
-func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dynatrace.ClientInterface, attachRules *dynatrace.AttachRules) *TestFinishedEventHandler {
+func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *TestFinishedEventHandler {
 	return &TestFinishedEventHandler{
 		event:       event,
-		client:      client,
+		dtClient:    client,
+		eClient:     eClient,
 		attachRules: attachRules,
 	}
 }
 
 // HandleEvent handles an action finished event
 func (eh *TestFinishedEventHandler) HandleEvent() error {
-	// Send Annotation Event
-	ae := dynatrace.CreateAnnotationEventDTO(eh.event, eh.attachRules)
+
+	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+
+	ae := dynatrace.CreateAnnotationEventDTO(eh.event, imageAndTag, eh.attachRules)
 	if ae.AnnotationType == "" {
 		ae.AnnotationType = "Stop Tests"
 	}
@@ -30,7 +35,7 @@ func (eh *TestFinishedEventHandler) HandleEvent() error {
 		ae.AnnotationDescription = "Stop running tests: against " + eh.event.GetService()
 	}
 
-	dynatrace.NewEventsClient(eh.client).AddAnnotationEvent(ae)
+	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ae)
 
 	return nil
 }

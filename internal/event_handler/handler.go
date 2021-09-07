@@ -89,23 +89,23 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), keptn.NewClient(kClient)), nil
 	case *problem.ActionTriggeredAdapter:
-		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, dynatraceConfig.AttachRules), nil
+		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *problem.ActionStartedAdapter:
-		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), dtClient), nil
+		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), dtClient, keptn.NewDefaultEventClient()), nil
 	case *problem.ActionFinishedAdapter:
-		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, dynatraceConfig.AttachRules), nil
+		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
 		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, keptn.NewClient(kClient), secretName, dynatraceConfig.Dashboard), nil
 	case *deployment.DeploymentFinishedAdapter:
-		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, dynatraceConfig.AttachRules), nil
+		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *deployment.TestTriggeredAdapter:
-		return deployment.NewTestTriggeredEventHandler(keptnEvent.(*deployment.TestTriggeredAdapter), dtClient, dynatraceConfig.AttachRules), nil
+		return deployment.NewTestTriggeredEventHandler(keptnEvent.(*deployment.TestTriggeredAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *deployment.TestFinishedAdapter:
-		return deployment.NewTestFinishedEventHandler(keptnEvent.(*deployment.TestFinishedAdapter), dtClient, dynatraceConfig.AttachRules), nil
+		return deployment.NewTestFinishedEventHandler(keptnEvent.(*deployment.TestFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *deployment.EvaluationFinishedAdapter:
-		return deployment.NewEvaluationFinishedEventHandler(keptnEvent.(*deployment.EvaluationFinishedAdapter), dtClient, dynatraceConfig.AttachRules), nil
+		return deployment.NewEvaluationFinishedEventHandler(keptnEvent.(*deployment.EvaluationFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *deployment.ReleaseTriggeredAdapter:
-		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, dynatraceConfig.AttachRules), nil
+		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	default:
 		return ErrorHandler{err: fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType)}, nil
 	}
