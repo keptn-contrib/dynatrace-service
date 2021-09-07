@@ -2,10 +2,8 @@ package problem
 
 import (
 	"encoding/json"
-	"errors"
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -45,12 +43,14 @@ type DTProblemDetails struct {
 }
 
 type ProblemEventHandler struct {
-	event ProblemAdapterInterface
+	event  ProblemAdapterInterface
+	client keptn.ClientInterface
 }
 
-func NewProblemEventHandler(event ProblemAdapterInterface) ProblemEventHandler {
+func NewProblemEventHandler(event ProblemAdapterInterface, client keptn.ClientInterface) ProblemEventHandler {
 	return ProblemEventHandler{
-		event: event,
+		event:  event,
+		client: client,
 	}
 }
 
@@ -103,44 +103,31 @@ func (eh ProblemEventHandler) HandleEvent() error {
 }
 
 func (eh ProblemEventHandler) handleClosedProblemFromDT() error {
-
-	err := createAndSendCE(eh.event.GetClosedProblemEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
+	err := eh.sendEvent(NewRemediationTriggeredEventFactory(eh.event))
 	if err != nil {
-		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
+
 	log.WithField("PID", eh.event.GetPID()).Debug("Successfully sent Keptn PROBLEM CLOSED event")
 	return nil
 }
 
 func (eh ProblemEventHandler) handleOpenedProblemFromDT() error {
-
 	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
-	err := createAndSendCE(eh.event.GetRemediationTriggeredEventData(), eh.event.GetShKeptnContext(), eh.event.GetEvent())
+	err := eh.sendEvent(NewProblemClosedEventFactory(eh.event))
 	if err != nil {
-		log.WithError(err).Error("Could not send cloud event")
 		return err
 	}
+
 	log.WithField("PID", eh.event.GetPID()).Debug("Successfully sent Keptn PROBLEM OPEN event")
 	return nil
 }
 
-func createAndSendCE(problemData interface{}, shkeptncontext string, eventType string) error {
-	ce := cloudevents.NewEvent()
-	ce.SetType(eventType)
-	ce.SetSource(event.GetEventSource())
-	ce.SetDataContentType(cloudevents.ApplicationJSON)
-	ce.SetData(cloudevents.ApplicationJSON, problemData)
-	ce.SetExtension("shkeptncontext", shkeptncontext)
-
-	keptnHandler, err := keptnv2.NewKeptn(&ce, keptncommon.KeptnOpts{})
+func (eh ProblemEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {
+	err := eh.client.SendCloudEvent(factory)
 	if err != nil {
-		return errors.New("Could not create Keptn Handler: " + err.Error())
+		log.WithError(err).Error("Failed to send cloud event")
 	}
 
-	if err := keptnHandler.SendCloudEvent(ce); err != nil {
-		return errors.New("Failed to send cloudevent:, " + err.Error())
-	}
-
-	return nil
+	return err
 }

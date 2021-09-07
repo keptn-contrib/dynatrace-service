@@ -11,13 +11,12 @@ type CloudEventFactoryInterface interface {
 }
 
 type CloudEventFactory struct {
-	// TODO 2021-09-07: fix interface below
-	event     CloudEventContentAdapter
+	event     TriggeredCloudEventContentAdapter
 	eventType string
 	payload   interface{}
 }
 
-func NewCloudEventFactory(event CloudEventContentAdapter, eventType string, payload interface{}) *CloudEventFactory {
+func NewCloudEventFactory(event TriggeredCloudEventContentAdapter, eventType string, payload interface{}) *CloudEventFactory {
 	return &CloudEventFactory{
 		event:     event,
 		eventType: eventType,
@@ -26,12 +25,38 @@ func NewCloudEventFactory(event CloudEventContentAdapter, eventType string, payl
 }
 
 func (f *CloudEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
+	ce, err := NewCloudEventFactoryBase(f.event, f.eventType, f.payload).CreateCloudEvent()
+	if err != nil {
+		return nil, err
+	}
+
+	if f.event.GetEventID() != "" {
+		ce.SetExtension("triggeredid", f.event.GetEventID())
+	}
+
+	return ce, nil
+}
+
+type CloudEventFactoryBase struct {
+	event     CloudEventContentAdapter
+	eventType string
+	payload   interface{}
+}
+
+func NewCloudEventFactoryBase(event CloudEventContentAdapter, eventType string, payload interface{}) *CloudEventFactoryBase {
+	return &CloudEventFactoryBase{
+		event:     event,
+		eventType: eventType,
+		payload:   payload,
+	}
+}
+
+func (f *CloudEventFactoryBase) CreateCloudEvent() (*cloudevents.Event, error) {
 	ev := cloudevents.NewEvent()
 	ev.SetSource(event.GetEventSource())
 	ev.SetDataContentType(cloudevents.ApplicationJSON)
 	ev.SetType(f.eventType)
 	ev.SetExtension("shkeptncontext", f.event.GetShKeptnContext())
-	ev.SetExtension("triggeredid", f.event.GetEventID())
 
 	err := ev.SetData(cloudevents.ApplicationJSON, f.payload)
 	if err != nil {

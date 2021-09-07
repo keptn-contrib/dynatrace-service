@@ -8,7 +8,7 @@ import (
 
 type GetSLITriggeredAdapterInterface interface {
 	adapter.EventContentAdapter
-	adapter.CloudEventContentAdapter
+	adapter.TriggeredCloudEventContentAdapter
 
 	IsNotForDynatrace() bool
 	GetSLIStart() string

@@ -87,7 +87,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case *monitoring.ProjectCreateFinishedAdapter:
 		return monitoring.NewProjectCreateFinishedEventHandler(keptnEvent.(*monitoring.ProjectCreateFinishedAdapter), dtClient, keptn.NewClient(kClient)), nil
 	case *problem.ProblemAdapter:
-		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter)), nil
+		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), keptn.NewClient(kClient)), nil
 	case *problem.ActionTriggeredAdapter:
 		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, dynatraceConfig.AttachRules), nil
 	case *problem.ActionStartedAdapter:

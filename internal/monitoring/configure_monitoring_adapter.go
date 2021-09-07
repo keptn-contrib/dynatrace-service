@@ -8,7 +8,7 @@ import (
 
 type ConfigureMonitoringAdapterInterface interface {
 	adapter.EventContentAdapter
-	adapter.CloudEventContentAdapter
+	adapter.TriggeredCloudEventContentAdapter
 
 	IsNotForDynatrace() bool
 }
