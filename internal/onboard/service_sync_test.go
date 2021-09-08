@@ -2,6 +2,9 @@ package onboard
 
 import (
 	"encoding/json"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/adapter/mock"
+	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io/ioutil"
 	"net/http"
@@ -18,11 +21,8 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-test/deep"
 	"github.com/google/uuid"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/adapter/mock"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
 	"github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
@@ -387,9 +387,9 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 	s := &serviceSynchronizer{
-		projectClient:  keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
-		servicesClient: keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL)),
-		resourcesAPI:   keptnapi.NewResourceHandler(mockCS.URL),
+		projectClient:   keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
+		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL)),
+		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
 		EntitiesClientFunc: func(creds *credentials.DTCredentials) *dynatrace.EntitiesClient {
 			return dynatrace.NewEntitiesClient(
 				dynatrace.NewClient(
@@ -531,7 +531,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		logger            keptncommon.LoggerInterface
 		projectsAPI       keptn.ProjectClientInterface
 		servicesAPI       keptn.ServiceClientInterface
-		resourcesAPI      *keptnapi.ResourceHandler
+		resourcesAPI      keptn.SLIAndSLOResourceWriterInterface
 		apiHandler        *keptnapi.APIHandler
 		credentialManager credentials.CredentialManagerInterface
 		apiMutex          sync.Mutex
@@ -556,7 +556,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 				logger:          keptncommon.NewLogger("", "", ""),
 				projectsAPI:     nil,
 				servicesAPI:     keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL)),
-				resourcesAPI:    keptnapi.NewResourceHandler(mockCS.URL),
+				resourcesAPI:    keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
 				apiMutex:        sync.Mutex{},
 				EntitiesClient:  nil,
 				syncTimer:       nil,
@@ -574,7 +574,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 			s := &serviceSynchronizer{
 				projectClient:      tt.fields.projectsAPI,
 				servicesClient:     tt.fields.servicesAPI,
-				resourcesAPI:       tt.fields.resourcesAPI,
+				resourcesClient:    tt.fields.resourcesAPI,
 				apiHandler:         tt.fields.apiHandler,
 				credentialManager:  tt.fields.credentialManager,
 				EntitiesClientFunc: tt.fields.EntitiesClient,

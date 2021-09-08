@@ -9,16 +9,16 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type SLOResourceClientInterface interface {
+type SLOResourceReaderInterface interface {
 	GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error)
+}
+type SLIAndSLOResourceWriterInterface interface {
+	UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error
 	UploadSLOs(project string, stage string, service string, dashboardSLOs *keptn.ServiceLevelObjectives) error
 }
 type DashboardResourceClientInterface interface {
 	UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error
 	GetDashboard(project string, stage string, service string) (string, error)
-}
-type SLIResourceClientInterface interface {
-	UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error
 }
 type DynatraceConfigResourceClientInterface interface {
 	GetDynatraceConfig(project string, stage string, service string) (string, error)
@@ -37,7 +37,7 @@ type ResourceClient struct {
 // NewDefaultResourceClient creates a new ResourceClient with a default Keptn resource handler for the configuration service
 func NewDefaultResourceClient() *ResourceClient {
 	return &ResourceClient{
-		client: NewConfigResourceClient(),
+		client: NewDefaultConfigResourceClient(),
 	}
 }
 

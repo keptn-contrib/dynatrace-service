@@ -2,15 +2,14 @@ package onboard
 
 import (
 	"bytes"
-	b64 "encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	keptnlib "github.com/keptn/go-utils/pkg/lib"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -27,44 +26,6 @@ import (
 
 const defaultDTProjectName = "dynatrace"
 const defaultDTProjectStage = "quality-gate"
-const defaultSLOFile = `---
-spec_version: "1.0"
-comparison:
-  aggregate_function: "avg"
-  compare_with: "single_result"
-  include_result_with_score: "pass"
-  number_of_comparison_results: 1
-filter:
-objectives:
-  - sli: "response_time_p95"
-    key_sli: false
-    pass:             
-      - criteria:
-          - "<600"    
-    warning:        
-      - criteria:
-          - "<=800"
-    weight: 1
-  - sli: "error_rate"
-    key_sli: false
-    pass:
-      - criteria:
-          - "<5"
-  - sli: throughput
-total_score:
-  pass: "90%"
-  warning: "75%"`
-
-const defaultSLIConfigFile = `---
-spec_version: '1.0'
-indicators:
-  throughput: "metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  error_rate: "metricSelector=builtin:service.errors.total.rate:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  response_time_p50: "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  response_time_p90: "metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  response_time_p95: "metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"`
-
-var encodedDefaultSLOFile string
 
 type initSyncEventAdapter struct {
 }
@@ -112,7 +73,7 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 type serviceSynchronizer struct {
 	projectClient      keptn.ProjectClientInterface
 	servicesClient     keptn.ServiceClientInterface
-	resourcesAPI       *keptnapi.ResourceHandler
+	resourcesClient    keptn.SLIAndSLOResourceWriterInterface
 	apiHandler         *keptnapi.APIHandler
 	credentialManager  credentials.CredentialManagerInterface
 	EntitiesClientFunc func(dtCredentials *credentials.DTCredentials) *dynatrace.EntitiesClient
@@ -131,7 +92,6 @@ const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serviceSynchronizer {
 	if serviceSynchronizerInstance == nil {
 
-		encodedDefaultSLOFile = b64.StdEncoding.EncodeToString([]byte(defaultSLOFile))
 		serviceSynchronizerInstance = &serviceSynchronizer{
 			credentialManager: c,
 		}
@@ -153,7 +113,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 
 		serviceSynchronizerInstance.projectClient = keptn.NewDefaultProjectClient()
 		serviceSynchronizerInstance.servicesClient = keptn.NewDefaultServiceClient()
-		serviceSynchronizerInstance.resourcesAPI = keptnapi.NewResourceHandler(configServiceBaseURL)
+		serviceSynchronizerInstance.resourcesClient = keptn.NewDefaultResourceClient()
 
 		serviceSynchronizerInstance.initializeSynchronizationTimer()
 
@@ -347,42 +307,63 @@ func (s *serviceSynchronizer) createService(projectName string, service *apimode
 }
 
 func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
-	resourceURI := "slo.yaml"
-	sloResource := &apimodels.Resource{
-		ResourceContent: defaultSLOFile,
-		ResourceURI:     &resourceURI,
+	defaultSLOs := &keptnlib.ServiceLevelObjectives{
+		SpecVersion: "1.0",
+		Filter:      nil,
+		Comparison: &keptnlib.SLOComparison{
+			AggregateFunction:         "avg",
+			CompareWith:               "single_result",
+			IncludeResultWithScore:    "pass",
+			NumberOfComparisonResults: 1,
+		},
+		Objectives: []*keptnlib.SLO{
+			{
+				SLI:     "response_time_p95",
+				KeySLI:  false,
+				Pass:    []*keptnlib.SLOCriteria{{Criteria: []string{"<600"}}},
+				Warning: []*keptnlib.SLOCriteria{{Criteria: []string{"<=800"}}},
+				Weight:  1,
+			},
+			{
+				SLI:    "error_rate",
+				KeySLI: false,
+				Pass:   []*keptnlib.SLOCriteria{{Criteria: []string{"<5"}}},
+				Weight: 1,
+			},
+			{
+				SLI: "throughput",
+			},
+		},
+		TotalScore: &keptnlib.SLOScore{
+			Pass:    "90%",
+			Warning: "75%",
+		},
 	}
-	_, err := s.resourcesAPI.CreateServiceResources(
-		defaultDTProjectName,
-		defaultDTProjectStage,
-		serviceName,
-		[]*apimodels.Resource{sloResource},
-	)
 
+	err := s.resourcesClient.UploadSLOs(defaultDTProjectName, defaultDTProjectStage, serviceName, defaultSLOs)
 	if err != nil {
-		return fmt.Errorf("could not upload slo.yaml to service %s: %s", serviceName, err.Error())
+		return err
 	}
 
 	return nil
 }
 
 func (s *serviceSynchronizer) createSLIResource(serviceName string) error {
-	resourceURI := "dynatrace/sli.yaml"
-	sliFileContent := strings.ReplaceAll(defaultSLIConfigFile, "$SERVICE", serviceName)
+	indicators := make(map[string]string)
+	indicators["throughput"] = fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["error_rate"] = fmt.Sprintf("metricSelector=builtin:service.errors.total.rate:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p50"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p90"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p95"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
 
-	sliResource := &apimodels.Resource{
-		ResourceContent: sliFileContent,
-		ResourceURI:     &resourceURI,
+	defaultSLIs := &dynatrace.SLI{
+		SpecVersion: "1.0",
+		Indicators:  indicators,
 	}
-	_, err := s.resourcesAPI.CreateServiceResources(
-		defaultDTProjectName,
-		defaultDTProjectStage,
-		serviceName,
-		[]*apimodels.Resource{sliResource},
-	)
 
+	err := s.resourcesClient.UploadSLI(defaultDTProjectName, defaultDTProjectStage, serviceName, defaultSLIs)
 	if err != nil {
-		return fmt.Errorf("could not upload sli.yaml to service %s: %s", serviceName, err.Error())
+		return err
 	}
 
 	return nil
