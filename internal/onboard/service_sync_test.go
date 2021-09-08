@@ -387,9 +387,9 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 	s := &serviceSynchronizer{
-		projectClient: keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
-		servicesAPI:   keptnapi.NewServiceHandler(servicesMockAPI.URL),
-		resourcesAPI:  keptnapi.NewResourceHandler(mockCS.URL),
+		projectClient:  keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
+		servicesClient: keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL)),
+		resourcesAPI:   keptnapi.NewResourceHandler(mockCS.URL),
 		EntitiesClientFunc: func(creds *credentials.DTCredentials) *dynatrace.EntitiesClient {
 			return dynatrace.NewEntitiesClient(
 				dynatrace.NewClient(
@@ -530,7 +530,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 	type fields struct {
 		logger            keptncommon.LoggerInterface
 		projectsAPI       keptn.ProjectClientInterface
-		servicesAPI       *keptnapi.ServiceHandler
+		servicesAPI       keptn.ServiceClientInterface
 		resourcesAPI      *keptnapi.ResourceHandler
 		apiHandler        *keptnapi.APIHandler
 		credentialManager credentials.CredentialManagerInterface
@@ -555,7 +555,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 			fields: fields{
 				logger:          keptncommon.NewLogger("", "", ""),
 				projectsAPI:     nil,
-				servicesAPI:     keptnapi.NewServiceHandler(servicesMockAPI.URL),
+				servicesAPI:     keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL)),
 				resourcesAPI:    keptnapi.NewResourceHandler(mockCS.URL),
 				apiMutex:        sync.Mutex{},
 				EntitiesClient:  nil,
@@ -573,7 +573,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &serviceSynchronizer{
 				projectClient:      tt.fields.projectsAPI,
-				servicesAPI:        tt.fields.servicesAPI,
+				servicesClient:     tt.fields.servicesAPI,
 				resourcesAPI:       tt.fields.resourcesAPI,
 				apiHandler:         tt.fields.apiHandler,
 				credentialManager:  tt.fields.credentialManager,

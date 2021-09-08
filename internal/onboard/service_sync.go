@@ -111,7 +111,7 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 
 type serviceSynchronizer struct {
 	projectClient      keptn.ProjectClientInterface
-	servicesAPI        *keptnapi.ServiceHandler
+	servicesClient     keptn.ServiceClientInterface
 	resourcesAPI       *keptnapi.ResourceHandler
 	apiHandler         *keptnapi.APIHandler
 	credentialManager  credentials.CredentialManagerInterface
@@ -152,7 +152,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 			}).Debug("Initializing Service Synchronizer")
 
 		serviceSynchronizerInstance.projectClient = keptn.NewDefaultProjectClient()
-		serviceSynchronizerInstance.servicesAPI = keptnapi.NewServiceHandler(shipyardControllerBaseURL)
+		serviceSynchronizerInstance.servicesClient = keptn.NewDefaultServiceClient()
 		serviceSynchronizerInstance.resourcesAPI = keptnapi.NewResourceHandler(configServiceBaseURL)
 
 		serviceSynchronizerInstance.initializeSynchronizationTimer()
@@ -248,13 +248,11 @@ func (s *serviceSynchronizer) fetchExistingServices() error {
 
 	// get all services currently in the project
 	s.servicesInKeptn = []string{}
-	allKeptnServicesInProject, err := s.servicesAPI.GetAllServices(defaultDTProjectName, defaultDTProjectStage)
+	serviceNames, err := s.servicesClient.GetServiceNames(defaultDTProjectName, defaultDTProjectStage)
 	if err != nil {
-		return fmt.Errorf("could not fetch services of Keptn project %s: %s", defaultDTProjectName, err.Error())
+		return err
 	}
-	for _, service := range allKeptnServicesInProject {
-		s.servicesInKeptn = append(s.servicesInKeptn, service.ServiceName)
-	}
+	s.servicesInKeptn = serviceNames
 
 	return nil
 }
