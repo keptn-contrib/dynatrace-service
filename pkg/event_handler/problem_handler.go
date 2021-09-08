@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"os"
+	"strings"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/pkg/common"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"net/url"
-	"os"
-	"strings"
 )
 
 type DTProblemEvent struct {
@@ -32,18 +33,58 @@ type DTProblemEvent struct {
 		StartTime     int64  `json:"startTime"`
 		Status        string `json:"status"`
 	} `json:"ProblemDetails"`
-	ProblemID    string `json:"ProblemID"`
-	ProblemTitle string `json:"ProblemTitle"`
-	ProblemURL   string `json:"ProblemURL"`
-	State        string `json:"State"`
-	Tags         string `json:"Tags"`
-	EventContext struct {
+	ProblemDetailsHTML string `json:"ProblemDetailsHTML"`
+	ProblemDetailsText string `json:"ProblemDetailsText"`
+	ProblemID          string `json:"ProblemID"`
+	ProblemImpact      string `json:"ProblemImpact"`
+	ProblemSeverity    string `json:"ProblemSeverity"`
+	ProblemTitle       string `json:"ProblemTitle"`
+	ProblemURL         string `json:"ProblemURL"`
+	State              string `json:"State"`
+	Tags               string `json:"Tags"`
+	EventContext       struct {
 		KeptnContext string `json:"keptnContext"`
 		Token        string `json:"token"`
 	} `json:"eventContext"`
 	KeptnProject string `json:"KeptnProject"`
 	KeptnService string `json:"KeptnService"`
 	KeptnStage   string `json:"KeptnStage"`
+}
+
+// ProblemEventData represents the data for describing a problem
+type problemEventData struct {
+	// State is the state of the problem; possible values are: OPEN, RESOLVED
+	State string `json:"State,omitempty"`
+	// ProblemID is a unique system identifier of the reported problem
+	ProblemID string `json:"ProblemID"`
+	// ProblemTitle is the display number of the reported problem.
+	ProblemTitle string `json:"ProblemTitle"`
+	// ProblemDetails are all problem event details including root cause
+	ProblemDetails json.RawMessage `json:"ProblemDetails"`
+	// ProblemDetailsHTML are all problem event details including root cause as an HTML-formatted string
+	ProblemDetailsHTML string `json:"ProblemDetailsHTML"`
+	// ProblemDetailsText are all problem event details including root cause as a text-formatted string.
+	ProblemDetailsText string `json:"ProblemDetailsText"`
+	// PID is a unique system identifier of the reported problem.
+	PID string `json:"PID"`
+	// ProblemImpact is the impact level of the problem. Possible values are APPLICATION, SERVICE, or INFRASTRUCTURE.
+	ProblemImpact string `json:"ProblemImpact"`
+	// ProblemSeverity is the severity level of the problem. Possible values are AVAILABILITY, ERROR, PERFORMANCE, RESOURCE_CONTENTION, or CUSTOM_ALERT.const
+	ProblemSeverity string `json:"ProblemSeverity"`
+	// ProblemURL is a back link to the original problem
+	ProblemURL string `json:"ProblemURL,omitempty"`
+	// ImpactedEntity is an identifier of the impacted entity
+	ImpactedEntity string `json:"ImpactedEntity,omitempty"`
+	// Tags is a comma separated list of tags that are defined for all impacted entities.
+	Tags string `json:"Tags,omitempty"`
+	// Project is the name of the project
+	Project string `json:"project,omitempty"`
+	// Stage is the name of the stage
+	Stage string `json:"stage,omitempty"`
+	// Service is the name of the new service
+	Service string `json:"service,omitempty"`
+	// Labels contains labels
+	Labels map[string]string `json:"labels"`
 }
 
 type ProblemEventHandler struct {
@@ -85,18 +126,22 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT(dtProblemEvent *DTProble
 
 	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
 
-	newProblemData := keptn.ProblemEventData{
-		State:          "CLOSED",
-		PID:            dtProblemEvent.PID,
-		ProblemID:      dtProblemEvent.ProblemID,
-		ProblemTitle:   dtProblemEvent.ProblemTitle,
-		ProblemDetails: json.RawMessage(problemDetailsString),
-		ProblemURL:     dtProblemEvent.ProblemURL,
-		ImpactedEntity: dtProblemEvent.ImpactedEntity,
-		Tags:           dtProblemEvent.Tags,
-		Project:        project,
-		Stage:          stage,
-		Service:        service,
+	newProblemData := problemEventData{
+		State:              "CLOSED",
+		PID:                dtProblemEvent.PID,
+		ProblemID:          dtProblemEvent.ProblemID,
+		ProblemTitle:       dtProblemEvent.ProblemTitle,
+		ProblemDetails:     json.RawMessage(problemDetailsString),
+		ProblemDetailsHTML: dtProblemEvent.ProblemDetailsHTML,
+		ProblemDetailsText: dtProblemEvent.ProblemDetailsText,
+		ProblemImpact:      dtProblemEvent.ProblemImpact,
+		ProblemSeverity:    dtProblemEvent.ProblemSeverity,
+		ProblemURL:         dtProblemEvent.ProblemURL,
+		ImpactedEntity:     dtProblemEvent.ImpactedEntity,
+		Tags:               dtProblemEvent.Tags,
+		Project:            project,
+		Stage:              stage,
+		Service:            service,
 	}
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176
@@ -118,18 +163,22 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT(dtProblemEvent *DTProble
 
 	project, stage, service := eh.extractContextFromDynatraceProblem(dtProblemEvent)
 
-	newProblemData := keptn.ProblemEventData{
-		State:          "OPEN",
-		PID:            dtProblemEvent.PID,
-		ProblemID:      dtProblemEvent.ProblemID,
-		ProblemTitle:   dtProblemEvent.ProblemTitle,
-		ProblemDetails: json.RawMessage(problemDetailsString),
-		ProblemURL:     dtProblemEvent.ProblemURL,
-		ImpactedEntity: dtProblemEvent.ImpactedEntity,
-		Tags:           dtProblemEvent.Tags,
-		Project:        project,
-		Stage:          stage,
-		Service:        service,
+	newProblemData := problemEventData{
+		State:              "OPEN",
+		PID:                dtProblemEvent.PID,
+		ProblemID:          dtProblemEvent.ProblemID,
+		ProblemTitle:       dtProblemEvent.ProblemTitle,
+		ProblemDetails:     json.RawMessage(problemDetailsString),
+		ProblemDetailsHTML: dtProblemEvent.ProblemDetailsHTML,
+		ProblemDetailsText: dtProblemEvent.ProblemDetailsText,
+		ProblemImpact:      dtProblemEvent.ProblemImpact,
+		ProblemSeverity:    dtProblemEvent.ProblemSeverity,
+		ProblemURL:         dtProblemEvent.ProblemURL,
+		ImpactedEntity:     dtProblemEvent.ImpactedEntity,
+		Tags:               dtProblemEvent.Tags,
+		Project:            project,
+		Stage:              stage,
+		Service:            service,
 	}
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176
@@ -174,7 +223,7 @@ func (eh ProblemEventHandler) extractContextFromDynatraceProblem(dtProblemEvent 
 	return project, stage, service
 }
 
-func createAndSendCE(eventbroker string, problemData keptn.ProblemEventData, shkeptncontext string, eventType string) error {
+func createAndSendCE(eventbroker string, problemData problemEventData, shkeptncontext string, eventType string) error {
 	source, _ := url.Parse("dynatrace-service")
 
 	ce := cloudevents.NewEvent()
