@@ -113,7 +113,7 @@ func ensureRightTimestamps(start string, end string) (time.Time, time.Time, erro
  */
 func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) error {
 
-	resourceClient := keptn.NewResourceClient()
+	resourceClient := keptn.NewDefaultResourceClient()
 
 	// first - lets load the SLO.yaml from the config repo
 	dashboardSLO, err := resourceClient.GetSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
@@ -172,7 +172,7 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
 		return nil, nil, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
 	}
 
-	resourceClient := keptn.NewResourceClient()
+	resourceClient := keptn.NewDefaultResourceClient()
 
 	// lets store the dashboard as well
 	if result.Dashboard() != nil {

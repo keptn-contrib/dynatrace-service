@@ -136,7 +136,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 			credentialManager: c,
 		}
 
-		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewResourceClient())
+		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
 		serviceSynchronizerInstance.EntitiesClientFunc =
 			func(credentials *credentials.DTCredentials) *dynatrace.EntitiesClient {
 				dtClient := dynatrace.NewClient(credentials)

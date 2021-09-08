@@ -44,7 +44,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 
 	log.Info("Creating custom metric events for project SLIs")
-	slos, err := keptn.NewResourceClient().GetSLOs(project, stage, service)
+	slos, err := keptn.NewDefaultResourceClient().GetSLOs(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithFields(
 			log.Fields{

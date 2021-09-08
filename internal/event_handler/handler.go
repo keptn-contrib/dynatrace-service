@@ -55,7 +55,7 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 
 func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	log.WithField("eventType", event.Type()).Debug("Received event")
-	dtConfigGetter := config.NewDynatraceConfigGetter(keptn.NewResourceClient())
+	dtConfigGetter := config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
 
 	keptnEvent, err := getEventAdapter(event)
 	if err != nil {

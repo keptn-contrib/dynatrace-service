@@ -34,10 +34,17 @@ type ResourceClient struct {
 	client ConfigResourceClientInterface
 }
 
-// NewResourceClient creates a new ResourceClient with a Keptn resource handler for the configuration service
-func NewResourceClient() *ResourceClient {
+// NewDefaultResourceClient creates a new ResourceClient with a default Keptn resource handler for the configuration service
+func NewDefaultResourceClient() *ResourceClient {
 	return &ResourceClient{
 		client: NewConfigResourceClient(),
+	}
+}
+
+// NewResourceClient creates a new ResourceClient with a Keptn resource handler for the configuration service
+func NewResourceClient(client ConfigResourceClientInterface) *ResourceClient {
+	return &ResourceClient{
+		client: client,
 	}
 }
 
