@@ -388,7 +388,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 	s := &serviceSynchronizer{
 		projectClient:   keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
-		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL)),
+		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
 		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
 		EntitiesClientFunc: func(creds *credentials.DTCredentials) *dynatrace.EntitiesClient {
 			return dynatrace.NewEntitiesClient(
@@ -555,7 +555,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 			fields: fields{
 				logger:          keptncommon.NewLogger("", "", ""),
 				projectsAPI:     nil,
-				servicesAPI:     keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL)),
+				servicesAPI:     keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
 				resourcesAPI:    keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
 				apiMutex:        sync.Mutex{},
 				EntitiesClient:  nil,

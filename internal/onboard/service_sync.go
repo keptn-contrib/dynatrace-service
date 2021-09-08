@@ -1,15 +1,10 @@
 package onboard
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
-	"io/ioutil"
-	"net/http"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -17,9 +12,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -96,7 +89,9 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 			credentialManager: c,
 		}
 
-		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
+		resourceClient := keptn.NewDefaultResourceClient()
+
+		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(resourceClient)
 		serviceSynchronizerInstance.EntitiesClientFunc =
 			func(credentials *credentials.DTCredentials) *dynatrace.EntitiesClient {
 				dtClient := dynatrace.NewClient(credentials)
@@ -113,7 +108,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 
 		serviceSynchronizerInstance.projectClient = keptn.NewDefaultProjectClient()
 		serviceSynchronizerInstance.servicesClient = keptn.NewDefaultServiceClient()
-		serviceSynchronizerInstance.resourcesClient = keptn.NewDefaultResourceClient()
+		serviceSynchronizerInstance.resourcesClient = resourceClient
 
 		serviceSynchronizerInstance.initializeSynchronizationTimer()
 
@@ -238,9 +233,7 @@ func doesServiceExist(services []string, serviceName string) bool {
 }
 
 func (s *serviceSynchronizer) addServiceToKeptn(serviceName string) error {
-	_, err := s.createService(defaultDTProjectName, &apimodels.CreateService{
-		ServiceName: &serviceName,
-	})
+	err := s.servicesClient.CreateServiceInProject(defaultDTProjectName, serviceName)
 	if err != nil {
 		return fmt.Errorf("could not create service %s: %s", serviceName, err)
 	}
@@ -261,49 +254,6 @@ func (s *serviceSynchronizer) addServiceToKeptn(serviceName string) error {
 
 	s.servicesInKeptn = append(s.servicesInKeptn, serviceName)
 	return nil
-}
-
-func (s *serviceSynchronizer) createService(projectName string, service *apimodels.CreateService) (string, error) {
-	bodyStr, err := json.Marshal(service)
-	if err != nil {
-		return "", fmt.Errorf("could not marshal service payload: %s", err.Error())
-	}
-
-	var scBaseURL string
-	scEndpoint, err := keptncommon.GetServiceEndpoint(shipyardController)
-	if err == nil {
-		scBaseURL = scEndpoint.String()
-	} else {
-		scBaseURL = defaultShipyardControllerURL
-	}
-	req, err := http.NewRequest("POST", scBaseURL+"/v1/project/"+projectName+"/service", bytes.NewBuffer(bodyStr))
-	req.Header.Set("Content-Type", "application/json")
-
-	client := http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode >= 200 && resp.StatusCode <= 204 {
-		if len(body) > 0 {
-			return string(body), nil
-		}
-
-		return "", nil
-	}
-
-	if len(body) > 0 {
-		return "", errors.New(string(body))
-	}
-
-	return "", fmt.Errorf("received unexpected response: %d %s", resp.StatusCode, resp.Status)
 }
 
 func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
