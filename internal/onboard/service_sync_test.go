@@ -2,6 +2,7 @@ package onboard
 
 import (
 	"encoding/json"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -386,9 +387,9 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 	s := &serviceSynchronizer{
-		projectsAPI:  keptnapi.NewProjectHandler(projectsMockAPI.URL),
-		servicesAPI:  keptnapi.NewServiceHandler(servicesMockAPI.URL),
-		resourcesAPI: keptnapi.NewResourceHandler(mockCS.URL),
+		projectClient: keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
+		servicesAPI:   keptnapi.NewServiceHandler(servicesMockAPI.URL),
+		resourcesAPI:  keptnapi.NewResourceHandler(mockCS.URL),
 		EntitiesClientFunc: func(creds *credentials.DTCredentials) *dynatrace.EntitiesClient {
 			return dynatrace.NewEntitiesClient(
 				dynatrace.NewClient(
@@ -528,7 +529,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 
 	type fields struct {
 		logger            keptncommon.LoggerInterface
-		projectsAPI       *keptnapi.ProjectHandler
+		projectsAPI       keptn.ProjectClientInterface
 		servicesAPI       *keptnapi.ServiceHandler
 		resourcesAPI      *keptnapi.ResourceHandler
 		apiHandler        *keptnapi.APIHandler
@@ -571,7 +572,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &serviceSynchronizer{
-				projectsAPI:        tt.fields.projectsAPI,
+				projectClient:      tt.fields.projectsAPI,
 				servicesAPI:        tt.fields.servicesAPI,
 				resourcesAPI:       tt.fields.resourcesAPI,
 				apiHandler:         tt.fields.apiHandler,

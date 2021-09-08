@@ -110,7 +110,7 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 }
 
 type serviceSynchronizer struct {
-	projectsAPI        *keptnapi.ProjectHandler
+	projectClient      keptn.ProjectClientInterface
 	servicesAPI        *keptnapi.ServiceHandler
 	resourcesAPI       *keptnapi.ResourceHandler
 	apiHandler         *keptnapi.APIHandler
@@ -151,7 +151,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 				"shipyardControllerBaseURL": shipyardControllerBaseURL,
 			}).Debug("Initializing Service Synchronizer")
 
-		serviceSynchronizerInstance.projectsAPI = keptnapi.NewProjectHandler(shipyardControllerBaseURL)
+		serviceSynchronizerInstance.projectClient = keptn.NewDefaultProjectClient()
 		serviceSynchronizerInstance.servicesAPI = keptnapi.NewServiceHandler(shipyardControllerBaseURL)
 		serviceSynchronizerInstance.resourcesAPI = keptnapi.NewResourceHandler(configServiceBaseURL)
 
@@ -241,17 +241,9 @@ func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.DTCredent
 }
 
 func (s *serviceSynchronizer) fetchExistingServices() error {
-	project, errObj := s.projectsAPI.GetProject(apimodels.Project{
-		ProjectName: defaultDTProjectName,
-	})
-	if errObj != nil {
-		if errObj.Code == 404 {
-			return fmt.Errorf("project %s does not exist", defaultDTProjectName)
-		}
-		return fmt.Errorf("could not check if Keptn project %s exists: %s", defaultDTProjectName, *errObj.Message)
-	}
-	if project == nil {
-		return fmt.Errorf("keptn project %s does not exist", defaultDTProjectName)
+	err := s.projectClient.AssertProjectExists(defaultDTProjectName)
+	if err != nil {
+		return err
 	}
 
 	// get all services currently in the project
