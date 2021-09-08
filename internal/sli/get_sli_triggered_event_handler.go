@@ -23,20 +23,23 @@ import (
 const ProblemOpenSLI = "problem_open"
 
 type GetSLIEventHandler struct {
-	event      GetSLITriggeredAdapterInterface
-	dtClient   dynatrace.ClientInterface
-	kClient    keptn.ClientInterface
+	event          GetSLITriggeredAdapterInterface
+	dtClient       dynatrace.ClientInterface
+	kClient        keptn.ClientInterface
+	resourceClient keptn.ResourceClientInterface
+
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, resourceClient keptn.ResourceClientInterface, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
-		event:      event,
-		dtClient:   dtClient,
-		kClient:    kClient,
-		secretName: secretName,
-		dashboard:  dashboard,
+		event:          event,
+		dtClient:       dtClient,
+		kClient:        kClient,
+		resourceClient: resourceClient,
+		secretName:     secretName,
+		dashboard:      dashboard,
 	}
 }
 
@@ -111,12 +114,10 @@ func ensureRightTimestamps(start string, end string) (time.Time, time.Time, erro
 /**
  * Adds an SLO Entry to the SLO.yaml
  */
-func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) error {
-
-	resourceClient := keptn.NewDefaultResourceClient()
+func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 
 	// first - lets load the SLO.yaml from the config repo
-	dashboardSLO, err := resourceClient.GetSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
+	dashboardSLO, err := eh.resourceClient.GetSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
 		var rnfErr *keptn.ResourceNotFoundError
 		if !errors.As(err, &rnfErr) {
@@ -146,7 +147,7 @@ func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) err
 
 	// now - lets add our newSLO to the list
 	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
-	err = resourceClient.UploadSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), dashboardSLO)
+	err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
 	if err != nil {
 		return err
 	}
@@ -157,7 +158,7 @@ func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) err
 /**
  * Tries to find a dynatrace dashboard that matches our project. If so - returns the SLI, SLO and SLIResults
  */
-func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.EventContentAdapter, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*DashboardLink, []*keptnv2.SLIResult, error) {
+func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.EventContentAdapter, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*DashboardLink, []*keptnv2.SLIResult, error) {
 
 	//
 	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
@@ -172,11 +173,9 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
 		return nil, nil, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
 	}
 
-	resourceClient := keptn.NewDefaultResourceClient()
-
 	// lets store the dashboard as well
 	if result.Dashboard() != nil {
-		err = resourceClient.UploadDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.Dashboard())
+		err = eh.resourceClient.UploadDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.Dashboard())
 		if err != nil {
 			return result.DashboardLink(), result.SLIResults(), err
 		}
@@ -184,7 +183,7 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
 
 	// lets write the SLI to the config repo
 	if result.SLI() != nil {
-		err = resourceClient.UploadSLI(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLI())
+		err = eh.resourceClient.UploadSLI(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLI())
 		if err != nil {
 			return result.DashboardLink(), result.SLIResults(), err
 		}
@@ -192,7 +191,7 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
 
 	// lets write the SLO to the config repo
 	if result.SLO() != nil {
-		err = resourceClient.UploadSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLO())
+		err = eh.resourceClient.UploadSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLO())
 		if err != nil {
 			return result.DashboardLink(), result.SLIResults(), err
 		}
@@ -250,7 +249,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	//
 	// creating Dynatrace Retrieval which allows us to call the Dynatrace API
-	sliRetrieval := NewRetrieval(eh.event, eh.dtClient, eh.kClient)
+	sliRetrieval := NewRetrieval(eh.event, eh.dtClient, eh.kClient, eh.resourceClient)
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps
@@ -267,7 +266,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	//
 	// Option 1 - see if we can get the data from a Dynatrace Dashboard
-	dashboardLinkAsLabel, sliResults, err := getDataFromDynatraceDashboard(sliRetrieval, eh.event, startUnix, endUnix, eh.dashboard)
+	dashboardLinkAsLabel, sliResults, err := eh.getDataFromDynatraceDashboard(sliRetrieval, eh.event, startUnix, endUnix, eh.dashboard)
 	if err != nil {
 		// log the error, but continue with loading sli.yaml
 		log.WithError(err).Error("getDataFromDynatraceDashboard failed")
@@ -353,7 +352,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", problemIndicator)
 		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
-		errAddSlo := addSLO(eh.event, sloDefinition)
+		errAddSlo := eh.addSLO(sloDefinition)
 		if errAddSlo != nil {
 			// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
 			log.WithError(errAddSlo).Error("problem while adding SLOs")

@@ -83,9 +83,9 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 
 	switch aType := keptnEvent.(type) {
 	case *monitoring.ConfigureMonitoringAdapter:
-		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, keptn.NewClient(kClient)), nil
+		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, keptn.NewClient(kClient), keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient()), nil
 	case *monitoring.ProjectCreateFinishedAdapter:
-		return monitoring.NewProjectCreateFinishedEventHandler(keptnEvent.(*monitoring.ProjectCreateFinishedAdapter), dtClient, keptn.NewClient(kClient)), nil
+		return monitoring.NewProjectCreateFinishedEventHandler(keptnEvent.(*monitoring.ProjectCreateFinishedAdapter), dtClient, keptn.NewClient(kClient), keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient()), nil
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), keptn.NewClient(kClient)), nil
 	case *problem.ActionTriggeredAdapter:
@@ -95,7 +95,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case *problem.ActionFinishedAdapter:
 		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
-		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, keptn.NewClient(kClient), secretName, dynatraceConfig.Dashboard), nil
+		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, keptn.NewClient(kClient), keptn.NewDefaultResourceClient(), secretName, dynatraceConfig.Dashboard), nil
 	case *deployment.DeploymentFinishedAdapter:
 		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *deployment.TestTriggeredAdapter:

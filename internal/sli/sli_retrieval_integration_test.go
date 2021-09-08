@@ -358,7 +358,8 @@ func createDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, httpClie
 		dynatrace.NewClientWithHTTP(
 			&credentials.DTCredentials{Tenant: "http://dynatrace"},
 			httpClient),
-		&KeptnClientMock{})
+		KeptnClientMock{},
+		DashboardReaderMock{})
 
 	return dh
 }

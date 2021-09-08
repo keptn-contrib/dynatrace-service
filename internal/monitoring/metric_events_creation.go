@@ -26,14 +26,16 @@ type CriteriaObject struct {
 }
 
 type MetricEventCreation struct {
-	dtClient dynatrace.ClientInterface
-	kClient  keptn.ClientInterface
+	dtClient  dynatrace.ClientInterface
+	kClient   keptn.ClientInterface
+	sloReader keptn.SLOResourceReaderInterface
 }
 
-func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface) MetricEventCreation {
+func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOResourceReaderInterface) MetricEventCreation {
 	return MetricEventCreation{
-		dtClient: dynatraceClient,
-		kClient:  keptnClient,
+		dtClient:  dynatraceClient,
+		kClient:   keptnClient,
+		sloReader: sloReader,
 	}
 }
 
@@ -44,7 +46,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 
 	log.Info("Creating custom metric events for project SLIs")
-	slos, err := keptn.NewDefaultResourceClient().GetSLOs(project, stage, service)
+	slos, err := mec.sloReader.GetSLOs(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithFields(
 			log.Fields{

@@ -123,3 +123,9 @@ func (KeptnClientMock) GetShipyard() (*keptnv2.Shipyard, error) {
 func (KeptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
 	return nil
 }
+
+type DashboardReaderMock struct{}
+
+func (DashboardReaderMock) GetDashboard(project string, stage string, service string) (string, error) {
+	return "", nil
+}

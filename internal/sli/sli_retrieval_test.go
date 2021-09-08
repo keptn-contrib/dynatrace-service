@@ -155,7 +155,8 @@ func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Re
 	dh := NewRetrieval(
 		keptnEvent,
 		dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
-		KeptnClientMock{})
+		KeptnClientMock{},
+		DashboardReaderMock{})
 
 	return dh, httpClient, url, teardown
 }

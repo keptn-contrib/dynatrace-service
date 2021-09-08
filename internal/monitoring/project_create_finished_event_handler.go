@@ -7,17 +7,21 @@ import (
 )
 
 type ProjectCreateFinishedEventHandler struct {
-	event    ProjectCreateFinishedAdapterInterface
-	dtClient dynatrace.ClientInterface
-	kClient  keptn.ClientInterface
+	event          ProjectCreateFinishedAdapterInterface
+	dtClient       dynatrace.ClientInterface
+	kClient        keptn.ClientInterface
+	resourceClient keptn.ResourceClientInterface
+	serviceClient  keptn.ServiceClientInterface
 }
 
 // NewProjectCreateFinishedEventHandler creates a new ProjectCreateFinishedEventHandler
-func NewProjectCreateFinishedEventHandler(event ProjectCreateFinishedAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface) ProjectCreateFinishedEventHandler {
+func NewProjectCreateFinishedEventHandler(event ProjectCreateFinishedAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, resourceClient keptn.ResourceClientInterface, serviceClient keptn.ServiceClientInterface) ProjectCreateFinishedEventHandler {
 	return ProjectCreateFinishedEventHandler{
-		event:    event,
-		dtClient: dtClient,
-		kClient:  kClient,
+		event:          event,
+		dtClient:       dtClient,
+		kClient:        kClient,
+		resourceClient: resourceClient,
+		serviceClient:  serviceClient,
 	}
 }
 
@@ -27,7 +31,7 @@ func (eh ProjectCreateFinishedEventHandler) HandleEvent() error {
 		log.WithError(err).Error("Could not load Keptn shipyard file")
 	}
 
-	cfg := NewConfiguration(eh.dtClient, eh.kClient)
+	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.resourceClient, eh.serviceClient)
 
 	_, err = cfg.ConfigureMonitoring(eh.event.GetProject(), shipyard)
 	if err != nil {
