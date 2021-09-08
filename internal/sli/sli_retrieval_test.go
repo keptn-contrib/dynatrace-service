@@ -129,7 +129,7 @@ func testingDynatraceHTTPClient() (*http.Client, string, func()) {
  * Creates a new Keptn Event
  */
 func testingGetKeptnEvent(project string, stage string, service string, deployment string, test string) GetSLITriggeredAdapterInterface {
-	keptnEvent := &BaseKeptnEvent{}
+	keptnEvent := &GetSLITriggeredEvent{}
 	keptnEvent.Project = project
 	keptnEvent.Stage = stage
 	keptnEvent.Service = service
