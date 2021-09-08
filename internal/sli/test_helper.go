@@ -18,9 +18,6 @@ type BaseKeptnEvent struct {
 	TestStrategy       string
 	DeploymentStrategy string
 
-	Image string
-	Tag   string
-
 	Labels map[string]string
 
 	IsForDynatrace bool
@@ -74,16 +71,6 @@ func (e *BaseKeptnEvent) GetTestStrategy() string {
 // GetDeploymentStrategy returns the used deployment strategy
 func (e BaseKeptnEvent) GetDeploymentStrategy() string {
 	return e.DeploymentStrategy
-}
-
-// GetImage returns the deployed image
-func (e *BaseKeptnEvent) GetImage() string {
-	return e.Image
-}
-
-// GetTag returns the deployed tag
-func (e *BaseKeptnEvent) GetTag() string {
-	return e.Tag
 }
 
 // GetLabels returns a map of labels

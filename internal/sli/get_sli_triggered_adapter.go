@@ -85,16 +85,6 @@ func (a GetSLITriggeredAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-// GetImage returns the deployed image
-func (a GetSLITriggeredAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a GetSLITriggeredAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a GetSLITriggeredAdapter) GetLabels() map[string]string {
 	return a.event.Labels

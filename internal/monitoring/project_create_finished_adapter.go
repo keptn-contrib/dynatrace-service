@@ -83,16 +83,6 @@ func (a ProjectCreateFinishedAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-// GetImage returns the deployed image
-func (a ProjectCreateFinishedAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a ProjectCreateFinishedAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a ProjectCreateFinishedAdapter) GetLabels() map[string]string {
 	return nil

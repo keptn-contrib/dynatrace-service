@@ -78,16 +78,6 @@ func (a TestTriggeredAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-// GetImage returns the deployed image
-func (a TestTriggeredAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a TestTriggeredAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a TestTriggeredAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels

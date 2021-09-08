@@ -80,16 +80,6 @@ func (a ReleaseTriggeredAdapter) GetDeploymentStrategy() string {
 	return a.event.Deployment.DeploymentStrategy
 }
 
-// GetImage returns the deployed image
-func (a ReleaseTriggeredAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a ReleaseTriggeredAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a ReleaseTriggeredAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels

@@ -105,14 +105,6 @@ func (initSyncEventAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-func (initSyncEventAdapter) GetImage() string {
-	return ""
-}
-
-func (initSyncEventAdapter) GetTag() string {
-	return ""
-}
-
 func (initSyncEventAdapter) GetLabels() map[string]string {
 	return nil
 }

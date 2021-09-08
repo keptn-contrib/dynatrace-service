@@ -103,16 +103,6 @@ func (a ProblemAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-// GetImage returns the deployed image
-func (a ProblemAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a ProblemAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a ProblemAdapter) GetLabels() map[string]string {
 	return nil

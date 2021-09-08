@@ -80,16 +80,6 @@ func (a ConfigureMonitoringAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-// GetImage returns the deployed image
-func (a ConfigureMonitoringAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a ConfigureMonitoringAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a ConfigureMonitoringAdapter) GetLabels() map[string]string {
 	return nil
