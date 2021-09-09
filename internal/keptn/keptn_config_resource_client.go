@@ -85,11 +85,16 @@ type ConfigResourceClient struct {
 	handler *api.ResourceHandler
 }
 
+// NewDefaultConfigResourceClient creates a new ResourceClient with a default Keptn resource handler for the configuration service
+func NewDefaultConfigResourceClient() *ConfigResourceClient {
+	return NewConfigResourceClient(
+		api.NewResourceHandler(common.GetConfigurationServiceURL()))
+}
+
 // NewConfigResourceClient creates a new ResourceClient with a Keptn resource handler for the configuration service
-func NewConfigResourceClient() *ConfigResourceClient {
+func NewConfigResourceClient(handler *api.ResourceHandler) *ConfigResourceClient {
 	return &ConfigResourceClient{
-		handler: api.NewResourceHandler(
-			common.GetConfigurationServiceURL()),
+		handler: handler,
 	}
 }
 

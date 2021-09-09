@@ -44,10 +44,10 @@ type TagNames struct {
 }
 
 type AutoTagsClient struct {
-	client *Client
+	client ClientInterface
 }
 
-func NewAutoTagClient(client *Client) *AutoTagsClient {
+func NewAutoTagClient(client ClientInterface) *AutoTagsClient {
 	return &AutoTagsClient{
 		client: client,
 	}
@@ -71,7 +71,7 @@ func (atc *AutoTagsClient) GetAllTagNames() (*TagNames, error) {
 		return nil, err
 	}
 
-	existingDTRules := &DTAPIListResponse{}
+	existingDTRules := &listResponse{}
 	err = json.Unmarshal(response, existingDTRules)
 	if err != nil {
 		log.WithError(err).Error("Failed to unmarshal Dynatrace tagging rules")
@@ -80,6 +80,6 @@ func (atc *AutoTagsClient) GetAllTagNames() (*TagNames, error) {
 
 	return &TagNames{
 		existingDTRules.ToStringSetWith(
-			func(values Values) string { return values.Name }),
+			func(values values) string { return values.Name }),
 	}, nil
 }

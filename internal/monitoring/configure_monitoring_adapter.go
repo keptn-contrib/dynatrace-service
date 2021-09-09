@@ -1,13 +1,19 @@
 package monitoring
 
 import (
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
-// ConfigureMonitoringAdapter godoc
+type ConfigureMonitoringAdapterInterface interface {
+	adapter.EventContentAdapter
+	adapter.TriggeredCloudEventContentAdapter
+
+	IsNotForDynatrace() bool
+}
+
+// ConfigureMonitoringAdapter encapsulates a cloud event and its parsed payload
 type ConfigureMonitoringAdapter struct {
 	event      keptn.ConfigureMonitoringEventData
 	cloudEvent adapter.CloudEventAdapter
@@ -15,21 +21,23 @@ type ConfigureMonitoringAdapter struct {
 
 // NewConfigureMonitoringAdapterFromEvent creates a new ConfigureMonitoringAdapter from a cloudevents Event
 func NewConfigureMonitoringAdapterFromEvent(e cloudevents.Event) (*ConfigureMonitoringAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	cmData := &keptn.ConfigureMonitoringEventData{}
-	err := e.DataAs(cmData)
+	err := ceAdapter.PayloadAs(cmData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse deployment finished event payload: %v", err)
+		return nil, err
 	}
 
 	return &ConfigureMonitoringAdapter{
 		event:      *cmData,
-		cloudEvent: adapter.NewCloudEventAdapter(e),
+		cloudEvent: ceAdapter,
 	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ConfigureMonitoringAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.Context()
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
@@ -69,16 +77,6 @@ func (a ConfigureMonitoringAdapter) GetTestStrategy() string {
 
 // GetDeploymentStrategy returns the used deployment strategy
 func (a ConfigureMonitoringAdapter) GetDeploymentStrategy() string {
-	return ""
-}
-
-// GetImage returns the deployed image
-func (a ConfigureMonitoringAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a ConfigureMonitoringAdapter) GetTag() string {
 	return ""
 }
 

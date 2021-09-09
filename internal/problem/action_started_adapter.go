@@ -1,46 +1,47 @@
 package problem
 
 import (
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-// ActionStartedAdapter is a content adaptor for events of type sh.keptn.event.action.started
-type ActionStartedAdapter struct {
-	event   keptnv2.ActionStartedEventData
-	context string
-	source  string
+type ActionStartedAdapterInterface interface {
+	adapter.EventContentAdapter
 }
 
-// NewActionStartedAdapter creates a new ActionStartedAdapter
-func NewActionStartedAdapter(event keptnv2.ActionStartedEventData, shkeptncontext, source string) ActionStartedAdapter {
-	return ActionStartedAdapter{event: event, context: shkeptncontext, source: source}
+// ActionStartedAdapter is a content adaptor for events of type sh.keptn.event.action.started
+type ActionStartedAdapter struct {
+	event      keptnv2.ActionStartedEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewActionStartedAdapterFromEvent creates a new ActionStartedAdapter from a cloudevents Event
 func NewActionStartedAdapterFromEvent(e cloudevents.Event) (*ActionStartedAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	asData := &keptnv2.ActionStartedEventData{}
-	err := e.DataAs(asData)
+	err := ceAdapter.PayloadAs(asData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse action started event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewActionStartedAdapter(*asData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &ActionStartedAdapter{
+		event:      *asData,
+		cloudEvent: ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ActionStartedAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ActionStartedAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
@@ -75,16 +76,6 @@ func (a ActionStartedAdapter) GetTestStrategy() string {
 
 // GetDeploymentStrategy returns the used deployment strategy
 func (a ActionStartedAdapter) GetDeploymentStrategy() string {
-	return ""
-}
-
-// GetImage returns the deployed image
-func (a ActionStartedAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a ActionStartedAdapter) GetTag() string {
 	return ""
 }
 

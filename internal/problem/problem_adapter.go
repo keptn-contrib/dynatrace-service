@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -14,41 +13,54 @@ import (
 
 const remediationTaskName = "remediation"
 
-// ProblemAdapter is a content adaptor for events of type sh.keptn.event.action.finished
-type ProblemAdapter struct {
-	event   DTProblemEvent
-	context string
-	source  string
+type ProblemAdapterInterface interface {
+	adapter.EventContentAdapter
+
+	IsNotFromDynatrace() bool
+	GetState() string
+	GetPID() string
+	GetProblemID() string
+	IsResolved() bool
+	GetProblemTitle() string
+	GetProblemURL() string
+	GetImpactedEntity() string
+	GetProblemTags() string
+	GetProblemDetails() json.RawMessage
 }
 
-// NewProblemAdapter creates a new ProblemAdapter
-func NewProblemAdapter(event DTProblemEvent, shkeptncontext, source string) ProblemAdapter {
-
-	// we need to set the project, stage and service names also from tags, if available
-	setProjectStageAndServiceFromTags(&event)
-	return ProblemAdapter{event: event, context: shkeptncontext, source: source}
+// ProblemAdapter is a content adaptor for events of type sh.keptn.event.action.finished
+type ProblemAdapter struct {
+	event      DTProblemEvent
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewProblemAdapterFromEvent creates a new ProblemAdapter from a cloudevents Event
 func NewProblemAdapterFromEvent(e cloudevents.Event) (*ProblemAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	pData := &DTProblemEvent{}
-	err := e.DataAs(pData)
+	err := ceAdapter.PayloadAs(pData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse problem event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewProblemAdapter(*pData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	// we need to set the project, stage and service names also from tags, if available
+	setProjectStageAndServiceFromTags(pData)
+
+	return &ProblemAdapter{
+		event:      *pData,
+		cloudEvent: ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ProblemAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ProblemAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
@@ -91,23 +103,13 @@ func (a ProblemAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-// GetImage returns the deployed image
-func (a ProblemAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a ProblemAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a ProblemAdapter) GetLabels() map[string]string {
 	return nil
 }
 
 func (a ProblemAdapter) IsNotFromDynatrace() bool {
-	return a.source != "dynatrace"
+	return a.cloudEvent.Source() != "dynatrace"
 }
 
 func (a ProblemAdapter) GetState() string {
@@ -122,58 +124,28 @@ func (a ProblemAdapter) GetProblemID() string {
 	return a.event.ProblemID
 }
 
+func (a ProblemAdapter) GetProblemTitle() string {
+	return a.event.ProblemTitle
+}
+
+func (a ProblemAdapter) GetProblemURL() string {
+	return a.event.ProblemURL
+}
+
+func (a ProblemAdapter) GetImpactedEntity() string {
+	return a.event.ImpactedEntity
+}
+
+func (a ProblemAdapter) GetProblemTags() string {
+	return a.event.Tags
+}
+
+func (a ProblemAdapter) GetProblemDetails() json.RawMessage {
+	return marshalProblemDetails(a.event.ProblemDetails)
+}
+
 func (a ProblemAdapter) IsResolved() bool {
 	return a.GetState() == "RESOLVED"
-}
-
-func (a ProblemAdapter) getClosedProblemEventData() keptn.ProblemEventData {
-	problemData := keptn.ProblemEventData{
-		State:          "CLOSED",
-		PID:            a.GetPID(),
-		ProblemID:      a.GetProblemID(),
-		ProblemTitle:   a.event.ProblemTitle,
-		ProblemDetails: json.RawMessage(marshalProblemDetails(a.event.ProblemDetails)),
-		ProblemURL:     a.event.ProblemURL,
-		ImpactedEntity: a.event.ImpactedEntity,
-		Tags:           a.event.Tags,
-		Project:        a.GetProject(),
-		Stage:          a.GetStage(),
-		Service:        a.GetService(),
-	}
-
-	// https://github.com/keptn-contrib/dynatrace-service/issues/176
-	// add problem URL as label so it becomes clickable
-	problemData.Labels = make(map[string]string)
-	problemData.Labels[common.PROBLEMURL_LABEL] = a.event.ProblemURL
-
-	return problemData
-}
-
-func (a ProblemAdapter) getRemediationTriggeredEventData() remediationTriggeredEventData {
-	remediationEventData := remediationTriggeredEventData{
-		EventData: keptnv2.EventData{
-			Project: a.GetProject(),
-			Stage:   a.GetStage(),
-			Service: a.GetService(),
-		},
-		Problem: ProblemDetails{
-			State:          "OPEN",
-			PID:            a.GetPID(),
-			ProblemID:      a.GetProblemID(),
-			ProblemTitle:   a.event.ProblemTitle,
-			ProblemDetails: json.RawMessage(marshalProblemDetails(a.event.ProblemDetails)),
-			ProblemURL:     a.event.ProblemURL,
-			ImpactedEntity: a.event.ImpactedEntity,
-			Tags:           a.event.Tags,
-		},
-	}
-
-	// https://github.com/keptn-contrib/dynatrace-service/issues/176
-	// add problem URL as label so it becomes clickable
-	remediationEventData.Labels = make(map[string]string)
-	remediationEventData.Labels[common.PROBLEMURL_LABEL] = a.event.ProblemURL
-
-	return remediationEventData
 }
 
 func marshalProblemDetails(details DTProblemDetails) []byte {

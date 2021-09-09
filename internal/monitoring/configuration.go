@@ -1,18 +1,11 @@
 package monitoring
 
 import (
-	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-
-	keptnutils "github.com/keptn/go-utils/pkg/api/utils"
 )
-
-type Configuration struct {
-	dtClient *dynatrace.Client
-	kClient  *keptnv2.Keptn
-}
 
 // ConfiguredEntities contains information about the entities configures in Dynatrace
 type ConfiguredEntities struct {
@@ -34,10 +27,19 @@ type ConfigResult struct {
 	Message string
 }
 
-func NewConfiguration(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) *Configuration {
+type Configuration struct {
+	dtClient       dynatrace.ClientInterface
+	kClient        keptn.ClientInterface
+	resourceClient keptn.ResourceClientInterface
+	serviceClient  keptn.ServiceClientInterface
+}
+
+func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, resourceClient keptn.ResourceClientInterface, serviceClient keptn.ServiceClientInterface) *Configuration {
 	return &Configuration{
-		dtClient: dynatraceClient,
-		kClient:  keptnClient,
+		dtClient:       dynatraceClient,
+		kClient:        keptnClient,
+		resourceClient: resourceClient,
+		serviceClient:  serviceClient,
 	}
 }
 
@@ -61,20 +63,18 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(project, *shipyard)
 		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(project, *shipyard)
 
-		configHandler := keptnutils.NewServiceHandler("shipyard-controller:8080")
-
 		var metricEvents []ConfigResult
 		// try to create metric events - if one fails, don't fail the whole setup
 		for _, stage := range shipyard.Spec.Stages {
 			if shouldCreateMetricEvents(stage) {
-				services, err := configHandler.GetAllServices(project, stage.Name)
+				serviceNames, err := mc.serviceClient.GetServiceNames(project, stage.Name)
 				if err != nil {
-					return nil, fmt.Errorf("failed to retrieve services of project %s: %v", project, err.Error())
+					return nil, err
 				}
-				for _, service := range services {
+				for _, serviceName := range serviceNames {
 					metricEvents = append(
 						metricEvents,
-						NewMetricEventCreation(mc.dtClient, mc.kClient).Create(project, stage.Name, service.ServiceName)...)
+						NewMetricEventCreation(mc.dtClient, mc.kClient, mc.resourceClient).Create(project, stage.Name, serviceName)...)
 				}
 			}
 		}

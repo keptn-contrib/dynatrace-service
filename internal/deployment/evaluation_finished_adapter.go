@@ -3,45 +3,48 @@ package deployment
 import (
 	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"os"
 )
 
-// EvaluationFinishedAdapter godoc
-type EvaluationFinishedAdapter struct {
-	event   keptnv2.EvaluationFinishedEventData
-	context string
-	source  string
+type EvaluationFinishedAdapterInterface interface {
+	adapter.EventContentAdapter
+
+	GetEvaluationScore() float64
+	GetResult() keptnv2.ResultType
 }
 
-// NewEvaluationFinishedAdapter creates a new EvaluationFinishedAdapter
-func NewEvaluationFinishedAdapter(event keptnv2.EvaluationFinishedEventData, shkeptncontext, source string) EvaluationFinishedAdapter {
-	return EvaluationFinishedAdapter{event: event, context: shkeptncontext, source: source}
+// EvaluationFinishedAdapter is a content adaptor for events of type sh.keptn.event.evaluation.finished
+type EvaluationFinishedAdapter struct {
+	event      keptnv2.EvaluationFinishedEventData
+	cloudEvent adapter.CloudEventAdapter
 }
 
 // NewEvaluationFinishedAdapterFromEvent creates a new EvaluationFinishedAdapter from a cloudevents Event
 func NewEvaluationFinishedAdapterFromEvent(e cloudevents.Event) (*EvaluationFinishedAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	efData := &keptnv2.EvaluationFinishedEventData{}
-	err := e.DataAs(efData)
+	err := ceAdapter.PayloadAs(efData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse evaluation finished event payload: %v", err)
+		return nil, err
 	}
 
-	adapter := NewEvaluationFinishedAdapter(*efData, event.GetShKeptnContext(e), e.Source())
-	return &adapter, nil
+	return &EvaluationFinishedAdapter{
+		event:      *efData,
+		cloudEvent: ceAdapter,
+	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a EvaluationFinishedAdapter) GetShKeptnContext() string {
-	return a.context
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a EvaluationFinishedAdapter) GetSource() string {
-	return a.source
+	return a.cloudEvent.Source()
 }
 
 // GetEvent returns the event type
@@ -79,16 +82,6 @@ func (a EvaluationFinishedAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-// GetImage returns the deployed image
-func (a EvaluationFinishedAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a EvaluationFinishedAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a EvaluationFinishedAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
@@ -104,23 +97,6 @@ func (a EvaluationFinishedAdapter) GetLabels() map[string]string {
 	labels["Evaluation Start"] = a.event.Evaluation.TimeStart
 	labels["Evaluation End"] = a.event.Evaluation.TimeEnd
 	return labels
-}
-
-// IsPartOfRemediation checks wether the evaluation.finished event is part of a remediation task sequence
-func (a EvaluationFinishedAdapter) IsPartOfRemediation() bool {
-	eventHandler := keptnapi.NewEventHandler(os.Getenv("DATASTORE"))
-
-	events, errObj := eventHandler.GetEvents(&keptnapi.EventFilter{
-		Project:      a.GetProject(),
-		Stage:        a.GetStage(),
-		Service:      a.GetService(),
-		EventType:    keptnv2.GetTriggeredEventType("remediation"),
-		KeptnContext: a.context,
-	})
-	if errObj != nil || events == nil || len(events) == 0 {
-		return false
-	}
-	return true
 }
 
 func (a EvaluationFinishedAdapter) GetEvaluationScore() float64 {

@@ -25,17 +25,19 @@ const MetricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatr
 
 // Retrieval interacts with a dynatrace API endpoint
 type Retrieval struct {
-	KeptnEvent GetSLITriggeredAdapterInterface
-	dtClient   *dynatrace.Client
-	kClient    keptn.ClientInterface
+	KeptnEvent      GetSLITriggeredAdapterInterface
+	dtClient        dynatrace.ClientInterface
+	kClient         keptn.ClientInterface
+	dashboardReader keptn.DashboardResourceReaderInterface
 }
 
 // NewRetrieval returns a new dynatrace handler that interacts with the Dynatrace REST API
-func NewRetrieval(keptnEvent GetSLITriggeredAdapterInterface, dtClient *dynatrace.Client, kClient keptn.ClientInterface) *Retrieval {
+func NewRetrieval(keptnEvent GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, dashboardReader keptn.DashboardResourceReaderInterface) *Retrieval {
 	return &Retrieval{
-		KeptnEvent: keptnEvent,
-		dtClient:   dtClient,
-		kClient:    kClient,
+		KeptnEvent:      keptnEvent,
+		dtClient:        dtClient,
+		kClient:         kClient,
+		dashboardReader: dashboardReader,
 	}
 }
 
@@ -769,12 +771,10 @@ func (ph *Retrieval) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int
 //  #5: Error
 func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventContentAdapter, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardQueryResult, error) {
 
-	resourceClient := keptn.NewResourceClient()
-
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
 	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
 	// If a dashboard.json exists and dashboard property is empty we default to QUERY - which is the old default behavior
-	existingDashboardContent, err := resourceClient.GetDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
+	existingDashboardContent, err := ph.dashboardReader.GetDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
 	if err == nil && existingDashboardContent != "" && dashboard == "" {
 		log.Debug("Set dashboard=query for backward compatibility as dashboard.json was present!")
 		dashboard = common.DynatraceConfigDashboardQUERY
@@ -791,7 +791,7 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 	}
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewDashboardLink(ph.dtClient.DynatraceCreds.Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
+	dashboardLinkAsLabel := NewDashboardLink(ph.dtClient.Credentials().Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details

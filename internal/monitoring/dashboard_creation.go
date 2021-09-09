@@ -16,10 +16,10 @@ const timeSeriesChartType = "TIMESERIES"
 const dashboardStageWidth int = 456
 
 type DashboardCreation struct {
-	client *dynatrace.Client
+	client dynatrace.ClientInterface
 }
 
-func NewDashboardCreation(client *dynatrace.Client) *DashboardCreation {
+func NewDashboardCreation(client dynatrace.ClientInterface) *DashboardCreation {
 	return &DashboardCreation{
 		client: client,
 	}
@@ -52,10 +52,10 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) C
 			Message: err.Error(),
 		}
 	}
-	log.WithField("dashboardUrl", "https://"+dc.client.DynatraceCreds.Tenant+"/#dashboards").Info("Dynatrace dashboard created successfully")
+	log.WithField("dashboardUrl", "https://"+dc.client.Credentials().Tenant+"/#dashboards").Info("Dynatrace dashboard created successfully")
 	return ConfigResult{
 		Success: true, // I guess this should be true not false?
-		Message: "Dynatrace dashboard created successfully. You can view it here: https://" + dc.client.DynatraceCreds.Tenant + "/#dashboards",
+		Message: "Dynatrace dashboard created successfully. You can view it here: https://" + dc.client.Credentials().Tenant + "/#dashboards",
 	}
 }
 

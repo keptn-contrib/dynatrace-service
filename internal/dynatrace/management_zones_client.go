@@ -38,10 +38,10 @@ type MZRules struct {
 const managementZonesPath = "/api/config/v1/managementZones"
 
 type ManagementZones struct {
-	values map[string]Values
+	values map[string]values
 }
 
-func (mz *ManagementZones) GetByName(name string) (Values, bool) {
+func (mz *ManagementZones) GetByName(name string) (values, bool) {
 	value, exists := mz.values[name]
 	return value, exists
 }
@@ -52,10 +52,10 @@ func (mz *ManagementZones) Contains(name string) bool {
 }
 
 type ManagementZonesClient struct {
-	client *Client
+	client ClientInterface
 }
 
-func NewManagementZonesClient(client *Client) *ManagementZonesClient {
+func NewManagementZonesClient(client ClientInterface) *ManagementZonesClient {
 	return &ManagementZonesClient{
 		client: client,
 	}
@@ -67,7 +67,7 @@ func (mzc *ManagementZonesClient) GetAll() (*ManagementZones, error) {
 		return nil, fmt.Errorf("could not retrieve management zones: %v", err)
 	}
 
-	mzs := &DTAPIListResponse{}
+	mzs := &listResponse{}
 	err = json.Unmarshal(response, mzs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse management zones list: %v", err)
@@ -76,9 +76,9 @@ func (mzc *ManagementZonesClient) GetAll() (*ManagementZones, error) {
 	return transformToManagementZones(mzs), nil
 }
 
-func transformToManagementZones(response *DTAPIListResponse) *ManagementZones {
+func transformToManagementZones(response *listResponse) *ManagementZones {
 	managementZones := &ManagementZones{
-		values: make(map[string]Values, len(response.Values)),
+		values: make(map[string]values, len(response.Values)),
 	}
 	for _, value := range response.Values {
 		managementZones.values[value.Name] = value

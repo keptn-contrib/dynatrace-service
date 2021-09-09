@@ -1,30 +1,34 @@
 package deployment
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 type TestTriggeredEventHandler struct {
-	event       *TestTriggeredAdapter
-	client      *dynatrace.Client
-	attachRules *config.DtAttachRules
+	event       TestTriggeredAdapterInterface
+	dtClient    dynatrace.ClientInterface
+	eClient     keptn.EventClientInterface
+	attachRules *dynatrace.AttachRules
 }
 
 // NewTestTriggeredEventHandler creates a new TestTriggeredEventHandler
-func NewTestTriggeredEventHandler(event *TestTriggeredAdapter, client *dynatrace.Client, attachRules *config.DtAttachRules) *TestTriggeredEventHandler {
+func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *TestTriggeredEventHandler {
 	return &TestTriggeredEventHandler{
 		event:       event,
-		client:      client,
+		dtClient:    dtClient,
+		eClient:     eClient,
 		attachRules: attachRules,
 	}
 }
 
 // HandleEvent handles an action finished event
 func (eh *TestTriggeredEventHandler) HandleEvent() error {
+
+	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+
 	// Send Annotation Event
-	ie := event.CreateAnnotationEvent(eh.event, eh.attachRules)
+	ie := dynatrace.CreateAnnotationEventDTO(eh.event, imageAndTag, eh.attachRules)
 	if ie.AnnotationType == "" {
 		ie.AnnotationType = "Start Tests: " + eh.event.GetTestStrategy()
 	}
@@ -32,7 +36,7 @@ func (eh *TestTriggeredEventHandler) HandleEvent() error {
 		ie.AnnotationDescription = "Start running tests: " + eh.event.GetTestStrategy() + " against " + eh.event.GetService()
 	}
 
-	dynatrace.NewEventsClient(eh.client).SendEvent(ie)
+	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ie)
 
 	return nil
 }

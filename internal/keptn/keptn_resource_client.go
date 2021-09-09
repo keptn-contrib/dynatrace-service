@@ -9,17 +9,26 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type SLOResourceClientInterface interface {
+type SLOResourceReaderInterface interface {
 	GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error)
+}
+type SLIAndSLOResourceWriterInterface interface {
+	UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error
 	UploadSLOs(project string, stage string, service string, dashboardSLOs *keptn.ServiceLevelObjectives) error
 }
-type DashboardResourceClientInterface interface {
-	UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error
+type DashboardResourceReaderInterface interface {
 	GetDashboard(project string, stage string, service string) (string, error)
 }
-type SLIResourceClientInterface interface {
-	UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error
+type DashboardResourceWriterInterface interface {
+	UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error
 }
+type ResourceClientInterface interface {
+	SLOResourceReaderInterface
+	SLIAndSLOResourceWriterInterface
+	DashboardResourceReaderInterface
+	DashboardResourceWriterInterface
+}
+
 type DynatraceConfigResourceClientInterface interface {
 	GetDynatraceConfig(project string, stage string, service string) (string, error)
 }
@@ -34,10 +43,16 @@ type ResourceClient struct {
 	client ConfigResourceClientInterface
 }
 
+// NewDefaultResourceClient creates a new ResourceClient with a default Keptn resource handler for the configuration service
+func NewDefaultResourceClient() *ResourceClient {
+	return NewResourceClient(
+		NewDefaultConfigResourceClient())
+}
+
 // NewResourceClient creates a new ResourceClient with a Keptn resource handler for the configuration service
-func NewResourceClient() *ResourceClient {
+func NewResourceClient(client ConfigResourceClientInterface) *ResourceClient {
 	return &ResourceClient{
-		client: NewConfigResourceClient(),
+		client: client,
 	}
 }
 

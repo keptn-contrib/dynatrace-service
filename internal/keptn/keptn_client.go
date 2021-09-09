@@ -3,6 +3,7 @@ package keptn
 import (
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -46,6 +47,8 @@ func (cq *CustomQueries) GetQueryByNameOrDefault(sliName string) (string, error)
 
 type ClientInterface interface {
 	GetCustomQueries(project string, stage string, service string) (*CustomQueries, error)
+	GetShipyard() (*keptnv2.Shipyard, error)
+	SendCloudEvent(factory adapter.CloudEventFactoryInterface) error
 }
 
 type Client struct {
@@ -69,6 +72,28 @@ func (c *Client) GetCustomQueries(project string, stage string, service string) 
 	}
 
 	return &CustomQueries{values: customQueries}, nil
+}
+
+func (c *Client) GetShipyard() (*keptnv2.Shipyard, error) {
+	shipyard, err := c.client.GetShipyard()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve shipyard for project %s: %v", c.client.Event.GetProject(), err)
+	}
+
+	return shipyard, nil
+}
+
+func (c *Client) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
+	ev, err := factory.CreateCloudEvent()
+	if err != nil {
+		return fmt.Errorf("could not create cloud event: %s", err)
+	}
+
+	if err := c.client.SendCloudEvent(*ev); err != nil {
+		return fmt.Errorf("could not send %s event: %s", ev.Type(), err.Error())
+	}
+
+	return nil
 }
 
 // based on the requested metric a dynatrace time series with its aggregation type is returned

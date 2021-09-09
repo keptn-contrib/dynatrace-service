@@ -62,11 +62,11 @@ type Problem struct {
 
 // ProblemsV2Client is a client for interacting with the Dynatrace problems endpoints
 type ProblemsV2Client struct {
-	client *Client
+	client ClientInterface
 }
 
 // NewProblemsV2Client creates a new ProblemsV2Client
-func NewProblemsV2Client(client *Client) *ProblemsV2Client {
+func NewProblemsV2Client(client ClientInterface) *ProblemsV2Client {
 	return &ProblemsV2Client{
 		client: client,
 	}

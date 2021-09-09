@@ -29,20 +29,38 @@ type EnvironmentAPIv2Error struct {
 	} `json:"error"`
 }
 
+type ClientInterface interface {
+	Get(apiPath string) ([]byte, error)
+	Post(apiPath string, body []byte) ([]byte, error)
+	Put(apiPath string, body []byte) ([]byte, error)
+	Delete(apiPath string) ([]byte, error)
+
+	Credentials() *credentials.DTCredentials
+}
+
 type Client struct {
-	DynatraceCreds *credentials.DTCredentials
-	HTTPClient     *http.Client
+	credentials *credentials.DTCredentials
+	httpClient  *http.Client
 }
 
 // NewClient creates a new Client
 func NewClient(dynatraceCreds *credentials.DTCredentials) *Client {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !env.IsHttpSSLVerificationEnabled()},
-		Proxy:           http.ProxyFromEnvironment,
-	}
+	return NewClientWithHTTP(
+		dynatraceCreds,
+		&http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: !env.IsHttpSSLVerificationEnabled()},
+				Proxy: http.ProxyFromEnvironment,
+			},
+		},
+	)
+}
+
+func NewClientWithHTTP(dynatraceCreds *credentials.DTCredentials, httpClient *http.Client) *Client {
 	return &Client{
-		DynatraceCreds: dynatraceCreds,
-		HTTPClient:     &http.Client{Transport: tr},
+		credentials: dynatraceCreds,
+		httpClient:  httpClient,
 	}
 }
 
@@ -81,10 +99,10 @@ func (dt *Client) sendRequest(apiPath string, method string, body []byte) ([]byt
 // creates http request for api call with appropriate headers including authorization
 func (dt *Client) createRequest(apiPath string, method string, body []byte) (*http.Request, error) {
 	var url string
-	if !strings.HasPrefix(dt.DynatraceCreds.Tenant, "http://") && !strings.HasPrefix(dt.DynatraceCreds.Tenant, "https://") {
-		url = "https://" + dt.DynatraceCreds.Tenant + apiPath
+	if !strings.HasPrefix(dt.credentials.Tenant, "http://") && !strings.HasPrefix(dt.credentials.Tenant, "https://") {
+		url = "https://" + dt.credentials.Tenant + apiPath
 	} else {
-		url = dt.DynatraceCreds.Tenant + apiPath
+		url = dt.credentials.Tenant + apiPath
 	}
 
 	log.WithFields(log.Fields{"method": method, "url": url}).Debug("creating Dynatrace API request")
@@ -95,7 +113,7 @@ func (dt *Client) createRequest(apiPath string, method string, body []byte) (*ht
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Api-Token "+dt.DynatraceCreds.ApiToken)
+	req.Header.Set("Authorization", "Api-Token "+dt.credentials.ApiToken)
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
 
 	return req, nil
@@ -103,7 +121,7 @@ func (dt *Client) createRequest(apiPath string, method string, body []byte) (*ht
 
 // performs the request and reads the response
 func (dt *Client) doRequest(req *http.Request) ([]byte, error) {
-	resp, err := dt.HTTPClient.Do(req)
+	resp, err := dt.httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send Dynatrace API request: %v", err)
 	}
@@ -126,4 +144,8 @@ func (dt *Client) doRequest(req *http.Request) ([]byte, error) {
 	}
 
 	return responseBody, nil
+}
+
+func (dt *Client) Credentials() *credentials.DTCredentials {
+	return dt.credentials
 }

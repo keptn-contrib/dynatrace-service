@@ -1,7 +1,6 @@
 package sli
 
 import (
-	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -9,13 +8,14 @@ import (
 
 type GetSLITriggeredAdapterInterface interface {
 	adapter.EventContentAdapter
+	adapter.TriggeredCloudEventContentAdapter
 
 	IsNotForDynatrace() bool
 	GetSLIStart() string
 	GetSLIEnd() string
 	GetIndicators() []string
 	GetCustomSLIFilters() []*keptnv2.SLIFilter
-	GetEventID() string
+	AddLabel(name string, value string)
 }
 
 // GetSLITriggeredAdapter is a content adaptor for events of type sh.keptn.event.action.started
@@ -26,21 +26,23 @@ type GetSLITriggeredAdapter struct {
 
 // NewGetSLITriggeredAdapterFromEvent creates a new GetSLITriggeredAdapter from a cloudevents Event
 func NewGetSLITriggeredAdapterFromEvent(e cloudevents.Event) (*GetSLITriggeredAdapter, error) {
+	ceAdapter := adapter.NewCloudEventAdapter(e)
+
 	stData := &keptnv2.GetSLITriggeredEventData{}
-	err := e.DataAs(stData)
+	err := ceAdapter.PayloadAs(stData)
 	if err != nil {
-		return nil, fmt.Errorf("could not parse action started event payload: %v", err)
+		return nil, err
 	}
 
 	return &GetSLITriggeredAdapter{
 		event:      *stData,
-		cloudEvent: adapter.NewCloudEventAdapter(e),
+		cloudEvent: ceAdapter,
 	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
 func (a GetSLITriggeredAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.Context()
+	return a.cloudEvent.ShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
@@ -83,16 +85,6 @@ func (a GetSLITriggeredAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-// GetImage returns the deployed image
-func (a GetSLITriggeredAdapter) GetImage() string {
-	return ""
-}
-
-// GetTag returns the deployed tag
-func (a GetSLITriggeredAdapter) GetTag() string {
-	return ""
-}
-
 // GetLabels returns a map of labels
 func (a GetSLITriggeredAdapter) GetLabels() map[string]string {
 	return a.event.Labels
@@ -122,7 +114,7 @@ func (a GetSLITriggeredAdapter) GetEventID() string {
 	return a.cloudEvent.ID()
 }
 
-func (a *GetSLITriggeredAdapter) addLabel(name string, value string) {
+func (a *GetSLITriggeredAdapter) AddLabel(name string, value string) {
 	if a.event.Labels == nil {
 		a.event.Labels = make(map[string]string)
 	}

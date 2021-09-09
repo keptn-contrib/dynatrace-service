@@ -13,8 +13,5 @@ type EventContentAdapter interface {
 	GetTestStrategy() string
 	GetDeploymentStrategy() string
 
-	GetImage() string
-	GetTag() string
-
 	GetLabels() map[string]string
 }

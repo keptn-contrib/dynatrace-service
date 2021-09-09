@@ -44,22 +44,22 @@ type CustomEventFilter struct {
 }
 
 type AlertingProfilesClient struct {
-	client *Client
+	client ClientInterface
 }
 
-func NewAlertingProfilesClient(client *Client) *AlertingProfilesClient {
+func NewAlertingProfilesClient(client ClientInterface) *AlertingProfilesClient {
 	return &AlertingProfilesClient{
 		client: client,
 	}
 }
 
-func (apc *AlertingProfilesClient) getAll() (*DTAPIListResponse, error) {
+func (apc *AlertingProfilesClient) getAll() (*listResponse, error) {
 	response, err := apc.client.Get(alertingProfilesPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve alerting profiles: %v", err)
 	}
 
-	alertingProfiles := &DTAPIListResponse{}
+	alertingProfiles := &listResponse{}
 	err = json.Unmarshal(response, alertingProfiles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal alerting profiles: %v", err)
@@ -95,7 +95,7 @@ func (apc *AlertingProfilesClient) Create(alertingProfile *AlertingProfile) (str
 		return "", fmt.Errorf("failed to setup alerting profile: %v", err)
 	}
 
-	createdItem := &Values{}
+	createdItem := &values{}
 	err = json.Unmarshal(response, createdItem)
 	if err != nil {
 		err = CheckForUnexpectedHTMLResponseError(err)

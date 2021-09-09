@@ -21,7 +21,7 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 	defer dtMockServer.Close()
 
 	type fields struct {
-		client *Client
+		client ClientInterface
 	}
 	type args struct {
 		nextPageKey string

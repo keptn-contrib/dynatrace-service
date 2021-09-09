@@ -7,7 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"regexp"
 	"strconv"
 	"strings"
@@ -27,14 +26,16 @@ type CriteriaObject struct {
 }
 
 type MetricEventCreation struct {
-	dtClient *dynatrace.Client
-	kClient  *keptnv2.Keptn
+	dtClient  dynatrace.ClientInterface
+	kClient   keptn.ClientInterface
+	sloReader keptn.SLOResourceReaderInterface
 }
 
-func NewMetricEventCreation(dynatraceClient *dynatrace.Client, keptnClient *keptnv2.Keptn) MetricEventCreation {
+func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOResourceReaderInterface) MetricEventCreation {
 	return MetricEventCreation{
-		dtClient: dynatraceClient,
-		kClient:  keptnClient,
+		dtClient:  dynatraceClient,
+		kClient:   keptnClient,
+		sloReader: sloReader,
 	}
 }
 
@@ -45,7 +46,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 
 	log.Info("Creating custom metric events for project SLIs")
-	slos, err := keptn.NewResourceClient().GetSLOs(project, stage, service)
+	slos, err := mec.sloReader.GetSLOs(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithFields(
 			log.Fields{
@@ -55,7 +56,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	}
 	// get custom metrics for project
 
-	projectCustomQueries, err := keptn.NewClient(mec.kClient).GetCustomQueries(project, stage, service)
+	projectCustomQueries, err := mec.kClient.GetCustomQueries(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithField("project", project).Error("Failed to get custom queries for project")
 		return nil
@@ -103,7 +104,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 
 	if len(metricsEventResults) > 0 {
 		// TODO: improve this?
-		log.Info("To review and enable the generated custom metric events, please go to: https://" + mec.dtClient.DynatraceCreds.Tenant + "/#settings/anomalydetection/metricevents")
+		log.Info("To review and enable the generated custom metric events, please go to: https://" + mec.dtClient.Credentials().Tenant + "/#settings/anomalydetection/metricevents")
 	}
 
 	return metricsEventResults

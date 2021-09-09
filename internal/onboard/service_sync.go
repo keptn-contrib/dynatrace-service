@@ -1,16 +1,10 @@
 package onboard
 
 import (
-	"bytes"
-	b64 "encoding/base64"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	"io/ioutil"
-	"net/http"
-	"strings"
+	keptnlib "github.com/keptn/go-utils/pkg/lib"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -18,53 +12,13 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
 const defaultDTProjectName = "dynatrace"
 const defaultDTProjectStage = "quality-gate"
-const defaultSLOFile = `---
-spec_version: "1.0"
-comparison:
-  aggregate_function: "avg"
-  compare_with: "single_result"
-  include_result_with_score: "pass"
-  number_of_comparison_results: 1
-filter:
-objectives:
-  - sli: "response_time_p95"
-    key_sli: false
-    pass:             
-      - criteria:
-          - "<600"    
-    warning:        
-      - criteria:
-          - "<=800"
-    weight: 1
-  - sli: "error_rate"
-    key_sli: false
-    pass:
-      - criteria:
-          - "<5"
-  - sli: throughput
-total_score:
-  pass: "90%"
-  warning: "75%"`
-
-const defaultSLIConfigFile = `---
-spec_version: '1.0'
-indicators:
-  throughput: "metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  error_rate: "metricSelector=builtin:service.errors.total.rate:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  response_time_p50: "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  response_time_p90: "metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"
-  response_time_p95: "metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:$SERVICE)"`
-
-var encodedDefaultSLOFile string
 
 type initSyncEventAdapter struct {
 }
@@ -105,29 +59,21 @@ func (initSyncEventAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
-func (initSyncEventAdapter) GetImage() string {
-	return ""
-}
-
-func (initSyncEventAdapter) GetTag() string {
-	return ""
-}
-
 func (initSyncEventAdapter) GetLabels() map[string]string {
 	return nil
 }
 
 type serviceSynchronizer struct {
-	projectsAPI       *keptnapi.ProjectHandler
-	servicesAPI       *keptnapi.ServiceHandler
-	resourcesAPI      *keptnapi.ResourceHandler
-	apiHandler        *keptnapi.APIHandler
-	credentialManager credentials.CredentialManagerInterface
-	EntitiesClient    *dynatrace.EntitiesClient
-	syncTimer         *time.Ticker
-	keptnHandler      *keptnv2.Keptn
-	servicesInKeptn   []string
-	dtConfigGetter    config.DynatraceConfigGetterInterface
+	projectClient      keptn.ProjectClientInterface
+	servicesClient     keptn.ServiceClientInterface
+	resourcesClient    keptn.SLIAndSLOResourceWriterInterface
+	apiHandler         *keptnapi.APIHandler
+	credentialManager  credentials.CredentialManagerInterface
+	EntitiesClientFunc func(dtCredentials *credentials.DTCredentials) *dynatrace.EntitiesClient
+	syncTimer          *time.Ticker
+	keptnHandler       *keptnv2.Keptn
+	servicesInKeptn    []string
+	dtConfigGetter     config.DynatraceConfigGetterInterface
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
@@ -139,13 +85,18 @@ const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serviceSynchronizer {
 	if serviceSynchronizerInstance == nil {
 
-		encodedDefaultSLOFile = b64.StdEncoding.EncodeToString([]byte(defaultSLOFile))
 		serviceSynchronizerInstance = &serviceSynchronizer{
 			credentialManager: c,
 		}
 
-		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(keptn.NewResourceClient())
-		serviceSynchronizerInstance.EntitiesClient = dynatrace.NewEntitiesClient(dynatrace.NewClient(nil))
+		resourceClient := keptn.NewDefaultResourceClient()
+
+		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(resourceClient)
+		serviceSynchronizerInstance.EntitiesClientFunc =
+			func(credentials *credentials.DTCredentials) *dynatrace.EntitiesClient {
+				dtClient := dynatrace.NewClient(credentials)
+				return dynatrace.NewEntitiesClient(dtClient)
+			}
 
 		configServiceBaseURL := common.GetConfigurationServiceURL()
 		shipyardControllerBaseURL := common.GetShipyardControllerURL()
@@ -155,9 +106,9 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 				"shipyardControllerBaseURL": shipyardControllerBaseURL,
 			}).Debug("Initializing Service Synchronizer")
 
-		serviceSynchronizerInstance.projectsAPI = keptnapi.NewProjectHandler(shipyardControllerBaseURL)
-		serviceSynchronizerInstance.servicesAPI = keptnapi.NewServiceHandler(shipyardControllerBaseURL)
-		serviceSynchronizerInstance.resourcesAPI = keptnapi.NewResourceHandler(configServiceBaseURL)
+		serviceSynchronizerInstance.projectClient = keptn.NewDefaultProjectClient()
+		serviceSynchronizerInstance.servicesClient = keptn.NewDefaultServiceClient()
+		serviceSynchronizerInstance.resourcesClient = resourceClient
 
 		serviceSynchronizerInstance.initializeSynchronizationTimer()
 
@@ -179,7 +130,8 @@ func (s *serviceSynchronizer) initializeSynchronizationTimer() {
 }
 
 func (s *serviceSynchronizer) synchronizeServices() {
-	if err := s.establishDTAPIConnection(); err != nil {
+	creds, err := s.establishDTAPIConnection()
+	if err != nil {
 		log.WithError(err).Error("Could not establish Dynatrace API connection")
 		return
 	}
@@ -192,7 +144,8 @@ func (s *serviceSynchronizer) synchronizeServices() {
 
 	log.Info("Fetching service entities with tags 'keptn_managed' and 'keptn_service'")
 
-	entities, err := s.EntitiesClient.GetKeptnManagedServices()
+	entitiesClient := s.EntitiesClientFunc(creds)
+	entities, err := entitiesClient.GetKeptnManagedServices()
 	if err != nil {
 		log.WithError(err).Error("Error fetching keptn managed services from dynatrace")
 		return
@@ -228,44 +181,33 @@ func (s *serviceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
 	}
 }
 
-func (s *serviceSynchronizer) establishDTAPIConnection() error {
+func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.DTCredentials, error) {
 	dynatraceConfig, err := s.dtConfigGetter.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
-		return fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
+		return nil, fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
 	}
 
 	creds, err := s.credentialManager.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
-		return fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
+		return nil, fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
 	}
 
-	s.EntitiesClient.Client.DynatraceCreds = creds
-	return nil
+	return creds, nil
 }
 
 func (s *serviceSynchronizer) fetchExistingServices() error {
-	project, errObj := s.projectsAPI.GetProject(apimodels.Project{
-		ProjectName: defaultDTProjectName,
-	})
-	if errObj != nil {
-		if errObj.Code == 404 {
-			return fmt.Errorf("project %s does not exist", defaultDTProjectName)
-		}
-		return fmt.Errorf("could not check if Keptn project %s exists: %s", defaultDTProjectName, *errObj.Message)
-	}
-	if project == nil {
-		return fmt.Errorf("keptn project %s does not exist", defaultDTProjectName)
+	err := s.projectClient.AssertProjectExists(defaultDTProjectName)
+	if err != nil {
+		return err
 	}
 
 	// get all services currently in the project
 	s.servicesInKeptn = []string{}
-	allKeptnServicesInProject, err := s.servicesAPI.GetAllServices(defaultDTProjectName, defaultDTProjectStage)
+	serviceNames, err := s.servicesClient.GetServiceNames(defaultDTProjectName, defaultDTProjectStage)
 	if err != nil {
-		return fmt.Errorf("could not fetch services of Keptn project %s: %s", defaultDTProjectName, err.Error())
+		return err
 	}
-	for _, service := range allKeptnServicesInProject {
-		s.servicesInKeptn = append(s.servicesInKeptn, service.ServiceName)
-	}
+	s.servicesInKeptn = serviceNames
 
 	return nil
 }
@@ -291,9 +233,7 @@ func doesServiceExist(services []string, serviceName string) bool {
 }
 
 func (s *serviceSynchronizer) addServiceToKeptn(serviceName string) error {
-	_, err := s.createService(defaultDTProjectName, &apimodels.CreateService{
-		ServiceName: &serviceName,
-	})
+	err := s.servicesClient.CreateServiceInProject(defaultDTProjectName, serviceName)
 	if err != nil {
 		return fmt.Errorf("could not create service %s: %s", serviceName, err)
 	}
@@ -316,86 +256,64 @@ func (s *serviceSynchronizer) addServiceToKeptn(serviceName string) error {
 	return nil
 }
 
-func (s *serviceSynchronizer) createService(projectName string, service *apimodels.CreateService) (string, error) {
-	bodyStr, err := json.Marshal(service)
-	if err != nil {
-		return "", fmt.Errorf("could not marshal service payload: %s", err.Error())
-	}
-
-	var scBaseURL string
-	scEndpoint, err := keptncommon.GetServiceEndpoint(shipyardController)
-	if err == nil {
-		scBaseURL = scEndpoint.String()
-	} else {
-		scBaseURL = defaultShipyardControllerURL
-	}
-	req, err := http.NewRequest("POST", scBaseURL+"/v1/project/"+projectName+"/service", bytes.NewBuffer(bodyStr))
-	req.Header.Set("Content-Type", "application/json")
-
-	client := http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode >= 200 && resp.StatusCode <= 204 {
-		if len(body) > 0 {
-			return string(body), nil
-		}
-
-		return "", nil
-	}
-
-	if len(body) > 0 {
-		return "", errors.New(string(body))
-	}
-
-	return "", fmt.Errorf("received unexpected response: %d %s", resp.StatusCode, resp.Status)
-}
-
 func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
-	resourceURI := "slo.yaml"
-	sloResource := &apimodels.Resource{
-		ResourceContent: defaultSLOFile,
-		ResourceURI:     &resourceURI,
+	defaultSLOs := &keptnlib.ServiceLevelObjectives{
+		SpecVersion: "1.0",
+		Filter:      nil,
+		Comparison: &keptnlib.SLOComparison{
+			AggregateFunction:         "avg",
+			CompareWith:               "single_result",
+			IncludeResultWithScore:    "pass",
+			NumberOfComparisonResults: 1,
+		},
+		Objectives: []*keptnlib.SLO{
+			{
+				SLI:     "response_time_p95",
+				KeySLI:  false,
+				Pass:    []*keptnlib.SLOCriteria{{Criteria: []string{"<600"}}},
+				Warning: []*keptnlib.SLOCriteria{{Criteria: []string{"<=800"}}},
+				Weight:  1,
+			},
+			{
+				SLI:    "error_rate",
+				KeySLI: false,
+				Pass:   []*keptnlib.SLOCriteria{{Criteria: []string{"<5"}}},
+				Weight: 1,
+			},
+			{
+				SLI: "throughput",
+			},
+		},
+		TotalScore: &keptnlib.SLOScore{
+			Pass:    "90%",
+			Warning: "75%",
+		},
 	}
-	_, err := s.resourcesAPI.CreateServiceResources(
-		defaultDTProjectName,
-		defaultDTProjectStage,
-		serviceName,
-		[]*apimodels.Resource{sloResource},
-	)
 
+	err := s.resourcesClient.UploadSLOs(defaultDTProjectName, defaultDTProjectStage, serviceName, defaultSLOs)
 	if err != nil {
-		return fmt.Errorf("could not upload slo.yaml to service %s: %s", serviceName, err.Error())
+		return err
 	}
 
 	return nil
 }
 
 func (s *serviceSynchronizer) createSLIResource(serviceName string) error {
-	resourceURI := "dynatrace/sli.yaml"
-	sliFileContent := strings.ReplaceAll(defaultSLIConfigFile, "$SERVICE", serviceName)
+	indicators := make(map[string]string)
+	indicators["throughput"] = fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["error_rate"] = fmt.Sprintf("metricSelector=builtin:service.errors.total.rate:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p50"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p90"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p95"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
 
-	sliResource := &apimodels.Resource{
-		ResourceContent: sliFileContent,
-		ResourceURI:     &resourceURI,
+	defaultSLIs := &dynatrace.SLI{
+		SpecVersion: "1.0",
+		Indicators:  indicators,
 	}
-	_, err := s.resourcesAPI.CreateServiceResources(
-		defaultDTProjectName,
-		defaultDTProjectStage,
-		serviceName,
-		[]*apimodels.Resource{sliResource},
-	)
 
+	err := s.resourcesClient.UploadSLI(defaultDTProjectName, defaultDTProjectStage, serviceName, defaultSLIs)
 	if err != nil {
-		return fmt.Errorf("could not upload sli.yaml to service %s: %s", serviceName, err.Error())
+		return err
 	}
 
 	return nil

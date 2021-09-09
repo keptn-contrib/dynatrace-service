@@ -9,10 +9,10 @@ import (
 )
 
 type ManagementZoneCreation struct {
-	client *dynatrace.Client
+	client dynatrace.ClientInterface
 }
 
-func NewManagementZoneCreation(client *dynatrace.Client) *ManagementZoneCreation {
+func NewManagementZoneCreation(client dynatrace.ClientInterface) *ManagementZoneCreation {
 	return &ManagementZoneCreation{
 		client: client,
 	}

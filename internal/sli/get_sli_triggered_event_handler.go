@@ -6,17 +6,13 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
 	"strings"
 	"time"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 
-	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
-
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	// configutils "github.com/keptn/go-utils/pkg/configuration-service/utils"
 	// keptnevents "github.com/keptn/go-utils/pkg/events"
@@ -27,20 +23,23 @@ import (
 const ProblemOpenSLI = "problem_open"
 
 type GetSLIEventHandler struct {
-	event      *GetSLITriggeredAdapter
-	dtClient   *dynatrace.Client
-	kClient    *keptn.Client
+	event          GetSLITriggeredAdapterInterface
+	dtClient       dynatrace.ClientInterface
+	kClient        keptn.ClientInterface
+	resourceClient keptn.ResourceClientInterface
+
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event *GetSLITriggeredAdapter, dtClient *dynatrace.Client, kClient *keptn.Client, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, resourceClient keptn.ResourceClientInterface, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
-		event:      event,
-		dtClient:   dtClient,
-		kClient:    kClient,
-		secretName: secretName,
-		dashboard:  dashboard,
+		event:          event,
+		dtClient:       dtClient,
+		kClient:        kClient,
+		resourceClient: resourceClient,
+		secretName:     secretName,
+		dashboard:      dashboard,
 	}
 }
 
@@ -115,12 +114,10 @@ func ensureRightTimestamps(start string, end string) (time.Time, time.Time, erro
 /**
  * Adds an SLO Entry to the SLO.yaml
  */
-func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) error {
-
-	resourceClient := keptn.NewResourceClient()
+func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 
 	// first - lets load the SLO.yaml from the config repo
-	dashboardSLO, err := resourceClient.GetSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
+	dashboardSLO, err := eh.resourceClient.GetSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
 		var rnfErr *keptn.ResourceNotFoundError
 		if !errors.As(err, &rnfErr) {
@@ -150,7 +147,7 @@ func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) err
 
 	// now - lets add our newSLO to the list
 	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
-	err = resourceClient.UploadSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), dashboardSLO)
+	err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
 	if err != nil {
 		return err
 	}
@@ -161,7 +158,7 @@ func addSLO(keptnEvent adapter.EventContentAdapter, newSLO *keptncommon.SLO) err
 /**
  * Tries to find a dynatrace dashboard that matches our project. If so - returns the SLI, SLO and SLIResults
  */
-func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.EventContentAdapter, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*DashboardLink, []*keptnv2.SLIResult, error) {
+func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.EventContentAdapter, startUnix time.Time, endUnix time.Time, dashboardConfig string) (*DashboardLink, []*keptnv2.SLIResult, error) {
 
 	//
 	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
@@ -176,11 +173,9 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
 		return nil, nil, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
 	}
 
-	resourceClient := keptn.NewResourceClient()
-
 	// lets store the dashboard as well
 	if result.Dashboard() != nil {
-		err = resourceClient.UploadDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.Dashboard())
+		err = eh.resourceClient.UploadDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.Dashboard())
 		if err != nil {
 			return result.DashboardLink(), result.SLIResults(), err
 		}
@@ -188,7 +183,7 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
 
 	// lets write the SLI to the config repo
 	if result.SLI() != nil {
-		err = resourceClient.UploadSLI(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLI())
+		err = eh.resourceClient.UploadSLI(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLI())
 		if err != nil {
 			return result.DashboardLink(), result.SLIResults(), err
 		}
@@ -196,7 +191,7 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
 
 	// lets write the SLO to the config repo
 	if result.SLO() != nil {
-		err = resourceClient.UploadSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLO())
+		err = eh.resourceClient.UploadSLOs(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService(), result.SLO())
 		if err != nil {
 			return result.DashboardLink(), result.SLIResults(), err
 		}
@@ -210,7 +205,7 @@ func getDataFromDynatraceDashboard(sliRetrieval *Retrieval, keptnEvent adapter.E
  *
  * Will evaluate the event and - if it finds a dynatrace problem ID - will return this - otherwise it will return 0
  */
-func getDynatraceProblemContext(eventData *GetSLITriggeredAdapter) string {
+func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) string {
 
 	// iterate through the labels and find Problem URL
 	if eventData.GetLabels() == nil || len(eventData.GetLabels()) == 0 {
@@ -238,8 +233,8 @@ func getDynatraceProblemContext(eventData *GetSLITriggeredAdapter) string {
 // Second will go to parse the SLI.yaml and returns the SLI as passed in by the event
 func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	// send get-sli.started event
-	if err := sendGetSLIStartedEvent(eh.event); err != nil {
-		return sendGetSLIFinishedEvent(eh.event, nil, err)
+	if err := eh.sendGetSLIStartedEvent(); err != nil {
+		return eh.sendGetSLIFinishedEvent(nil, err)
 	}
 
 	log.WithFields(
@@ -250,18 +245,18 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		}).Info("Processing sh.keptn.internal.event.get-sli")
 
 	// Adding DtCreds as a label so users know which DtCreds was used
-	eh.event.addLabel("DtCreds", eh.secretName)
+	eh.event.AddLabel("DtCreds", eh.secretName)
 
 	//
 	// creating Dynatrace Retrieval which allows us to call the Dynatrace API
-	sliRetrieval := NewRetrieval(eh.event, eh.dtClient, eh.kClient)
+	sliRetrieval := NewRetrieval(eh.event, eh.dtClient, eh.kClient, eh.resourceClient)
 
 	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps
 	startUnix, endUnix, err := ensureRightTimestamps(eh.event.GetSLIStart(), eh.event.GetSLIEnd())
 	if err != nil {
 		log.WithError(err).Error("ensureRightTimestamps failed")
-		return sendGetSLIFinishedEvent(eh.event, nil, err)
+		return eh.sendGetSLIFinishedEvent(nil, err)
 	}
 
 	//
@@ -271,7 +266,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	//
 	// Option 1 - see if we can get the data from a Dynatrace Dashboard
-	dashboardLinkAsLabel, sliResults, err := getDataFromDynatraceDashboard(sliRetrieval, eh.event, startUnix, endUnix, eh.dashboard)
+	dashboardLinkAsLabel, sliResults, err := eh.getDataFromDynatraceDashboard(sliRetrieval, eh.event, startUnix, endUnix, eh.dashboard)
 	if err != nil {
 		// log the error, but continue with loading sli.yaml
 		log.WithError(err).Error("getDataFromDynatraceDashboard failed")
@@ -279,7 +274,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	// add link to dynatrace dashboard to labels
 	if dashboardLinkAsLabel != nil {
-		eh.event.addLabel("Dashboard Link", dashboardLinkAsLabel.String())
+		eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
 	}
 
 	//
@@ -357,7 +352,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", problemIndicator)
 		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
-		errAddSlo := addSLO(eh.event, sloDefinition)
+		errAddSlo := eh.addSLO(sloDefinition)
 		if errAddSlo != nil {
 			// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
 			log.WithError(errAddSlo).Error("problem while adding SLOs")
@@ -372,46 +367,21 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	log.Info("Finished fetching metrics; Sending SLIDone event now ...")
 
-	return sendGetSLIFinishedEvent(eh.event, sliResults, err)
+	return eh.sendGetSLIFinishedEvent(sliResults, err)
 }
 
 /**
  * Sends the SLI Done Event. If err != nil it will send an error message
  */
-func sendGetSLIFinishedEvent(eventData *GetSLITriggeredAdapter, indicatorValues []*keptnv2.SLIResult, err error) error {
+func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(indicatorValues []*keptnv2.SLIResult, err error) error {
 
 	// if an error was set - the indicators will be set to failed and error message is set to each
-	indicatorValues = resetIndicatorsInCaseOfError(err, eventData, indicatorValues)
+	indicatorValues = resetIndicatorsInCaseOfError(err, eh.event, indicatorValues)
 
-	getSLIEvent := keptnv2.GetSLIFinishedEventData{
-		EventData: keptnv2.EventData{
-			Project: eventData.GetProject(),
-			Stage:   eventData.GetStage(),
-			Service: eventData.GetService(),
-			Labels:  eventData.GetLabels(),
-			Status:  keptnv2.StatusSucceeded,
-			Result:  keptnv2.ResultPass,
-		},
-
-		GetSLI: keptnv2.GetSLIFinished{
-			IndicatorValues: indicatorValues,
-			Start:           eventData.GetSLIStart(),
-			End:             eventData.GetSLIEnd(),
-		},
-	}
-
-	ev := cloudevents.NewEvent()
-	ev.SetType(keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName))
-	ev.SetSource(event.GetEventSource())
-	ev.SetDataContentType(cloudevents.ApplicationJSON)
-	ev.SetExtension("shkeptncontext", eventData.GetShKeptnContext())
-	ev.SetExtension("triggeredid", eventData.GetEventID())
-	ev.SetData(cloudevents.ApplicationJSON, getSLIEvent)
-
-	return sendEvent(ev)
+	return eh.sendEvent(NewGetSLIFinishedEventFactory(eh.event, indicatorValues))
 }
 
-func resetIndicatorsInCaseOfError(err error, eventData *GetSLITriggeredAdapter, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
+func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
 	if err != nil {
 		indicators := eventData.GetIndicators()
 		if (indicatorValues == nil) || (len(indicatorValues) == 0) {
@@ -439,39 +409,19 @@ func resetIndicatorsInCaseOfError(err error, eventData *GetSLITriggeredAdapter, 
 	return indicatorValues
 }
 
-func sendGetSLIStartedEvent(eventData *GetSLITriggeredAdapter) error {
-
-	getSLIStartedEvent := keptnv2.GetSLIStartedEventData{
-		EventData: keptnv2.EventData{
-			Project: eventData.GetProject(),
-			Stage:   eventData.GetStage(),
-			Service: eventData.GetService(),
-			Labels:  eventData.GetLabels(),
-			Status:  keptnv2.StatusSucceeded,
-			Result:  keptnv2.ResultPass,
-		},
-	}
-
-	ev := cloudevents.NewEvent()
-	ev.SetType(keptnv2.GetStartedEventType(keptnv2.GetSLITaskName))
-	ev.SetSource(event.GetEventSource())
-	ev.SetDataContentType(cloudevents.ApplicationJSON)
-	ev.SetExtension("shkeptncontext", eventData.GetShKeptnContext())
-	ev.SetExtension("triggeredid", eventData.GetEventID())
-	ev.SetData(cloudevents.ApplicationJSON, getSLIStartedEvent)
-
-	return sendEvent(ev)
+func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
+	return eh.sendEvent(NewGetSliStartedEventFactory(eh.event))
 }
 
 /**
  * sends cloud event back to keptn
  */
-func sendEvent(event cloudevents.Event) error {
-
-	keptnHandler, err := keptnv2.NewKeptn(&event, keptnapi.KeptnOpts{})
+func (eh *GetSLIEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {
+	err := eh.kClient.SendCloudEvent(factory)
 	if err != nil {
+		log.WithError(err).Error("Could not send get sli cloud event")
 		return err
 	}
 
-	return keptnHandler.SendCloudEvent(event)
+	return nil
 }
