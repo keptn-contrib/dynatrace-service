@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -158,11 +159,11 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 
 func (eh *ConfigureMonitoringEventHandler) handleError(err error) error {
 	log.Error(err)
-	return eh.sendConfigureMonitoringFinishedEvent(NewFailureEventFactory(err.Error()))
+	return eh.sendConfigureMonitoringFinishedEvent(NewFailureEventFactory(eh.event, err.Error()))
 }
 
 func (eh *ConfigureMonitoringEventHandler) handleSuccess(message string) error {
-	return eh.sendConfigureMonitoringFinishedEvent(NewSuccessEventFactory(message))
+	return eh.sendConfigureMonitoringFinishedEvent(NewSuccessEventFactory(eh.event, message))
 }
 
 func (eh *ConfigureMonitoringEventHandler) sendConfigureMonitoringFinishedEvent(factory adapter.CloudEventFactoryInterface) error {
