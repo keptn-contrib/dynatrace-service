@@ -6,7 +6,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io"
 	"io/ioutil"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -516,18 +515,6 @@ func TestCreateNewDynatraceHandler(t *testing.T) {
 	}
 	if dh.KeptnEvent.GetDeploymentStrategy() != "direct" {
 		t.Errorf("dh.Deployment=%s; want direct", dh.KeptnEvent.GetDeploymentStrategy())
-	}
-}
-
-func TestTimestampToString(t *testing.T) {
-	dt := time.Now()
-
-	got := common.TimestampToString(dt)
-
-	expected := strconv.FormatInt(dt.Unix()*1000, 10)
-
-	if got != expected {
-		t.Errorf("timestampToString() returned %s, expected %s", got, expected)
 	}
 }
 
