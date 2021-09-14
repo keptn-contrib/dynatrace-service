@@ -226,11 +226,12 @@ jobs:
     needs: [helm_charts_build, docker_build]
     runs-on: ubuntu-20.04
     env:
-      KEPTN_VERSION: 0.8.7
+      KEPTN_VERSION: 0.9.0
       KEPTN_ENDPOINT: ${{ secrets.KEPTN_ENDPOINT }}
       KEPTN_API_TOKEN: ${{ secrets.KEPTN_API_TOKEN }}
       KEPTN_PROJECT: demo
       KEPTN_STAGE: dev
+      VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
 
     steps:
       - name: Checkout Code
@@ -243,7 +244,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: installer
-                
+
       - name: Set up Keptn CLI and connect to Keptn instance
         run: |
           echo "Setting up keptn CLI $KEPTN_VERSION"
