@@ -145,10 +145,10 @@ jobs:
         run: |
           if [[ "$BRANCH" == "master" ]]; then
             # use VERSION.DATETIME for the image tag (e.g., nightly build)
-            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}.${DATETIME}" "${env.IMAGE}"
+            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}.${DATETIME}" "${IMAGE}"
           else
             # just use VERSION for the image tag
-            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}" "${env.IMAGE}"
+            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}" "${IMAGE}"
           fi
 
       - name: Upload Helm Chart as an artifact
@@ -254,7 +254,7 @@ jobs:
       - name: Upload Helm chart to as Keptn resource
         run: |
           ls -latr
-          keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=${{ env.IMAGE }} --resource=${{ env.IMAGE }}-${{ env.VERSION }}.tgz --resourceUri=${{ env.IMAGE }}-${{ env.VERSION }}.tgz 
+          keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=$IMAGE --resource=${IMAGE}-${VERSION}.tgz --resourceUri=helm/dynatrace-service.tgz
 
   ############################################################################
   # store-output-in-build-config                                             #
