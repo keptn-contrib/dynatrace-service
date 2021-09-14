@@ -269,7 +269,7 @@ jobs:
             "type": "sh.keptn.event.dev.delivery.triggered"
           }
           EOF
-          keptn send event --file=./delivery-triggered.json
+          
   ############################################################################
   # store-output-in-build-config                                             #
   ############################################################################
