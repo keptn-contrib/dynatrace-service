@@ -253,8 +253,7 @@ jobs:
           keptn auth --endpoint=$KEPTN_ENDPOINT --api-token=$KEPTN_API_TOKEN
           keptn version
       - name: Upload Helm chart to as Keptn resource
-        run: |
-          ls -latr
+        run: |          
           keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=$IMAGE --resource=${IMAGE}-${VERSION}.tgz --resourceUri=helm/dynatrace-service.tgz
           cat <<EOF >>delivery-triggered.json
           {
@@ -269,6 +268,7 @@ jobs:
             "type": "sh.keptn.event.dev.delivery.triggered"
           }
           EOF
+          keptn send event --file=./delivery-triggered.json
           
   ############################################################################
   # store-output-in-build-config                                             #
