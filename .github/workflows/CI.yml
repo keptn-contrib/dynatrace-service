@@ -155,8 +155,8 @@ jobs:
         id: upload_helm_chart
         uses: actions/upload-artifact@v2
         with:
-          name: ${env.IMAGE}-${env.VERSION}.tgz
-          path: installer/${env.IMAGE}-${env.VERSION}.tgz
+          name: installer
+          path: installer/*.tgz
 
   ############################################################################
   # Build Docker Image                                                      #
@@ -237,6 +237,7 @@ jobs:
         run: |
           echo "Setting up keptn CLI $KEPTN_VERSION"
           curl -sL https://get.keptn.sh | KEPTN_VERSION=$KEPTN_VERSION bash
+          keptn set config KubeContextCheck false
           keptn auth --endpoint=$KEPTN_ENDPOINT --api-token=$KEPTN_API_TOKEN
           keptn version
 
@@ -248,10 +249,11 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: ${{ env.IMAGE }}-${{ env.VERSION }}.tgz
+          name: installer
 
       - name: Upload Helm chart to as Keptn resource
         run: |
+          ls -latr
           keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=${{ env.IMAGE }} --resource=${{ env.IMAGE }}-${{ env.VERSION }}.tgz --resourceUri=${{ env.IMAGE }}-${{ env.VERSION }}.tgz 
 
   ############################################################################
