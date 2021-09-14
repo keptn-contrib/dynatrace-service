@@ -155,8 +155,8 @@ jobs:
         id: upload_helm_chart
         uses: actions/upload-artifact@v2
         with:
-          name: installer
-          path: installer/*.tgz
+          name: ${IMAGE}-${VERSION}.tgz
+          path: installer/${IMAGE}-${VERSION}.tgz
 
   ############################################################################
   # Build Docker Image                                                      #
@@ -218,6 +218,38 @@ jobs:
           path: docker_build_report_final.txt
           recreate: true
 
+  ############################################################################
+  # Deploy to Keptn                                                          #
+  ############################################################################
+  deploy-to-keptn:
+    needs: [helm_charts_build, docker_build]
+    runs-on: ubuntu-20.04
+    env:      
+      KEPTN_ENDPOINT: ${{ secrets.KEPTN_ENDPOINT }}
+      KEPTN_API_TOKEN: ${{ secrets.KEPTN_API_TOKEN }}
+      KEPTN_PROJECT: demo
+      KEPTN_STAGE: dev
+      KEPTN_SERVICE: ${{ env.VERSION }}
+
+    steps:
+      - name: Set up Keptn CLI and connect to Keptn instance
+        run: |
+          echo "Setting up keptn CLI $KEPTN_VERSION"
+          curl -sL https://get.keptn.sh | KEPTN_VERSION=$KEPTN_VERSION bash
+          keptn auth --endpoint=$KEPTN_ENDPOINT --api-token=$KEPTN_API_TOKEN
+          keptn version
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: test.txt
+
+      - name: Upload Helm chart to as Keptn resource
+        run: |
+          keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=$KEPTN_SERVICE --resource=$HELM_CHART_FILENAME --resourceUri=installer/dynatrace-service.tgz 
+
+  ############################################################################
+  # store-output-in-build-config                                             #
+  ############################################################################
   store-output-in-build-config:
     name: "Store output of last step in build-config.env"
     needs: prepare_ci_run
