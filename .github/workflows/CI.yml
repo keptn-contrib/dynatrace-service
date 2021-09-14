@@ -225,7 +225,8 @@ jobs:
     name: Deploy Helm chart to Keptn
     needs: [helm_charts_build, docker_build]
     runs-on: ubuntu-20.04
-    env:      
+    env:
+      KEPTN_VERSION: 0.8.7
       KEPTN_ENDPOINT: ${{ secrets.KEPTN_ENDPOINT }}
       KEPTN_API_TOKEN: ${{ secrets.KEPTN_API_TOKEN }}
       KEPTN_PROJECT: demo
