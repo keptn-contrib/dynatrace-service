@@ -17,19 +17,21 @@ func (f *ConfigureMonitoringFinishedEventFactory) CreateCloudEvent() (*cloudeven
 	return f.getEventFactory(f.status, f.result, f.message).CreateCloudEvent()
 }
 
-func NewSuccessEventFactory(message string) *ConfigureMonitoringFinishedEventFactory {
+func NewSuccessEventFactory(eventData ConfigureMonitoringAdapterInterface, message string) *ConfigureMonitoringFinishedEventFactory {
 	return &ConfigureMonitoringFinishedEventFactory{
-		status:  keptnv2.StatusSucceeded,
-		result:  keptnv2.ResultPass,
-		message: message,
+		eventData: eventData,
+		status:    keptnv2.StatusSucceeded,
+		result:    keptnv2.ResultPass,
+		message:   message,
 	}
 }
 
-func NewFailureEventFactory(message string) *ConfigureMonitoringFinishedEventFactory {
+func NewFailureEventFactory(eventData ConfigureMonitoringAdapterInterface, message string) *ConfigureMonitoringFinishedEventFactory {
 	return &ConfigureMonitoringFinishedEventFactory{
-		status:  keptnv2.StatusErrored,
-		result:  keptnv2.ResultFailed,
-		message: message,
+		eventData: eventData,
+		status:    keptnv2.StatusErrored,
+		result:    keptnv2.ResultFailed,
+		message:   message,
 	}
 }
 
