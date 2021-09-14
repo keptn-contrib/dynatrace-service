@@ -531,44 +531,6 @@ func TestTimestampToString(t *testing.T) {
 	}
 }
 
-// tests the parseUnixTimestamp with invalid params
-func TestParseInvalidUnixTimestamp(t *testing.T) {
-	_, err := common.ParseUnixTimestamp("")
-
-	if err == nil {
-		t.Errorf("parseUnixTimestamp(\"\") did not return an error")
-	}
-}
-
-// tests the parseUnixTimestamp with valid params
-func TestParseValidUnixTimestamp(t *testing.T) {
-	got, err := common.ParseUnixTimestamp("2019-10-24T15:44:27.152330783Z")
-
-	if err != nil {
-		t.Fatalf("parseUnixTimestamp(\"2019-10-24T15:44:27.152330783Z\") returned error %s", err.Error())
-	}
-
-	if got.Year() != 2019 {
-		t.Errorf("parseUnixTimestamp() returned year %d, expected 2019", got.Year())
-	}
-
-	if got.Month() != 10 {
-		t.Errorf("parseUnixTimestamp() returned month %d, expected 10", got.Month())
-	}
-
-	if got.Day() != 24 {
-		t.Errorf("parseUnixTimestamp() returned day %d, expected 24", got.Day())
-	}
-
-	if got.Hour() != 15 {
-		t.Errorf("parseUnixTimestamp() returned hour %d, expected 15", got.Hour())
-	}
-
-	if got.Minute() != 44 {
-		t.Errorf("parseUnixTimestamp() returned minute %d, expected 44", got.Minute())
-	}
-}
-
 func TestScaleData(t *testing.T) {
 	if scaleData("", "MicroSecond", 1000000.0) != 1000.0 {
 		t.Errorf("scaleData incorrectly scales MicroSecond")
