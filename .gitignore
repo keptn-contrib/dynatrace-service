@@ -4,6 +4,9 @@ dynatrace-service
 # local files
 _*
 
+# dont ignore environment variables in chart
+!_dynatrace_service_environment.tpl
+
 # GoLand IDE
 .idea/*
 
