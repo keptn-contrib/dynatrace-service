@@ -159,35 +159,6 @@ func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Re
 	return dh, httpClient, url, teardown
 }
 
-func TestExecuteDynatraceREST(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent("sockshop", "dev", "carts", "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
-	defer teardown()
-
-	body, err := dh.dtClient.Get("/api/config/v1/dashboards")
-
-	if body == nil {
-		t.Errorf("No body returned by Dynatrace REST")
-	}
-
-	if err != nil {
-		t.Errorf("%+v\n", err)
-	}
-}
-
-func TestExecuteDynatraceRESTBadRequest(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
-	defer teardown()
-
-	_, err := dh.dtClient.Get("/BADAPI")
-
-	// TODO 2021-08-31: check for Dynatrace API status
-	if err == nil {
-		t.Errorf("Dynatrace REST not returning http 400")
-	}
-}
-
 func TestFindDynatraceDashboardSuccess(t *testing.T) {
 	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
 	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
