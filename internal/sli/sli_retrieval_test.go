@@ -6,7 +6,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io"
 	"io/ioutil"
-	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -20,7 +19,6 @@ import (
 	"net/http/httptest"
 
 	_ "github.com/keptn/go-utils/pkg/lib"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	"golang.org/x/net/context"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -580,77 +578,6 @@ func TestScaleData(t *testing.T) {
 	}
 	if scaleData("builtin:service.response.time", "", 1000000.0) != 1000.0 {
 		t.Errorf("scaleData incorrectly scales builtin:service.response.time")
-	}
-}
-
-func TestParsePassAndWarningFromString(t *testing.T) {
-	type args struct {
-		customName string
-	}
-	tests := []struct {
-		name string
-		args args
-		want keptnapi.SLO
-	}{
-		{
-			name: "simple test",
-			args: args{
-				customName: "Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true",
-			},
-			want: keptnapi.SLO{
-				SLI:     "teststep_rt",
-				Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{"<500ms", "<+10%"}}},
-				Warning: []*keptnapi.SLOCriteria{{Criteria: []string{"<1000ms", "<+20%"}}},
-				Weight:  1,
-				KeySLI:  true,
-			},
-		},
-		{
-			name: "test with = in pass/warn expression",
-			args: args{
-				customName: "Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false",
-			},
-			want: keptnapi.SLO{
-				SLI:     "host_disk_queue",
-				Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{"<=0"}}},
-				Warning: []*keptnapi.SLOCriteria{{Criteria: []string{"<1"}}},
-				Weight:  1,
-				KeySLI:  false,
-			},
-		},
-		{
-			name: "test weight",
-			args: args{
-				customName: "Host CPU %;sli=host_cpu;pass=<20;warning=<50;key=false;weight=2",
-			},
-			want: keptnapi.SLO{
-				SLI:     "host_cpu",
-				Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{"<20"}}},
-				Warning: []*keptnapi.SLOCriteria{{Criteria: []string{"<50"}}},
-				Weight:  2,
-				KeySLI:  false,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := common.ParsePassAndWarningWithoutDefaultsFrom(tt.args.customName)
-			if got.SLI != tt.want.SLI {
-				t.Errorf("ParsePassAndWarningFromString() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got.Pass, tt.want.Pass) {
-				t.Errorf("ParsePassAndWarningFromString() Pass = %v, want %v", got.Pass, tt.want.Pass)
-			}
-			if !reflect.DeepEqual(got.Warning, tt.want.Warning) {
-				t.Errorf("ParsePassAndWarningFromString() Warning = %v, want %v", got.Warning, tt.want.Warning)
-			}
-			if got.Weight != tt.want.Weight {
-				t.Errorf("ParsePassAndWarningFromString() Weight = %v, want %v", got.Weight, tt.want.Weight)
-			}
-			if got.KeySLI != tt.want.KeySLI {
-				t.Errorf("ParsePassAndWarningFromString() KeySLI = %v, want %v", got.KeySLI, tt.want.KeySLI)
-			}
-		})
 	}
 }
 
