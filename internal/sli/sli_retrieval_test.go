@@ -4,6 +4,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -283,17 +284,17 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 }
 
 func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
+	expected := ",entityId(\"SERVICE-086C46F600BA1DC6\"),tag(\"keptn_deployment:primary\")"
+
 	var filtersPerEntityType = map[string]map[string][]string{
 		"SERVICE": {
 			"SPECIFIC_ENTITIES": {"SERVICE-086C46F600BA1DC6"},
 			"AUTO_TAGS":         {"keptn_deployment:primary"},
 		},
 	}
-	entityTileFilter := getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
+	actual := getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
 
-	if strings.Compare(entityTileFilter, ",entityId(\"SERVICE-086C46F600BA1DC6\"),tag(\"keptn_deployment:primary\")") != 0 {
-		t.Errorf("getEntitySelectorFromEntityFilter wrong. Returned: " + entityTileFilter)
-	}
+	assert.Equal(t, expected, actual)
 }
 
 func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
