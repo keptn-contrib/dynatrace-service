@@ -155,8 +155,8 @@ jobs:
         id: upload_helm_chart
         uses: actions/upload-artifact@v2
         with:
-          name: ${IMAGE}-${VERSION}.tgz
-          path: installer/${IMAGE}-${VERSION}.tgz
+          name: ${env.IMAGE}-${env.VERSION}.tgz
+          path: installer/${env.IMAGE}-${env.VERSION}.tgz
 
   ############################################################################
   # Build Docker Image                                                      #
@@ -222,6 +222,7 @@ jobs:
   # Deploy to Keptn                                                          #
   ############################################################################
   deploy-to-keptn:
+    name: Deploy Helm chart to Keptn
     needs: [helm_charts_build, docker_build]
     runs-on: ubuntu-20.04
     env:      
