@@ -31,3 +31,7 @@ func CreateHandler(response []byte, statusCode int) http.Handler {
 		}
 	})
 }
+
+func CreateOkHandler(response []byte) http.Handler {
+	return CreateHandler(response, http.StatusOK)
+}
