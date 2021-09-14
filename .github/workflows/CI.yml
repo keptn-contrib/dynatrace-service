@@ -1,5 +1,8 @@
 name: CI
 on:
+  # allow manual dispatch
+  workflow_dispatch:
+  
   # always execute docker build when something is pushed to master or release-* branches
   push:
     branches:
