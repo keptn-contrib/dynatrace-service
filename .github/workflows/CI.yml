@@ -229,8 +229,6 @@ jobs:
       KEPTN_API_TOKEN: ${{ secrets.KEPTN_API_TOKEN }}
       KEPTN_PROJECT: demo
       KEPTN_STAGE: dev
-      KEPTN_SERVICE: ${{ env.VERSION }}
-      CHART_FILENAME: "${{ env.IMAGE }}-${{ env.VERSION }}"
 
     steps:
       - name: Set up Keptn CLI and connect to Keptn instance
@@ -248,11 +246,11 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: $CHART_FILENAME
+          name: ${{ env.IMAGE }}-${{ env.VERSION }}.tgz
 
       - name: Upload Helm chart to as Keptn resource
         run: |
-          keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=$KEPTN_SERVICE --resource=$CHART_FILENAME --resourceUri=$CHART_FILENAME 
+          keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=${{ env.IMAGE }} --resource=${{ env.IMAGE }}-${{ env.VERSION }}.tgz --resourceUri=${{ env.IMAGE }}-${{ env.VERSION }}.tgz 
 
   ############################################################################
   # store-output-in-build-config                                             #
