@@ -230,6 +230,7 @@ jobs:
       KEPTN_PROJECT: demo
       KEPTN_STAGE: dev
       KEPTN_SERVICE: ${{ env.VERSION }}
+      CHART_FILENAME: "${{ env.IMAGE }}-${{ env.VERSION }}"
 
     steps:
       - name: Set up Keptn CLI and connect to Keptn instance
@@ -241,11 +242,11 @@ jobs:
 
       - uses: actions/download-artifact@v2
         with:
-          name: test.txt
+          name: $CHART_FILENAME
 
       - name: Upload Helm chart to as Keptn resource
         run: |
-          keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=$KEPTN_SERVICE --resource=$HELM_CHART_FILENAME --resourceUri=installer/dynatrace-service.tgz 
+          keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=$KEPTN_SERVICE --resource=$CHART_FILENAME --resourceUri=$CHART_FILENAME 
 
   ############################################################################
   # store-output-in-build-config                                             #
