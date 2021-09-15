@@ -4,6 +4,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -325,5 +326,84 @@ func TestIsValidUUID(t *testing.T) {
 		if got != config.want {
 			t.Errorf("uuid: %s, result should have been: %v, but got: %v", config.uuid, config.want, got)
 		}
+	}
+}
+
+func TestParseMarkdownConfigurationParams(t *testing.T) {
+	testConfigs := []struct {
+		input              string
+		expectedScore      *keptnapi.SLOScore
+		expectedComparison *keptnapi.SLOComparison
+	}{
+		// single result
+		{
+			"KQG.Total.Pass=90%;KQG.Total.Warning=70%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
+			createSLOScore("90%", "70%"),
+			createSLOComparison("single_result", "pass", 1, "avg"),
+		},
+		// several results, p50
+		{
+			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p50",
+			createSLOScore("50%", "40%"),
+			createSLOComparison("several_results", "pass", 3, "p50"),
+		},
+		// several results, p90
+		{
+			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p90",
+			createSLOScore("50%", "40%"),
+			createSLOComparison("several_results", "pass", 3, "p90"),
+		},
+		// several results, p95
+		{
+			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p95",
+			createSLOScore("50%", "40%"),
+			createSLOComparison("several_results", "pass", 3, "p95"),
+		},
+		// several results, p95, all
+		{
+			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=all;KQG.Compare.Results=3;KQG.Compare.Function=p95",
+			createSLOScore("50%", "40%"),
+			createSLOComparison("several_results", "all", 3, "p95"),
+		},
+		// several results, p95, pass_or_warn
+		{
+			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass_or_warn;KQG.Compare.Results=3;KQG.Compare.Function=p95",
+			createSLOScore("50%", "40%"),
+			createSLOComparison("several_results", "pass_or_warn", 3, "p95"),
+		},
+
+		// several results, p95, fallback to pass if compare function is unknown
+		{
+			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=warn;KQG.Compare.Results=3;KQG.Compare.Function=p95",
+			createSLOScore("50%", "40%"),
+			createSLOComparison("several_results", "pass", 3, "p95"),
+		},
+		// several results, fallback if function is unknown e.g. p97
+		{
+			"KQG.Total.Pass=51%;KQG.Total.Warning=41%;KQG.Compare.WithScore=pass;KQG.Compare.Results=4;KQG.Compare.Function=p97",
+			createSLOScore("51%", "41%"),
+			createSLOComparison("several_results", "pass", 4, "avg"),
+		},
+	}
+	for _, config := range testConfigs {
+		actualScore, actualComparison := parseMarkdownConfiguration(config.input)
+
+		assert.EqualValues(t, config.expectedScore, actualScore)
+		assert.EqualValues(t, config.expectedComparison, actualComparison)
+	}
+}
+
+func createSLOScore(pass string, warning string) *keptnapi.SLOScore {
+	return &keptnapi.SLOScore{
+		Pass:    pass,
+		Warning: warning,
+	}
+}
+func createSLOComparison(compareWith string, include string, numberOfResults int, aggregateFunc string) *keptnapi.SLOComparison {
+	return &keptnapi.SLOComparison{
+		CompareWith:               compareWith,
+		IncludeResultWithScore:    include,
+		NumberOfComparisonResults: numberOfResults,
+		AggregateFunction:         aggregateFunc,
 	}
 }
