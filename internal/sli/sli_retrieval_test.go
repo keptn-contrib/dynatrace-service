@@ -4,6 +4,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"io/ioutil"
@@ -11,17 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"crypto/tls"
-	"crypto/x509"
-	"log"
-	"net"
-	"net/http"
-	"net/http/httptest"
-
-	_ "github.com/keptn/go-utils/pkg/lib"
-	"golang.org/x/net/context"
-
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	_ "github.com/keptn/go-utils/pkg/lib"
+	"log"
+	"net/http"
 )
 
 const QUALITYGATE_DASHBOARD_ID = "12345678-1111-4444-8888-123456789012"
@@ -29,10 +23,26 @@ const QUALITYGATE_PROJECT = "qualitygate"
 const QUALTIYGATE_SERVICE = "evalservice"
 const QUALITYGATE_STAGE = "qualitystage"
 
-// Mocking Http Responses
-// testingDynatraceHTTPClient builds a test client with a httptest server that responds to specific Dynatrace REST API Calls
-func testingDynatraceHTTPClient() (*http.Client, string, func()) {
+/**
+ * Creates a new Keptn Event
+ */
+func testingGetKeptnEvent(project string, stage string, service string, deployment string, test string) GetSLITriggeredAdapterInterface {
+	keptnEvent := &GetSLITriggeredEvent{}
+	keptnEvent.Project = project
+	keptnEvent.Stage = stage
+	keptnEvent.Service = service
+	keptnEvent.DeploymentStrategy = deployment
+	keptnEvent.TestStrategy = test
 
+	return keptnEvent
+}
+
+/**
+ * This function will create a new HTTP Server for handling Dynatrace REST Calls.
+ * It returns the Dynatrace Retrieval as well as the httpClient, mocked server url and the teardown method
+ * ATTENTION: When using this method you have to call the "teardown" method that is returned in the last parameter
+ */
+func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Retrieval, *http.Client, string, func()) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		// we handle these if the URLs are a full match
@@ -99,51 +109,7 @@ func testingDynatraceHTTPClient() (*http.Client, string, func()) {
 		w.WriteHeader(http.StatusBadRequest)
 	})
 
-	server := httptest.NewTLSServer(handler)
-
-	cert, err := x509.ParseCertificate(server.TLS.Certificates[0].Certificate[0])
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	certpool := x509.NewCertPool()
-	certpool.AddCert(cert)
-
-	client := &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(_ context.Context, network, _ string) (net.Conn, error) {
-				return net.Dial(network, server.Listener.Addr().String())
-			},
-			TLSClientConfig: &tls.Config{
-				RootCAs: certpool,
-			},
-		},
-	}
-
-	return client, server.URL, server.Close
-}
-
-/**
- * Creates a new Keptn Event
- */
-func testingGetKeptnEvent(project string, stage string, service string, deployment string, test string) GetSLITriggeredAdapterInterface {
-	keptnEvent := &GetSLITriggeredEvent{}
-	keptnEvent.Project = project
-	keptnEvent.Stage = stage
-	keptnEvent.Service = service
-	keptnEvent.DeploymentStrategy = deployment
-	keptnEvent.TestStrategy = test
-
-	return keptnEvent
-}
-
-/**
- * This function will create a new HTTP Server for handling Dynatrace REST Calls.
- * It returns the Dynatrace Retrieval as well as the httpClient, mocked server url and the teardown method
- * ATTENTION: When using this method you have to call the "teardown" method that is returned in the last parameter
- */
-func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Retrieval, *http.Client, string, func()) {
-	httpClient, url, teardown := testingDynatraceHTTPClient()
+	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials := &credentials.DTCredentials{
 		Tenant:   url,
