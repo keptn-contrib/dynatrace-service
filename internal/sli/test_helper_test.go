@@ -2,8 +2,14 @@ package sli
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"github.com/stretchr/testify/assert"
+	"net/http"
+	"testing"
 )
 
 type GetSLITriggeredEvent struct {
@@ -108,6 +114,48 @@ func (e *GetSLITriggeredEvent) AddLabel(key string, value string) {
 	}
 
 	e.Labels[key] = value
+}
+
+// createKeptnEvent creates a new Keptn Event for project, stage and service
+func createKeptnEvent(project string, stage string, service string) GetSLITriggeredAdapterInterface {
+	return &GetSLITriggeredEvent{
+		Project: project,
+		Stage:   stage,
+		Service: service,
+	}
+}
+
+func createRetrievalWithHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler) (*Retrieval, string, func()) {
+	httpClient, url, teardown := test.CreateHTTPSClient(handler)
+
+	dtCredentials := &credentials.DTCredentials{
+		Tenant:   url,
+		ApiToken: "test",
+	}
+
+	dh := NewRetrieval(
+		keptnEvent,
+		dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
+		KeptnClientMock{},
+		DashboardReaderMock{})
+
+	return dh, url, teardown
+}
+
+func TestCreateRetrievalWithHandler(t *testing.T) {
+	keptnEvent := createKeptnEvent("sockshop", "dev", "carts")
+	dh, url, teardown := createRetrievalWithHandler(keptnEvent, nil)
+	defer teardown()
+
+	c := &credentials.DTCredentials{
+		Tenant:   url,
+		ApiToken: "test",
+	}
+
+	assert.EqualValues(t, c, dh.dtClient.Credentials())
+	assert.EqualValues(t, keptnEvent, dh.KeptnEvent)
+	assert.EqualValues(t, KeptnClientMock{}, dh.kClient)
+	assert.EqualValues(t, DashboardReaderMock{}, dh.dashboardReader)
 }
 
 type KeptnClientMock struct{}

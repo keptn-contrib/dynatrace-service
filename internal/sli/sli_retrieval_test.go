@@ -1,7 +1,6 @@
 package sli
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	_ "github.com/keptn/go-utils/pkg/lib"
-	"net/http"
 )
 
 const QUALITYGATE_DASHBOARD_ID = "12345678-1111-4444-8888-123456789012"
@@ -20,25 +18,11 @@ const QUALTIYGATE_SERVICE = "evalservice"
 const QUALITYGATE_STAGE = "qualitystage"
 
 /**
- * Creates a new Keptn Event
- */
-func testingGetKeptnEvent(project string, stage string, service string, deployment string, test string) GetSLITriggeredAdapterInterface {
-	keptnEvent := &GetSLITriggeredEvent{}
-	keptnEvent.Project = project
-	keptnEvent.Stage = stage
-	keptnEvent.Service = service
-	keptnEvent.DeploymentStrategy = deployment
-	keptnEvent.TestStrategy = test
-
-	return keptnEvent
-}
-
-/**
  * This function will create a new HTTP Server for handling Dynatrace REST Calls.
- * It returns the Dynatrace Retrieval as well as the httpClient, mocked server url and the teardown method
+ * It returns the Retrieval and the teardown method
  * ATTENTION: When using this method you have to call the "teardown" method that is returned in the last parameter
  */
-func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Retrieval, *http.Client, string, func()) {
+func createRetrieval(keptnEvent GetSLITriggeredAdapterInterface) (*Retrieval, func()) {
 
 	handler := test.NewURLHandler()
 	// we handle these if the URLs are a full match
@@ -61,25 +45,14 @@ func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Re
 	handler.AddStartsWith("/api/v2/problems", "./testfiles/test_get_problems.json")
 	handler.AddStartsWith("/api/v2/securityProblems", "./testfiles/test_get_securityproblems.json")
 
-	httpClient, url, teardown := test.CreateHTTPSClient(handler)
+	ret, _, teardown := createRetrievalWithHandler(keptnEvent, handler)
 
-	dtCredentials := &credentials.DTCredentials{
-		Tenant:   url,
-		ApiToken: "test",
-	}
-
-	dh := NewRetrieval(
-		keptnEvent,
-		dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
-		KeptnClientMock{},
-		DashboardReaderMock{})
-
-	return dh, httpClient, url, teardown
+	return ret, teardown
 }
 
 func TestFindDynatraceDashboardSuccess(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	dashboardID, err := dh.findDynatraceDashboard(keptnEvent)
@@ -94,8 +67,8 @@ func TestFindDynatraceDashboardSuccess(t *testing.T) {
 }
 
 func TestFindDynatraceDashboardNoneExistingDashboard(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent("BAD_PROJECT", QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent("BAD PROJECT", QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	dashboardID, err := dh.findDynatraceDashboard(keptnEvent)
@@ -110,8 +83,8 @@ func TestFindDynatraceDashboardNoneExistingDashboard(t *testing.T) {
 }
 
 func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	// this should load the dashboard
@@ -131,8 +104,8 @@ func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
 }
 
 func TestLoadDynatraceDashboardWithID(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	// this should load the dashboard
@@ -152,8 +125,8 @@ func TestLoadDynatraceDashboardWithID(t *testing.T) {
 }
 
 func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	// this should load the dashboard
@@ -186,78 +159,9 @@ func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
-	defer teardown()
-
-	startTime := time.Unix(1571649084, 0).UTC()
-	endTime := time.Unix(1571649085, 0).UTC()
-	result, err := dh.QueryDynatraceDashboardForSLIs(keptnEvent, common.DynatraceConfigDashboardQUERY, startTime, endTime)
-
-	if result == nil {
-		t.Fatalf("No result returned")
-	}
-
-	if result.dashboardLink == nil {
-		t.Errorf("No dashboard link label generated")
-	}
-
-	if result.dashboard == nil {
-		t.Errorf("No Dashboard JSON returned")
-	}
-
-	const expectedSLOs = 14
-
-	// validate the SLIs - there should be 9 SLIs coming back
-	if result.sli != nil {
-		if len(result.sli.Indicators) != expectedSLOs {
-			t.Errorf("Excepted %d SLIs to come back but got %d", expectedSLOs, len(result.sli.Indicators))
-		}
-	} else {
-		t.Errorf("No SLI returned")
-	}
-
-	// validate the SLOs
-	if result.slo != nil {
-		if len(result.slo.Objectives) != expectedSLOs {
-			t.Errorf("Excepted %d SLOs to come back but got %d", expectedSLOs, len(result.slo.Objectives))
-		}
-		if result.slo.TotalScore.Pass != "90%" || result.slo.TotalScore.Warning != "70%" {
-			t.Errorf("Total Warning and Pass Scores not as expected. Got %s (pass) and %s (warning)", result.slo.TotalScore.Pass, result.slo.TotalScore.Warning)
-		}
-		if result.slo.Comparison.CompareWith != "single_result" ||
-			result.slo.Comparison.IncludeResultWithScore != "pass" ||
-			result.slo.Comparison.NumberOfComparisonResults != 1 ||
-			result.slo.Comparison.AggregateFunction != "avg" {
-			t.Errorf(
-				"Incorrect Comparisons: %s, %s, %d, %s",
-				result.slo.Comparison.CompareWith,
-				result.slo.Comparison.IncludeResultWithScore,
-				result.slo.Comparison.NumberOfComparisonResults,
-				result.slo.Comparison.AggregateFunction)
-		}
-	} else {
-		t.Errorf("No SLO return")
-	}
-
-	// validate the SLI Results
-	if result.sliResults != nil {
-		if len(result.sliResults) != expectedSLOs {
-			t.Errorf("Excepted %d SLI Results to come back but got %d", expectedSLOs, len(result.sliResults))
-		}
-	} else {
-		t.Errorf("No SLI Results returned")
-	}
-
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestExecuteGetDynatraceSLO(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	startTime := time.Unix(1571649084, 0).UTC()
@@ -280,8 +184,8 @@ func TestExecuteGetDynatraceSLO(t *testing.T) {
 
 func TestGetSLIValueWithSLOPrefix(t *testing.T) {
 
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	customQueries := make(map[string]string)
@@ -298,8 +202,8 @@ func TestGetSLIValueWithSLOPrefix(t *testing.T) {
 }
 
 func TestExecuteGetDynatraceProblems(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	startTime := time.Unix(1571649084, 0).UTC()
@@ -321,8 +225,8 @@ func TestExecuteGetDynatraceProblems(t *testing.T) {
 }
 
 func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	startTime := time.Unix(1571649084, 0).UTC()
@@ -347,8 +251,8 @@ func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
 
 func TestGetSLIValueWithPV2Prefix(t *testing.T) {
 
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	customQueries := make(map[string]string)
@@ -366,8 +270,8 @@ func TestGetSLIValueWithPV2Prefix(t *testing.T) {
 
 func TestGetSLIValueWithSECPV2Prefix(t *testing.T) {
 
-	keptnEvent := testingGetKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE, "", "")
-	dh, _, _, teardown := testingGetDynatraceHandler(keptnEvent)
+	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
+	dh, teardown := createRetrieval(keptnEvent)
 	defer teardown()
 
 	customQueries := make(map[string]string)
@@ -380,31 +284,6 @@ func TestGetSLIValueWithSECPV2Prefix(t *testing.T) {
 
 	if err != nil {
 		t.Error(err)
-	}
-}
-
-func TestCreateNewDynatraceHandler(t *testing.T) {
-	keptnEvent := testingGetKeptnEvent("sockshop", "dev", "carts", "direct", "")
-	dh, _, url, teardown := testingGetDynatraceHandler(keptnEvent)
-	defer teardown()
-
-	if dh.dtClient.Credentials().Tenant != url {
-		t.Errorf("dh.client.DynatraceCreds.Tenant=%s; want %s", dh.dtClient.Credentials().Tenant, url)
-	}
-
-	if dh.KeptnEvent.GetProject() != "sockshop" {
-		t.Errorf("dh.Project=%s; want sockshop", dh.KeptnEvent.GetProject())
-	}
-
-	if dh.KeptnEvent.GetStage() != "dev" {
-		t.Errorf("dh.Stage=%s; want dev", dh.KeptnEvent.GetStage())
-	}
-
-	if dh.KeptnEvent.GetService() != "carts" {
-		t.Errorf("dh.Service=%s; want carts", dh.KeptnEvent.GetService())
-	}
-	if dh.KeptnEvent.GetDeploymentStrategy() != "direct" {
-		t.Errorf("dh.Deployment=%s; want direct", dh.KeptnEvent.GetDeploymentStrategy())
 	}
 }
 
