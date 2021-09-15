@@ -1208,17 +1208,19 @@ func (ph *Retrieval) executeSecurityProblemQuery(metricsQuery string, startUnix 
 }
 
 func (ph *Retrieval) executeMetricsV2Query(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
+	metricsQuery, unit := extractMetricQueryFromMV2Query(metricsQuery)
+	return ph.executeMetricsQuery(metricsQuery, unit, startUnix, endUnix)
+}
 
+func extractMetricQueryFromMV2Query(metricsQuery string) (adaptedMetricsQuery string, unit string) {
 	// lets first start to query for the MV2 prefix, e.g: MV2;byte;actualQuery
 	// if it starts with MV2 we extract metric unit and the actual query
-
 	metricsQuery = metricsQuery[4:]
 	queryStartIndex := strings.Index(metricsQuery, ";")
-	unit := metricsQuery[:queryStartIndex]
-	metricsQuery = metricsQuery[queryStartIndex+1:]
+	unit = metricsQuery[:queryStartIndex]
+	adaptedMetricsQuery = metricsQuery[queryStartIndex+1:]
 
-	return ph.executeMetricsQuery(metricsQuery, unit, startUnix, endUnix)
-
+	return
 }
 
 func (ph *Retrieval) executeMetricsQuery(metricsQuery string, unit string, startUnix time.Time, endUnix time.Time) (float64, error) {
