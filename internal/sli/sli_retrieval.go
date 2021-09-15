@@ -119,7 +119,7 @@ func (ph *Retrieval) buildDynatraceUSQLQuery(query string, startUnix time.Time, 
 	// replace query params (e.g., $PROJECT, $STAGE, $SERVICE ...)
 	// default query params that are required: resolution, from and to
 	q := make(url.Values)
-	q.Add("query", ph.replaceQueryParameters(query))
+	q.Add("query", replaceQueryParameters(query, ph.KeptnEvent))
 	q.Add("explain", "false")
 	q.Add("addDeepLinkFields", "false")
 	q.Add("startTimestamp", common.TimestampToString(startUnix))
@@ -136,7 +136,7 @@ func (ph *Retrieval) buildDynatraceUSQLQuery(query string, startUnix time.Time, 
 //  #3: error
 func (ph *Retrieval) buildDynatraceMetricsQuery(metricQuery string, startUnix time.Time, endUnix time.Time) (string, string, error) {
 	// replace query params (e.g., $PROJECT, $STAGE, $SERVICE ...)
-	metricQuery = ph.replaceQueryParameters(metricQuery)
+	metricQuery = replaceQueryParameters(metricQuery, ph.KeptnEvent)
 
 	if strings.HasPrefix(metricQuery, "?metricSelector=") {
 		log.WithFields(
@@ -1270,9 +1270,9 @@ func scaleData(metricID string, unit string, value float64) float64 {
 	return value
 }
 
-func (ph *Retrieval) replaceQueryParameters(query string) string {
+func replaceQueryParameters(query string, keptnEvent GetSLITriggeredAdapterInterface) string {
 	// apply customfilters
-	for _, filter := range ph.KeptnEvent.GetCustomSLIFilters() {
+	for _, filter := range keptnEvent.GetCustomSLIFilters() {
 		filter.Value = strings.Replace(filter.Value, "'", "", -1)
 		filter.Value = strings.Replace(filter.Value, "\"", "", -1)
 
@@ -1287,7 +1287,7 @@ func (ph *Retrieval) replaceQueryParameters(query string) string {
 	query = strings.Replace(query, "$SERVICE", ph.Service, -1)
 	query = strings.Replace(query, "$DEPLOYMENT", ph.Deployment, -1)*/
 
-	query = common.ReplaceKeptnPlaceholders(query, ph.KeptnEvent)
+	query = common.ReplaceKeptnPlaceholders(query, keptnEvent)
 
 	return query
 }
