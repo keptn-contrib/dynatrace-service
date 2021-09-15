@@ -6,15 +6,11 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
-	"io"
-	"io/ioutil"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	_ "github.com/keptn/go-utils/pkg/lib"
-	"log"
 	"net/http"
 )
 
@@ -43,71 +39,27 @@ func testingGetKeptnEvent(project string, stage string, service string, deployme
  * ATTENTION: When using this method you have to call the "teardown" method that is returned in the last parameter
  */
 func testingGetDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface) (*Retrieval, *http.Client, string, func()) {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		// we handle these if the URLs are a full match
-		completeUrlMatchToResponseFileMap := map[string]string{
-			"/api/config/v1/dashboards":                                      "./testfiles/test_get_dashboards.json",
-			"/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012": "./testfiles/test_get_dashboards_id.json",
-			"/api/v2/metrics/builtin:tech.generic.processCount":              "./testfiles/test_get_metrics_processcount.json",
-			"/api/v2/metrics/builtin:service.response.time":                  "./testfiles/test_get_metrics_svcresponsetime.json",
-			"/api/v2/metrics/builtin:tech.generic.mem.workingSetSize":        "./testfiles/test_get_metrics_workingsetsize.json",
-			"/api/v2/metrics/builtin:tech.generic.cpu.usage":                 "./testfiles/test_get_metrics_cpuusage.json",
-			"/api/v2/metrics/builtin:service.errors.server.rate":             "./testfiles/test_get_metrics_errorrate.json",
-			"/api/v2/metrics/builtin:service.requestCount.total":             "./testfiles/test_get_metrics_requestcount.json",
-			"/api/v2/metrics/builtin:host.cpu.usage":                         "./testfiles/test_get_metrics_hostcpuusage.json",
-			"/api/v2/metrics/builtin:host.mem.usage":                         "./testfiles/test_get_metrics_hostmemusage.json",
-			"/api/v2/metrics/builtin:host.disk.queueLength":                  "./testfiles/test_get_metrics_hostdiskqueue.json",
-			"/api/v2/metrics/builtin:service.nonDbChildCallCount":            "./testfiles/test_get_metrics_nondbcallcount.json",
-			"/api/v2/metrics/jmeter.usermetrics.transaction.meantime":        "./testfiles/test_get_metrics_jmeter_usermetrics_transaction_meantime.json",
-		}
-
-		log.Println("Mock for: " + r.URL.Path)
-
-		// we handle these if the URL "starts with"
-		startsWithUrlToResponseFileMap := map[string]string{
-			"/api/v2/metrics/query":    "./testfiles/test_get_metrics_query.json",
-			"/api/v2/slo":              "./testfiles/test_get_slo_id.json",
-			"/api/v2/problems":         "./testfiles/test_get_problems.json",
-			"/api/v2/securityProblems": "./testfiles/test_get_securityproblems.json",
-		}
-
-		for url, file := range completeUrlMatchToResponseFileMap {
-			if strings.Compare(url, r.URL.Path) == 0 {
-				log.Println("Found Mock: " + url + " --> " + file)
-				localFileContent, err := ioutil.ReadFile(file)
-				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					io.WriteString(w, "couldnt load local test file "+file)
-					log.Println("couldnt load local test file " + file)
-					return
-				}
-				w.WriteHeader(http.StatusOK)
-				w.Write(localFileContent)
-				return
-			}
-		}
-
-		for url, file := range startsWithUrlToResponseFileMap {
-			if strings.Index(r.URL.Path, url) == 0 {
-				log.Println("Found Mock: " + url + " --> " + file)
-
-				localFileContent, err := ioutil.ReadFile(file)
-				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					io.WriteString(w, "couldnt load local test file "+file)
-					log.Println("couldnt load local test file " + file)
-					return
-				}
-				w.WriteHeader(http.StatusOK)
-				w.Write(localFileContent)
-				return
-			}
-		}
-
-		// if nothing matches we have a bad URL
-		w.WriteHeader(http.StatusBadRequest)
-	})
+	handler := test.NewURLHandler()
+	// we handle these if the URLs are a full match
+	handler.AddExact("/api/config/v1/dashboards", "./testfiles/test_get_dashboards.json")
+	handler.AddExact("/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012", "./testfiles/test_get_dashboards_id.json")
+	handler.AddExact("/api/v2/metrics/builtin:tech.generic.processCount", "./testfiles/test_get_metrics_processcount.json")
+	handler.AddExact("/api/v2/metrics/builtin:service.response.time", "./testfiles/test_get_metrics_svcresponsetime.json")
+	handler.AddExact("/api/v2/metrics/builtin:tech.generic.mem.workingSetSize", "./testfiles/test_get_metrics_workingsetsize.json")
+	handler.AddExact("/api/v2/metrics/builtin:tech.generic.cpu.usage", "./testfiles/test_get_metrics_cpuusage.json")
+	handler.AddExact("/api/v2/metrics/builtin:service.errors.server.rate", "./testfiles/test_get_metrics_errorrate.json")
+	handler.AddExact("/api/v2/metrics/builtin:service.requestCount.total", "./testfiles/test_get_metrics_requestcount.json")
+	handler.AddExact("/api/v2/metrics/builtin:host.cpu.usage", "./testfiles/test_get_metrics_hostcpuusage.json")
+	handler.AddExact("/api/v2/metrics/builtin:host.mem.usage", "./testfiles/test_get_metrics_hostmemusage.json")
+	handler.AddExact("/api/v2/metrics/builtin:host.disk.queueLength", "./testfiles/test_get_metrics_hostdiskqueue.json")
+	handler.AddExact("/api/v2/metrics/builtin:service.nonDbChildCallCount", "./testfiles/test_get_metrics_nondbcallcount.json")
+	handler.AddExact("/api/v2/metrics/jmeter.usermetrics.transaction.meantime", "./testfiles/test_get_metrics_jmeter_usermetrics_transaction_meantime.json")
+	// we handle these if the URL "starts with"
+	handler.AddStartsWith("/api/v2/metrics/query", "./testfiles/test_get_metrics_query.json")
+	handler.AddStartsWith("/api/v2/slo", "./testfiles/test_get_slo_id.json")
+	handler.AddStartsWith("/api/v2/problems", "./testfiles/test_get_problems.json")
+	handler.AddStartsWith("/api/v2/securityProblems", "./testfiles/test_get_securityproblems.json")
 
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
