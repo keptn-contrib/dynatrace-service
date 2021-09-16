@@ -60,6 +60,7 @@ func (r *DashboardQueryResult) addTileResult(result *tileResult) {
 	r.sliResults = append(r.sliResults, result.sliResult)
 }
 
+// addTileResult adds multiple tileResult to the DashboardQueryResult,
 func (r *DashboardQueryResult) addTileResults(results []*tileResult) {
 	for _, result := range results {
 		r.addTileResult(result)

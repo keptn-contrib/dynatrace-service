@@ -855,7 +855,8 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 			tileResults := ph.getSLIAndSLOFromCustomChartsTile(&tile, startUnix, endUnix, result.dashboard.DashboardMetadata.DashboardFilter)
 			result.addTileResults(tileResults)
 		case "DTAQL":
-			ph.addSLIAndSLOToResultFromUserSessionQueryTile(&tile, startUnix, endUnix, result)
+			tileResults := ph.getSLIAndSLOFromUserSessionQueryTile(&tile, startUnix, endUnix)
+			result.addTileResults(tileResults)
 		default:
 			// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)
 			continue
@@ -1084,7 +1085,7 @@ func (ph *Retrieval) getSLIAndSLOFromCustomChartsTile(tile *dynatrace.Tile, star
 	return tileResults
 }
 
-func (ph *Retrieval) addSLIAndSLOToResultFromUserSessionQueryTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Retrieval) getSLIAndSLOFromUserSessionQueryTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time) []*tileResult {
 	// for Dynatrace Query Language we currently support the following
 	// SINGLE_VALUE: we just take the one value that comes back
 	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
@@ -1094,7 +1095,7 @@ func (ph *Retrieval) addSLIAndSLOToResultFromUserSessionQueryTile(tile *dynatrac
 	usqlResult, err := dynatrace.NewUSQLClient(ph.dtClient).GetByQuery(usql)
 	if err != nil {
 		log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
-		return
+		return nil
 	}
 
 	tileTitle := tile.Title()
@@ -1103,8 +1104,10 @@ func (ph *Retrieval) addSLIAndSLOToResultFromUserSessionQueryTile(tile *dynatrac
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
 	if sloDefinition.SLI == "" {
 		log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
-		return
+		return nil
 	}
+
+	var tileResults []*tileResult
 
 	for _, rowValue := range usqlResult.Values {
 		dimensionName := ""
@@ -1142,28 +1145,30 @@ func (ph *Retrieval) addSLIAndSLOToResultFromUserSessionQueryTile(tile *dynatrac
 				"dimensionValue": dimensionValue,
 			}).Debug("Appending SLIResult")
 
-		// lets add the value to our SLIResult array
-		result.sliResults = append(result.sliResults, &keptnv2.SLIResult{
-			Metric:  indicatorName,
-			Value:   dimensionValue,
-			Success: true,
-		})
-
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
 		// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
-		result.sli.Indicators[indicatorName] = fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query)
-
-		// lets add the SLO definition in case we need to generate an SLO.yaml
-		result.slo.Objectives = append(
-			result.slo.Objectives,
-			&keptncommon.SLO{
-				SLI:     indicatorName,
-				Weight:  sloDefinition.Weight,
-				KeySLI:  sloDefinition.KeySLI,
-				Pass:    sloDefinition.Pass,
-				Warning: sloDefinition.Warning,
+		// we also add the SLO definition in case we need to generate an SLO.yaml
+		tileResults = append(
+			tileResults,
+			&tileResult{
+				sliResult: &keptnv2.SLIResult{
+					Metric:  indicatorName,
+					Value:   dimensionValue,
+					Success: true,
+				},
+				objective: &keptncommon.SLO{
+					SLI:     indicatorName,
+					Weight:  sloDefinition.Weight,
+					KeySLI:  sloDefinition.KeySLI,
+					Pass:    sloDefinition.Pass,
+					Warning: sloDefinition.Warning,
+				},
+				sliName:  indicatorName,
+				sliQuery: fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query),
 			})
 	}
+
+	return tileResults
 }
 
 // GetSLIValue queries a single metric value from Dynatrace API.
