@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"errors"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -126,6 +127,10 @@ func createKeptnEvent(project string, stage string, service string) GetSLITrigge
 }
 
 func createRetrievalWithHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler) (*Retrieval, string, func()) {
+	return createCustomRetrieval(keptnEvent, handler, KeptnClientMock{}, DashboardReaderMock{})
+}
+
+func createCustomRetrieval(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, keptnClient keptn.ClientInterface, reader keptn.DashboardResourceReaderInterface) (*Retrieval, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials := &credentials.DTCredentials{
@@ -136,8 +141,8 @@ func createRetrievalWithHandler(keptnEvent GetSLITriggeredAdapterInterface, hand
 	dh := NewRetrieval(
 		keptnEvent,
 		dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
-		KeptnClientMock{},
-		DashboardReaderMock{})
+		keptnClient,
+		reader)
 
 	return dh, url, teardown
 }
@@ -172,8 +177,15 @@ func (KeptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface
 	return nil
 }
 
-type DashboardReaderMock struct{}
+type DashboardReaderMock struct {
+	content string
+	err     string
+}
 
-func (DashboardReaderMock) GetDashboard(project string, stage string, service string) (string, error) {
-	return "", nil
+func (m DashboardReaderMock) GetDashboard(project string, stage string, service string) (string, error) {
+	if m.err != "" {
+		return "", errors.New(m.err)
+	}
+
+	return m.content, nil
 }
