@@ -13,8 +13,8 @@ type tileResult struct {
 	sliQuery  string
 }
 
-// DashboardQueryResult is the object returned by querying a Dynatrace dashboard for SLIs
-type DashboardQueryResult struct {
+// dashboardQueryResult is the object returned by querying a Dynatrace dashboard for SLIs
+type dashboardQueryResult struct {
 	dashboardLink *DashboardLink
 	dashboard     *dynatrace.Dashboard
 	sli           *dynatrace.SLI
@@ -22,35 +22,35 @@ type DashboardQueryResult struct {
 	sliResults    []*keptnv2.SLIResult
 }
 
-// NewDashboardQueryResultFrom creates a new DashboardQueryResult object just from a DashboardLink
-func NewDashboardQueryResultFrom(dashboardLink *DashboardLink) *DashboardQueryResult {
-	return &DashboardQueryResult{
+// newDashboardQueryResultFrom creates a new dashboardQueryResult object just from a DashboardLink
+func newDashboardQueryResultFrom(dashboardLink *DashboardLink) *dashboardQueryResult {
+	return &dashboardQueryResult{
 		dashboardLink: dashboardLink,
 	}
 }
 
-func (r *DashboardQueryResult) DashboardLink() *DashboardLink {
+func (r *dashboardQueryResult) DashboardLink() *DashboardLink {
 	return r.dashboardLink
 }
 
-func (r *DashboardQueryResult) Dashboard() *dynatrace.Dashboard {
+func (r *dashboardQueryResult) Dashboard() *dynatrace.Dashboard {
 	return r.dashboard
 }
 
-func (r *DashboardQueryResult) SLI() *dynatrace.SLI {
+func (r *dashboardQueryResult) SLI() *dynatrace.SLI {
 	return r.sli
 }
 
-func (r *DashboardQueryResult) SLO() *keptnapi.ServiceLevelObjectives {
+func (r *dashboardQueryResult) SLO() *keptnapi.ServiceLevelObjectives {
 	return r.slo
 }
 
-func (r *DashboardQueryResult) SLIResults() []*keptnv2.SLIResult {
+func (r *dashboardQueryResult) SLIResults() []*keptnv2.SLIResult {
 	return r.sliResults
 }
 
-// addTileResult adds a tileResult to the DashboardQueryResult, also allows nil values for convenience
-func (r *DashboardQueryResult) addTileResult(result *tileResult) {
+// addTileResult adds a tileResult to the dashboardQueryResult, also allows nil values for convenience
+func (r *dashboardQueryResult) addTileResult(result *tileResult) {
 	if result == nil {
 		return
 	}
@@ -60,8 +60,8 @@ func (r *DashboardQueryResult) addTileResult(result *tileResult) {
 	r.sliResults = append(r.sliResults, result.sliResult)
 }
 
-// addTileResult adds multiple tileResult to the DashboardQueryResult,
-func (r *DashboardQueryResult) addTileResults(results []*tileResult) {
+// addTileResult adds multiple tileResult to the dashboardQueryResult,
+func (r *dashboardQueryResult) addTileResults(results []*tileResult) {
 	for _, result := range results {
 		r.addTileResult(result)
 	}

@@ -779,7 +779,7 @@ func (ph *Retrieval) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int
 //  #3: ServiceLevelObjectives
 //  #4: SLIResult
 //  #5: Error
-func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventContentAdapter, dashboard string, startUnix time.Time, endUnix time.Time) (*DashboardQueryResult, error) {
+func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventContentAdapter, dashboard string, startUnix time.Time, endUnix time.Time) (*dashboardQueryResult, error) {
 
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
 	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
@@ -807,11 +807,11 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
 	if dashboardJSON.IsTheSameAs(existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
-		return NewDashboardQueryResultFrom(dashboardLinkAsLabel), nil
+		return newDashboardQueryResultFrom(dashboardLinkAsLabel), nil
 	}
 
 	// generate our own SLIResult array based on the dashboard configuration
-	result := &DashboardQueryResult{
+	result := &dashboardQueryResult{
 		dashboardLink: dashboardLinkAsLabel,
 		dashboard:     dashboardJSON,
 		sli: &dynatrace.SLI{
