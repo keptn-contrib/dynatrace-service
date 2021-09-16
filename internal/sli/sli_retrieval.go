@@ -779,33 +779,33 @@ func (ph *Retrieval) generateSLISLOFromMetricsAPIQuery(noOfDimensionsInChart int
 //  #3: ServiceLevelObjectives
 //  #4: SLIResult
 //  #5: Error
-func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventContentAdapter, dashboard string, startUnix time.Time, endUnix time.Time) (*dashboardQueryResult, error) {
+func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventContentAdapter, dashboardID string, startUnix time.Time, endUnix time.Time) (*dashboardQueryResult, error) {
 
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
 	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
 	// If a dashboard.json exists and dashboard property is empty we default to QUERY - which is the old default behavior
 	existingDashboardContent, err := ph.dashboardReader.GetDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
-	if err == nil && existingDashboardContent != "" && dashboard == "" {
+	if err == nil && existingDashboardContent != "" && dashboardID == "" {
 		log.Debug("Set dashboard=query for backward compatibility as dashboard.json was present!")
-		dashboard = common.DynatraceConfigDashboardQUERY
+		dashboardID = common.DynatraceConfigDashboardQUERY
 	}
 
 	// lets load the dashboard if needed
-	dashboardJSON, dashboard, err := ph.loadDynatraceDashboard(keptnEvent, dashboard)
+	dashboard, dashboardID, err := ph.loadDynatraceDashboard(keptnEvent, dashboardID)
 	if err != nil {
-		return nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboard, err)
+		return nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboardID, err)
 	}
 
-	if dashboardJSON == nil {
+	if dashboard == nil {
 		return nil, nil
 	}
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewDashboardLink(ph.dtClient.Credentials().Tenant, startUnix, endUnix, dashboardJSON.ID, dashboardJSON.DashboardMetadata.DashboardFilter)
+	dashboardLinkAsLabel := NewDashboardLink(ph.dtClient.Credentials().Tenant, startUnix, endUnix, dashboard.ID, dashboard.GetFilter())
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/92 for more details
-	if dashboardJSON.IsTheSameAs(existingDashboardContent) {
+	if dashboard.IsTheSameAs(existingDashboardContent) {
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
 		return newDashboardQueryResultFrom(dashboardLinkAsLabel), nil
 	}
@@ -813,7 +813,7 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 	// generate our own SLIResult array based on the dashboard configuration
 	result := &dashboardQueryResult{
 		dashboardLink: dashboardLinkAsLabel,
-		dashboard:     dashboardJSON,
+		dashboard:     dashboard,
 		sli: &dynatrace.SLI{
 			SpecVersion: "0.1.4",
 			Indicators:  make(map[string]string),
@@ -829,7 +829,7 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 	log.Debug("Dashboard has changed: reparsing it!")
 
 	// now lets iterate through the dashboard to find our SLIs
-	for _, tile := range dashboardJSON.Tiles {
+	for _, tile := range dashboard.Tiles {
 		switch tile.TileType {
 		case "MARKDOWN":
 			score, comparison := getSLOScoreAndSLOComparisonFromMarkdownTile(&tile)
@@ -841,18 +841,18 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 			tileResults := ph.getSLIAndSLOFromSLOTile(&tile, startUnix, endUnix)
 			result.addTileResults(tileResults)
 		case "OPEN_PROBLEMS":
-			tileResult := ph.getSLIAndSLOFromOpenProblemsTile(&tile, startUnix, endUnix, result.dashboard.DashboardMetadata.DashboardFilter)
+			tileResult := ph.getSLIAndSLOFromOpenProblemsTile(&tile, startUnix, endUnix, result.dashboard.GetFilter())
 			result.addTileResult(tileResult)
 
 			// current logic also does security tile processing for open problem tiles
-			tileResult = ph.getSLIAndSLOFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result.dashboard.DashboardMetadata.DashboardFilter)
+			tileResult = ph.getSLIAndSLOFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result.dashboard.GetFilter())
 			result.addTileResult(tileResult)
 		case "DATA_EXPLORER":
 			// here we handle the new Metric Data Explorer Tile
-			tileResults := ph.getSLIAndSLOFromDataExplorerTile(&tile, startUnix, endUnix, result.dashboard.DashboardMetadata.DashboardFilter)
+			tileResults := ph.getSLIAndSLOFromDataExplorerTile(&tile, startUnix, endUnix, result.dashboard.GetFilter())
 			result.addTileResults(tileResults)
 		case "CUSTOM_CHARTING":
-			tileResults := ph.getSLIAndSLOFromCustomChartsTile(&tile, startUnix, endUnix, result.dashboard.DashboardMetadata.DashboardFilter)
+			tileResults := ph.getSLIAndSLOFromCustomChartsTile(&tile, startUnix, endUnix, result.dashboard.GetFilter())
 			result.addTileResults(tileResults)
 		case "DTAQL":
 			tileResults := ph.getSLIAndSLOFromUserSessionQueryTile(&tile, startUnix, endUnix)
