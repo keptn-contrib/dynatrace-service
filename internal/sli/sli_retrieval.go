@@ -828,7 +828,8 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 				result.slo.Comparison = comparison
 			}
 		case "SLO":
-			ph.addSLIAndSLOToResultFromSLOTile(&tile, startUnix, endUnix, result)
+			tileResults := ph.getSLIAndSLOFromSLOTile(&tile, startUnix, endUnix)
+			result.addTileResults(tileResults)
 		case "OPEN_PROBLEMS":
 			ph.addSLIAndSLOToResultFromOpenProblemsTile(&tile, startUnix, endUnix, result)
 			// current logic also does security tile processing for open problem tiles
@@ -927,8 +928,10 @@ func parseMarkdownConfiguration(markdown string) (*keptncommon.SLOScore, *keptnc
 	return totalScore, comparison
 }
 
-func (ph *Retrieval) addSLIAndSLOToResultFromSLOTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Retrieval) getSLIAndSLOFromSLOTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time) []tileResult {
 	// we will take the SLO definition from Dynatrace
+	var results []tileResult
+
 	for _, sloEntity := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
 
@@ -938,10 +941,17 @@ func (ph *Retrieval) addSLIAndSLOToResultFromSLOTile(tile *dynatrace.Tile, start
 			continue
 		}
 
-		result.sliResults = append(result.sliResults, sliResult)
-		result.sli.Indicators[sliIndicator] = sliQuery
-		result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+		results = append(
+			results,
+			tileResult{
+				sliResult: sliResult,
+				objective: sloDefinition,
+				sliName:   sliIndicator,
+				sliQuery:  sliQuery,
+			})
 	}
+
+	return results
 }
 
 func (ph *Retrieval) addSLIAndSLOToResultFromOpenProblemsTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
