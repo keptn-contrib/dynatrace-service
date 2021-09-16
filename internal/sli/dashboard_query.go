@@ -49,13 +49,18 @@ func (r *DashboardQueryResult) SLIResults() []*keptnv2.SLIResult {
 	return r.sliResults
 }
 
-func (r *DashboardQueryResult) addTileResult(result tileResult) {
+// addTileResult adds a tileResult to the DashboardQueryResult, also allows nil values for convenience
+func (r *DashboardQueryResult) addTileResult(result *tileResult) {
+	if result == nil {
+		return
+	}
+
 	r.sli.Indicators[result.sliName] = result.sliQuery
 	r.slo.Objectives = append(r.slo.Objectives, result.objective)
 	r.sliResults = append(r.sliResults, result.sliResult)
 }
 
-func (r *DashboardQueryResult) addTileResults(results []tileResult) {
+func (r *DashboardQueryResult) addTileResults(results []*tileResult) {
 	for _, result := range results {
 		r.addTileResult(result)
 	}

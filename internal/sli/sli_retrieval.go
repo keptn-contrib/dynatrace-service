@@ -315,7 +315,7 @@ func (ph *Retrieval) processSLOTile(sloID string, startUnix time.Time, endUnix t
 
 // processOpenProblemTile Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
 // If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (ph *Retrieval) processOpenProblemTile(problemSelector string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
+func (ph *Retrieval) processOpenProblemTile(problemSelector string, startUnix time.Time, endUnix time.Time) (*tileResult, error) {
 
 	problemQuery := ""
 	if problemSelector != "" {
@@ -325,7 +325,7 @@ func (ph *Retrieval) processOpenProblemTile(problemSelector string, startUnix ti
 	// Step 1: Query the Dynatrace API to get the number of actual problems matching that query and timeframe
 	problemQueryResult, err := dynatrace.NewProblemsV2Client(ph.dtClient).GetByQuery(problemQuery, startUnix, endUnix)
 	if err != nil {
-		return nil, "", "", nil, err
+		return nil, err
 	}
 
 	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
@@ -354,12 +354,17 @@ func (ph *Retrieval) processOpenProblemTile(problemSelector string, startUnix ti
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
-	return sliResult, indicatorName, sliQuery, sloDefinition, nil
+	return &tileResult{
+		sliResult: sliResult,
+		objective: sloDefinition,
+		sliName:   indicatorName,
+		sliQuery:  sliQuery,
+	}, nil
 }
 
 // processOpenSecurityProblemTile Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
 // If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (ph *Retrieval) processOpenSecurityProblemTile(securityProblemSelector string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
+func (ph *Retrieval) processOpenSecurityProblemTile(securityProblemSelector string, startUnix time.Time, endUnix time.Time) (*tileResult, error) {
 
 	problemQuery := ""
 	if securityProblemSelector != "" {
@@ -369,7 +374,7 @@ func (ph *Retrieval) processOpenSecurityProblemTile(securityProblemSelector stri
 	// Step 1: Query the Dynatrace API to get the number of actual problems matching that query and timeframe
 	problemQueryResult, err := dynatrace.NewSecurityProblemsClient(ph.dtClient).GetByQuery(problemQuery, startUnix, endUnix)
 	if err != nil {
-		return nil, "", "", nil, err
+		return nil, err
 	}
 
 	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
@@ -398,7 +403,12 @@ func (ph *Retrieval) processOpenSecurityProblemTile(securityProblemSelector stri
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
-	return sliResult, indicatorName, sliQuery, sloDefinition, nil
+	return &tileResult{
+		sliResult: sliResult,
+		objective: sloDefinition,
+		sliName:   indicatorName,
+		sliQuery:  sliQuery,
+	}, nil
 }
 
 // Looks at the DataExplorerQuery configuration of a data explorer chart and generates the Metrics Query.
@@ -831,9 +841,12 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 			tileResults := ph.getSLIAndSLOFromSLOTile(&tile, startUnix, endUnix)
 			result.addTileResults(tileResults)
 		case "OPEN_PROBLEMS":
-			ph.addSLIAndSLOToResultFromOpenProblemsTile(&tile, startUnix, endUnix, result)
+			tileResult := ph.getSLIAndSLOFromOpenProblemsTile(&tile, startUnix, endUnix, result.dashboard.DashboardMetadata.DashboardFilter)
+			result.addTileResult(tileResult)
+
 			// current logic also does security tile processing for open problem tiles
-			ph.addSLIAndSLOToResultFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result)
+			tileResult = ph.getSLIAndSLOFromOpenSecurityProblemsTile(&tile, startUnix, endUnix, result.dashboard.DashboardMetadata.DashboardFilter)
+			result.addTileResult(tileResult)
 		case "DATA_EXPLORER":
 			// here we handle the new Metric Data Explorer Tile
 			ph.addSLIAndSLOToResultFromDataExplorerTile(&tile, startUnix, endUnix, result)
@@ -928,9 +941,9 @@ func parseMarkdownConfiguration(markdown string) (*keptncommon.SLOScore, *keptnc
 	return totalScore, comparison
 }
 
-func (ph *Retrieval) getSLIAndSLOFromSLOTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time) []tileResult {
+func (ph *Retrieval) getSLIAndSLOFromSLOTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time) []*tileResult {
 	// we will take the SLO definition from Dynatrace
-	var results []tileResult
+	var results []*tileResult
 
 	for _, sloEntity := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
@@ -943,7 +956,7 @@ func (ph *Retrieval) getSLIAndSLOFromSLOTile(tile *dynatrace.Tile, startUnix tim
 
 		results = append(
 			results,
-			tileResult{
+			&tileResult{
 				sliResult: sliResult,
 				objective: sloDefinition,
 				sliName:   sliIndicator,
@@ -954,46 +967,40 @@ func (ph *Retrieval) getSLIAndSLOFromSLOTile(tile *dynatrace.Tile, startUnix tim
 	return results
 }
 
-func (ph *Retrieval) addSLIAndSLOToResultFromOpenProblemsTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Retrieval) getSLIAndSLOFromOpenProblemsTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, dashboardFilter *dynatrace.DashboardFilter) *tileResult {
+
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-	tileManagementZoneFilter := NewManagementZoneFilter(
-		result.dashboard.DashboardMetadata.DashboardFilter,
-		tile.TileFilter.ManagementZone)
+	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	// we will query the number of open problems based on the specification of that tile
 	problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
 
-	sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenProblemTile(problemSelector, startUnix, endUnix)
+	tileResult, err := ph.processOpenProblemTile(problemSelector, startUnix, endUnix)
 	if err != nil {
 		log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
-		return
+		return nil
 	}
 
-	result.sliResults = append(result.sliResults, sliResult)
-	result.sli.Indicators[sliIndicator] = sliQuery
-	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+	return tileResult
 }
 
-func (ph *Retrieval) addSLIAndSLOToResultFromOpenSecurityProblemsTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
+func (ph *Retrieval) getSLIAndSLOFromOpenSecurityProblemsTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, dashboardFilter *dynatrace.DashboardFilter) *tileResult {
+
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-	tileManagementZoneFilter := NewManagementZoneFilter(
-		result.dashboard.DashboardMetadata.DashboardFilter,
-		tile.TileFilter.ManagementZone)
+	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	// we will query the number of open security problems based on the specification of that tile
 	problemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
 
-	sliResult, sliIndicator, sliQuery, sloDefinition, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
+	tileResult, err := ph.processOpenSecurityProblemTile(problemSelector, startUnix, endUnix)
 	if err != nil {
 		log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
-		return
+		return nil
 	}
 
-	result.sliResults = append(result.sliResults, sliResult)
-	result.sli.Indicators[sliIndicator] = sliQuery
-	result.slo.Objectives = append(result.slo.Objectives, sloDefinition)
+	return tileResult
 }
 
 func (ph *Retrieval) addSLIAndSLOToResultFromDataExplorerTile(tile *dynatrace.Tile, startUnix time.Time, endUnix time.Time, result *DashboardQueryResult) {
