@@ -265,6 +265,10 @@ jobs:
               "project": "demo",
               "service": "dynatrace-service",
               "stage": "dev"
+              "labels": {
+                "github-action-run": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                "version": "${VERSION}"
+              }    
             },
             "source": "gh-action",
             "specversion": "1.0",
