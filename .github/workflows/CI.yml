@@ -276,6 +276,12 @@ jobs:
           }
           EOF
           keptn send event --file=./delivery-triggered.json
+      - name: Upload delivery-triggered.json
+        id: upload_delivery_triggered
+        uses: actions/upload-artifact@v2
+        with:
+          name: delivery-triggered.json
+          path: delivery-triggered.json
           
   ############################################################################
   # store-output-in-build-config                                             #
