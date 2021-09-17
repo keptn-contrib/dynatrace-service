@@ -2,10 +2,12 @@ package sli
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -192,4 +194,31 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 
 	assert.Nil(t, err)
 	assert.EqualValues(t, expectedResult, actualResult)
+}
+
+// If you do specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "<some-dashboard-uuid>") then we will retrieve the
+// dashboard via the Dynatrace API.
+// also the ID of the dashboard we try to retrieve was not found
+func TestRetrieveDashboardWithInvalidID(t *testing.T) {
+	// we need do not care about the event here
+	ev := &GetSLITriggeredEvent{}
+
+	const dashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9c"
+
+	// we add a handler to simulate a very concrete 404 Dashboards API request/response in this case.
+	handler := test.NewURLHandler()
+	handler.AddExactError(dashboardURL+"/"+dashboardID, http.StatusNotFound, "./testfiles/test_query_dynatrace_dashboard_dashboard_id_not_found.json")
+
+	// we also do not care about the dashboard that would be returned by keptn
+	retrieval, _, teardown := createCustomRetrieval(ev, handler, KeptnClientMock{}, DashboardReaderMock{})
+	defer teardown()
+
+	actualResult, err := retrieval.QueryDynatraceDashboardForSLIs(ev, dashboardID, time.Now(), time.Now())
+
+	assert.Error(t, err)
+	var apiErr *dynatrace.APIError
+	assert.ErrorAs(t, err, &apiErr)
+	assert.Equal(t, http.StatusNotFound, apiErr.Code())
+	assert.Contains(t, apiErr.Message(), dashboardID)
+	assert.Nil(t, actualResult)
 }

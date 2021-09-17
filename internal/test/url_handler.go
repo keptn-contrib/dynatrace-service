@@ -7,14 +7,21 @@ import (
 	"strings"
 )
 
+type errConfig struct {
+	status   int
+	fileName string
+}
+
 type URLHandler struct {
 	exactURLs      map[string]string
+	exactErrorURLs map[string]errConfig
 	startsWithURLs map[string]string
 }
 
 func NewURLHandler() *URLHandler {
 	return &URLHandler{
 		exactURLs:      make(map[string]string),
+		exactErrorURLs: make(map[string]errConfig),
 		startsWithURLs: make(map[string]string),
 	}
 }
@@ -26,6 +33,15 @@ func (h *URLHandler) AddExact(url string, fileName string) {
 	}
 
 	h.exactURLs[url] = fileName
+}
+
+func (h *URLHandler) AddExactError(url string, statusCode int, fileName string) {
+	oldFileName, isSet := h.exactURLs[url]
+	if isSet {
+		log.Warningf("You are replacing the file for exact error url match '%s'! Old: %s, new: %s", url, oldFileName, fileName)
+	}
+
+	h.exactErrorURLs[url] = errConfig{status: statusCode, fileName: fileName}
 }
 
 func (h *URLHandler) AddStartsWith(url string, fileName string) {
@@ -44,7 +60,7 @@ func (h *URLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if url == r.URL.Path {
 			log.Println("Found Mock: " + url + " --> " + fileName)
 
-			writeToResponseWriter(w, fileName)
+			writeToResponseWriter(w, http.StatusOK, fileName)
 			return
 		}
 	}
@@ -53,7 +69,16 @@ func (h *URLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if strings.Index(r.URL.Path, url) == 0 {
 			log.Println("Found Mock: " + url + " --> " + fileName)
 
-			writeToResponseWriter(w, fileName)
+			writeToResponseWriter(w, http.StatusOK, fileName)
+			return
+		}
+	}
+
+	for url, config := range h.exactErrorURLs {
+		if strings.Index(r.URL.Path, url) == 0 {
+			log.Println("Found Mock: " + url + " --> " + config.fileName)
+
+			writeToResponseWriter(w, config.status, config.fileName)
 			return
 		}
 	}
@@ -61,14 +86,14 @@ func (h *URLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 }
 
-func writeToResponseWriter(w http.ResponseWriter, fileName string) {
+func writeToResponseWriter(w http.ResponseWriter, statusCode int, fileName string) {
 	localFileContent, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 
 		panic("could not load local test file: " + fileName)
 	}
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(statusCode)
 	_, err = w.Write(localFileContent)
 	if err != nil {
 		panic("could not write to mock http handler")

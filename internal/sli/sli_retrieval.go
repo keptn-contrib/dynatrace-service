@@ -793,7 +793,7 @@ func (ph *Retrieval) QueryDynatraceDashboardForSLIs(keptnEvent adapter.EventCont
 	// lets load the dashboard if needed
 	dashboard, dashboardID, err := ph.loadDynatraceDashboard(keptnEvent, dashboardID)
 	if err != nil {
-		return nil, fmt.Errorf("Error while processing dashboard config '%s' - %v", dashboardID, err)
+		return nil, fmt.Errorf("error while processing dashboard config '%s' - %w", dashboardID, err)
 	}
 
 	if dashboard == nil {
