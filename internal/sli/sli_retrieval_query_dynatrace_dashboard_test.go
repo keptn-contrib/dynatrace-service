@@ -67,9 +67,14 @@ func TestNoQueryingOfDashboardNecessaryDueToNotSpecifiedAndNotDashboardInKeptn(t
 
 // If you do not specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "") but there is a dashboard already stored
 // in Keptn resources then we do the fallback to querying Dynatrace API for a dashboard
+// also we will fail because of a failing request to Dynatrace API
 func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnWithFailingDynatraceRequest(t *testing.T) {
 	// we don't care about event data in this case
 	ev := &GetSLITriggeredEvent{}
+
+	// we add a handler to simulate a failing dashboards API request (401 in this case)
+	handler := test.NewURLHandler()
+	handler.AddExactError(dashboardURL, http.StatusUnauthorized, "./testfiles/dynatrace_missing_authorization_error.json")
 
 	// we don't care about the content of the dashboard here, because it just should not be empty!
 	// also we don't add a handler to simulate a failing request (404) in this case.
