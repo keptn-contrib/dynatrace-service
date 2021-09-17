@@ -5,9 +5,12 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"testing"
 	"time"
 )
+
+const dashboardURL = "/api/config/v1/dashboards"
 
 func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
@@ -89,7 +92,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 
 	// we add a handler to simulate an successful Dashboards API request in this case.
 	handler := test.NewURLHandler()
-	handler.AddExact("/api/config/v1/dashboards", "./testfiles/test_query_dynatrace_dashboard_dashboards.json")
+	handler.AddExact(dashboardURL, "./testfiles/test_query_dynatrace_dashboard_dashboards.json")
 
 	// we don't care about the content of the dashboard here, because it just should not be empty!
 	retrieval, _, teardown := createCustomRetrieval(ev, handler, KeptnClientMock{}, DashboardReaderMock{content: "some dashboard content"})
@@ -107,24 +110,44 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 // in Keptn resources then we do the fallback to querying Dynatrace API for a dashboard
 //
 // we will find dashboards and one with a name, that would match the required format: KQG;project=%project%;service=%service%;stage=%stage%;xxx
+// also the retrieved dashboard is the same as the stored one and we have enabled "KQG.QueryBehavior=ParseOnChange" in our markdown tile
+// so no need to do anything with the contents of the dashboard here.
 func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnWithSuccessfulDynatraceRequestAndMatchingDashboard(t *testing.T) {
 	// we need to match project, stage & service against the dashboard name
 	ev := createKeptnEvent("project-1", "stage-3", "service-7")
 
-	// we add a handler to simulate an successful Dashboards API request in this case.
-	handler := test.NewURLHandler()
-	handler.AddExact("/api/config/v1/dashboards", "./testfiles/test_query_dynatrace_dashboard_dashboards_kqg.json")
-	handler.AddExact("/api/config/v1/dashboards/e03f4be0-4712-4f12-96ee-8c486d001e9b", "./testfiles/test_query_dynatrace_dashboard_dashboard_kqg.json")
+	const matchingDashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9b"
+	// we need to make sure to use the "processed" one and not the original Dynatrace JSON, because we do have different
+	// models for our DTOs (Tile structures are generic in our part - we need to support any tile type)
+	const storedDashboardFile = "./testfiles/test_query_dynatrace_dashboard_dashboard_kqg.json"
 
-	// we don't care about the content of the dashboard here, because it just should not be empty!
-	retrieval, _, teardown := createCustomRetrieval(ev, handler, KeptnClientMock{}, DashboardReaderMock{content: "some dashboard content"})
+	// we add a handle to simulate an successful Dashboards API request in this case.
+	handler := test.NewURLHandler()
+	handler.AddExact(dashboardURL, "./testfiles/test_query_dynatrace_dashboard_dashboards_kqg.json")
+	handler.AddExact(dashboardURL+"/"+matchingDashboardID, storedDashboardFile)
+
+	dashboardContent, err := ioutil.ReadFile(storedDashboardFile)
+	if err != nil {
+		panic(err)
+	}
+
+	// we need to make sure that the mocked reader returns the "processed" Dynatrace Dashboard
+	retrieval, url, teardown := createCustomRetrieval(ev, handler, KeptnClientMock{}, DashboardReaderMock{content: string(dashboardContent)})
 	defer teardown()
 
 	const dashboardID = ""
 
-	result, err := retrieval.QueryDynatraceDashboardForSLIs(ev, dashboardID, time.Now(), time.Now())
+	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
+	to := time.Date(2021, 9, 17, 8, 0, 0, 0, time.UTC)
+	actualResult, err := retrieval.QueryDynatraceDashboardForSLIs(ev, dashboardID, from, to)
+
+	expectedResult := newDashboardQueryResultFrom(&DashboardLink{
+		apiURL:         url,
+		startTimestamp: from,
+		endTimestamp:   to,
+		dashboardID:    matchingDashboardID,
+	})
 
 	assert.Nil(t, err)
-	// TODO 2021-09-16: refine for result checks on equality here!
-	assert.NotNil(t, result)
+	assert.EqualValues(t, expectedResult, actualResult)
 }

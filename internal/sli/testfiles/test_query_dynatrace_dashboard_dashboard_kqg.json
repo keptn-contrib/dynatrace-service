@@ -10,13 +10,21 @@
     "name": "my-dashboard",
     "shared": false,
     "owner": "name2.surname2@company.com",
-    "dashboardFilter": null
+    "sharingDetails": {
+      "linkShared": false,
+      "published": false
+    },
+    "tags": null
   },
   "tiles": [
     {
       "name": "Markdown",
       "tileType": "MARKDOWN",
       "configured": true,
+      "query": "",
+      "type": "",
+      "customName": "",
+      "markdown": "KQG.Total.Pass=90%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg;KQG.QueryBehavior=ParseOnChange",
       "bounds": {
         "top": 0,
         "left": 0,
@@ -24,15 +32,18 @@
         "height": 152
       },
       "tileFilter": {
-        "timeframe": null,
-        "managementZone": null
+        "timeframe": ""
       },
-      "markdown": "KQG.Total.Pass=90%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg"
+      "queries": null
     },
     {
       "name": "single result tile",
       "tileType": "DATA_EXPLORER",
       "configured": true,
+      "query": "",
+      "type": "",
+      "customName": "My single value tile",
+      "markdown": "",
       "bounds": {
         "top": 190,
         "left": 0,
@@ -40,10 +51,8 @@
         "height": 304
       },
       "tileFilter": {
-        "timeframe": null,
-        "managementZone": null
+        "timeframe": ""
       },
-      "customName": "My single value tile",
       "queries": [
         {
           "id": "A",
@@ -51,71 +60,13 @@
           "spaceAggregation": "SUM",
           "timeAggregation": "DEFAULT",
           "splitBy": [],
-          "sortBy": null,
           "filterBy": {
-            "filter": null,
-            "globalEntity": null,
-            "filterType": null,
-            "filterOperator": null,
-            "entityAttribute": null,
+            "filterOperator": "",
             "nestedFilters": [],
             "criteria": []
-          },
-          "limit": null,
-          "metricSelector": null,
-          "foldTransformation": null,
-          "enabled": true
+          }
         }
-      ],
-      "visualConfig": {
-        "type": "SINGLE_VALUE",
-        "global": {
-          "theme": "DEFAULT",
-          "threshold": {
-            "axisTarget": "LEFT",
-            "columnId": null,
-            "rules": [
-              {
-                "value": null,
-                "color": "#7dc540"
-              },
-              {
-                "value": null,
-                "color": "#f5d30f"
-              },
-              {
-                "value": null,
-                "color": "#dc172a"
-              }
-            ]
-          },
-          "seriesType": "LINE",
-          "hasTrendline": true,
-          "hideLegend": null
-        },
-        "rules": [],
-        "axes": {
-          "xAxis": {
-            "displayName": "",
-            "visible": true
-          },
-          "yAxes": [
-            {
-              "displayName": "",
-              "visible": true,
-              "min": "AUTO",
-              "max": "AUTO",
-              "position": "LEFT",
-              "queryIds": [
-                "A",
-                ""
-              ],
-              "defaultAxis": true
-            }
-          ]
-        },
-        "heatmapSettings": null
-      }
+      ]
     }
   ]
 }
