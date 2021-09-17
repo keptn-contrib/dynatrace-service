@@ -239,25 +239,35 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v2.3.4        
+
       - name: Load CI Environment from .ci_env
         id: load_ci_env
         uses: c-py/action-dotenv-to-setenv@v3
         with:
           env-file: .ci_env
-      - uses: actions/download-artifact@v2
+
+      - name: Download Helm chart
+        uses: actions/download-artifact@v2
         with:
           name: installer
 
-      - name: Set up Keptn CLI and connect to Keptn instance
+      - name: Set up Keptn CLI
         run: |
           echo "Setting up keptn CLI $KEPTN_VERSION"
           curl -sL https://get.keptn.sh | KEPTN_VERSION=$KEPTN_VERSION bash
           keptn set config KubeContextCheck false
+
+      - name: Connect to Keptn instance
+        run: |    
           keptn auth --endpoint=$KEPTN_ENDPOINT --api-token=$KEPTN_API_TOKEN
           keptn version
-      - name: Upload Helm chart to as Keptn resource
+
+      - name: Upload Helm chart to Keptn as resource
         run: |          
           keptn add-resource --project=$KEPTN_PROJECT --stage=$KEPTN_STAGE --service=$IMAGE --resource=${IMAGE}-${VERSION}.tgz --resourceUri=helm/dynatrace-service.tgz
+
+      - name: Trigger Keptn delivery
+        run: |          
           cat <<EOF >>delivery-triggered.json
           {
             "contenttype": "application/json",
@@ -279,6 +289,7 @@ jobs:
           cat delivery-triggered.json
           echo 
           keptn send event --file=./delivery-triggered.json
+          
       - name: Upload delivery-triggered.json
         id: upload_delivery_triggered
         uses: actions/upload-artifact@v2
