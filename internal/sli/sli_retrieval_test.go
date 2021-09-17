@@ -183,25 +183,6 @@ func TestExecuteGetDynatraceSLO(t *testing.T) {
 	}
 }
 
-func TestGetSLIValueWithSLOPrefix(t *testing.T) {
-
-	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
-	dh, teardown := createRetrieval(keptnEvent)
-	defer teardown()
-
-	customQueries := make(map[string]string)
-	customQueries["RT_faster_500ms"] = "SLO;524ca177-849b-3e8c-8175-42b93fbc33c5"
-
-	startTime := time.Unix(1571649084, 0).UTC()
-	endTime := time.Unix(1571649085, 0).UTC()
-
-	_, err := dh.GetSLIValue("RT_faster_500ms", startTime, endTime, keptn.NewCustomQueries(customQueries))
-
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestExecuteGetDynatraceProblems(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
 	dh, teardown := createRetrieval(keptnEvent)
@@ -250,41 +231,40 @@ func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
 	}
 }
 
-func TestGetSLIValueWithPV2Prefix(t *testing.T) {
-
+func TestGetSLIValueForIndicator(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
-	dh, teardown := createRetrieval(keptnEvent)
+	ret, teardown := createRetrieval(keptnEvent)
 	defer teardown()
-
-	customQueries := make(map[string]string)
-	customQueries["problems"] = "PV2;problemEntity=status(open)"
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 
-	_, err := dh.GetSLIValue("problems", startTime, endTime, keptn.NewCustomQueries(customQueries))
-
-	if err != nil {
-		t.Error(err)
+	testConfigs := []struct {
+		indicator string
+		query     string
+	}{
+		{
+			indicator: "problems",
+			query:     "PV2;problemEntity=status(open)",
+		},
+		{
+			indicator: "security_problems",
+			query:     "SECPV2;problemEntity=status(open)",
+		},
+		{
+			indicator: "RT_faster_500ms",
+			query:     "SLO;524ca177-849b-3e8c-8175-42b93fbc33c5",
+		},
 	}
-}
 
-func TestGetSLIValueWithSECPV2Prefix(t *testing.T) {
+	for _, testConfig := range testConfigs {
+		customQueries := make(map[string]string)
+		customQueries[testConfig.indicator] = testConfig.query
 
-	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
-	dh, teardown := createRetrieval(keptnEvent)
-	defer teardown()
+		res, err := ret.GetSLIValue(testConfig.indicator, startTime, endTime, keptn.NewCustomQueries(customQueries))
 
-	customQueries := make(map[string]string)
-	customQueries["security_problems"] = "SECPV2;problemEntity=status(open)"
-
-	startTime := time.Unix(1571649084, 0).UTC()
-	endTime := time.Unix(1571649085, 0).UTC()
-
-	_, err := dh.GetSLIValue("security_problems", startTime, endTime, keptn.NewCustomQueries(customQueries))
-
-	if err != nil {
-		t.Error(err)
+		assert.NoError(t, err)
+		assert.NotNil(t, res)
 	}
 }
 
@@ -314,52 +294,51 @@ func TestParseMarkdownConfigurationParams(t *testing.T) {
 		},
 		// several results, p50
 		{
-			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p50",
-			createSLOScore("50%", "40%"),
-			createSLOComparison("several_results", "pass", 3, "p50"),
+			"KQG.Total.Pass=91%;KQG.Total.Warning=71%;KQG.Compare.WithScore=pass;KQG.Compare.Results=2;KQG.Compare.Function=p50",
+			createSLOScore("91%", "71%"),
+			createSLOComparison("several_results", "pass", 2, "p50"),
 		},
 		// several results, p90
 		{
-			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p90",
-			createSLOScore("50%", "40%"),
+			"KQG.Total.Pass=92%;KQG.Total.Warning=72%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p90",
+			createSLOScore("92%", "72%"),
 			createSLOComparison("several_results", "pass", 3, "p90"),
 		},
 		// several results, p95
 		{
-			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p95",
-			createSLOScore("50%", "40%"),
-			createSLOComparison("several_results", "pass", 3, "p95"),
+			"KQG.Total.Pass=93%;KQG.Total.Warning=73%;KQG.Compare.WithScore=pass;KQG.Compare.Results=4;KQG.Compare.Function=p95",
+			createSLOScore("93%", "73%"),
+			createSLOComparison("several_results", "pass", 4, "p95"),
 		},
 		// several results, p95, all
 		{
-			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=all;KQG.Compare.Results=3;KQG.Compare.Function=p95",
-			createSLOScore("50%", "40%"),
-			createSLOComparison("several_results", "all", 3, "p95"),
+			"KQG.Total.Pass=94%;KQG.Total.Warning=74%;KQG.Compare.WithScore=all;KQG.Compare.Results=5;KQG.Compare.Function=p95",
+			createSLOScore("94%", "74%"),
+			createSLOComparison("several_results", "all", 5, "p95"),
 		},
 		// several results, p95, pass_or_warn
 		{
-			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=pass_or_warn;KQG.Compare.Results=3;KQG.Compare.Function=p95",
-			createSLOScore("50%", "40%"),
-			createSLOComparison("several_results", "pass_or_warn", 3, "p95"),
+			"KQG.Total.Pass=95%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass_or_warn;KQG.Compare.Results=6;KQG.Compare.Function=p95",
+			createSLOScore("95%", "75%"),
+			createSLOComparison("several_results", "pass_or_warn", 6, "p95"),
 		},
-
 		// several results, p95, fallback to pass if compare function is unknown
 		{
-			"KQG.Total.Pass=50%;KQG.Total.Warning=40%;KQG.Compare.WithScore=warn;KQG.Compare.Results=3;KQG.Compare.Function=p95",
-			createSLOScore("50%", "40%"),
-			createSLOComparison("several_results", "pass", 3, "p95"),
+			"KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=warn;KQG.Compare.Results=7;KQG.Compare.Function=p95",
+			createSLOScore("96%", "76%"),
+			createSLOComparison("several_results", "pass", 7, "p95"),
 		},
 		// several results, fallback if function is unknown e.g. p97
 		{
-			"KQG.Total.Pass=51%;KQG.Total.Warning=41%;KQG.Compare.WithScore=pass;KQG.Compare.Results=4;KQG.Compare.Function=p97",
-			createSLOScore("51%", "41%"),
-			createSLOComparison("several_results", "pass", 4, "avg"),
+			"KQG.Total.Pass=97%;KQG.Total.Warning=77%;KQG.Compare.WithScore=pass;KQG.Compare.Results=8;KQG.Compare.Function=p97",
+			createSLOScore("97%", "77%"),
+			createSLOComparison("several_results", "pass", 8, "avg"),
 		},
 		// several results, fallback if function is unknown e.g. p97, ignore dashboard query behaviour
 		{
-			"KQG.Total.Pass=51%;KQG.Total.Warning=41%;KQG.Compare.WithScore=pass;KQG.Compare.Results=4;KQG.Compare.Function=p97;KQG.QueryBehavior=ParseOnChange",
-			createSLOScore("51%", "41%"),
-			createSLOComparison("several_results", "pass", 4, "avg"),
+			"KQG.Total.Pass=98%;KQG.Total.Warning=78%;KQG.Compare.WithScore=pass;KQG.Compare.Results=9;KQG.Compare.Function=p97;KQG.QueryBehavior=ParseOnChange",
+			createSLOScore("98%", "78%"),
+			createSLOComparison("several_results", "pass", 9, "avg"),
 		},
 	}
 	for _, config := range testConfigs {
