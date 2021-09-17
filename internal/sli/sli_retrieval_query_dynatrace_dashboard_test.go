@@ -151,3 +151,45 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 	assert.Nil(t, err)
 	assert.EqualValues(t, expectedResult, actualResult)
 }
+
+// If you do specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "<some-dashboard-uuid>") then we will retrieve the
+// dashboard via the Dynatrace API.
+// also the retrieved dashboard is the same as the stored one and we have enabled "KQG.QueryBehavior=ParseOnChange" in our markdown tile
+// so no need to do anything with the contents of the dashboard here.
+// (this is basically the same as above without querying the dashboards API for a matching dashboard beforehand)
+func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testing.T) {
+	// we need to match project, stage & service against the dashboard name
+	ev := createKeptnEvent("project-1", "stage-3", "service-7")
+
+	const dashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9b"
+	// we need to make sure to use the "processed" one and not the original Dynatrace JSON, because we do have different
+	// models for our DTOs (Tile structures are generic in our part - we need to support any tile type)
+	const storedDashboardFile = "./testfiles/test_query_dynatrace_dashboard_dashboard_kqg.json"
+
+	// we add a handle to simulate an successful Dashboards API request in this case.
+	handler := test.NewURLHandler()
+	handler.AddExact(dashboardURL+"/"+dashboardID, storedDashboardFile)
+
+	dashboardContent, err := ioutil.ReadFile(storedDashboardFile)
+	if err != nil {
+		panic(err)
+	}
+
+	// we need to make sure that the mocked reader returns the "processed" Dynatrace Dashboard
+	retrieval, url, teardown := createCustomRetrieval(ev, handler, KeptnClientMock{}, DashboardReaderMock{content: string(dashboardContent)})
+	defer teardown()
+
+	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
+	to := time.Date(2021, 9, 17, 8, 0, 0, 0, time.UTC)
+	actualResult, err := retrieval.QueryDynatraceDashboardForSLIs(ev, dashboardID, from, to)
+
+	expectedResult := newDashboardQueryResultFrom(&DashboardLink{
+		apiURL:         url,
+		startTimestamp: from,
+		endTimestamp:   to,
+		dashboardID:    dashboardID,
+	})
+
+	assert.Nil(t, err)
+	assert.EqualValues(t, expectedResult, actualResult)
+}
