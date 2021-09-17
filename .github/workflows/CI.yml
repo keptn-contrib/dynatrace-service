@@ -274,6 +274,8 @@ jobs:
             "specversion": "1.0",
             "type": "sh.keptn.event.dev.delivery.triggered"
           }
+          EOF
+          
           cat delivery-triggered.json
           echo 
           keptn send event --file=./delivery-triggered.json
