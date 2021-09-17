@@ -18,20 +18,38 @@ import (
 
 type EnvironmentAPIv2Error struct {
 	Error struct {
-		Code                 int    `json:"code"`
-		Message              string `json:"message"`
-		ConstraintViolations []struct {
-			Path              string `json:"path"`
-			Message           string `json:"message"`
-			ParameterLocation string `json:"parameterLocation"`
-			Location          string `json:"location"`
-		} `json:"constraintViolations"`
+		Code                 int                  `json:"code"`
+		Message              string               `json:"message"`
+		ConstraintViolations ConstraintViolations `json:"constraintViolations"`
 	} `json:"error"`
+}
+
+type ConstraintViolation struct {
+	Path              string `json:"path"`
+	Message           string `json:"message"`
+	ParameterLocation string `json:"parameterLocation"`
+	Location          string `json:"location"`
+}
+
+func (v ConstraintViolation) String() string {
+	return v.Message
+}
+
+type ConstraintViolations []ConstraintViolation
+
+func (vs ConstraintViolations) String() string {
+	messages := make([]string, len(vs))
+	for i, v := range vs {
+		messages[i] = v.Message
+	}
+
+	return strings.Join(messages, ", ")
 }
 
 type APIError struct {
 	code    int
 	message string
+	uri     string
 	details *EnvironmentAPIv2Error
 }
 
@@ -45,10 +63,10 @@ func (e *APIError) Message() string {
 
 func (e *APIError) Error() string {
 	if e.details != nil {
-		return fmt.Sprintf("Dynatrace API error (%d): %s [%v]", e.code, e.message, e.details.Error.ConstraintViolations)
+		return fmt.Sprintf("Dynatrace API error (%d): %s %s - URL: %s", e.code, e.message, e.details.Error.ConstraintViolations, e.uri)
 	}
 
-	return fmt.Sprintf("Dynatrace API error (%d): %s", e.code, e.message)
+	return fmt.Sprintf("Dynatrace API error (%d): %s - URL: %s", e.code, e.message, e.uri)
 }
 
 type ClientError struct {
@@ -181,12 +199,14 @@ func (dt *Client) doRequest(req *http.Request) ([]byte, error) {
 			return responseBody, &APIError{
 				code:    resp.StatusCode,
 				message: string(responseBody),
+				uri:     req.URL.String(),
 			}
 		}
 		return responseBody, &APIError{
 			code:    dtAPIError.Error.Code,
 			message: dtAPIError.Error.Message,
 			details: dtAPIError,
+			uri:     req.URL.String(),
 		}
 	}
 

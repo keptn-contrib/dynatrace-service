@@ -7,7 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -39,12 +38,6 @@ func NewRetrieval(keptnEvent GetSLITriggeredAdapterInterface, dtClient dynatrace
 		kClient:         kClient,
 		dashboardReader: dashboardReader,
 	}
-}
-
-// isValidUUID Helper function to validate whether string is a valid UUID in version 4, variant 1
-func isValidUUID(uuid string) bool {
-	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[89aAbB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
-	return r.MatchString(uuid)
 }
 
 func (ph *Retrieval) findDynatraceDashboard(keptnEvent adapter.EventContentAdapter) (string, error) {
@@ -94,12 +87,6 @@ func (ph *Retrieval) loadDynatraceDashboard(keptnEvent adapter.EventContentAdapt
 				"service":   keptnEvent.GetService(),
 				"dashboard": dashboard,
 			}).Debug("Dashboard option query found for dashboard")
-	}
-
-	// Lets validate if we have a valid UUID - either because it was passed or because queried
-	// If not - we are going down the dashboard route!
-	if !isValidUUID(dashboard) {
-		return nil, dashboard, fmt.Errorf("Dashboard ID %s not a valid UUID", dashboard)
 	}
 
 	// We have a valid Dashboard UUID - now lets query it!

@@ -204,7 +204,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 // If you do specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "<some-dashboard-uuid>") then we will retrieve the
 // dashboard via the Dynatrace API.
 // also the ID of the dashboard we try to retrieve was not found
-func TestRetrieveDashboardWithInvalidID(t *testing.T) {
+func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	// we need do not care about the event here
 	ev := &GetSLITriggeredEvent{}
 
@@ -221,9 +221,40 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	actualResult, err := retrieval.QueryDynatraceDashboardForSLIs(ev, dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
-	var apiErr *dynatrace.APIError
-	assert.ErrorAs(t, err, &apiErr)
-	assert.Equal(t, http.StatusNotFound, apiErr.Code())
-	assert.Contains(t, apiErr.Message(), dashboardID)
 	assert.Nil(t, actualResult)
+
+	var apiErr *dynatrace.APIError
+	if assert.ErrorAs(t, err, &apiErr) {
+		assert.Equal(t, http.StatusNotFound, apiErr.Code())
+		assert.Contains(t, apiErr.Message(), dashboardID)
+	}
+}
+
+// If you do specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "<some-dashboard-uuid>") then we will retrieve the
+// dashboard via the Dynatrace API.
+// it could happen that you have a copy/paste error in your ID (invalid UUID) so we will see a different error
+func TestRetrieveDashboardWithInvalidID(t *testing.T) {
+	// we need do not care about the event here
+	ev := &GetSLITriggeredEvent{}
+
+	const dashboardID = "definitely-invalid-uuid"
+
+	// we add a handler to simulate a very concrete 400 Dashboards API request/response in this case.
+	handler := test.NewURLHandler()
+	handler.AddExactError(dashboardURL+"/"+dashboardID, http.StatusBadRequest, "./testfiles/test_query_dynatrace_dashboard_dashboard_id_not_valid.json")
+
+	// we also do not care about the dashboard that would be returned by keptn
+	retrieval, _, teardown := createCustomRetrieval(ev, handler, KeptnClientMock{}, DashboardReaderMock{})
+	defer teardown()
+
+	actualResult, err := retrieval.QueryDynatraceDashboardForSLIs(ev, dashboardID, time.Now(), time.Now())
+
+	assert.Error(t, err)
+	assert.Nil(t, actualResult)
+
+	var apiErr *dynatrace.APIError
+	if assert.ErrorAs(t, err, &apiErr) {
+		assert.Equal(t, http.StatusBadRequest, apiErr.Code())
+	}
+	assert.Contains(t, err.Error(), "UUID")
 }

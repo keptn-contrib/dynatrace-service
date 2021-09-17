@@ -300,35 +300,6 @@ func TestScaleData(t *testing.T) {
 	}
 }
 
-func TestIsValidUUID(t *testing.T) {
-	testConfigs := []struct {
-		uuid string
-		want bool
-	}{
-		// reproduce issue with "|"
-		{
-			"311f4aa7-5257-41d7-|bd1-70420500e1c8",
-			false,
-		},
-		// valid UUID v4, variant 1
-		{
-			"311f4aa7-5257-41d7-abd1-70420500e1c8",
-			true,
-		},
-		// NIL UUID is not valid
-		{
-			"00000000-0000-0000-0000-000000000000",
-			false,
-		},
-	}
-	for _, config := range testConfigs {
-		got := isValidUUID(config.uuid)
-		if got != config.want {
-			t.Errorf("uuid: %s, result should have been: %v, but got: %v", config.uuid, config.want, got)
-		}
-	}
-}
-
 func TestParseMarkdownConfigurationParams(t *testing.T) {
 	testConfigs := []struct {
 		input              string
