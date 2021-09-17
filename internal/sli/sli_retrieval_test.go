@@ -355,6 +355,12 @@ func TestParseMarkdownConfigurationParams(t *testing.T) {
 			createSLOScore("51%", "41%"),
 			createSLOComparison("several_results", "pass", 4, "avg"),
 		},
+		// several results, fallback if function is unknown e.g. p97, ignore dashboard query behaviour
+		{
+			"KQG.Total.Pass=51%;KQG.Total.Warning=41%;KQG.Compare.WithScore=pass;KQG.Compare.Results=4;KQG.Compare.Function=p97;KQG.QueryBehavior=ParseOnChange",
+			createSLOScore("51%", "41%"),
+			createSLOComparison("several_results", "pass", 4, "avg"),
+		},
 	}
 	for _, config := range testConfigs {
 		actualScore, actualComparison := parseMarkdownConfiguration(config.input)
