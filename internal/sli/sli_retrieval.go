@@ -3,13 +3,14 @@ package sli
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
 	log "github.com/sirupsen/logrus"
 
@@ -448,7 +449,7 @@ func (ph *Retrieval) generateMetricQueryFromDataExplorer(dataQuery dynatrace.Dat
 		if doMergeDimension {
 			// this is a dimension we want to merge as it is not split by in the chart
 			log.WithField("dimension", metricDefinition.DimensionDefinitions[metricDimIx].Key).Debug("merging dimension")
-			mergeAggregator = mergeAggregator + fmt.Sprintf(":merge(%d)", metricDimIx)
+			mergeAggregator = mergeAggregator + fmt.Sprintf(":merge(\"%s\")", metricDefinition.DimensionDefinitions[metricDimIx].Key)
 		}
 	}
 
@@ -564,7 +565,7 @@ func (ph *Retrieval) generateMetricQueryFromChart(series dynatrace.Series, tileM
 		if doMergeDimension {
 			// this is a dimension we want to merge as it is not split by in the chart
 			log.WithField("dimension", metricDefinition.DimensionDefinitions[metricDimIx].Name).Debug("merging dimension")
-			mergeAggregator = mergeAggregator + fmt.Sprintf(":merge(%d)", metricDimIx)
+			mergeAggregator = mergeAggregator + fmt.Sprintf(":merge(\"%s\")", metricDefinition.DimensionDefinitions[metricDimIx].Key)
 		}
 	}
 
