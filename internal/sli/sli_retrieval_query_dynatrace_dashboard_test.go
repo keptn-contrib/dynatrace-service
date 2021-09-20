@@ -78,7 +78,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 
 	// we don't care about the content of the dashboard here, because it just should not be empty!
 	// also we don't add a handler to simulate a failing request (404) in this case.
-	retrieval, _, teardown := createCustomRetrieval(ev, nil, KeptnClientMock{}, DashboardReaderMock{content: "some dashboard content"})
+	retrieval, _, teardown := createCustomRetrieval(ev, handler, KeptnClientMock{}, DashboardReaderMock{content: "some dashboard content"})
 	defer teardown()
 
 	const dashboardID = ""
