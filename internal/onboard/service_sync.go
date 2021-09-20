@@ -2,10 +2,11 @@ package onboard
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
@@ -300,11 +301,11 @@ func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
 
 func (s *serviceSynchronizer) createSLIResource(serviceName string) error {
 	indicators := make(map[string]string)
-	indicators["throughput"] = fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(0):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
-	indicators["error_rate"] = fmt.Sprintf("metricSelector=builtin:service.errors.total.rate:merge(0):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
-	indicators["response_time_p50"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
-	indicators["response_time_p90"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
-	indicators["response_time_p95"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(0):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["throughput"] = fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["error_rate"] = fmt.Sprintf("metricSelector=builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p50"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p90"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
+	indicators["response_time_p95"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
 
 	defaultSLIs := &dynatrace.SLI{
 		SpecVersion: "1.0",
