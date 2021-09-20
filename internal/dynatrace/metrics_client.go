@@ -3,6 +3,7 @@ package dynatrace
 import (
 	"encoding/json"
 	"errors"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,13 +20,15 @@ type MetricDefinition struct {
 	DefaultAggregation struct {
 		Type string `json:"type"`
 	} `json:"defaultAggregation"`
-	DimensionDefinitions []struct {
-		Name        string `json:"name"`
-		Type        string `json:"type"`
-		Key         string `json:"key"`
-		DisplayName string `json:"displayName"`
-	} `json:"dimensionDefinitions"`
-	EntityType []string `json:"entityType"`
+	DimensionDefinitions []DimensionDefinition `json:"dimensionDefinitions"`
+	EntityType           []string              `json:"entityType"`
+}
+
+type DimensionDefinition struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Key         string `json:"key"`
+	DisplayName string `json:"displayName"`
 }
 
 // MetricsQueryResult is struct for /metrics/query

@@ -2,14 +2,15 @@ package sli
 
 import (
 	"errors"
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +23,7 @@ func TestGetSLIValue(t *testing.T) {
 		"nextPageKey": null,
 		"result": [
 			{
-				"metricId": "builtin:service.response.time:merge(0):percentile(50)",
+				"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
 				"data": [
 					{
 						"dimensions": [],
@@ -53,7 +54,7 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 		"nextPageKey": null,
 		"result": [
 			{
-				"metricId": "builtin:service.response.time:merge(0):percentile(50)",
+				"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
 				"data": [
 					{
 						"dimensions": [],
@@ -86,7 +87,7 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 
 	// overwrite custom queries with the new format (starting with metricSelector=)
 	customQueries := make(map[string]string)
-	customQueries[keptn.ResponseTimeP50] = "metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
+	customQueries[keptn.ResponseTimeP50] = "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
@@ -97,7 +98,7 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 
 	// now do the same but with the new format but with ?metricSelector= in front (the ? is not needed/wanted)
 	customQueries = make(map[string]string)
-	customQueries[keptn.ResponseTimeP50] = "?metricSelector=builtin:service.response.time:merge(0):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
+	customQueries[keptn.ResponseTimeP50] = "?metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
 
 	start = time.Unix(1571649084, 0).UTC()
 	end = time.Unix(1571649085, 0).UTC()
@@ -108,7 +109,7 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 
 	// now do the same but with the old format ($metricName?scope=...)
 	customQueries = make(map[string]string)
-	customQueries[keptn.ResponseTimeP50] = "builtin:service.response.time:merge(0):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)"
+	customQueries[keptn.ResponseTimeP50] = "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)"
 
 	start = time.Unix(1571649084, 0).UTC()
 	end = time.Unix(1571649085, 0).UTC()
@@ -126,7 +127,7 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
     "nextPageKey": null,
 	"result": [
 		{
-			"metricId": "builtin:service.response.time:merge(0):percentile(50)",
+			"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
 			"data": [
 			]
 		}
@@ -195,16 +196,16 @@ func runGetSLIValueTest(okResponse string) (float64, error) {
 
 func TestGetSLIValueWithMV2Prefix(t *testing.T) {
 
-	metricsQuery := "MV2;Percent;metricSelector=builtin:host.cpu.usage:merge(0):avg:names&entitySelector=type(HOST)"
+	metricsQuery := "MV2;Percent;metricSelector=builtin:host.cpu.usage:merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)"
 
 	if strings.HasPrefix(metricsQuery, "MV2;") {
 		metricsQuery = metricsQuery[4:]
-		assert.EqualValues(t, metricsQuery, "Percent;metricSelector=builtin:host.cpu.usage:merge(0):avg:names&entitySelector=type(HOST)")
+		assert.EqualValues(t, metricsQuery, "Percent;metricSelector=builtin:host.cpu.usage:merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)")
 		queryStartIndex := strings.Index(metricsQuery, ";")
 		metricUnit := metricsQuery[:queryStartIndex]
 		assert.EqualValues(t, metricUnit, "Percent")
 		metricsQuery = metricsQuery[queryStartIndex+1:]
-		assert.EqualValues(t, metricsQuery, "metricSelector=builtin:host.cpu.usage:merge(0):avg:names&entitySelector=type(HOST)")
+		assert.EqualValues(t, metricsQuery, "metricSelector=builtin:host.cpu.usage:merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)")
 	}
 }
 
@@ -266,7 +267,7 @@ func TestGetSLISleep(t *testing.T) {
 		"nextPageKey": null,
 		"result": [
 			{
-				"metricId": "builtin:service.response.time:merge(0):percentile(50)",
+				"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
 				"data": [
 					{
 						"dimensions": [],

@@ -1,7 +1,7 @@
 {
     "result": [
     {
-        "metricId": "builtin:tech.generic.processCount:merge(0):avg:names",
+        "metricId": "builtin:tech.generic.processCount:merge(\"dt.entity.process_group_instance\"):avg:names",
         "data": [
           {
             "dimensions": [
@@ -33,7 +33,7 @@
     },
 
     {
-        "metricId": "builtin:tech.generic.mem.workingSetSize:merge(0):avg:names",
+        "metricId": "builtin:tech.generic.mem.workingSetSize:merge(\"dt.entity.process_group_instance\"):avg:names",
         "data": [
           {
             "dimensions": [
@@ -50,7 +50,7 @@
     },
     
     {
-        "metricId": "builtin:tech.generic.cpu.usage:merge(0):avg:names",
+        "metricId": "builtin:tech.generic.cpu.usage:merge(\"dt.entity.process_group_instance\"):avg:names",
         "data": [
           {
             "dimensions": [
@@ -67,7 +67,7 @@
     },
     
     {
-        "metricId": "builtin:service.errors.server.rate:merge(0):avg:names",
+        "metricId": "builtin:service.errors.server.rate:merge(\"dt.entity.service\"):avg:names",
         "data": [
           {
             "dimensions": [
@@ -84,7 +84,7 @@
     },
     
     {
-        "metricId": "builtin:service.requestCount.total:merge(0):value:names",
+        "metricId": "builtin:service.requestCount.total:merge(\"dt.entity.service\"):value:names",
         "data": [
           {
             "dimensions": [
@@ -101,7 +101,7 @@
     },
     
     {
-        "metricId": "builtin:host.cpu.usage:merge(0):avg:names",
+        "metricId": "builtin:host.cpu.usage:merge(\"dt.entity.host\"):avg:names",
         "data": [
           {
             "dimensions": [
@@ -118,7 +118,7 @@
     },
     
     {
-        "metricId": "builtin:host.mem.usage:merge(0):avg:names",
+        "metricId": "builtin:host.mem.usage:merge(\"dt.entity.host\"):avg:names",
         "data": [
           {
             "dimensions": [
@@ -135,7 +135,7 @@
     },
     
     {
-        "metricId": "builtin:host.disk.queueLength:merge(1):merge(0):max:names",
+        "metricId": "builtin:host.disk.queueLength:merge(\"dt.entity.disk\"):merge(\"dt.entity.host\"):max:names",
         "data": [
           {
             "dimensions": [
@@ -152,7 +152,7 @@
     },
     
     {
-        "metricId": "builtin:service.nonDbChildCallCount:merge(0):value:names",
+        "metricId": "builtin:service.nonDbChildCallCount:merge(\"dt.entity.service\"):value:names",
         "data": [
           {
             "dimensions": [

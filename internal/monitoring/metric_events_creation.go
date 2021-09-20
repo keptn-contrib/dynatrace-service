@@ -3,13 +3,14 @@ package monitoring
 import (
 	"errors"
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
-	"regexp"
-	"strconv"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -250,12 +251,13 @@ var supportedAggregations = [...]string{"avg", "max", "min", "count", "sum", "va
 
 func createKeptnMetricEventDTO(project string, stage string, service string, metric string, query string, condition string, threshold float64, managementZoneID int64) (*dynatrace.MetricEvent, error) {
 
+	// TODO: 2021-09-20: Check what parts are still needed
 	/*
 		need to map queries used by SLI-service to metric event definition.
-		example: builtin:service.response.time:merge(0):percentile(90)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)
+		example: builtin:service.response.time:merge("dt.entity.service"):percentile(90)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)
 
-		1. split by '?' and get first part => builtin:service.response.time:merge(0):percentile(90)
-		2. split by ':' => builtin:service.response.time | merge(0) | percentile(90) => merge(0) is not needed
+		1. split by '?' and get first part => builtin:service.response.time:merge("dt.entity.service"):percentile(90)
+		2. split by ':' => builtin:service.response.time | merge("dt.entity.service") | percentile(90) => merge("dt.entity.service") is not needed
 		3. first part is the metricId and can be used for the Metric Event API => builtin:service.response.time
 		4. Aggregation is limited to: AVG, COUNT, MAX, MEDIAN, MIN, OF_INTEREST, OF_INTEREST_RATIO, OTHER, OTHER_RATIO, P90, SUM, VALUE
 	*/
@@ -265,10 +267,10 @@ func createKeptnMetricEventDTO(project string, stage string, service string, met
 	}
 
 	query = strings.TrimPrefix(query, "metricSelector=")
-	// 1. split by '?' and get first part => builtin:service.response.time:merge(0):percentile(90)
+	// 1. split by '?' and get first part => builtin:service.response.time:merge("dt.entity.service"):percentile(90)
 	split := strings.Split(query, "?")
 
-	// 2. split by ':' => builtin:service.response.time | merge(0) | percentile(90) => merge(0) is not needed/supported by MetricEvent API
+	// 2. split by ':' => builtin:service.response.time | merge("dt.entity.service") | percentile(90) => merge("dt.entity.service") is not needed/supported by MetricEvent API
 	splittedQuery := strings.Split(split[0], ":")
 
 	if len(splittedQuery) < 2 {
