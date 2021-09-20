@@ -1,4 +1,4 @@
-package sli
+package query
 
 import (
 	"errors"
@@ -7,10 +7,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -47,7 +50,7 @@ func TestGetSLIValue(t *testing.T) {
 }
 
 // tests the GETSliValue function to return the proper datapoint with the old custom query format
-func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
+func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 
 	okResponse := `{
 		"totalCount": 8,
@@ -77,46 +80,28 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 	httpClient, teardown := test.CreateHTTPClient(h)
 	defer teardown()
 
-	keptnEvent := &GetSLITriggeredEvent{}
-	keptnEvent.Project = "sockshop"
-	keptnEvent.Stage = "dev"
-	keptnEvent.Service = "carts"
-	keptnEvent.DeploymentStrategy = ""
-
-	dh := createDynatraceHandler(keptnEvent, httpClient)
-
-	// overwrite custom queries with the new format (starting with metricSelector=)
-	customQueries := make(map[string]string)
-	customQueries[keptn.ResponseTimeP50] = "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
+	keptnEvent := createDefaultTestEventData()
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewCustomQueries(customQueries))
 
-	assert.EqualValues(t, nil, err)
-	assert.InDelta(t, 8.43340, value, 0.001)
+	testQueries := []string{
+		"metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)",
+		"?metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)",
+		"builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
+	}
 
-	// now do the same but with the new format but with ?metricSelector= in front (the ? is not needed/wanted)
-	customQueries = make(map[string]string)
-	customQueries[keptn.ResponseTimeP50] = "?metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
+	for _, testQuery := range testQueries {
 
-	start = time.Unix(1571649084, 0).UTC()
-	end = time.Unix(1571649085, 0).UTC()
-	value, err = dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewCustomQueries(customQueries))
+		customQueries := make(map[string]string)
+		customQueries[keptn.ResponseTimeP50] = testQuery
 
-	assert.EqualValues(t, nil, err)
-	assert.InDelta(t, 8.43340, value, 0.001)
+		p := createCustomQueryProcessing(keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), start, end)
+		value, err := p.GetSLIValue(keptn.ResponseTimeP50)
 
-	// now do the same but with the old format ($metricName?scope=...)
-	customQueries = make(map[string]string)
-	customQueries[keptn.ResponseTimeP50] = "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)"
-
-	start = time.Unix(1571649084, 0).UTC()
-	end = time.Unix(1571649085, 0).UTC()
-	value, err = dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewCustomQueries(customQueries))
-
-	assert.EqualValues(t, nil, err)
-	assert.InDelta(t, 8.43340, value, 0.001)
+		assert.EqualValues(t, nil, err)
+		assert.InDelta(t, 8.43340, value, 0.001)
+	}
 }
 
 // Tests GetSLIValue with an empty result (no datapoints)
@@ -180,18 +165,14 @@ func runGetSLIValueTest(okResponse string) (float64, error) {
 	httpClient, teardown := test.CreateHTTPClient(h)
 	defer teardown()
 
-	keptnEvent := &GetSLITriggeredEvent{}
-	keptnEvent.Project = "sockshop"
-	keptnEvent.Stage = "dev"
-	keptnEvent.Service = "carts"
-	keptnEvent.DeploymentStrategy = ""
-
-	dh := createDynatraceHandler(keptnEvent, httpClient)
+	keptnEvent := createDefaultTestEventData()
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
 
-	return dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewEmptyCustomQueries())
+	dh := createQueryProcessing(keptnEvent, httpClient, start, end)
+
+	return dh.GetSLIValue(keptn.ResponseTimeP50)
 }
 
 func TestGetSLIValueWithMV2Prefix(t *testing.T) {
@@ -287,18 +268,14 @@ func TestGetSLISleep(t *testing.T) {
 	httpClient, teardown := test.CreateHTTPClient(h)
 	defer teardown()
 
-	keptnEvent := &GetSLITriggeredEvent{}
-	keptnEvent.Project = "sockshop"
-	keptnEvent.Stage = "dev"
-	keptnEvent.Service = "carts"
-	keptnEvent.DeploymentStrategy = ""
-
-	dh := createDynatraceHandler(keptnEvent, httpClient)
+	keptnEvent := createDefaultTestEventData()
 
 	start := time.Now().Add(-5 * time.Minute)
 	// artificially increase end time to be in the future
 	end := time.Now().Add(-80 * time.Second)
-	value, err := dh.GetSLIValue(keptn.ResponseTimeP50, start, end, keptn.NewEmptyCustomQueries())
+	dh := createQueryProcessing(keptnEvent, httpClient, start, end)
+
+	value, err := dh.GetSLIValue(keptn.ResponseTimeP50)
 
 	assert.InDelta(t, 8.43340, value, 0.001)
 	assert.Nil(t, err)
@@ -310,30 +287,87 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 	httpClient, teardown := test.CreateHTTPClient(h)
 	defer teardown()
 
-	keptnEvent := &GetSLITriggeredEvent{}
-	keptnEvent.Project = "sockshop"
-	keptnEvent.Stage = "dev"
-	keptnEvent.Service = "carts"
-	keptnEvent.DeploymentStrategy = ""
-
-	dh := createDynatraceHandler(keptnEvent, httpClient)
+	keptnEvent := createDefaultTestEventData()
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
-	value, err := dh.GetSLIValue(keptn.Throughput, start, end, keptn.NewEmptyCustomQueries())
+	dh := createQueryProcessing(keptnEvent, httpClient, start, end)
+
+	value, err := dh.GetSLIValue(keptn.Throughput)
 
 	assert.EqualValues(t, 0.0, value)
 	assert.NotNil(t, err, nil)
 }
 
-func createDynatraceHandler(keptnEvent GetSLITriggeredAdapterInterface, httpClient *http.Client) *Retrieval {
-	dh := NewRetrieval(
+func TestGetSLIValueForIndicator(t *testing.T) {
+	handler := test.NewFileBasedURLHandler()
+	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
+	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
+	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
+
+	httpClient, teardown := test.CreateHTTPClient(handler)
+	defer teardown()
+
+	keptnEvent := createDefaultTestEventData()
+	startTime := time.Unix(1571649084, 0).UTC()
+	endTime := time.Unix(1571649085, 0).UTC()
+
+	testConfigs := []struct {
+		indicator string
+		query     string
+	}{
+		{
+			indicator: "problems",
+			query:     "PV2;problemEntity=status(open)",
+		},
+		{
+			indicator: "security_problems",
+			query:     "SECPV2;problemEntity=status(open)",
+		},
+		{
+			indicator: "RT_faster_500ms",
+			query:     "SLO;524ca177-849b-3e8c-8175-42b93fbc33c5",
+		},
+	}
+
+	for _, testConfig := range testConfigs {
+		customQueries := make(map[string]string)
+		customQueries[testConfig.indicator] = testConfig.query
+
+		ret := createCustomQueryProcessing(keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), startTime, endTime)
+
+		res, err := ret.GetSLIValue(testConfig.indicator)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, res)
+	}
+}
+
+func createQueryProcessing(keptnEvent adapter.EventContentAdapter, httpClient *http.Client, start time.Time, end time.Time) *Processing {
+	return createCustomQueryProcessing(
 		keptnEvent,
+		httpClient,
+		keptn.NewEmptyCustomQueries(),
+		start,
+		end)
+}
+
+func createCustomQueryProcessing(keptnEvent adapter.EventContentAdapter, httpClient *http.Client, queries *keptn.CustomQueries, start time.Time, end time.Time) *Processing {
+	return NewProcessing(
 		dynatrace.NewClientWithHTTP(
 			&credentials.DTCredentials{Tenant: "http://dynatrace"},
 			httpClient),
-		KeptnClientMock{},
-		DashboardReaderMock{})
+		keptnEvent,
+		[]*keptnv2.SLIFilter{},
+		queries,
+		start,
+		end)
+}
 
-	return dh
+func createDefaultTestEventData() adapter.EventContentAdapter {
+	return &test.EventData{
+		Project: "sockshop",
+		Stage:   "dev",
+		Service: "carts",
+	}
 }

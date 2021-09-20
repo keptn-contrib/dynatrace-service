@@ -1,4 +1,4 @@
-package sli
+package dashboard
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ type DashboardLink struct {
 	dashboardFilter *dynatrace.DashboardFilter
 }
 
-func NewDashboardLink(
+func NewLink(
 	apiURL string,
 	startTimestamp time.Time,
 	endTimestamp time.Time,

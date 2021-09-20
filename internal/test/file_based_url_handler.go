@@ -12,21 +12,23 @@ type errConfig struct {
 	fileName string
 }
 
-type URLHandler struct {
+type FileBasedURLHandler struct {
 	exactURLs      map[string]string
 	exactErrorURLs map[string]errConfig
 	startsWithURLs map[string]string
 }
 
-func NewURLHandler() *URLHandler {
-	return &URLHandler{
+func NewFileBasedURLHandler() *FileBasedURLHandler {
+	return &FileBasedURLHandler{
 		exactURLs:      make(map[string]string),
 		exactErrorURLs: make(map[string]errConfig),
 		startsWithURLs: make(map[string]string),
 	}
 }
 
-func (h *URLHandler) AddExact(url string, fileName string) {
+func (h *FileBasedURLHandler) AddExact(url string, fileName string) {
+	assertFileIsInTestDataFolder(fileName)
+
 	oldFileName, isSet := h.exactURLs[url]
 	if isSet {
 		log.Warningf("You are replacing the file for exact url match '%s'! Old: %s, new: %s", url, oldFileName, fileName)
@@ -35,7 +37,9 @@ func (h *URLHandler) AddExact(url string, fileName string) {
 	h.exactURLs[url] = fileName
 }
 
-func (h *URLHandler) AddExactError(url string, statusCode int, fileName string) {
+func (h *FileBasedURLHandler) AddExactError(url string, statusCode int, fileName string) {
+	assertFileIsInTestDataFolder(fileName)
+
 	oldFileName, isSet := h.exactURLs[url]
 	if isSet {
 		log.Warningf("You are replacing the file for exact error url match '%s'! Old: %s, new: %s", url, oldFileName, fileName)
@@ -44,7 +48,9 @@ func (h *URLHandler) AddExactError(url string, statusCode int, fileName string) 
 	h.exactErrorURLs[url] = errConfig{status: statusCode, fileName: fileName}
 }
 
-func (h *URLHandler) AddStartsWith(url string, fileName string) {
+func (h *FileBasedURLHandler) AddStartsWith(url string, fileName string) {
+	assertFileIsInTestDataFolder(fileName)
+
 	oldFileName, isSet := h.startsWithURLs[url]
 	if isSet {
 		log.Warningf("You are replacing the file for starts with url match '%s'! Old: %s, new: %s", url, oldFileName, fileName)
@@ -53,7 +59,13 @@ func (h *URLHandler) AddStartsWith(url string, fileName string) {
 	h.startsWithURLs[url] = fileName
 }
 
-func (h *URLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func assertFileIsInTestDataFolder(fileName string) {
+	if !strings.HasPrefix(fileName, "./testdata/") {
+		panic("the file you specified is not in the local 'testdata' folder: " + fileName)
+	}
+}
+
+func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Println("Mock for: " + r.URL.Path)
 
 	for url, fileName := range h.exactURLs {

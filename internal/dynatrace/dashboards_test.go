@@ -1,15 +1,14 @@
-package sli
+package dynatrace
 
 import (
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"strings"
 	"testing"
 )
 
 type dashboardTestConfig struct {
 	testDescription     string
-	dashboards          dynatrace.Dashboards
+	dashboards          Dashboards
 	expectedDashboardID string
 }
 
@@ -128,21 +127,21 @@ func createDashboardNameFor(project string, service string, stage string) string
 	return dashboardName + "something-else"
 }
 
-func createDashboardWith(dashboardID string, project string, service string, stage string) dynatrace.DashboardEntry {
+func createDashboardWith(dashboardID string, project string, service string, stage string) DashboardEntry {
 	return createDashboard(
 		dashboardID,
 		createDashboardNameFor(project, service, stage))
 }
 
-func createDashboard(dashboardID string, dashboardName string) dynatrace.DashboardEntry {
-	return dynatrace.DashboardEntry{
+func createDashboard(dashboardID string, dashboardName string) DashboardEntry {
+	return DashboardEntry{
 		ID:   dashboardID,
 		Name: dashboardName,
 	}
 }
 
-func createDashboards(dashboards ...dynatrace.DashboardEntry) dynatrace.Dashboards {
-	return dynatrace.Dashboards{
+func createDashboards(dashboards ...DashboardEntry) Dashboards {
+	return Dashboards{
 		Dashboards: dashboards,
 	}
 }
