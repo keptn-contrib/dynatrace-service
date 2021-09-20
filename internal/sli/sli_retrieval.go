@@ -420,6 +420,7 @@ func (ph *Retrieval) generateMetricQueryFromDataExplorer(dataQuery dynatrace.Dat
 	}
 
 	// building the merge aggregator string, e.g: merge(1):merge(0) - or merge(0)
+	// TODO: 2021-09-20: Check for redundant code after update to use dimension keys rather than indexes
 	metricDimensionCount := len(metricDefinition.DimensionDefinitions)
 	metricAggregation := metricDefinition.DefaultAggregation.Type
 	mergeAggregator := ""
@@ -522,6 +523,7 @@ func (ph *Retrieval) generateMetricQueryFromChart(series dynatrace.Series, tileM
 	}
 
 	// building the merge aggregator string, e.g: merge(1):merge(0) - or merge(0)
+	// TODO: 2021-09-20: Check for redundant code after update to use dimension keys rather than indexes
 	metricDimensionCount := len(metricDefinition.DimensionDefinitions)
 	metricAggregation := metricDefinition.DefaultAggregation.Type
 	mergeAggregator := ""
@@ -1326,7 +1328,7 @@ func (ph *Retrieval) executeMetricsQuery(metricsQuery string, unit string, start
 
 			if len(i.Data) != 1 {
 				jsonString, _ := json.Marshal(i)
-				return 0, fmt.Errorf("Dynatrace Metrics API returned %d result values, expected 1 for query: %s.\nPlease ensure the response contains exactly one value (e.g., by using :merge(0):avg for the metric). Here is the output for troubleshooting: %s", len(i.Data), metricsQuery, string(jsonString))
+				return 0, fmt.Errorf("Dynatrace Metrics API returned %d result values, expected 1 for query: %s.\nPlease ensure the response contains exactly one value (e.g., by using :merge(dimension_key):avg for the metric). Here is the output for troubleshooting: %s", len(i.Data), metricsQuery, string(jsonString))
 			}
 
 			return scaleData(metricSelector, unit, i.Data[0].Values[0]), nil
