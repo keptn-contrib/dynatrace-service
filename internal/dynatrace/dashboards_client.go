@@ -2,7 +2,7 @@ package dynatrace
 
 import (
 	"encoding/json"
-	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
 const dashboardsPath = "/api/config/v1/dashboards"
@@ -20,14 +20,14 @@ func NewDashboardsClient(client ClientInterface) *DashboardsClient {
 func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 	res, err := dc.client.Get(dashboardsPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve list of existing Dynatrace dashboards: %v", err)
+		return nil, err
 	}
 
 	dashboards := &Dashboards{}
 	err = json.Unmarshal(res, dashboards)
 	if err != nil {
 		err = CheckForUnexpectedHTMLResponseError(err)
-		return nil, fmt.Errorf("failed to unmarshal list of existing Dynatrace dashboards: %v", err)
+		return nil, common.NewUnmarshalJSONError("Dynatrace dashboards", err)
 	}
 
 	return dashboards, nil
@@ -36,14 +36,14 @@ func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
 	body, err := dc.client.Get(dashboardsPath + "/" + dashboardID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve Dynatrace dashboard with ID %s: %v", dashboardID, err)
+		return nil, err
 	}
 
 	// parse json
 	dynatraceDashboard := &Dashboard{}
 	err = json.Unmarshal(body, &dynatraceDashboard)
 	if err != nil {
-		return nil, fmt.Errorf("could not decode unmarshal dashboard payload: %v", err)
+		return nil, common.NewUnmarshalJSONError("Dynatrace dashboard", err)
 	}
 
 	return dynatraceDashboard, nil
@@ -52,12 +52,12 @@ func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
 func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
-		return fmt.Errorf("failed to unmarshal Dynatrace dashboards: %v", err)
+		return common.NewMarshalJSONError("Dynatrace dashboard", err)
 	}
 
 	_, err = dc.client.Post(dashboardsPath, dashboardPayload)
 	if err != nil {
-		return fmt.Errorf("failed to create Dynatrace dashboards: %v", err)
+		return err
 	}
 
 	return nil

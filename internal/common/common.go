@@ -200,55 +200,7 @@ func ParsePassAndWarningFromString(customName string, defaultPass []string, defa
 	return result
 }
 
-// ParseMarkdownConfiguration parses a text that can be used in a Markdown tile to specify global SLO properties
-func ParseMarkdownConfiguration(markdown string, slo *keptncommon.ServiceLevelObjectives) {
-	markdownSplits := strings.Split(markdown, ";")
-
-	for _, markdownSplitValue := range markdownSplits {
-		configValueSplits := strings.Split(markdownSplitValue, "=")
-		if len(configValueSplits) != 2 {
-			continue
-		}
-
-		// lets get configname and value
-		configName := strings.ToLower(configValueSplits[0])
-		configValue := configValueSplits[1]
-
-		switch configName {
-		case "kqg.total.pass":
-			slo.TotalScore.Pass = configValue
-		case "kqg.total.warning":
-			slo.TotalScore.Warning = configValue
-		case "kqg.compare.withscore":
-			slo.Comparison.IncludeResultWithScore = configValue
-			if (configValue == "pass") || (configValue == "pass_or_warn") || (configValue == "all") {
-				slo.Comparison.IncludeResultWithScore = configValue
-			} else {
-				slo.Comparison.IncludeResultWithScore = "pass"
-			}
-		case "kqg.compare.results":
-			noresults, err := strconv.Atoi(configValue)
-			if err != nil {
-				slo.Comparison.NumberOfComparisonResults = 1
-			} else {
-				slo.Comparison.NumberOfComparisonResults = noresults
-			}
-			if slo.Comparison.NumberOfComparisonResults > 1 {
-				slo.Comparison.CompareWith = "several_results"
-			} else {
-				slo.Comparison.CompareWith = "single_result"
-			}
-		case "kqg.compare.function":
-			if (configValue == "avg") || (configValue == "p50") || (configValue == "p90") || (configValue == "p95") {
-				slo.Comparison.AggregateFunction = configValue
-			} else {
-				slo.Comparison.AggregateFunction = "avg"
-			}
-		}
-	}
-}
-
-// cleanIndicatorName makes sure we have a valid indicator name by getting rid of special characters
+// CleanIndicatorName makes sure we have a valid indicator name by getting rid of special characters
 func CleanIndicatorName(indicatorName string) string {
 	indicatorName = strings.ReplaceAll(indicatorName, " ", "_")
 	indicatorName = strings.ReplaceAll(indicatorName, "/", "_")

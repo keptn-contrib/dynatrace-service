@@ -5,31 +5,14 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	"net"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
-
-// create a fake http client for integration tests
-func testingHTTPClient(handler http.Handler) (*http.Client, func()) {
-	s := httptest.NewServer(handler)
-
-	cli := &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(_ context.Context, network, _ string) (net.Conn, error) {
-				return net.Dial(network, s.Listener.Addr().String())
-			},
-		},
-	}
-
-	return cli, s.Close
-}
 
 // tests the GETSliValue function to return the proper datapoint
 func TestGetSLIValue(t *testing.T) {
@@ -90,7 +73,7 @@ func TestGetSLIValueWithOldandNewCustomQueryFormat(t *testing.T) {
 		w.Write([]byte(okResponse))
 	})
 
-	httpClient, teardown := testingHTTPClient(h)
+	httpClient, teardown := test.CreateHTTPClient(h)
 	defer teardown()
 
 	keptnEvent := &GetSLITriggeredEvent{}
@@ -192,11 +175,8 @@ func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
  * Helper function to test GetSLIValue
  */
 func runGetSLIValueTest(okResponse string) (float64, error) {
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(okResponse))
-	})
-
-	httpClient, teardown := testingHTTPClient(h)
+	h := test.CreateOkHandler([]byte(okResponse))
+	httpClient, teardown := test.CreateHTTPClient(h)
 	defer teardown()
 
 	keptnEvent := &GetSLITriggeredEvent{}
@@ -302,11 +282,8 @@ func TestGetSLISleep(t *testing.T) {
 		]
 	}`
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(okResponse))
-	})
-
-	httpClient, teardown := testingHTTPClient(h)
+	h := test.CreateOkHandler([]byte(okResponse))
+	httpClient, teardown := test.CreateHTTPClient(h)
 	defer teardown()
 
 	keptnEvent := &GetSLITriggeredEvent{}
@@ -328,12 +305,8 @@ func TestGetSLISleep(t *testing.T) {
 
 // Tests the behaviour of the GetSLIValue function in case of a HTTP 400 return code
 func TestGetSLIValueWithErrorResponse(t *testing.T) {
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// w.Write([]byte(response))
-		w.WriteHeader(http.StatusBadRequest)
-	})
-
-	httpClient, teardown := testingHTTPClient(h)
+	h := test.CreateHandler([]byte{}, http.StatusBadRequest)
+	httpClient, teardown := test.CreateHTTPClient(h)
 	defer teardown()
 
 	keptnEvent := &GetSLITriggeredEvent{}
