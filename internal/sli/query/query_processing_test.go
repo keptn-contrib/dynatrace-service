@@ -18,6 +18,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const metricAPIURL = "/api/v2/metrics/query"
+
 // tests the GETSliValue function to return the proper datapoint
 func TestGetSLIValue(t *testing.T) {
 
@@ -42,7 +44,10 @@ func TestGetSLIValue(t *testing.T) {
 		]
 	}`
 
-	value, err := runGetSLIValueTest(okResponse)
+	handler := test.NewPayloadBasedURLHandler()
+	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
+
+	value, err := runGetSLIValueTest(handler)
 
 	assert.NoError(t, err)
 
@@ -73,11 +78,10 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		]
 	}`
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(okResponse))
-	})
+	handler := test.NewPayloadBasedURLHandler()
+	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
 
-	httpClient, teardown := test.CreateHTTPClient(h)
+	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
 
 	keptnEvent := createDefaultTestEventData()
@@ -108,18 +112,21 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 func TestGetSLIValueWithEmptyResult(t *testing.T) {
 
 	okResponse := `{
-    "totalCount": 4,
-    "nextPageKey": null,
-	"result": [
-		{
-			"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
-			"data": [
-			]
-		}
-	]
-}`
+		"totalCount": 4,
+		"nextPageKey": null,
+		"result": [
+			{
+				"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+				"data": [
+				]
+			}
+		]
+	}`
 
-	value, err := runGetSLIValueTest(okResponse)
+	handler := test.NewPayloadBasedURLHandler()
+	handler.AddExact(metricAPIURL, []byte(okResponse))
+
+	value, err := runGetSLIValueTest(handler)
 
 	assert.Error(t, err)
 
@@ -150,7 +157,10 @@ func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
 		]
 	}`
 
-	value, err := runGetSLIValueTest(okResponse)
+	handler := test.NewPayloadBasedURLHandler()
+	handler.AddExact(metricAPIURL, []byte(okResponse))
+
+	value, err := runGetSLIValueTest(handler)
 
 	assert.EqualValues(t, errors.New("No result matched the query's metric selector"), err)
 
@@ -160,9 +170,8 @@ func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
 /*
  * Helper function to test GetSLIValue
  */
-func runGetSLIValueTest(okResponse string) (float64, error) {
-	h := test.CreateOkHandler([]byte(okResponse))
-	httpClient, teardown := test.CreateHTTPClient(h)
+func runGetSLIValueTest(handler http.Handler) (float64, error) {
+	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
 
 	keptnEvent := createDefaultTestEventData()
@@ -264,8 +273,10 @@ func TestGetSLISleep(t *testing.T) {
 		]
 	}`
 
-	h := test.CreateOkHandler([]byte(okResponse))
-	httpClient, teardown := test.CreateHTTPClient(h)
+	handler := test.NewPayloadBasedURLHandler()
+	handler.AddExact(metricAPIURL, []byte(okResponse))
+
+	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
 
 	keptnEvent := createDefaultTestEventData()
@@ -283,8 +294,10 @@ func TestGetSLISleep(t *testing.T) {
 
 // Tests the behaviour of the GetSLIValue function in case of a HTTP 400 return code
 func TestGetSLIValueWithErrorResponse(t *testing.T) {
-	h := test.CreateHandler([]byte{}, http.StatusBadRequest)
-	httpClient, teardown := test.CreateHTTPClient(h)
+	handler := test.NewPayloadBasedURLHandler()
+	handler.AddStartsWithError(metricAPIURL, http.StatusBadRequest, []byte{})
+
+	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
 
 	keptnEvent := createDefaultTestEventData()
