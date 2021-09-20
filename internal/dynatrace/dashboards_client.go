@@ -52,7 +52,7 @@ func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
 func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
-		return common.NewMarshalJSONError("Dynatrace dashboards", err)
+		return common.NewMarshalJSONError("Dynatrace dashboard", err)
 	}
 
 	_, err = dc.client.Post(dashboardsPath, dashboardPayload)
