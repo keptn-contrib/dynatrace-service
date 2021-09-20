@@ -1,0 +1,14 @@
+{
+  "error": {
+    "code": 400,
+    "message": "Constraints violated.",
+    "constraintViolations": [
+      {
+        "path": "id",
+        "message": "Not a valid UUID.",
+        "parameterLocation": "PATH",
+        "location": null
+      }
+    ]
+  }
+}

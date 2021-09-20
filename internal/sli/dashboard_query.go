@@ -2,42 +2,67 @@ package sli
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-// DashboardQueryResult is the object returned by querying a Dynatrace dashboard for SLIs
-type DashboardQueryResult struct {
+type tileResult struct {
+	sliResult *keptnv2.SLIResult
+	objective *keptnapi.SLO
+	sliName   string
+	sliQuery  string
+}
+
+// dashboardQueryResult is the object returned by querying a Dynatrace dashboard for SLIs
+type dashboardQueryResult struct {
 	dashboardLink *DashboardLink
 	dashboard     *dynatrace.Dashboard
 	sli           *dynatrace.SLI
-	slo           *keptn.ServiceLevelObjectives
+	slo           *keptnapi.ServiceLevelObjectives
 	sliResults    []*keptnv2.SLIResult
 }
 
-// NewDashboardQueryResultFrom creates a new DashboardQueryResult object just from a DashboardLink
-func NewDashboardQueryResultFrom(dashboardLink *DashboardLink) *DashboardQueryResult {
-	return &DashboardQueryResult{
+// newDashboardQueryResultFrom creates a new dashboardQueryResult object just from a DashboardLink
+func newDashboardQueryResultFrom(dashboardLink *DashboardLink) *dashboardQueryResult {
+	return &dashboardQueryResult{
 		dashboardLink: dashboardLink,
 	}
 }
 
-func (result *DashboardQueryResult) DashboardLink() *DashboardLink {
-	return result.dashboardLink
+func (r *dashboardQueryResult) DashboardLink() *DashboardLink {
+	return r.dashboardLink
 }
 
-func (result *DashboardQueryResult) Dashboard() *dynatrace.Dashboard {
-	return result.dashboard
+func (r *dashboardQueryResult) Dashboard() *dynatrace.Dashboard {
+	return r.dashboard
 }
 
-func (result *DashboardQueryResult) SLI() *dynatrace.SLI {
-	return result.sli
+func (r *dashboardQueryResult) SLI() *dynatrace.SLI {
+	return r.sli
 }
 
-func (result *DashboardQueryResult) SLO() *keptn.ServiceLevelObjectives {
-	return result.slo
+func (r *dashboardQueryResult) SLO() *keptnapi.ServiceLevelObjectives {
+	return r.slo
 }
 
-func (result *DashboardQueryResult) SLIResults() []*keptnv2.SLIResult {
-	return result.sliResults
+func (r *dashboardQueryResult) SLIResults() []*keptnv2.SLIResult {
+	return r.sliResults
+}
+
+// addTileResult adds a tileResult to the dashboardQueryResult, also allows nil values for convenience
+func (r *dashboardQueryResult) addTileResult(result *tileResult) {
+	if result == nil {
+		return
+	}
+
+	r.sli.Indicators[result.sliName] = result.sliQuery
+	r.slo.Objectives = append(r.slo.Objectives, result.objective)
+	r.sliResults = append(r.sliResults, result.sliResult)
+}
+
+// addTileResult adds multiple tileResult to the dashboardQueryResult,
+func (r *dashboardQueryResult) addTileResults(results []*tileResult) {
+	for _, result := range results {
+		r.addTileResult(result)
+	}
 }

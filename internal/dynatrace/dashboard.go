@@ -211,3 +211,8 @@ func (dashboard *Dashboard) IsTheSameAs(existingDashboardContent string) bool {
 
 	return false
 }
+
+// GetFilter returns the DashboardFilter
+func (dashboard *Dashboard) GetFilter() *DashboardFilter {
+	return dashboard.DashboardMetadata.DashboardFilter
+}
