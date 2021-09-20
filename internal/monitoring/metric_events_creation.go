@@ -251,6 +251,7 @@ var supportedAggregations = [...]string{"avg", "max", "min", "count", "sum", "va
 
 func createKeptnMetricEventDTO(project string, stage string, service string, metric string, query string, condition string, threshold float64, managementZoneID int64) (*dynatrace.MetricEvent, error) {
 
+	// TODO: 2021-09-20: Check what parts are still needed
 	/*
 		need to map queries used by SLI-service to metric event definition.
 		example: builtin:service.response.time:merge("dt.entity.service"):percentile(90)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)
