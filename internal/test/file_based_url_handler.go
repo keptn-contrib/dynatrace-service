@@ -7,21 +7,21 @@ import (
 	"strings"
 )
 
-type errConfig struct {
+type errConfigForFile struct {
 	status   int
 	fileName string
 }
 
 type FileBasedURLHandler struct {
 	exactURLs      map[string]string
-	exactErrorURLs map[string]errConfig
+	exactErrorURLs map[string]errConfigForFile
 	startsWithURLs map[string]string
 }
 
 func NewFileBasedURLHandler() *FileBasedURLHandler {
 	return &FileBasedURLHandler{
 		exactURLs:      make(map[string]string),
-		exactErrorURLs: make(map[string]errConfig),
+		exactErrorURLs: make(map[string]errConfigForFile),
 		startsWithURLs: make(map[string]string),
 	}
 }
@@ -45,7 +45,7 @@ func (h *FileBasedURLHandler) AddExactError(url string, statusCode int, fileName
 		log.Warningf("You are replacing the file for exact error url match '%s'! Old: %s, new: %s", url, oldFileName, fileName)
 	}
 
-	h.exactErrorURLs[url] = errConfig{status: statusCode, fileName: fileName}
+	h.exactErrorURLs[url] = errConfigForFile{status: statusCode, fileName: fileName}
 }
 
 func (h *FileBasedURLHandler) AddStartsWith(url string, fileName string) {
@@ -72,7 +72,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		if url == r.URL.Path {
 			log.Println("Found Mock: " + url + " --> " + fileName)
 
-			writeToResponseWriter(w, http.StatusOK, fileName)
+			writeFileToResponseWriter(w, http.StatusOK, fileName)
 			return
 		}
 	}
@@ -81,24 +81,24 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		if strings.Index(r.URL.Path, url) == 0 {
 			log.Println("Found Mock: " + url + " --> " + fileName)
 
-			writeToResponseWriter(w, http.StatusOK, fileName)
+			writeFileToResponseWriter(w, http.StatusOK, fileName)
 			return
 		}
 	}
 
 	for url, config := range h.exactErrorURLs {
-		if strings.Index(r.URL.Path, url) == 0 {
+		if url == r.URL.Path {
 			log.Println("Found Mock: " + url + " --> " + config.fileName)
 
-			writeToResponseWriter(w, config.status, config.fileName)
+			writeFileToResponseWriter(w, config.status, config.fileName)
 			return
 		}
 	}
 
-	w.WriteHeader(http.StatusNotFound)
+	panic("no path defined for: " + r.URL.Path)
 }
 
-func writeToResponseWriter(w http.ResponseWriter, statusCode int, fileName string) {
+func writeFileToResponseWriter(w http.ResponseWriter, statusCode int, fileName string) {
 	localFileContent, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
