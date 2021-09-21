@@ -2,6 +2,7 @@ package common
 
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"net/url"
 	"os"
 	"strconv"
@@ -61,6 +62,29 @@ func getKeptnServiceURL(servicename, defaultURL string) string {
  * Defines the Dynatrace Configuration File structure and supporting Constants
  */
 const DynatraceConfigDashboardQUERY = "query"
+
+// ReplaceQueryParameters replaces query parameters based on sli filters and keptn event data
+func ReplaceQueryParameters(query string, customFilters []*keptnv2.SLIFilter, keptnEvent adapter.EventContentAdapter) string {
+	// apply custom filters
+	for _, filter := range customFilters {
+		filter.Value = strings.Replace(filter.Value, "'", "", -1)
+		filter.Value = strings.Replace(filter.Value, "\"", "", -1)
+
+		// replace the key in both variants, "normal" and uppercased
+		query = strings.Replace(query, "$"+filter.Key, filter.Value, -1)
+		query = strings.Replace(query, "$"+strings.ToUpper(filter.Key), filter.Value, -1)
+	}
+
+	// apply default values
+	/* query = strings.Replace(query, "$PROJECT", ph.Project, -1)
+	query = strings.Replace(query, "$STAGE", ph.Stage, -1)
+	query = strings.Replace(query, "$SERVICE", ph.Service, -1)
+	query = strings.Replace(query, "$DEPLOYMENT", ph.Deployment, -1)*/
+
+	query = ReplaceKeptnPlaceholders(query, keptnEvent)
+
+	return query
+}
 
 //
 // replaces $ placeholders with actual values

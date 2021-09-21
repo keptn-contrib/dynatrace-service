@@ -1,6 +1,6 @@
-package sli
+package dashboard
 
-type MetricQueryComponents struct {
+type queryComponents struct {
 	metricID                      string
 	metricUnit                    string
 	metricQuery                   string
