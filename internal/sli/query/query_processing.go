@@ -7,7 +7,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
-	unit2 "github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
+	unit "github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	usql2 "github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -181,7 +181,7 @@ func extractMetricQueryFromMV2Query(metricsQuery string) (adaptedMetricsQuery st
 	return
 }
 
-func (p *Processing) executeMetricsQuery(metricsQuery string, unit string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
 
 	metricsQuery, metricSelector, err := metrics.NewQueryBuilder(p.eventData, p.customFilters).Build(metricsQuery, startUnix, endUnix)
 	if err != nil {
@@ -205,7 +205,7 @@ func (p *Processing) executeMetricsQuery(metricsQuery string, unit string, start
 				return 0, fmt.Errorf("Dynatrace Metrics API returned %d result values, expected 1 for query: %s.\nPlease ensure the response contains exactly one value (e.g., by using :merge(dimension_key):avg for the metric). Here is the output for troubleshooting: %s", len(i.Data), metricsQuery, string(jsonString))
 			}
 
-			return unit2.ScaleData(metricSelector, unit, i.Data[0].Values[0]), nil
+			return unit.ScaleData(metricSelector, metricUnit, i.Data[0].Values[0]), nil
 		}
 	}
 
