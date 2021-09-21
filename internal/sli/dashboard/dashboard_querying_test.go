@@ -43,7 +43,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
-	result, err := querying.GetSLIValues(keptnEvent, common.DynatraceConfigDashboardQUERY, startTime, endTime)
+	result, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, startTime, endTime)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, result, "No result returned")
@@ -81,7 +81,7 @@ func TestNoQueryingOfDashboardNecessaryDueToNotSpecifiedAndNotDashboardInKeptn(t
 
 	const dashboardID = ""
 
-	result, err := querying.GetSLIValues(ev, dashboardID, time.Now(), time.Now())
+	result, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Nil(t, result)
 	assert.Nil(t, err)
@@ -105,7 +105,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 
 	const dashboardID = ""
 
-	result, err := querying.GetSLIValues(ev, dashboardID, time.Now(), time.Now())
+	result, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Nil(t, result)
 	assert.Nil(t, err)
@@ -129,7 +129,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 
 	const dashboardID = ""
 
-	result, err := querying.GetSLIValues(ev, dashboardID, time.Now(), time.Now())
+	result, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Nil(t, result)
 	assert.Nil(t, err)
@@ -168,7 +168,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 
 	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
 	to := time.Date(2021, 9, 17, 8, 0, 0, 0, time.UTC)
-	actualResult, err := querying.GetSLIValues(ev, dashboardID, from, to)
+	actualResult, err := querying.GetSLIValues(dashboardID, from, to)
 
 	expectedResult := NewQueryResultFrom(&DashboardLink{
 		apiURL:         url,
@@ -210,7 +210,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 
 	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
 	to := time.Date(2021, 9, 17, 8, 0, 0, 0, time.UTC)
-	actualResult, err := querying.GetSLIValues(ev, dashboardID, from, to)
+	actualResult, err := querying.GetSLIValues(dashboardID, from, to)
 
 	expectedResult := NewQueryResultFrom(&DashboardLink{
 		apiURL:         url,
@@ -240,7 +240,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
 	defer teardown()
 
-	actualResult, err := querying.GetSLIValues(ev, dashboardID, time.Now(), time.Now())
+	actualResult, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
 	assert.Nil(t, actualResult)
@@ -269,7 +269,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
 	defer teardown()
 
-	actualResult, err := querying.GetSLIValues(ev, dashboardID, time.Now(), time.Now())
+	actualResult, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
 	assert.Nil(t, actualResult)

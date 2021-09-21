@@ -169,7 +169,7 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
 	// ==============================================================================
 	// Lets see if we have a Dashboard in Dynatrace that we should parse
-	result, err := sliQuerying.GetSLIValues(eh.event, eh.dashboard, startUnix, endUnix)
+	result, err := sliQuerying.GetSLIValues(eh.dashboard, startUnix, endUnix)
 	if result == nil && err == nil {
 		return nil, nil, nil
 	}

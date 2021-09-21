@@ -40,19 +40,19 @@ func NewQuerying(eventData adapter.EventContentAdapter, customFilters []*keptnv2
 //  #3: ServiceLevelObjectives
 //  #4: SLIResult
 //  #5: Error
-func (q *Querying) GetSLIValues(keptnEvent adapter.EventContentAdapter, dashboardID string, startUnix time.Time, endUnix time.Time) (*QueryResult, error) {
+func (q *Querying) GetSLIValues(dashboardID string, startUnix time.Time, endUnix time.Time) (*QueryResult, error) {
 
 	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
 	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
 	// If a dashboard.json exists and dashboard property is empty we default to QUERY - which is the old default behavior
-	existingDashboardContent, err := q.dashboardReader.GetDashboard(keptnEvent.GetProject(), keptnEvent.GetStage(), keptnEvent.GetService())
+	existingDashboardContent, err := q.dashboardReader.GetDashboard(q.eventData.GetProject(), q.eventData.GetStage(), q.eventData.GetService())
 	if err == nil && existingDashboardContent != "" && dashboardID == "" {
 		log.Debug("Set dashboard=query for backward compatibility as dashboard.json was present!")
 		dashboardID = common.DynatraceConfigDashboardQUERY
 	}
 
 	// lets load the dashboard if needed
-	dashbd, dashboardID, err := NewRetrieval(q.dtClient, keptnEvent).Retrieve(dashboardID)
+	dashbd, dashboardID, err := NewRetrieval(q.dtClient, q.eventData).Retrieve(dashboardID)
 	if err != nil {
 		return nil, fmt.Errorf("error while processing dashboard config '%s' - %w", dashboardID, err)
 	}
