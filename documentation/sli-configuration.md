@@ -156,7 +156,7 @@ Most SLIs you define are queried using the Metrics API v2. The following is an e
 
 ```yaml
 indicators:
- teststep_rt_Basic_Check: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,Basic Check));entitySelector=type(SERVICE)"
+ teststep_rt_Basic_Check: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,Basic Check))&entitySelector=type(SERVICE)"
 ```
 
 When the *dynatrace-service* executes this query it simply returns the value of that metric. What is not always known is the metric unit. Depending on the metric definition this could be nanoseconds, microseconds, milliseconds or seconds or even bytes, kilobytes or megabytes.
@@ -167,7 +167,7 @@ To let the *dynatrace-service* know about the expected *Metric Unit* you can pre
 
 ```yaml
 indicators:
- teststep_rt_Basic_Check: "MV2;MicroSecond;metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,Basic Check));entitySelector=type(SERVICE)"
+ teststep_rt_Basic_Check: "MV2;MicroSecond;metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,Basic Check))&entitySelector=type(SERVICE)"
 ```
 
 The possible metric units are those that Dynatrace specifies in the API. Please have a look at the Metric API documentation for a complete overview.
@@ -309,7 +309,7 @@ Here a couple of examples from tiles and how they translate into `sli.yaml` and 
 * Results in an `sli.yaml` like this:
 
     ```yaml
-    svc_rt_p95: metricSelector=builtin:service.response.time:percentile(50):names;entitySelector=type(SERVICE),mzId(-8783122447839702114)
+    svc_rt_p95: metricSelector=builtin:service.response.time:percentile(50):names&entitySelector=type(SERVICE),mzId(-8783122447839702114)
     ```
 
 * And an `slo.yaml` definition like this:
@@ -332,11 +332,11 @@ Here a couple of examples from tiles and how they translate into `sli.yaml` and 
 * Result in an SLI definition like this
 
     ```yaml
-    teststep_rt_Basic_Check: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,Basic Check));entitySelector=type(SERVICE),mzId(-8783122447839702114)",
-    teststep_rt_echo: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,echo));entitySelector=type(SERVICE),mzId(-8783122447839702114)",
-    teststep_rt_homepage: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,homepage));entitySelector=type(SERVICE),mzId(-8783122447839702114)",
-    teststep_rt_invoke: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,invoke));entitySelector=type(SERVICE),mzId(-8783122447839702114)",
-    teststep_rt_version: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,version));entitySelector=type(SERVICE),mzId(-8783122447839702114)",
+    teststep_rt_Basic_Check: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,Basic Check))&entitySelector=type(SERVICE),mzId(-8783122447839702114)",
+    teststep_rt_echo: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,echo))&entitySelector=type(SERVICE),mzId(-8783122447839702114)",
+    teststep_rt_homepage: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,homepage))&entitySelector=type(SERVICE),mzId(-8783122447839702114)",
+    teststep_rt_invoke: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,invoke))&entitySelector=type(SERVICE),mzId(-8783122447839702114)",
+    teststep_rt_version: "metricSelector=calc:service.teststepresponsetime:merge(\"dt.entity.service\"):avg:names:filter(eq(Test Step,version))&entitySelector=type(SERVICE),mzId(-8783122447839702114)",
     ```
 
 * And an SLO like this:
