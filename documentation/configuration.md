@@ -128,9 +128,14 @@ needs to be set to `true`. Once enabled, the service will by default scan Dynatr
 To import a Service Entity into Keptn, a project with the name `dynatrace`, containing the stage `quality-gate` has to be available within Keptn. To create the project, create a `shipyard.yaml` file with the following content:
 
 ```yaml
-stages:
-  - name: "quality-gate"
-    test_strategy: "performance"
+apiVersion: "spec.keptn.sh/0.2.2"
+kind: "Shipyard"
+metadata:
+  name: "dynatrace"
+spec:
+  stages:
+    - name: "quality-gate"
+      test_strategy: "performance"
 ```
 
 Afterwards, create the project using the following command:
