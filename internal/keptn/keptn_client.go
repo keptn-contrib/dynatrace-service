@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cloudevents/sdk-go/v2/event"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -60,6 +63,18 @@ func NewClient(client *keptnv2.Keptn) *Client {
 	return &Client{
 		client: client,
 	}
+}
+
+func NewDefaultClient(event event.Event) (*Client, error) {
+	keptnOpts := keptnapi.KeptnOpts{
+		ConfigurationServiceURL: common.GetConfigurationServiceURL(),
+		DatastoreURL:            common.GetDatastoreURL(),
+	}
+	kClient, err := keptnv2.NewKeptn(&event, keptnOpts)
+	if err != nil {
+		return nil, fmt.Errorf("could not create default Keptn client: %v", err)
+	}
+	return NewClient(kClient), nil
 }
 
 func (c *Client) GetCustomQueries(project string, stage string, service string) (*CustomQueries, error) {
