@@ -1,13 +1,14 @@
 package common
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	log "github.com/sirupsen/logrus"
 
@@ -21,21 +22,18 @@ const KEPTNSBRIDGE_LABEL = "Keptns Bridge"
 
 const shipyardController = "SHIPYARD_CONTROLLER"
 const configurationService = "CONFIGURATION_SERVICE"
+const datastore = "DATASTORE"
+
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
-const defaultConfigurationServiceURL = "http://configuration-service:8080"
 
 // GetConfigurationServiceURL Returns the endpoint to the configuration-service
 func GetConfigurationServiceURL() string {
-	/*
-		// TODO: check previous alternate implementation:
+	return getKeptnServiceURL(configurationService, keptn.ConfigurationServiceURL)
+}
 
-		if os.Getenv("CONFIGURATION_SERVICE") != "" {
-			return os.Getenv("CONFIGURATION_SERVICE")
-		}
-		return "configuration-service:8080"
-	*/
-
-	return getKeptnServiceURL(configurationService, defaultConfigurationServiceURL)
+// GetConfigurationServiceURL Returns the endpoint to the configuration-service
+func GetDatastoreURL() string {
+	return getKeptnServiceURL(datastore, keptn.DatastoreURL)
 }
 
 // GetShipyardControllerURL Returns the endpoint to the shipyard-controller
@@ -44,14 +42,11 @@ func GetShipyardControllerURL() string {
 }
 
 func getKeptnServiceURL(servicename, defaultURL string) string {
-	var baseURL string
 	url, err := keptn.GetServiceEndpoint(servicename)
-	if err == nil {
-		baseURL = url.String()
-	} else {
-		baseURL = defaultURL
+	if err != nil {
+		return defaultURL
 	}
-	return baseURL
+	return url.String()
 }
 
 /**

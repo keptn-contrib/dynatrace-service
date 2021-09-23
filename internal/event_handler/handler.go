@@ -2,6 +2,7 @@ package event_handler
 
 import (
 	"fmt"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
@@ -13,7 +14,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/problem"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
-	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -82,7 +82,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	}
 
 	dtClient := dynatrace.NewClient(dynatraceCredentials)
-	kClient, err := keptnv2.NewKeptn(&event, keptnapi.KeptnOpts{})
+	kClient, err := keptn.NewDefaultClient(event)
 	if err != nil {
 		log.WithError(err).Error("Could not get create Keptn client")
 		return ErrorHandler{err: err}, nil
@@ -90,11 +90,11 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 
 	switch aType := keptnEvent.(type) {
 	case *monitoring.ConfigureMonitoringAdapter:
-		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, keptn.NewClient(kClient), keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient()), nil
+		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient()), nil
 	case *monitoring.ProjectCreateFinishedAdapter:
-		return monitoring.NewProjectCreateFinishedEventHandler(keptnEvent.(*monitoring.ProjectCreateFinishedAdapter), dtClient, keptn.NewClient(kClient), keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient()), nil
+		return monitoring.NewProjectCreateFinishedEventHandler(keptnEvent.(*monitoring.ProjectCreateFinishedAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient()), nil
 	case *problem.ProblemAdapter:
-		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), keptn.NewClient(kClient)), nil
+		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), kClient), nil
 	case *problem.ActionTriggeredAdapter:
 		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *problem.ActionStartedAdapter:
@@ -102,7 +102,7 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case *problem.ActionFinishedAdapter:
 		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
-		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, keptn.NewClient(kClient), keptn.NewDefaultResourceClient(), secretName, dynatraceConfig.Dashboard), nil
+		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), secretName, dynatraceConfig.Dashboard), nil
 	case *deployment.DeploymentFinishedAdapter:
 		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *deployment.TestTriggeredAdapter:
