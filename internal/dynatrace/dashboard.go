@@ -11,7 +11,7 @@ type Dashboard struct {
 		ConfigurationVersions []int  `json:"configurationVersions"`
 		ClusterVersion        string `json:"clusterVersion"`
 	} `json:"metadata"`
-	ID                string            `json:"id"`
+	ID                string            `json:"id,omitempty"`
 	DashboardMetadata DashboardMetadata `json:"dashboardMetadata"`
 	Tiles             []Tile            `json:"tiles"`
 }
