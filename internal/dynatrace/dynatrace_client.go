@@ -40,10 +40,12 @@ type ConstraintViolations []ConstraintViolation
 func (vs ConstraintViolations) String() string {
 	messages := make([]string, len(vs))
 	for i, v := range vs {
-		messages[i] = v.Message
+		messages[i] = fmt.Sprintf("[path: %s - msg: %s]", v.Path, v.Message)
 	}
 
-	return strings.Join(messages, ", ")
+	return strings.TrimRight(
+		strings.Join(messages, ", "),
+		", ")
 }
 
 type APIError struct {

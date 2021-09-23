@@ -122,7 +122,7 @@ func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *dy
 				Series:         []dynatrace.Series{},
 				ResultMetadata: dynatrace.ResultMetadata{},
 			},
-			FiltersPerEntityType: nil,
+			FiltersPerEntityType: map[string]map[string][]string{},
 		})
 	hostsTile.Bounds = createBounds(38, 0, 152)
 	dtDashboard.Tiles = append(dtDashboard.Tiles, hostsTile)
@@ -201,10 +201,11 @@ func createHostCPULoadTile() dynatrace.Tile {
 		"Host CPU Load",
 		customChartingTileType,
 		&dynatrace.FilterConfig{
-			Type:        "MIXED",
-			CustomName:  "CPU",
-			DefaultName: customChartName,
-			ChartConfig: createTimeSeriesChartConfig("builtin:host.cpu.load", "AVG", "LINE", "HOST"),
+			Type:                 "MIXED",
+			CustomName:           "CPU",
+			DefaultName:          customChartName,
+			ChartConfig:          createTimeSeriesChartConfig("builtin:host.cpu.load", "AVG", "LINE", "HOST"),
+			FiltersPerEntityType: map[string]map[string][]string{},
 		})
 }
 
