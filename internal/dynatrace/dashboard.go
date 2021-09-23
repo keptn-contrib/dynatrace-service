@@ -7,13 +7,15 @@ import (
 )
 
 type Dashboard struct {
-	Metadata struct {
-		ConfigurationVersions []int  `json:"configurationVersions"`
-		ClusterVersion        string `json:"clusterVersion"`
-	} `json:"metadata"`
+	Metadata          *Metadata         `json:"metadata,omitempty"`
 	ID                string            `json:"id,omitempty"`
 	DashboardMetadata DashboardMetadata `json:"dashboardMetadata"`
 	Tiles             []Tile            `json:"tiles"`
+}
+
+type Metadata struct {
+	ConfigurationVersions []int  `json:"configurationVersions,omitempty"`
+	ClusterVersion        string `json:"clusterVersion,omitempty"`
 }
 
 type DashboardMetadata struct {
@@ -22,7 +24,7 @@ type DashboardMetadata struct {
 	Owner           string           `json:"owner"`
 	SharingDetails  SharingDetails   `json:"sharingDetails"`
 	DashboardFilter *DashboardFilter `json:"dashboardFilter,omitempty"`
-	Tags            []string         `json:"tags"`
+	Tags            []string         `json:"tags,omitempty"`
 }
 
 type SharingDetails struct {
@@ -43,14 +45,14 @@ type Tile struct {
 	Name                      string              `json:"name"`
 	TileType                  string              `json:"tileType"`
 	Configured                bool                `json:"configured"`
-	Query                     string              `json:"query"`
-	Type                      string              `json:"type"`
-	CustomName                string              `json:"customName"`
-	Markdown                  string              `json:"markdown"`
+	Query                     string              `json:"query,omitempty"`
+	Type                      string              `json:"type,omitempty"`
+	CustomName                string              `json:"customName,omitempty"`
+	Markdown                  string              `json:"markdown,omitempty"`
 	ChartVisible              bool                `json:"chartVisible,omitempty"`
 	Bounds                    Bounds              `json:"bounds"`
 	TileFilter                TileFilter          `json:"tileFilter"`
-	Queries                   []DataExplorerQuery `json:"queries"`
+	Queries                   []DataExplorerQuery `json:"queries,omitempty"`
 	AssignedEntities          []string            `json:"assignedEntities,omitempty"`
 	ExcludeMaintenanceWindows bool                `json:"excludeMaintenanceWindows,omitempty"`
 	FilterConfig              *FilterConfig       `json:"filterConfig,omitempty"`
