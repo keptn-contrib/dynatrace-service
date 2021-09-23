@@ -13,17 +13,13 @@
     "sharingDetails": {
       "linkShared": false,
       "published": false
-    },
-    "tags": null
+    }
   },
   "tiles": [
     {
       "name": "Markdown",
       "tileType": "MARKDOWN",
       "configured": true,
-      "query": "",
-      "type": "",
-      "customName": "",
       "markdown": "KQG.Total.Pass=90%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg;KQG.QueryBehavior=ParseOnChange",
       "bounds": {
         "top": 0,
@@ -33,17 +29,13 @@
       },
       "tileFilter": {
         "timeframe": ""
-      },
-      "queries": null
+      }
     },
     {
       "name": "single result tile",
       "tileType": "DATA_EXPLORER",
       "configured": true,
-      "query": "",
-      "type": "",
       "customName": "My single value tile",
-      "markdown": "",
       "bounds": {
         "top": 190,
         "left": 0,
