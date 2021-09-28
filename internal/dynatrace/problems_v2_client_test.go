@@ -7,7 +7,7 @@ import (
 )
 
 func TestExecuteGetDynatraceProblems(t *testing.T) {
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
 
 	dtClient, _, teardown := createDynatraceClient(handler)

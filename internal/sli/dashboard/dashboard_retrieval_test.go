@@ -13,7 +13,7 @@ import (
 func TestFindDynatraceDashboardSuccess(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
 
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
 
 	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
@@ -33,7 +33,7 @@ func TestFindDynatraceDashboardSuccess(t *testing.T) {
 func TestFindDynatraceDashboardNoneExistingDashboard(t *testing.T) {
 	keptnEvent := createKeptnEvent("BAD PROJECT", QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
 
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
 
 	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
@@ -53,7 +53,7 @@ func TestFindDynatraceDashboardNoneExistingDashboard(t *testing.T) {
 func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
 
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
 	handler.AddExact("/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
 
@@ -79,7 +79,7 @@ func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
 func TestLoadDynatraceDashboardWithID(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
 
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact("/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
 
 	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
@@ -104,7 +104,7 @@ func TestLoadDynatraceDashboardWithID(t *testing.T) {
 func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
 
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 
 	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
 	defer teardown()

@@ -7,7 +7,7 @@ import (
 )
 
 func TestExecuteGetDynatraceSLO(t *testing.T) {
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
 
 	dtClient, _, teardown := createDynatraceClient(handler)

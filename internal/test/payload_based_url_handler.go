@@ -4,6 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+	"testing"
 )
 
 type errConfigForPayload struct {
@@ -16,14 +17,16 @@ type PayloadBasedURLHandler struct {
 	exactErrorURLs      map[string]errConfigForPayload
 	startsWithURLs      map[string][]byte
 	startsWithErrorURLs map[string]errConfigForPayload
+	t                   *testing.T
 }
 
-func NewPayloadBasedURLHandler() *PayloadBasedURLHandler {
+func NewPayloadBasedURLHandler(t *testing.T) *PayloadBasedURLHandler {
 	return &PayloadBasedURLHandler{
 		exactURLs:           make(map[string][]byte),
 		exactErrorURLs:      make(map[string]errConfigForPayload),
 		startsWithURLs:      make(map[string][]byte),
 		startsWithErrorURLs: make(map[string]errConfigForPayload),
+		t:                   t,
 	}
 }
 
@@ -64,10 +67,11 @@ func (h *PayloadBasedURLHandler) AddStartsWithError(url string, statusCode int, 
 }
 
 func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println("Mock for: " + r.URL.Path)
+	requestedURL := r.URL.String()
+	log.Println("Mock for: " + requestedURL)
 
 	for url, payload := range h.exactURLs {
-		if url == r.URL.Path {
+		if url == requestedURL {
 			log.Println("Found Mock: " + url)
 
 			writePayloadToResponseWriter(w, http.StatusOK, payload)
@@ -76,7 +80,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 
 	for url, payload := range h.startsWithURLs {
-		if strings.Index(r.URL.Path, url) == 0 {
+		if strings.Index(requestedURL, url) == 0 {
 			log.Println("Found Mock: " + url)
 
 			writePayloadToResponseWriter(w, http.StatusOK, payload)
@@ -85,7 +89,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 
 	for url, config := range h.exactErrorURLs {
-		if url == r.URL.Path {
+		if url == requestedURL {
 			log.Println("Found Mock: " + url)
 
 			writePayloadToResponseWriter(w, config.status, config.payload)
@@ -94,7 +98,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 
 	for url, config := range h.startsWithErrorURLs {
-		if strings.Index(r.URL.Path, url) == 0 {
+		if strings.Index(requestedURL, url) == 0 {
 			log.Println("Found Mock: " + url)
 
 			writePayloadToResponseWriter(w, config.status, config.payload)
@@ -102,7 +106,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	panic("no path defined for: " + r.URL.Path)
+	h.t.Fatalf("no path defined for: %s", requestedURL)
 }
 
 func writePayloadToResponseWriter(w http.ResponseWriter, statusCode int, payload []byte) {

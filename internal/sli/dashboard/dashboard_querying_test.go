@@ -17,7 +17,7 @@ const dashboardURL = "/api/config/v1/dashboards"
 func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
 
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	// we handle these if the URLs are a full match
 	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
 	handler.AddExact("/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
@@ -95,7 +95,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 	ev := &test.EventData{}
 
 	// we add a handler to simulate a failing dashboards API request (401 in this case)
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExactError(dashboardURL, http.StatusUnauthorized, "./testdata/dynatrace_missing_authorization_error.json")
 
 	// we don't care about the content of the dashboard here, because it just should not be empty!
@@ -120,7 +120,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 	ev := &test.EventData{}
 
 	// we add a handler to simulate an successful Dashboards API request in this case.
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dashboardURL, "./testdata/test_query_dynatrace_dashboard_dashboards.json")
 
 	// we don't care about the content of the dashboard here, because it just should not be empty!
@@ -151,7 +151,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 	const storedDashboardFile = "./testdata/test_query_dynatrace_dashboard_dashboard_kqg.json"
 
 	// we add a handle to simulate an successful Dashboards API request in this case.
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dashboardURL, "./testdata/test_query_dynatrace_dashboard_dashboards_kqg.json")
 	handler.AddExact(dashboardURL+"/"+matchingDashboardID, storedDashboardFile)
 
@@ -196,7 +196,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 	const storedDashboardFile = "./testdata/test_query_dynatrace_dashboard_dashboard_kqg.json"
 
 	// we add a handle to simulate an successful Dashboards API request in this case.
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dashboardURL+"/"+dashboardID, storedDashboardFile)
 
 	dashboardContent, err := ioutil.ReadFile(storedDashboardFile)
@@ -233,7 +233,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	const dashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9c"
 
 	// we add a handler to simulate a very concrete 404 Dashboards API request/response in this case.
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExactError(dashboardURL+"/"+dashboardID, http.StatusNotFound, "./testdata/test_query_dynatrace_dashboard_dashboard_id_not_found.json")
 
 	// we also do not care about the dashboard that would be returned by keptn
@@ -262,7 +262,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	const dashboardID = "definitely-invalid-uuid"
 
 	// we add a handler to simulate a very concrete 400 Dashboards API request/response in this case.
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExactError(dashboardURL+"/"+dashboardID, http.StatusBadRequest, "./testdata/test_query_dynatrace_dashboard_dashboard_id_not_valid.json")
 
 	// we also do not care about the dashboard that would be returned by keptn

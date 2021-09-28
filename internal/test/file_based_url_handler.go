@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"testing"
 )
 
 type errConfigForFile struct {
@@ -16,18 +17,20 @@ type FileBasedURLHandler struct {
 	exactURLs      map[string]string
 	exactErrorURLs map[string]errConfigForFile
 	startsWithURLs map[string]string
+	t              *testing.T
 }
 
-func NewFileBasedURLHandler() *FileBasedURLHandler {
+func NewFileBasedURLHandler(t *testing.T) *FileBasedURLHandler {
 	return &FileBasedURLHandler{
 		exactURLs:      make(map[string]string),
 		exactErrorURLs: make(map[string]errConfigForFile),
 		startsWithURLs: make(map[string]string),
+		t:              t,
 	}
 }
 
 func (h *FileBasedURLHandler) AddExact(url string, fileName string) {
-	assertFileIsInTestDataFolder(fileName)
+	h.assertFileIsInTestDataFolder(fileName)
 
 	oldFileName, isSet := h.exactURLs[url]
 	if isSet {
@@ -38,7 +41,7 @@ func (h *FileBasedURLHandler) AddExact(url string, fileName string) {
 }
 
 func (h *FileBasedURLHandler) AddExactError(url string, statusCode int, fileName string) {
-	assertFileIsInTestDataFolder(fileName)
+	h.assertFileIsInTestDataFolder(fileName)
 
 	oldFileName, isSet := h.exactURLs[url]
 	if isSet {
@@ -49,7 +52,7 @@ func (h *FileBasedURLHandler) AddExactError(url string, statusCode int, fileName
 }
 
 func (h *FileBasedURLHandler) AddStartsWith(url string, fileName string) {
-	assertFileIsInTestDataFolder(fileName)
+	h.assertFileIsInTestDataFolder(fileName)
 
 	oldFileName, isSet := h.startsWithURLs[url]
 	if isSet {
@@ -59,17 +62,18 @@ func (h *FileBasedURLHandler) AddStartsWith(url string, fileName string) {
 	h.startsWithURLs[url] = fileName
 }
 
-func assertFileIsInTestDataFolder(fileName string) {
+func (h *FileBasedURLHandler) assertFileIsInTestDataFolder(fileName string) {
 	if !strings.HasPrefix(fileName, "./testdata/") {
-		panic("the file you specified is not in the local 'testdata' folder: " + fileName)
+		h.t.Fatalf("the file you specified is not in the local 'testdata' folder: %s", fileName)
 	}
 }
 
 func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Println("Mock for: " + r.URL.Path)
+	requestedURL := r.URL.String()
+	log.Println("Mock for: " + requestedURL)
 
 	for url, fileName := range h.exactURLs {
-		if url == r.URL.Path {
+		if url == requestedURL {
 			log.Println("Found Mock: " + url + " --> " + fileName)
 
 			writeFileToResponseWriter(w, http.StatusOK, fileName)
@@ -78,7 +82,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	for url, fileName := range h.startsWithURLs {
-		if strings.Index(r.URL.Path, url) == 0 {
+		if strings.Index(requestedURL, url) == 0 {
 			log.Println("Found Mock: " + url + " --> " + fileName)
 
 			writeFileToResponseWriter(w, http.StatusOK, fileName)
@@ -87,7 +91,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	for url, config := range h.exactErrorURLs {
-		if url == r.URL.Path {
+		if url == requestedURL {
 			log.Println("Found Mock: " + url + " --> " + config.fileName)
 
 			writeFileToResponseWriter(w, config.status, config.fileName)
@@ -95,7 +99,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	panic("no path defined for: " + r.URL.Path)
+	h.t.Fatalf("no path defined for: %s", requestedURL)
 }
 
 func writeFileToResponseWriter(w http.ResponseWriter, statusCode int, fileName string) {
