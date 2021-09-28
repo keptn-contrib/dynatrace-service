@@ -16,6 +16,7 @@ Versions of the applicable components
 
 * Dynatrace Service version : 
 * Dynatrace cluster version :
+* Keptn version:
 
 **To Reproduce**
 Steps to reproduce the behavior:
