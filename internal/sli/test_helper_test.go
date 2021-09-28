@@ -159,12 +159,17 @@ func (m *resourceClientMock) UploadDashboard(project string, stage string, servi
 }
 
 type keptnClientMock struct {
-	eventSink     []*cloudevents.Event
-	customQueries map[string]string
-	mutex         sync.Mutex
+	eventSink          []*cloudevents.Event
+	customQueries      map[string]string
+	customQueriesError error
+	mutex              sync.Mutex
 }
 
 func (m *keptnClientMock) GetCustomQueries(project string, stage string, service string) (*keptn.CustomQueries, error) {
+	if m.customQueriesError != nil {
+		return nil, m.customQueriesError
+	}
+
 	if m.customQueries == nil {
 		return keptn.NewEmptyCustomQueries(), nil
 	}

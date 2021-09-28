@@ -2,12 +2,53 @@ package sli
 
 import (
 	"encoding/json"
+	"fmt"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
+
+// In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
+//
+// prerequisites:
+// * no (previous) dashboard is stored in Keptn
+// * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
+// * the defined SLI has errors, so parsing the YAML file would not be possible
+func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
+	const indicator = "response_time_p95"
+
+	ev := &getSLIEventData{
+		project:    "sockshop",
+		stage:      "staging",
+		service:    "carts",
+		indicators: []string{indicator}, // we need this to check later on in the custom queries
+	}
+
+	// make sure we would not be able to query any metric due to a parsing error
+	handler := test.NewFileBasedURLHandler(t)
+
+	const errorMessage = "invalid YAML file - some parsing issue"
+	kClient := &keptnClientMock{
+		customQueriesError: fmt.Errorf(errorMessage),
+	}
+
+	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
+	defer teardown()
+
+	err := eh.retrieveMetrics()
+
+	expectedResult := &keptnv2.SLIResult{
+		Metric:  indicator,
+		Value:   0,
+		Success: false,
+		Message: errorMessage,
+	}
+
+	assert.NoError(t, err)
+	assertThatEventHasExpectedPayload(t, expectedResult, kClient.eventSink)
+}
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
@@ -46,10 +87,10 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 	}
 
 	assert.NoError(t, err)
-	assertThatEventsHaveSuccessPayload(t, expectedResult, kClient.eventSink)
+	assertThatEventHasExpectedPayload(t, expectedResult, kClient.eventSink)
 }
 
-func assertThatEventsHaveSuccessPayload(t *testing.T, expectedResult *keptnv2.SLIResult, events []*cloudevents.Event) {
+func assertThatEventHasExpectedPayload(t *testing.T, expectedResult *keptnv2.SLIResult, events []*cloudevents.Event) {
 	assert.EqualValues(t, 2, len(events))
 
 	assert.EqualValues(t, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), events[0].Type())
