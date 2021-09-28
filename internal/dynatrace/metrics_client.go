@@ -3,8 +3,6 @@ package dynatrace
 import (
 	"encoding/json"
 	"errors"
-
-	log "github.com/sirupsen/logrus"
 )
 
 const metricsPath = "/api/v2/metrics"
@@ -80,10 +78,7 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (mc *MetricsClient) GetByQuery(metricsQuery string) (*MetricsQueryResult, error) {
-	path := metricsPath + "/query?" + metricsQuery
-	log.WithField("query", mc.client.Credentials().Tenant+path).Debug("Final Query")
-
-	body, err := mc.client.Get(path)
+	body, err := mc.client.Get(metricsPath + "/query?" + metricsQuery)
 	if err != nil {
 		return nil, err
 	}
