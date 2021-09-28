@@ -14,18 +14,20 @@ type errConfigForFile struct {
 }
 
 type FileBasedURLHandler struct {
-	exactURLs      map[string]string
-	exactErrorURLs map[string]errConfigForFile
-	startsWithURLs map[string]string
-	t              *testing.T
+	exactURLs           map[string]string
+	exactErrorURLs      map[string]errConfigForFile
+	startsWithURLs      map[string]string
+	startsWithErrorURLs map[string]errConfigForFile
+	t                   *testing.T
 }
 
 func NewFileBasedURLHandler(t *testing.T) *FileBasedURLHandler {
 	return &FileBasedURLHandler{
-		exactURLs:      make(map[string]string),
-		exactErrorURLs: make(map[string]errConfigForFile),
-		startsWithURLs: make(map[string]string),
-		t:              t,
+		exactURLs:           make(map[string]string),
+		exactErrorURLs:      make(map[string]errConfigForFile),
+		startsWithURLs:      make(map[string]string),
+		startsWithErrorURLs: make(map[string]errConfigForFile),
+		t:                   t,
 	}
 }
 
@@ -43,9 +45,9 @@ func (h *FileBasedURLHandler) AddExact(url string, fileName string) {
 func (h *FileBasedURLHandler) AddExactError(url string, statusCode int, fileName string) {
 	h.assertFileIsInTestDataFolder(fileName)
 
-	oldFileName, isSet := h.exactURLs[url]
+	oldEntry, isSet := h.exactErrorURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the file for exact error url match '%s'! Old: %s, new: %s", url, oldFileName, fileName)
+		log.Warningf("You are replacing the file for exact error url match '%s'! Old: %s, new: %s", url, oldEntry.fileName, fileName)
 	}
 
 	h.exactErrorURLs[url] = errConfigForFile{status: statusCode, fileName: fileName}
@@ -60,6 +62,17 @@ func (h *FileBasedURLHandler) AddStartsWith(url string, fileName string) {
 	}
 
 	h.startsWithURLs[url] = fileName
+}
+
+func (h *FileBasedURLHandler) AddStartsWithError(url string, statusCode int, fileName string) {
+	h.assertFileIsInTestDataFolder(fileName)
+
+	oldEntry, isSet := h.startsWithErrorURLs[url]
+	if isSet {
+		log.Warningf("You are replacing the file for starts with error url match '%s'! Old: %s, new: %s", url, oldEntry.fileName, fileName)
+	}
+
+	h.startsWithErrorURLs[url] = errConfigForFile{status: statusCode, fileName: fileName}
 }
 
 func (h *FileBasedURLHandler) assertFileIsInTestDataFolder(fileName string) {
@@ -95,6 +108,15 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			log.Println("Found Mock: " + url + " --> " + config.fileName)
 
 			writeFileToResponseWriter(w, config.status, config.fileName)
+			return
+		}
+	}
+
+	for url, config := range h.startsWithErrorURLs {
+		if strings.Index(requestedURL, url) == 0 {
+			log.Println("Found Mock: " + url + " --> " + config.fileName)
+
+			writeFileToResponseWriter(w, http.StatusOK, config.fileName)
 			return
 		}
 	}
