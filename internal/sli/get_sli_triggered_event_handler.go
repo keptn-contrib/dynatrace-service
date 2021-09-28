@@ -287,6 +287,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 			// if we cannot retrieve any, we continue anyway
 			log.WithError(err).Errorf("could not retrieve custom queries: %v", err)
 			projectCustomQueries = keptn.NewEmptyCustomQueries()
+			//return eh.sendGetSLIFinishedEvent(nil, err)
 		}
 
 		queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), projectCustomQueries, startUnix, endUnix)
