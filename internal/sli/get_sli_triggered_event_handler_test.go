@@ -15,6 +15,53 @@ import (
 // prerequisites:
 // * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
+// * the defined SLI is valid YAML, but Dynatrace cannot process the query correctly and returns a 400 error
+func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *testing.T) {
+	const indicator = "response_time_p95"
+
+	ev := &getSLIEventData{
+		project:    "sockshop",
+		stage:      "staging",
+		service:    "carts",
+		indicators: []string{indicator}, // we need this to check later on in the custom queries
+	}
+
+	// error here: metric(s)Selector=
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExactError(
+		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricsSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		400,
+		"./testdata/response_time_p95_400_constraints-violated.json")
+
+	// error here as well: metric(s)Selector=
+	kClient := &keptnClientMock{
+		customQueries: map[string]string{
+			indicator: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+	}
+
+	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
+	defer teardown()
+
+	err := eh.retrieveMetrics()
+
+	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, 0, actual.Value)
+		assert.EqualValues(t, false, actual.Success)
+		assert.Contains(t, actual.Message, "metricSelector to be specified")
+		assert.Contains(t, actual.Message, "400")
+	}
+
+	assert.NoError(t, err)
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
+}
+
+// In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
+//
+// prerequisites:
+// * no (previous) dashboard is stored in Keptn
+// * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI has errors, so parsing the YAML file would not be possible
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 	const indicator = "response_time_p95"

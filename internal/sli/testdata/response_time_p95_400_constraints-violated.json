@@ -1,0 +1,14 @@
+{
+  "error": {
+    "code": 400,
+    "message": "Constraints violated.",
+    "constraintViolations": [
+      {
+        "path": "nextPageKey",
+        "message": "expected one of nextPageKey or metricSelector to be specified",
+        "parameterLocation": "QUERY",
+        "location": null
+      }
+    ]
+  }
+}
