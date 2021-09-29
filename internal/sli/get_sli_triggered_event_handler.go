@@ -232,6 +232,96 @@ func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) strin
 	return ""
 }
 
+//
+func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(startUnix time.Time, endUnix time.Time) ([]*keptnv2.SLIResult, error) {
+	// get custom metrics for project if they exist
+	projectCustomQueries, err := eh.kClient.GetCustomQueries(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+	if err != nil {
+		log.WithError(err).Errorf("could not retrieve custom queries: %v", err)
+		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
+	}
+
+	queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), projectCustomQueries, startUnix, endUnix)
+
+	var sliResults []*keptnv2.SLIResult
+
+	// query all indicators
+	for _, indicator := range eh.event.GetIndicators() {
+		if strings.Compare(indicator, ProblemOpenSLI) == 0 {
+			log.WithField("indicator", indicator).Info("Skipping indicator as it is handled later")
+			continue
+		}
+
+		sliResults = append(sliResults, getSLIResultFromIndicator(indicator, queryProcessing))
+	}
+
+	return sliResults, nil
+}
+
+func getSLIResultFromIndicator(indicator string, queryProcessing *query.Processing) *keptnv2.SLIResult {
+	log.WithField("indicator", indicator).Info("Fetching indicator")
+
+	sliValue, err := queryProcessing.GetSLIValue(indicator)
+	if err != nil {
+		// failed to fetch metric
+		log.WithError(err).Error("GetSLIValue failed")
+		return &keptnv2.SLIResult{
+			Metric:  indicator,
+			Value:   0,
+			Success: false, // mark as failure
+			Message: err.Error(),
+		}
+	}
+
+	// successfully fetched metric
+	return &keptnv2.SLIResult{
+		Metric:  indicator,
+		Value:   sliValue,
+		Success: true, // mark as success
+	}
+}
+
+func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) *keptnv2.SLIResult {
+	problemIndicator := ProblemOpenSLI
+	openProblemValue := 0.0
+	success := false
+	message := ""
+
+	// lets query the status of this problem and add it to the SLI Result
+	dynatraceProblem, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetById(problemID)
+	if err != nil {
+		message = err.Error()
+	}
+
+	if dynatraceProblem != nil {
+		success = true
+		if dynatraceProblem.Status == "OPEN" {
+			openProblemValue = 1.0
+		}
+	}
+
+	// lets add this to the sliResults
+	sliResult := &keptnv2.SLIResult{
+		Metric:  problemIndicator,
+		Value:   openProblemValue,
+		Success: success,
+		Message: message,
+	}
+
+	// lets add this to the SLO in case this indicator is not yet in SLO.yaml. Becuase if it doesnt get added the lighthouse wont evaluate the SLI values
+	// we default it to open_problems<=0
+	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", problemIndicator)
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
+
+	errAddSlo := eh.addSLO(sloDefinition)
+	if errAddSlo != nil {
+		// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
+		log.WithError(errAddSlo).Error("problem while adding SLOs")
+	}
+
+	return sliResult
+}
+
 // retrieveMetrics Handles keptn.InternalGetSLIEventType
 //
 // First tries to find a Dynatrace dashboard and then parses it for SLIs and SLOs
@@ -281,85 +371,17 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	//
 	// Option 2: If we have not received any data via a Dynatrace Dashboard lets query the SLIs based on the SLI.yaml definition
 	if sliResults == nil {
-		// get custom metrics for project if they exist
-		projectCustomQueries, err := eh.kClient.GetCustomQueries(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+		sliResults, err = eh.getSLIResultsFromCustomQueries(startUnix, endUnix)
 		if err != nil {
-			// if we cannot retrieve any, we continue anyway
-			log.WithError(err).Errorf("could not retrieve custom queries: %v", err)
 			return eh.sendGetSLIFinishedEvent(nil, err)
-		}
-
-		queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), projectCustomQueries, startUnix, endUnix)
-
-		// query all indicators
-		for _, indicator := range eh.event.GetIndicators() {
-			if strings.Compare(indicator, ProblemOpenSLI) == 0 {
-				log.WithField("indicator", indicator).Info("Skipping indicator as it is handled later")
-			} else {
-				log.WithField("indicator", indicator).Info("Fetching indicator")
-				sliValue, err := queryProcessing.GetSLIValue(indicator)
-				if err != nil {
-					log.WithError(err).Error("GetSLIValue failed")
-					// failed to fetch metric
-					sliResults = append(sliResults, &keptnv2.SLIResult{
-						Metric:  indicator,
-						Value:   0,
-						Success: false, // Mark as failure
-						Message: err.Error(),
-					})
-				} else {
-					// successfully fetched metric
-					sliResults = append(sliResults, &keptnv2.SLIResult{
-						Metric:  indicator,
-						Value:   sliValue,
-						Success: true, // mark as success
-					})
-				}
-			}
 		}
 	}
 
-	//
 	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
 	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
 	problemID := getDynatraceProblemContext(eh.event)
 	if problemID != "" {
-		problemIndicator := ProblemOpenSLI
-		openProblemValue := 0.0
-		success := false
-		message := ""
-
-		// lets query the status of this problem and add it to the SLI Result
-		dynatraceProblem, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetById(problemID)
-		if err != nil {
-			message = err.Error()
-		}
-
-		if dynatraceProblem != nil {
-			success = true
-			if dynatraceProblem.Status == "OPEN" {
-				openProblemValue = 1.0
-			}
-		}
-
-		// lets add this to the sliResults
-		sliResults = append(sliResults, &keptnv2.SLIResult{
-			Metric:  problemIndicator,
-			Value:   openProblemValue,
-			Success: success,
-			Message: message,
-		})
-
-		// lets add this to the SLO in case this indicator is not yet in SLO.yaml. Becuase if it doesnt get added the lighthouse wont evaluate the SLI values
-		// we default it to open_problems<=0
-		sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", problemIndicator)
-		sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
-
-		errAddSlo := eh.addSLO(sloDefinition)
-		if errAddSlo != nil {
-			// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
-			log.WithError(errAddSlo).Error("problem while adding SLOs")
-		}
+		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(problemID))
 	}
 
 	// now - lets see if we have captured any result values - if not - return send an error
