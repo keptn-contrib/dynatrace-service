@@ -27,7 +27,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 	// error here in the misspelled indicator:
 	kClient := &keptnClientMock{
 		customQueries: map[string]string{
-			"response_time_p59": "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+			"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 		},
 	}
 
@@ -178,7 +178,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 
 	// no custom queries defined here
 	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
-	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'not SLIs defined' - the latter could be intentional
+	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
 	kClient := &keptnClientMock{}
 
 	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
