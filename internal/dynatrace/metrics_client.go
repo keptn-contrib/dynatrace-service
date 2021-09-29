@@ -39,6 +39,7 @@ type MetricsQueryResult struct {
 type MetricQueryResultValues struct {
 	MetricID string                     `json:"metricId"`
 	Data     []MetricQueryResultNumbers `json:"data"`
+	Warnings []string                   `json:"warnings,omitempty"`
 }
 
 type MetricQueryResultNumbers struct {
