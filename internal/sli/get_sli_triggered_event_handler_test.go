@@ -21,15 +21,13 @@ const indicator = "response_time_p95"
 // * the defined SLI could not be found because of a misspelled indicator name - e.g. 'response_time_p59' instead of 'response_time_p95'
 //   - this would have lead to a fallback to default SLIs, but should return an error now.
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatched(t *testing.T) {
-	const misspelledIndicator = "response_time_p59"
-
 	// no need to have something here, because we should not send an API request
 	handler := test.NewFileBasedURLHandler(t)
 
 	// error here in the misspelled indicator:
 	kClient := &keptnClientMock{
 		customQueries: map[string]string{
-			misspelledIndicator: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+			"response_time_p59": "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 		},
 	}
 
@@ -40,7 +38,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		assert.Contains(t, actual.Message, "response_time_p95")
 	}
 
-	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -72,7 +70,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.Contains(t, actual.Message, "400")
 	}
 
-	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -97,7 +95,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		assert.Contains(t, actual.Message, errorMessage)
 	}
 
-	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -129,7 +127,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		assert.Contains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -161,7 +159,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -183,13 +181,13 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'not SLIs defined' - the latter could be intentional
 	kClient := &keptnClientMock{}
 
-	expectedResult := &keptnv2.SLIResult{
-		Metric:  indicator,
-		Value:   12.439619479902443, // div by 1000 from dynatrace API result!
-		Success: true,
+	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
+		assert.EqualValues(t, true, actual.Success)
 	}
 
-	assertThatTestWithExpectedResultIsCorrect(t, handler, kClient, expectedResult)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -209,17 +207,28 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		},
 	}
 
-	expectedResult := &keptnv2.SLIResult{
-		Metric:  indicator,
-		Value:   12.439619479902443, // div by 1000 from dynatrace API result!
-		Success: true,
+	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
+		assert.EqualValues(t, true, actual.Success)
 	}
 
-	assertThatTestWithExpectedResultIsCorrect(t, handler, kClient, expectedResult)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+}
+
+func assertThatTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
+	setupTestAndAssertNoError(t, handler, kClient)
+
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
 }
 
 func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock) {
-	ev := createEvent()
+	ev := &getSLIEventData{
+		project:    "sockshop",
+		stage:      "staging",
+		service:    "carts",
+		indicators: []string{indicator}, // we need this to check later on in the custom queries
+	}
 
 	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
 	defer teardown()
@@ -227,25 +236,6 @@ func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *kept
 	err := eh.retrieveMetrics()
 
 	assert.NoError(t, err)
-}
-
-func assertThatTestWithAssertionsIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
-	setupTestAndAssertNoError(t, handler, kClient)
-
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
-}
-
-func assertThatTestWithExpectedResultIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, expectedResult *keptnv2.SLIResult) {
-	setupTestAndAssertNoError(t, handler, kClient)
-
-	assertThatEventHasExpectedPayload(t, expectedResult, kClient.eventSink)
-}
-
-func assertThatEventHasExpectedPayload(t *testing.T, expectedResult *keptnv2.SLIResult, events []*cloudevents.Event) {
-	data := assertThatEventsAreThere(t, events)
-
-	assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
-	assert.EqualValues(t, expectedResult, data.GetSLI.IndicatorValues[0])
 }
 
 func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event) {
@@ -271,13 +261,4 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event) *keptnv
 	assert.EqualValues(t, keptnv2.StatusSucceeded, data.Status)
 
 	return &data
-}
-
-func createEvent() *getSLIEventData {
-	return &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
 }
