@@ -7,8 +7,11 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"testing"
 )
+
+const indicator = "response_time_p95"
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
@@ -18,15 +21,7 @@ import (
 // * the defined SLI could not be found because of a misspelled indicator name - e.g. 'response_time_p59' instead of 'response_time_p95'
 //   - this would have lead to a fallback to default SLIs, but should return an error now.
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatched(t *testing.T) {
-	const indicator = "response_time_p95"
 	const misspelledIndicator = "response_time_p59"
-
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
 
 	// no need to have something here, because we should not send an API request
 	handler := test.NewFileBasedURLHandler(t)
@@ -38,11 +33,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		},
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
-	defer teardown()
-
-	err := eh.retrieveMetrics()
-
 	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
@@ -50,51 +40,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		assert.Contains(t, actual.Message, "response_time_p95")
 	}
 
-	assert.NoError(t, err)
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
-}
-
-// In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
-//
-// prerequisites:
-// * no (previous) dashboard is stored in Keptn
-// * a file called 'dynatrace/sli.yaml' exists but there are no SLIs defined OR
-// * there is no 'dynatrace/sli.yaml' file
-//   - currently this would lead to a fallback for default SLI definitions
-func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
-	const indicator = "response_time_p95"
-
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
-
-	// fallback: mind the default SLI definitions in the URL below
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
-		"./testdata/response_time_p95_200_1_result_defaults.json")
-
-	// no custom queries defined here
-	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
-	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'not SLIs defined' - the latter could be intentional
-	kClient := &keptnClientMock{}
-
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
-	defer teardown()
-
-	err := eh.retrieveMetrics()
-
-	expectedResult := &keptnv2.SLIResult{
-		Metric:  indicator,
-		Value:   12.439619479902443, // div by 1000 from dynatrace API result!
-		Success: true,
-	}
-
-	assert.NoError(t, err)
-	assertThatEventHasExpectedPayload(t, expectedResult, kClient.eventSink)
+	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -104,15 +50,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, but Dynatrace cannot process the query correctly and returns a 400 error
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *testing.T) {
-	const indicator = "response_time_p95"
-
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
-
 	// error here: metric(s)Selector=
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExactError(
@@ -127,11 +64,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		},
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
-	defer teardown()
-
-	err := eh.retrieveMetrics()
-
 	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
@@ -140,8 +72,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.Contains(t, actual.Message, "400")
 	}
 
-	assert.NoError(t, err)
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
+	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -151,15 +82,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI has errors, so parsing the YAML file would not be possible
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
-	const indicator = "response_time_p95"
-
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
-
 	// make sure we would not be able to query any metric due to a parsing error
 	handler := test.NewFileBasedURLHandler(t)
 
@@ -168,11 +90,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		customQueriesError: fmt.Errorf(errorMessage),
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
-	defer teardown()
-
-	err := eh.retrieveMetrics()
-
 	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
@@ -180,8 +97,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		assert.Contains(t, actual.Message, errorMessage)
 	}
 
-	assert.NoError(t, err)
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
+	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -192,15 +108,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 0 results and a warning
 //   - e.g. misspelled dimension key in merge transformation
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsAndWarning(t *testing.T) {
-	const indicator = "response_time_p95"
-
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
-
 	// error here: merge(dt.entity.services)
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
@@ -214,11 +121,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		},
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
-	defer teardown()
-
-	err := eh.retrieveMetrics()
-
 	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
@@ -227,8 +129,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		assert.Contains(t, actual.Message, "Warning")
 	}
 
-	assert.NoError(t, err)
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
+	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -239,15 +140,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 0 results and no warning
 //	 - e.g. misspelled tag name
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(t *testing.T) {
-	const indicator = "response_time_p95"
-
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
-
 	// error here: tag(keptn_project:stagin)
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
@@ -261,11 +153,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		},
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
-	defer teardown()
-
-	err := eh.retrieveMetrics()
-
 	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
@@ -274,8 +161,35 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assert.NoError(t, err)
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
+	assertThatTestWithAssertionsIsCorrect(t, handler, kClient, assertionsFunc)
+}
+
+// In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
+//
+// prerequisites:
+// * no (previous) dashboard is stored in Keptn
+// * a file called 'dynatrace/sli.yaml' exists but there are no SLIs defined OR
+// * there is no 'dynatrace/sli.yaml' file
+//   - currently this would lead to a fallback for default SLI definitions
+func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
+	// fallback: mind the default SLI definitions in the URL below
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(
+		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		"./testdata/response_time_p95_200_1_result_defaults.json")
+
+	// no custom queries defined here
+	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
+	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'not SLIs defined' - the latter could be intentional
+	kClient := &keptnClientMock{}
+
+	expectedResult := &keptnv2.SLIResult{
+		Metric:  indicator,
+		Value:   12.439619479902443, // div by 1000 from dynatrace API result!
+		Success: true,
+	}
+
+	assertThatTestWithExpectedResultIsCorrect(t, handler, kClient, expectedResult)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -284,16 +198,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 // * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
-
-	const indicator = "response_time_p95"
-
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
-
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
 		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
@@ -305,18 +209,35 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		},
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
-	defer teardown()
-
-	err := eh.retrieveMetrics()
-
 	expectedResult := &keptnv2.SLIResult{
 		Metric:  indicator,
 		Value:   12.439619479902443, // div by 1000 from dynatrace API result!
 		Success: true,
 	}
 
+	assertThatTestWithExpectedResultIsCorrect(t, handler, kClient, expectedResult)
+}
+
+func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock) {
+	ev := createEvent()
+
+	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
+	defer teardown()
+
+	err := eh.retrieveMetrics()
+
 	assert.NoError(t, err)
+}
+
+func assertThatTestWithAssertionsIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
+	setupTestAndAssertNoError(t, handler, kClient)
+
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
+}
+
+func assertThatTestWithExpectedResultIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, expectedResult *keptnv2.SLIResult) {
+	setupTestAndAssertNoError(t, handler, kClient)
+
 	assertThatEventHasExpectedPayload(t, expectedResult, kClient.eventSink)
 }
 
@@ -350,4 +271,13 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event) *keptnv
 	assert.EqualValues(t, keptnv2.StatusSucceeded, data.Status)
 
 	return &data
+}
+
+func createEvent() *getSLIEventData {
+	return &getSLIEventData{
+		project:    "sockshop",
+		stage:      "staging",
+		service:    "carts",
+		indicators: []string{indicator}, // we need this to check later on in the custom queries
+	}
 }
