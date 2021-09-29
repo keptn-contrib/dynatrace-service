@@ -50,7 +50,6 @@ func TestGetSLIValue(t *testing.T) {
 	value, err := runGetSLIValueTest(handler)
 
 	assert.NoError(t, err)
-
 	assert.InDelta(t, 8.43340, value, 0.001)
 }
 
@@ -288,8 +287,8 @@ func TestGetSLISleep(t *testing.T) {
 
 	value, err := dh.GetSLIValue(keptn.ResponseTimeP50)
 
+	assert.NoError(t, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
-	assert.Nil(t, err)
 }
 
 // Tests the behaviour of the GetSLIValue function in case of a HTTP 400 return code
@@ -308,8 +307,8 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	value, err := dh.GetSLIValue(keptn.Throughput)
 
+	assert.Error(t, err)
 	assert.EqualValues(t, 0.0, value)
-	assert.NotNil(t, err, nil)
 }
 
 func TestGetSLIValueForIndicator(t *testing.T) {

@@ -38,11 +38,11 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 // GetSLIValue queries a single metric value from Dynatrace API.
 // Can handle both Metric Queries as well as USQL
 func (p *Processing) GetSLIValue(name string) (float64, error) {
-
 	// first we get the query from the SLI configuration based on its logical name
-	sliQuery, err := p.customQueries.GetQueryByNameOrDefault(name)
+	// no default values here anymore if indicator could not be matched (e.g. due to a misspelling) and custom SLIs were defined
+	sliQuery, err := p.customQueries.GetQueryByNameOrDefaultIfEmpty(name)
 	if err != nil {
-		return 0, fmt.Errorf("error when fetching SLI config for %s %s", name, err.Error())
+		return 0, err
 	}
 
 	log.WithFields(
