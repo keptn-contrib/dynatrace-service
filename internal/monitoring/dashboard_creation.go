@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -52,10 +53,10 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) C
 			Message: err.Error(),
 		}
 	}
-	log.WithField("dashboardUrl", "https://"+dc.client.Credentials().Tenant+"/#dashboards").Info("Dynatrace dashboard created successfully")
+	log.WithField("dashboardUrl", dc.client.Credentials().Tenant+"/#dashboards").Info("Dynatrace dashboard created successfully")
 	return ConfigResult{
 		Success: true, // I guess this should be true not false?
-		Message: "Dynatrace dashboard created successfully. You can view it here: https://" + dc.client.Credentials().Tenant + "/#dashboards",
+		Message: "Dynatrace dashboard created successfully. You can view it here: " + dc.client.Credentials().Tenant + "/#dashboards",
 	}
 }
 
