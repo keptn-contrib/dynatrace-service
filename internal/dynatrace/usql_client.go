@@ -3,7 +3,6 @@ package dynatrace
 import (
 	"encoding/json"
 	"errors"
-	log "github.com/sirupsen/logrus"
 )
 
 const usqlPath = "/api/v1/userSessionQueryLanguage/table"
@@ -27,10 +26,7 @@ func NewUSQLClient(client ClientInterface) *USQLClient {
 
 // GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set
 func (uc *USQLClient) GetByQuery(usql string) (*DTUSQLResult, error) {
-	path := usqlPath + "?" + usql
-	log.WithField("query", uc.client.Credentials().Tenant+path).Debug("Final USQL Query")
-
-	body, err := uc.client.Get(path)
+	body, err := uc.client.Get(usqlPath + "?" + usql)
 	if err != nil {
 		return nil, err
 	}

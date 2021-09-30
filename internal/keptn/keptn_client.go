@@ -49,6 +49,26 @@ func (cq *CustomQueries) GetQueryByNameOrDefault(sliName string) (string, error)
 	return defaultQuery, nil
 }
 
+func (cq *CustomQueries) GetQueryByNameOrDefaultIfEmpty(sliName string) (string, error) {
+	query, exists := cq.values[sliName]
+	if exists {
+		return query, nil
+	}
+
+	// there are custom SLIs defined, but we could not match it
+	if len(cq.values) != 0 {
+		return "", fmt.Errorf("SLI definition for '%s' was not found", sliName)
+	}
+
+	// no custom SLIs defined - so we fallback to using defaults
+	defaultQuery, err := getDefaultQuery(sliName)
+	if err != nil {
+		return "", err
+	}
+
+	return defaultQuery, nil
+}
+
 type ClientInterface interface {
 	GetCustomQueries(project string, stage string, service string) (*CustomQueries, error)
 	GetShipyard() (*keptnv2.Shipyard, error)

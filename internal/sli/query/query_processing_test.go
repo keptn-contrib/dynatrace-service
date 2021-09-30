@@ -44,13 +44,12 @@ func TestGetSLIValue(t *testing.T) {
 		]
 	}`
 
-	handler := test.NewPayloadBasedURLHandler()
+	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
 
 	value, err := runGetSLIValueTest(handler)
 
 	assert.NoError(t, err)
-
 	assert.InDelta(t, 8.43340, value, 0.001)
 }
 
@@ -78,7 +77,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		]
 	}`
 
-	handler := test.NewPayloadBasedURLHandler()
+	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
 
 	httpClient, teardown := test.CreateHTTPClient(handler)
@@ -123,8 +122,8 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 		]
 	}`
 
-	handler := test.NewPayloadBasedURLHandler()
-	handler.AddExact(metricAPIURL, []byte(okResponse))
+	handler := test.NewPayloadBasedURLHandler(t)
+	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
 
 	value, err := runGetSLIValueTest(handler)
 
@@ -157,8 +156,8 @@ func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
 		]
 	}`
 
-	handler := test.NewPayloadBasedURLHandler()
-	handler.AddExact(metricAPIURL, []byte(okResponse))
+	handler := test.NewPayloadBasedURLHandler(t)
+	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
 
 	value, err := runGetSLIValueTest(handler)
 
@@ -273,8 +272,8 @@ func TestGetSLISleep(t *testing.T) {
 		]
 	}`
 
-	handler := test.NewPayloadBasedURLHandler()
-	handler.AddExact(metricAPIURL, []byte(okResponse))
+	handler := test.NewPayloadBasedURLHandler(t)
+	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
 
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
@@ -288,13 +287,13 @@ func TestGetSLISleep(t *testing.T) {
 
 	value, err := dh.GetSLIValue(keptn.ResponseTimeP50)
 
+	assert.NoError(t, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
-	assert.Nil(t, err)
 }
 
 // Tests the behaviour of the GetSLIValue function in case of a HTTP 400 return code
 func TestGetSLIValueWithErrorResponse(t *testing.T) {
-	handler := test.NewPayloadBasedURLHandler()
+	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWithError(metricAPIURL, http.StatusBadRequest, []byte{})
 
 	httpClient, teardown := test.CreateHTTPClient(handler)
@@ -308,12 +307,12 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	value, err := dh.GetSLIValue(keptn.Throughput)
 
+	assert.Error(t, err)
 	assert.EqualValues(t, 0.0, value)
-	assert.NotNil(t, err, nil)
 }
 
 func TestGetSLIValueForIndicator(t *testing.T) {
-	handler := test.NewFileBasedURLHandler()
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
 	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
 	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
