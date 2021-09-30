@@ -149,12 +149,7 @@ func (dt *Client) sendRequest(apiPath string, method string, body []byte) ([]byt
 
 // creates http request for api call with appropriate headers including authorization
 func (dt *Client) createRequest(apiPath string, method string, body []byte) (*http.Request, error) {
-	var url string
-	if !strings.HasPrefix(dt.credentials.Tenant, "http://") && !strings.HasPrefix(dt.credentials.Tenant, "https://") {
-		url = "https://" + dt.credentials.Tenant + apiPath
-	} else {
-		url = dt.credentials.Tenant + apiPath
-	}
+	var url = dt.credentials.Tenant + apiPath
 
 	log.WithFields(log.Fields{"method": method, "url": url}).Debug("creating Dynatrace API request")
 
