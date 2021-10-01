@@ -166,6 +166,38 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 //
 // prerequisites:
 // * no (previous) dashboard is stored in Keptn
+// * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
+// * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 3 results instead of 1 and no warning
+//	 - e.g. missing merge('dimension_key') transformation
+func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleResults(t *testing.T) {
+	// error here: missing merge("dt.entity.service) transformation
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(
+		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		"./testdata/response_time_p95_200_3_results.json")
+
+	// error here as well: missing merge("dt.entity.service) transformation
+	kClient := &keptnClientMock{
+		customQueries: map[string]string{
+			indicator: "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+	}
+
+	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, 0, actual.Value)
+		assert.EqualValues(t, false, actual.Success)
+		assert.Contains(t, actual.Message, "returned 3 result values")
+		assert.NotContains(t, actual.Message, "Warning")
+	}
+
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+}
+
+// In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
+//
+// prerequisites:
+// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists but there are no SLIs defined OR
 // * there is no 'dynatrace/sli.yaml' file
 //   - currently this would lead to a fallback for default SLI definitions
