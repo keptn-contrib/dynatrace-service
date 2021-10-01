@@ -18,13 +18,13 @@ import (
 // DTCredentials is a struct for the tenant and api token information
 type DTCredentials struct {
 	// Base URL of Dynatrace tenant. This is always prefixed with "https://" or "http://"
-	Tenant   string `json:"DT_TENANT" yaml:"DT_TENANT"`
-	ApiToken string `json:"DT_API_TOKEN" yaml:"DT_API_TOKEN"`
+	Tenant   string
+	ApiToken string
 }
 
 type KeptnAPICredentials struct {
-	APIURL   string `json:"KEPTN_API_URL" yaml:"KEPTN_API_URL"`
-	APIToken string `json:"KEPTN_API_TOKEN" yaml:"KEPTN_API_TOKEN"`
+	APIURL   string
+	APIToken string
 }
 
 var namespace = getPodNamespace()
