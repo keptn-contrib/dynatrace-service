@@ -38,7 +38,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		assert.Contains(t, actual.Message, "response_time_p95")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -70,7 +70,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.Contains(t, actual.Message, "400")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -95,7 +95,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		assert.Contains(t, actual.Message, errorMessage)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -127,7 +127,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		assert.Contains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -159,7 +159,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -191,7 +191,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -219,7 +219,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 		assert.EqualValues(t, true, actual.Success)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, false)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -245,13 +245,13 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		assert.EqualValues(t, true, actual.Success)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc)
+	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, false)
 }
 
-func assertThatTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
+func assertThatTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
 	setupTestAndAssertNoError(t, handler, kClient)
 
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink)
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, shouldFail)
 }
 
 func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock) {
@@ -270,14 +270,14 @@ func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *kept
 	assert.NoError(t, err)
 }
 
-func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event) {
-	data := assertThatEventsAreThere(t, events)
+func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, shouldFail bool) {
+	data := assertThatEventsAreThere(t, events, shouldFail)
 
 	assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
 	assertionsFunc(t, data.GetSLI.IndicatorValues[0])
 }
 
-func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event) *keptnv2.GetSLIFinishedEventData {
+func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, shouldFail bool) *keptnv2.GetSLIFinishedEventData {
 	assert.EqualValues(t, 2, len(events))
 
 	assert.EqualValues(t, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), events[0].Type())
@@ -289,7 +289,13 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event) *keptnv
 		t.Fatalf("could not parse event payload correctly: %s", err)
 	}
 
-	assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+	if shouldFail {
+		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
+		assert.NotEmpty(t, data.Message)
+	} else {
+		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+		assert.Empty(t, data.Message)
+	}
 	assert.EqualValues(t, keptnv2.StatusSucceeded, data.Status)
 
 	return &data

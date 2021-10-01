@@ -403,7 +403,7 @@ func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(indicatorValues []*keptnv2
 	// if an error was set - the indicators will be set to failed and error message is set to each
 	indicatorValues = resetIndicatorsInCaseOfError(err, eh.event, indicatorValues)
 
-	return eh.sendEvent(NewGetSLIFinishedEventFactory(eh.event, indicatorValues))
+	return eh.sendEvent(NewGetSLIFinishedEventFactory(eh.event, indicatorValues, err))
 }
 
 func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
