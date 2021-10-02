@@ -96,7 +96,7 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 func createDashboardRetrieval(eventData adapter.EventContentAdapter, handler http.Handler) (*Retrieval, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials := &credentials.DTCredentials{
+	dtCredentials := &credentials.DynatraceCredentials{
 		Tenant:   url,
 		ApiToken: "test",
 	}

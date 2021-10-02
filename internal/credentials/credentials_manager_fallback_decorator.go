@@ -2,8 +2,9 @@ package credentials
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type CredentialManagerFallbackDecorator struct {
@@ -27,7 +28,7 @@ func NewCredentialManagerSLIServiceFallbackDecorator(cm CredentialManagerInterfa
 	return NewCredentialManagerFallbackDecorator(cm, []string{fmt.Sprintf("dynatrace-credentials-%s", project), "dynatrace-credentials", "dynatrace"})
 }
 
-func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName string) (*DTCredentials, error) {
+func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
 	secrets := []string{secretName}
 	secrets = append(secrets, cm.fallbackSecretNames...)
 
@@ -52,7 +53,7 @@ func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName
 	return nil, fmt.Errorf("could not find any Dynatrace specific secrets with the following names: %s", strings.Join(secrets, ","))
 }
 
-func (cm *CredentialManagerFallbackDecorator) GetKeptnAPICredentials() (*KeptnAPICredentials, error) {
+func (cm *CredentialManagerFallbackDecorator) GetKeptnAPICredentials() (*KeptnCredentials, error) {
 	return cm.credentialManager.GetKeptnAPICredentials()
 }
 

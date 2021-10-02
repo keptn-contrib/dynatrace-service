@@ -69,7 +69,7 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAs
 func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials := &credentials.DTCredentials{
+	dtCredentials := &credentials.DynatraceCredentials{
 		Tenant:   url,
 		ApiToken: "test",
 	}

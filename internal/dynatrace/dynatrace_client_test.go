@@ -2,12 +2,13 @@ package dynatrace
 
 import (
 	"bytes"
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
@@ -30,7 +31,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 		noProxy    string
 	}
 	type fields struct {
-		DynatraceCreds *credentials.DTCredentials
+		DynatraceCreds *credentials.DynatraceCredentials
 	}
 	type args struct {
 		req *http.Request
@@ -54,7 +55,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 				noProxy:    "localhost",
 			},
 			fields: fields{
-				DynatraceCreds: &credentials.DTCredentials{
+				DynatraceCreds: &credentials.DynatraceCredentials{
 					Tenant:   mockTenant,
 					ApiToken: "",
 				},
@@ -253,7 +254,7 @@ func testingDynatraceClient(handler http.Handler) (*Client, func()) {
 	httpClient, teardown := test.CreateHTTPClient(handler)
 
 	client := NewClientWithHTTP(
-		&credentials.DTCredentials{
+		&credentials.DynatraceCredentials{
 			Tenant:   "http://my-tenant.dynatrace.com",
 			ApiToken: "abcdefgh12345678",
 		},

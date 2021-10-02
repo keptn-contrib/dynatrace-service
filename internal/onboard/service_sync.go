@@ -70,7 +70,7 @@ type serviceSynchronizer struct {
 	resourcesClient    keptn.SLIAndSLOResourceWriterInterface
 	apiHandler         *keptnapi.APIHandler
 	credentialManager  credentials.CredentialManagerInterface
-	EntitiesClientFunc func(dtCredentials *credentials.DTCredentials) *dynatrace.EntitiesClient
+	EntitiesClientFunc func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
 	syncTimer          *time.Ticker
 	keptnHandler       *keptnv2.Keptn
 	servicesInKeptn    []string
@@ -94,7 +94,7 @@ func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serv
 
 		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(resourceClient)
 		serviceSynchronizerInstance.EntitiesClientFunc =
-			func(credentials *credentials.DTCredentials) *dynatrace.EntitiesClient {
+			func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
 				dtClient := dynatrace.NewClient(credentials)
 				return dynatrace.NewEntitiesClient(dtClient)
 			}
@@ -182,7 +182,7 @@ func (s *serviceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
 	}
 }
 
-func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.DTCredentials, error) {
+func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.DynatraceCredentials, error) {
 	dynatraceConfig, err := s.dtConfigGetter.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Dynatrace config: %s", err.Error())

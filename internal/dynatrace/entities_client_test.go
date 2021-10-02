@@ -39,7 +39,7 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 			name: "",
 			fields: fields{
 				client: NewClient(
-					&credentials.DTCredentials{
+					&credentials.DynatraceCredentials{
 						Tenant:   dtMockServer.URL,
 						ApiToken: "",
 					}),

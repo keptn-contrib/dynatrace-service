@@ -15,14 +15,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DTCredentials is a struct for the tenant and api token information
-type DTCredentials struct {
+// DynatraceCredentials is a struct for the tenant and api token information
+type DynatraceCredentials struct {
 	// Base URL of Dynatrace tenant. This is always prefixed with "https://" or "http://"
 	Tenant   string
 	ApiToken string
 }
 
-type KeptnAPICredentials struct {
+type KeptnCredentials struct {
 	APIURL   string
 	APIToken string
 }
@@ -90,8 +90,8 @@ func (OSEnvCredentialReader) ReadSecret(secretName, namespace, secretKey string)
 
 //go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/credential_manager_mock.go . CredentialManagerInterface
 type CredentialManagerInterface interface {
-	GetDynatraceCredentials(secretName string) (*DTCredentials, error)
-	GetKeptnAPICredentials() (*KeptnAPICredentials, error)
+	GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error)
+	GetKeptnAPICredentials() (*KeptnCredentials, error)
 }
 
 type CredentialManager struct {
@@ -112,7 +112,7 @@ func NewCredentialManager(sr SecretReader) (*CredentialManager, error) {
 	return cm, nil
 }
 
-func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*DTCredentials, error) {
+func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
 	dtTenant, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_TENANT")
 	if err != nil {
 		return nil, fmt.Errorf("key DT_TENANT was not found in secret \"%s\"", secretName)
@@ -123,10 +123,10 @@ func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*DTCred
 		return nil, fmt.Errorf("key DT_API_TOKEN was not found in secret \"%s\"", secretName)
 	}
 
-	return &DTCredentials{Tenant: getCleanURL(dtTenant), ApiToken: getCleanToken(dtAPIToken)}, nil
+	return &DynatraceCredentials{Tenant: getCleanURL(dtTenant), ApiToken: getCleanToken(dtAPIToken)}, nil
 }
 
-func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, error) {
+func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error) {
 	secretName := "dynatrace"
 
 	apiURL, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_API_URL")
@@ -145,7 +145,7 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnAPICredentials, err
 		}
 	}
 
-	return &KeptnAPICredentials{APIURL: getCleanURL(apiURL), APIToken: getCleanToken(apiToken)}, nil
+	return &KeptnCredentials{APIURL: getCleanURL(apiURL), APIToken: getCleanToken(apiToken)}, nil
 }
 
 func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
@@ -181,7 +181,7 @@ func getCleanToken(token string) string {
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
-func GetKeptnCredentials() (*KeptnAPICredentials, error) {
+func GetKeptnCredentials() (*KeptnCredentials, error) {
 	cm, err := NewCredentialManager(nil)
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func GetKeptnCredentials() (*KeptnAPICredentials, error) {
 }
 
 // CheckKeptnConnection verifies wether a connection to the Keptn API can be established
-func CheckKeptnConnection(keptnCredentials *KeptnAPICredentials) error {
+func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

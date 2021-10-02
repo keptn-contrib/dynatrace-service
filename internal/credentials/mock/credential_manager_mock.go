@@ -28,10 +28,10 @@ import (
 // 	}
 type CredentialManagerInterfaceMock struct {
 	// GetDynatraceCredentialsFunc mocks the GetDynatraceCredentials method.
-	GetDynatraceCredentialsFunc func(secretName string) (*credentials.DTCredentials, error)
+	GetDynatraceCredentialsFunc func(secretName string) (*credentials.DynatraceCredentials, error)
 
 	// GetKeptnAPICredentialsFunc mocks the GetKeptnAPICredentials method.
-	GetKeptnAPICredentialsFunc func() (*credentials.KeptnAPICredentials, error)
+	GetKeptnAPICredentialsFunc func() (*credentials.KeptnCredentials, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -49,7 +49,7 @@ type CredentialManagerInterfaceMock struct {
 }
 
 // GetDynatraceCredentials calls GetDynatraceCredentialsFunc.
-func (mock *CredentialManagerInterfaceMock) GetDynatraceCredentials(secretName string) (*credentials.DTCredentials, error) {
+func (mock *CredentialManagerInterfaceMock) GetDynatraceCredentials(secretName string) (*credentials.DynatraceCredentials, error) {
 	if mock.GetDynatraceCredentialsFunc == nil {
 		panic("CredentialManagerInterfaceMock.GetDynatraceCredentialsFunc: method is nil but CredentialManagerInterface.GetDynatraceCredentials was just called")
 	}
@@ -80,7 +80,7 @@ func (mock *CredentialManagerInterfaceMock) GetDynatraceCredentialsCalls() []str
 }
 
 // GetKeptnAPICredentials calls GetKeptnAPICredentialsFunc.
-func (mock *CredentialManagerInterfaceMock) GetKeptnAPICredentials() (*credentials.KeptnAPICredentials, error) {
+func (mock *CredentialManagerInterfaceMock) GetKeptnAPICredentials() (*credentials.KeptnCredentials, error) {
 	if mock.GetKeptnAPICredentialsFunc == nil {
 		panic("CredentialManagerInterfaceMock.GetKeptnAPICredentialsFunc: method is nil but CredentialManagerInterface.GetKeptnAPICredentials was just called")
 	}

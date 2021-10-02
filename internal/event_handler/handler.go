@@ -23,7 +23,7 @@ type DynatraceEventHandler interface {
 }
 
 // Retrieves Dynatrace Credential information
-func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dtConfigGetter config.DynatraceConfigGetterInterface) (*config.DynatraceConfigFile, *credentials.DTCredentials, string, error) {
+func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dtConfigGetter config.DynatraceConfigGetterInterface) (*config.DynatraceConfigFile, *credentials.DynatraceCredentials, string, error) {
 	dynatraceConfig, err := dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		log.WithError(err).Warn("Failed to load Dynatrace config - will use a default one!")

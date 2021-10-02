@@ -3,8 +3,9 @@ package dynatrace
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"strings"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
 const keptnProblemNotificationName = "Keptn Problem Notification"
@@ -97,7 +98,7 @@ func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications() error {
 }
 
 // Create creates a new default notification for the given KeptnAPICredentials and the alertingProfileID
-func (nc *NotificationsClient) Create(credentials *credentials.KeptnAPICredentials, alertingProfileID string) error {
+func (nc *NotificationsClient) Create(credentials *credentials.KeptnCredentials, alertingProfileID string) error {
 	notification := problemNotificationPayload
 	notification = strings.ReplaceAll(notification, "$KEPTN_DNS", credentials.APIURL)
 	notification = strings.ReplaceAll(notification, "$KEPTN_TOKEN", credentials.APIToken)

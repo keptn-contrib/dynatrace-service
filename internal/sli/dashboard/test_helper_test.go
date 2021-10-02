@@ -47,7 +47,7 @@ func createCustomQuerying(keptnEvent adapter.EventContentAdapter, handler http.H
 func createDynatraceClient(handler http.Handler) (dynatrace.ClientInterface, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials := &credentials.DTCredentials{
+	dtCredentials := &credentials.DynatraceCredentials{
 		Tenant:   url,
 		ApiToken: "test",
 	}
@@ -62,7 +62,7 @@ func TestCreateQueryingWithHandler(t *testing.T) {
 	dh, url, teardown := createQueryingWithHandler(keptnEvent, nil)
 	defer teardown()
 
-	c := &credentials.DTCredentials{
+	c := &credentials.DynatraceCredentials{
 		Tenant:   url,
 		ApiToken: "test",
 	}

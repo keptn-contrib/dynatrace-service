@@ -86,16 +86,16 @@ type ClientInterface interface {
 	Put(apiPath string, body []byte) ([]byte, error)
 	Delete(apiPath string) ([]byte, error)
 
-	Credentials() *credentials.DTCredentials
+	Credentials() *credentials.DynatraceCredentials
 }
 
 type Client struct {
-	credentials *credentials.DTCredentials
+	credentials *credentials.DynatraceCredentials
 	httpClient  *http.Client
 }
 
 // NewClient creates a new Client
-func NewClient(dynatraceCreds *credentials.DTCredentials) *Client {
+func NewClient(dynatraceCreds *credentials.DynatraceCredentials) *Client {
 	return NewClientWithHTTP(
 		dynatraceCreds,
 		&http.Client{
@@ -108,7 +108,7 @@ func NewClient(dynatraceCreds *credentials.DTCredentials) *Client {
 	)
 }
 
-func NewClientWithHTTP(dynatraceCreds *credentials.DTCredentials, httpClient *http.Client) *Client {
+func NewClientWithHTTP(dynatraceCreds *credentials.DynatraceCredentials, httpClient *http.Client) *Client {
 	return &Client{
 		credentials: dynatraceCreds,
 		httpClient:  httpClient,
@@ -210,6 +210,6 @@ func (dt *Client) doRequest(req *http.Request) ([]byte, error) {
 	return responseBody, nil
 }
 
-func (dt *Client) Credentials() *credentials.DTCredentials {
+func (dt *Client) Credentials() *credentials.DynatraceCredentials {
 	return dt.credentials
 }

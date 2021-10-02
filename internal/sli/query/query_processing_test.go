@@ -365,7 +365,7 @@ func createQueryProcessing(keptnEvent adapter.EventContentAdapter, httpClient *h
 func createCustomQueryProcessing(keptnEvent adapter.EventContentAdapter, httpClient *http.Client, queries *keptn.CustomQueries, start time.Time, end time.Time) *Processing {
 	return NewProcessing(
 		dynatrace.NewClientWithHTTP(
-			&credentials.DTCredentials{Tenant: "http://dynatrace"},
+			&credentials.DynatraceCredentials{Tenant: "http://dynatrace"},
 			httpClient),
 		keptnEvent,
 		[]*keptnv2.SLIFilter{},
