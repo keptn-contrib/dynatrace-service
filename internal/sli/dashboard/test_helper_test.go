@@ -27,12 +27,12 @@ func createKeptnEvent(project string, stage string, service string) adapter.Even
 	}
 }
 
-func createQueryingWithHandler(keptnEvent adapter.EventContentAdapter, handler http.Handler) (*Querying, string, func()) {
-	return createCustomQuerying(keptnEvent, handler, DashboardReaderMock{})
+func createQueryingWithHandler(t *testing.T, keptnEvent adapter.EventContentAdapter, handler http.Handler) (*Querying, string, func()) {
+	return createCustomQuerying(t, keptnEvent, handler, DashboardReaderMock{})
 }
 
-func createCustomQuerying(keptnEvent adapter.EventContentAdapter, handler http.Handler, reader keptn.DashboardResourceReaderInterface) (*Querying, string, func()) {
-	dynatraceClient, url, teardown := createDynatraceClient(handler)
+func createCustomQuerying(t *testing.T, keptnEvent adapter.EventContentAdapter, handler http.Handler, reader keptn.DashboardResourceReaderInterface) (*Querying, string, func()) {
+	dynatraceClient, url, teardown := createDynatraceClient(t, handler)
 
 	dh := NewQuerying(
 		keptnEvent,
@@ -44,13 +44,11 @@ func createCustomQuerying(keptnEvent adapter.EventContentAdapter, handler http.H
 }
 
 // TODO: 2021-10-08: Can this be moved to test package and shared?
-func createDynatraceClient(handler http.Handler) (dynatrace.ClientInterface, string, func()) {
+func createDynatraceClient(t *testing.T, handler http.Handler) (dynatrace.ClientInterface, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials := &credentials.DynatraceCredentials{
-		Tenant:   url,
-		ApiToken: "test",
-	}
+	dtCredentials, err := credentials.NewDynatraceCredentials(url, "test")
+	assert.NoError(t, err)
 
 	dh := dynatrace.NewClientWithHTTP(dtCredentials, httpClient)
 
@@ -59,13 +57,11 @@ func createDynatraceClient(handler http.Handler) (dynatrace.ClientInterface, str
 
 func TestCreateQueryingWithHandler(t *testing.T) {
 	keptnEvent := createKeptnEvent("sockshop", "dev", "carts")
-	dh, url, teardown := createQueryingWithHandler(keptnEvent, nil)
+	dh, url, teardown := createQueryingWithHandler(t, keptnEvent, nil)
 	defer teardown()
 
-	c := &credentials.DynatraceCredentials{
-		Tenant:   url,
-		ApiToken: "test",
-	}
+	c, err := credentials.NewDynatraceCredentials(url, "test")
+	assert.NoError(t, err)
 
 	assert.EqualValues(t, c, dh.dtClient.Credentials())
 	assert.EqualValues(t, keptnEvent, dh.eventData)

@@ -19,7 +19,7 @@ func TestFindDynatraceDashboardSuccess(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
 
-	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
+	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
 	dashboardID, err := dh.findDynatraceDashboard()
@@ -34,7 +34,7 @@ func TestFindDynatraceDashboardNoneExistingDashboard(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
 
-	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
+	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
 	dashboardID, err := dh.findDynatraceDashboard()
@@ -50,7 +50,7 @@ func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
 	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
 	handler.AddExact("/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
 
-	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
+	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
 	dashboard, dashboardID, err := dh.Retrieve(common.DynatraceConfigDashboardQUERY)
@@ -66,7 +66,7 @@ func TestLoadDynatraceDashboardWithID(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact("/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
 
-	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
+	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
 	dashboard, dashboardID, err := dh.Retrieve(QUALITYGATE_DASHBOARD_ID)
@@ -81,7 +81,7 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 
 	handler := test.NewFileBasedURLHandler(t)
 
-	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
+	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
 	dashboardJSON, dashboard, err := dh.Retrieve("")
@@ -93,13 +93,11 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 	assert.Empty(t, dashboard)
 }
 
-func createDashboardRetrieval(eventData adapter.EventContentAdapter, handler http.Handler) (*Retrieval, func()) {
+func createDashboardRetrieval(t *testing.T, eventData adapter.EventContentAdapter, handler http.Handler) (*Retrieval, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials := &credentials.DynatraceCredentials{
-		Tenant:   url,
-		ApiToken: "test",
-	}
+	dtCredentials, err := credentials.NewDynatraceCredentials(url, "test")
+	assert.NoError(t, err)
 
 	retrieval := NewRetrieval(
 		dynatrace.NewClientWithHTTP(dtCredentials, httpClient),

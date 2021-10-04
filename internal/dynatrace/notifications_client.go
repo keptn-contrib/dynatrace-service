@@ -100,8 +100,8 @@ func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications() error {
 // Create creates a new default notification for the given KeptnAPICredentials and the alertingProfileID
 func (nc *NotificationsClient) Create(credentials *credentials.KeptnCredentials, alertingProfileID string) error {
 	notification := problemNotificationPayload
-	notification = strings.ReplaceAll(notification, "$KEPTN_DNS", credentials.APIURL)
-	notification = strings.ReplaceAll(notification, "$KEPTN_TOKEN", credentials.APIToken)
+	notification = strings.ReplaceAll(notification, "$KEPTN_DNS", credentials.GetAPIURL())
+	notification = strings.ReplaceAll(notification, "$KEPTN_TOKEN", credentials.GetAPIToken())
 	notification = strings.ReplaceAll(notification, "$ALERTING_PROFILE_ID", alertingProfileID)
 	notification = strings.ReplaceAll(notification, "$KEPTN_PROBLEM_NOTIFICATION_NAME", keptnProblemNotificationName)
 

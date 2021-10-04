@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -25,7 +26,8 @@ func TestCheckKeptnConnection(t *testing.T) {
 	defer ts.Close()
 
 	type args struct {
-		KeptnAPICredentials *KeptnCredentials
+		apiURL   string
+		apiToken string
 	}
 	tests := []struct {
 		name             string
@@ -36,10 +38,8 @@ func TestCheckKeptnConnection(t *testing.T) {
 		{
 			name: "Successful connection",
 			args: args{
-				KeptnAPICredentials: &KeptnCredentials{
-					APIURL:   ts.URL,
-					APIToken: "my-test-token",
-				},
+				apiURL:   ts.URL,
+				apiToken: "my-test-token",
 			},
 			returnedResponse: 200,
 			wantErr:          false,
@@ -47,10 +47,8 @@ func TestCheckKeptnConnection(t *testing.T) {
 		{
 			name: "unauthorized connection",
 			args: args{
-				KeptnAPICredentials: &KeptnCredentials{
-					APIURL:   ts.URL,
-					APIToken: "my-test-token",
-				},
+				apiURL:   ts.URL,
+				apiToken: "my-test-token",
 			},
 			returnedResponse: 401,
 			wantErr:          true,
@@ -59,7 +57,9 @@ func TestCheckKeptnConnection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			returnedResponse = tt.returnedResponse
-			if err := CheckKeptnConnection(tt.args.KeptnAPICredentials); (err != nil) != tt.wantErr {
+			keptnCredentials, err := NewKeptnCredentials(tt.args.apiURL, tt.args.apiToken)
+			assert.NoError(t, err)
+			if err := CheckKeptnConnection(keptnCredentials); (err != nil) != tt.wantErr {
 				t.Errorf("CheckKeptnConnection() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -67,6 +67,13 @@ func TestCheckKeptnConnection(t *testing.T) {
 }
 
 func TestGetKeptnAPICredentials(t *testing.T) {
+
+	wantHTTPSKeptnCredentials, err := NewKeptnCredentials("https://api.keptn.test.com", "1234")
+	assert.NoError(t, err)
+
+	wantHTTPKeptnCredentials, err := NewKeptnCredentials("http://api.keptn.test.com", "1234")
+	assert.NoError(t, err)
+
 	tests := []struct {
 		name           string
 		want           *KeptnCredentials
@@ -82,31 +89,22 @@ func TestGetKeptnAPICredentials(t *testing.T) {
 			APITokenEnvVar: "",
 		},
 		{
-			name: "return credentials with https://",
-			want: &KeptnCredentials{
-				APIURL:   "https://api.keptn.test.com",
-				APIToken: "1234",
-			},
+			name:           "return credentials with https://",
+			want:           wantHTTPSKeptnCredentials,
 			wantErr:        false,
 			APIURLEnvVar:   "api.keptn.test.com",
 			APITokenEnvVar: "1234",
 		},
 		{
-			name: "return credentials with https://",
-			want: &KeptnCredentials{
-				APIURL:   "https://api.keptn.test.com",
-				APIToken: "1234",
-			},
+			name:           "return credentials with https://",
+			want:           wantHTTPSKeptnCredentials,
 			wantErr:        false,
 			APIURLEnvVar:   "https://api.keptn.test.com",
 			APITokenEnvVar: "1234",
 		},
 		{
-			name: "return credentials with http://",
-			want: &KeptnCredentials{
-				APIURL:   "http://api.keptn.test.com",
-				APIToken: "1234",
-			},
+			name:           "return credentials with http://",
+			want:           wantHTTPKeptnCredentials,
 			wantErr:        false,
 			APIURLEnvVar:   "http://api.keptn.test.com",
 			APITokenEnvVar: "1234",
@@ -211,6 +209,9 @@ func TestGetKeptnBridgeURL(t *testing.T) {
 // If neither is available, an error should be produced.
 func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 
+	wantDynatraceCredentials, err := NewDynatraceCredentials("https://mySampleEnv.live.dynatrace.com", "abc123")
+	assert.NoError(t, err)
+
 	dynatraceSecret := createDynatraceDTSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123")
 	dynatraceOtherSecret := createDynatraceDTSecret("dynatrace_other", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123")
 
@@ -238,10 +239,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			args: args{
 				secretName: "",
 			},
-			want: &DynatraceCredentials{
-				Tenant:   "https://mySampleEnv.live.dynatrace.com",
-				ApiToken: "abc123",
-			},
+			want:    wantDynatraceCredentials,
 			wantErr: false,
 		},
 		{
@@ -250,10 +248,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			args: args{
 				secretName: "dynatrace_other",
 			},
-			want: &DynatraceCredentials{
-				Tenant:   "https://mySampleEnv.live.dynatrace.com",
-				ApiToken: "abc123",
-			},
+			want:    wantDynatraceCredentials,
 			wantErr: false,
 		},
 		{
@@ -317,6 +312,11 @@ func createDynatraceDTSecret(name string, namespace string, dtTenant string, dtA
 // If neither is available, an error should be produced.
 func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 
+	wantKeptnCredentials, err := NewKeptnCredentials("https://mySampleEnv.live.dynatrace.com", "abc123")
+	assert.NoError(t, err)
+	wantOtherKeptnCredentials, err := NewKeptnCredentials("https://otherSampleEnv.live.dynatrace.com", "def456")
+	assert.NoError(t, err)
+
 	dynatraceSecret := createDynatraceKeptnSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123", "https://mySampleEnv.live.dynatrace.com/bridge")
 	otherDynatraceSecret := createDynatraceKeptnSecret("dynatrace_other", "keptn", "https://sampleEnv.live.dynatrace.com", "xyz000", "https://sampleEnv.live.dynatrace.com/bridge")
 
@@ -340,21 +340,21 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 		{
 			name:    "with secret, no env vars",
 			secret:  dynatraceSecret,
-			want:    &KeptnCredentials{APIURL: "https://mySampleEnv.live.dynatrace.com", APIToken: "abc123"},
+			want:    wantKeptnCredentials,
 			wantErr: false,
 		},
 		{
 			name:    "with secret, with env vars",
 			secret:  dynatraceSecret,
 			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
-			want:    &KeptnCredentials{APIURL: "https://mySampleEnv.live.dynatrace.com", APIToken: "abc123"},
+			want:    wantKeptnCredentials,
 			wantErr: false,
 		},
 		{
 			name:    "no secret, with env vars",
 			secret:  &v1.Secret{},
 			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
-			want:    &KeptnCredentials{APIURL: "https://otherSampleEnv.live.dynatrace.com", APIToken: "def456"},
+			want:    wantOtherKeptnCredentials,
 			wantErr: false,
 		},
 		{
@@ -366,7 +366,7 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 			name:    "with other secret, with env vars",
 			secret:  otherDynatraceSecret,
 			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
-			want:    &KeptnCredentials{APIURL: "https://otherSampleEnv.live.dynatrace.com", APIToken: "def456"},
+			want:    wantOtherKeptnCredentials,
 			wantErr: false,
 		},
 	}

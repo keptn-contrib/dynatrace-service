@@ -28,7 +28,7 @@ func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *kept
 		indicators: []string{indicator}, // we need this to check later on in the custom queries
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient, rClient, dashboard)
+	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, kClient, rClient, dashboard)
 	defer teardown()
 
 	err := eh.retrieveMetrics()
@@ -66,13 +66,11 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAs
 	return &data
 }
 
-func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
+func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials := &credentials.DynatraceCredentials{
-		Tenant:   url,
-		ApiToken: "test",
-	}
+	dtCredentials, err := credentials.NewDynatraceCredentials(url, "test")
+	assert.NoError(t, err)
 
 	eh := &GetSLIEventHandler{
 		event:          keptnEvent,

@@ -61,8 +61,8 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		keptnAPICheck.ConnectionSuccessful = false
 		keptnAPICheck.APIURL = "unknown"
 	} else {
-		keptnAPICheck.APIURL = keptnCredentials.APIURL
-		log.WithField("apiUrl", keptnCredentials.APIURL).Print("Verifying access to Keptn API")
+		keptnAPICheck.APIURL = keptnCredentials.GetAPIURL()
+		log.WithField("apiURL", keptnCredentials.GetAPIURL()).Print("Verifying access to Keptn API")
 
 		err = credentials.CheckKeptnConnection(keptnCredentials)
 		if err != nil {

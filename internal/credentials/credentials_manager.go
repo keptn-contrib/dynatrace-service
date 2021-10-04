@@ -15,18 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// DynatraceCredentials is a struct for the tenant and api token information
-type DynatraceCredentials struct {
-	// Base URL of Dynatrace tenant. This is always prefixed with "https://" or "http://"
-	Tenant   string
-	ApiToken string
-}
-
-type KeptnCredentials struct {
-	APIURL   string
-	APIToken string
-}
-
 var namespace = getPodNamespace()
 
 var ErrSecretNotFound = errors.New("secret not found")
@@ -123,7 +111,7 @@ func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*Dynatr
 		return nil, fmt.Errorf("key DT_API_TOKEN was not found in secret \"%s\"", secretName)
 	}
 
-	return &DynatraceCredentials{Tenant: getCleanURL(dtTenant), ApiToken: getCleanToken(dtAPIToken)}, nil
+	return NewDynatraceCredentials(getCleanURL(dtTenant), getCleanToken(dtAPIToken))
 }
 
 func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error) {
@@ -145,7 +133,7 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error)
 		}
 	}
 
-	return &KeptnCredentials{APIURL: getCleanURL(apiURL), APIToken: getCleanToken(apiToken)}, nil
+	return NewKeptnCredentials(getCleanURL(apiURL), getCleanToken(apiToken))
 }
 
 func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
@@ -196,10 +184,11 @@ func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		},
 	}
-	req, err := http.NewRequest(http.MethodGet, keptnCredentials.APIURL+"/v1/auth", nil)
+	keptnAuthURL := keptnCredentials.GetAPIURL() + "/v1/auth"
+	req, err := http.NewRequest(http.MethodGet, keptnAuthURL, nil)
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-token", keptnCredentials.APIToken)
+	req.Header.Set("x-token", keptnCredentials.GetAPIToken())
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -207,9 +196,9 @@ func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return errors.New("invalid Keptn API Token: received 401 - Unauthorized from " + keptnCredentials.APIURL + "/v1/auth")
+		return errors.New("invalid Keptn API Token: received 401 - Unauthorized from " + keptnAuthURL)
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("received unexpected response from "+keptnCredentials.APIURL+"/v1/auth: %d", resp.StatusCode)
+		return fmt.Errorf("received unexpected response from %s: %d", keptnAuthURL, resp.StatusCode)
 	}
 	return nil
 }

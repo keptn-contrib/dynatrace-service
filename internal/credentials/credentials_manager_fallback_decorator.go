@@ -43,7 +43,7 @@ func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName
 			log.WithFields(
 				log.Fields{
 					"secret": secret,
-					"tenant": dtCredentials.Tenant,
+					"tenant": dtCredentials.GetTenant(),
 				}).Info("Found secret with credentials")
 			cm.secretName = secret
 			return dtCredentials, nil

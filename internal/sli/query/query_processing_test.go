@@ -104,7 +104,7 @@ func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddStartsWith(dynatrace.MetricsQueryPath, tt.metricsQueryResponseFilename)
 
-			value, err := runGetSLIValueTest(handler)
+			value, err := runGetSLIValueTest(t, handler)
 
 			assert.EqualValues(t, tt.expectedValue, value)
 			if tt.shouldFail {
@@ -145,7 +145,7 @@ func TestGetSLIValue(t *testing.T) {
 	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
-	value, err := runGetSLIValueTest(handler)
+	value, err := runGetSLIValueTest(t, handler)
 
 	assert.NoError(t, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
@@ -197,7 +197,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		customQueries := make(map[string]string)
 		customQueries[keptn.ResponseTimeP50] = testQuery
 
-		p := createCustomQueryProcessing(keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), start, end)
+		p := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), start, end)
 		value, err := p.GetSLIValue(keptn.ResponseTimeP50)
 
 		assert.EqualValues(t, nil, err)
@@ -223,7 +223,7 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
-	value, err := runGetSLIValueTest(handler)
+	value, err := runGetSLIValueTest(t, handler)
 
 	assert.Error(t, err)
 
@@ -233,7 +233,7 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 /*
  * Helper function to test GetSLIValue
  */
-func runGetSLIValueTest(handler http.Handler) (float64, error) {
+func runGetSLIValueTest(t *testing.T, handler http.Handler) (float64, error) {
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
 
@@ -242,7 +242,7 @@ func runGetSLIValueTest(handler http.Handler) (float64, error) {
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
 
-	dh := createQueryProcessing(keptnEvent, httpClient, start, end)
+	dh := createQueryProcessing(t, keptnEvent, httpClient, start, end)
 
 	return dh.GetSLIValue(keptn.ResponseTimeP50)
 }
@@ -281,7 +281,7 @@ func TestGetSLISleep(t *testing.T) {
 	start := time.Now().Add(-5 * time.Minute)
 	// artificially increase end time to be in the future
 	end := time.Now().Add(-80 * time.Second)
-	dh := createQueryProcessing(keptnEvent, httpClient, start, end)
+	dh := createQueryProcessing(t, keptnEvent, httpClient, start, end)
 
 	value, err := dh.GetSLIValue(keptn.ResponseTimeP50)
 
@@ -301,7 +301,7 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	start := time.Unix(1571649084, 0).UTC()
 	end := time.Unix(1571649085, 0).UTC()
-	dh := createQueryProcessing(keptnEvent, httpClient, start, end)
+	dh := createQueryProcessing(t, keptnEvent, httpClient, start, end)
 
 	value, err := dh.GetSLIValue(keptn.Throughput)
 
@@ -344,7 +344,7 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 		customQueries := make(map[string]string)
 		customQueries[testConfig.indicator] = testConfig.query
 
-		ret := createCustomQueryProcessing(keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), startTime, endTime)
+		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), startTime, endTime)
 
 		res, err := ret.GetSLIValue(testConfig.indicator)
 
@@ -353,8 +353,9 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 	}
 }
 
-func createQueryProcessing(keptnEvent adapter.EventContentAdapter, httpClient *http.Client, start time.Time, end time.Time) *Processing {
+func createQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAdapter, httpClient *http.Client, start time.Time, end time.Time) *Processing {
 	return createCustomQueryProcessing(
+		t,
 		keptnEvent,
 		httpClient,
 		keptn.NewEmptyCustomQueries(),
@@ -362,10 +363,13 @@ func createQueryProcessing(keptnEvent adapter.EventContentAdapter, httpClient *h
 		end)
 }
 
-func createCustomQueryProcessing(keptnEvent adapter.EventContentAdapter, httpClient *http.Client, queries *keptn.CustomQueries, start time.Time, end time.Time) *Processing {
+func createCustomQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAdapter, httpClient *http.Client, queries *keptn.CustomQueries, start time.Time, end time.Time) *Processing {
+	credentials, err := credentials.NewDynatraceCredentials("http://dynatrace", "")
+	assert.NoError(t, err)
+
 	return NewProcessing(
 		dynatrace.NewClientWithHTTP(
-			&credentials.DynatraceCredentials{Tenant: "http://dynatrace"},
+			credentials,
 			httpClient),
 		keptnEvent,
 		[]*keptnv2.SLIFilter{},

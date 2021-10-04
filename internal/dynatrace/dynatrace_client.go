@@ -149,7 +149,7 @@ func (dt *Client) sendRequest(apiPath string, method string, body []byte) ([]byt
 
 // creates http request for api call with appropriate headers including authorization
 func (dt *Client) createRequest(apiPath string, method string, body []byte) (*http.Request, error) {
-	var url = dt.credentials.Tenant + apiPath
+	var url = dt.credentials.GetTenant() + apiPath
 
 	log.WithFields(log.Fields{"method": method, "url": url}).Debug("creating Dynatrace API request")
 
@@ -162,7 +162,7 @@ func (dt *Client) createRequest(apiPath string, method string, body []byte) (*ht
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Api-Token "+dt.credentials.ApiToken)
+	req.Header.Set("Authorization", "Api-Token "+dt.credentials.GetAPIToken())
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
 
 	return req, nil

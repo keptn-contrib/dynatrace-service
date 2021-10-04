@@ -257,7 +257,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			handler.AddExact("/api/v2/metrics/query?"+tt.args.metricQueryComponents.fullMetricQueryString,
 				tt.metricQueryResponseFilename)
 
-			dtClient, _, teardown := createDynatraceClient(handler)
+			dtClient, _, teardown := createDynatraceClient(t, handler)
 			defer teardown()
 
 			processing := NewMetricsQueryProcessing(dtClient)

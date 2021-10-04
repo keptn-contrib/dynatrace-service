@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-test/deep"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
@@ -17,6 +18,9 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 		writer.WriteHeader(200)
 		writer.Write(marshal)
 	}))
+
+	mockCredentials, err := credentials.NewDynatraceCredentials(dtMockServer.URL, "")
+	assert.NoError(t, err)
 
 	defer dtMockServer.Close()
 
@@ -38,11 +42,7 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 		{
 			name: "",
 			fields: fields{
-				client: NewClient(
-					&credentials.DynatraceCredentials{
-						Tenant:   dtMockServer.URL,
-						ApiToken: "",
-					}),
+				client: NewClient(mockCredentials),
 			},
 			args: args{
 				nextPageKey: "",

@@ -1,12 +1,13 @@
 package dashboard
 
 import (
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func createDefaultSLOScore() keptncommon.SLOScore {
@@ -49,7 +50,7 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 func (p *Processing) Process(dashboard *dynatrace.Dashboard) *QueryResult {
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewLink(p.client.Credentials().Tenant, p.startUnix, p.endUnix, dashboard.ID, dashboard.GetFilter())
+	dashboardLinkAsLabel := NewLink(p.client.Credentials().GetTenant(), p.startUnix, p.endUnix, dashboard.ID, dashboard.GetFilter())
 
 	// generate our own SLIResult array based on the dashboard configuration
 	result := &QueryResult{
