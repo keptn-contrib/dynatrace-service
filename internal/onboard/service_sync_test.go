@@ -55,6 +55,8 @@ const testDTEntityQueryResponse = `{
     ]
 }`
 
+const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
+
 func Test_doesServiceExist(t *testing.T) {
 	type args struct {
 		services    []string
@@ -387,7 +389,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 
 	os.Setenv(shipyardController, mockCS.URL)
 
-	mockCredentials, err := credentials.NewDynatraceCredentials(dtMockServer.URL, "")
+	mockCredentials, err := credentials.NewDynatraceCredentials(dtMockServer.URL, testDynatraceAPIToken)
 	assert.NoError(t, err)
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)

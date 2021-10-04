@@ -8,7 +8,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
@@ -96,11 +95,8 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 func createDashboardRetrieval(t *testing.T, eventData adapter.EventContentAdapter, handler http.Handler) (*Retrieval, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials, err := credentials.NewDynatraceCredentials(url, "test")
-	assert.NoError(t, err)
-
 	retrieval := NewRetrieval(
-		dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
+		dynatrace.NewClientWithHTTP(createDynatraceCredentials(t, url), httpClient),
 		eventData)
 
 	return retrieval, teardown

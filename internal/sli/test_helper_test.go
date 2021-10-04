@@ -19,6 +19,7 @@ import (
 )
 
 const indicator = "response_time_p95"
+const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
 func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
 	ev := &getSLIEventData{
@@ -69,7 +70,7 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAs
 func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials, err := credentials.NewDynatraceCredentials(url, "test")
+	dtCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
 	assert.NoError(t, err)
 
 	eh := &GetSLIEventHandler{

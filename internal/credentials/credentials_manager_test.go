@@ -13,6 +13,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
+const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
+
 func TestCheckKeptnConnection(t *testing.T) {
 
 	var returnedResponse int
@@ -209,11 +211,11 @@ func TestGetKeptnBridgeURL(t *testing.T) {
 // If neither is available, an error should be produced.
 func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 
-	wantDynatraceCredentials, err := NewDynatraceCredentials("https://mySampleEnv.live.dynatrace.com", "abc123")
+	wantDynatraceCredentials, err := NewDynatraceCredentials("https://mySampleEnv.live.dynatrace.com", testDynatraceAPIToken)
 	assert.NoError(t, err)
 
-	dynatraceSecret := createDynatraceDTSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123")
-	dynatraceOtherSecret := createDynatraceDTSecret("dynatrace_other", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123")
+	dynatraceSecret := createDynatraceDTSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", testDynatraceAPIToken)
+	dynatraceOtherSecret := createDynatraceDTSecret("dynatrace_other", "keptn", "https://mySampleEnv.live.dynatrace.com", testDynatraceAPIToken)
 
 	type args struct {
 		secretName string

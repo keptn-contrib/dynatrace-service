@@ -16,6 +16,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
+
 func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 
 	// TODO 2021-10-13: add rich error types as described in #358, including warnings
@@ -364,7 +366,7 @@ func createQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAdapter,
 }
 
 func createCustomQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAdapter, httpClient *http.Client, queries *keptn.CustomQueries, start time.Time, end time.Time) *Processing {
-	credentials, err := credentials.NewDynatraceCredentials("http://dynatrace", "")
+	credentials, err := credentials.NewDynatraceCredentials("http://dynatrace", testDynatraceAPIToken)
 	assert.NoError(t, err)
 
 	return NewProcessing(

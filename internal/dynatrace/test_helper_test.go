@@ -9,13 +9,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
+
 func createDynatraceClient(t *testing.T, handler http.Handler) (ClientInterface, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials, err := credentials.NewDynatraceCredentials(url, "test")
-	assert.NoError(t, err)
-
-	dh := NewClientWithHTTP(dtCredentials, httpClient)
+	dh := NewClientWithHTTP(createDynatraceCredentials(t, url), httpClient)
 
 	return dh, url, teardown
+}
+
+func createDynatraceCredentials(t *testing.T, url string) *credentials.DynatraceCredentials {
+	dynatraceCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
+	assert.NoError(t, err)
+	return dynatraceCredentials
 }

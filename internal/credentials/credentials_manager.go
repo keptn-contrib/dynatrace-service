@@ -11,6 +11,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/url"
 	keptnkubeutils "github.com/keptn/kubernetes-utils/pkg"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -111,7 +112,8 @@ func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*Dynatr
 		return nil, fmt.Errorf("key DT_API_TOKEN was not found in secret \"%s\"", secretName)
 	}
 
-	return NewDynatraceCredentials(getCleanURL(dtTenant), getCleanToken(dtAPIToken))
+	dtAPIToken = strings.TrimSpace(dtAPIToken)
+	return NewDynatraceCredentials(dtTenant, dtAPIToken)
 }
 
 func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error) {
@@ -133,7 +135,8 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error)
 		}
 	}
 
-	return NewKeptnCredentials(getCleanURL(apiURL), getCleanToken(apiToken))
+	apiToken = strings.TrimSpace(apiToken)
+	return NewKeptnCredentials(apiURL, apiToken)
 }
 
 func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
@@ -148,24 +151,7 @@ func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
 		}
 	}
 
-	return getCleanURL(bridgeURL), nil
-}
-
-// Trims new lines and trailing slashes, defaults to https if http not specified
-func getCleanURL(url string) string {
-	url = strings.Trim(url, "\n")
-	url = strings.TrimSuffix(url, "/")
-
-	// ensure that url uses https if http has not been explicitly specified
-	if !strings.HasPrefix(url, "http://") {
-		url = "https://" + strings.TrimPrefix(url, "https://")
-	}
-
-	return url
-}
-
-func getCleanToken(token string) string {
-	return strings.Trim(token, "\n")
+	return url.MakeCleanURL(bridgeURL)
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret

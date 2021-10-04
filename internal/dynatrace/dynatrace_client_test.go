@@ -22,8 +22,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 		return
 	}
 
-	mockDynatraceCredentials, err := credentials.NewDynatraceCredentials(mockTenant, "")
-	assert.NoError(t, err)
+	mockDynatraceCredentials := createDynatraceCredentials(t, mockTenant)
 
 	mockProxy := "https://proxy:8080"
 	t.Logf("Using mock proxy: %v", mockProxy)
@@ -249,13 +248,8 @@ func TestDynatraceClient(t *testing.T) {
 func testingDynatraceClient(t *testing.T, handler http.Handler) (*Client, func()) {
 	httpClient, teardown := test.CreateHTTPClient(handler)
 
-	credentials, err := credentials.NewDynatraceCredentials(
-		"http://my-tenant.dynatrace.com",
-		"abcdefgh12345678")
-	assert.NoError(t, err)
-
 	client := NewClientWithHTTP(
-		credentials,
+		createDynatraceCredentials(t, "http://my-tenant.dynatrace.com"),
 		httpClient)
 
 	return client, teardown

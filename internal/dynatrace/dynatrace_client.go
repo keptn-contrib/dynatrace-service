@@ -162,7 +162,7 @@ func (dt *Client) createRequest(apiPath string, method string, body []byte) (*ht
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Api-Token "+dt.credentials.GetAPIToken())
+	req.Header.Set("Authorization", "Api-Token "+dt.credentials.GetAPIToken().String())
 	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
 
 	return req, nil
