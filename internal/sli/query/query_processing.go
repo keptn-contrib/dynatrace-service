@@ -7,8 +7,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
-	unit "github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
-	usql2 "github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -79,8 +79,8 @@ func (p *Processing) executeUSQLQuery(metricsQuery string, startUnix time.Time, 
 	requestedDimensionName := querySplits[2]
 	usqlRawQuery := querySplits[3]
 
-	usql := usql2.NewQueryBuilder(p.eventData, p.customFilters).Build(usqlRawQuery, startUnix, endUnix)
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(usql)
+	usqlQuery := usql.NewQueryBuilder(p.eventData, p.customFilters).Build(usqlRawQuery, startUnix, endUnix)
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(usqlQuery)
 
 	if err != nil {
 		return 0, fmt.Errorf("Error executing USQL Query %v", err)
@@ -166,16 +166,16 @@ func (p *Processing) executeSecurityProblemQuery(metricsQuery string, startUnix 
 }
 
 func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	metricsQuery, unit := extractMetricQueryFromMV2Query(metricsQuery)
-	return p.executeMetricsQuery(metricsQuery, unit, startUnix, endUnix)
+	metricsQuery, metricUnit := extractMetricQueryFromMV2Query(metricsQuery)
+	return p.executeMetricsQuery(metricsQuery, metricUnit, startUnix, endUnix)
 }
 
-func extractMetricQueryFromMV2Query(metricsQuery string) (adaptedMetricsQuery string, unit string) {
+func extractMetricQueryFromMV2Query(metricsQuery string) (adaptedMetricsQuery string, metricUnit string) {
 	// lets first start to query for the MV2 prefix, e.g: MV2;byte;actualQuery
 	// if it starts with MV2 we extract metric unit and the actual query
 	metricsQuery = metricsQuery[4:]
 	queryStartIndex := strings.Index(metricsQuery, ";")
-	unit = metricsQuery[:queryStartIndex]
+	metricUnit = metricsQuery[:queryStartIndex]
 	adaptedMetricsQuery = metricsQuery[queryStartIndex+1:]
 
 	return
