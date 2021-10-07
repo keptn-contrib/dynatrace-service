@@ -11,6 +11,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -166,19 +167,38 @@ func (p *Processing) executeSecurityProblemQuery(metricsQuery string, startUnix 
 }
 
 func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	metricsQuery, metricUnit := extractMetricQueryFromMV2Query(metricsQuery)
+	metricsQuery, metricUnit, err := extractMetricQueryFromMV2Query(metricsQuery)
+	if err != nil {
+		return 0, err
+	}
+
 	return p.executeMetricsQuery(metricsQuery, metricUnit, startUnix, endUnix)
 }
 
-func extractMetricQueryFromMV2Query(metricsQuery string) (adaptedMetricsQuery string, metricUnit string) {
-	// lets first start to query for the MV2 prefix, e.g: MV2;byte;actualQuery
+func extractMetricQueryFromMV2Query(metricsQuery string) (adaptedMetricsQuery string, metricUnit string, err error) {
+	// lets first start to query for the MV2 prefix, e.g: MV2;Byte;<actualQuery>
 	// if it starts with MV2 we extract metric unit and the actual query
-	metricsQuery = metricsQuery[4:]
-	queryStartIndex := strings.Index(metricsQuery, ";")
-	metricUnit = metricsQuery[:queryStartIndex]
-	adaptedMetricsQuery = metricsQuery[queryStartIndex+1:]
+	pattern := regexp.MustCompile(`^MV2;(([bB]yte)|([Mm]icro[sS]econd));(.+)$`)
+	chunks := pattern.FindStringSubmatch(metricsQuery)
+	if len(chunks) != 5 {
+		return "", "", createMV2FormatError(metricsQuery)
+	}
 
-	return
+	metricUnit = chunks[1]
+	if metricUnit == "" {
+		return "", "", createMV2FormatError(metricsQuery)
+	}
+
+	adaptedMetricsQuery = chunks[4]
+	if adaptedMetricsQuery == "" {
+		return "", "", createMV2FormatError(metricsQuery)
+	}
+
+	return adaptedMetricsQuery, metricUnit, nil
+}
+
+func createMV2FormatError(query string) error {
+	return fmt.Errorf("could not parse SLI definition format - should either be 'MV2;Byte;<query>' or 'MV2;MicroSecond;<query>': %s", query)
 }
 
 func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {

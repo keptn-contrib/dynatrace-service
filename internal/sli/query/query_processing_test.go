@@ -3,7 +3,6 @@ package query
 import (
 	"errors"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -183,18 +182,107 @@ func runGetSLIValueTest(handler http.Handler) (float64, error) {
 	return dh.GetSLIValue(keptn.ResponseTimeP50)
 }
 
-func TestGetSLIValueWithMV2Prefix(t *testing.T) {
+func TestExtractMetricQueryFromMV2Query(t *testing.T) {
 
-	metricsQuery := "MV2;Percent;metricSelector=builtin:host.cpu.usage:merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)"
+	testConfigs := []struct {
+		name          string
+		input         string
+		expectedQuery string
+		expectedUnit  string
+		shouldFail    bool
+	}{
+		// these should fail
+		{
+			name:       "percent unit does not work",
+			input:      "MV2;Percent;metricSelector=builtin:host.cpu.usage:merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)",
+			shouldFail: true,
+		},
+		{
+			name:       "missing microsecond metric unit",
+			input:      "MV2;metricSelector=builtin:service.response.server:filter(and(in(\"dt.entity.service\",entitySelector(\"type(service),tag(~\"KeptnQualityGate~\")\")))):splitBy():percentile(90)",
+			shouldFail: true,
+		},
+		{
+			name:       "missing mv2 prefix",
+			input:      "MicroSecond;metricSelector=builtin:service.response.server:filter(and(in(\"dt.entity.service\",entitySelector(\"type(service),tag(~\"KeptnQualityGate~\")\")))):splitBy():percentile(90)",
+			shouldFail: true,
+		},
+		{
+			name:       "missing mv2 prefix",
+			input:      "MV2;MicroSeconds;metricSelector=builtin:service.response.server:filter(and(in(\"dt.entity.service\",entitySelector(\"type(service),tag(~\"KeptnQualityGate~\")\")))):splitBy():percentile(90)",
+			shouldFail: true,
+		},
+		// these should not fail
+		{
+			name:          "microsecond metric works",
+			input:         "MV2;MicroSecond;metricSelector=builtin:service.response.server:filter(and(in(\"dt.entity.service\",entitySelector(\"type(service),tag(~\"KeptnQualityGate~\")\")))):splitBy():percentile(90)",
+			expectedQuery: "metricSelector=builtin:service.response.server:filter(and(in(\"dt.entity.service\",entitySelector(\"type(service),tag(~\"KeptnQualityGate~\")\")))):splitBy():percentile(90)",
+			expectedUnit:  "MicroSecond",
+		},
+		{
+			name:          "microsecond metric works 2",
+			input:         "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.response.server:filter(and(in(\"dt.entity.service_method\",entitySelector(\"type(service_method),entityName(~\"/api/ui/v2/bootstrap~\")\")))):splitBy(\"dt.entity.service_method\"):percentile(90)",
+			expectedQuery: "metricSelector=builtin:service.keyRequest.response.server:filter(and(in(\"dt.entity.service_method\",entitySelector(\"type(service_method),entityName(~\"/api/ui/v2/bootstrap~\")\")))):splitBy(\"dt.entity.service_method\"):percentile(90)",
+			expectedUnit:  "MicroSecond",
+		},
+		{
+			name:          "microsecond metric works - metric selector first",
+			input:         "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)",
+			expectedQuery: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)",
+			expectedUnit:  "MicroSecond",
+		},
+		{
+			name:          "microsecond metric works - entity selector first - MicroSecond unit",
+			input:         "MV2;MicroSecond;entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)&metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedQuery: "entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)&metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedUnit:  "MicroSecond",
+		},
+		{
+			name:          "microsecond metric works - entity selector first - Microsecond unit",
+			input:         "MV2;Microsecond;entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)&metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedQuery: "entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)&metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedUnit:  "Microsecond",
+		},
+		{
+			name:          "microsecond metric works - entity selector first - microsecond unit",
+			input:         "MV2;microsecond;entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)&metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedQuery: "entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)&metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedUnit:  "microsecond",
+		},
+		{
+			name:          "microsecond metric works - entity selector first - microSecond unit",
+			input:         "MV2;microSecond;entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)&metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedQuery: "entitySelector=type(SERVICE),tag(keptn_project:project1),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:direct)&metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedUnit:  "microSecond",
+		},
+		{
+			name:          "byte metric works - Byte unit",
+			input:         "MV2;Byte;metricSelector=builtin:host.disk.avail:merge(\"dt.entity.host\"):merge(\"dt.entity.disk\")",
+			expectedQuery: "metricSelector=builtin:host.disk.avail:merge(\"dt.entity.host\"):merge(\"dt.entity.disk\")",
+			expectedUnit:  "Byte",
+		},
+		{
+			name:          "byte metric works - byte unit",
+			input:         "MV2;byte;metricSelector=builtin:host.disk.avail:merge(\"dt.entity.host\"):merge(\"dt.entity.disk\")",
+			expectedQuery: "metricSelector=builtin:host.disk.avail:merge(\"dt.entity.host\"):merge(\"dt.entity.disk\")",
+			expectedUnit:  "byte",
+		},
+	}
+	for _, testConfig := range testConfigs {
+		tc := testConfig
+		t.Run(tc.name, func(t *testing.T) {
 
-	if strings.HasPrefix(metricsQuery, "MV2;") {
-		metricsQuery = metricsQuery[4:]
-		assert.EqualValues(t, metricsQuery, "Percent;metricSelector=builtin:host.cpu.usage:merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)")
-		queryStartIndex := strings.Index(metricsQuery, ";")
-		metricUnit := metricsQuery[:queryStartIndex]
-		assert.EqualValues(t, metricUnit, "Percent")
-		metricsQuery = metricsQuery[queryStartIndex+1:]
-		assert.EqualValues(t, metricsQuery, "metricSelector=builtin:host.cpu.usage:merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)")
+			adaptedQuery, unit, err := extractMetricQueryFromMV2Query(tc.input)
+			if tc.shouldFail {
+				assert.Error(t, err)
+				assert.Empty(t, adaptedQuery)
+				assert.Empty(t, unit)
+			} else {
+				assert.NoError(t, err)
+				assert.EqualValues(t, tc.expectedQuery, adaptedQuery)
+				assert.EqualValues(t, tc.expectedUnit, unit)
+			}
+		})
 	}
 }
 

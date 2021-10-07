@@ -198,6 +198,67 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 //
 // prerequisites:
 // * no (previous) dashboard is stored in Keptn
+// * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
+// * the defined SLI is valid YAML, but the MV2 prefix is used incorrectly, so we return an error for that
+//	 - e.g. MV2;MicroSeconds;<query>
+func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetricUnit(t *testing.T) {
+
+	testConfigs := []struct {
+		name      string
+		mv2Prefix string
+	}{
+		{
+			name:      "unit Percent fails",
+			mv2Prefix: "MV2;Percent;",
+		},
+		{
+			name:      "unit MicroSeconds fails",
+			mv2Prefix: "MV2;MicroSeconds;",
+		},
+		{
+			name:      "unit Bytes fails",
+			mv2Prefix: "MV2;Bytes;",
+		},
+		{
+			name:      "missing unit fails",
+			mv2Prefix: "MV2;",
+		},
+		{
+			name:      "missing unit fails 2",
+			mv2Prefix: "MV2;;",
+		},
+	}
+	for _, testConfig := range testConfigs {
+		tc := testConfig
+		t.Run(tc.name, func(t *testing.T) {
+
+			// no handler needed
+			handler := test.NewFileBasedURLHandler(t)
+
+			// error here: in value of tc.mv2Prefix
+			kClient := &keptnClientMock{
+				customQueries: map[string]string{
+					indicator: tc.mv2Prefix + "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+				},
+			}
+
+			assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+				assert.EqualValues(t, indicator, actual.Metric)
+				assert.EqualValues(t, 0, actual.Value)
+				assert.EqualValues(t, false, actual.Success)
+				assert.Contains(t, actual.Message, "MV2;")
+				assert.Contains(t, actual.Message, "SLI definition format")
+			}
+
+			assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+		})
+	}
+}
+
+// In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
+//
+// prerequisites:
+// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists but there are no SLIs defined OR
 // * there is no 'dynatrace/sli.yaml' file
 //   - currently this would lead to a fallback for default SLI definitions
