@@ -251,7 +251,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 				assert.Contains(t, actual.Message, "SLI definition format")
 			}
 
-			assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 		})
 	}
 }
