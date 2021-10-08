@@ -34,14 +34,14 @@ func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *kept
 	assert.NoError(t, err)
 }
 
-func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, shouldFail bool) {
-	data := assertThatEventsAreThere(t, events, shouldFail)
+func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
+	data := assertThatEventsAreThere(t, events, eventAssertionsFunc)
 
 	assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
 	assertionsFunc(t, data.GetSLI.IndicatorValues[0])
 }
 
-func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, shouldFail bool) *keptnv2.GetSLIFinishedEventData {
+func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) *keptnv2.GetSLIFinishedEventData {
 	assert.EqualValues(t, 2, len(events))
 
 	assert.EqualValues(t, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), events[0].Type())
@@ -53,13 +53,8 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, shouldF
 		t.Fatalf("could not parse event payload correctly: %s", err)
 	}
 
-	if shouldFail {
-		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
-		assert.NotEmpty(t, data.Message)
-	} else {
-		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
-		assert.Empty(t, data.Message)
-	}
+	eventAssertionsFunc(&data)
+
 	assert.EqualValues(t, keptnv2.StatusSucceeded, data.Status)
 
 	return &data

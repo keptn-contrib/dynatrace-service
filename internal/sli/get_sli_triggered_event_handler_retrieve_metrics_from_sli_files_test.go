@@ -315,5 +315,15 @@ func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClien
 	// we do not want to query a dashboard, so we leave it empty (and have no dashboard stored)
 	setupTestAndAssertNoError(t, handler, kClient, &resourceClientMock{t: t}, "")
 
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, shouldFail)
+	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
+		if shouldFail {
+			assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
+			assert.NotEmpty(t, data.Message)
+		} else {
+			assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+			assert.Empty(t, data.Message)
+		}
+	}
+
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, eventAssertionsFunc)
 }
