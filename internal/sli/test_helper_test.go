@@ -1,18 +1,76 @@
 package sli
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"sync"
+	"testing"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"net/http"
-	"sync"
 )
+
+func assertThatTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
+	setupTestAndAssertNoError(t, handler, kClient)
+
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, shouldFail)
+}
+
+func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock) {
+	ev := &getSLIEventData{
+		project:    "sockshop",
+		stage:      "staging",
+		service:    "carts",
+		indicators: []string{indicator}, // we need this to check later on in the custom queries
+	}
+
+	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
+	defer teardown()
+
+	err := eh.retrieveMetrics()
+
+	assert.NoError(t, err)
+}
+
+func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, shouldFail bool) {
+	data := assertThatEventsAreThere(t, events, shouldFail)
+
+	assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
+	assertionsFunc(t, data.GetSLI.IndicatorValues[0])
+}
+
+func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, shouldFail bool) *keptnv2.GetSLIFinishedEventData {
+	assert.EqualValues(t, 2, len(events))
+
+	assert.EqualValues(t, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), events[0].Type())
+	assert.EqualValues(t, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), events[1].Type())
+
+	var data keptnv2.GetSLIFinishedEventData
+	err := json.Unmarshal(events[1].Data(), &data)
+	if err != nil {
+		t.Fatalf("could not parse event payload correctly: %s", err)
+	}
+
+	if shouldFail {
+		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
+		assert.NotEmpty(t, data.Message)
+	} else {
+		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+		assert.Empty(t, data.Message)
+	}
+	assert.EqualValues(t, keptnv2.StatusSucceeded, data.Status)
+
+	return &data
+}
 
 func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
