@@ -18,6 +18,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
+const indicator = "response_time_p95"
+
 func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
 	ev := &getSLIEventData{
 		project:    "sockshop",

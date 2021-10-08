@@ -12,8 +12,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-const indicator = "response_time_p95"
-
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
