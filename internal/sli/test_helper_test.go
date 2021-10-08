@@ -39,8 +39,12 @@ func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *kept
 func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
 	data := assertThatEventsAreThere(t, events, eventAssertionsFunc)
 
-	assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
-	assertionsFunc(t, data.GetSLI.IndicatorValues[0])
+	if assertionsFunc != nil {
+		assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
+		assertionsFunc(t, data.GetSLI.IndicatorValues[0])
+	} else {
+		assert.EqualValues(t, 0, len(data.GetSLI.IndicatorValues), "you should assert something on your result!")
+	}
 }
 
 func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) *keptnv2.GetSLIFinishedEventData {

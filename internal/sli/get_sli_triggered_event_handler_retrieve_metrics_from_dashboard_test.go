@@ -14,7 +14,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-type uploadFailingResourceClientMock struct {
+type uploadErrorResourceClientMock struct {
 	t                    *testing.T
 	dashboardContent     string
 	uploadDashboardError error
@@ -22,13 +22,13 @@ type uploadFailingResourceClientMock struct {
 	uploadSLIError       error
 }
 
-func (m *uploadFailingResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
+func (m *uploadErrorResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 
 	return nil, nil
 }
 
-func (m *uploadFailingResourceClientMock) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
+func (m *uploadErrorResourceClientMock) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
 	if m.uploadSLIError != nil {
 		return m.uploadSLIError
 	}
@@ -36,7 +36,7 @@ func (m *uploadFailingResourceClientMock) UploadSLI(project string, stage string
 	return nil
 }
 
-func (m *uploadFailingResourceClientMock) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnapi.ServiceLevelObjectives) error {
+func (m *uploadErrorResourceClientMock) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnapi.ServiceLevelObjectives) error {
 	if m.uploadSLOError != nil {
 		return m.uploadSLOError
 	}
@@ -44,11 +44,11 @@ func (m *uploadFailingResourceClientMock) UploadSLOs(project string, stage strin
 	return nil
 }
 
-func (m *uploadFailingResourceClientMock) GetDashboard(project string, stage string, service string) (string, error) {
+func (m *uploadErrorResourceClientMock) GetDashboard(project string, stage string, service string) (string, error) {
 	return m.dashboardContent, nil
 }
 
-func (m *uploadFailingResourceClientMock) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
+func (m *uploadErrorResourceClientMock) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
 	if m.uploadDashboardError != nil {
 		return m.uploadDashboardError
 	}
@@ -56,7 +56,7 @@ func (m *uploadFailingResourceClientMock) UploadDashboard(project string, stage 
 	return nil
 }
 
-// Retrieving (a single) SLI from a dashboard works, but Upload of dashboard, SLO, SLI file fails
+// Retrieving (a single) SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
 //
 // prerequisites:
 //   * we use a valid dashboard ID
@@ -79,7 +79,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 		// failure cases:
 		{
 			name: "dashboard upload fails",
-			resourceClientMock: &uploadFailingResourceClientMock{
+			resourceClientMock: &uploadErrorResourceClientMock{
 				t:                    t,
 				uploadDashboardError: errors.New("dashboard upload failed"),
 			},
@@ -88,7 +88,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 		},
 		{
 			name: "SLO upload fails",
-			resourceClientMock: &uploadFailingResourceClientMock{
+			resourceClientMock: &uploadErrorResourceClientMock{
 				t:              t,
 				uploadSLOError: errors.New("SLO upload failed"),
 			},
@@ -97,7 +97,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 		},
 		{
 			name: "SLI upload fails",
-			resourceClientMock: &uploadFailingResourceClientMock{
+			resourceClientMock: &uploadErrorResourceClientMock{
 				t:              t,
 				uploadSLIError: errors.New("SLI upload failed"),
 			},
@@ -107,7 +107,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 		// success case:
 		{
 			name: "upload of all files works",
-			resourceClientMock: &uploadFailingResourceClientMock{
+			resourceClientMock: &uploadErrorResourceClientMock{
 				t: t,
 			},
 			assertFunc: func(t *testing.T, actual *keptnv2.SLIResult) {
@@ -148,8 +148,37 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 	}
 }
 
+// Retrieving (a single) SLI from a dashboard did not work, but no empty SLI or SLO files would be written
+//
+// prerequisites:
+//   * we use a valid dashboard ID
+//   * all processing works, but SLI result retrieval failed with 0 results (no data available)
+//   * therefore SLI and SLO should be empty and an upload of either SLO or SLI should fail the test
 func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
+		"./testdata/sli_via_dashboard_test/response_time_p95_200_0_results.json")
 
+	// we do not need custom queries, as we are using the dashboard here
+	kClient := &keptnClientMock{}
+
+	// if an upload of sli would be triggered then this test should fail, because the result fails
+	rClient := &uploadErrorResourceClientMock{
+		t:              t,
+		uploadSLOError: errors.New("SLO upload failed"),
+		uploadSLIError: errors.New("SLI upload failed"),
+	}
+
+	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+		assert.Empty(t, data.Message)
+	}
+
+	// we do not want to assert the expected result, because there won't be any in this case
+	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, nil, eventAssertionsFunc)
 }
 
 func assertThatDashboardTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
