@@ -161,9 +161,7 @@ indicators:
 
 When the *dynatrace-service* executes this query it simply returns the value of that metric. What is not always known is the metric unit. Depending on the metric definition this could be nanoseconds, microseconds, milliseconds or seconds or even bytes, kilobytes or megabytes.
 
-For some metrics the *dynatrace-service* makes metric unit assumptions and for instance converts **MicroSecond**s into **MilliSecond**s and **Byte**s into **KiloByte**s. However, these assumptions only work for builtin metrics and are therefore not a valid approach unless we would start querying the Metric Definition everytime we query these metrics. While this would work it is a lot of extra API calls we want to avoid.
-
-To let the *dynatrace-service* know about the expected *Metric Unit* you can prefix your regular query with `MV2;<MetricUnit>;` which would give you `MV2;<MetricUnit>;<Regular Query>`. So - the above example can be changed to this to tell the service that this metric is returned in **MicroSecond**s and will therefore be converted into **MilliSecond**s:
+For `builtin:service.response.time` metrics the *dynatrace-service* converts the result from **MicroSecond**s into **MilliSecond**s automatically. For other metrics however, you need to let the *dynatrace-service* know about the expected *Metric Unit*. You can prefix your regular query with `MV2;<MetricUnit>;` which would give you `MV2;<MetricUnit>;<Regular Query>`. So - the above example can be changed to this to tell the service that this metric's unit is **MicroSecond**s and will therefore be converted into **MilliSecond**s:
 
 ```yaml
 indicators:
@@ -172,9 +170,11 @@ indicators:
 
 The possible metric units are those that Dynatrace specifies in the API. Please have a look at the Metric API documentation for a complete overview.
 
-Currently the *dynatrace-service* does the following conversions before returning the value to Keptn. While this does not yet solve every request we have seen from our users this solves many use cases of users asking for better handling of **MicroSecond**s and **Byte**s:
+**Please note:**
 
-| Source Data Tye | Converted To |
+Currently the *dynatrace-service* only does the following conversions before returning the value to Keptn. While this does not yet solve each request we have seen from our users this solves many use cases of users asking for better handling of **MicroSecond**s and **Byte**s:
+
+| Source Data Type | Converted To |
 |:----------------|:-----------------|
 | MicroSecond | MilliSecond |
 | Byte | KiloByte |
