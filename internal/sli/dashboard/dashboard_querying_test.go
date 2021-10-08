@@ -1,15 +1,17 @@
 package dashboard
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
+
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
 func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
@@ -17,21 +19,21 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	handler := test.NewFileBasedURLHandler(t)
 	// we handle these if the URLs are a full match
-	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
-	handler.AddExact("/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
-	handler.AddExact("/api/v2/metrics/builtin:tech.generic.processCount", "./testdata/test_get_metrics_processcount.json")
-	handler.AddExact("/api/v2/metrics/builtin:service.response.time", "./testdata/test_get_metrics_svcresponsetime.json")
-	handler.AddExact("/api/v2/metrics/builtin:tech.generic.mem.workingSetSize", "./testdata/test_get_metrics_workingsetsize.json")
-	handler.AddExact("/api/v2/metrics/builtin:tech.generic.cpu.usage", "./testdata/test_get_metrics_cpuusage.json")
-	handler.AddExact("/api/v2/metrics/builtin:service.errors.server.rate", "./testdata/test_get_metrics_errorrate.json")
-	handler.AddExact("/api/v2/metrics/builtin:service.requestCount.total", "./testdata/test_get_metrics_requestcount.json")
-	handler.AddExact("/api/v2/metrics/builtin:host.cpu.usage", "./testdata/test_get_metrics_hostcpuusage.json")
-	handler.AddExact("/api/v2/metrics/builtin:host.mem.usage", "./testdata/test_get_metrics_hostmemusage.json")
-	handler.AddExact("/api/v2/metrics/builtin:host.disk.queueLength", "./testdata/test_get_metrics_hostdiskqueue.json")
-	handler.AddExact("/api/v2/metrics/builtin:service.nonDbChildCallCount", "./testdata/test_get_metrics_nondbcallcount.json")
-	handler.AddExact("/api/v2/metrics/jmeter.usermetrics.transaction.meantime", "./testdata/test_get_metrics_jmeter_usermetrics_transaction_meantime.json")
+	handler.AddExact(dynatrace.DashboardsPath, "./testdata/test_get_dashboards.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.processCount", "./testdata/test_get_metrics_processcount.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/test_get_metrics_svcresponsetime.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.mem.workingSetSize", "./testdata/test_get_metrics_workingsetsize.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.cpu.usage", "./testdata/test_get_metrics_cpuusage.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.errors.server.rate", "./testdata/test_get_metrics_errorrate.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.requestCount.total", "./testdata/test_get_metrics_requestcount.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.cpu.usage", "./testdata/test_get_metrics_hostcpuusage.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.mem.usage", "./testdata/test_get_metrics_hostmemusage.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.disk.queueLength", "./testdata/test_get_metrics_hostdiskqueue.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.nonDbChildCallCount", "./testdata/test_get_metrics_nondbcallcount.json")
+	handler.AddExact(dynatrace.MetricsPath+"/jmeter.usermetrics.transaction.meantime", "./testdata/test_get_metrics_jmeter_usermetrics_transaction_meantime.json")
 	// we handle these if the URL "starts with"
-	handler.AddStartsWith("/api/v2/metrics/query", "./testdata/test_get_metrics_query.json")
+	handler.AddStartsWith(dynatrace.MetricsQueryPath, "./testdata/test_get_metrics_query.json")
 	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
 	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
 	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
