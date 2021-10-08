@@ -7,10 +7,11 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
-	unit "github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
-	usql2 "github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -79,8 +80,8 @@ func (p *Processing) executeUSQLQuery(metricsQuery string, startUnix time.Time, 
 	requestedDimensionName := querySplits[2]
 	usqlRawQuery := querySplits[3]
 
-	usql := usql2.NewQueryBuilder(p.eventData, p.customFilters).Build(usqlRawQuery, startUnix, endUnix)
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(usql)
+	usqlQuery := usql.NewQueryBuilder(p.eventData, p.customFilters).Build(usqlRawQuery, startUnix, endUnix)
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(usqlQuery)
 
 	if err != nil {
 		return 0, fmt.Errorf("Error executing USQL Query %v", err)
@@ -166,19 +167,38 @@ func (p *Processing) executeSecurityProblemQuery(metricsQuery string, startUnix 
 }
 
 func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	metricsQuery, unit := extractMetricQueryFromMV2Query(metricsQuery)
-	return p.executeMetricsQuery(metricsQuery, unit, startUnix, endUnix)
+	metricsQuery, metricUnit, err := extractMetricQueryFromMV2Query(metricsQuery)
+	if err != nil {
+		return 0, err
+	}
+
+	return p.executeMetricsQuery(metricsQuery, metricUnit, startUnix, endUnix)
 }
 
-func extractMetricQueryFromMV2Query(metricsQuery string) (adaptedMetricsQuery string, unit string) {
-	// lets first start to query for the MV2 prefix, e.g: MV2;byte;actualQuery
+func extractMetricQueryFromMV2Query(metricsQuery string) (adaptedMetricsQuery string, metricUnit string, err error) {
+	// lets first start to query for the MV2 prefix, e.g: MV2;Byte;<actualQuery>
 	// if it starts with MV2 we extract metric unit and the actual query
-	metricsQuery = metricsQuery[4:]
-	queryStartIndex := strings.Index(metricsQuery, ";")
-	unit = metricsQuery[:queryStartIndex]
-	adaptedMetricsQuery = metricsQuery[queryStartIndex+1:]
+	pattern := regexp.MustCompile(`^MV2;(([bB]yte)|([Mm]icro[sS]econd));(.+)$`)
+	chunks := pattern.FindStringSubmatch(metricsQuery)
+	if len(chunks) != 5 {
+		return "", "", createMV2FormatError(metricsQuery)
+	}
 
-	return
+	metricUnit = chunks[1]
+	if metricUnit == "" {
+		return "", "", createMV2FormatError(metricsQuery)
+	}
+
+	adaptedMetricsQuery = chunks[4]
+	if adaptedMetricsQuery == "" {
+		return "", "", createMV2FormatError(metricsQuery)
+	}
+
+	return adaptedMetricsQuery, metricUnit, nil
+}
+
+func createMV2FormatError(query string) error {
+	return fmt.Errorf("could not parse SLI definition format - should either be 'MV2;Byte;<query>' or 'MV2;MicroSecond;<query>': %s", query)
 }
 
 func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
