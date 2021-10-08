@@ -5,7 +5,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
-const dashboardsPath = "/api/config/v1/dashboards"
+const DashboardsPath = "/api/config/v1/dashboards"
 
 type DashboardsClient struct {
 	client ClientInterface
@@ -18,7 +18,7 @@ func NewDashboardsClient(client ClientInterface) *DashboardsClient {
 }
 
 func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
-	res, err := dc.client.Get(dashboardsPath)
+	res, err := dc.client.Get(DashboardsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 }
 
 func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
-	body, err := dc.client.Get(dashboardsPath + "/" + dashboardID)
+	body, err := dc.client.Get(DashboardsPath + "/" + dashboardID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
 		return common.NewMarshalJSONError("Dynatrace dashboard", err)
 	}
 
-	_, err = dc.client.Post(dashboardsPath, dashboardPayload)
+	_, err = dc.client.Post(DashboardsPath, dashboardPayload)
 	if err != nil {
 		return err
 	}
@@ -64,7 +64,7 @@ func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
 }
 
 func (dc *DashboardsClient) Delete(dashboardID string) error {
-	_, err := dc.client.Delete(dashboardsPath + "/" + dashboardID)
+	_, err := dc.client.Delete(DashboardsPath + "/" + dashboardID)
 	if err != nil {
 		return err
 	}
