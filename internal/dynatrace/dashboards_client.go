@@ -2,9 +2,11 @@ package dynatrace
 
 import (
 	"encoding/json"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
+// DashboardsPath is the base endpoint for dashboards Config API
 const DashboardsPath = "/api/config/v1/dashboards"
 
 type DashboardsClient struct {

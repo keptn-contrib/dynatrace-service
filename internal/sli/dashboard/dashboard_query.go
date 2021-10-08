@@ -42,6 +42,7 @@ func (r *QueryResult) SLI() *dynatrace.SLI {
 	return r.sli
 }
 
+// HasSLIs checks whether any indicators are available
 func (r *QueryResult) HasSLIs() bool {
 	return r.sli != nil && len(r.sli.Indicators) > 0
 }
@@ -50,6 +51,7 @@ func (r *QueryResult) SLO() *keptnapi.ServiceLevelObjectives {
 	return r.slo
 }
 
+// HasSLOs checks whether any objectives are available
 func (r *QueryResult) HasSLOs() bool {
 	return r.slo != nil && len(r.slo.Objectives) > 0
 }

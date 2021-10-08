@@ -5,8 +5,11 @@ import (
 	"errors"
 )
 
+// MetricsPath is the base endpoint for Metrics API v2
 const MetricsPath = "/api/v2/metrics"
-const MetricsQueryPath = "/api/v2/metrics/query"
+
+// MetricsQueryPath is the query endpoint for Metrics API v2
+const MetricsQueryPath = MetricsPath + "/query"
 
 // MetricDefinition defines the output of /metrics/<metricID>
 type MetricDefinition struct {
