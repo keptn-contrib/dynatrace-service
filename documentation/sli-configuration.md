@@ -25,7 +25,7 @@ The `dashboard` parameter provides 3 options:
 * `query`: This value means that the *dynatrace-service* will look for a dashboard on your Dynatrace Tenant (dynatrace-prod in the example above) which has the following dashboard naming format: `KQG;project=<YOURKEPTNPROJECT>;service=<YOURKEPTNSERVICE>;stage=<YOURKEPTNSTAGE>`. If such a dashboard exists it will use the definition of that dashboard for SLIs as well as SLOs. If no dashboard is found that matches that name it goes back to default mode.
 * DASHBOARD-UUID: If you specify the UUID of a Dynatrace dashboard the *dynatrace-service* will query this dashboard on the specified Dynatrace Tenant. If it exists it will use the definition of this dashboard for SLIs as well as SLOs. If the dashboard was not found the *dynatrace-service* will raise an error.
 
-Here is an example of a `dynatrace.conf.yaml` specifing the UUID of a Dynatrace Dashboard:
+Here is an example of a `dynatrace.conf.yaml` specifying the UUID of a Dynatrace Dashboard:
 
 ```yaml
 ---
@@ -46,7 +46,7 @@ This behavior also implies that the *dynatrace-service* stores the content of th
 
 While most users will use the dashboard approach it is important to understand how the general processing of SLIs works without dashboards. Dashboards give an additional convenience as the `sli.yaml` file doesn't need to be created or maintained by anybody as this information is extracted from a Dynatrace Dashboard. However - in very mature organizations the approach of using SLI & SLO YAML files instead of Dynatrace Dashboards is very likely.
 
-Thats why - lets give you some basic understanding of how SLIs work with the *dynatrace-service*.
+That is why - lets give you some basic understanding of how SLIs work with the *dynatrace-service*.
 
 The default SLI queries that come with the *dynatrace-service* are defined as follows and will be used in case you have not specified a custom `sli.yaml` or a Dynatrace dashboard:
 
@@ -275,14 +275,14 @@ It is not mandatory to define them as there are defaults for all of them. Here i
 | KQG.Total.Pass | 90% | Specifies total pass goal of your SLO |
 | KQG.Total.Warning | 75% | Specifies total warning goal of your SLO |
 | KQG.Compare.Result | 1 | Against how many previous builds to compare your result to? |
-| KQG.Compare.WithScore | pass | Which prevoius builds to include in the comparison: pass, pass_or_warn or all |
+| KQG.Compare.WithScore | pass | Which previous builds to include in the comparison: pass, pass_or_warn or all |
 | KQG.Compare.Function | avg | When comparing against multiple builds which aggregation should be used: avg, p50, p90, p95 |
-| KQG.QueryBehavior | <empty> | A dashboard is always parsed for SLIs & SLOs even if it hasnt changed. To only parse it when changes occured use 'ParseOnChange' |
+| KQG.QueryBehavior | <empty> | A dashboard is always parsed for SLIs & SLOs even if it has not changed. To only parse it when changes occurred use 'ParseOnChange' |
 
 
 **4. Tiles with SLI definition**
 
-The *dynatrace-service* analyzes every tile but only includes those in the SLI/SLO anlaysis where the tile name includes the name-value pair: `sli=sliprefix`
+The *dynatrace-service* analyzes every tile but only includes those in the SLI/SLO analysis where the tile name includes the name-value pair: `sli=sliprefix`
 
 If you look at the example dashboard screenshot, you see some tiles that have the `sli=sliprefix` and some that don't. This allows you to build dashboards that you can extend with metrics that should not be included in your SLI/SLO validation.
 
@@ -298,7 +298,7 @@ Response time (P50);sli=svc_rt_p95;pass=<+10%,<500
 | Setting | Sample Value | Comment |
 |:------|:-------|:-------|
 | sli | test_rt | This will become the SLI Name, e.g: test_Rt If the chart includes metrics split by dimensions - then the value is a prefix and each dimension will be appended, e.g: test_rt_teststep1, test_rt_teststep2 |
-| pass | <500,<+10% | This can be a comma-separated list which allows you to specify multiple critiera as you can also do in the `slo.yaml`. You are also allowed to specify multiple pass name/value pairs which will result into multiple criteria just as allowed in the `slo.yaml` spec |
+| pass | <500,<+10% | This can be a comma-separated list which allows you to specify multiple criteria as you can also do in the `slo.yaml`. You are also allowed to specify multiple pass name/value pairs which will result into multiple criteria just as allowed in the `slo.yaml` spec |
 | warning | <1000 | Same as with pass |
 | weight | 1 | Allows you to define a weight of the SLI. Default is 1 |
 | key | true | If true, this SLI becomes a key SLI. Default is false |
@@ -375,7 +375,7 @@ SLOs in Dynatrace are a new feature to monitor SLOs in production and report on 
 
 ### Support for Problem Tiles
 
-A great use case is to validate whether there are any open problems in a given enviornment as part of your Keptn Quality Gate Evaluation. As described above the *dynatrace-service* supports querying the number of problems that have a certain status using Dynatrace's Problem API v2.
+A great use case is to validate whether there are any open problems in a given environment as part of your Keptn Quality Gate Evaluation. As described above the *dynatrace-service* supports querying the number of problems that have a certain status using Dynatrace's Problem API v2.
 To include the open problem count that matches your dashboards management zone you can simply add the "Problems" tile to your dashboard. If this tile is on the dashboard you will get an SLI with the name `problems`, the value will be the total count of problems open. The default SLO will be that `problems` is a `key sli` with a pass criteria of `<=0`. This results in the following `slo.yaml` entry being generated:
 
 ```yaml
@@ -431,4 +431,4 @@ Also check out the samples folder of this repo with some additional helper files
 
 * The Dynatrace Metrics API provides data with the "eventually consistency" approach. Therefore, the metrics data retrieved can be incomplete or even contain inconsistencies in case of time frames that are within two hours of the current datetime. Usually, it takes a minute to catch up, but in extreme situations this might not be enough. We try to mitigate that by delaying calls to the metrics API by 60 seconds.
 
-* This service uses the Dynatrace Metrics v2 API by default but can also parse v1 metrics query. If you use the v1 query language you will see warning log outputs in the *dynatrace-service* which encourages you to update your queries to v2. More information about Metics v2 API can be found in the [Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/dynatrace-api/environment-api/metric-v2/)
+* This service uses the Dynatrace Metrics v2 API by default but can also parse v1 metrics query. If you use the v1 query language you will see warning log outputs in the *dynatrace-service* which encourages you to update your queries to v2. More information about Metrics v2 API can be found in the [Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/dynatrace-api/environment-api/metric-v2/)
