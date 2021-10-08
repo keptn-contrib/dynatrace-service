@@ -286,57 +286,6 @@ func TestExtractMetricQueryFromMV2Query(t *testing.T) {
 	}
 }
 
-/*
-// Tests what happens if the end-time is in the future
-func TestGetSLIEndTimeFuture(t *testing.T) {
-	keptnEvent := &GetSLITriggeredEvent{}
-	keptnEvent.Project = "sockshop"
-	keptnEvent.Stage = "dev"
-	keptnEvent.Service = "carts"
-	keptnEvent.DeploymentStrategy = ""
-
-	ts := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("Content-Type", "application/json")
-			w.WriteHeader(200)
-			w.Write([]byte(`{}`))
-		}),
-	)
-	defer ts.Close()
-
-	dh := NewRetrieval(ts.URL, keptnEvent, nil, nil)
-
-	start := time.Now()
-	// artificially increase end time to be in the future
-	end := time.Now().Add(3 * time.Minute)
-	value, err := dh.GetSLIValue(Throughput, start, end, []*events.SLIFilter{})
-
-	assert.EqualValues(t, 0.0, value)
-	assert.NotNil(t, err, nil)
-	assert.EqualValues(t, "end time must not be in the future", err.Error())
-}
-
-// Tests what happens if start-time is after end-time
-func TestGetSLIStartTimeAfterEndTime(t *testing.T) {
-	keptnEvent := &GetSLITriggeredEvent{}
-	keptnEvent.Project = "sockshop"
-	keptnEvent.Stage = "dev"
-	keptnEvent.Service = "carts"
-	keptnEvent.DeploymentStrategy = ""
-
-	dh := NewRetrieval("http://dynatrace", keptnEvent, nil, nil)
-
-	start := time.Now()
-	// artificially increase end time to be in the future
-	end := time.Now().Add(-1 * time.Minute)
-	value, err := dh.GetSLIValue(Throughput, start, end, []*events.SLIFilter{})
-
-	assert.EqualValues(t, 0.0, value)
-	assert.NotNil(t, err, nil)
-	assert.EqualValues(t, "start time needs to be before end time", err.Error())
-}
-*/
-
 // Tests what happens when end time is too close to now
 func TestGetSLISleep(t *testing.T) {
 	okResponse := `{
