@@ -41,8 +41,16 @@ func (r *QueryResult) SLI() *dynatrace.SLI {
 	return r.sli
 }
 
+func (r *QueryResult) HasSLIs() bool {
+	return len(r.sli.Indicators) > 0
+}
+
 func (r *QueryResult) SLO() *keptnapi.ServiceLevelObjectives {
 	return r.slo
+}
+
+func (r *QueryResult) HasSLOs() bool {
+	return len(r.slo.Objectives) > 0
 }
 
 func (r *QueryResult) SLIResults() []*keptnv2.SLIResult {

@@ -187,7 +187,7 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	}
 
 	// lets write the SLI to the config repo
-	if result.SLI() != nil {
+	if result.HasSLIs() {
 		err = eh.resourceClient.UploadSLI(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLI())
 		if err != nil {
 			return result.DashboardLink(), result.SLIResults(), err
@@ -195,7 +195,7 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	}
 
 	// lets write the SLO to the config repo
-	if result.SLO() != nil {
+	if result.HasSLOs() {
 		err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLO())
 		if err != nil {
 			return result.DashboardLink(), result.SLIResults(), err
