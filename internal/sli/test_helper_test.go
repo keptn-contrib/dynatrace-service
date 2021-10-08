@@ -186,18 +186,23 @@ func (e *getSLIEventData) AddLabel(name string, value string) {
 	e.labels[name] = value
 }
 
-type resourceClientMock struct{}
+type resourceClientMock struct {
+	t *testing.T
+}
 
 func (m *resourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
-	panic("GetSLOs() should not be needed in this mock!")
+	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
+	return nil, nil
 }
 
 func (m *resourceClientMock) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
-	panic("UploadSLI() should not be needed in this mock!")
+	m.t.Fatalf("UploadSLI() should not be needed in this mock!")
+	return nil
 }
 
 func (m *resourceClientMock) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnapi.ServiceLevelObjectives) error {
-	panic("UploadSLOs() should not be needed in this mock!")
+	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
+	return nil
 }
 
 func (m *resourceClientMock) GetDashboard(project string, stage string, service string) (string, error) {
@@ -206,7 +211,8 @@ func (m *resourceClientMock) GetDashboard(project string, stage string, service 
 }
 
 func (m *resourceClientMock) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
-	panic("UploadDashboard() should not be needed in this mock!")
+	m.t.Fatalf("UploadDashboard() should not be needed in this mock!")
+	return nil
 }
 
 type keptnClientMock struct {
