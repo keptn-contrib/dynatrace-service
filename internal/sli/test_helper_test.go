@@ -18,13 +18,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-func assertThatTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
-	setupTestAndAssertNoError(t, handler, kClient)
-
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, shouldFail)
-}
-
-func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock) {
+func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
 	ev := &getSLIEventData{
 		project:    "sockshop",
 		stage:      "staging",
@@ -32,7 +26,7 @@ func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *kept
 		indicators: []string{indicator}, // we need this to check later on in the custom queries
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
+	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient, rClient, dashboard)
 	defer teardown()
 
 	err := eh.retrieveMetrics()
@@ -71,7 +65,7 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, shouldF
 	return &data
 }
 
-func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface) (*GetSLIEventHandler, string, func()) {
+func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials := &credentials.DTCredentials{
@@ -83,8 +77,8 @@ func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handle
 		event:          keptnEvent,
 		dtClient:       dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
 		kClient:        kClient,
-		resourceClient: &resourceClientMock{},
-		dashboard:      "",          // we do not want to query a dashboard, so we leave it empty (and have no dashboard stored)
+		resourceClient: rClient,
+		dashboard:      dashboard,
 		secretName:     "dynatrace", // we do not need this string
 	}
 

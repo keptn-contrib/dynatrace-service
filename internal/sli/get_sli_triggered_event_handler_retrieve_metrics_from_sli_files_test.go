@@ -2,6 +2,7 @@ package sli
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -38,7 +39,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		assert.Contains(t, actual.Message, "response_time_p95")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -70,7 +71,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.Contains(t, actual.Message, "400")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -95,7 +96,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		assert.Contains(t, actual.Message, errorMessage)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -127,7 +128,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		assert.Contains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -159,7 +160,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -191,7 +192,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -280,7 +281,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 		assert.EqualValues(t, true, actual.Success)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, false)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, false)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -306,5 +307,13 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		assert.EqualValues(t, true, actual.Success)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, false)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, false)
+}
+
+func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
+	// we use the special mock for the resource client
+	// we do not want to query a dashboard, so we leave it empty (and have no dashboard stored)
+	setupTestAndAssertNoError(t, handler, kClient, &resourceClientMock{}, "")
+
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, shouldFail)
 }
