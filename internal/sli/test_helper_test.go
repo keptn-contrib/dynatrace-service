@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 	"testing"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -220,7 +219,6 @@ type keptnClientMock struct {
 	eventSink          []*cloudevents.Event
 	customQueries      map[string]string
 	customQueriesError error
-	mutex              sync.Mutex
 }
 
 func (m *keptnClientMock) GetCustomQueries(project string, stage string, service string) (*keptn.CustomQueries, error) {
@@ -240,9 +238,6 @@ func (m *keptnClientMock) GetShipyard() (*keptnv2.Shipyard, error) {
 }
 
 func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	// simulate errors while creating cloud event
 	if factory == nil {
 		return fmt.Errorf("could not send create cloud event")
