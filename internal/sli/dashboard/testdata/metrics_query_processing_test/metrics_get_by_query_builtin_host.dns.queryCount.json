@@ -1,0 +1,21 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "result": [
+    {
+      "metricId": "builtin:host.dns.queryCount:merge(dnsServerIp):merge(\"dt.entity.host\"):avg:names",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1633507200000
+          ],
+          "values": [
+            96.94525462962963
+          ]
+        }
+      ]
+    }
+  ]
+}
