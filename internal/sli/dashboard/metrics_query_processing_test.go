@@ -133,7 +133,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			processing := NewMetricsQueryProcessing(dtClient)
 			tileResults := processing.Process(tt.args.noOfDimensionsInChart, tt.args.sloDefinition, tt.args.metricQueryComponents)
 
-			assert.EqualValues(t, tileResults, tt.expectedResults)
+			assert.EqualValues(t, tt.expectedResults, tileResults)
 		})
 	}
 }
