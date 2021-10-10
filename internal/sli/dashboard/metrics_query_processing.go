@@ -141,9 +141,15 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 				"value": value,
 			}).Debug("Got indicator value")
 
+		sliQuery := strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1)
+
+		// only add MV2 prefix for byte or microsecond units
+		if unit.IsByteUnit(metricQueryComponents.metricUnit) || unit.IsMicroSecondUnit(metricQueryComponents.metricUnit) {
+			sliQuery = fmt.Sprintf("MV2;%s;%s", metricQueryComponents.metricUnit, sliQuery)
+		}
+
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
 		// we use ":names" to find the right spot to add our custom dimension filter
-		// we also "pre-pend" the metricDefinition.Unit - which allows us later on to do the scaling right
 		// we also add the SLO definition in case we need to generate an SLO.yaml
 		tileResults = append(
 			tileResults,
@@ -161,7 +167,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 					Warning: sloDefinition.Warning,
 				},
 				sliName:  indicatorName,
-				sliQuery: fmt.Sprintf("MV2;%s;%s", metricQueryComponents.metricUnit, strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1)),
+				sliQuery: sliQuery,
 			})
 	}
 
