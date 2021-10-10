@@ -120,6 +120,136 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 			},
 		},
+
+		// Metric ID syntax variants tests
+		{
+			name:                        "cmu - All dimensions quotes",
+			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			args: args{
+				noOfDimensionsInChart: 0,
+				sloDefinition: &keptncommon.SLO{
+					SLI:    "cmu",
+					Weight: 1,
+				},
+				metricQueryComponents: &queryComponents{
+					metricID:              "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names",
+					metricUnit:            "Byte",
+					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+				},
+			},
+			expectedResults: []*TileResult{
+				{
+					sliResult: &v0_2_0.SLIResult{
+						Metric:  "cmu",
+						Value:   48975.83345935025,
+						Success: true,
+					},
+					objective: &keptncommon.SLO{
+						SLI:    "cmu",
+						Weight: 1,
+					},
+					sliName:  "cmu",
+					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+				},
+			},
+		},
+		{
+			name:                        "cmu - No dimensions quotes",
+			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			args: args{
+				noOfDimensionsInChart: 0,
+				sloDefinition: &keptncommon.SLO{
+					SLI:    "cmu",
+					Weight: 1,
+				},
+				metricQueryComponents: &queryComponents{
+					metricID:              "builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names",
+					metricUnit:            "Byte",
+					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+				},
+			},
+			expectedResults: []*TileResult{
+				{
+					sliResult: &v0_2_0.SLIResult{
+						Metric:  "cmu",
+						Value:   48975.83345935025,
+						Success: true,
+					},
+					objective: &keptncommon.SLO{
+						SLI:    "cmu",
+						Weight: 1,
+					},
+					sliName:  "cmu",
+					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+				},
+			},
+		},
+		{
+			name:                        "cmu - Just entity dimensions quotes",
+			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			args: args{
+				noOfDimensionsInChart: 0,
+				sloDefinition: &keptncommon.SLO{
+					SLI:    "cmu",
+					Weight: 1,
+				},
+				metricQueryComponents: &queryComponents{
+					metricID:              "builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names",
+					metricUnit:            "Byte",
+					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+				},
+			},
+			expectedResults: []*TileResult{
+				{
+					sliResult: &v0_2_0.SLIResult{
+						Metric:  "cmu",
+						Value:   48975.83345935025,
+						Success: true,
+					},
+					objective: &keptncommon.SLO{
+						SLI:    "cmu",
+						Weight: 1,
+					},
+					sliName:  "cmu",
+					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+				},
+			},
+		},
+		{
+			name:                        "cmu - Just non-entity dimensions quotes",
+			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			args: args{
+				noOfDimensionsInChart: 0,
+				sloDefinition: &keptncommon.SLO{
+					SLI:    "cmu",
+					Weight: 1,
+				},
+				metricQueryComponents: &queryComponents{
+					metricID:              "builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names",
+					metricUnit:            "Byte",
+					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+				},
+			},
+			expectedResults: []*TileResult{
+				{
+					sliResult: &v0_2_0.SLIResult{
+						Metric:  "cmu",
+						Value:   48975.83345935025,
+						Success: true,
+					},
+					objective: &keptncommon.SLO{
+						SLI:    "cmu",
+						Weight: 1,
+					},
+					sliName:  "cmu",
+					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
