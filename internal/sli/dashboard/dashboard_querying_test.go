@@ -32,8 +32,34 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.disk.queueLength", "./testdata/test_get_metrics_hostdiskqueue.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.nonDbChildCallCount", "./testdata/test_get_metrics_nondbcallcount.json")
 	handler.AddExact(dynatrace.MetricsPath+"/jmeter.usermetrics.transaction.meantime", "./testdata/test_get_metrics_jmeter_usermetrics_transaction_meantime.json")
-	// we handle these if the URL "starts with"
-	handler.AddStartsWith(dynatrace.MetricsQueryPath, "./testdata/test_get_metrics_query.json")
+
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1571649084000&metricSelector=builtin%3Atech.generic.processCount%3Amerge%28%22dt.entity.process_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_tech.generic.processCount.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CentityId%28%22SERVICE-086C46F600BA1DC6%22%29%2Ctag%28%22keptn_deployment%3Aprimary%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_service.response.time.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2890.000000%29%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_service.response.time.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850.000000%29%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_service.response.time.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1571649084000&metricSelector=builtin%3Atech.generic.mem.workingSetSize%3Amerge%28%22dt.entity.process_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_tech.generic.mem.workingSetSize.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1571649084000&metricSelector=builtin%3Atech.generic.cpu.usage%3Amerge%28%22dt.entity.process_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_tech.generic.cpu.usage.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.errors.server.rate%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_service.errors.server.rate.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.requestCount.total%3Amerge%28%22dt.entity.service%22%29%3Avalue%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_service.requestCount.total.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28HOST%29&from=1571649084000&metricSelector=builtin%3Ahost.cpu.usage%3Amerge%28%22dt.entity.host%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_host.cpu.usage.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28HOST%29&from=1571649084000&metricSelector=builtin%3Ahost.mem.usage%3Amerge%28%22dt.entity.host%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_host.mem.usage.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28HOST%29&from=1571649084000&metricSelector=builtin%3Ahost.disk.queueLength%3Amerge%28%22dt.entity.disk%22%29%3Amerge%28%22dt.entity.host%22%29%3Amax%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_host.disk.queueLength.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.nonDbChildCallCount%3Amerge%28%22dt.entity.service%22%29%3Avalue%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_service.nonDbChildCallCount.json")
+	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-FFD81F003E39B468%29&from=1571649084000&metricSelector=jmeter.usermetrics.transaction.meantime%3Aavg%3Anames&resolution=Inf&to=1571649085000",
+		"./testdata/test_get_metrics_query_jmeter.usermetrics.transaction.meantime.json")
+
 	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
 	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
 	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
