@@ -1,0 +1,18 @@
+{
+  "result": [
+    {
+      "metricId": "builtin:tech.generic.processCount:merge(\"dt.entity.process_group_instance\"):avg:names",
+      "data": [
+        {
+          "dimensions": [],
+          "timestamps": [
+            1600950300000
+          ],
+          "values": [
+            1.0
+          ]
+        }
+      ]
+    }
+  ]
+}

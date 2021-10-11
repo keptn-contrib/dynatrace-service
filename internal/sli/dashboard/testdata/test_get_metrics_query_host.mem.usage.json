@@ -1,0 +1,20 @@
+{
+  "result": [
+    {
+      "metricId": "builtin:host.mem.usage:merge(\"dt.entity.host\"):avg:names",
+      "data": [
+        {
+          "dimensions": [
+            "HOST-24A949AB19EC17CB"
+          ],
+          "timestamps": [
+            1600950300000
+          ],
+          "values": [
+            0.04146322688540897
+          ]
+        }
+      ]
+    }
+  ]
+}
