@@ -26,10 +26,12 @@ func ScaleData(metricID string, unit string, value float64) float64 {
 	return value
 }
 
+// IsByteUnit returns true iff the specified unit is byte
 func IsByteUnit(unit string) bool {
 	return bytePattern.MatchString(unit)
 }
 
+// IsMicroSecondUnit returns true iff the specified unit is micosecond
 func IsMicroSecondUnit(unit string) bool {
 	return microSecondPattern.MatchString(unit)
 }
