@@ -79,7 +79,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	assert.NotNil(t, result.slo, "No SLO returned")
 	assert.NotNil(t, result.sliResults, "No SLI Results returned")
 
-	const expectedSLOs = 14
+	const expectedSLOs = 17
 	assert.Equal(t, expectedSLOs, len(result.sli.Indicators))
 	assert.Equal(t, expectedSLOs, len(result.slo.Objectives))
 	assert.EqualValues(t, &keptnapi.SLOScore{Pass: "90%", Warning: "70%"}, result.slo.TotalScore)
