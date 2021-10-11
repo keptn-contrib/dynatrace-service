@@ -1,20 +1,72 @@
 package sli
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
+	"testing"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"net/http"
-	"sync"
 )
 
-func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface) (*GetSLIEventHandler, string, func()) {
+const indicator = "response_time_p95"
+
+func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
+	ev := &getSLIEventData{
+		project:    "sockshop",
+		stage:      "staging",
+		service:    "carts",
+		indicators: []string{indicator}, // we need this to check later on in the custom queries
+	}
+
+	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient, rClient, dashboard)
+	defer teardown()
+
+	err := eh.retrieveMetrics()
+
+	assert.NoError(t, err)
+}
+
+func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
+	data := assertThatEventsAreThere(t, events, eventAssertionsFunc)
+
+	if assertionsFunc != nil {
+		assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
+		assertionsFunc(t, data.GetSLI.IndicatorValues[0])
+	} else {
+		assert.EqualValues(t, 0, len(data.GetSLI.IndicatorValues), "you should assert something on your result!")
+	}
+}
+
+func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) *keptnv2.GetSLIFinishedEventData {
+	assert.EqualValues(t, 2, len(events))
+
+	assert.EqualValues(t, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), events[0].Type())
+	assert.EqualValues(t, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), events[1].Type())
+
+	var data keptnv2.GetSLIFinishedEventData
+	err := json.Unmarshal(events[1].Data(), &data)
+	if err != nil {
+		t.Fatalf("could not parse event payload correctly: %s", err)
+	}
+
+	eventAssertionsFunc(&data)
+
+	assert.EqualValues(t, keptnv2.StatusSucceeded, data.Status)
+
+	return &data
+}
+
+func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials := &credentials.DTCredentials{
@@ -26,8 +78,8 @@ func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handle
 		event:          keptnEvent,
 		dtClient:       dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
 		kClient:        kClient,
-		resourceClient: &resourceClientMock{},
-		dashboard:      "",          // we do not want to query a dashboard, so we leave it empty (and have no dashboard stored)
+		resourceClient: rClient,
+		dashboard:      dashboard,
 		secretName:     "dynatrace", // we do not need this string
 	}
 
@@ -135,18 +187,23 @@ func (e *getSLIEventData) AddLabel(name string, value string) {
 	e.labels[name] = value
 }
 
-type resourceClientMock struct{}
+type resourceClientMock struct {
+	t *testing.T
+}
 
 func (m *resourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
-	panic("GetSLOs() should not be needed in this mock!")
+	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
+	return nil, nil
 }
 
 func (m *resourceClientMock) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
-	panic("UploadSLI() should not be needed in this mock!")
+	m.t.Fatalf("UploadSLI() should not be needed in this mock!")
+	return nil
 }
 
 func (m *resourceClientMock) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnapi.ServiceLevelObjectives) error {
-	panic("UploadSLOs() should not be needed in this mock!")
+	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
+	return nil
 }
 
 func (m *resourceClientMock) GetDashboard(project string, stage string, service string) (string, error) {
@@ -155,14 +212,14 @@ func (m *resourceClientMock) GetDashboard(project string, stage string, service 
 }
 
 func (m *resourceClientMock) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
-	panic("UploadDashboard() should not be needed in this mock!")
+	m.t.Fatalf("UploadDashboard() should not be needed in this mock!")
+	return nil
 }
 
 type keptnClientMock struct {
 	eventSink          []*cloudevents.Event
 	customQueries      map[string]string
 	customQueriesError error
-	mutex              sync.Mutex
 }
 
 func (m *keptnClientMock) GetCustomQueries(project string, stage string, service string) (*keptn.CustomQueries, error) {
@@ -182,9 +239,6 @@ func (m *keptnClientMock) GetShipyard() (*keptnv2.Shipyard, error) {
 }
 
 func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	// simulate errors while creating cloud event
 	if factory == nil {
 		return fmt.Errorf("could not send create cloud event")

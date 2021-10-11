@@ -1,9 +1,10 @@
 package dashboard
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
 type TileResult struct {
@@ -41,8 +42,18 @@ func (r *QueryResult) SLI() *dynatrace.SLI {
 	return r.sli
 }
 
+// HasSLIs checks whether any indicators are available
+func (r *QueryResult) HasSLIs() bool {
+	return r.sli != nil && len(r.sli.Indicators) > 0
+}
+
 func (r *QueryResult) SLO() *keptnapi.ServiceLevelObjectives {
 	return r.slo
+}
+
+// HasSLOs checks whether any objectives are available
+func (r *QueryResult) HasSLOs() bool {
+	return r.slo != nil && len(r.slo.Objectives) > 0
 }
 
 func (r *QueryResult) SLIResults() []*keptnv2.SLIResult {

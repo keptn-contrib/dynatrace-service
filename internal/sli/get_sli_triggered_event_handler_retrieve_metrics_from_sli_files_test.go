@@ -1,17 +1,16 @@
 package sli
 
 import (
-	"encoding/json"
 	"fmt"
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"testing"
-)
 
-const indicator = "response_time_p95"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
+)
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
@@ -38,7 +37,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		assert.Contains(t, actual.Message, "response_time_p95")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -51,7 +50,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 	// error here: metric(s)Selector=
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExactError(
-		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricsSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricsSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		400,
 		"./testdata/response_time_p95_400_constraints-violated.json")
 
@@ -70,7 +69,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.Contains(t, actual.Message, "400")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -95,7 +94,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		assert.Contains(t, actual.Message, errorMessage)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -109,7 +108,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 	// error here: merge(dt.entity.services)
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
-		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.services%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.services%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_0_result_warning_entity-selector.json")
 
 	// error here as well: merge("dt.entity.services")
@@ -127,7 +126,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		assert.Contains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -141,7 +140,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 	// error here: tag(keptn_project:stagin)
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
-		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astagin%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astagin%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_0_result_wrong-tag.json")
 
 	// error here as well: tag(keptn_project:stagin)
@@ -159,7 +158,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -173,7 +172,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 	// error here: missing merge("dt.entity.service) transformation
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
-		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_3_results.json")
 
 	// error here as well: missing merge("dt.entity.service) transformation
@@ -191,7 +190,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -250,7 +249,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 				assert.Contains(t, actual.Message, "SLI definition format")
 			}
 
-			assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, true)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
 		})
 	}
 }
@@ -266,7 +265,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	// fallback: mind the default SLI definitions in the URL below
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
-		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_1_result_defaults.json")
 
 	// no custom queries defined here
@@ -280,7 +279,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 		assert.EqualValues(t, true, actual.Success)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, false)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, false)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -291,7 +290,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
-		"/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_1_result.json")
 
 	kClient := &keptnClientMock{
@@ -306,58 +305,23 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		assert.EqualValues(t, true, actual.Success)
 	}
 
-	assertThatTestIsCorrect(t, handler, kClient, assertionsFunc, false)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, false)
 }
 
-func assertThatTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
-	setupTestAndAssertNoError(t, handler, kClient)
+func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
+	// we use the special mock for the resource client
+	// we do not want to query a dashboard, so we leave it empty (and have no dashboard stored)
+	setupTestAndAssertNoError(t, handler, kClient, &resourceClientMock{t: t}, "")
 
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, shouldFail)
-}
-
-func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock) {
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
+	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
+		if shouldFail {
+			assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
+			assert.NotEmpty(t, data.Message)
+		} else {
+			assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+			assert.Empty(t, data.Message)
+		}
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient)
-	defer teardown()
-
-	err := eh.retrieveMetrics()
-
-	assert.NoError(t, err)
-}
-
-func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, shouldFail bool) {
-	data := assertThatEventsAreThere(t, events, shouldFail)
-
-	assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
-	assertionsFunc(t, data.GetSLI.IndicatorValues[0])
-}
-
-func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, shouldFail bool) *keptnv2.GetSLIFinishedEventData {
-	assert.EqualValues(t, 2, len(events))
-
-	assert.EqualValues(t, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), events[0].Type())
-	assert.EqualValues(t, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), events[1].Type())
-
-	var data keptnv2.GetSLIFinishedEventData
-	err := json.Unmarshal(events[1].Data(), &data)
-	if err != nil {
-		t.Fatalf("could not parse event payload correctly: %s", err)
-	}
-
-	if shouldFail {
-		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
-		assert.NotEmpty(t, data.Message)
-	} else {
-		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
-		assert.Empty(t, data.Message)
-	}
-	assert.EqualValues(t, keptnv2.StatusSucceeded, data.Status)
-
-	return &data
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, eventAssertionsFunc)
 }

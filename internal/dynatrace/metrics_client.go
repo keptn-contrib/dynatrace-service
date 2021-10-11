@@ -5,7 +5,11 @@ import (
 	"errors"
 )
 
-const metricsPath = "/api/v2/metrics"
+// MetricsPath is the base endpoint for Metrics API v2
+const MetricsPath = "/api/v2/metrics"
+
+// MetricsQueryPath is the query endpoint for Metrics API v2
+const MetricsQueryPath = MetricsPath + "/query"
 
 // MetricDefinition defines the output of /metrics/<metricID>
 type MetricDefinition struct {
@@ -63,7 +67,7 @@ func NewMetricsClient(client ClientInterface) *MetricsClient {
 
 // GetByID calls the Dynatrace API to retrieve MetricDefinition details.
 func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
-	body, err := mc.client.Get(metricsPath + "/" + metricID)
+	body, err := mc.client.Get(MetricsPath + "/" + metricID)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +83,7 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (mc *MetricsClient) GetByQuery(metricsQuery string) (*MetricsQueryResult, error) {
-	body, err := mc.client.Get(metricsPath + "/query?" + metricsQuery)
+	body, err := mc.client.Get(MetricsQueryPath + "?" + metricsQuery)
 	if err != nil {
 		return nil, err
 	}

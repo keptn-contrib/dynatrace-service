@@ -1,39 +1,39 @@
 package dashboard
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"testing"
 	"time"
-)
 
-const dashboardURL = "/api/config/v1/dashboards"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
+)
 
 func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	keptnEvent := createKeptnEvent(QUALITYGATE_PROJECT, QUALITYGATE_STAGE, QUALTIYGATE_SERVICE)
 
 	handler := test.NewFileBasedURLHandler(t)
 	// we handle these if the URLs are a full match
-	handler.AddExact("/api/config/v1/dashboards", "./testdata/test_get_dashboards.json")
-	handler.AddExact("/api/config/v1/dashboards/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
-	handler.AddExact("/api/v2/metrics/builtin:tech.generic.processCount", "./testdata/test_get_metrics_processcount.json")
-	handler.AddExact("/api/v2/metrics/builtin:service.response.time", "./testdata/test_get_metrics_svcresponsetime.json")
-	handler.AddExact("/api/v2/metrics/builtin:tech.generic.mem.workingSetSize", "./testdata/test_get_metrics_workingsetsize.json")
-	handler.AddExact("/api/v2/metrics/builtin:tech.generic.cpu.usage", "./testdata/test_get_metrics_cpuusage.json")
-	handler.AddExact("/api/v2/metrics/builtin:service.errors.server.rate", "./testdata/test_get_metrics_errorrate.json")
-	handler.AddExact("/api/v2/metrics/builtin:service.requestCount.total", "./testdata/test_get_metrics_requestcount.json")
-	handler.AddExact("/api/v2/metrics/builtin:host.cpu.usage", "./testdata/test_get_metrics_hostcpuusage.json")
-	handler.AddExact("/api/v2/metrics/builtin:host.mem.usage", "./testdata/test_get_metrics_hostmemusage.json")
-	handler.AddExact("/api/v2/metrics/builtin:host.disk.queueLength", "./testdata/test_get_metrics_hostdiskqueue.json")
-	handler.AddExact("/api/v2/metrics/builtin:service.nonDbChildCallCount", "./testdata/test_get_metrics_nondbcallcount.json")
-	handler.AddExact("/api/v2/metrics/jmeter.usermetrics.transaction.meantime", "./testdata/test_get_metrics_jmeter_usermetrics_transaction_meantime.json")
+	handler.AddExact(dynatrace.DashboardsPath, "./testdata/test_get_dashboards.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", "./testdata/test_get_dashboards_id.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.processCount", "./testdata/test_get_metrics_processcount.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/test_get_metrics_svcresponsetime.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.mem.workingSetSize", "./testdata/test_get_metrics_workingsetsize.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.cpu.usage", "./testdata/test_get_metrics_cpuusage.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.errors.server.rate", "./testdata/test_get_metrics_errorrate.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.requestCount.total", "./testdata/test_get_metrics_requestcount.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.cpu.usage", "./testdata/test_get_metrics_hostcpuusage.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.mem.usage", "./testdata/test_get_metrics_hostmemusage.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.disk.queueLength", "./testdata/test_get_metrics_hostdiskqueue.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.nonDbChildCallCount", "./testdata/test_get_metrics_nondbcallcount.json")
+	handler.AddExact(dynatrace.MetricsPath+"/jmeter.usermetrics.transaction.meantime", "./testdata/test_get_metrics_jmeter_usermetrics_transaction_meantime.json")
 	// we handle these if the URL "starts with"
-	handler.AddStartsWith("/api/v2/metrics/query", "./testdata/test_get_metrics_query.json")
+	handler.AddStartsWith(dynatrace.MetricsQueryPath, "./testdata/test_get_metrics_query.json")
 	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
 	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
 	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
@@ -96,7 +96,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 
 	// we add a handler to simulate a failing dashboards API request (401 in this case)
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExactError(dashboardURL, http.StatusUnauthorized, "./testdata/dynatrace_missing_authorization_error.json")
+	handler.AddExactError(dynatrace.DashboardsPath, http.StatusUnauthorized, "./testdata/dynatrace_missing_authorization_error.json")
 
 	// we don't care about the content of the dashboard here, because it just should not be empty!
 	// also we don't add a handler to simulate a failing request (404) in this case.
@@ -121,7 +121,7 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 
 	// we add a handler to simulate an successful Dashboards API request in this case.
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dashboardURL, "./testdata/test_query_dynatrace_dashboard_dashboards.json")
+	handler.AddExact(dynatrace.DashboardsPath, "./testdata/test_query_dynatrace_dashboard_dashboards.json")
 
 	// we don't care about the content of the dashboard here, because it just should not be empty!
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{content: "some dashboard content"})
@@ -152,8 +152,8 @@ func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnW
 
 	// we add a handle to simulate an successful Dashboards API request in this case.
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dashboardURL, "./testdata/test_query_dynatrace_dashboard_dashboards_kqg.json")
-	handler.AddExact(dashboardURL+"/"+matchingDashboardID, storedDashboardFile)
+	handler.AddExact(dynatrace.DashboardsPath, "./testdata/test_query_dynatrace_dashboard_dashboards_kqg.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+matchingDashboardID, storedDashboardFile)
 
 	dashboardContent, err := ioutil.ReadFile(storedDashboardFile)
 	if err != nil {
@@ -197,7 +197,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 
 	// we add a handle to simulate an successful Dashboards API request in this case.
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dashboardURL+"/"+dashboardID, storedDashboardFile)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+dashboardID, storedDashboardFile)
 
 	dashboardContent, err := ioutil.ReadFile(storedDashboardFile)
 	if err != nil {
@@ -234,7 +234,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 
 	// we add a handler to simulate a very concrete 404 Dashboards API request/response in this case.
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExactError(dashboardURL+"/"+dashboardID, http.StatusNotFound, "./testdata/test_query_dynatrace_dashboard_dashboard_id_not_found.json")
+	handler.AddExactError(dynatrace.DashboardsPath+"/"+dashboardID, http.StatusNotFound, "./testdata/test_query_dynatrace_dashboard_dashboard_id_not_found.json")
 
 	// we also do not care about the dashboard that would be returned by keptn
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
@@ -263,7 +263,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 
 	// we add a handler to simulate a very concrete 400 Dashboards API request/response in this case.
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExactError(dashboardURL+"/"+dashboardID, http.StatusBadRequest, "./testdata/test_query_dynatrace_dashboard_dashboard_id_not_valid.json")
+	handler.AddExactError(dynatrace.DashboardsPath+"/"+dashboardID, http.StatusBadRequest, "./testdata/test_query_dynatrace_dashboard_dashboard_id_not_valid.json")
 
 	// we also do not care about the dashboard that would be returned by keptn
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
