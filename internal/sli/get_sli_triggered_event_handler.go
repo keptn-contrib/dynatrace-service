@@ -3,19 +3,21 @@ package sli
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/dashboard"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/query"
-	"strings"
-	"time"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	// configutils "github.com/keptn/go-utils/pkg/configuration-service/utils"
 	// keptnevents "github.com/keptn/go-utils/pkg/events"
 	// keptnutils "github.com/keptn/go-utils/pkg/utils"
@@ -182,23 +184,23 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	if result.Dashboard() != nil {
 		err = eh.resourceClient.UploadDashboard(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.Dashboard())
 		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), err
+			return nil, nil, err
 		}
 	}
 
 	// lets write the SLI to the config repo
-	if result.SLI() != nil {
+	if result.HasSLIs() {
 		err = eh.resourceClient.UploadSLI(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLI())
 		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), err
+			return nil, nil, err
 		}
 	}
 
 	// lets write the SLO to the config repo
-	if result.SLO() != nil {
+	if result.HasSLOs() {
 		err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLO())
 		if err != nil {
-			return result.DashboardLink(), result.SLIResults(), err
+			return nil, nil, err
 		}
 	}
 
@@ -359,8 +361,8 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	// Option 1 - see if we can get the data from a Dynatrace Dashboard
 	dashboardLinkAsLabel, sliResults, err := eh.getDataFromDynatraceDashboard(startUnix, endUnix)
 	if err != nil {
-		// log the error, but continue with loading sli.yaml
-		log.WithError(err).Error("getDataFromDynatraceDashboard failed")
+		log.WithError(err).Error("Could not retrieve SLI results via Dynatrace dashboard")
+		return eh.sendGetSLIFinishedEvent(nil, err)
 	}
 
 	// add link to dynatrace dashboard to labels
@@ -373,6 +375,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	if sliResults == nil {
 		sliResults, err = eh.getSLIResultsFromCustomQueries(startUnix, endUnix)
 		if err != nil {
+			log.WithError(err).Error("Could not retrieve SLI results via sli.yaml file")
 			return eh.sendGetSLIFinishedEvent(nil, err)
 		}
 	}
@@ -387,7 +390,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	// now - lets see if we have captured any result values - if not - return send an error
 	err = nil
 	if sliResults == nil {
-		err = errors.New("Couldn't retrieve any SLI Results")
+		err = errors.New("could not retrieve any SLI results")
 	}
 
 	log.Info("Finished fetching metrics; Sending SLIDone event now ...")

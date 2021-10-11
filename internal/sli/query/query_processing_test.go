@@ -17,8 +17,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const metricAPIURL = "/api/v2/metrics/query"
-
 // tests the GETSliValue function to return the proper datapoint
 func TestGetSLIValue(t *testing.T) {
 
@@ -44,7 +42,7 @@ func TestGetSLIValue(t *testing.T) {
 	}`
 
 	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
+	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
 	value, err := runGetSLIValueTest(handler)
 
@@ -77,7 +75,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 	}`
 
 	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
+	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
@@ -122,7 +120,7 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 	}`
 
 	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
+	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
 	value, err := runGetSLIValueTest(handler)
 
@@ -156,7 +154,7 @@ func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
 	}`
 
 	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
+	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
 	value, err := runGetSLIValueTest(handler)
 
@@ -310,7 +308,7 @@ func TestGetSLISleep(t *testing.T) {
 	}`
 
 	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(metricAPIURL, []byte(okResponse))
+	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
@@ -331,7 +329,7 @@ func TestGetSLISleep(t *testing.T) {
 // Tests the behaviour of the GetSLIValue function in case of a HTTP 400 return code
 func TestGetSLIValueWithErrorResponse(t *testing.T) {
 	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWithError(metricAPIURL, http.StatusBadRequest, []byte{})
+	handler.AddStartsWithError(dynatrace.MetricsQueryPath, http.StatusBadRequest, []byte{})
 
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
