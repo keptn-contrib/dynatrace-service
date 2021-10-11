@@ -33,14 +33,15 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.nonDbChildCallCount", "./testdata/test_get_metrics_nondbcallcount.json")
 	handler.AddExact(dynatrace.MetricsPath+"/jmeter.usermetrics.transaction.meantime", "./testdata/test_get_metrics_jmeter_usermetrics_transaction_meantime.json")
 
+	// TODO 2021-10-11: Check: these test data files may be out of date as the result data elements do not include a dimensionMap element
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1571649084000&metricSelector=builtin%3Atech.generic.processCount%3Amerge%28%22dt.entity.process_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
 		"./testdata/test_get_metrics_query_tech.generic.processCount.json")
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CentityId%28%22SERVICE-086C46F600BA1DC6%22%29%2Ctag%28%22keptn_deployment%3Aprimary%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1571649085000",
-		"./testdata/test_get_metrics_query_service.response.time.json")
+		"./testdata/test_get_metrics_query_service.response.time_merge_service_percentile_95.json")
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2890.000000%29%3Anames&resolution=Inf&to=1571649085000",
-		"./testdata/test_get_metrics_query_service.response.time.json")
+		"./testdata/test_get_metrics_query_service.response.time_merge_service_percentile_90.json")
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850.000000%29%3Anames&resolution=Inf&to=1571649085000",
-		"./testdata/test_get_metrics_query_service.response.time.json")
+		"./testdata/test_get_metrics_query_service.response.time_merge_service_percentile_50.json")
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1571649084000&metricSelector=builtin%3Atech.generic.mem.workingSetSize%3Amerge%28%22dt.entity.process_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
 		"./testdata/test_get_metrics_query_tech.generic.mem.workingSetSize.json")
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1571649084000&metricSelector=builtin%3Atech.generic.cpu.usage%3Amerge%28%22dt.entity.process_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",

@@ -1,11 +1,10 @@
 {
   "result": [
     {
-      "metricId": "builtin:service.response.time",
+      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):names",
       "data": [
         {
           "dimensions": [
-            "SERVICE-123456"
           ],
           "timestamps": [
             1600950300000
