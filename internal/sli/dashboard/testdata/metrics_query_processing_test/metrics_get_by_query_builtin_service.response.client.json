@@ -1,0 +1,21 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "result": [
+    {
+      "metricId": "builtin:service.response.client:merge(\"dt.entity.service\"):avg:names",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1633507200000
+          ],
+          "values": [
+            15868.648438045173
+          ]
+        }
+      ]
+    }
+  ]
+}

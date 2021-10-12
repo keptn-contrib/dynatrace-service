@@ -2,14 +2,15 @@ package dashboard
 
 import (
 	"errors"
+	"net/http"
+	"testing"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"testing"
 )
 
 const QUALITYGATE_DASHBOARD_ID = "12345678-1111-4444-8888-123456789012"
@@ -31,6 +32,19 @@ func createQueryingWithHandler(keptnEvent adapter.EventContentAdapter, handler h
 }
 
 func createCustomQuerying(keptnEvent adapter.EventContentAdapter, handler http.Handler, reader keptn.DashboardResourceReaderInterface) (*Querying, string, func()) {
+	dynatraceClient, url, teardown := createDynatraceClient(handler)
+
+	dh := NewQuerying(
+		keptnEvent,
+		nil,
+		dynatraceClient,
+		reader)
+
+	return dh, url, teardown
+}
+
+// TODO: 2021-10-08: Can this be moved to test package and shared?
+func createDynatraceClient(handler http.Handler) (dynatrace.ClientInterface, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials := &credentials.DTCredentials{
@@ -38,11 +52,7 @@ func createCustomQuerying(keptnEvent adapter.EventContentAdapter, handler http.H
 		ApiToken: "test",
 	}
 
-	dh := NewQuerying(
-		keptnEvent,
-		nil,
-		dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
-		reader)
+	dh := dynatrace.NewClientWithHTTP(dtCredentials, httpClient)
 
 	return dh, url, teardown
 }
