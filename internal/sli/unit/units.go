@@ -13,12 +13,12 @@ var bytePattern = regexp.MustCompile(`^[Bb]yte$`)
 // Right now this method scales microseconds to milliseconds and bytes to Kilobytes
 // At a later stage we should extend this with more conversions and even think of allowing custom scale targets, e.g: Byte to MegaByte
 func ScaleData(metricID string, unit string, value float64) float64 {
-	if IsMicroSecondUnit(unit) || strings.Contains(metricID, "builtin:service.response.time") {
+	if isMicroSecondUnit(unit) || strings.Contains(metricID, "builtin:service.response.time") {
 		// scale from microseconds to milliseconds
 		return value / 1000.0
 	}
 
-	if IsByteUnit(unit) {
+	if isByteUnit(unit) {
 		// convert Bytes to Kilobyte
 		return value / 1024
 	}
@@ -26,12 +26,14 @@ func ScaleData(metricID string, unit string, value float64) float64 {
 	return value
 }
 
-// IsByteUnit returns true iff the specified unit is byte
-func IsByteUnit(unit string) bool {
+func canBeConverted(unit string) bool {
+	return isByteUnit(unit) || isMicroSecondUnit(unit)
+}
+
+func isByteUnit(unit string) bool {
 	return bytePattern.MatchString(unit)
 }
 
-// IsMicroSecondUnit returns true iff the specified unit is micosecond
-func IsMicroSecondUnit(unit string) bool {
+func isMicroSecondUnit(unit string) bool {
 	return microSecondPattern.MatchString(unit)
 }

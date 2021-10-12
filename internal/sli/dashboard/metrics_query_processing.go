@@ -1,7 +1,6 @@
 package dashboard
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -121,22 +120,21 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 		value = unit.ScaleData(metricQueryComponents.metricID, metricQueryComponents.metricUnit, value)
 
 		// we got our metric, slos and the value
-
 		log.WithFields(
 			log.Fields{
 				"name":  indicatorName,
 				"value": value,
 			}).Debug("Got indicator value")
 
+		// we use ":names" to find the right spot to add our custom dimension filter
 		sliQuery := strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1)
 
-		// only add MV2 prefix for byte or microsecond units
-		if unit.IsByteUnit(metricQueryComponents.metricUnit) || unit.IsMicroSecondUnit(metricQueryComponents.metricUnit) {
-			sliQuery = fmt.Sprintf("MV2;%s;%s", metricQueryComponents.metricUnit, sliQuery)
+		finalSLIQuery, err := unit.ConvertToMV2Query(sliQuery, metricQueryComponents.metricUnit)
+		if err != nil {
+			finalSLIQuery = sliQuery
 		}
 
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-		// we use ":names" to find the right spot to add our custom dimension filter
 		// we also add the SLO definition in case we need to generate an SLO.yaml
 		tileResults = append(
 			tileResults,
@@ -154,7 +152,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 					Warning: sloDefinition.Warning,
 				},
 				sliName:  indicatorName,
-				sliQuery: sliQuery,
+				sliQuery: finalSLIQuery,
 			})
 	}
 
