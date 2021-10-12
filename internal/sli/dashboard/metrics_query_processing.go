@@ -47,7 +47,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 	}
 
 	if len(queryResult.Result) > 1 {
-		const errorMessage = "Expected a result only for a single metric ID"
+		const errorMessage = "Expected a result only for a single metric ID but got multiple results"
 		log.WithFields(
 			log.Fields{
 				"wantedMetricId": metricQueryComponents.metricID,
