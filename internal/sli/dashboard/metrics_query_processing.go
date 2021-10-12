@@ -28,45 +28,32 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
 	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(metricQueryComponents.fullMetricQueryString)
+
+	// ERROR-CASE: Metric API return no values or an error
+	// we could not query data - so - we return the error back as part of our SLIResults
 	if err != nil {
 		log.WithError(err).Debug("No result for query")
-
-		// ERROR-CASE: Metric API return no values or an error
-		// we could not query data - so - we return the error back as part of our SLIResults
-		return []*TileResult{
-			{
-				sliResult: &keptnv2.SLIResult{
-					Metric:  sloDefinition.SLI,
-					Value:   0,
-					Success: false, // Mark as failure
-					Message: err.Error(),
-				},
-				objective: nil,
-				sliName:   sloDefinition.SLI,
-				sliQuery:  metricQueryComponents.metricQuery,
-			},
-		}
+		return createFailureTileResult(sloDefinition.SLI, metricQueryComponents.metricQuery, err.Error())
 	}
 
-	if len(queryResult.Result) != 1 {
+	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
+	if len(queryResult.Result) == 0 {
+		const errorMessage = "Expected a single result but got no result for metric ID"
+
 		log.WithFields(
 			log.Fields{
 				"wantedMetricId": metricQueryComponents.metricID,
-			}).Error("Expected a result only for a single metric ID")
+			}).Error(errorMessage)
+		return createFailureTileResult(sloDefinition.SLI, metricQueryComponents.metricQuery, errorMessage)
+	}
 
-		return []*TileResult{
-			{
-				sliResult: &keptnv2.SLIResult{
-					Metric:  sloDefinition.SLI,
-					Value:   0,
-					Success: false, // Mark as failure
-					Message: "Expected a result only for a single metric ID",
-				},
-				objective: nil,
-				sliName:   sloDefinition.SLI,
-				sliQuery:  metricQueryComponents.metricQuery,
-			},
-		}
+	if len(queryResult.Result) > 1 {
+		const errorMessage = "Expected a result only for a single metric ID"
+		log.WithFields(
+			log.Fields{
+				"wantedMetricId": metricQueryComponents.metricID,
+			}).Error(errorMessage)
+		return createFailureTileResult(sloDefinition.SLI, metricQueryComponents.metricQuery, errorMessage)
 	}
 
 	var tileResults []*TileResult
@@ -172,4 +159,20 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 	}
 
 	return tileResults
+}
+
+func createFailureTileResult(sliName string, sliQuery string, message string) []*TileResult {
+	return []*TileResult{
+		{
+			sliResult: &keptnv2.SLIResult{
+				Metric:  sliName,
+				Value:   0,
+				Success: false,
+				Message: message,
+			},
+			objective: nil,
+			sliName:   sliName,
+			sliQuery:  sliQuery,
+		},
+	}
 }
