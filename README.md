@@ -63,6 +63,7 @@ As highlighted above, the *dynatrace-service* also provides the following capabi
 |       0.8.4 - 0.8.6     | keptncontrib/dynatrace-service:0.15.1    | 1.15 - 1.20                        |
 |       0.8.4 - 0.8.7     | keptncontrib/dynatrace-service:0.16.0    | 1.15 - 1.20                        |
 |       0.8.4 - 0.9.2     | keptncontrib/dynatrace-service:0.17.0    | 1.15 - 1.20                        |
+|       0.8.4 - 0.9.2     | keptncontrib/dynatrace-service:0.17.1    | 1.15 - 1.20                        |
 
 (*) *Note:* 0.11.0 is feature-complete with 0.10.0. Changes and fixes made from 0.10.1 to 0.10.3 will be incorporated in 0.12.0
 
