@@ -189,7 +189,7 @@ func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string,
 	// TODO 2021-10-13: Collect and log all warnings
 
 	// TODO 2021-10-13: Check if having a query result with zero results is even plausable
-	if result == nil || len(result.Result) == 0 {
+	if len(result.Result) == 0 {
 		return 0, fmt.Errorf("Dynatrace Metrics API failed to return a result")
 	}
 
