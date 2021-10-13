@@ -67,9 +67,9 @@ As highlighted above, the *dynatrace-service* also provides the following capabi
 
 (*) *Note:* 0.11.0 is feature-complete with 0.10.0. Changes and fixes made from 0.10.1 to 0.10.3 will be incorporated in 0.12.0
 
-## Upgrade to 0.19.0
+## Upgrade to 0.18.0
 
-If you are planning to upgrade to *dynatrace-service* version `0.19.0` from a previous version, then please make sure to read and follow [these instructions on patching your secrets](documentation/patching-dynatrace-secrets.md) before doing the upgrade.
+If you are planning to upgrade to *dynatrace-service* version `0.18.0` from a previous version, then please make sure to read and follow [these instructions on patching your secrets](documentation/patching-dynatrace-secrets.md) before doing the upgrade.
 
 
 ## Overview

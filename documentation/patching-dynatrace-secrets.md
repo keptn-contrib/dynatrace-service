@@ -1,6 +1,6 @@
 ## Changes to the access rights of the ServiceAccount
 
-Prior to **dynatrace-service** version `0.19.0` and **Keptn** version `0.10.0` you will probably have created your Dynatrace secret in a way similar to this:
+Prior to **dynatrace-service** version `0.18.0` and **Keptn** version `0.10.0` you will probably have created your Dynatrace secret in a way similar to this:
 
 ```shell
 kubectl -n keptn create secret generic dynatrace \
@@ -13,7 +13,7 @@ This would have resulted in a secret looking similar to this:
 
 ![Dynatrace secret by kubectl](images/secrets/secret-by-kubectl.png "Dynatrace secret by kubectl")
 
-From **dynatrace-service** version `0.19.0` onwards its **ServiceAccount** will no longer have the rights to read all secrets that are available, but only those that are bound to a specific read-only **Role**. 
+From **dynatrace-service** version `0.18.0` onwards its **ServiceAccount** will no longer have the rights to read all secrets that are available, but only those that are bound to a specific read-only **Role**. 
 This is automatically done if you create your secret with **Keptn Secret Service** (from version `0.10.0` onwards) via the **Uniform** UI. Please see [installation details](installation.md#2-create-a-secret-with-keptn-bridge) for further information on how to do this.
 
 A secret created by **Keptn Secret Service** will look like this (please note the labels `managed-by` and `scope`):
@@ -23,9 +23,9 @@ A secret created by **Keptn Secret Service** will look like this (please note th
 
 ### How to migrate your existing secrets
 
-If you have used the **dynatrace-service** before, you will most likely have existing secrets and upgrading to version `0.19.0` would result in problems reading the Dynatrace secrets it will no longer have the appropriate access rights. 
+If you have used the **dynatrace-service** before, you will most likely have existing secrets and upgrading to version `0.18.0` would result in problems reading the Dynatrace secrets it will no longer have the appropriate access rights. 
 
-Here are two suggested migration workflows to go forward before upgrading to version `0.19.0`. Either automatically or manually. 
+Here are two suggested migration workflows to go forward before upgrading to version `0.18.0`. Either automatically or manually. 
 
 
 #### Automatically adding a Kubernetes Role and RoleBinding and patching your secrets.
