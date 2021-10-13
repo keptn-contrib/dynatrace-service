@@ -122,7 +122,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "no result values")
+		assert.Contains(t, actual.Message, "zero data points")
 		assert.Contains(t, actual.Message, "Warning")
 	}
 
@@ -154,7 +154,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "no result values")
+		assert.Contains(t, actual.Message, "zero data points")
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
@@ -186,7 +186,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "returned 3 result values")
+		assert.Contains(t, actual.Message, "but got multiple")
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
