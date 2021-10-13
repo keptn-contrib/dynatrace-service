@@ -42,14 +42,14 @@ func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 
 		// this case may not occur in reality, but check it here for completeness
 		{
-			name:                         "Zero results 3 - want failure",
+			name:                         "Zero results 1 - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_0results_fake3.json",
 			shouldFail:                   true,
 			expectedErrorSubString:       "Dynatrace Metrics API returned an error",
 		},
 
 		{
-			name:                         "One results, no data - want failure",
+			name:                         "One result, no data - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_0data.json",
 			shouldFail:                   true,
 			expectedErrorSubString:       "Dynatrace Metrics API returned zero data points",
@@ -57,7 +57,7 @@ func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 
 		// this case may not occur in reality, but check it here for completeness
 		{
-			name:                         "One results, one data, no values - want failure",
+			name:                         "One result, one data, no values - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_0values_fake1.json",
 			shouldFail:                   true,
 			expectedErrorSubString:       "Dynatrace Metrics API returned zero data point values",
@@ -65,14 +65,14 @@ func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 
 		// this case may not occur in reality, but check it here for completeness
 		{
-			name:                         "One results, one data, no values - want failure",
+			name:                         "One result, one data, no values - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_0values_fake2.json",
 			shouldFail:                   true,
 			expectedErrorSubString:       "Dynatrace Metrics API returned zero data point values",
 		},
 
 		{
-			name:                         "One results, one data, two values - want failure",
+			name:                         "One result, one data, two values - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_2values.json",
 			shouldFail:                   true,
 			expectedErrorSubString:       "expected only a single data point value from Dynatrace Metrics API",
