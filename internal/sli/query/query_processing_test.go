@@ -1,7 +1,6 @@
 package query
 
 import (
-	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -227,40 +226,6 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 	value, err := runGetSLIValueTest(handler)
 
 	assert.Error(t, err)
-
-	assert.EqualValues(t, 0.0, value)
-}
-
-// Tests GetSLIValue without the expected metric in it
-func TestGetSLIValueWithoutExpectedMetric(t *testing.T) {
-
-	okResponse := `{
-		"totalCount": 4,
-		"nextPageKey": null,
-		"result": [
-			{
-				"metricId": "something_else",
-				"data": [
-					{
-						"dimensions": [],
-						"timestamps": [
-							1579097520000
-						],
-						"values": [
-							8433.40
-						]
-					}
-				]
-			}
-		]
-	}`
-
-	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
-
-	value, err := runGetSLIValueTest(handler)
-
-	assert.EqualValues(t, errors.New("No result matched the query's metric selector"), err)
 
 	assert.EqualValues(t, 0.0, value)
 }
