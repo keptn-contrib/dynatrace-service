@@ -17,6 +17,108 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
+
+	// TODO 2021-10-13: add rich error types as described in #358, including warnings
+	tests := []struct {
+		name                         string
+		metricsQueryResponseFilename string
+		expectedValue                float64
+		shouldFail                   bool
+		expectedErrorSubString       string
+	}{
+		{
+			name:                         "One result, one data - want success",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_1value.json",
+			expectedValue:                287.10692602352884 / 1000,
+		},
+
+		{
+			name:                         "Request fails - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_constraints_violated.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "Dynatrace Metrics API returned an error",
+		},
+
+		// this case may not occur in reality, but check it here for completeness
+		{
+			name:                         "Zero results 3 - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_0results_fake3.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "Dynatrace Metrics API returned an error",
+		},
+
+		{
+			name:                         "One results, no data - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_0data.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "Dynatrace Metrics API returned zero data points",
+		},
+
+		// this case may not occur in reality, but check it here for completeness
+		{
+			name:                         "One results, one data, no values - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_0values_fake1.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "Dynatrace Metrics API returned zero data point values",
+		},
+
+		// this case may not occur in reality, but check it here for completeness
+		{
+			name:                         "One results, one data, no values - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_0values_fake2.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "Dynatrace Metrics API returned zero data point values",
+		},
+
+		{
+			name:                         "One results, one data, two values - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_2values.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "expected only a single data point value from Dynatrace Metrics API",
+		},
+
+		{
+			name:                         "One result, two data - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_2data.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "expected only a single data point from Dynatrace Metrics API",
+		},
+
+		{
+			name:                         "Two results, one data - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_2results_1data.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "expected only a single result from Dynatrace Metrics API",
+		},
+
+		{
+			name:                         "Two results, two data - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_2results_2data.json",
+			shouldFail:                   true,
+			expectedErrorSubString:       "expected only a single result from Dynatrace Metrics API",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddStartsWith(dynatrace.MetricsQueryPath, tt.metricsQueryResponseFilename)
+
+			value, err := runGetSLIValueTest(handler)
+
+			assert.EqualValues(t, tt.expectedValue, value)
+			if tt.shouldFail {
+				if assert.Error(t, err) {
+					assert.Contains(t, err.Error(), tt.expectedErrorSubString)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
 // tests the GETSliValue function to return the proper datapoint
 func TestGetSLIValue(t *testing.T) {
 
