@@ -1,0 +1,14 @@
+{
+  "totalCount": 0,
+  "nextPageKey": null,
+  "result": [
+    {
+      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+      "data": []
+    },
+    {
+      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(90)",
+      "data": []
+    }
+  ]
+}

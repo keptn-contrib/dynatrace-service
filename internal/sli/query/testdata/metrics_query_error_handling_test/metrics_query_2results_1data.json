@@ -1,0 +1,36 @@
+{
+  "totalCount": 2,
+  "nextPageKey": null,
+  "result": [
+    {
+      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1634116020000
+          ],
+          "values": [
+            275.27280532146915
+          ]
+        }
+      ]
+    },
+    {
+      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(90)",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1634116020000
+          ],
+          "values": [
+            7204.250260500773
+          ]
+        }
+      ]
+    }
+  ]
+}
