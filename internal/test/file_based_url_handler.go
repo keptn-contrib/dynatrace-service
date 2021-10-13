@@ -1,11 +1,12 @@
 package test
 
 import (
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type errConfigForFile struct {
@@ -83,11 +84,11 @@ func (h *FileBasedURLHandler) assertFileIsInTestDataFolder(fileName string) {
 
 func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestedURL := r.URL.String()
-	log.Println("Mock for: " + requestedURL)
+	log.Debug("Mock for: " + requestedURL)
 
 	for url, fileName := range h.exactURLs {
 		if url == requestedURL {
-			log.Println("Found Mock: " + url + " --> " + fileName)
+			log.Debug("Found Mock: " + url + " --> " + fileName)
 
 			writeFileToResponseWriter(w, http.StatusOK, fileName)
 			return
@@ -96,7 +97,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	for url, fileName := range h.startsWithURLs {
 		if strings.Index(requestedURL, url) == 0 {
-			log.Println("Found Mock: " + url + " --> " + fileName)
+			log.Debug("Found Mock: " + url + " --> " + fileName)
 
 			writeFileToResponseWriter(w, http.StatusOK, fileName)
 			return
@@ -105,7 +106,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	for url, config := range h.exactErrorURLs {
 		if url == requestedURL {
-			log.Println("Found Mock: " + url + " --> " + config.fileName)
+			log.Debug("Found Mock: " + url + " --> " + config.fileName)
 
 			writeFileToResponseWriter(w, config.status, config.fileName)
 			return
@@ -114,7 +115,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	for url, config := range h.startsWithErrorURLs {
 		if strings.Index(requestedURL, url) == 0 {
-			log.Println("Found Mock: " + url + " --> " + config.fileName)
+			log.Debug("Found Mock: " + url + " --> " + config.fileName)
 
 			writeFileToResponseWriter(w, http.StatusOK, config.fileName)
 			return

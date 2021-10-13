@@ -1,10 +1,11 @@
 package test
 
 import (
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type errConfigForPayload struct {
@@ -68,11 +69,11 @@ func (h *PayloadBasedURLHandler) AddStartsWithError(url string, statusCode int, 
 
 func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestedURL := r.URL.String()
-	log.Println("Mock for: " + requestedURL)
+	log.Debug("Mock for: " + requestedURL)
 
 	for url, payload := range h.exactURLs {
 		if url == requestedURL {
-			log.Println("Found Mock: " + url)
+			log.Debug("Found Mock: " + url)
 
 			writePayloadToResponseWriter(w, http.StatusOK, payload)
 			return
@@ -81,7 +82,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	for url, payload := range h.startsWithURLs {
 		if strings.Index(requestedURL, url) == 0 {
-			log.Println("Found Mock: " + url)
+			log.Debug("Found Mock: " + url)
 
 			writePayloadToResponseWriter(w, http.StatusOK, payload)
 			return
@@ -90,7 +91,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	for url, config := range h.exactErrorURLs {
 		if url == requestedURL {
-			log.Println("Found Mock: " + url)
+			log.Debug("Found Mock: " + url)
 
 			writePayloadToResponseWriter(w, config.status, config.payload)
 			return
@@ -99,7 +100,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	for url, config := range h.startsWithErrorURLs {
 		if strings.Index(requestedURL, url) == 0 {
-			log.Println("Found Mock: " + url)
+			log.Debug("Found Mock: " + url)
 
 			writePayloadToResponseWriter(w, config.status, config.payload)
 			return
