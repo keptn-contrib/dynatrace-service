@@ -1,7 +1,6 @@
 package query
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -187,28 +186,50 @@ func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string,
 		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %s. This was the query executed: %s", err.Error(), metricsQuery)
 	}
 
-	if result == nil {
+	// TODO 2021-10-13: Collect and log all warnings
+
+	// TODO 2021-10-13: Check if having a query result with zero results is even plausable
+	if result == nil || len(result.Result) == 0 {
 		return 0, fmt.Errorf("Dynatrace Metrics API failed to return a result")
 	}
-	for _, i := range result.Result {
 
-		if IsMatchingMetricID(i.MetricID, metricSelector) {
-			if len(i.Data) != 1 {
-				if len(i.Data) == 0 {
-					if len(i.Warnings) > 0 {
-						return 0, fmt.Errorf("Warning: %s. Dynatrace Metrics API returned no result values, expected 1 for query: %s", strings.Join(i.Warnings, ", "), metricsQuery)
-					}
-
-					return 0, fmt.Errorf("Dynatrace Metrics API returned no result values, expected 1 for query: %s. Please ensure the response contains exactly one value", metricsQuery)
-				}
-
-				jsonString, _ := json.Marshal(i)
-				return 0, fmt.Errorf("Dynatrace Metrics API returned %d result values, expected 1 for query: %s. Please ensure the response contains exactly one value (e.g., by using :merge(dimension_key):avg for the metric). Here is the output for troubleshooting: %s", len(i.Data), metricsQuery, string(jsonString))
-			}
-
-			return unit.ScaleData(metricSelector, metricUnit, i.Data[0].Values[0]), nil
-		}
+	if len(result.Result) > 1 {
+		return 0, fmt.Errorf("expected only a single result from Dynatrace Metrics API but got multiple")
 	}
 
-	return 0, fmt.Errorf("No result matched the query's metric selector")
+	singleResult := result.Result[0]
+
+	if len(singleResult.Data) == 0 {
+		if len(singleResult.Warnings) > 0 {
+			return 0, fmt.Errorf("Dynatrace Metrics API returned zero data points. Warnings: %s, Query: %s", strings.Join(singleResult.Warnings, ", "), metricsQuery)
+		}
+		return 0, fmt.Errorf("Dynatrace Metrics API returned zero data points")
+	}
+
+	if len(singleResult.Data) > 1 {
+		if len(singleResult.Warnings) > 0 {
+			return 0, fmt.Errorf("expected only a single data point from Dynatrace Metrics API but got multiple. Warnings: %s, Query: %s", strings.Join(singleResult.Warnings, ", "), metricsQuery)
+		}
+		return 0, fmt.Errorf("expected only a single data point from Dynatrace Metrics API but got multiple")
+	}
+
+	singleDataPoint := singleResult.Data[0]
+
+	// TODO 2021-10-13: Check if having a query result with zero values is even plausable
+	if len(singleDataPoint.Values) == 0 {
+		if len(singleResult.Warnings) > 0 {
+			return 0, fmt.Errorf("Dynatrace Metrics API returned zero data point values. Warnings: %s, Query: %s", strings.Join(singleResult.Warnings, ", "), metricsQuery)
+		}
+		return 0, fmt.Errorf("Dynatrace Metrics API returned zero data point values")
+	}
+
+	if len(singleDataPoint.Values) > 1 {
+		if len(singleResult.Warnings) > 0 {
+			return 0, fmt.Errorf("expected only a single data point value from Dynatrace Metrics API but got multiple. Warnings: %s, Query: %s", strings.Join(singleResult.Warnings, ", "), metricsQuery)
+		}
+		return 0, fmt.Errorf("expected only a single data point value from Dynatrace Metrics API but got multiple")
+	}
+
+	singleValue := singleDataPoint.Values[0]
+	return unit.ScaleData(metricSelector, metricUnit, singleValue), nil
 }
