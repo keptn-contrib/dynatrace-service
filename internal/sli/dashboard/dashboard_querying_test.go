@@ -3,6 +3,7 @@ package dashboard
 import (
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -70,9 +72,10 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
-	result, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, startTime, endTime)
+	result, dbProcessed, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, startTime, endTime)
 
 	assert.Nil(t, err)
+	assert.True(t, dbProcessed)
 	assert.NotNil(t, result, "No result returned")
 	assert.NotNil(t, result.dashboardLink, "No dashboard link label generated")
 	assert.NotNil(t, result.dashboard, "No Dashboard JSON returned")
@@ -125,7 +128,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 
 	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
 	to := time.Date(2021, 9, 17, 8, 0, 0, 0, time.UTC)
-	actualResult, err := querying.GetSLIValues(dashboardID, from, to)
+	actualResult, dbProcessed, err := querying.GetSLIValues(dashboardID, from, to)
 
 	expectedResult := NewQueryResultFrom(&DashboardLink{
 		apiURL:         url,
@@ -134,7 +137,8 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 		dashboardID:    dashboardID,
 	})
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
+	assert.False(t, dbProcessed)
 	assert.EqualValues(t, expectedResult, actualResult)
 }
 
@@ -155,15 +159,59 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
 	defer teardown()
 
-	actualResult, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+	actualResult, dbProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
+	assert.False(t, dbProcessed)
 	assert.Nil(t, actualResult)
 
 	var apiErr *dynatrace.APIError
 	if assert.ErrorAs(t, err, &apiErr) {
 		assert.Equal(t, http.StatusNotFound, apiErr.Code())
 		assert.Contains(t, apiErr.Message(), dashboardID)
+	}
+}
+
+// If you do specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "<some-dashboard-uuid>") then we will try to retrieve the dashboard via the Dynatrace API.
+// this should fail if we cannot access Keptn resources or if a dashboard is stored in Keptn, but has no content
+func TestRetrieveDashboardFailingBecauseOfErrorsInKeptn(t *testing.T) {
+	testConfigs := []struct {
+		name string
+		err  error
+	}{
+		{
+			name: "error while retrieving dashboard from Keptn",
+			err:  &keptn.ResourceRetrievalFailedError{},
+		},
+		{
+			name: "error because dashboard content is empty",
+			err:  &keptn.ResourceEmptyError{},
+		},
+	}
+
+	const dashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9c"
+
+	// we should not be able to query anything, but fail early
+	handler := test.NewFileBasedURLHandler(t)
+
+	for _, testConfig := range testConfigs {
+		tc := testConfig
+		t.Run(tc.name, func(t *testing.T) {
+			querying, _, teardown := createCustomQuerying(
+				&test.EventData{},
+				handler,
+				DashboardReaderMock{err: tc.err})
+			defer teardown()
+
+			actualResult, dbProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+
+			assert.Error(t, err)
+			assert.False(t, dbProcessed)
+			assert.Nil(t, actualResult)
+
+			var resErr = reflect.New(reflect.TypeOf(tc.err)).Interface()
+			assert.ErrorAs(t, err, &resErr)
+		})
 	}
 }
 
@@ -184,9 +232,10 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
 	defer teardown()
 
-	actualResult, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+	actualResult, dbProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
+	assert.False(t, dbProcessed)
 	assert.Nil(t, actualResult)
 
 	var apiErr *dynatrace.APIError
