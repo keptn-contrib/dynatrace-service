@@ -95,7 +95,6 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 		assert.Empty(t, data.Message)
 	}
 
-	// we do not want to assert the expected result, because there won't be any in this case
 	assertThatCombinedTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
 }
 
