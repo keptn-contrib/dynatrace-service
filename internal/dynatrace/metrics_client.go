@@ -35,9 +35,7 @@ type DimensionDefinition struct {
 
 // MetricsQueryResult is struct for /metrics/query
 type MetricsQueryResult struct {
-	TotalCount  int                       `json:"totalCount"`
-	NextPageKey string                    `json:"nextPageKey"`
-	Result      []MetricQueryResultValues `json:"result"`
+	Result []MetricQueryResultValues `json:"result"`
 }
 
 type MetricQueryResultValues struct {
