@@ -11,6 +11,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -70,9 +71,10 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
-	result, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, startTime, endTime)
+	result, dashboardProcessed, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, startTime, endTime)
 
 	assert.Nil(t, err)
+	assert.True(t, dashboardProcessed)
 	assert.NotNil(t, result, "No result returned")
 	assert.NotNil(t, result.dashboardLink, "No dashboard link label generated")
 	assert.NotNil(t, result.dashboard, "No Dashboard JSON returned")
@@ -94,118 +96,6 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 		},
 		result.slo.Comparison)
 	assert.Equal(t, expectedSLOs, len(result.sliResults))
-}
-
-// If you do not specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "") and there is no dashboard already stored
-// in Keptn resources then we do not do anything
-func TestNoQueryingOfDashboardNecessaryDueToNotSpecifiedAndNotDashboardInKeptn(t *testing.T) {
-	// we don't care about event data in this case
-	ev := &test.EventData{}
-
-	// no need for a handler as we should not query Dynatrace API here
-	querying, _, teardown := createCustomQuerying(ev, nil, DashboardReaderMock{err: "no dashboard"})
-	defer teardown()
-
-	const dashboardID = ""
-
-	result, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
-
-	assert.Nil(t, result)
-	assert.Nil(t, err)
-}
-
-// If you do not specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "") but there is a dashboard already stored
-// in Keptn resources then we do the fallback to querying Dynatrace API for a dashboard
-// also we will fail because of a failing request to Dynatrace API
-func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnWithFailingDynatraceRequest(t *testing.T) {
-	// we don't care about event data in this case
-	ev := &test.EventData{}
-
-	// we add a handler to simulate a failing dashboards API request (401 in this case)
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExactError(dynatrace.DashboardsPath, http.StatusUnauthorized, "./testdata/dynatrace_missing_authorization_error.json")
-
-	// we don't care about the content of the dashboard here, because it just should not be empty!
-	// also we don't add a handler to simulate a failing request (404) in this case.
-	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{content: "some dashboard content"})
-	defer teardown()
-
-	const dashboardID = ""
-
-	result, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
-
-	assert.Nil(t, result)
-	assert.Nil(t, err)
-}
-
-// If you do not specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "") but there is a dashboard already stored
-// in Keptn resources then we do the fallback to querying Dynatrace API for a dashboard
-//
-// we will find dashboards but none with a name, that would match the required format: KQG;project=%project%;service=%service%;stage=%stage%;xxx
-func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnWithSuccessfulDynatraceRequest(t *testing.T) {
-	// we don't care about event data in this case
-	ev := &test.EventData{}
-
-	// we add a handler to simulate an successful Dashboards API request in this case.
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath, "./testdata/test_query_dynatrace_dashboard_dashboards.json")
-
-	// we don't care about the content of the dashboard here, because it just should not be empty!
-	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{content: "some dashboard content"})
-	defer teardown()
-
-	const dashboardID = ""
-
-	result, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
-
-	assert.Nil(t, result)
-	assert.Nil(t, err)
-}
-
-// If you do not specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "") but there is a dashboard already stored
-// in Keptn resources then we do the fallback to querying Dynatrace API for a dashboard
-//
-// we will find dashboards and one with a name, that would match the required format: KQG;project=%project%;service=%service%;stage=%stage%;xxx
-// also the retrieved dashboard is the same as the stored one and we have enabled "KQG.QueryBehavior=ParseOnChange" in our markdown tile
-// so no need to do anything with the contents of the dashboard here.
-func TestQueryingOfDashboardNecessaryDueToNotSpecifiedButStoredDashboardInKeptnWithSuccessfulDynatraceRequestAndMatchingDashboard(t *testing.T) {
-	// we need to match project, stage & service against the dashboard name
-	ev := createKeptnEvent("project-1", "stage-3", "service-7")
-
-	const matchingDashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9b"
-	// we need to make sure to use the "processed" one and not the original Dynatrace JSON, because we do have different
-	// models for our DTOs (Tile structures are generic in our part - we need to support any tile type)
-	const storedDashboardFile = "./testdata/test_query_dynatrace_dashboard_dashboard_kqg.json"
-
-	// we add a handle to simulate an successful Dashboards API request in this case.
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath, "./testdata/test_query_dynatrace_dashboard_dashboards_kqg.json")
-	handler.AddExact(dynatrace.DashboardsPath+"/"+matchingDashboardID, storedDashboardFile)
-
-	dashboardContent, err := ioutil.ReadFile(storedDashboardFile)
-	if err != nil {
-		panic(err)
-	}
-
-	// we need to make sure that the mocked reader returns the "processed" Dynatrace Dashboard
-	querying, url, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{content: string(dashboardContent)})
-	defer teardown()
-
-	const dashboardID = ""
-
-	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
-	to := time.Date(2021, 9, 17, 8, 0, 0, 0, time.UTC)
-	actualResult, err := querying.GetSLIValues(dashboardID, from, to)
-
-	expectedResult := NewQueryResultFrom(&DashboardLink{
-		apiURL:         url,
-		startTimestamp: from,
-		endTimestamp:   to,
-		dashboardID:    matchingDashboardID,
-	})
-
-	assert.Nil(t, err)
-	assert.EqualValues(t, expectedResult, actualResult)
 }
 
 // If you do specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "<some-dashboard-uuid>") then we will retrieve the
@@ -237,7 +127,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 
 	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
 	to := time.Date(2021, 9, 17, 8, 0, 0, 0, time.UTC)
-	actualResult, err := querying.GetSLIValues(dashboardID, from, to)
+	actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, from, to)
 
 	expectedResult := NewQueryResultFrom(&DashboardLink{
 		apiURL:         url,
@@ -246,7 +136,8 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 		dashboardID:    dashboardID,
 	})
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
+	assert.False(t, dashboardProcessed)
 	assert.EqualValues(t, expectedResult, actualResult)
 }
 
@@ -267,15 +158,58 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
 	defer teardown()
 
-	actualResult, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+	actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
+	assert.False(t, dashboardProcessed)
 	assert.Nil(t, actualResult)
 
 	var apiErr *dynatrace.APIError
 	if assert.ErrorAs(t, err, &apiErr) {
 		assert.Equal(t, http.StatusNotFound, apiErr.Code())
 		assert.Contains(t, apiErr.Message(), dashboardID)
+	}
+}
+
+// If you do specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "<some-dashboard-uuid>") then we will try to retrieve the dashboard via the Dynatrace API.
+// this should fail if we cannot access Keptn resources or if a dashboard is stored in Keptn, but has no content
+func TestRetrieveDashboardFailingBecauseOfErrorsInKeptn(t *testing.T) {
+	testConfigs := []struct {
+		name string
+		err  error
+	}{
+		{
+			name: "error while retrieving dashboard from Keptn",
+			err:  &keptn.ResourceRetrievalFailedError{},
+		},
+		{
+			name: "error because dashboard content is empty",
+			err:  &keptn.ResourceEmptyError{},
+		},
+	}
+
+	const dashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9c"
+
+	// we should not be able to query anything, but fail early
+	handler := test.NewFileBasedURLHandler(t)
+
+	for _, testConfig := range testConfigs {
+		tc := testConfig
+		t.Run(tc.name, func(t *testing.T) {
+			querying, _, teardown := createCustomQuerying(
+				&test.EventData{},
+				handler,
+				DashboardReaderMock{err: tc.err})
+			defer teardown()
+
+			actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+
+			assert.Error(t, err)
+			assert.False(t, dashboardProcessed)
+			assert.Nil(t, actualResult)
+
+			assert.ErrorIs(t, err, tc.err)
+		})
 	}
 }
 
@@ -296,9 +230,10 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
 	defer teardown()
 
-	actualResult, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+	actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
+	assert.False(t, dashboardProcessed)
 	assert.Nil(t, actualResult)
 
 	var apiErr *dynatrace.APIError

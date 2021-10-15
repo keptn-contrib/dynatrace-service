@@ -1,13 +1,16 @@
 package dashboard
 
 import (
+	"net/http"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	"net/http"
-	"testing"
 )
 
 func TestFindDynatraceDashboardSuccess(t *testing.T) {
@@ -21,13 +24,8 @@ func TestFindDynatraceDashboardSuccess(t *testing.T) {
 
 	dashboardID, err := dh.findDynatraceDashboard()
 
-	if err != nil {
-		t.Error(err)
-	}
-
-	if dashboardID != QUALITYGATE_DASHBOARD_ID {
-		t.Errorf("findDynatraceDashboard not finding quality gate dashboard")
-	}
+	assert.NoError(t, err)
+	assert.EqualValues(t, dashboardID, QUALITYGATE_DASHBOARD_ID)
 }
 
 func TestFindDynatraceDashboardNoneExistingDashboard(t *testing.T) {
@@ -41,13 +39,8 @@ func TestFindDynatraceDashboardNoneExistingDashboard(t *testing.T) {
 
 	dashboardID, err := dh.findDynatraceDashboard()
 
-	if err != nil {
-		t.Error(err)
-	}
-
-	if dashboardID != "" {
-		t.Errorf("findDynatraceDashboard found a dashboard that should not have been found: " + dashboardID)
-	}
+	assert.Error(t, err)
+	assert.Empty(t, dashboardID)
 }
 
 func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
@@ -60,20 +53,11 @@ func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
 	defer teardown()
 
-	// this should load the dashboard
-	dashboardJSON, dashboard, err := dh.Retrieve(common.DynatraceConfigDashboardQUERY)
+	dashboard, dashboardID, err := dh.Retrieve(common.DynatraceConfigDashboardQUERY)
 
-	if dashboardJSON == nil {
-		t.Errorf("Didnt query dashboard for quality gate project even though it shoudl exist: " + dashboard)
-	}
-
-	if dashboard != QUALITYGATE_DASHBOARD_ID {
-		t.Errorf("Didnt query the dashboard that matches the project/stage/service names: " + dashboard)
-	}
-
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
+	assert.NotNil(t, dashboard)
+	assert.EqualValues(t, QUALITYGATE_DASHBOARD_ID, dashboardID)
 }
 
 func TestLoadDynatraceDashboardWithID(t *testing.T) {
@@ -85,20 +69,11 @@ func TestLoadDynatraceDashboardWithID(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
 	defer teardown()
 
-	// this should load the dashboard
-	dashboardJSON, dashboard, err := dh.Retrieve(QUALITYGATE_DASHBOARD_ID)
+	dashboard, dashboardID, err := dh.Retrieve(QUALITYGATE_DASHBOARD_ID)
 
-	if dashboardJSON == nil {
-		t.Errorf("Didnt query dashboard for quality gate project even though it should exist by ID")
-	}
-
-	if dashboard != QUALITYGATE_DASHBOARD_ID {
-		t.Errorf("loadDynatraceDashboard should return the passed in dashboard id")
-	}
-
-	if err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, err)
+	assert.NotNil(t, dashboard)
+	assert.EqualValues(t, QUALITYGATE_DASHBOARD_ID, dashboardID)
 }
 
 func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
@@ -109,20 +84,13 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(keptnEvent, handler)
 	defer teardown()
 
-	// this should load the dashboard
 	dashboardJSON, dashboard, err := dh.Retrieve("")
 
-	if dashboardJSON != nil {
-		t.Errorf("No dashboard should be loaded if no dashboard is passed")
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "invalid 'dashboard'")
 	}
-
-	if dashboard != "" {
-		t.Errorf("dashboard should be empty as by default we dont load a dashboard")
-	}
-
-	if err != nil {
-		t.Error(err)
-	}
+	assert.Nil(t, dashboardJSON)
+	assert.Empty(t, dashboard)
 }
 
 func createDashboardRetrieval(eventData adapter.EventContentAdapter, handler http.Handler) (*Retrieval, func()) {

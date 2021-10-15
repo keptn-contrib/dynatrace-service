@@ -1,16 +1,16 @@
 package dashboard
 
 import (
-	"errors"
 	"net/http"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	"github.com/stretchr/testify/assert"
 )
 
 const QUALITYGATE_DASHBOARD_ID = "12345678-1111-4444-8888-123456789012"
@@ -74,12 +74,12 @@ func TestCreateQueryingWithHandler(t *testing.T) {
 
 type DashboardReaderMock struct {
 	content string
-	err     string
+	err     error
 }
 
 func (m DashboardReaderMock) GetDashboard(project string, stage string, service string) (string, error) {
-	if m.err != "" {
-		return "", errors.New(m.err)
+	if m.err != nil {
+		return "", m.err
 	}
 
 	return m.content, nil

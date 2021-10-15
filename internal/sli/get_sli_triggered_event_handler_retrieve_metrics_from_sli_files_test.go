@@ -15,7 +15,6 @@ import (
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI could not be found because of a misspelled indicator name - e.g. 'response_time_p59' instead of 'response_time_p95'
 //   - this would have lead to a fallback to default SLIs, but should return an error now.
@@ -43,7 +42,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, but Dynatrace cannot process the query correctly and returns a 400 error
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *testing.T) {
@@ -75,7 +73,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI has errors, so parsing the YAML file would not be possible
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
@@ -100,7 +97,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 0 results and a warning
 //   - e.g. misspelled dimension key in merge transformation
@@ -132,7 +128,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 0 results and no warning
 //	 - e.g. misspelled tag name
@@ -164,7 +159,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 3 results instead of 1 and no warning
 //	 - e.g. missing merge('dimension_key') transformation
@@ -196,7 +190,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, but the MV2 prefix is used incorrectly, so we return an error for that
 //	 - e.g. MV2;MicroSeconds;<query>
@@ -257,7 +250,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists but there are no SLIs defined OR
 // * there is no 'dynatrace/sli.yaml' file
 //   - currently this would lead to a fallback for default SLI definitions
@@ -285,7 +277,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * no (previous) dashboard is stored in Keptn
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
@@ -310,7 +301,7 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 
 func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
 	// we use the special mock for the resource client
-	// we do not want to query a dashboard, so we leave it empty (and have no dashboard stored)
+	// we do not want to query a dashboard, so we leave it empty
 	setupTestAndAssertNoError(t, handler, kClient, &resourceClientMock{t: t}, "")
 
 	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {

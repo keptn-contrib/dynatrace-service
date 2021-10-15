@@ -1,16 +1,17 @@
 package dashboard
 
 import (
+	"errors"
 	"fmt"
+	"time"
+
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"time"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
 // Querying interacts with a dynatrace API endpoint
@@ -32,33 +33,23 @@ func NewQuerying(eventData adapter.EventContentAdapter, customFilters []*keptnv2
 }
 
 // GetSLIValues implements - https://github.com/keptn-contrib/dynatrace-sli-service/issues/60
-// Queries Dynatrace for the existance of a dashboard tagged with keptn_project:project, keptn_stage:stage, keptn_service:service, SLI
+// Queries Dynatrace for the existence of a dashboard tagged with keptn_project:project, keptn_stage:stage, keptn_service:service, SLI
 // if this dashboard exists it will be parsed and a custom SLI_dashboard.yaml and an SLO_dashboard.yaml will be created
-// Returns:
-//  #1: Link to Dashboard
-//  #2: SLI
-//  #3: ServiceLevelObjectives
-//  #4: SLIResult
-//  #5: Error
-func (q *Querying) GetSLIValues(dashboardID string, startUnix time.Time, endUnix time.Time) (*QueryResult, error) {
-
-	// Lets see if there is a dashboard.json already in the configuration repo - if so its an indicator that we should query the dashboard
-	// This check is especially important for backward compatibility as the new dynatrace.conf.yaml:dashboard property is changing the default behavior
-	// If a dashboard.json exists and dashboard property is empty we default to QUERY - which is the old default behavior
+// Returns a QueryResult, a bool indicating whether the dashboard was processed, or an error
+func (q *Querying) GetSLIValues(dashboardID string, startUnix time.Time, endUnix time.Time) (*QueryResult, bool, error) {
 	existingDashboardContent, err := q.dashboardReader.GetDashboard(q.eventData.GetProject(), q.eventData.GetStage(), q.eventData.GetService())
-	if err == nil && existingDashboardContent != "" && dashboardID == "" {
-		log.Debug("Set dashboard=query for backward compatibility as dashboard.json was present!")
-		dashboardID = common.DynatraceConfigDashboardQUERY
+	if err != nil {
+		// only fail if there is a problem with dashboard. Having no dashboard stored is not a problem, so continue
+		var rnfErr *keptn.ResourceNotFoundError
+		if !errors.As(err, &rnfErr) {
+			return nil, false, err
+		}
 	}
 
-	// lets load the dashboard if needed
+	// let's load the dashboard if needed
 	dashbd, dashboardID, err := NewRetrieval(q.dtClient, q.eventData).Retrieve(dashboardID)
 	if err != nil {
-		return nil, fmt.Errorf("error while processing dashboard config '%s' - %w", dashboardID, err)
-	}
-
-	if dashbd == nil {
-		return nil, nil
+		return nil, false, fmt.Errorf("error while processing dashboard config '%s' - %w", dashboardID, err)
 	}
 
 	// Lets validate if we really need to process this dashboard as it might be the same (without change) from the previous runs
@@ -72,8 +63,9 @@ func (q *Querying) GetSLIValues(dashboardID string, startUnix time.Time, endUnix
 					endUnix,
 					dashbd.ID,
 					dashbd.GetFilter())),
+			false,
 			nil
 	}
 
-	return NewProcessing(q.dtClient, q.eventData, q.customSLIFilters, startUnix, endUnix).Process(dashbd), nil
+	return NewProcessing(q.dtClient, q.eventData, q.customSLIFilters, startUnix, endUnix).Process(dashbd), true, nil
 }

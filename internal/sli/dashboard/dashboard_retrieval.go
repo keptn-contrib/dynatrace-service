@@ -1,10 +1,14 @@
 package dashboard
 
 import (
+	"errors"
+	"fmt"
+
+	log "github.com/sirupsen/logrus"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	log "github.com/sirupsen/logrus"
 )
 
 type Retrieval struct {
@@ -22,29 +26,25 @@ func NewRetrieval(client dynatrace.ClientInterface, eventData adapter.EventConte
 // Retrieve Depending on the dashboard parameter which is pulled from dynatrace.conf.yaml:dashboard this method either
 //   - query:        queries all dashboards on the Dynatrace Tenant and returns the one that matches project/service/stage, or
 //   - dashboard-ID: if this is a valid dashboard ID it will query the dashboard with this ID, e.g: ddb6a571-4bda-4e8b-a9c0-4a3e02c2e14a, or
-//   - <empty>:      it will not query any dashboard.
 // It returns a parsed Dynatrace Dashboard and the actual dashboard ID in case we queried a dashboard.
 func (r *Retrieval) Retrieve(dashboard string) (*dynatrace.Dashboard, string, error) {
-	// Option 1: there is no dashboard we should query
+	// dashboard property is invalid
 	if dashboard == "" {
-		return nil, dashboard, nil
+		return nil, "", fmt.Errorf("invalid 'dashboard' property - either specify a dashboard ID or use 'query'")
 	}
 
-	// Option 2: Query dashboards
+	// Option 1: Query dashboards
 	if dashboard == common.DynatraceConfigDashboardQUERY {
 		var err error
 		dashboard, err = r.findDynatraceDashboard()
-		if dashboard == "" || err != nil {
+		if err != nil {
 			log.WithError(err).WithFields(
 				log.Fields{
 					"project": r.eventData.GetProject(),
 					"stage":   r.eventData.GetStage(),
 					"service": r.eventData.GetService(),
 				}).Debug("Dashboard option query but could not find KQG dashboard")
-
-			// TODO 2021-08-03: should this really return no error, if querying dashboards found no match?
-			// this would be the same result as option 1 then
-			return nil, dashboard, nil
+			return nil, "", err
 		}
 
 		log.WithFields(
@@ -56,7 +56,7 @@ func (r *Retrieval) Retrieve(dashboard string) (*dynatrace.Dashboard, string, er
 			}).Debug("Dashboard option query found for dashboard")
 	}
 
-	// We have a Dashboard UUID - now lets query it!
+	// Option 2: We (now) have a Dashboard UUID - so let's query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
 	dynatraceDashboard, err := dynatrace.NewDashboardsClient(r.client).GetByID(dashboard)
 	if err != nil {
@@ -74,5 +74,10 @@ func (r *Retrieval) findDynatraceDashboard() (string, error) {
 		return "", err
 	}
 
-	return dashboards.SearchForDashboardMatching(r.eventData.GetProject(), r.eventData.GetStage(), r.eventData.GetService()), nil
+	dashboard := dashboards.SearchForDashboardMatching(r.eventData.GetProject(), r.eventData.GetStage(), r.eventData.GetService())
+	if dashboard != "" {
+		return dashboard, nil
+	}
+
+	return "", errors.New("could not find a matching dashboard name - e.g. KQG;project=<project>;service=<service>;stage=<stage>")
 }

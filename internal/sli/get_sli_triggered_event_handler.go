@@ -159,10 +159,9 @@ func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 	return nil
 }
 
-/**
- * Tries to find a dynatrace dashboard that matches our project. If so - returns the SLI, SLO and SLIResults
- */
-func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time, endUnix time.Time) (*dashboard.DashboardLink, []*keptnv2.SLIResult, error) {
+// Tries to find a dynatrace dashboard that matches our project. If so - returns the SLI, SLO and SLIResults, as well as
+// a bool whether the dashboard was processed again or not.
+func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time, endUnix time.Time) (*dashboard.DashboardLink, []*keptnv2.SLIResult, bool, error) {
 
 	// creating Dynatrace Retrieval which allows us to call the Dynatrace API
 	sliQuerying := dashboard.NewQuerying(eh.event, eh.event.GetCustomSLIFilters(), eh.dtClient, eh.resourceClient)
@@ -171,20 +170,20 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
 	// ==============================================================================
 	// Lets see if we have a Dashboard in Dynatrace that we should parse
-	result, err := sliQuerying.GetSLIValues(eh.dashboard, startUnix, endUnix)
-	if result == nil && err == nil {
-		return nil, nil, nil
+	result, dashboardProcessed, err := sliQuerying.GetSLIValues(eh.dashboard, startUnix, endUnix)
+	if err != nil {
+		return nil, nil, false, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
 	}
 
-	if err != nil {
-		return nil, nil, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
+	if !dashboardProcessed {
+		return result.DashboardLink(), nil, false, nil
 	}
 
 	// lets store the dashboard as well
 	if result.Dashboard() != nil {
 		err = eh.resourceClient.UploadDashboard(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.Dashboard())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, true, err
 		}
 	}
 
@@ -192,7 +191,7 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	if result.HasSLIs() {
 		err = eh.resourceClient.UploadSLI(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLI())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, true, err
 		}
 	}
 
@@ -200,11 +199,11 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	if result.HasSLOs() {
 		err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLO())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, true, err
 		}
 	}
 
-	return result.DashboardLink(), result.SLIResults(), nil
+	return result.DashboardLink(), result.SLIResults(), true, nil
 }
 
 /**
@@ -352,27 +351,24 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		return eh.sendGetSLIFinishedEvent(nil, err)
 	}
 
-	//
-	// THIS IS OUR RETURN OBJECT: sliResult
-	// Whether option 1 or option 2 - this will hold our SLIResults
 	var sliResults []*keptnv2.SLIResult
+	var dashboardProcessed = true
+	if eh.dashboard != "" {
+		// Option 1: See if we can get the data from a Dynatrace Dashboard
+		var dashboardLinkAsLabel *dashboard.DashboardLink
+		dashboardLinkAsLabel, sliResults, dashboardProcessed, err = eh.getDataFromDynatraceDashboard(startUnix, endUnix)
+		if err != nil {
+			log.WithError(err).Error("Could not retrieve SLI results via Dynatrace dashboard")
+			return eh.sendGetSLIFinishedEvent(nil, err)
+		}
 
-	//
-	// Option 1 - see if we can get the data from a Dynatrace Dashboard
-	dashboardLinkAsLabel, sliResults, err := eh.getDataFromDynatraceDashboard(startUnix, endUnix)
-	if err != nil {
-		log.WithError(err).Error("Could not retrieve SLI results via Dynatrace dashboard")
-		return eh.sendGetSLIFinishedEvent(nil, err)
+		// add link to dynatrace dashboard to labels
+		if dashboardLinkAsLabel != nil {
+			eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
+		}
 	}
-
-	// add link to dynatrace dashboard to labels
-	if dashboardLinkAsLabel != nil {
-		eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
-	}
-
-	//
-	// Option 2: If we have not received any data via a Dynatrace Dashboard lets query the SLIs based on the SLI.yaml definition
-	if sliResults == nil {
+	if eh.dashboard == "" || !dashboardProcessed {
+		// Option 2: Let's query the SLIs based on the SLI.yaml definition
 		sliResults, err = eh.getSLIResultsFromCustomQueries(startUnix, endUnix)
 		if err != nil {
 			log.WithError(err).Error("Could not retrieve SLI results via sli.yaml file")
