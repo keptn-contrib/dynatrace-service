@@ -161,7 +161,7 @@ jobs:
             console.log(`Trying to fetch release by tag '${tag}'...`);
 
             try {
-              release = await github.repos.getReleaseByTag({
+              release = await github.rest.repos.getReleaseByTag({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 tag: tag
@@ -180,13 +180,13 @@ jobs:
         uses: actions/github-script@v5
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
+          script: |            
             let tag = "${{ env.VERSION }}";
             console.log(`Trying to fetch DRAFT release by tag '${tag}'...`);
 
             try {
               // get all releases (including drafts)
-              let releases = await github.repos.listReleases({
+              let releases = await github.rest.repos.listReleases({
                 owner: context.repo.owner,
                 repo: context.repo.repo
               });
