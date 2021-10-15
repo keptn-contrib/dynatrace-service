@@ -3,7 +3,6 @@ package dashboard
 import (
 	"io/ioutil"
 	"net/http"
-	"reflect"
 	"testing"
 	"time"
 
@@ -209,8 +208,7 @@ func TestRetrieveDashboardFailingBecauseOfErrorsInKeptn(t *testing.T) {
 			assert.False(t, dashboardProcessed)
 			assert.Nil(t, actualResult)
 
-			var resErr = reflect.New(reflect.TypeOf(tc.err)).Interface()
-			assert.ErrorAs(t, err, &resErr)
+			assert.ErrorIs(t, err, tc.err)
 		})
 	}
 }
