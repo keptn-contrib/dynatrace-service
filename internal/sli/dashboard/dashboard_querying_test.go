@@ -72,10 +72,10 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
-	result, dbProcessed, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, startTime, endTime)
+	result, dashboardProcessed, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, startTime, endTime)
 
 	assert.Nil(t, err)
-	assert.True(t, dbProcessed)
+	assert.True(t, dashboardProcessed)
 	assert.NotNil(t, result, "No result returned")
 	assert.NotNil(t, result.dashboardLink, "No dashboard link label generated")
 	assert.NotNil(t, result.dashboard, "No Dashboard JSON returned")
@@ -128,7 +128,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 
 	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
 	to := time.Date(2021, 9, 17, 8, 0, 0, 0, time.UTC)
-	actualResult, dbProcessed, err := querying.GetSLIValues(dashboardID, from, to)
+	actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, from, to)
 
 	expectedResult := NewQueryResultFrom(&DashboardLink{
 		apiURL:         url,
@@ -138,7 +138,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 	})
 
 	assert.NoError(t, err)
-	assert.False(t, dbProcessed)
+	assert.False(t, dashboardProcessed)
 	assert.EqualValues(t, expectedResult, actualResult)
 }
 
@@ -159,10 +159,10 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
 	defer teardown()
 
-	actualResult, dbProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+	actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
-	assert.False(t, dbProcessed)
+	assert.False(t, dashboardProcessed)
 	assert.Nil(t, actualResult)
 
 	var apiErr *dynatrace.APIError
@@ -203,10 +203,10 @@ func TestRetrieveDashboardFailingBecauseOfErrorsInKeptn(t *testing.T) {
 				DashboardReaderMock{err: tc.err})
 			defer teardown()
 
-			actualResult, dbProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+			actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 			assert.Error(t, err)
-			assert.False(t, dbProcessed)
+			assert.False(t, dashboardProcessed)
 			assert.Nil(t, actualResult)
 
 			var resErr = reflect.New(reflect.TypeOf(tc.err)).Interface()
@@ -232,10 +232,10 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
 	defer teardown()
 
-	actualResult, dbProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+	actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
 
 	assert.Error(t, err)
-	assert.False(t, dbProcessed)
+	assert.False(t, dashboardProcessed)
 	assert.Nil(t, actualResult)
 
 	var apiErr *dynatrace.APIError
