@@ -121,77 +121,29 @@ func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 	switch e.Type() {
 	case keptnevents.ConfigureMonitoringEventType:
-		keptnEvent, err := monitoring.NewConfigureMonitoringAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return monitoring.NewConfigureMonitoringAdapterFromEvent(e)
 	case keptnv2.GetFinishedEventType(keptnv2.ProjectCreateTaskName):
-		keptnEvent, err := monitoring.NewProjectCreateFinishedAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return monitoring.NewProjectCreateFinishedAdapterFromEvent(e)
 	case keptnevents.ProblemEventType:
-		keptnEvent, err := problem.NewProblemAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return problem.NewProblemAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName):
-		keptnEvent, err := problem.NewActionTriggeredAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return problem.NewActionTriggeredAdapterFromEvent(e)
 	case keptnv2.GetStartedEventType(keptnv2.ActionTaskName):
-		keptnEvent, err := problem.NewActionStartedAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return problem.NewActionStartedAdapterFromEvent(e)
 	case keptnv2.GetFinishedEventType(keptnv2.ActionTaskName):
-		keptnEvent, err := problem.NewActionFinishedAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return problem.NewActionFinishedAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.GetSLITaskName):
-		keptnEvent, err := sli.NewGetSLITriggeredAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return sli.NewGetSLITriggeredAdapterFromEvent(e)
 	case keptnv2.GetFinishedEventType(keptnv2.DeploymentTaskName):
-		keptnEvent, err := deployment.NewDeploymentFinishedAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return deployment.NewDeploymentFinishedAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.TestTaskName):
-		keptnEvent, err := deployment.NewTestTriggeredAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return deployment.NewTestTriggeredAdapterFromEvent(e)
 	case keptnv2.GetFinishedEventType(keptnv2.TestTaskName):
-		keptnEvent, err := deployment.NewTestFinishedAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return deployment.NewTestFinishedAdapterFromEvent(e)
 	case keptnv2.GetFinishedEventType(keptnv2.EvaluationTaskName):
-		keptnEvent, err := deployment.NewEvaluationFinishedAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return deployment.NewEvaluationFinishedAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.ReleaseTaskName):
-		keptnEvent, err := deployment.NewReleaseTriggeredAdapterFromEvent(e)
-		if err != nil {
-			return nil, err
-		}
-		return keptnEvent, nil
+		return deployment.NewReleaseTriggeredAdapterFromEvent(e)
 	case keptnv2.GetFinishedEventType(keptnv2.ReleaseTaskName):
 		//do nothing, ignore the type, don't even log
 		return nil, nil
