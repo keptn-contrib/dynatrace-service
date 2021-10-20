@@ -36,12 +36,12 @@ func NewDeploymentFinishedAdapterFromEvent(e cloudevents.Event) (*DeploymentFini
 
 // GetShKeptnContext returns the shkeptncontext
 func (a DeploymentFinishedAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.ShKeptnContext()
+	return a.cloudEvent.GetShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a DeploymentFinishedAdapter) GetSource() string {
-	return a.cloudEvent.Source()
+	return a.cloudEvent.GetSource()
 }
 
 // GetEvent returns the event type

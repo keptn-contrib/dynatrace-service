@@ -60,12 +60,12 @@ func NewProblemAdapterFromEvent(e cloudevents.Event) (*ProblemAdapter, error) {
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ProblemAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.ShKeptnContext()
+	return a.cloudEvent.GetShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ProblemAdapter) GetSource() string {
-	return a.cloudEvent.Source()
+	return a.cloudEvent.GetSource()
 }
 
 // GetEvent returns the event type
@@ -114,7 +114,7 @@ func (a ProblemAdapter) GetLabels() map[string]string {
 }
 
 func (a ProblemAdapter) IsNotFromDynatrace() bool {
-	return a.cloudEvent.Source() != "dynatrace"
+	return a.cloudEvent.GetSource() != "dynatrace"
 }
 
 func (a ProblemAdapter) GetState() string {

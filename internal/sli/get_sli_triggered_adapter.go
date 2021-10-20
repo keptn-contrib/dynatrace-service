@@ -42,12 +42,12 @@ func NewGetSLITriggeredAdapterFromEvent(e cloudevents.Event) (*GetSLITriggeredAd
 
 // GetShKeptnContext returns the shkeptncontext
 func (a GetSLITriggeredAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.ShKeptnContext()
+	return a.cloudEvent.GetShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a GetSLITriggeredAdapter) GetSource() string {
-	return a.cloudEvent.Source()
+	return a.cloudEvent.GetSource()
 }
 
 // GetEvent returns the event type
@@ -111,7 +111,7 @@ func (a GetSLITriggeredAdapter) GetCustomSLIFilters() []*keptnv2.SLIFilter {
 }
 
 func (a GetSLITriggeredAdapter) GetEventID() string {
-	return a.cloudEvent.ID()
+	return a.cloudEvent.GetEventID()
 }
 
 func (a *GetSLITriggeredAdapter) AddLabel(name string, value string) {
