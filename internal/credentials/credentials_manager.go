@@ -1,81 +1,23 @@
 package credentials
 
 import (
-	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 
-	"k8s.io/client-go/kubernetes"
-
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/url"
-	keptnkubeutils "github.com/keptn/kubernetes-utils/pkg"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var namespace = getPodNamespace()
+const dynatraceSecretName = "dynatrace"
 
-var ErrSecretNotFound = errors.New("secret not found")
-
-func getKubernetesClient() (*kubernetes.Clientset, error) {
-	useInClusterConfig := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
-	return keptnkubeutils.GetClientset(useInClusterConfig)
-}
-
-func getPodNamespace() string {
-	ns := os.Getenv("POD_NAMESPACE")
-	if ns == "" {
-		return "keptn"
-	}
-
-	return ns
-}
-
-type SecretReader interface {
-	ReadSecret(secretName, namespace, secretKey string) (string, error)
-}
-
-type K8sCredentialReader struct {
-	K8sClient kubernetes.Interface
-}
-
-func NewK8sCredentialReader(k8sClient kubernetes.Interface) (*K8sCredentialReader, error) {
-	k8sCredentialReader := &K8sCredentialReader{}
-	if k8sClient != nil {
-		k8sCredentialReader.K8sClient = k8sClient
-	} else {
-		client, err := getKubernetesClient()
-		if err != nil {
-			return nil, fmt.Errorf("could not initialize K8sCredentialReader: %s", err.Error())
-		}
-		k8sCredentialReader.K8sClient = client
-	}
-	return k8sCredentialReader, nil
-}
-
-func (kcr *K8sCredentialReader) ReadSecret(secretName, namespace, secretKey string) (string, error) {
-	secret, err := kcr.K8sClient.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	if string(secret.Data[secretKey]) == "" {
-		return "", ErrSecretNotFound
-	}
-	return string(secret.Data[secretKey]), nil
-}
-
-type OSEnvCredentialReader struct{}
-
-func (OSEnvCredentialReader) ReadSecret(secretName, namespace, secretKey string) (string, error) {
-	secret := os.Getenv(secretKey)
-	if secret == "" {
-		return secret, ErrSecretNotFound
-	}
-	return secret, nil
-}
+const dynatraceTenantSecretName = "DT_TENANT"
+const dynatraceAPITokenSecretName = "DT_API_TOKEN"
+const keptnAPIURLName = "KEPTN_API_URL"
+const keptnAPITokenName = "KEPTN_API_TOKEN"
+const keptnBridgeURLName = "KEPTN_BRIDGE_URL"
 
 //go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/credential_manager_mock.go . CredentialManagerInterface
 type CredentialManagerInterface interface {
@@ -84,32 +26,39 @@ type CredentialManagerInterface interface {
 }
 
 type CredentialManager struct {
-	SecretReader SecretReader
+	SecretReader              *K8sSecretReader
+	EnvironmentVariableReader *env.OSEnvironmentVariableReader
 }
 
-func NewCredentialManager(sr SecretReader) (*CredentialManager, error) {
+func NewCredentialManager(secretReader *K8sSecretReader) (*CredentialManager, error) {
 	cm := &CredentialManager{}
-	if sr != nil {
-		cm.SecretReader = sr
-	} else {
-		sr, err := NewK8sCredentialReader(nil)
+	if secretReader == nil {
+		sr, err := NewK8sSecretReader(nil)
 		if err != nil {
 			return nil, fmt.Errorf("could not initialize CredentialManager: %s", err.Error())
 		}
-		cm.SecretReader = sr
+		secretReader = sr
 	}
+	cm.SecretReader = secretReader
+
+	er, err := env.NewOSEnvironmentVariableReader()
+	if err != nil {
+		return nil, fmt.Errorf("could not initialize CredentialManager: %s", err.Error())
+	}
+	cm.EnvironmentVariableReader = er
+
 	return cm, nil
 }
 
 func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
-	dtTenant, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_TENANT")
+	dtTenant, err := cm.SecretReader.ReadSecret(secretName, namespace, dynatraceTenantSecretName)
 	if err != nil {
-		return nil, fmt.Errorf("key DT_TENANT was not found in secret \"%s\"", secretName)
+		return nil, fmt.Errorf("key %s was not found in secret \"%s\"", dynatraceTenantSecretName, secretName)
 	}
 
-	dtAPIToken, err := cm.SecretReader.ReadSecret(secretName, namespace, "DT_API_TOKEN")
+	dtAPIToken, err := cm.SecretReader.ReadSecret(secretName, namespace, dynatraceAPITokenSecretName)
 	if err != nil {
-		return nil, fmt.Errorf("key DT_API_TOKEN was not found in secret \"%s\"", secretName)
+		return nil, fmt.Errorf("key %s was not found in secret \"%s\"", dynatraceAPITokenSecretName, secretName)
 	}
 
 	dtAPIToken = strings.TrimSpace(dtAPIToken)
@@ -117,22 +66,22 @@ func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*Dynatr
 }
 
 func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error) {
-	secretName := "dynatrace"
-
-	apiURL, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_API_URL")
+	apiURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnAPIURLName)
 	if err != nil {
-		apiURL = os.Getenv("KEPTN_API_URL")
-		if apiURL == "" {
-			return nil, fmt.Errorf("key KEPTN_API_URL was not found in secret \"%s\" or environment variables", secretName)
+		val, found := cm.EnvironmentVariableReader.Read(keptnAPIURLName)
+		if !found {
+			return nil, fmt.Errorf("key %s was not found in secret \"%s\" or environment variables", keptnAPIURLName, dynatraceSecretName)
 		}
+		apiURL = val
 	}
 
-	apiToken, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_API_TOKEN")
+	apiToken, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnAPITokenName)
 	if err != nil {
-		apiToken = os.Getenv("KEPTN_API_TOKEN")
-		if apiToken == "" {
-			return nil, fmt.Errorf("key KEPTN_API_TOKEN was not found in secret \"%s\" or environment variables", secretName)
+		val, found := cm.EnvironmentVariableReader.Read(keptnAPITokenName)
+		if !found {
+			return nil, fmt.Errorf("key %s was not found in secret \"%s\" or environment variables", keptnAPITokenName, dynatraceSecretName)
 		}
+		apiToken = val
 	}
 
 	apiToken = strings.TrimSpace(apiToken)
@@ -140,15 +89,14 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error)
 }
 
 func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
-	secretName := "dynatrace"
-
-	bridgeURL, err := cm.SecretReader.ReadSecret(secretName, namespace, "KEPTN_BRIDGE_URL")
+	bridgeURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnBridgeURLName)
 
 	if err != nil {
-		bridgeURL = os.Getenv("KEPTN_BRIDGE_URL")
-		if bridgeURL == "" {
-			return "", fmt.Errorf("key KEPTN_BRIDGE_URL was not found in secret \"%s\" or environment variables", secretName)
+		val, found := cm.EnvironmentVariableReader.Read(keptnBridgeURLName)
+		if !found {
+			return "", fmt.Errorf("key %s was not found in secret \"%s\" or environment variables", keptnBridgeURLName, dynatraceSecretName)
 		}
+		bridgeURL = val
 	}
 
 	return url.MakeCleanURL(bridgeURL)

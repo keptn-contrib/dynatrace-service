@@ -126,7 +126,7 @@ func TestGetKeptnAPICredentials(t *testing.T) {
 				},
 			})
 
-			k8sSecretReader, _ := NewK8sCredentialReader(fakeClient)
+			k8sSecretReader, _ := NewK8sSecretReader(fakeClient)
 
 			cm, err := NewCredentialManager(k8sSecretReader)
 			if err != nil {
@@ -189,7 +189,7 @@ func TestGetKeptnBridgeURL(t *testing.T) {
 				},
 			})
 
-			k8sSecretReader, _ := NewK8sCredentialReader(fakeClient)
+			k8sSecretReader, _ := NewK8sSecretReader(fakeClient)
 
 			cm, err := NewCredentialManager(k8sSecretReader)
 			if err != nil {
@@ -273,7 +273,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			secretReader, err := NewK8sCredentialReader(fake.NewSimpleClientset(tt.secret))
+			secretReader, err := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 			if err != nil {
 				t.Fatalf("NewK8sCredentialReader() error = %v", err)
 			}
@@ -374,7 +374,7 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			secretReader, err := NewK8sCredentialReader(fake.NewSimpleClientset(tt.secret))
+			secretReader, err := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 			if err != nil {
 				t.Fatalf("NewK8sCredentialReader() error = %v", err)
 			}
@@ -464,7 +464,7 @@ func TestCredentialManager_GetKeptnBridgeURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			secretReader, err := NewK8sCredentialReader(fake.NewSimpleClientset(tt.secret))
+			secretReader, err := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 			if err != nil {
 				t.Fatalf("NewK8sCredentialReader() error = %v", err)
 			}
