@@ -7,28 +7,28 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type CredentialManagerFallbackDecorator struct {
-	credentialManager   CredentialManagerInterface
+type DynatraceCredentialsProviderFallbackDecorator struct {
+	credentialsProvider DynatraceCredentialsProvider
 	fallbackSecretNames []string
 	secretName          string
 }
 
-func NewCredentialManagerFallbackDecorator(cm CredentialManagerInterface, secretNames []string) *CredentialManagerFallbackDecorator {
-	return &CredentialManagerFallbackDecorator{
-		credentialManager:   cm,
+func NewCredentialManagerFallbackDecorator(cm DynatraceCredentialsProvider, secretNames []string) *DynatraceCredentialsProviderFallbackDecorator {
+	return &DynatraceCredentialsProviderFallbackDecorator{
+		credentialsProvider: cm,
 		fallbackSecretNames: secretNames,
 	}
 }
 
-func NewCredentialManagerDefaultFallbackDecorator(cm CredentialManagerInterface) *CredentialManagerFallbackDecorator {
+func NewCredentialManagerDefaultFallbackDecorator(cm DynatraceCredentialsProvider) *DynatraceCredentialsProviderFallbackDecorator {
 	return NewCredentialManagerFallbackDecorator(cm, []string{"dynatrace"})
 }
 
-func NewCredentialManagerSLIServiceFallbackDecorator(cm CredentialManagerInterface, project string) *CredentialManagerFallbackDecorator {
+func NewCredentialManagerSLIServiceFallbackDecorator(cm DynatraceCredentialsProvider, project string) *DynatraceCredentialsProviderFallbackDecorator {
 	return NewCredentialManagerFallbackDecorator(cm, []string{fmt.Sprintf("dynatrace-credentials-%s", project), "dynatrace-credentials", "dynatrace"})
 }
 
-func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
+func (cm *DynatraceCredentialsProviderFallbackDecorator) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
 	secrets := []string{secretName}
 	secrets = append(secrets, cm.fallbackSecretNames...)
 
@@ -38,7 +38,7 @@ func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName
 			continue
 		}
 
-		dtCredentials, err := cm.credentialManager.GetDynatraceCredentials(secret)
+		dtCredentials, err := cm.credentialsProvider.GetDynatraceCredentials(secret)
 		if err == nil && dtCredentials != nil {
 			log.WithFields(
 				log.Fields{
@@ -53,10 +53,6 @@ func (cm *CredentialManagerFallbackDecorator) GetDynatraceCredentials(secretName
 	return nil, fmt.Errorf("could not find any Dynatrace specific secrets with the following names: %s", strings.Join(secrets, ","))
 }
 
-func (cm *CredentialManagerFallbackDecorator) GetKeptnAPICredentials() (*KeptnCredentials, error) {
-	return cm.credentialManager.GetKeptnAPICredentials()
-}
-
-func (cm *CredentialManagerFallbackDecorator) GetSecretName() string {
+func (cm *DynatraceCredentialsProviderFallbackDecorator) GetSecretName() string {
 	return cm.secretName
 }

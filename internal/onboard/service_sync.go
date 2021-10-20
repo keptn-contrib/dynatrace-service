@@ -65,16 +65,16 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 }
 
 type serviceSynchronizer struct {
-	projectClient      keptn.ProjectClientInterface
-	servicesClient     keptn.ServiceClientInterface
-	resourcesClient    keptn.SLIAndSLOResourceWriterInterface
-	apiHandler         *keptnapi.APIHandler
-	credentialManager  credentials.CredentialManagerInterface
-	EntitiesClientFunc func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-	syncTimer          *time.Ticker
-	keptnHandler       *keptnv2.Keptn
-	servicesInKeptn    []string
-	dtConfigGetter     config.DynatraceConfigGetterInterface
+	projectClient       keptn.ProjectClientInterface
+	servicesClient      keptn.ServiceClientInterface
+	resourcesClient     keptn.SLIAndSLOResourceWriterInterface
+	apiHandler          *keptnapi.APIHandler
+	credentialsProvider credentials.DynatraceCredentialsProvider
+	EntitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
+	syncTimer           *time.Ticker
+	keptnHandler        *keptnv2.Keptn
+	servicesInKeptn     []string
+	dtConfigGetter      config.DynatraceConfigGetterInterface
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
@@ -83,11 +83,11 @@ const shipyardController = "SHIPYARD_CONTROLLER"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 
 // ActivateServiceSynchronizer godoc
-func ActivateServiceSynchronizer(c credentials.CredentialManagerInterface) *serviceSynchronizer {
+func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) *serviceSynchronizer {
 	if serviceSynchronizerInstance == nil {
 
 		serviceSynchronizerInstance = &serviceSynchronizer{
-			credentialManager: c,
+			credentialsProvider: c,
 		}
 
 		resourceClient := keptn.NewDefaultResourceClient()
@@ -188,7 +188,7 @@ func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.Dynatrace
 		return nil, fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
 	}
 
-	creds, err := s.credentialManager.GetDynatraceCredentials(dynatraceConfig.DtCreds)
+	creds, err := s.credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
 	}

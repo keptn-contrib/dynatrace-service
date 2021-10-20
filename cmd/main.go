@@ -35,7 +35,7 @@ func main() {
 func _main(args []string, envCfg envConfig) int {
 
 	if env.IsServiceSyncEnabled() {
-		cm, err := credentials.NewCredentialManager(nil)
+		cm, err := credentials.NewDynatraceK8sSecretReader(nil)
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize CredentialManager")
 		}

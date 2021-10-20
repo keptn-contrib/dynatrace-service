@@ -404,12 +404,9 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		syncTimer:       nil,
 		keptnHandler:    k,
 		servicesInKeptn: []string{},
-		credentialManager: &credentials_mock.CredentialManagerInterfaceMock{
+		credentialsProvider: &credentials_mock.DynatraceCredentialsProviderMock{
 			GetDynatraceCredentialsFunc: func(secretName string) (*credentials.DynatraceCredentials, error) {
 				return mockCredentials, nil
-			},
-			GetKeptnAPICredentialsFunc: func() (*credentials.KeptnCredentials, error) {
-				return &credentials.KeptnCredentials{}, nil
 			},
 		},
 		dtConfigGetter: &adapter_mock.DynatraceConfigGetterInterfaceMock{
@@ -528,18 +525,18 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 
 	type fields struct {
-		logger            keptncommon.LoggerInterface
-		projectsAPI       keptn.ProjectClientInterface
-		servicesAPI       keptn.ServiceClientInterface
-		resourcesAPI      keptn.SLIAndSLOResourceWriterInterface
-		apiHandler        *keptnapi.APIHandler
-		credentialManager credentials.CredentialManagerInterface
-		apiMutex          sync.Mutex
-		EntitiesClient    func(*credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-		syncTimer         *time.Ticker
-		keptnHandler      *keptnv2.Keptn
-		servicesInKeptn   []string
-		dtConfigGetter    config.DynatraceConfigGetterInterface
+		logger              keptncommon.LoggerInterface
+		projectsAPI         keptn.ProjectClientInterface
+		servicesAPI         keptn.ServiceClientInterface
+		resourcesAPI        keptn.SLIAndSLOResourceWriterInterface
+		apiHandler          *keptnapi.APIHandler
+		credentialsProvider credentials.DynatraceCredentialsProvider
+		apiMutex            sync.Mutex
+		EntitiesClient      func(*credentials.DynatraceCredentials) *dynatrace.EntitiesClient
+		syncTimer           *time.Ticker
+		keptnHandler        *keptnv2.Keptn
+		servicesInKeptn     []string
+		dtConfigGetter      config.DynatraceConfigGetterInterface
 	}
 	type args struct {
 		serviceName string
@@ -572,16 +569,16 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &serviceSynchronizer{
-				projectClient:      tt.fields.projectsAPI,
-				servicesClient:     tt.fields.servicesAPI,
-				resourcesClient:    tt.fields.resourcesAPI,
-				apiHandler:         tt.fields.apiHandler,
-				credentialManager:  tt.fields.credentialManager,
-				EntitiesClientFunc: tt.fields.EntitiesClient,
-				syncTimer:          tt.fields.syncTimer,
-				keptnHandler:       tt.fields.keptnHandler,
-				servicesInKeptn:    tt.fields.servicesInKeptn,
-				dtConfigGetter:     tt.fields.dtConfigGetter,
+				projectClient:       tt.fields.projectsAPI,
+				servicesClient:      tt.fields.servicesAPI,
+				resourcesClient:     tt.fields.resourcesAPI,
+				apiHandler:          tt.fields.apiHandler,
+				credentialsProvider: tt.fields.credentialsProvider,
+				EntitiesClientFunc:  tt.fields.EntitiesClient,
+				syncTimer:           tt.fields.syncTimer,
+				keptnHandler:        tt.fields.keptnHandler,
+				servicesInKeptn:     tt.fields.servicesInKeptn,
+				dtConfigGetter:      tt.fields.dtConfigGetter,
 			}
 			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {
 				t.Errorf("serviceSynchronizer.addServiceToKeptn() error = %v, wantErr %v", err, tt.wantErr)

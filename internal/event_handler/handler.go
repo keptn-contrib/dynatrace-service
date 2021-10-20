@@ -37,13 +37,13 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 		}
 	}
 
-	cm, err := credentials.NewCredentialManager(nil)
+	cm, err := credentials.NewDynatraceK8sSecretReader(nil)
 	if err != nil {
 		return nil, nil, "", err
 	}
 
 	// TODO 2021-09-01: remove temporary fallback behaviour later on
-	var fallbackDecorator *credentials.CredentialManagerFallbackDecorator
+	var fallbackDecorator *credentials.DynatraceCredentialsProviderFallbackDecorator
 	switch keptnEvent.(type) {
 	case *sli.GetSLITriggeredAdapter:
 		fallbackDecorator = credentials.NewCredentialManagerSLIServiceFallbackDecorator(cm, keptnEvent.GetProject())

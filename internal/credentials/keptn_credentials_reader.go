@@ -11,31 +11,22 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/url"
 )
 
-const dynatraceSecretName = "dynatrace"
-
-const dynatraceTenantSecretName = "DT_TENANT"
-const dynatraceAPITokenSecretName = "DT_API_TOKEN"
-const keptnAPIURLName = "KEPTN_API_URL"
-const keptnAPITokenName = "KEPTN_API_TOKEN"
-const keptnBridgeURLName = "KEPTN_BRIDGE_URL"
-
-//go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/credential_manager_mock.go . CredentialManagerInterface
-type CredentialManagerInterface interface {
-	GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error)
-	GetKeptnAPICredentials() (*KeptnCredentials, error)
+//go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/keptn_credentials_provider_mock.go . KeptnCredentialsProvider
+type KeptnCredentialsProvider interface {
+	GetKeptnCredentials() (*KeptnCredentials, error)
 }
 
-type CredentialManager struct {
+type KeptnCredentialsReader struct {
 	SecretReader              *K8sSecretReader
 	EnvironmentVariableReader *env.OSEnvironmentVariableReader
 }
 
-func NewCredentialManager(secretReader *K8sSecretReader) (*CredentialManager, error) {
-	cm := &CredentialManager{}
+func NewKeptnCredentialsReader(secretReader *K8sSecretReader) (*KeptnCredentialsReader, error) {
+	cm := &KeptnCredentialsReader{}
 	if secretReader == nil {
 		sr, err := NewK8sSecretReader(nil)
 		if err != nil {
-			return nil, fmt.Errorf("could not initialize CredentialManager: %s", err.Error())
+			return nil, fmt.Errorf("could not initialize KeptnCredentialsReader: %s", err.Error())
 		}
 		secretReader = sr
 	}
@@ -43,29 +34,14 @@ func NewCredentialManager(secretReader *K8sSecretReader) (*CredentialManager, er
 
 	er, err := env.NewOSEnvironmentVariableReader()
 	if err != nil {
-		return nil, fmt.Errorf("could not initialize CredentialManager: %s", err.Error())
+		return nil, fmt.Errorf("could not initialize KeptnCredentialsReader: %s", err.Error())
 	}
 	cm.EnvironmentVariableReader = er
 
 	return cm, nil
 }
 
-func (cm *CredentialManager) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
-	dtTenant, err := cm.SecretReader.ReadSecret(secretName, namespace, dynatraceTenantSecretName)
-	if err != nil {
-		return nil, fmt.Errorf("key %s was not found in secret \"%s\"", dynatraceTenantSecretName, secretName)
-	}
-
-	dtAPIToken, err := cm.SecretReader.ReadSecret(secretName, namespace, dynatraceAPITokenSecretName)
-	if err != nil {
-		return nil, fmt.Errorf("key %s was not found in secret \"%s\"", dynatraceAPITokenSecretName, secretName)
-	}
-
-	dtAPIToken = strings.TrimSpace(dtAPIToken)
-	return NewDynatraceCredentials(dtTenant, dtAPIToken)
-}
-
-func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error) {
+func (cm *KeptnCredentialsReader) GetKeptnAPICredentials() (*KeptnCredentials, error) {
 	apiURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnAPIURLName)
 	if err != nil {
 		val, found := cm.EnvironmentVariableReader.Read(keptnAPIURLName)
@@ -88,7 +64,7 @@ func (cm *CredentialManager) GetKeptnAPICredentials() (*KeptnCredentials, error)
 	return NewKeptnCredentials(apiURL, apiToken)
 }
 
-func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
+func (cm *KeptnCredentialsReader) GetKeptnBridgeURL() (string, error) {
 	bridgeURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnBridgeURLName)
 
 	if err != nil {
@@ -104,7 +80,7 @@ func (cm *CredentialManager) GetKeptnBridgeURL() (string, error) {
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
 func GetKeptnCredentials() (*KeptnCredentials, error) {
-	cm, err := NewCredentialManager(nil)
+	cm, err := NewKeptnCredentialsReader(nil)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +115,7 @@ func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
 
 // GetKeptnBridgeURL returns the bridge URL
 func GetKeptnBridgeURL() (string, error) {
-	cm, err := NewCredentialManager(nil)
+	cm, err := NewKeptnCredentialsReader(nil)
 	if err != nil {
 		return "", err
 	}
