@@ -32,7 +32,7 @@ func NewErrorEventFactory(event cloudevents.Event, err error, integrationID stri
 
 func (f *ErrorEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
 
-	taskName, err := extractTaskNameFormEventType(f.evt.Type())
+	taskName, _, err := keptnv2.ParseTaskEventType(f.evt.Type())
 	if err != nil {
 		log.WithError(err).Warnf("could not extract task name from event type: %s, will set it to full type", f.evt.Type())
 		taskName = f.evt.Type()
@@ -49,13 +49,4 @@ func (f *ErrorEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
 		errorType,
 		errorData,
 	).CreateCloudEvent()
-}
-
-func extractTaskNameFormEventType(eventType string) (string, error) {
-	taskName, _, err := keptnv2.ParseTaskEventType(eventType)
-	if err != nil {
-		return "", err
-	}
-
-	return taskName, nil
 }
