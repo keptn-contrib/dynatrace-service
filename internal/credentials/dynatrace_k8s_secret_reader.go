@@ -21,17 +21,16 @@ type DynatraceK8sSecretReader struct {
 	SecretReader *K8sSecretReader
 }
 
-func NewDynatraceK8sSecretReader(secretReader *K8sSecretReader) (*DynatraceK8sSecretReader, error) {
-	cm := &DynatraceK8sSecretReader{}
-	if secretReader == nil {
-		sr, err := NewK8sSecretReader(nil)
-		if err != nil {
-			return nil, fmt.Errorf("could not initialize DynatraceK8sSecretReader: %s", err.Error())
-		}
-		secretReader = sr
+func NewDynatraceK8sSecretReader(sr *K8sSecretReader) *DynatraceK8sSecretReader {
+	return &DynatraceK8sSecretReader{SecretReader: sr}
+}
+
+func NewDefaultDynatraceK8sSecretReader() (*DynatraceK8sSecretReader, error) {
+	sr, err := NewDefaultK8sSecretReader()
+	if err != nil {
+		return nil, fmt.Errorf("could not initialize DynatraceK8sSecretReader: %s", err.Error())
 	}
-	cm.SecretReader = secretReader
-	return cm, nil
+	return &DynatraceK8sSecretReader{SecretReader: sr}, nil
 }
 
 func (cm *DynatraceK8sSecretReader) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {

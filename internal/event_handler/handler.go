@@ -37,7 +37,7 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 		}
 	}
 
-	cm, err := credentials.NewDynatraceK8sSecretReader(nil)
+	cm, err := credentials.NewDefaultDynatraceK8sSecretReader()
 	if err != nil {
 		return nil, nil, "", err
 	}

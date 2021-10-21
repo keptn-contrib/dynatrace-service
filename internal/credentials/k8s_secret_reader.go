@@ -19,18 +19,17 @@ type K8sSecretReader struct {
 	K8sClient kubernetes.Interface
 }
 
-func NewK8sSecretReader(k8sClient kubernetes.Interface) (*K8sSecretReader, error) {
-	k8sSecretReader := &K8sSecretReader{}
-	if k8sClient != nil {
-		k8sSecretReader.K8sClient = k8sClient
-	} else {
-		client, err := getKubernetesClient()
-		if err != nil {
-			return nil, fmt.Errorf("could not initialize NewK8sSecretReader: %s", err.Error())
-		}
-		k8sSecretReader.K8sClient = client
+func NewK8sSecretReader(k8sClient kubernetes.Interface) *K8sSecretReader {
+	return &K8sSecretReader{K8sClient: k8sClient}
+}
+
+func NewDefaultK8sSecretReader() (*K8sSecretReader, error) {
+	useInClusterConfig := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
+	k8sClient, err := keptnkubeutils.GetClientset(useInClusterConfig)
+	if err != nil {
+		return nil, fmt.Errorf("could not initialize K8sSecretReader: %s", err.Error())
 	}
-	return k8sSecretReader, nil
+	return &K8sSecretReader{K8sClient: k8sClient}, nil
 }
 
 func (kcr *K8sSecretReader) ReadSecret(secretName, namespace, secretKey string) (string, error) {
@@ -42,11 +41,6 @@ func (kcr *K8sSecretReader) ReadSecret(secretName, namespace, secretKey string) 
 		return "", ErrSecretNotFound
 	}
 	return string(secret.Data[secretKey]), nil
-}
-
-func getKubernetesClient() (*kubernetes.Clientset, error) {
-	useInClusterConfig := os.Getenv("KUBERNETES_SERVICE_HOST") != ""
-	return keptnkubeutils.GetClientset(useInClusterConfig)
 }
 
 func getPodNamespace() string {

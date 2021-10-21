@@ -20,24 +20,20 @@ type KeptnCredentialsReader struct {
 	EnvironmentVariableReader *env.OSEnvironmentVariableReader
 }
 
-func NewKeptnCredentialsReader(secretReader *K8sSecretReader) (*KeptnCredentialsReader, error) {
-	cm := &KeptnCredentialsReader{}
-	if secretReader == nil {
-		sr, err := NewK8sSecretReader(nil)
-		if err != nil {
-			return nil, fmt.Errorf("could not initialize KeptnCredentialsReader: %s", err.Error())
-		}
-		secretReader = sr
-	}
-	cm.SecretReader = secretReader
+func NewKeptnCredentialsReader(sr *K8sSecretReader) *KeptnCredentialsReader {
+	return &KeptnCredentialsReader{SecretReader: sr, EnvironmentVariableReader: env.NewOSEnvironmentVariableReader()}
+}
 
-	er, err := env.NewOSEnvironmentVariableReader()
+func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
+	sr, err := NewDefaultK8sSecretReader()
 	if err != nil {
 		return nil, fmt.Errorf("could not initialize KeptnCredentialsReader: %s", err.Error())
 	}
-	cm.EnvironmentVariableReader = er
 
-	return cm, nil
+	return &KeptnCredentialsReader{
+		SecretReader:              sr,
+		EnvironmentVariableReader: env.NewOSEnvironmentVariableReader(),
+	}, nil
 }
 
 func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
@@ -78,7 +74,7 @@ func (cm *KeptnCredentialsReader) GetKeptnBridgeURL() (string, error) {
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
 func GetKeptnCredentials() (*KeptnCredentials, error) {
-	cm, err := NewKeptnCredentialsReader(nil)
+	cm, err := NewDefaultKeptnCredentialsReader()
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +109,7 @@ func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
 
 // GetKeptnBridgeURL returns the bridge URL
 func GetKeptnBridgeURL() (string, error) {
-	cm, err := NewKeptnCredentialsReader(nil)
+	cm, err := NewDefaultKeptnCredentialsReader()
 	if err != nil {
 		return "", err
 	}

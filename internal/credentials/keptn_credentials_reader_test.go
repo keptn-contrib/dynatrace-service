@@ -124,12 +124,9 @@ func TestGetKeptnAPICredentials(t *testing.T) {
 				},
 			})
 
-			k8sSecretReader, _ := NewK8sSecretReader(fakeClient)
+			k8sSecretReader := NewK8sSecretReader(fakeClient)
 
-			cm, err := NewKeptnCredentialsReader(k8sSecretReader)
-			if err != nil {
-				t.Errorf("could not initialize CredentialManager: %s", err.Error())
-			}
+			cm := NewKeptnCredentialsReader(k8sSecretReader)
 
 			got, err := cm.GetKeptnCredentials()
 			if (err != nil) != tt.wantErr {
@@ -187,12 +184,9 @@ func TestGetKeptnBridgeURL(t *testing.T) {
 				},
 			})
 
-			k8sSecretReader, _ := NewK8sSecretReader(fakeClient)
+			k8sSecretReader := NewK8sSecretReader(fakeClient)
 
-			cm, err := NewKeptnCredentialsReader(k8sSecretReader)
-			if err != nil {
-				t.Errorf("could not initialize CredentialManager: %s", err.Error())
-			}
+			cm := NewKeptnCredentialsReader(k8sSecretReader)
 			got, err := cm.GetKeptnBridgeURL()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetKeptnBridgeURL() error = %v, wantErr %v", err, tt.wantErr)
@@ -269,10 +263,7 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			secretReader, err := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
-			if err != nil {
-				t.Fatalf("NewK8sCredentialReader() error = %v", err)
-			}
+			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 
 			os.Setenv("KEPTN_API_URL", tt.envVars.keptnAPIURL)
 			os.Setenv("KEPTN_API_TOKEN", tt.envVars.keptnAPIToken)
@@ -281,11 +272,7 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 				os.Unsetenv("KEPTN_API_TOKEN")
 			}()
 
-			cm, err := NewKeptnCredentialsReader(secretReader)
-			if err != nil {
-				t.Fatalf("NewCredentialManager() error = %v", err)
-			}
-
+			cm := NewKeptnCredentialsReader(secretReader)
 			got, err := cm.GetKeptnCredentials()
 
 			if (err != nil) && tt.wantErr {
@@ -359,20 +346,14 @@ func TestCredentialManager_GetKeptnBridgeURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			secretReader, err := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
-			if err != nil {
-				t.Fatalf("NewK8sCredentialReader() error = %v", err)
-			}
+			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 
 			os.Setenv("KEPTN_BRIDGE_URL", tt.envVars.keptnBridgeURL)
 			defer func() {
 				os.Unsetenv("KEPTN_BRIDGE_URL")
 			}()
 
-			cm, err := NewKeptnCredentialsReader(secretReader)
-			if err != nil {
-				t.Fatalf("NewCredentialManager() error = %v", err)
-			}
+			cm := NewKeptnCredentialsReader(secretReader)
 			got, err := cm.GetKeptnBridgeURL()
 			if (err != nil) && tt.wantErr {
 				return

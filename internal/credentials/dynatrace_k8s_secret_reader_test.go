@@ -76,14 +76,8 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			secretReader, err := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
-			if err != nil {
-				t.Fatalf("NewK8sCredentialReader() error = %v", err)
-			}
-			cm, err := NewDynatraceK8sSecretReader(secretReader)
-			if err != nil {
-				t.Fatalf("NewCredentialManager() error = %v", err)
-			}
+			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
+			cm := NewDynatraceK8sSecretReader(secretReader)
 			decorator := NewCredentialManagerDefaultFallbackDecorator(cm)
 
 			got, err := decorator.GetDynatraceCredentials(tt.args.secretName)
