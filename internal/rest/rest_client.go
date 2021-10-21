@@ -86,7 +86,7 @@ func (c *Client) sendRequest(apiPath string, method string, body []byte) ([]byte
 func (c *Client) createRequest(apiPath string, method string, body []byte) (*http.Request, error) {
 	var url = c.baseURL + apiPath
 
-	log.WithFields(log.Fields{"method": method, "url": url}).Debug("creating Dynatrace API request")
+	log.WithFields(log.Fields{"method": method, "url": url}).Debug("creating HTTP request")
 
 	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 	if err != nil {
