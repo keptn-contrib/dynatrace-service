@@ -1,18 +1,19 @@
 package keptn
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/rest"
 )
 
 type registrationResponse struct {
 	ID string `json:"id"`
 }
+
+const UniformPath = "/v1/uniform/registration"
 
 type UniformClientInterface interface {
 	GetServiceNames(project string, stage string) ([]string, error)
@@ -20,7 +21,7 @@ type UniformClientInterface interface {
 }
 
 type UniformClient struct {
-	httpClient *http.Client
+	client APIClientInterface
 }
 
 func NewDefaultUniformClient() *UniformClient {
@@ -30,36 +31,23 @@ func NewDefaultUniformClient() *UniformClient {
 
 func NewUniformClient(httpClient *http.Client) *UniformClient {
 	return &UniformClient{
-		httpClient: httpClient,
+		client: NewAPIClient(
+			rest.NewDefaultClient(
+				httpClient,
+				common.GetShipyardControllerURL())),
 	}
 }
 
 func (c *UniformClient) GetIntegrationIDFor(integrationName string) (string, error) {
-	// TODO 2021-10-20: extract the http client and consolidate with services (and with dynatrace http client)
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/v1/uniform/registration?name=%s", common.GetShipyardControllerURL(), integrationName), bytes.NewReader(nil))
-	if err != nil {
-		return "", fmt.Errorf("could not create request: %v", err)
-	}
-
-	resp, err := c.httpClient.Do(req)
+	body, err := c.client.Get(UniformPath + "?name=" + integrationName)
 	if err != nil {
 		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return "", fmt.Errorf("request failed with %d: %s", resp.StatusCode, string(body))
 	}
 
 	var responses []registrationResponse
 	err = json.Unmarshal(body, &responses)
 	if err != nil {
-		return "", fmt.Errorf("could not parse Keptn Uniform API response")
+		return "", fmt.Errorf("could not parse Keptn Uniform API response: %w", err)
 	}
 
 	if len(responses) == 0 {
