@@ -26,11 +26,11 @@ func NewKeptnCredentials(apiURL string, apiToken string) (*KeptnCredentials, err
 	return &KeptnCredentials{apiURL: apiURL, apiToken: apiToken}, nil
 }
 
-func (c KeptnCredentials) GetAPIURL() string {
+func (c *KeptnCredentials) GetAPIURL() string {
 	return c.apiURL
 }
 
-func (c KeptnCredentials) GetAPIToken() string {
+func (c *KeptnCredentials) GetAPIToken() string {
 	return c.apiToken
 }
 

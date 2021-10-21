@@ -26,10 +26,10 @@ func NewDynatraceCredentials(tenant string, apiTokenString string) (*DynatraceCr
 }
 
 // GetTenant gets the base URL of Dynatrace tenant. This is always prefixed with "https://" or "http://".
-func (c DynatraceCredentials) GetTenant() string {
+func (c *DynatraceCredentials) GetTenant() string {
 	return c.tenant
 }
 
-func (c DynatraceCredentials) GetAPIToken() DynatraceAPIToken {
+func (c *DynatraceCredentials) GetAPIToken() DynatraceAPIToken {
 	return c.apiToken
 }
