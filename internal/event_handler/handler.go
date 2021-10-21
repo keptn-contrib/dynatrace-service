@@ -23,7 +23,7 @@ type DynatraceEventHandler interface {
 }
 
 // Retrieves Dynatrace Credential information
-func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dtConfigGetter config.DynatraceConfigGetterInterface) (*config.DynatraceConfigFile, *credentials.DTCredentials, string, error) {
+func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dtConfigGetter config.DynatraceConfigGetterInterface) (*config.DynatraceConfigFile, *credentials.DynatraceCredentials, string, error) {
 	dynatraceConfig, err := dtConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		log.WithError(err).Warn("Failed to load Dynatrace config - will use a default one!")
@@ -37,13 +37,13 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 		}
 	}
 
-	cm, err := credentials.NewCredentialManager(nil)
+	cm, err := credentials.NewDefaultDynatraceK8sSecretReader()
 	if err != nil {
 		return nil, nil, "", err
 	}
 
 	// TODO 2021-09-01: remove temporary fallback behaviour later on
-	var fallbackDecorator *credentials.CredentialManagerFallbackDecorator
+	var fallbackDecorator *credentials.DynatraceCredentialsProviderFallbackDecorator
 	switch keptnEvent.(type) {
 	case *sli.GetSLITriggeredAdapter:
 		fallbackDecorator = credentials.NewCredentialManagerSLIServiceFallbackDecorator(cm, keptnEvent.GetProject())

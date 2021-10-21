@@ -58,7 +58,7 @@ func (q *Querying) GetSLIValues(dashboardID string, startUnix time.Time, endUnix
 		log.Debug("Dashboard hasn't changed: skipping parsing of dashboard")
 		return NewQueryResultFrom(
 				NewLink(
-					q.dtClient.Credentials().Tenant,
+					q.dtClient.Credentials().GetTenant(),
 					startUnix,
 					endUnix,
 					dashbd.ID,

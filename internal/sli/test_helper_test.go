@@ -19,6 +19,7 @@ import (
 )
 
 const indicator = "response_time_p95"
+const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
 func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
 	ev := &getSLIEventData{
@@ -28,7 +29,7 @@ func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *kept
 		indicators: []string{indicator}, // we need this to check later on in the custom queries
 	}
 
-	eh, _, teardown := createGetSLIEventHandler(ev, handler, kClient, rClient, dashboard)
+	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, kClient, rClient, dashboard)
 	defer teardown()
 
 	err := eh.retrieveMetrics()
@@ -66,13 +67,11 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAs
 	return &data
 }
 
-func createGetSLIEventHandler(keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
+func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials := &credentials.DTCredentials{
-		Tenant:   url,
-		ApiToken: "test",
-	}
+	dtCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
+	assert.NoError(t, err)
 
 	eh := &GetSLIEventHandler{
 		event:          keptnEvent,

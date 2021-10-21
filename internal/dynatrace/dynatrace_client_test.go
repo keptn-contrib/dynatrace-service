@@ -2,12 +2,13 @@ package dynatrace
 
 import (
 	"bytes"
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
@@ -21,6 +22,8 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 		return
 	}
 
+	mockDynatraceCredentials := createDynatraceCredentials(t, mockTenant)
+
 	mockProxy := "https://proxy:8080"
 	t.Logf("Using mock proxy: %v", mockProxy)
 
@@ -30,7 +33,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 		noProxy    string
 	}
 	type fields struct {
-		DynatraceCreds *credentials.DTCredentials
+		DynatraceCreds *credentials.DynatraceCredentials
 	}
 	type args struct {
 		req *http.Request
@@ -54,10 +57,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 				noProxy:    "localhost",
 			},
 			fields: fields{
-				DynatraceCreds: &credentials.DTCredentials{
-					Tenant:   mockTenant,
-					ApiToken: "",
-				},
+				DynatraceCreds: mockDynatraceCredentials,
 			},
 			args: args{
 				req: mockReq,
@@ -67,11 +67,7 @@ func TestDynatraceHelper_createClient(t *testing.T) {
 		/*{
 			name: "testWithNoProxy",
 			fields: fields{
-				DynatraceCreds: &credentials.DTCredentials{
-					Tenant:   mockTenant,
-					ApiToken: "",
-				},
-				Logger: keptncommon.NewLogger("", "", ""),
+				DynatraceCreds: mockDynatraceCredentials,
 			},
 			args: args{
 				req: mockReq,
@@ -121,7 +117,7 @@ func TestExecuteDynatraceREST(t *testing.T) {
 	expectedStatusCode := http.StatusNotFound
 	h := test.CreateHandler(expected, expectedStatusCode)
 
-	client, teardown := testingDynatraceClient(h)
+	client, teardown := testingDynatraceClient(t, h)
 	defer teardown()
 
 	actual, err := client.Get("/invalid-url")
@@ -136,7 +132,7 @@ func TestExecuteDynatraceRESTBadRequest(t *testing.T) {
 	expected := []byte("my-message")
 	h := test.CreateHandler(expected, 200)
 
-	client, teardown := testingDynatraceClient(h)
+	client, teardown := testingDynatraceClient(t, h)
 	defer teardown()
 
 	actual, err := client.Get("/valid-url")
@@ -231,7 +227,7 @@ func TestDynatraceClient(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			h := test.CreateHandler(tt.expectedResponse, tt.expectedStatusCode)
 
-			client, teardown := testingDynatraceClient(h)
+			client, teardown := testingDynatraceClient(t, h)
 			defer teardown()
 
 			actualResponse, err := tt.responseFunc(client)
@@ -249,14 +245,11 @@ func TestDynatraceClient(t *testing.T) {
 	}
 }
 
-func testingDynatraceClient(handler http.Handler) (*Client, func()) {
+func testingDynatraceClient(t *testing.T, handler http.Handler) (*Client, func()) {
 	httpClient, teardown := test.CreateHTTPClient(handler)
 
 	client := NewClientWithHTTP(
-		&credentials.DTCredentials{
-			Tenant:   "http://my-tenant.dynatrace.com",
-			ApiToken: "abcdefgh12345678",
-		},
+		createDynatraceCredentials(t, "http://my-tenant.dynatrace.com"),
 		httpClient)
 
 	return client, teardown

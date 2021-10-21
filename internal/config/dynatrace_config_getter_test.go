@@ -1,8 +1,9 @@
 package config
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_parseDynatraceConfigFile(t *testing.T) {
@@ -68,13 +69,14 @@ dashboard: '****'`,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := parseDynatraceConfigFile([]byte(tt.yamlString))
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseDynatraceConfigFile() error = %v, wantErr %v", err, tt.wantErr)
-				return
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("parseDynatraceConfigFile() = %v, want %v", got, tt.want)
-			}
+
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }

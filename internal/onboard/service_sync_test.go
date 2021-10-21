@@ -2,10 +2,6 @@ package onboard
 
 import (
 	"encoding/json"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/adapter/mock"
-	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +11,12 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/adapter/mock"
+	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
@@ -52,6 +54,8 @@ const testDTEntityQueryResponse = `{
         }
     ]
 }`
+
+const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
 func Test_doesServiceExist(t *testing.T) {
 	type args struct {
@@ -385,31 +389,24 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 
 	os.Setenv(shipyardController, mockCS.URL)
 
+	mockCredentials, err := credentials.NewDynatraceCredentials(dtMockServer.URL, testDynatraceAPIToken)
+	assert.NoError(t, err)
+
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 	s := &serviceSynchronizer{
 		projectClient:   keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
 		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
 		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
-		EntitiesClientFunc: func(creds *credentials.DTCredentials) *dynatrace.EntitiesClient {
+		EntitiesClientFunc: func(creds *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
 			return dynatrace.NewEntitiesClient(
-				dynatrace.NewClient(
-					&credentials.DTCredentials{
-						Tenant:   dtMockServer.URL,
-						ApiToken: "",
-					}))
+				dynatrace.NewClient(mockCredentials))
 		},
 		syncTimer:       nil,
 		keptnHandler:    k,
 		servicesInKeptn: []string{},
-		credentialManager: &credentials_mock.CredentialManagerInterfaceMock{
-			GetDynatraceCredentialsFunc: func(secretName string) (*credentials.DTCredentials, error) {
-				return &credentials.DTCredentials{
-					Tenant:   dtMockServer.URL,
-					ApiToken: "",
-				}, nil
-			},
-			GetKeptnAPICredentialsFunc: func() (*credentials.KeptnAPICredentials, error) {
-				return &credentials.KeptnAPICredentials{}, nil
+		credentialsProvider: &credentials_mock.DynatraceCredentialsProviderMock{
+			GetDynatraceCredentialsFunc: func(secretName string) (*credentials.DynatraceCredentials, error) {
+				return mockCredentials, nil
 			},
 		},
 		dtConfigGetter: &adapter_mock.DynatraceConfigGetterInterfaceMock{
@@ -528,18 +525,18 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 
 	type fields struct {
-		logger            keptncommon.LoggerInterface
-		projectsAPI       keptn.ProjectClientInterface
-		servicesAPI       keptn.ServiceClientInterface
-		resourcesAPI      keptn.SLIAndSLOResourceWriterInterface
-		apiHandler        *keptnapi.APIHandler
-		credentialManager credentials.CredentialManagerInterface
-		apiMutex          sync.Mutex
-		EntitiesClient    func(*credentials.DTCredentials) *dynatrace.EntitiesClient
-		syncTimer         *time.Ticker
-		keptnHandler      *keptnv2.Keptn
-		servicesInKeptn   []string
-		dtConfigGetter    config.DynatraceConfigGetterInterface
+		logger              keptncommon.LoggerInterface
+		projectsAPI         keptn.ProjectClientInterface
+		servicesAPI         keptn.ServiceClientInterface
+		resourcesAPI        keptn.SLIAndSLOResourceWriterInterface
+		apiHandler          *keptnapi.APIHandler
+		credentialsProvider credentials.DynatraceCredentialsProvider
+		apiMutex            sync.Mutex
+		EntitiesClient      func(*credentials.DynatraceCredentials) *dynatrace.EntitiesClient
+		syncTimer           *time.Ticker
+		keptnHandler        *keptnv2.Keptn
+		servicesInKeptn     []string
+		dtConfigGetter      config.DynatraceConfigGetterInterface
 	}
 	type args struct {
 		serviceName string
@@ -572,16 +569,16 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &serviceSynchronizer{
-				projectClient:      tt.fields.projectsAPI,
-				servicesClient:     tt.fields.servicesAPI,
-				resourcesClient:    tt.fields.resourcesAPI,
-				apiHandler:         tt.fields.apiHandler,
-				credentialManager:  tt.fields.credentialManager,
-				EntitiesClientFunc: tt.fields.EntitiesClient,
-				syncTimer:          tt.fields.syncTimer,
-				keptnHandler:       tt.fields.keptnHandler,
-				servicesInKeptn:    tt.fields.servicesInKeptn,
-				dtConfigGetter:     tt.fields.dtConfigGetter,
+				projectClient:       tt.fields.projectsAPI,
+				servicesClient:      tt.fields.servicesAPI,
+				resourcesClient:     tt.fields.resourcesAPI,
+				apiHandler:          tt.fields.apiHandler,
+				credentialsProvider: tt.fields.credentialsProvider,
+				EntitiesClientFunc:  tt.fields.EntitiesClient,
+				syncTimer:           tt.fields.syncTimer,
+				keptnHandler:        tt.fields.keptnHandler,
+				servicesInKeptn:     tt.fields.servicesInKeptn,
+				dtConfigGetter:      tt.fields.dtConfigGetter,
 			}
 			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {
 				t.Errorf("serviceSynchronizer.addServiceToKeptn() error = %v, wantErr %v", err, tt.wantErr)

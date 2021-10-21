@@ -13,6 +13,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
+const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
+
 const QUALITYGATE_DASHBOARD_ID = "12345678-1111-4444-8888-123456789012"
 const QUALITYGATE_PROJECT = "qualitygate"
 const QUALTIYGATE_SERVICE = "evalservice"
@@ -27,12 +29,18 @@ func createKeptnEvent(project string, stage string, service string) adapter.Even
 	}
 }
 
-func createQueryingWithHandler(keptnEvent adapter.EventContentAdapter, handler http.Handler) (*Querying, string, func()) {
-	return createCustomQuerying(keptnEvent, handler, DashboardReaderMock{})
+func createDynatraceCredentials(t *testing.T, url string) *credentials.DynatraceCredentials {
+	dynatraceCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
+	assert.NoError(t, err)
+	return dynatraceCredentials
 }
 
-func createCustomQuerying(keptnEvent adapter.EventContentAdapter, handler http.Handler, reader keptn.DashboardResourceReaderInterface) (*Querying, string, func()) {
-	dynatraceClient, url, teardown := createDynatraceClient(handler)
+func createQueryingWithHandler(t *testing.T, keptnEvent adapter.EventContentAdapter, handler http.Handler) (*Querying, string, func()) {
+	return createCustomQuerying(t, keptnEvent, handler, DashboardReaderMock{})
+}
+
+func createCustomQuerying(t *testing.T, keptnEvent adapter.EventContentAdapter, handler http.Handler, reader keptn.DashboardResourceReaderInterface) (*Querying, string, func()) {
+	dynatraceClient, url, teardown := createDynatraceClient(t, handler)
 
 	dh := NewQuerying(
 		keptnEvent,
@@ -44,30 +52,20 @@ func createCustomQuerying(keptnEvent adapter.EventContentAdapter, handler http.H
 }
 
 // TODO: 2021-10-08: Can this be moved to test package and shared?
-func createDynatraceClient(handler http.Handler) (dynatrace.ClientInterface, string, func()) {
+func createDynatraceClient(t *testing.T, handler http.Handler) (dynatrace.ClientInterface, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials := &credentials.DTCredentials{
-		Tenant:   url,
-		ApiToken: "test",
-	}
-
-	dh := dynatrace.NewClientWithHTTP(dtCredentials, httpClient)
+	dh := dynatrace.NewClientWithHTTP(createDynatraceCredentials(t, url), httpClient)
 
 	return dh, url, teardown
 }
 
 func TestCreateQueryingWithHandler(t *testing.T) {
 	keptnEvent := createKeptnEvent("sockshop", "dev", "carts")
-	dh, url, teardown := createQueryingWithHandler(keptnEvent, nil)
+	dh, url, teardown := createQueryingWithHandler(t, keptnEvent, nil)
 	defer teardown()
 
-	c := &credentials.DTCredentials{
-		Tenant:   url,
-		ApiToken: "test",
-	}
-
-	assert.EqualValues(t, c, dh.dtClient.Credentials())
+	assert.EqualValues(t, createDynatraceCredentials(t, url), dh.dtClient.Credentials())
 	assert.EqualValues(t, keptnEvent, dh.eventData)
 	assert.EqualValues(t, DashboardReaderMock{}, dh.dashboardReader)
 }

@@ -1,16 +1,17 @@
 package dynatrace
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"testing"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
 func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
 
-	dtClient, _, teardown := createDynatraceClient(handler)
+	dtClient, _, teardown := createDynatraceClient(t, handler)
 	defer teardown()
 
 	startTime := time.Unix(1571649084, 0).UTC()

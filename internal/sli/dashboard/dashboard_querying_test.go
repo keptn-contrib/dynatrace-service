@@ -66,7 +66,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
 	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
 
-	querying, _, teardown := createQueryingWithHandler(keptnEvent, handler)
+	querying, _, teardown := createQueryingWithHandler(t, keptnEvent, handler)
 	defer teardown()
 
 	startTime := time.Unix(1571649084, 0).UTC()
@@ -122,7 +122,7 @@ func TestRetrieveDashboardWithValidIDAndStoredDashboardInKeptnIsTheSame(t *testi
 	}
 
 	// we need to make sure that the mocked reader returns the "processed" Dynatrace Dashboard
-	querying, url, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{content: string(dashboardContent)})
+	querying, url, teardown := createCustomQuerying(t, ev, handler, DashboardReaderMock{content: string(dashboardContent)})
 	defer teardown()
 
 	from := time.Date(2021, 9, 17, 7, 0, 0, 0, time.UTC)
@@ -155,7 +155,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	handler.AddExactError(dynatrace.DashboardsPath+"/"+dashboardID, http.StatusNotFound, "./testdata/test_query_dynatrace_dashboard_dashboard_id_not_found.json")
 
 	// we also do not care about the dashboard that would be returned by keptn
-	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
+	querying, _, teardown := createCustomQuerying(t, ev, handler, DashboardReaderMock{})
 	defer teardown()
 
 	actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
@@ -197,6 +197,7 @@ func TestRetrieveDashboardFailingBecauseOfErrorsInKeptn(t *testing.T) {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
 			querying, _, teardown := createCustomQuerying(
+				t,
 				&test.EventData{},
 				handler,
 				DashboardReaderMock{err: tc.err})
@@ -227,7 +228,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	handler.AddExactError(dynatrace.DashboardsPath+"/"+dashboardID, http.StatusBadRequest, "./testdata/test_query_dynatrace_dashboard_dashboard_id_not_valid.json")
 
 	// we also do not care about the dashboard that would be returned by keptn
-	querying, _, teardown := createCustomQuerying(ev, handler, DashboardReaderMock{})
+	querying, _, teardown := createCustomQuerying(t, ev, handler, DashboardReaderMock{})
 	defer teardown()
 
 	actualResult, dashboardProcessed, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
 func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
@@ -17,6 +16,8 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 		writer.WriteHeader(200)
 		writer.Write(marshal)
 	}))
+
+	mockCredentials := createDynatraceCredentials(t, dtMockServer.URL)
 
 	defer dtMockServer.Close()
 
@@ -38,11 +39,7 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 		{
 			name: "",
 			fields: fields{
-				client: NewClient(
-					&credentials.DTCredentials{
-						Tenant:   dtMockServer.URL,
-						ApiToken: "",
-					}),
+				client: NewClient(mockCredentials),
 			},
 			args: args{
 				nextPageKey: "",

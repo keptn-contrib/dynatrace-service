@@ -105,7 +105,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 
 	if len(metricsEventResults) > 0 {
 		// TODO: improve this?
-		log.Info("To review and enable the generated custom metric events, please go to: " + mec.dtClient.Credentials().Tenant + "/#settings/anomalydetection/metricevents")
+		log.Info("To review and enable the generated custom metric events, please go to: " + mec.dtClient.Credentials().GetTenant() + "/#settings/anomalydetection/metricevents")
 	}
 
 	return metricsEventResults
