@@ -14,12 +14,12 @@ type DynatraceCredentials struct {
 func NewDynatraceCredentials(tenant string, apiTokenString string) (*DynatraceCredentials, error) {
 	tenant, err := url.MakeCleanURL(tenant)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create dynatrace credentials: %v", err)
+		return nil, fmt.Errorf("cannot create Dynatrace credentials: %v", err)
 	}
 
 	apiToken, err := NewDynatraceAPIToken(apiTokenString)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create dynatrace credentials: %v", err)
+		return nil, fmt.Errorf("cannot create Dynatrace credentials: %v", err)
 	}
 
 	return &DynatraceCredentials{tenant: tenant, apiToken: *apiToken}, nil

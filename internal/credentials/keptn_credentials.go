@@ -15,12 +15,12 @@ type KeptnCredentials struct {
 func NewKeptnCredentials(apiURL string, apiToken string) (*KeptnCredentials, error) {
 	apiURL, err := url.MakeCleanURL(apiURL)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create keptn credentials: %v", err)
+		return nil, fmt.Errorf("cannot create Keptn credentials: %v", err)
 	}
 
 	err = validateKeptnAPIToken(apiToken)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create keptn credentials: %v", err)
+		return nil, fmt.Errorf("cannot create Keptn credentials: %v", err)
 	}
 
 	return &KeptnCredentials{apiURL: apiURL, apiToken: apiToken}, nil
