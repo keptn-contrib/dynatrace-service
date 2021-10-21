@@ -1,8 +1,9 @@
 package credentials
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewDynatraceAPIToken(t *testing.T) {
@@ -42,12 +43,12 @@ func TestNewDynatraceAPIToken(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "invalid token - pulic too short",
+			name:    "invalid token - public too short",
 			args:    args{t: "dt0c01.T2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"},
 			wantErr: true,
 		},
 		{
-			name:    "invalid token - pulic too long",
+			name:    "invalid token - public too long",
 			args:    args{t: "dt0c01.SST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"},
 			wantErr: true,
 		},
@@ -70,13 +71,14 @@ func TestNewDynatraceAPIToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewDynatraceAPIToken(tt.args.t)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewDynatraceAPIToken() error = %v, wantErr %v", err, tt.wantErr)
-				return
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewDynatraceAPIToken() = %v, want %v", got, tt.want)
-			}
+
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
