@@ -50,8 +50,8 @@ func NewClient(httpClient *http.Client, baseURL string, additionalHeader HTTPHea
 }
 
 // NewDefaultClient creates a new Client with a default HTTP client set up
-func NewDefaultClient(baseURL string, additionalHeader HTTPHeader) *Client {
-	return NewClient(&http.Client{}, baseURL, additionalHeader)
+func NewDefaultClient(httpClient *http.Client, baseURL string) *Client {
+	return NewClient(httpClient, baseURL, HTTPHeader{})
 }
 
 func (c *Client) Get(apiPath string) ([]byte, int, string, error) {
