@@ -2,7 +2,6 @@ package credentials
 
 import (
 	"fmt"
-	"strings"
 )
 
 const dynatraceSecretName = "dynatrace"
@@ -46,6 +45,5 @@ func (cm *DynatraceK8sSecretReader) GetDynatraceCredentials(secretName string) (
 		return nil, fmt.Errorf("key %s was not found in secret \"%s\"", dynatraceAPITokenSecretName, secretName)
 	}
 
-	dtAPIToken = strings.TrimSpace(dtAPIToken)
 	return NewDynatraceCredentials(dtTenant, dtAPIToken)
 }

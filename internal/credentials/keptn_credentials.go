@@ -3,6 +3,7 @@ package credentials
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/url"
 )
@@ -18,7 +19,7 @@ func NewKeptnCredentials(apiURL string, apiToken string) (*KeptnCredentials, err
 		return nil, fmt.Errorf("cannot create Keptn credentials: %v", err)
 	}
 
-	err = validateKeptnAPIToken(apiToken)
+	apiToken, err = cleanKeptnAPIToken(apiToken)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create Keptn credentials: %v", err)
 	}
@@ -34,9 +35,11 @@ func (c *KeptnCredentials) GetAPIToken() string {
 	return c.apiToken
 }
 
-func validateKeptnAPIToken(apiToken string) error {
+func cleanKeptnAPIToken(apiToken string) (string, error) {
+	apiToken = strings.TrimSpace(apiToken)
+
 	if apiToken == "" {
-		return errors.New("Keptn API token cannot be empty")
+		return "", errors.New("Keptn API token cannot be empty")
 	}
-	return nil
+	return apiToken, nil
 }

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/url"
@@ -60,7 +59,6 @@ func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, erro
 		apiToken = val
 	}
 
-	apiToken = strings.TrimSpace(apiToken)
 	return NewKeptnCredentials(apiURL, apiToken)
 }
 
