@@ -24,6 +24,7 @@ func (eh ErrorHandler) HandleEvent() error {
 	keptnClient, err := keptn.NewDefaultClient(eh.evt)
 	if err != nil {
 		log.WithError(err).Error("Could not instantiate Keptn client")
+		// no need to continue with sending, will not work anyway
 		return err
 	}
 
@@ -31,6 +32,8 @@ func (eh ErrorHandler) HandleEvent() error {
 	integrationID, err := uniformClient.GetIntegrationIDFor(event.GetEventSource())
 	if err != nil {
 		log.WithError(err).Error("Could not retrieve integration ID from Keptn Uniform")
+		// no need to continue here, message will not show up in Uniform
+		return err
 	}
 
 	log.WithError(eh.err).Debug("Sending error to Keptn Uniform")
