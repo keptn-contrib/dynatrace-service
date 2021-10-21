@@ -11,8 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-var namespace = getPodNamespace()
-
 var ErrSecretNotFound = errors.New("secret not found")
 
 type K8sSecretReader struct {
@@ -32,8 +30,8 @@ func NewDefaultK8sSecretReader() (*K8sSecretReader, error) {
 	return &K8sSecretReader{K8sClient: k8sClient}, nil
 }
 
-func (kcr *K8sSecretReader) ReadSecret(secretName, namespace, secretKey string) (string, error) {
-	secret, err := kcr.K8sClient.CoreV1().Secrets(namespace).Get(context.TODO(), secretName, metav1.GetOptions{})
+func (kcr *K8sSecretReader) ReadSecret(secretName string, secretKey string) (string, error) {
+	secret, err := kcr.K8sClient.CoreV1().Secrets(getPodNamespace()).Get(context.TODO(), secretName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}

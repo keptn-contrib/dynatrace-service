@@ -37,7 +37,7 @@ func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
 }
 
 func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
-	apiURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnAPIURLName)
+	apiURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnAPIURLName)
 	if err != nil {
 		val, found := cm.EnvironmentVariableReader.Read(keptnAPIURLName)
 		if !found {
@@ -46,7 +46,7 @@ func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, erro
 		apiURL = val
 	}
 
-	apiToken, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnAPITokenName)
+	apiToken, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnAPITokenName)
 	if err != nil {
 		val, found := cm.EnvironmentVariableReader.Read(keptnAPITokenName)
 		if !found {
@@ -59,7 +59,7 @@ func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, erro
 }
 
 func (cm *KeptnCredentialsReader) GetKeptnBridgeURL() (string, error) {
-	bridgeURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnBridgeURLName)
+	bridgeURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLName)
 
 	if err != nil {
 		val, found := cm.EnvironmentVariableReader.Read(keptnBridgeURLName)
