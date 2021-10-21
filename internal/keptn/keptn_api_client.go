@@ -30,14 +30,14 @@ func (c *APIClient) Post(apiPath string, body []byte) ([]byte, error) {
 	return validateResponse(body, status, url)
 }
 
-// GenericAPIErrorDTO will support multiple Keptn API errors
-type GenericAPIErrorDTO struct {
+// genericAPIErrorDTO will support multiple Keptn API errors
+type genericAPIErrorDTO struct {
 	Code      int    `json:"code"`
 	ErrorCode int    `json:"errorCode"`
 	Message   string `json:"message"`
 }
 
-func (e *GenericAPIErrorDTO) status() int {
+func (e *genericAPIErrorDTO) status() int {
 	if e.Code != 0 {
 		return e.Code
 	}
@@ -58,7 +58,7 @@ func (e *APIError) Error() string {
 func validateResponse(body []byte, status int, url string) ([]byte, error) {
 	if status < 200 || status >= 300 {
 		// try to get the error information
-		keptnAPIError := &GenericAPIErrorDTO{}
+		keptnAPIError := &genericAPIErrorDTO{}
 		err := json.Unmarshal(body, keptnAPIError)
 		if err != nil {
 			return body, &APIError{
