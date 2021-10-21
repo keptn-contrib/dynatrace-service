@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -129,13 +128,14 @@ func TestGetKeptnAPICredentials(t *testing.T) {
 			cm := NewKeptnCredentialsReader(k8sSecretReader)
 
 			got, err := cm.GetKeptnCredentials()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetKeptnCredentials() error = %v, wantErr %v", err, tt.wantErr)
-				return
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetKeptnCredentials() got = %v, want %v", got, tt.want)
-			}
+
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
@@ -275,15 +275,13 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 			cm := NewKeptnCredentialsReader(secretReader)
 			got, err := cm.GetKeptnCredentials()
 
-			if (err != nil) && tt.wantErr {
-				return
-			} else if (err != nil) != tt.wantErr {
-				t.Fatalf("CredentialManager.GetKeptnAPICredentials() error = %v, wantErr %v", err, tt.wantErr)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CredentialManager.GetKeptnAPICredentials() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }

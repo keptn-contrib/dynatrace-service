@@ -1,7 +1,6 @@
 package credentials
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,15 +80,14 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			decorator := NewCredentialManagerDefaultFallbackDecorator(cm)
 
 			got, err := decorator.GetDynatraceCredentials(tt.args.secretName)
-			if (err != nil) && tt.wantErr {
-				return
-			} else if (err != nil) != tt.wantErr {
-				t.Fatalf("CredentialManager.GetDynatraceCredentials() error = %v, wantErr %v", err, tt.wantErr)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CredentialManager.GetDynatraceCredentials() = %v, want %v", got, tt.want)
-			}
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }

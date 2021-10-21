@@ -1,8 +1,9 @@
 package credentials
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewDynatraceCredentials(t *testing.T) {
@@ -104,13 +105,14 @@ func TestNewDynatraceCredentials(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := NewDynatraceCredentials(tt.args.tenant, tt.args.apiToken)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewDynatraceCredentials() error = %v, wantErr %v", err, tt.wantErr)
-				return
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewDynatraceCredentials() = %v, want %v", got, tt.want)
-			}
+
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
