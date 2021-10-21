@@ -18,7 +18,7 @@ func NewKeptnCredentials(apiURL string, apiToken string) (*KeptnCredentials, err
 		return nil, fmt.Errorf("cannot create keptn credentials: %v", err)
 	}
 
-	err = validateKeptnApiToken(apiToken)
+	err = validateKeptnAPIToken(apiToken)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create keptn credentials: %v", err)
 	}
@@ -34,7 +34,7 @@ func (c KeptnCredentials) GetAPIToken() string {
 	return c.apiToken
 }
 
-func validateKeptnApiToken(apiToken string) error {
+func validateKeptnAPIToken(apiToken string) error {
 	if apiToken == "" {
 		return errors.New("Keptn API token cannot be empty")
 	}

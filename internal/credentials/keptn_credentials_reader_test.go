@@ -131,7 +131,7 @@ func TestGetKeptnAPICredentials(t *testing.T) {
 				t.Errorf("could not initialize CredentialManager: %s", err.Error())
 			}
 
-			got, err := cm.GetKeptnAPICredentials()
+			got, err := cm.GetKeptnCredentials()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetKeptnCredentials() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -286,7 +286,7 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 				t.Fatalf("NewCredentialManager() error = %v", err)
 			}
 
-			got, err := cm.GetKeptnAPICredentials()
+			got, err := cm.GetKeptnCredentials()
 
 			if (err != nil) && tt.wantErr {
 				return

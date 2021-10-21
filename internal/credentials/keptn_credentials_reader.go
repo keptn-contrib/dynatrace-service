@@ -41,7 +41,7 @@ func NewKeptnCredentialsReader(secretReader *K8sSecretReader) (*KeptnCredentials
 	return cm, nil
 }
 
-func (cm *KeptnCredentialsReader) GetKeptnAPICredentials() (*KeptnCredentials, error) {
+func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
 	apiURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, namespace, keptnAPIURLName)
 	if err != nil {
 		val, found := cm.EnvironmentVariableReader.Read(keptnAPIURLName)
@@ -84,7 +84,7 @@ func GetKeptnCredentials() (*KeptnCredentials, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cm.GetKeptnAPICredentials()
+	return cm.GetKeptnCredentials()
 }
 
 // CheckKeptnConnection verifies wether a connection to the Keptn API can be established
