@@ -8,6 +8,7 @@ import (
 )
 
 type APIClientInterface interface {
+	Get(apiPath string) ([]byte, error)
 	Post(apiPath string, body []byte) ([]byte, error)
 }
 
@@ -19,6 +20,15 @@ func NewAPIClient(client rest.ClientInterface) *APIClient {
 	return &APIClient{
 		restClient: client,
 	}
+}
+
+func (c *APIClient) Get(apiPath string) ([]byte, error) {
+	body, status, url, err := c.restClient.Get(apiPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return validateResponse(body, status, url)
 }
 
 func (c *APIClient) Post(apiPath string, body []byte) ([]byte, error) {
