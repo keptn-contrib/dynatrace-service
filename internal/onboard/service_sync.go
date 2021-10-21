@@ -83,7 +83,7 @@ const shipyardController = "SHIPYARD_CONTROLLER"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 
 // ActivateServiceSynchronizer godoc
-func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) *serviceSynchronizer {
+func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) {
 	if serviceSynchronizerInstance == nil {
 
 		serviceSynchronizerInstance = &serviceSynchronizer{
@@ -114,7 +114,6 @@ func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) *se
 		serviceSynchronizerInstance.initializeSynchronizationTimer()
 
 	}
-	return serviceSynchronizerInstance
 }
 
 func (s *serviceSynchronizer) initializeSynchronizationTimer() {
