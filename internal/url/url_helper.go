@@ -20,10 +20,6 @@ func MakeCleanURL(u string) (string, error) {
 		}
 	}
 
-	if uu.Scheme == "" {
-		uu.Scheme = "https"
-	}
-
 	if uu.Scheme != "https" && uu.Scheme != "http" {
 		return "", errors.New("expected https or http scheme")
 	}
