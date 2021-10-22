@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"fmt"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
@@ -85,11 +86,11 @@ func (a EvaluationFinishedAdapter) GetDeploymentStrategy() string {
 // GetLabels returns a map of labels
 func (a EvaluationFinishedAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
-	keptnBridgeURL, err := credentials.GetKeptnBridgeURL()
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	if err == nil {
+	keptnBridgeURL, _ := credentials.GetKeptnBridgeURL()
+	if keptnBridgeURL != "" {
 		labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
 	labels["Quality Gate Score"] = fmt.Sprintf("%.2f", a.event.Evaluation.Score)

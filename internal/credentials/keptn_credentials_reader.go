@@ -60,13 +60,12 @@ func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, erro
 
 func (cm *KeptnCredentialsReader) GetKeptnBridgeURL() (string, error) {
 	bridgeURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLName)
-
 	if err != nil {
-		val, found := cm.EnvironmentVariableReader.Read(keptnBridgeURLName)
-		if !found {
-			return "", fmt.Errorf("key %s was not found in secret \"%s\" or environment variables", keptnBridgeURLName, dynatraceSecretName)
-		}
-		bridgeURL = val
+		bridgeURL, _ = cm.EnvironmentVariableReader.Read(keptnBridgeURLName)
+	}
+
+	if bridgeURL == "" {
+		return "", nil
 	}
 
 	return url.MakeCleanURL(bridgeURL)

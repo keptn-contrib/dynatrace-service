@@ -83,11 +83,11 @@ func (a ReleaseTriggeredAdapter) GetDeploymentStrategy() string {
 // GetLabels returns a map of labels
 func (a ReleaseTriggeredAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
-	keptnBridgeURL, err := credentials.GetKeptnBridgeURL()
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	if err == nil {
+	keptnBridgeURL, _ := credentials.GetKeptnBridgeURL()
+	if keptnBridgeURL != "" {
 		labels["Keptns Bridge"] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
 	}
 	return labels

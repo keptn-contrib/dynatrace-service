@@ -168,7 +168,7 @@ func TestGetKeptnBridgeURL(t *testing.T) {
 		{
 			name:            "return error if env var not set",
 			want:            "",
-			wantErr:         true,
+			wantErr:         false,
 			bridgeURLEnvVar: "",
 		},
 	}
@@ -307,7 +307,7 @@ func TestCredentialManager_GetKeptnBridgeURL(t *testing.T) {
 		{
 			name:    "no secret, no env vars",
 			secret:  &v1.Secret{},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name:    "with secret, no env vars",
@@ -332,7 +332,7 @@ func TestCredentialManager_GetKeptnBridgeURL(t *testing.T) {
 		{
 			name:    "with other secret, no env vars",
 			secret:  otherDynatraceSecret,
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name:    "with other secret, with env vars",
