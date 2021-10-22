@@ -1,14 +1,15 @@
 package keptn
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/rest"
+
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	"io/ioutil"
-	"net/http"
 )
 
 type ServiceClientInterface interface {
@@ -17,8 +18,8 @@ type ServiceClientInterface interface {
 }
 
 type ServiceClient struct {
-	client     *keptnapi.ServiceHandler
-	httpClient *http.Client
+	client    *keptnapi.ServiceHandler
+	apiClient APIClientInterface
 }
 
 func NewDefaultServiceClient() *ServiceClient {
@@ -29,8 +30,11 @@ func NewDefaultServiceClient() *ServiceClient {
 
 func NewServiceClient(client *keptnapi.ServiceHandler, httpClient *http.Client) *ServiceClient {
 	return &ServiceClient{
-		client:     client,
-		httpClient: httpClient,
+		client: client,
+		apiClient: NewAPIClient(
+			rest.NewDefaultClient(
+				httpClient,
+				common.GetShipyardControllerURL())),
 	}
 }
 
@@ -61,28 +65,10 @@ func (c *ServiceClient) CreateServiceInProject(project string, service string) e
 		return fmt.Errorf("could not marshal service payload: %s", err.Error())
 	}
 
-	// TODO 2021-09-08: extract the http client and maybe consolidate with dynatrace (http) client
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/project/%s/service", common.GetShipyardControllerURL(), project), bytes.NewBuffer(reqBody))
-	if err != nil {
-		return fmt.Errorf("could not create request: %v", err)
-	}
+	_, err = c.apiClient.Post(getServicePathFor(project), reqBody)
+	return err
+}
 
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("request failed with %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
+func getServicePathFor(project string) string {
+	return "/v1/project/" + project + "/service"
 }

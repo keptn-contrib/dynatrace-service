@@ -37,12 +37,12 @@ func NewConfigureMonitoringAdapterFromEvent(e cloudevents.Event) (*ConfigureMoni
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ConfigureMonitoringAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.ShKeptnContext()
+	return a.cloudEvent.GetShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ConfigureMonitoringAdapter) GetSource() string {
-	return a.cloudEvent.Source()
+	return a.cloudEvent.GetSource()
 }
 
 // GetEvent returns the event type
@@ -90,5 +90,5 @@ func (a ConfigureMonitoringAdapter) IsNotForDynatrace() bool {
 }
 
 func (a ConfigureMonitoringAdapter) GetEventID() string {
-	return a.cloudEvent.ID()
+	return a.cloudEvent.GetEventID()
 }

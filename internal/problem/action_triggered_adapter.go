@@ -39,12 +39,12 @@ func NewActionTriggeredAdapterFromEvent(e cloudevents.Event) (*ActionTriggeredAd
 
 // GetShKeptnContext returns the shkeptncontext
 func (a ActionTriggeredAdapter) GetShKeptnContext() string {
-	return a.cloudEvent.ShKeptnContext()
+	return a.cloudEvent.GetShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
 func (a ActionTriggeredAdapter) GetSource() string {
-	return a.cloudEvent.Source()
+	return a.cloudEvent.GetSource()
 }
 
 // GetEvent returns the event type

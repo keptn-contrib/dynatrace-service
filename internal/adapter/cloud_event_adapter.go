@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"fmt"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/types"
 	log "github.com/sirupsen/logrus"
@@ -35,7 +36,7 @@ func NewCloudEventAdapter(ce cloudevents.Event) CloudEventAdapter {
 	return CloudEventAdapter{ce: ce}
 }
 
-func (a CloudEventAdapter) ShKeptnContext() string {
+func (a CloudEventAdapter) GetShKeptnContext() string {
 	context, err := types.ToString(a.ce.Context.GetExtensions()[shKeptnContext])
 	if err != nil {
 		log.WithError(err).Debug("Event does not contain " + shKeptnContext)
@@ -43,15 +44,15 @@ func (a CloudEventAdapter) ShKeptnContext() string {
 	return context
 }
 
-func (a CloudEventAdapter) Source() string {
+func (a CloudEventAdapter) GetSource() string {
 	return a.ce.Source()
 }
 
-func (a CloudEventAdapter) ID() string {
+func (a CloudEventAdapter) GetEventID() string {
 	return a.ce.ID()
 }
 
-func (a CloudEventAdapter) Type() string {
+func (a CloudEventAdapter) GetType() string {
 	return a.ce.Type()
 }
 

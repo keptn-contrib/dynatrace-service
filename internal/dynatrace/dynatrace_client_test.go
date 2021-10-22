@@ -1,115 +1,35 @@
 package dynatrace
 
 import (
-	"bytes"
 	"net/http"
 	"os"
 	"strconv"
 	"testing"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-func TestDynatraceHelper_createClient(t *testing.T) {
+func TestDynatraceHelper_createClient_with_proxy(t *testing.T) {
+	const mockTenant = "https://mySampleEnv.live.dynatrace.com"
+	const mockProxy = "https://proxy-abcdefgh123:8080"
 
-	mockTenant := "https://mySampleEnv.live.dynatrace.com"
-	mockReq, err := http.NewRequest("GET", mockTenant+"/api/v1/config/clusterversion", bytes.NewReader(make([]byte, 100)))
-	if err != nil {
-		t.Errorf("Client.createClient(): unable to make mock request: error = %v", err)
-		return
+	os.Setenv("HTTP_PROXY", mockProxy)
+	os.Setenv("HTTPS_PROXY", mockProxy)
+	os.Setenv("NO_PROXY", "localhost")
+
+	dt := NewClient(createDynatraceCredentials(t, mockTenant))
+	_, _, url, err := dt.restClient.Get("/api/v1/config/clusterversion")
+
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "proxy-abcdefgh123")
 	}
+	assert.Empty(t, url)
 
-	mockDynatraceCredentials := createDynatraceCredentials(t, mockTenant)
-
-	mockProxy := "https://proxy:8080"
-	t.Logf("Using mock proxy: %v", mockProxy)
-
-	type proxyEnvVars struct {
-		httpProxy  string
-		httpsProxy string
-		noProxy    string
-	}
-	type fields struct {
-		DynatraceCreds *credentials.DynatraceCredentials
-	}
-	type args struct {
-		req *http.Request
-	}
-
-	// only one test can be run in a single test run due to the ProxyConfig environment being cached
-	// see envProxyFunc() in transport.go for details
-	tests := []struct {
-		name         string
-		proxyEnvVars proxyEnvVars
-		fields       fields
-		args         args
-		wantErr      bool
-		wantProxy    string
-	}{
-		{
-			name: "testWithProxy",
-			proxyEnvVars: proxyEnvVars{
-				httpProxy:  mockProxy,
-				httpsProxy: mockProxy,
-				noProxy:    "localhost",
-			},
-			fields: fields{
-				DynatraceCreds: mockDynatraceCredentials,
-			},
-			args: args{
-				req: mockReq,
-			},
-			wantProxy: mockProxy,
-		},
-		/*{
-			name: "testWithNoProxy",
-			fields: fields{
-				DynatraceCreds: mockDynatraceCredentials,
-			},
-			args: args{
-				req: mockReq,
-			},
-			wantProxy: "",
-		},*/
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			os.Setenv("HTTP_PROXY", tt.proxyEnvVars.httpProxy)
-			os.Setenv("HTTPS_PROXY", tt.proxyEnvVars.httpsProxy)
-			os.Setenv("NO_PROXY", tt.proxyEnvVars.noProxy)
-
-			dt := NewClient(tt.fields.DynatraceCreds)
-
-			gotTransport := dt.httpClient.Transport.(*http.Transport)
-			gotProxyUrl, err := gotTransport.Proxy(tt.args.req)
-			if err != nil {
-				t.Errorf("Client.createClient() error = %v", err)
-				return
-			}
-
-			if gotProxyUrl == nil {
-				if tt.wantProxy != "" {
-					t.Errorf("Client.createClient() error, got proxy is nil, wanted = %v", tt.wantProxy)
-				}
-			} else {
-				gotProxy := gotProxyUrl.String()
-				if tt.wantProxy == "" {
-					t.Errorf("Client.createClient() error, got proxy = %v, wanted nil", gotProxy)
-				} else if gotProxy != tt.wantProxy {
-					t.Errorf("Client.createClient() error, got proxy = %v, wanted = %v", gotProxy, tt.wantProxy)
-				}
-			}
-
-			os.Unsetenv("HTTP_PROXY")
-			os.Unsetenv("HTTPS_PROXY")
-			os.Unsetenv("NO_PROXY")
-		})
-	}
+	os.Unsetenv("HTTP_PROXY")
+	os.Unsetenv("HTTPS_PROXY")
+	os.Unsetenv("NO_PROXY")
 }
 
 func TestExecuteDynatraceREST(t *testing.T) {

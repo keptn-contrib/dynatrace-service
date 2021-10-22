@@ -1,17 +1,14 @@
 package dynatrace
 
 import (
-	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	log "github.com/sirupsen/logrus"
+	"github.com/keptn-contrib/dynatrace-service/internal/rest"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
@@ -71,13 +68,11 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("Dynatrace API error (%d): %s - URL: %s", e.code, e.message, e.uri)
 }
 
-type ClientError struct {
-	message string
-	cause   error
-}
+func createAdditionalHeaders(token string) rest.HTTPHeader {
+	header := rest.HTTPHeader{}
+	header.Add("Authorization", "Api-Token "+token)
 
-func (e *ClientError) Error() string {
-	return fmt.Sprintf("Dynatrace client error: %s [%v]", e.message, e.cause)
+	return header
 }
 
 type ClientInterface interface {
@@ -91,13 +86,13 @@ type ClientInterface interface {
 
 type Client struct {
 	credentials *credentials.DynatraceCredentials
-	httpClient  *http.Client
+	restClient  rest.ClientInterface
 }
 
 // NewClient creates a new Client
-func NewClient(dynatraceCreds *credentials.DynatraceCredentials) *Client {
+func NewClient(dynatraceCredentials *credentials.DynatraceCredentials) *Client {
 	return NewClientWithHTTP(
-		dynatraceCreds,
+		dynatraceCredentials,
 		&http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
@@ -108,106 +103,75 @@ func NewClient(dynatraceCreds *credentials.DynatraceCredentials) *Client {
 	)
 }
 
-func NewClientWithHTTP(dynatraceCreds *credentials.DynatraceCredentials, httpClient *http.Client) *Client {
+func NewClientWithHTTP(dynatraceCredentials *credentials.DynatraceCredentials, httpClient *http.Client) *Client {
 	return &Client{
-		credentials: dynatraceCreds,
-		httpClient:  httpClient,
+		credentials: dynatraceCredentials,
+		restClient: rest.NewClient(
+			httpClient,
+			dynatraceCredentials.GetTenant(),
+			createAdditionalHeaders(dynatraceCredentials.GetAPIToken())),
 	}
 }
 
 func (dt *Client) Get(apiPath string) ([]byte, error) {
-	return dt.sendRequest(apiPath, http.MethodGet, nil)
-}
-
-func (dt *Client) Post(apiPath string, body []byte) ([]byte, error) {
-	return dt.sendRequest(apiPath, http.MethodPost, body)
-}
-
-func (dt *Client) Put(apiPath string, body []byte) ([]byte, error) {
-	return dt.sendRequest(apiPath, http.MethodPut, body)
-}
-
-func (dt *Client) Delete(apiPath string) ([]byte, error) {
-	return dt.sendRequest(apiPath, http.MethodDelete, nil)
-}
-
-// sendRequest makes an Dynatrace API request and returns the response
-func (dt *Client) sendRequest(apiPath string, method string, body []byte) ([]byte, error) {
-
-	req, err := dt.createRequest(apiPath, method, body)
+	body, status, url, err := dt.restClient.Get(apiPath)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := dt.doRequest(req)
-	if err != nil {
-		return response, err
-	}
-
-	return response, nil
+	return validateResponse(body, status, url)
 }
 
-// creates http request for api call with appropriate headers including authorization
-func (dt *Client) createRequest(apiPath string, method string, body []byte) (*http.Request, error) {
-	var url = dt.credentials.GetTenant() + apiPath
-
-	log.WithFields(log.Fields{"method": method, "url": url}).Debug("creating Dynatrace API request")
-
-	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+func (dt *Client) Post(apiPath string, body []byte) ([]byte, error) {
+	body, status, url, err := dt.restClient.Post(apiPath, body)
 	if err != nil {
-		return nil, &ClientError{
-			message: "failed to create request",
-			cause:   err,
-		}
+		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Api-Token "+dt.credentials.GetAPIToken())
-	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
-
-	return req, nil
+	return validateResponse(body, status, url)
 }
 
-// performs the request and reads the response
-func (dt *Client) doRequest(req *http.Request) ([]byte, error) {
-	resp, err := dt.httpClient.Do(req)
+func (dt *Client) Put(apiPath string, body []byte) ([]byte, error) {
+	body, status, url, err := dt.restClient.Put(apiPath, body)
 	if err != nil {
-		return nil, &ClientError{
-			message: "failed to send request",
-			cause:   err,
-		}
+		return nil, err
 	}
 
-	defer resp.Body.Close()
-	responseBody, err := ioutil.ReadAll(resp.Body)
+	return validateResponse(body, status, url)
+}
+
+func (dt *Client) Delete(apiPath string) ([]byte, error) {
+	body, status, url, err := dt.restClient.Delete(apiPath)
 	if err != nil {
-		return nil, &ClientError{
-			message: "failed to read response body",
-			cause:   err,
-		}
+		return nil, err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	return validateResponse(body, status, url)
+}
+
+// validates the response and returns the payload or Keptn API error
+func validateResponse(body []byte, status int, url string) ([]byte, error) {
+	if status < 200 || status >= 300 {
 
 		// try to get the error information
 		dtAPIError := &EnvironmentAPIv2Error{}
-		err := json.Unmarshal(responseBody, dtAPIError)
+		err := json.Unmarshal(body, dtAPIError)
 		if err != nil {
-			return responseBody, &APIError{
-				code:    resp.StatusCode,
-				message: string(responseBody),
-				uri:     req.URL.String(),
+			return body, &APIError{
+				code:    status,
+				message: string(body),
+				uri:     url,
 			}
 		}
-		return responseBody, &APIError{
+		return body, &APIError{
 			code:    dtAPIError.Error.Code,
 			message: dtAPIError.Error.Message,
 			details: dtAPIError,
-			uri:     req.URL.String(),
+			uri:     url,
 		}
 	}
 
-	return responseBody, nil
+	return body, nil
 }
 
 func (dt *Client) Credentials() *credentials.DynatraceCredentials {
