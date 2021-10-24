@@ -3,8 +3,7 @@ package problem
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -84,15 +83,7 @@ func (a ActionTriggeredAdapter) GetDeploymentStrategy() string {
 
 // GetLabels returns a map of labels
 func (a ActionTriggeredAdapter) GetLabels() map[string]string {
-	labels := a.event.Labels
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-	keptnBridgeURL, _ := credentials.GetKeptnBridgeURL()
-	if keptnBridgeURL != "" {
-		labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
-	}
-	return labels
+	return keptn.AddOptionalKeptnBridgeUrlToLabels(a.event.Labels, a.GetShKeptnContext())
 }
 
 func (a ActionTriggeredAdapter) GetAction() string {
