@@ -4,8 +4,6 @@ import (
 	"fmt"
 )
 
-const dynatraceSecretName = "dynatrace"
-
 const dynatraceTenantSecretName = "DT_TENANT"
 const dynatraceAPITokenSecretName = "DT_API_TOKEN"
 const keptnAPIURLName = "KEPTN_API_URL"
@@ -18,11 +16,11 @@ type DynatraceCredentialsProvider interface {
 }
 
 type DynatraceK8sSecretReader struct {
-	SecretReader *K8sSecretReader
+	secretReader *K8sSecretReader
 }
 
 func NewDynatraceK8sSecretReader(sr *K8sSecretReader) *DynatraceK8sSecretReader {
-	return &DynatraceK8sSecretReader{SecretReader: sr}
+	return &DynatraceK8sSecretReader{secretReader: sr}
 }
 
 func NewDefaultDynatraceK8sSecretReader() (*DynatraceK8sSecretReader, error) {
@@ -30,19 +28,19 @@ func NewDefaultDynatraceK8sSecretReader() (*DynatraceK8sSecretReader, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not initialize DynatraceK8sSecretReader: %w", err)
 	}
-	return &DynatraceK8sSecretReader{SecretReader: sr}, nil
+	return &DynatraceK8sSecretReader{secretReader: sr}, nil
 }
 
-func (cm *DynatraceK8sSecretReader) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
-	dtTenant, err := cm.SecretReader.ReadSecret(secretName, dynatraceTenantSecretName)
+func (cr *DynatraceK8sSecretReader) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
+	tenant, err := cr.secretReader.ReadSecret(secretName, dynatraceTenantSecretName)
 	if err != nil {
 		return nil, fmt.Errorf("key %s was not found in secret \"%s\": %w", dynatraceTenantSecretName, secretName, err)
 	}
 
-	dtAPIToken, err := cm.SecretReader.ReadSecret(secretName, dynatraceAPITokenSecretName)
+	apiToken, err := cr.secretReader.ReadSecret(secretName, dynatraceAPITokenSecretName)
 	if err != nil {
 		return nil, fmt.Errorf("key %s was not found in secret \"%s\": %w", dynatraceAPITokenSecretName, secretName, err)
 	}
 
-	return NewDynatraceCredentials(dtTenant, dtAPIToken)
+	return NewDynatraceCredentials(tenant, apiToken)
 }

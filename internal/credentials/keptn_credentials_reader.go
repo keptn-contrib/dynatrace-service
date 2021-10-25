@@ -8,18 +8,20 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 )
 
+const dynatraceSecretName = "dynatrace"
+
 //go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/keptn_credentials_provider_mock.go . KeptnCredentialsProvider
 type KeptnCredentialsProvider interface {
 	GetKeptnCredentials() (*KeptnCredentials, error)
 }
 
 type KeptnCredentialsReader struct {
-	SecretReader              *K8sSecretReader
-	EnvironmentVariableReader *env.OSEnvironmentVariableReader
+	secretReader              *K8sSecretReader
+	environmentVariableReader *env.OSEnvironmentVariableReader
 }
 
 func NewKeptnCredentialsReader(sr *K8sSecretReader) *KeptnCredentialsReader {
-	return &KeptnCredentialsReader{SecretReader: sr, EnvironmentVariableReader: env.NewOSEnvironmentVariableReader()}
+	return &KeptnCredentialsReader{secretReader: sr, environmentVariableReader: env.NewOSEnvironmentVariableReader()}
 }
 
 func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
@@ -29,37 +31,37 @@ func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
 	}
 
 	return &KeptnCredentialsReader{
-		SecretReader:              sr,
-		EnvironmentVariableReader: env.NewOSEnvironmentVariableReader(),
+		secretReader:              sr,
+		environmentVariableReader: env.NewOSEnvironmentVariableReader(),
 	}, nil
 }
 
-func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
-	apiURL, err := cm.readSecretWithEnvironmentVariableFallback(keptnAPIURLName)
+func (cr *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
+	apiURL, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPIURLName)
 	if err != nil {
 		return nil, err
 	}
 
-	apiToken, err := cm.readSecretWithEnvironmentVariableFallback(keptnAPITokenName)
+	apiToken, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPITokenName)
 	if err != nil {
 		return nil, err
 	}
 
-	bridgeURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLName)
+	bridgeURL, err := cr.secretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLName)
 	if err != nil {
-		bridgeURL, _ = cm.EnvironmentVariableReader.Read(keptnBridgeURLName)
+		bridgeURL, _ = cr.environmentVariableReader.Read(keptnBridgeURLName)
 	}
 
 	return NewKeptnCredentials(apiURL, apiToken, bridgeURL)
 }
 
-func (cm *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(secretName string) (string, error) {
-	val, err := cm.SecretReader.ReadSecret(dynatraceSecretName, secretName)
+func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(secretName string) (string, error) {
+	val, err := cr.secretReader.ReadSecret(dynatraceSecretName, secretName)
 	if err == nil {
 		return val, nil
 	}
 
-	val, found := cm.EnvironmentVariableReader.Read(secretName)
+	val, found := cr.environmentVariableReader.Read(secretName)
 	if found {
 		return val, nil
 	}
@@ -69,11 +71,11 @@ func (cm *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(secr
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
 func GetKeptnCredentials() (*KeptnCredentials, error) {
-	cm, err := NewDefaultKeptnCredentialsReader()
+	cr, err := NewDefaultKeptnCredentialsReader()
 	if err != nil {
 		return nil, err
 	}
-	return cm.GetKeptnCredentials()
+	return cr.GetKeptnCredentials()
 }
 
 // CheckKeptnConnection verifies wether a connection to the Keptn API can be established
