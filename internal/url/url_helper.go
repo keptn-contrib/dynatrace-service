@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// MakeCleanURL cleans and validates the URL. It trims whitespace and trailing slashes, and defaults to HTTPS if HTTP not specified.
-func MakeCleanURL(u string) (string, error) {
+// CleanURL cleans and validates the URL. It trims whitespace and trailing slashes, and defaults to HTTPS if HTTP not specified.
+func CleanURL(u string) (string, error) {
 	u = strings.TrimSpace(u)
 	u = strings.TrimSuffix(u, "/")
 

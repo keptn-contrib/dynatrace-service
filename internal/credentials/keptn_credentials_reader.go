@@ -68,7 +68,7 @@ func (cm *KeptnCredentialsReader) GetKeptnBridgeURL() (string, error) {
 		return "", nil
 	}
 
-	return url.MakeCleanURL(bridgeURL)
+	return url.CleanURL(bridgeURL)
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
