@@ -28,7 +28,7 @@ func NewDynatraceK8sSecretReader(sr *K8sSecretReader) *DynatraceK8sSecretReader 
 func NewDefaultDynatraceK8sSecretReader() (*DynatraceK8sSecretReader, error) {
 	sr, err := NewDefaultK8sSecretReader()
 	if err != nil {
-		return nil, fmt.Errorf("could not initialize DynatraceK8sSecretReader: %s", err.Error())
+		return nil, fmt.Errorf("could not initialize DynatraceK8sSecretReader: %w", err)
 	}
 	return &DynatraceK8sSecretReader{SecretReader: sr}, nil
 }
@@ -36,12 +36,12 @@ func NewDefaultDynatraceK8sSecretReader() (*DynatraceK8sSecretReader, error) {
 func (cm *DynatraceK8sSecretReader) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
 	dtTenant, err := cm.SecretReader.ReadSecret(secretName, dynatraceTenantSecretName)
 	if err != nil {
-		return nil, fmt.Errorf("key %s was not found in secret \"%s\"", dynatraceTenantSecretName, secretName)
+		return nil, fmt.Errorf("key %s was not found in secret \"%s\": %w", dynatraceTenantSecretName, secretName, err)
 	}
 
 	dtAPIToken, err := cm.SecretReader.ReadSecret(secretName, dynatraceAPITokenSecretName)
 	if err != nil {
-		return nil, fmt.Errorf("key %s was not found in secret \"%s\"", dynatraceAPITokenSecretName, secretName)
+		return nil, fmt.Errorf("key %s was not found in secret \"%s\": %w", dynatraceAPITokenSecretName, secretName, err)
 	}
 
 	return NewDynatraceCredentials(dtTenant, dtAPIToken)
