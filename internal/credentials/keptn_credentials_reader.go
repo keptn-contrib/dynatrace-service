@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	"github.com/keptn-contrib/dynatrace-service/internal/url"
 )
 
 //go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/keptn_credentials_provider_mock.go . KeptnCredentialsProvider
@@ -55,20 +54,12 @@ func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, erro
 		apiToken = val
 	}
 
-	return NewKeptnCredentials(apiURL, apiToken)
-}
-
-func (cm *KeptnCredentialsReader) GetKeptnBridgeURL() (string, error) {
 	bridgeURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLName)
 	if err != nil {
 		bridgeURL, _ = cm.EnvironmentVariableReader.Read(keptnBridgeURLName)
 	}
 
-	if bridgeURL == "" {
-		return "", nil
-	}
-
-	return url.CleanURL(bridgeURL)
+	return NewKeptnCredentials(apiURL, apiToken, bridgeURL)
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
@@ -104,13 +95,4 @@ func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
 		return fmt.Errorf("received unexpected response from %s: %d", keptnAuthURL, resp.StatusCode)
 	}
 	return nil
-}
-
-// GetKeptnBridgeURL returns the bridge URL
-func GetKeptnBridgeURL() (string, error) {
-	cm, err := NewDefaultKeptnCredentialsReader()
-	if err != nil {
-		return "", err
-	}
-	return cm.GetKeptnBridgeURL()
 }

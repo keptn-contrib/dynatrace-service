@@ -11,9 +11,16 @@ func AddOptionalKeptnBridgeUrlToLabels(labels map[string]string, shKeptnContext 
 	if labels == nil {
 		labels = make(map[string]string)
 	}
-	keptnBridgeURL, _ := credentials.GetKeptnBridgeURL()
-	if keptnBridgeURL != "" {
-		labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + shKeptnContext
+	credentials, err := credentials.GetKeptnCredentials()
+	if err != nil {
+		return labels
 	}
+
+	keptnBridgeURL := credentials.GetBridgeURL()
+	if keptnBridgeURL == "" {
+		return labels
+	}
+
+	labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + shKeptnContext
 	return labels
 }
