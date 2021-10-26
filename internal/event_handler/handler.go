@@ -47,9 +47,9 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 	var fallbackDecorator *credentials.DynatraceCredentialsProviderFallbackDecorator
 	switch keptnEvent.(type) {
 	case *sli.GetSLITriggeredAdapter:
-		fallbackDecorator = credentials.NewCredentialManagerSLIServiceFallbackDecorator(cm, keptnEvent.GetProject())
+		fallbackDecorator = credentials.NewCredentialsProviderSLIServiceFallbackDecorator(cm, keptnEvent.GetProject())
 	default:
-		fallbackDecorator = credentials.NewCredentialManagerDefaultFallbackDecorator(cm)
+		fallbackDecorator = credentials.NewDefaultCredentialsProviderFallbackDecorator(cm)
 	}
 
 	creds, err := fallbackDecorator.GetDynatraceCredentials(dynatraceConfig.DtCreds)

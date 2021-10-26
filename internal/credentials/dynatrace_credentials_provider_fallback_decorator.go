@@ -13,24 +13,24 @@ type DynatraceCredentialsProviderFallbackDecorator struct {
 	secretName          string
 }
 
-func NewCredentialManagerFallbackDecorator(cm DynatraceCredentialsProvider, secretNames []string) *DynatraceCredentialsProviderFallbackDecorator {
+func NewCredentialsProviderFallbackDecorator(cp DynatraceCredentialsProvider, secretNames []string) *DynatraceCredentialsProviderFallbackDecorator {
 	return &DynatraceCredentialsProviderFallbackDecorator{
-		credentialsProvider: cm,
+		credentialsProvider: cp,
 		fallbackSecretNames: secretNames,
 	}
 }
 
-func NewCredentialManagerDefaultFallbackDecorator(cm DynatraceCredentialsProvider) *DynatraceCredentialsProviderFallbackDecorator {
-	return NewCredentialManagerFallbackDecorator(cm, []string{"dynatrace"})
+func NewDefaultCredentialsProviderFallbackDecorator(cp DynatraceCredentialsProvider) *DynatraceCredentialsProviderFallbackDecorator {
+	return NewCredentialsProviderFallbackDecorator(cp, []string{"dynatrace"})
 }
 
-func NewCredentialManagerSLIServiceFallbackDecorator(cm DynatraceCredentialsProvider, project string) *DynatraceCredentialsProviderFallbackDecorator {
-	return NewCredentialManagerFallbackDecorator(cm, []string{fmt.Sprintf("dynatrace-credentials-%s", project), "dynatrace-credentials", "dynatrace"})
+func NewCredentialsProviderSLIServiceFallbackDecorator(cp DynatraceCredentialsProvider, project string) *DynatraceCredentialsProviderFallbackDecorator {
+	return NewCredentialsProviderFallbackDecorator(cp, []string{fmt.Sprintf("dynatrace-credentials-%s", project), "dynatrace-credentials", "dynatrace"})
 }
 
-func (cm *DynatraceCredentialsProviderFallbackDecorator) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
+func (cp *DynatraceCredentialsProviderFallbackDecorator) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
 	secrets := []string{secretName}
-	secrets = append(secrets, cm.fallbackSecretNames...)
+	secrets = append(secrets, cp.fallbackSecretNames...)
 
 	// let's see whether we are fine with the given secret name first, if not, we will try all our fallback secret names
 	for _, secret := range secrets {
@@ -38,21 +38,21 @@ func (cm *DynatraceCredentialsProviderFallbackDecorator) GetDynatraceCredentials
 			continue
 		}
 
-		dtCredentials, err := cm.credentialsProvider.GetDynatraceCredentials(secret)
-		if err == nil && dtCredentials != nil {
+		dynatraceCredentials, err := cp.credentialsProvider.GetDynatraceCredentials(secret)
+		if err == nil && dynatraceCredentials != nil {
 			log.WithFields(
 				log.Fields{
 					"secret": secret,
-					"tenant": dtCredentials.GetTenant(),
+					"tenant": dynatraceCredentials.GetTenant(),
 				}).Info("Found secret with credentials")
-			cm.secretName = secret
-			return dtCredentials, nil
+			cp.secretName = secret
+			return dynatraceCredentials, nil
 		}
 	}
 
 	return nil, fmt.Errorf("could not find any Dynatrace specific secrets with the following names: %s", strings.Join(secrets, ","))
 }
 
-func (cm *DynatraceCredentialsProviderFallbackDecorator) GetSecretName() string {
-	return cm.secretName
+func (cp *DynatraceCredentialsProviderFallbackDecorator) GetSecretName() string {
+	return cp.secretName
 }

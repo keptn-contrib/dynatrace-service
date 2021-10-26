@@ -85,7 +85,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 
 			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 			cm := NewDynatraceK8sSecretReader(secretReader)
-			decorator := NewCredentialManagerDefaultFallbackDecorator(cm)
+			decorator := NewDefaultCredentialsProviderFallbackDecorator(cm)
 
 			got, err := decorator.GetDynatraceCredentials(tt.args.secretName)
 
