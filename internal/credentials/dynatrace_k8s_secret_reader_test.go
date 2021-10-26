@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -16,8 +15,16 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 	wantDynatraceCredentials, err := NewDynatraceCredentials("https://mySampleEnv.live.dynatrace.com", testDynatraceAPIToken)
 	assert.NoError(t, err)
 
-	dynatraceSecret := createDynatraceDTSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", testDynatraceAPIToken)
-	dynatraceOtherSecret := createDynatraceDTSecret("dynatrace_other", "keptn", "https://mySampleEnv.live.dynatrace.com", testDynatraceAPIToken)
+	dynatraceSecret := createTestSecret("dynatrace",
+		map[string]string{
+			"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
+			"DT_API_TOKEN": testDynatraceAPIToken,
+		})
+	dynatraceOtherSecret := createTestSecret("dynatrace_other",
+		map[string]string{
+			"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
+			"DT_API_TOKEN": testDynatraceAPIToken,
+		})
 
 	type args struct {
 		secretName string
@@ -71,6 +78,7 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		// TODO: 2021-10-25: Improve tests to cover DynatraceCredentialsProviderFallbackDecorator
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -89,18 +97,5 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 
 			assert.EqualValues(t, tt.want, got)
 		})
-	}
-}
-
-func createDynatraceDTSecret(name string, namespace string, dtTenant string, dtAPIToken string) *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			"DT_TENANT":    []byte(dtTenant),
-			"DT_API_TOKEN": []byte(dtAPIToken),
-		},
 	}
 }
