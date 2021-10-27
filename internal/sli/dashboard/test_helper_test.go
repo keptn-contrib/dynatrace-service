@@ -9,11 +9,10 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
+const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
 const QUALITYGATE_DASHBOARD_ID = "12345678-1111-4444-8888-123456789012"
 const QUALITYGATE_PROJECT = "qualitygate"
@@ -36,17 +35,16 @@ func createDynatraceCredentials(t *testing.T, url string) *credentials.Dynatrace
 }
 
 func createQueryingWithHandler(t *testing.T, keptnEvent adapter.EventContentAdapter, handler http.Handler) (*Querying, string, func()) {
-	return createCustomQuerying(t, keptnEvent, handler, DashboardReaderMock{})
+	return createCustomQuerying(t, keptnEvent, handler)
 }
 
-func createCustomQuerying(t *testing.T, keptnEvent adapter.EventContentAdapter, handler http.Handler, reader keptn.DashboardResourceReaderInterface) (*Querying, string, func()) {
+func createCustomQuerying(t *testing.T, keptnEvent adapter.EventContentAdapter, handler http.Handler) (*Querying, string, func()) {
 	dynatraceClient, url, teardown := createDynatraceClient(t, handler)
 
 	dh := NewQuerying(
 		keptnEvent,
 		nil,
-		dynatraceClient,
-		reader)
+		dynatraceClient)
 
 	return dh, url, teardown
 }
@@ -67,18 +65,4 @@ func TestCreateQueryingWithHandler(t *testing.T) {
 
 	assert.EqualValues(t, createDynatraceCredentials(t, url), dh.dtClient.Credentials())
 	assert.EqualValues(t, keptnEvent, dh.eventData)
-	assert.EqualValues(t, DashboardReaderMock{}, dh.dashboardReader)
-}
-
-type DashboardReaderMock struct {
-	content string
-	err     error
-}
-
-func (m DashboardReaderMock) GetDashboard(project string, stage string, service string) (string, error) {
-	if m.err != nil {
-		return "", m.err
-	}
-
-	return m.content, nil
 }

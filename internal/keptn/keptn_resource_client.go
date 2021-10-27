@@ -1,12 +1,13 @@
 package keptn
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	"gopkg.in/yaml.v2"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
 type SLOResourceReaderInterface interface {
@@ -16,17 +17,9 @@ type SLIAndSLOResourceWriterInterface interface {
 	UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error
 	UploadSLOs(project string, stage string, service string, dashboardSLOs *keptn.ServiceLevelObjectives) error
 }
-type DashboardResourceReaderInterface interface {
-	GetDashboard(project string, stage string, service string) (string, error)
-}
-type DashboardResourceWriterInterface interface {
-	UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error
-}
 type ResourceClientInterface interface {
 	SLOResourceReaderInterface
 	SLIAndSLOResourceWriterInterface
-	DashboardResourceReaderInterface
-	DashboardResourceWriterInterface
 }
 
 type DynatraceConfigResourceClientInterface interface {
@@ -35,7 +28,6 @@ type DynatraceConfigResourceClientInterface interface {
 
 const sloFilename = "slo.yaml"
 const sliFilename = "dynatrace/sli.yaml"
-const dashboardFilename = "dynatrace/dashboard.json"
 const configFilename = "dynatrace/dynatrace.conf.yaml"
 
 // ResourceClient is the default implementation for the *ResourceClientInterfaces using a ConfigResourceClientInterface
@@ -79,19 +71,6 @@ func (rc *ResourceClient) UploadSLOs(project string, stage string, service strin
 	}
 
 	return rc.client.UploadResource(yamlAsByteArray, sloFilename, project, stage, service)
-}
-
-func (rc *ResourceClient) GetDashboard(project string, stage string, service string) (string, error) {
-	return rc.client.GetServiceResource(project, stage, service, dashboardFilename)
-}
-
-func (rc *ResourceClient) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
-	jsonAsByteArray, err := json.MarshalIndent(dashboard, "", "  ")
-	if err != nil {
-		return fmt.Errorf("could not convert dashboard to JSON: %s", err)
-	}
-
-	return rc.client.UploadResource(jsonAsByteArray, dashboardFilename, project, stage, service)
 }
 
 func (rc *ResourceClient) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
