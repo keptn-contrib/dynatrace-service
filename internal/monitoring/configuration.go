@@ -1,10 +1,11 @@
 package monitoring
 
 import (
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 // ConfiguredEntities contains information about the entities configures in Dynatrace
@@ -28,18 +29,18 @@ type ConfigResult struct {
 }
 
 type Configuration struct {
-	dtClient       dynatrace.ClientInterface
-	kClient        keptn.ClientInterface
-	resourceClient keptn.ResourceClientInterface
-	serviceClient  keptn.ServiceClientInterface
+	dtClient      dynatrace.ClientInterface
+	kClient       keptn.ClientInterface
+	sloReader     keptn.SLOResourceReaderInterface
+	serviceClient keptn.ServiceClientInterface
 }
 
-func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, resourceClient keptn.ResourceClientInterface, serviceClient keptn.ServiceClientInterface) *Configuration {
+func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOResourceReaderInterface, serviceClient keptn.ServiceClientInterface) *Configuration {
 	return &Configuration{
-		dtClient:       dynatraceClient,
-		kClient:        keptnClient,
-		resourceClient: resourceClient,
-		serviceClient:  serviceClient,
+		dtClient:      dynatraceClient,
+		kClient:       keptnClient,
+		sloReader:     sloReader,
+		serviceClient: serviceClient,
 	}
 }
 
@@ -74,7 +75,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 				for _, serviceName := range serviceNames {
 					metricEvents = append(
 						metricEvents,
-						NewMetricEventCreation(mc.dtClient, mc.kClient, mc.resourceClient).Create(project, stage.Name, serviceName)...)
+						NewMetricEventCreation(mc.dtClient, mc.kClient, mc.sloReader).Create(project, stage.Name, serviceName)...)
 				}
 			}
 		}

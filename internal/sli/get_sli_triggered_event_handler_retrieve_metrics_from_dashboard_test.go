@@ -15,11 +15,10 @@ import (
 )
 
 type uploadErrorResourceClientMock struct {
-	t                    *testing.T
-	dashboardContent     string
-	uploadDashboardError error
-	uploadSLOError       error
-	uploadSLIError       error
+	t                *testing.T
+	dashboardContent string
+	uploadSLOError   error
+	uploadSLIError   error
 }
 
 func (m *uploadErrorResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
@@ -48,14 +47,6 @@ func (m *uploadErrorResourceClientMock) GetDashboard(project string, stage strin
 	return m.dashboardContent, nil
 }
 
-func (m *uploadErrorResourceClientMock) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
-	if m.uploadDashboardError != nil {
-		return m.uploadDashboardError
-	}
-
-	return nil
-}
-
 // Retrieving (a single) SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
 //
 // prerequisites:
@@ -76,16 +67,6 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 		assertFunc         func(t *testing.T, actual *keptnv2.SLIResult)
 		shouldFail         bool
 	}{
-		// failure cases:
-		{
-			name: "dashboard upload fails",
-			resourceClientMock: &uploadErrorResourceClientMock{
-				t:                    t,
-				uploadDashboardError: errors.New("dashboard upload failed"),
-			},
-			assertFunc: failureAssertionFunc,
-			shouldFail: true,
-		},
 		{
 			name: "SLO upload fails",
 			resourceClientMock: &uploadErrorResourceClientMock{

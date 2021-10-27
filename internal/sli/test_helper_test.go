@@ -19,7 +19,7 @@ import (
 )
 
 const indicator = "response_time_p95"
-const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
+const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
 func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
 	ev := &getSLIEventData{
@@ -208,11 +208,6 @@ func (m *resourceClientMock) UploadSLOs(project string, stage string, service st
 func (m *resourceClientMock) GetDashboard(project string, stage string, service string) (string, error) {
 	// we do not want to have any dashboard stored, so return empty string
 	return "", nil
-}
-
-func (m *resourceClientMock) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
-	m.t.Fatalf("UploadDashboard() should not be needed in this mock!")
-	return nil
 }
 
 type keptnClientMock struct {

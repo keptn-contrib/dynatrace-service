@@ -20,21 +20,21 @@ type KeptnAPIConnectionCheck struct {
 }
 
 type ConfigureMonitoringEventHandler struct {
-	event          ConfigureMonitoringAdapterInterface
-	dtClient       dynatrace.ClientInterface
-	kClient        keptn.ClientInterface
-	resourceClient keptn.ResourceClientInterface
-	serviceClient  keptn.ServiceClientInterface
+	event         ConfigureMonitoringAdapterInterface
+	dtClient      dynatrace.ClientInterface
+	kClient       keptn.ClientInterface
+	sloReader     keptn.SLOResourceReaderInterface
+	serviceClient keptn.ServiceClientInterface
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, resourceClient keptn.ResourceClientInterface, serviceClient keptn.ServiceClientInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, sloReader keptn.SLOResourceReaderInterface, serviceClient keptn.ServiceClientInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
-		event:          event,
-		dtClient:       dtClient,
-		kClient:        kClient,
-		resourceClient: resourceClient,
-		serviceClient:  serviceClient,
+		event:         event,
+		dtClient:      dtClient,
+		kClient:       kClient,
+		sloReader:     sloReader,
+		serviceClient: serviceClient,
 	}
 }
 
@@ -82,7 +82,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		}
 	}
 
-	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.resourceClient, eh.serviceClient)
+	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sloReader, eh.serviceClient)
 
 	configuredEntities, err := cfg.ConfigureMonitoring(eh.event.GetProject(), shipyard)
 	if err != nil {

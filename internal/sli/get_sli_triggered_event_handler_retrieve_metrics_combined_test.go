@@ -41,12 +41,6 @@ func (m *uploadWillFailResourceClientMock) GetDashboard(project string, stage st
 	return m.dashboardContent, nil
 }
 
-func (m *uploadWillFailResourceClientMock) UploadDashboard(project string, stage string, service string, dashboard *dynatrace.Dashboard) error {
-	m.t.Fatalf("UploadDashboard() should not be needed in this mock!")
-
-	return nil
-}
-
 // Retrieving a dashboard by ID  SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
 //
 // prerequisites:
