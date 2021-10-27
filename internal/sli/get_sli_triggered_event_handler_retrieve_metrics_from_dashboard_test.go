@@ -128,13 +128,13 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 	}
 }
 
-// Retrieving a dashboard by ID SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
+// Retrieving a dashboard by ID works, and we ignore the outdated parse behaviour
 //
 // prerequisites:
 //   * we use a valid dashboard ID and it is returned by Dynatrace API
 //   * The dashboard has 'KQG.QueryBehavior=ParseOnChange' set to only reparse the dashboard if it changed  (we do no longer consider this behaviour)
 //   * we will not fallback to processing the stored SLI files, but process the dashboard again
-func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.T) {
+func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 
 	// we metrics definition, because we will be retrieving metrics from dashboard
 	handler := test.NewFileBasedURLHandler(t)
