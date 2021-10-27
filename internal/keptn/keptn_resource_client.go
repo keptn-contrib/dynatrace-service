@@ -28,7 +28,6 @@ type DynatraceConfigResourceClientInterface interface {
 
 const sloFilename = "slo.yaml"
 const sliFilename = "dynatrace/sli.yaml"
-const dashboardFilename = "dynatrace/dashboard.json"
 const configFilename = "dynatrace/dynatrace.conf.yaml"
 
 // ResourceClient is the default implementation for the *ResourceClientInterfaces using a ConfigResourceClientInterface
@@ -72,10 +71,6 @@ func (rc *ResourceClient) UploadSLOs(project string, stage string, service strin
 	}
 
 	return rc.client.UploadResource(yamlAsByteArray, sloFilename, project, stage, service)
-}
-
-func (rc *ResourceClient) GetDashboard(project string, stage string, service string) (string, error) {
-	return rc.client.GetServiceResource(project, stage, service, dashboardFilename)
 }
 
 func (rc *ResourceClient) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
