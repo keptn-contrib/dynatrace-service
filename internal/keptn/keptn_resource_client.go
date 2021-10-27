@@ -17,13 +17,9 @@ type SLIAndSLOResourceWriterInterface interface {
 	UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error
 	UploadSLOs(project string, stage string, service string, dashboardSLOs *keptn.ServiceLevelObjectives) error
 }
-type DashboardResourceReaderInterface interface {
-	GetDashboard(project string, stage string, service string) (string, error)
-}
 type ResourceClientInterface interface {
 	SLOResourceReaderInterface
 	SLIAndSLOResourceWriterInterface
-	DashboardResourceReaderInterface
 }
 
 type DynatraceConfigResourceClientInterface interface {

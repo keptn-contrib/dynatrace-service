@@ -1,11 +1,5 @@
 package dynatrace
 
-import (
-	"encoding/json"
-	log "github.com/sirupsen/logrus"
-	"strings"
-)
-
 type Dashboard struct {
 	Metadata          *Metadata         `json:"metadata,omitempty"`
 	ID                string            `json:"id,omitempty"`
@@ -190,28 +184,6 @@ func (tile Tile) Title() string {
 	}
 
 	return tile.Name
-}
-
-// IsTheSameAs Will validate if the this dashboard is the same as the one passed as parameter
-func (dashboard *Dashboard) IsTheSameAs(existingDashboardContent string) bool {
-
-	jsonAsByteArray, err := json.MarshalIndent(dashboard, "", "  ")
-	if err != nil {
-		log.WithError(err).Warn("Could not marshal dashboard")
-	}
-	newDashboardContent := string(jsonAsByteArray)
-
-	// If ParseOnChange is not specified we consider this as a dashboard with a change
-	if strings.Index(newDashboardContent, "KQG.QueryBehavior=ParseOnChange") == -1 {
-		return false
-	}
-
-	// now lets compare the dashboard from the config repo and the one passed to this function
-	if strings.Compare(newDashboardContent, existingDashboardContent) == 0 {
-		return true
-	}
-
-	return false
 }
 
 // GetFilter returns the DashboardFilter

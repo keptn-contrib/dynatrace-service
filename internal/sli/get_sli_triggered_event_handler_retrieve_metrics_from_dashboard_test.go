@@ -15,10 +15,11 @@ import (
 )
 
 type uploadErrorResourceClientMock struct {
-	t                *testing.T
-	dashboardContent string
-	uploadSLOError   error
-	uploadSLIError   error
+	t              *testing.T
+	uploadSLOError error
+	sloUploaded    bool
+	uploadSLIError error
+	sliUploaded    bool
 }
 
 func (m *uploadErrorResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
@@ -32,6 +33,7 @@ func (m *uploadErrorResourceClientMock) UploadSLI(project string, stage string, 
 		return m.uploadSLIError
 	}
 
+	m.sliUploaded = true
 	return nil
 }
 
@@ -40,11 +42,8 @@ func (m *uploadErrorResourceClientMock) UploadSLOs(project string, stage string,
 		return m.uploadSLOError
 	}
 
+	m.sloUploaded = true
 	return nil
-}
-
-func (m *uploadErrorResourceClientMock) GetDashboard(project string, stage string, service string) (string, error) {
-	return m.dashboardContent, nil
 }
 
 // Retrieving (a single) SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
@@ -129,6 +128,66 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 	}
 }
 
+// Retrieving a dashboard by ID SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
+//
+// prerequisites:
+//   * we use a valid dashboard ID and it is returned by Dynatrace API
+//   * The dashboard has 'KQG.QueryBehavior=ParseOnChange' set to only reparse the dashboard if it changed  (we do no longer consider this behaviour)
+//   * we will not fallback to processing the stored SLI files, but process the dashboard again
+func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.T) {
+
+	// we metrics definition, because we will be retrieving metrics from dashboard
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli_parse_only_on_change.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
+		"./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
+
+	// we do not need custom queries, as we are using the dashboard
+	kClient := &keptnClientMock{}
+
+	// sli and slo upload works
+	rClient := &uploadErrorResourceClientMock{t: t}
+
+	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
+		assert.EqualValues(t, true, actual.Success)
+	}
+
+	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+		assert.Empty(t, data.Message)
+	}
+
+	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
+	assert.True(t, rClient.sliUploaded)
+	assert.True(t, rClient.sloUploaded)
+}
+
+type uploadWillFailResourceClientMock struct {
+	t *testing.T
+}
+
+func (m *uploadWillFailResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
+	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
+
+	return nil, nil
+}
+
+func (m *uploadWillFailResourceClientMock) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
+	m.t.Fatalf("UploadSLI() should not be needed in this mock!")
+
+	return nil
+}
+
+func (m *uploadWillFailResourceClientMock) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnapi.ServiceLevelObjectives) error {
+	m.t.Fatalf("UploadSLO() should not be needed in this mock!")
+
+	return nil
+}
+
 // Retrieving (a single) SLI from a dashboard did not work, but no empty SLI or SLO files would be written
 //
 // prerequisites:
@@ -146,12 +205,8 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 	// we do not need custom queries, as we are using the dashboard here
 	kClient := &keptnClientMock{}
 
-	// if an upload of sli would be triggered then this test should fail, because the result fails
-	rClient := &uploadErrorResourceClientMock{
-		t:              t,
-		uploadSLOError: errors.New("SLO upload failed"),
-		uploadSLIError: errors.New("SLI upload failed"),
-	}
+	// if an upload of sli would be triggered then this test would fail
+	rClient := &uploadWillFailResourceClientMock{t: t}
 
 	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
