@@ -22,8 +22,8 @@ keptn add-resource --project=yourproject --stage=yourstage --resource=./dynatrac
 The `dashboard` parameter provides 3 options:
 
 * blank (default): If `dashboard` is not specified at all or if you do not even have a `dynatrace.conf.yaml` then the *dynatrace-service* will simply execute the metric query as defined in `slo.yaml`
-* `query`: This value means that the *dynatrace-service* will look for a dashboard on your Dynatrace Tenant (dynatrace-prod in the example above) which has the following dashboard naming format: `KQG;project=<YOURKEPTNPROJECT>;service=<YOURKEPTNSERVICE>;stage=<YOURKEPTNSTAGE>`. If such a dashboard exists it will use the definition of that dashboard for SLIs as well as SLOs. If no dashboard is found that matches that name it goes back to default mode.
-* DASHBOARD-UUID: If you specify the UUID of a Dynatrace dashboard the *dynatrace-service* will query this dashboard on the specified Dynatrace Tenant. If it exists it will use the definition of this dashboard for SLIs as well as SLOs. If the dashboard was not found the *dynatrace-service* will raise an error.
+* `query`: This value means that the *dynatrace-service* will look for a dashboard on your Dynatrace Tenant (dynatrace-prod in the example above) which has the following dashboard naming format: `KQG;project=<YOURKEPTNPROJECT>;service=<YOURKEPTNSERVICE>;stage=<YOURKEPTNSTAGE>`. If such a dashboard exists it will use the definition of that dashboard for SLIs as well as SLOs. If no dashboard was found an error will be returned.
+* DASHBOARD-UUID: If you specify the UUID of a Dynatrace dashboard the *dynatrace-service* will query this dashboard on the specified Dynatrace Tenant. If it exists it will use the definition of this dashboard for SLIs as well as SLOs. If the dashboard was not found the *dynatrace-service* will return an error.
 
 Here is an example of a `dynatrace.conf.yaml` specifying the UUID of a Dynatrace Dashboard:
 
@@ -33,12 +33,6 @@ spec_version: '0.1.0'
 dtCreds: dynatrace-prod
 dashboard: 311f4aa7-5257-41d7-abd1-70420500e1c8
 ```
-
-*Dashboard parsing behavior*
-
-If a dashboard is queried, the *dynatrace-service* will first validate if the dashboard has changed since the last evaluation. It does that by comparing the dashboard's JSON with the dashboard JSON that was used during the last evaluation run. If the `dashboard.json` has not changed it will fall back to the `sli.yaml` and `slo.yaml` as these were also created out of the dashboard in the previous run. If you want to overwrite this behavior you can simply put a `KQG.QueryBehavior=Overwrite` on your dashboard. Details on that explained further down in this readme.
-
-This behavior also implies that the *dynatrace-service* stores the content of the dashboard and the generated `sli.yaml` and `slo.yaml` in your configuration repo. You can find these files on service level under `dynatrace/dashboard.json`, `dynatrace/sli.yaml` and `slo.yaml`.
 
 **Tip:** You can easily find the dashboard id for an existing dashboard by navigating to it in your Dynatrace Web interface. The ID is then part of the URL.
 
@@ -224,15 +218,15 @@ Based on user feedback we learned that defining custom SLIs via the `sli.yaml` a
 
 As dashboards are a prominent feature in Dynatrace to visualize metrics, it was a logical step to leverage dashboards as the basis for Keptn's SLI/SLO configuration.
 
-If *dynatrace-service* parses your dashboard, it will generate an `sli.yaml` and `slo.yaml` and uploads it to your Keptn configuration repository. It will also upload the `dashboard.json`. 
+If *dynatrace-service* parses your dashboard, it will generate an `sli.yaml` and `slo.yaml` and uploads it to your Keptn configuration repository. You can find these files on service level under `dynatrace/sli.yaml` and `slo.yaml`.
 
 ### How dynatrace-service locates a Dashboard
 
 As explained earlier, the *dynatrace-service* gives you two options through the `dashboard` property in your `dynatrace.conf.yaml`
 
-1. `query`. This will query for a dashboard with the name pattern like this: KQG;project=<YOURKEPTNPROJECT>;service=<YOURKEPTNSERVICE>;stage=<YOURKEPTNSTAGE>
+1. Query option: `dashboard: query`. This will query for a dashboard with the name pattern like this: `KQG;project=<YOURKEPTNPROJECT>;service=<YOURKEPTNSERVICE>;stage=<YOURKEPTNSTAGE>`
 
-2. UUID: Use e.g: `dashboard: e6c947f2-4c29-483c-a065-269b3707bea4` which will then query exactly that dashboard
+2. UUID option: use e.g: `dashboard: e6c947f2-4c29-483c-a065-269b3707bea4` which will then query exactly that dashboard via its ID
 
 For more details refer to the section above where we explained `dynatrace.conf.yaml`
 
@@ -242,17 +236,17 @@ Here is a sample dashboard for our simplenode sample application:
 
 ![](./images/samplenode_slislo_dashboard.png)
 
-And here is how the individual pieces matter:
+Here is how the individual pieces matter:
 
 **1. Name of the dashboard**
 
-If the dashboard is not referenced in `dynatrace.conf.yaml` via the Dashboard ID, the *dynatrace-service* queries all dashboards and uses the one that starts with `KQG;` followed by the name-value pairs:
+If the dashboard is not referenced in `dynatrace.conf.yaml` via the Dashboard ID and you specified `query`, the *dynatrace-service* queries all dashboards and uses the one that starts with `KQG;` followed by the name-value pairs:
 
 ```
 project=<project>,service=<service>,stage=<stage>
 ```
 
-The order of these name-value pairs is not relevant but the values have to match your Keptn project, service and stage. In the example dashboard you see that this dashboard matches the project *simpleproject*, service *simplenode*, and stage *staging*.
+The order of these name-value pairs is not relevant, but the values have to match your Keptn project, service and stage. In the example dashboard you see that this dashboard matches the project *simpleproject*, service *simplenode*, and stage *staging*.
 
 **2. Management Zone Filter**
 
@@ -277,7 +271,6 @@ It is not mandatory to define them as there are defaults for all of them. Here i
 | KQG.Compare.Result | 1 | Against how many previous builds to compare your result to? |
 | KQG.Compare.WithScore | pass | Which previous builds to include in the comparison: pass, pass_or_warn or all |
 | KQG.Compare.Function | avg | When comparing against multiple builds which aggregation should be used: avg, p50, p90, p95 |
-| KQG.QueryBehavior | <empty> | A dashboard is always parsed for SLIs & SLOs even if it has not changed. To only parse it when changes occurred use 'ParseOnChange' |
 
 
 **4. Tiles with SLI definition**
