@@ -10,21 +10,12 @@ import (
 
 // Test dynatrace credential behavior: values should be read from dynatrace secret unless secret name has been overridden in dynatrace config file.
 // If neither is available, an error should be produced.
-func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
+func TestDynatraceK8CredentialsReader_GetDynatraceCredentials(t *testing.T) {
 
 	wantDynatraceCredentials, err := NewDynatraceCredentials("https://mySampleEnv.live.dynatrace.com", testDynatraceAPIToken)
 	assert.NoError(t, err)
-
-	dynatraceSecret := createTestSecret("dynatrace",
-		map[string]string{
-			"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
-			"DT_API_TOKEN": testDynatraceAPIToken,
-		})
-	dynatraceOtherSecret := createTestSecret("dynatrace_other",
-		map[string]string{
-			"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
-			"DT_API_TOKEN": testDynatraceAPIToken,
-		})
+	wantDynatraceHTTPCredentials, err := NewDynatraceCredentials("http://mySampleEnv.live.dynatrace.com", testDynatraceAPIToken)
+	assert.NoError(t, err)
 
 	type args struct {
 		secretName string
@@ -37,25 +28,90 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:   "with no secret, no config",
-			secret: &v1.Secret{},
-			args: args{
-				secretName: "",
-			},
+			name:    "with no secret, no config",
+			secret:  &v1.Secret{},
 			wantErr: true,
 		},
 		{
-			name:   "with dynatrace secret, no config",
-			secret: dynatraceSecret,
-			args: args{
-				secretName: "",
-			},
+			name: "with dynatrace secret, no config",
+			secret: createTestSecret(
+				"dynatrace",
+				map[string]string{
+					"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": testDynatraceAPIToken,
+				}),
 			want:    wantDynatraceCredentials,
 			wantErr: false,
 		},
 		{
-			name:   "with dynatrace_other secret, with good config",
-			secret: dynatraceOtherSecret,
+			name: "with dynatrace secret, no config - want HTTPS",
+			secret: createTestSecret(
+				"dynatrace",
+				map[string]string{
+					"DT_TENANT":    "mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": testDynatraceAPIToken,
+				}),
+			want:    wantDynatraceCredentials,
+			wantErr: false,
+		},
+		{
+			name: "with dynatrace secret, no config - want HTTP",
+			secret: createTestSecret(
+				"dynatrace",
+				map[string]string{
+					"DT_TENANT":    "http://mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": testDynatraceAPIToken,
+				}),
+			want:    wantDynatraceHTTPCredentials,
+			wantErr: false,
+		},
+		{
+			name: "with dynatrace secret, no config - invalid URL",
+			secret: createTestSecret(
+				"dynatrace",
+				map[string]string{
+					"DT_TENANT":    "//mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": testDynatraceAPIToken,
+				}),
+			wantErr: true,
+		},
+		{
+			name: "with dynatrace secret, no config - invalid scheme",
+			secret: createTestSecret(
+				"dynatrace",
+				map[string]string{
+					"DT_TENANT":    "ftp://mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": testDynatraceAPIToken,
+				}),
+			wantErr: true,
+		},
+		{
+			name: "with dynatrace secret, no config - invalid token",
+			secret: createTestSecret(
+				"dynatrace",
+				map[string]string{
+					"DT_TENANT":    "ftp://mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": "dcO.public.private",
+				}),
+			wantErr: true,
+		},
+		{
+			name: "with dynatrace secret, no config - no token",
+			secret: createTestSecret(
+				"dynatrace",
+				map[string]string{
+					"DT_TENANT": "ftp://mySampleEnv.live.dynatrace.com",
+				}),
+			wantErr: true,
+		},
+		{
+			name: "with dynatrace_other secret, with good config",
+			secret: createTestSecret(
+				"dynatrace_other",
+				map[string]string{
+					"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": testDynatraceAPIToken,
+				}),
 			args: args{
 				secretName: "dynatrace_other",
 			},
@@ -63,16 +119,26 @@ func TestCredentialManager_GetDynatraceCredentials(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "with dynatrace_other secret, with bad config",
-			secret: dynatraceOtherSecret,
+			name: "with dynatrace_other secret, with bad config",
+			secret: createTestSecret(
+				"dynatrace_other",
+				map[string]string{
+					"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": testDynatraceAPIToken,
+				}),
 			args: args{
 				secretName: "dynatrace_other2",
 			},
 			wantErr: true,
 		},
 		{
-			name:   "with dynatrace_other secret, no config",
-			secret: dynatraceOtherSecret,
+			name: "with dynatrace_other secret, no config",
+			secret: createTestSecret(
+				"dynatrace_other",
+				map[string]string{
+					"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
+					"DT_API_TOKEN": testDynatraceAPIToken,
+				}),
 			args: args{
 				secretName: "",
 			},
