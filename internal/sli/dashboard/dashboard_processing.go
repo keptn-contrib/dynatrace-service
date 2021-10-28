@@ -69,7 +69,6 @@ func (p *Processing) Process(dashboard *dynatrace.Dashboard) *QueryResult {
 			TotalScore: &totalScore,
 			Comparison: &comparison,
 		},
-		sliResults: []*keptnv2.SLIResult{},
 	}
 
 	log.Debug("Dashboard has changed: reparsing it!")

@@ -128,15 +128,15 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 	}
 }
 
-// Retrieving a dashboard by ID SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
+// Retrieving a dashboard by ID works, and we ignore the outdated parse behaviour
 //
 // prerequisites:
 //   * we use a valid dashboard ID and it is returned by Dynatrace API
 //   * The dashboard has 'KQG.QueryBehavior=ParseOnChange' set to only reparse the dashboard if it changed  (we do no longer consider this behaviour)
 //   * we will not fallback to processing the stored SLI files, but process the dashboard again
-func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.T) {
+func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 
-	// we metrics definition, because we will be retrieving metrics from dashboard
+	// we need metrics definition, because we will be retrieving metrics from dashboard
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli_parse_only_on_change.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
@@ -208,13 +208,49 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 	// if an upload of sli would be triggered then this test would fail
 	rClient := &uploadWillFailResourceClientMock{t: t}
 
-	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
-		assert.Empty(t, data.Message)
+	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, 0, actual.Value)
+		assert.False(t, actual.Success)
 	}
 
-	// we do not want to assert the expected result, because there won't be any in this case
-	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, nil, eventAssertionsFunc)
+	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
+		assert.Contains(t, data.Message, "any SLI results")
+	}
+
+	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
+}
+
+// Retrieving a dashboard by ID works, but dashboard processing did not produce any results, so we expect an error
+//
+// prerequisites:
+//   * we use a valid dashboard ID and it is returned by Dynatrace API
+//   * the dashboard does have a CustomCharting tile, but not the correct tile name, that would qualify it as SLI/SLO source
+func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.T) {
+
+	// we do not need metrics definition and metrics query, because we will should not be looking into the tile
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", "./testdata/sli_via_dashboard_test/dashboard_custom_charting_without_matching_tile_name.json")
+
+	// we do not need custom queries, as we are using the dashboard
+	kClient := &keptnClientMock{}
+
+	// sli and slo should not happen, otherwise we fail
+	rClient := &uploadWillFailResourceClientMock{t: t}
+
+	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, 0, actual.Value)
+		assert.False(t, actual.Success)
+	}
+
+	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
+		assert.Contains(t, data.Message, "any SLI results")
+	}
+
+	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
 }
 
 func assertThatDashboardTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {

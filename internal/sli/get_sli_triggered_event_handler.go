@@ -370,7 +370,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 
 	// now - lets see if we have captured any result values - if not - return send an error
 	err = nil
-	if sliResults == nil {
+	if len(sliResults) == 0 {
 		err = errors.New("could not retrieve any SLI results")
 	}
 
