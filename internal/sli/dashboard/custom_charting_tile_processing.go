@@ -6,6 +6,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 	"strconv"
@@ -52,28 +53,26 @@ func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFi
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	if tile.FilterConfig == nil {
-		return nil
+		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile is missing a filterConfig element")
 	}
 
-	var tileResults []*TileResult
-
-	// we can potentially have multiple series on that chart
-	for _, series := range tile.FilterConfig.ChartConfig.Series {
-
-		// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-		metricQuery, err := p.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, p.startUnix, p.endUnix)
-
-		// if there was no error we generate the SLO & SLO definition
-		if err != nil {
-			log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
-			continue
-		}
-
-		results := NewMetricsQueryProcessing(p.client).Process(len(series.Dimensions), sloDefinition, metricQuery)
-		tileResults = append(tileResults, results...)
+	if len(tile.FilterConfig.ChartConfig.Series) != 1 {
+		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile must have exactly one series")
 	}
 
-	return tileResults
+	return p.processSeries(sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
+}
+
+func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string) []*TileResult {
+
+	metricQuery, err := p.generateMetricQueryFromChart(series, tileManagementZoneFilter, filtersPerEntityType, p.startUnix, p.endUnix)
+
+	if err != nil {
+		log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
+		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile could not be converted to a metric query: "+err.Error())
+	}
+
+	return NewMetricsQueryProcessing(p.client).Process(len(series.Dimensions), sloDefinition, metricQuery)
 }
 
 // Looks at the ChartSeries configuration of a regular chart and generates the Metrics Query
@@ -85,7 +84,7 @@ func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFi
 //   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (*queryComponents, error) {
+func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (*queryComponents, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(series.Metric)
