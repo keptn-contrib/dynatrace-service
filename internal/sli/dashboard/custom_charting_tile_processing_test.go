@@ -8,7 +8,7 @@ import (
 func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
 	expected := ",entityId(\"SERVICE-086C46F600BA1DC6\"),tag(\"keptn_deployment:primary\")"
 
-	var filtersPerEntityType = map[string]map[string][]string{
+	var filtersPerEntityType = map[string]dynatrace.FilterMap{
 		"SERVICE": {
 			"SPECIFIC_ENTITIES": {"SERVICE-086C46F600BA1DC6"},
 			"AUTO_TAGS":         {"keptn_deployment:primary"},

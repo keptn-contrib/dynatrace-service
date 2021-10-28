@@ -63,7 +63,7 @@ func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFi
 	return p.processSeries(sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
 }
 
-func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string) []*TileResult {
+func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []*TileResult {
 
 	metricQuery, err := p.generateMetricQueryFromChart(series, tileManagementZoneFilter, filtersPerEntityType, p.startUnix, p.endUnix)
 
@@ -84,7 +84,7 @@ func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO
 //   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (*queryComponents, error) {
+func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap, startUnix time.Time, endUnix time.Time) (*queryComponents, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(series.Metric)
@@ -199,7 +199,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 // getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -
 // the return value always starts with a , (comma)
 //   return example: ,entityId("ABAD-222121321321")
-func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]map[string][]string, entityType string) string {
+func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace.FilterMap, entityType string) string {
 	entityTileFilter := ""
 	if filtersPerEntityType, containsEntityType := filtersPerEntityType[entityType]; containsEntityType {
 		// Check for SPECIFIC_ENTITIES - if we have an array then we filter for each entity
