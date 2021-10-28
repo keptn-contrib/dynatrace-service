@@ -3,8 +3,7 @@ package deployment
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -81,14 +80,7 @@ func (a DeploymentFinishedAdapter) GetDeploymentStrategy() string {
 
 // GetLabels returns a map of labels
 func (a DeploymentFinishedAdapter) GetLabels() map[string]string {
-	labels := a.event.Labels
-	keptnBridgeURL, err := credentials.GetKeptnBridgeURL()
-	if labels == nil {
-		labels = make(map[string]string)
-	}
-	if err == nil {
-		labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + a.GetShKeptnContext()
-	}
+	labels := keptn.AddOptionalKeptnBridgeUrlToLabels(a.event.Labels, a.GetShKeptnContext())
 	if len(a.event.Deployment.DeploymentURIsLocal) > 0 {
 		labels["deploymentURILocal"] = a.event.Deployment.DeploymentURIsLocal[0]
 	}

@@ -8,7 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -25,8 +24,9 @@ func TestCheckKeptnConnection(t *testing.T) {
 	defer ts.Close()
 
 	type args struct {
-		apiURL   string
-		apiToken string
+		apiURL    string
+		apiToken  string
+		bridgeURL string
 	}
 	tests := []struct {
 		name             string
@@ -56,7 +56,7 @@ func TestCheckKeptnConnection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			returnedResponse = tt.returnedResponse
-			keptnCredentials, err := NewKeptnCredentials(tt.args.apiURL, tt.args.apiToken)
+			keptnCredentials, err := NewKeptnCredentials(tt.args.apiURL, tt.args.apiToken, tt.args.bridgeURL)
 			assert.NoError(t, err)
 			if err := CheckKeptnConnection(keptnCredentials); (err != nil) != tt.wantErr {
 				t.Errorf("CheckKeptnConnection() error = %v, wantErr %v", err, tt.wantErr)
@@ -65,213 +65,153 @@ func TestCheckKeptnConnection(t *testing.T) {
 	}
 }
 
-func TestGetKeptnAPICredentials(t *testing.T) {
-
-	wantHTTPSKeptnCredentials, err := NewKeptnCredentials("https://api.keptn.test.com", "1234")
-	assert.NoError(t, err)
-
-	wantHTTPKeptnCredentials, err := NewKeptnCredentials("http://api.keptn.test.com", "1234")
-	assert.NoError(t, err)
-
-	tests := []struct {
-		name           string
-		want           *KeptnCredentials
-		wantErr        bool
-		APIURLEnvVar   string
-		APITokenEnvVar string
-	}{
-		{
-			name:           "return error if required environment variables are not set",
-			want:           nil,
-			wantErr:        true,
-			APIURLEnvVar:   "",
-			APITokenEnvVar: "",
-		},
-		{
-			name:           "return credentials with https://",
-			want:           wantHTTPSKeptnCredentials,
-			wantErr:        false,
-			APIURLEnvVar:   "api.keptn.test.com",
-			APITokenEnvVar: "1234",
-		},
-		{
-			name:           "return credentials with https://",
-			want:           wantHTTPSKeptnCredentials,
-			wantErr:        false,
-			APIURLEnvVar:   "https://api.keptn.test.com",
-			APITokenEnvVar: "1234",
-		},
-		{
-			name:           "return credentials with http://",
-			want:           wantHTTPKeptnCredentials,
-			wantErr:        false,
-			APIURLEnvVar:   "http://api.keptn.test.com",
-			APITokenEnvVar: "1234",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			fakeClient := fake.NewSimpleClientset(&v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynatrace",
-					Namespace: "keptn",
-				},
-				Data: map[string][]byte{
-					"KEPTN_API_URL":   []byte(tt.APIURLEnvVar),
-					"KEPTN_API_TOKEN": []byte(tt.APITokenEnvVar),
-				},
-			})
-
-			k8sSecretReader := NewK8sSecretReader(fakeClient)
-
-			cm := NewKeptnCredentialsReader(k8sSecretReader)
-
-			got, err := cm.GetKeptnCredentials()
-
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-
-			assert.EqualValues(t, tt.want, got)
-		})
-	}
-}
-
-func TestGetKeptnBridgeURL(t *testing.T) {
-	tests := []struct {
-		name            string
-		want            string
-		wantErr         bool
-		bridgeURLEnvVar string
-	}{
-		{
-			name:            "return bridge URL",
-			want:            "https://bridge.keptn",
-			wantErr:         false,
-			bridgeURLEnvVar: "bridge.keptn",
-		},
-		{
-			name:            "return bridge URL",
-			want:            "https://bridge.keptn",
-			wantErr:         false,
-			bridgeURLEnvVar: "https://bridge.keptn",
-		},
-		{
-			name:            "return bridge URL with http",
-			want:            "http://bridge.keptn",
-			wantErr:         false,
-			bridgeURLEnvVar: "http://bridge.keptn",
-		},
-		{
-			name:            "return error if env var not set",
-			want:            "",
-			wantErr:         true,
-			bridgeURLEnvVar: "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fakeClient := fake.NewSimpleClientset(&v1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "dynatrace",
-					Namespace: "keptn",
-				},
-				Data: map[string][]byte{
-					"KEPTN_BRIDGE_URL": []byte(tt.bridgeURLEnvVar),
-				},
-			})
-
-			k8sSecretReader := NewK8sSecretReader(fakeClient)
-
-			cm := NewKeptnCredentialsReader(k8sSecretReader)
-			got, err := cm.GetKeptnBridgeURL()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetKeptnBridgeURL() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("GetKeptnBridgeURL() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 // Test keptn api credential behavior: values in dynatrace secret should be used, if not available, fall back to environment variables
 // If neither is available, an error should be produced.
-func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
+func TestKeptnCredentialsReader_GetKeptnCredentials(t *testing.T) {
 
-	wantKeptnCredentials, err := NewKeptnCredentials("https://mySampleEnv.live.dynatrace.com", "abc123")
+	wantKeptnCredentials, err := NewKeptnCredentials("https://keptn.test.com/api", "abc123", "https://keptn.test.com/bridge")
 	assert.NoError(t, err)
-	wantOtherKeptnCredentials, err := NewKeptnCredentials("https://otherSampleEnv.live.dynatrace.com", "def456")
+	wantKeptn2Credentials, err := NewKeptnCredentials("http://keptn2.test.com/api", "abc123", "http://keptn2.test.com/bridge")
 	assert.NoError(t, err)
-
-	dynatraceSecret := createDynatraceKeptnSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123", "https://mySampleEnv.live.dynatrace.com/bridge")
-	otherDynatraceSecret := createDynatraceKeptnSecret("dynatrace_other", "keptn", "https://sampleEnv.live.dynatrace.com", "xyz000", "https://sampleEnv.live.dynatrace.com/bridge")
-
-	type envVars struct {
-		keptnAPIURL   string
-		keptnAPIToken string
-	}
+	wantOtherKeptnCredentials, err := NewKeptnCredentials("https://keptn.other.com/api", "def456", "https://keptn.other.com/bridge")
+	assert.NoError(t, err)
+	wantKeptnCredentialsNoBridgeURL, err := NewKeptnCredentials("https://keptn.test.com/api", "abc123", "")
+	assert.NoError(t, err)
 
 	tests := []struct {
-		name    string
-		secret  *v1.Secret
-		envVars envVars
-		want    *KeptnCredentials
-		wantErr bool
+		name                 string
+		secretName           string
+		secretData           map[string]string
+		environmentVariables map[string]string
+		want                 *KeptnCredentials
+		wantErr              bool
 	}{
 		{
 			name:    "no secret, no env vars",
-			secret:  &v1.Secret{},
 			wantErr: true,
 		},
 		{
-			name:    "with secret, no env vars",
-			secret:  dynatraceSecret,
+			name:       "with secret, no env vars - valid URLs",
+			secretName: "dynatrace",
+			secretData: map[string]string{
+				"KEPTN_API_URL":    "https://keptn.test.com/api",
+				"KEPTN_API_TOKEN":  "abc123",
+				"KEPTN_BRIDGE_URL": "https://keptn.test.com/bridge",
+			},
 			want:    wantKeptnCredentials,
 			wantErr: false,
 		},
 		{
-			name:    "with secret, with env vars",
-			secret:  dynatraceSecret,
-			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
+			name:       "with secret, no env vars - invalid URL",
+			secretName: "dynatrace",
+			secretData: map[string]string{
+				"KEPTN_API_URL":    "/keptn.test.com/api",
+				"KEPTN_API_TOKEN":  "abc123",
+				"KEPTN_BRIDGE_URL": "https://keptn.test.com/bridge",
+			},
+			wantErr: true,
+		},
+		{
+			name:       "with secret, no env vars - invalid scheme",
+			secretName: "dynatrace",
+			secretData: map[string]string{
+				"KEPTN_API_URL":    "https://keptn.test.com/api",
+				"KEPTN_API_TOKEN":  "abc123",
+				"KEPTN_BRIDGE_URL": "ftp://keptn.test.com/bridge",
+			},
+			wantErr: true,
+		},
+		{
+			name:       "with secret, no env vars - no API token",
+			secretName: "dynatrace",
+			secretData: map[string]string{
+				"KEPTN_API_URL":    "https://keptn.test.com/api",
+				"KEPTN_BRIDGE_URL": "https://keptn.test.com/bridge",
+			},
+			wantErr: true,
+		},
+		{
+			name:       "with secret, no env vars - assume HTTPS",
+			secretName: "dynatrace",
+			secretData: map[string]string{
+				"KEPTN_API_URL":    "keptn.test.com/api",
+				"KEPTN_API_TOKEN":  "abc123",
+				"KEPTN_BRIDGE_URL": "keptn.test.com/bridge",
+			},
 			want:    wantKeptnCredentials,
 			wantErr: false,
 		},
 		{
-			name:    "no secret, with env vars",
-			secret:  &v1.Secret{},
-			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
+			name:       "with secret, no env vars - explicit HTTP",
+			secretName: "dynatrace",
+			secretData: map[string]string{
+				"KEPTN_API_URL":    "http://keptn2.test.com/api",
+				"KEPTN_API_TOKEN":  "abc123",
+				"KEPTN_BRIDGE_URL": "http://keptn2.test.com/bridge",
+			},
+			want:    wantKeptn2Credentials,
+			wantErr: false,
+		},
+		{
+			name:       "with secret, with env vars - secret preferred",
+			secretName: "dynatrace",
+			secretData: map[string]string{
+				"KEPTN_API_URL":    "https://keptn.test.com/api",
+				"KEPTN_API_TOKEN":  "abc123",
+				"KEPTN_BRIDGE_URL": "https://keptn.test.com/bridge",
+			},
+			environmentVariables: map[string]string{
+				"KEPTN_API_URL":   "https://keptn.other.com/api",
+				"KEPTN_API_TOKEN": "def456",
+			},
+			want:    wantKeptnCredentials,
+			wantErr: false,
+		},
+		{
+			name: "no secret, with env vars",
+			environmentVariables: map[string]string{
+				"KEPTN_API_URL":    "https://keptn.other.com/api",
+				"KEPTN_API_TOKEN":  "def456",
+				"KEPTN_BRIDGE_URL": "https://keptn.other.com/bridge",
+			},
 			want:    wantOtherKeptnCredentials,
 			wantErr: false,
 		},
 		{
-			name:    "with other secret, no env vars",
-			secret:  otherDynatraceSecret,
-			wantErr: true,
-		},
-		{
-			name:    "with other secret, with env vars",
-			secret:  otherDynatraceSecret,
-			envVars: envVars{keptnAPIURL: "https://otherSampleEnv.live.dynatrace.com", keptnAPIToken: "def456"},
-			want:    wantOtherKeptnCredentials,
+			name:       "mixed, no bridge URL",
+			secretName: "dynatrace",
+			secretData: map[string]string{
+				"KEPTN_API_URL": "https://keptn.test.com/api",
+			},
+			environmentVariables: map[string]string{
+				"KEPTN_API_TOKEN": "abc123",
+			},
+			want:    wantKeptnCredentialsNoBridgeURL,
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 
-			os.Setenv("KEPTN_API_URL", tt.envVars.keptnAPIURL)
-			os.Setenv("KEPTN_API_TOKEN", tt.envVars.keptnAPIToken)
+			var secret *v1.Secret
+			if tt.secretName == "" {
+				secret = &v1.Secret{}
+			} else {
+				secret = createTestSecret(tt.secretName, tt.secretData)
+			}
+
+			clientSet := fake.NewSimpleClientset(secret)
+
+			for key, value := range tt.environmentVariables {
+				os.Setenv(key, value)
+			}
 			defer func() {
-				os.Unsetenv("KEPTN_API_URL")
-				os.Unsetenv("KEPTN_API_TOKEN")
+				for k, _ := range tt.environmentVariables {
+					os.Unsetenv(k)
+				}
 			}()
 
+			secretReader := NewK8sSecretReader(clientSet)
 			cm := NewKeptnCredentialsReader(secretReader)
 			got, err := cm.GetKeptnCredentials()
 
@@ -283,98 +223,5 @@ func TestCredentialManager_GetKeptnAPICredentials(t *testing.T) {
 
 			assert.EqualValues(t, tt.want, got)
 		})
-	}
-}
-
-// Test keptn bridge URL behavior: value in dynatrace secret should be used, if not available, fall back to environment variable
-// If neither is available, an error should be produced.
-func TestCredentialManager_GetKeptnBridgeURL(t *testing.T) {
-
-	dynatraceSecret := createDynatraceKeptnSecret("dynatrace", "keptn", "https://mySampleEnv.live.dynatrace.com", "abc123", "https://mySampleEnv.live.dynatrace.com/bridge")
-	otherDynatraceSecret := createDynatraceKeptnSecret("dynatrace_other", "keptn", "https://sampleEnv.live.dynatrace.com", "xyz000", "https://sampleEnv.live.dynatrace.com/bridge")
-
-	type envVars struct {
-		keptnBridgeURL string
-	}
-
-	tests := []struct {
-		name    string
-		secret  *v1.Secret
-		envVars envVars
-		want    string
-		wantErr bool
-	}{
-		{
-			name:    "no secret, no env vars",
-			secret:  &v1.Secret{},
-			wantErr: true,
-		},
-		{
-			name:    "with secret, no env vars",
-			secret:  dynatraceSecret,
-			want:    "https://mySampleEnv.live.dynatrace.com/bridge",
-			wantErr: false,
-		},
-		{
-			name:    "with secret, with env vars",
-			secret:  dynatraceSecret,
-			envVars: envVars{keptnBridgeURL: "https://sampleEnv.live.dynatrace.com/bridge"},
-			want:    "https://mySampleEnv.live.dynatrace.com/bridge",
-			wantErr: false,
-		},
-		{
-			name:    "no secret, with env vars",
-			secret:  &v1.Secret{},
-			envVars: envVars{keptnBridgeURL: "https://sampleEnv.live.dynatrace.com/bridge"},
-			want:    "https://sampleEnv.live.dynatrace.com/bridge",
-			wantErr: false,
-		},
-		{
-			name:    "with other secret, no env vars",
-			secret:  otherDynatraceSecret,
-			wantErr: true,
-		},
-		{
-			name:    "with other secret, with env vars",
-			secret:  otherDynatraceSecret,
-			envVars: envVars{keptnBridgeURL: "https://sampleEnv.live.dynatrace.com/bridge"},
-			want:    "https://sampleEnv.live.dynatrace.com/bridge",
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
-
-			os.Setenv("KEPTN_BRIDGE_URL", tt.envVars.keptnBridgeURL)
-			defer func() {
-				os.Unsetenv("KEPTN_BRIDGE_URL")
-			}()
-
-			cm := NewKeptnCredentialsReader(secretReader)
-			got, err := cm.GetKeptnBridgeURL()
-			if (err != nil) && tt.wantErr {
-				return
-			} else if (err != nil) != tt.wantErr {
-				t.Fatalf("CredentialManager.GetKeptnBridgeURL() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if got != tt.want {
-				t.Errorf("CredentialManager.GetKeptnBridgeURL() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func createDynatraceKeptnSecret(name string, namespace string, keptnAPIURL string, keptnAPIToken string, KeptnBridgeURL string) *v1.Secret {
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Data: map[string][]byte{
-			"KEPTN_API_URL":    []byte(keptnAPIURL),
-			"KEPTN_API_TOKEN":  []byte(keptnAPIToken),
-			"KEPTN_BRIDGE_URL": []byte(KeptnBridgeURL),
-		},
 	}
 }

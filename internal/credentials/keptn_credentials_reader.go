@@ -2,13 +2,13 @@ package credentials
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	"github.com/keptn-contrib/dynatrace-service/internal/url"
 )
+
+const dynatraceSecretName = "dynatrace"
 
 //go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/keptn_credentials_provider_mock.go . KeptnCredentialsProvider
 type KeptnCredentialsProvider interface {
@@ -16,69 +16,66 @@ type KeptnCredentialsProvider interface {
 }
 
 type KeptnCredentialsReader struct {
-	SecretReader              *K8sSecretReader
-	EnvironmentVariableReader *env.OSEnvironmentVariableReader
+	secretReader              *K8sSecretReader
+	environmentVariableReader *env.OSEnvironmentVariableReader
 }
 
 func NewKeptnCredentialsReader(sr *K8sSecretReader) *KeptnCredentialsReader {
-	return &KeptnCredentialsReader{SecretReader: sr, EnvironmentVariableReader: env.NewOSEnvironmentVariableReader()}
+	return &KeptnCredentialsReader{secretReader: sr, environmentVariableReader: env.NewOSEnvironmentVariableReader()}
 }
 
 func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
 	sr, err := NewDefaultK8sSecretReader()
 	if err != nil {
-		return nil, fmt.Errorf("could not initialize KeptnCredentialsReader: %s", err.Error())
+		return nil, fmt.Errorf("could not initialize KeptnCredentialsReader: %w", err)
 	}
 
 	return &KeptnCredentialsReader{
-		SecretReader:              sr,
-		EnvironmentVariableReader: env.NewOSEnvironmentVariableReader(),
+		secretReader:              sr,
+		environmentVariableReader: env.NewOSEnvironmentVariableReader(),
 	}, nil
 }
 
-func (cm *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
-	apiURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnAPIURLName)
+func (cr *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
+	apiURL, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPIURLName)
 	if err != nil {
-		val, found := cm.EnvironmentVariableReader.Read(keptnAPIURLName)
-		if !found {
-			return nil, fmt.Errorf("key %s was not found in secret \"%s\" or environment variables", keptnAPIURLName, dynatraceSecretName)
-		}
-		apiURL = val
+		return nil, err
 	}
 
-	apiToken, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnAPITokenName)
+	apiToken, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPITokenName)
 	if err != nil {
-		val, found := cm.EnvironmentVariableReader.Read(keptnAPITokenName)
-		if !found {
-			return nil, fmt.Errorf("key %s was not found in secret \"%s\" or environment variables", keptnAPITokenName, dynatraceSecretName)
-		}
-		apiToken = val
+		return nil, err
 	}
 
-	return NewKeptnCredentials(apiURL, apiToken)
+	bridgeURL, err := cr.secretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLName)
+	if err != nil {
+		bridgeURL, _ = cr.environmentVariableReader.Read(keptnBridgeURLName)
+	}
+
+	return NewKeptnCredentials(apiURL, apiToken, bridgeURL)
 }
 
-func (cm *KeptnCredentialsReader) GetKeptnBridgeURL() (string, error) {
-	bridgeURL, err := cm.SecretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLName)
-
-	if err != nil {
-		val, found := cm.EnvironmentVariableReader.Read(keptnBridgeURLName)
-		if !found {
-			return "", fmt.Errorf("key %s was not found in secret \"%s\" or environment variables", keptnBridgeURLName, dynatraceSecretName)
-		}
-		bridgeURL = val
+func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(secretName string) (string, error) {
+	val, err := cr.secretReader.ReadSecret(dynatraceSecretName, secretName)
+	if err == nil {
+		return val, nil
 	}
 
-	return url.MakeCleanURL(bridgeURL)
+	val, found := cr.environmentVariableReader.Read(secretName)
+	if found {
+		return val, nil
+	}
+
+	return "", fmt.Errorf("key %s was not found in secret \"%s\" or environment variables: %w", secretName, dynatraceSecretName, err)
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
 func GetKeptnCredentials() (*KeptnCredentials, error) {
-	cm, err := NewDefaultKeptnCredentialsReader()
+	cr, err := NewDefaultKeptnCredentialsReader()
 	if err != nil {
 		return nil, err
 	}
-	return cm.GetKeptnCredentials()
+	return cr.GetKeptnCredentials()
 }
 
 // CheckKeptnConnection verifies wether a connection to the Keptn API can be established
@@ -96,22 +93,13 @@ func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return errors.New("could not authenticate at Keptn API: " + err.Error())
+		return fmt.Errorf("could not authenticate at Keptn API: %w", err)
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized {
-		return errors.New("invalid Keptn API Token: received 401 - Unauthorized from " + keptnAuthURL)
+		return fmt.Errorf("invalid Keptn API Token: received 401 - Unauthorized from %s", keptnAuthURL)
 	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("received unexpected response from %s: %d", keptnAuthURL, resp.StatusCode)
 	}
 	return nil
-}
-
-// GetKeptnBridgeURL returns the bridge URL
-func GetKeptnBridgeURL() (string, error) {
-	cm, err := NewDefaultKeptnCredentialsReader()
-	if err != nil {
-		return "", err
-	}
-	return cm.GetKeptnBridgeURL()
 }

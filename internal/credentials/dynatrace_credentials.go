@@ -16,7 +16,7 @@ type DynatraceCredentials struct {
 }
 
 func NewDynatraceCredentials(tenant string, apiToken string) (*DynatraceCredentials, error) {
-	tenant, err := url.MakeCleanURL(tenant)
+	tenant, err := url.CleanURL(tenant)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create Dynatrace credentials: %v", err)
 	}

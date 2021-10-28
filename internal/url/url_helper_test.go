@@ -2,7 +2,7 @@ package url
 
 import "testing"
 
-func TestMakeCleanURL(t *testing.T) {
+func TestCleanURL(t *testing.T) {
 	type args struct {
 		u string
 	}
@@ -69,7 +69,7 @@ func TestMakeCleanURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MakeCleanURL(tt.args.u)
+			got, err := CleanURL(tt.args.u)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MakeCleanURL() error = %v, wantErr %v", err, tt.wantErr)
 				return
