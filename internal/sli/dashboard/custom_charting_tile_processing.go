@@ -2,6 +2,10 @@ package dashboard
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -9,9 +13,6 @@ import (
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type CustomChartingTileProcessing struct {
@@ -163,16 +164,16 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 	// TODO - handle aggregation rates -> probably doesnt make sense as we always evalute a short timeframe
 	// if series.AggregationRate
 
+	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entites or tags
+	// lets see if we have a FiltersPerEntityType for the tiles EntityType
+	entityTileFilter := getEntitySelectorFromEntityFilter(filtersPerEntityType, series.EntityType)
+
 	// lets get the true entity type as the one in the dashboard might not be accurate, e.g: IOT might be used instead of CUSTOM_DEVICE
 	// so - if the metric definition has EntityTypes defined we take the first one
 	entityType := series.EntityType
 	if len(metricDefinition.EntityType) > 0 {
 		entityType = metricDefinition.EntityType[0]
 	}
-
-	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entites or tags
-	// lets see if we have a FiltersPerEntityType for the tiles EntityType
-	entityTileFilter := getEntitySelectorFromEntityFilter(filtersPerEntityType, entityType)
 
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
@@ -200,22 +201,30 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 // the return value always starts with a , (comma)
 //   return example: ,entityId("ABAD-222121321321")
 func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace.FilterMap, entityType string) string {
-	entityTileFilter := ""
-	if filtersPerEntityType, containsEntityType := filtersPerEntityType[entityType]; containsEntityType {
-		// Check for SPECIFIC_ENTITIES - if we have an array then we filter for each entity
-		if entityArray, containsSpecificEntities := filtersPerEntityType["SPECIFIC_ENTITIES"]; containsSpecificEntities {
-			for _, entityId := range entityArray {
-				entityTileFilter = entityTileFilter + ","
-				entityTileFilter = entityTileFilter + fmt.Sprintf("entityId(\"%s\")", entityId)
-			}
-		}
-		// Check for SPECIFIC_ENTITIES - if we have an array then we filter for each entity
-		if tagArray, containsAutoTags := filtersPerEntityType["AUTO_TAGS"]; containsAutoTags {
-			for _, tag := range tagArray {
-				entityTileFilter = entityTileFilter + ","
-				entityTileFilter = entityTileFilter + fmt.Sprintf("tag(\"%s\")", tag)
-			}
-		}
+	filterMap, containsEntityType := filtersPerEntityType[entityType]
+	if !containsEntityType {
+		return ""
 	}
-	return entityTileFilter
+
+	filter := makeSpecificEntitiesFilter(filterMap["SPECIFIC_ENTITIES"]) + makeAutoTagsFilter(filterMap["AUTO_TAGS"])
+	if entityType == "SERVICE_KEY_REQUEST" {
+		filter = ",fromRelationships.isServiceMethodOfService(type(SERVICE)" + filter + ")"
+	}
+	return filter
+}
+
+func makeSpecificEntitiesFilter(specificEntities []string) string {
+	specificEntityFilter := ""
+	for _, entityId := range specificEntities {
+		specificEntityFilter = specificEntityFilter + fmt.Sprintf(",entityId(\"%s\")", entityId)
+	}
+	return specificEntityFilter
+}
+
+func makeAutoTagsFilter(autoTags []string) string {
+	autoTagsFilter := ""
+	for _, tag := range autoTags {
+		autoTagsFilter = autoTagsFilter + fmt.Sprintf(",tag(\"%s\")", tag)
+	}
+	return autoTagsFilter
 }

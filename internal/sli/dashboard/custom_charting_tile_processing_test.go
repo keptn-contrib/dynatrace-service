@@ -1,8 +1,10 @@
 package dashboard
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
