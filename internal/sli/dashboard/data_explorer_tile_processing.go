@@ -79,7 +79,6 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(dataQuery.Metric)
 	if err != nil {
-		log.WithError(err).WithField("metric", dataQuery.Metric).Debug("Error retrieving metric description")
 		return nil, err
 	}
 
@@ -119,30 +118,35 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	}
 
 	// Create the right entity Selectors for the queries execute
-	// TODO: we currently only support a single filter - if we want to support more we need to build this in
 	if dataQuery.FilterBy != nil && len(dataQuery.FilterBy.NestedFilters) > 0 {
 
-		if len(dataQuery.FilterBy.NestedFilters[0].Criteria) == 1 {
-			if strings.HasPrefix(dataQuery.FilterBy.NestedFilters[0].Filter, "dt.entity.") {
-				entitySelectorSLIDefinition = ",entityId(FILTERDIMENSIONVALUE)"
-				entityFilter = fmt.Sprintf("&entitySelector=entityId(%s)", dataQuery.FilterBy.NestedFilters[0].Criteria[0].Value)
-			} else {
-				filterSLIDefinitionAggregator = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", dataQuery.FilterBy.NestedFilters[0].Filter)
-				filterAggregator = fmt.Sprintf(":filter(%s(%s,%s))", dataQuery.FilterBy.NestedFilters[0].Criteria[0].Evaluator, dataQuery.FilterBy.NestedFilters[0].Filter, dataQuery.FilterBy.NestedFilters[0].Criteria[0].Value)
-			}
+		// TODO: 2021-10-29: we currently only support a single filter - if we want to support more we need to build this in
+		if len(dataQuery.FilterBy.NestedFilters) != 1 {
+			return nil, fmt.Errorf("only a single filter is supported")
+		}
+
+		if len(dataQuery.FilterBy.NestedFilters[0].Criteria) != 1 {
+			return nil, fmt.Errorf("only a single filter criterion is supported")
+		}
+
+		if strings.HasPrefix(dataQuery.FilterBy.NestedFilters[0].Filter, "dt.entity.") {
+			entitySelectorSLIDefinition = ",entityId(FILTERDIMENSIONVALUE)"
+			entityFilter = fmt.Sprintf("&entitySelector=entityId(%s)", dataQuery.FilterBy.NestedFilters[0].Criteria[0].Value)
 		} else {
-			log.Debug("Code only supports a single filter for data explorer")
+			filterSLIDefinitionAggregator = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", dataQuery.FilterBy.NestedFilters[0].Filter)
+			filterAggregator = fmt.Sprintf(":filter(%s(%s,%s))", dataQuery.FilterBy.NestedFilters[0].Criteria[0].Evaluator, dataQuery.FilterBy.NestedFilters[0].Filter, dataQuery.FilterBy.NestedFilters[0].Criteria[0].Value)
 		}
 	}
 
-	// TODO: we currently only support one split dimension
-	// but - if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
-	if dataQuery.SplitBy != nil {
-		if len(dataQuery.SplitBy) == 1 {
-			filterSLIDefinitionAggregator = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", filterSLIDefinitionAggregator, dataQuery.SplitBy[0])
-		} else {
-			log.Debug("Code only supports a single splitby dimension for data explorer")
-		}
+	// optionally split by a single dimentision
+	// TODO: 2021-10-29: consider adding support for more than one split dimension
+	if len(dataQuery.SplitBy) > 1 {
+		return nil, fmt.Errorf("only a single splitBy dimension is supported")
+	}
+
+	// if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
+	if len(dataQuery.SplitBy) == 1 {
+		filterSLIDefinitionAggregator = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", filterSLIDefinitionAggregator, dataQuery.SplitBy[0])
 	}
 
 	// lets create the metricSelector and entitySelector
