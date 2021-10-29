@@ -85,11 +85,10 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	// building the merge aggregator string, e.g: merge("dt.entity.disk"):merge("dt.entity.host") - or merge("dt.entity.service")
 	// TODO: 2021-09-20: Check for redundant code after update to use dimension keys rather than indexes
 	metricDimensionCount := len(metricDefinition.DimensionDefinitions)
-	metricAggregation := metricDefinition.DefaultAggregation.Type
-	mergeAggregator := ""
 
 	// we need to merge all those dimensions based on the metric definition that are not included in the "splitBy"
 	// so - we iterate through the dimensions based on the metric definition from the back to front - and then merge those not included in splitBy
+	mergeAggregator := ""
 	for metricDimIx := metricDimensionCount - 1; metricDimIx >= 0; metricDimIx-- {
 		log.WithField("metricDimIx", metricDimIx).Debug("Processing Dimension Ix")
 
@@ -147,6 +146,11 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	// if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
 	if len(dataQuery.SplitBy) == 1 {
 		filterAggregator.filterSLIDefinitionAggregator = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", filterAggregator.filterSLIDefinitionAggregator, dataQuery.SplitBy[0])
+	}
+
+	metricAggregation, err := getSpaceAggregationTransformation(dataQuery.SpaceAggregation)
+	if err != nil {
+		metricAggregation = metricDefinition.DefaultAggregation.Type
 	}
 
 	// lets create the metricSelector and entitySelector
@@ -208,4 +212,32 @@ func makeFilter(entityType string, nestedFilter *dynatrace.DataExplorerFilter) (
 	default:
 		return nil, fmt.Errorf("unsupported filter type")
 	}
+}
+
+func getSpaceAggregationTransformation(spaceAggregation string) (string, error) {
+	switch spaceAggregation {
+	case "AVG":
+		return "avg", nil
+	case "SUM":
+		return "sum", nil
+	case "MIN":
+		return "min", nil
+	case "MAX":
+		return "max", nil
+	case "COUNT":
+		return "count", nil
+	case "MEDIAN":
+		return "median", nil
+	case "PERCENTILE_10":
+		return "percentile(10)", nil
+	case "PERCENTILE_75":
+		return "percentile(75)", nil
+	case "PERCENTILE_90":
+		return "percentile(90)", nil
+	case "VALUE":
+		return "value", nil
+	default:
+		return "", fmt.Errorf("unknown space aggregation: %s", spaceAggregation)
+	}
+
 }
