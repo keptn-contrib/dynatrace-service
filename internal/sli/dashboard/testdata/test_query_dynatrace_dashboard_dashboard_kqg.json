@@ -53,6 +53,8 @@
           "timeAggregation": "DEFAULT",
           "splitBy": [],
           "filterBy": {
+            "filter": "",
+            "filterType": "",
             "filterOperator": "",
             "nestedFilters": [],
             "criteria": []
