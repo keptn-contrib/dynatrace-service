@@ -58,17 +58,13 @@ func (m *uploadErrorResourceClientMock) UploadSLOs(project string, stage string,
 //   * if an upload of either SLO, SLI or dashboard file fails, then the test must fail
 func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 
-	failureAssertionFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.False(t, actual.Success)
-	}
+	failureAssertionsFunc := createFailedSLIResultAssertionsFunc(indicator)
 
 	testConfigs := []struct {
-		name               string
-		resourceClientMock keptn.ResourceClientInterface
-		assertFunc         func(t *testing.T, actual *keptnv2.SLIResult)
-		shouldFail         bool
+		name                    string
+		resourceClientMock      keptn.ResourceClientInterface
+		sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)
+		shouldFail              bool
 	}{
 		{
 			name: "SLO upload fails",
@@ -76,8 +72,8 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 				t:              t,
 				uploadSLOError: errors.New("SLO upload failed"),
 			},
-			assertFunc: failureAssertionFunc,
-			shouldFail: true,
+			sliResultAssertionsFunc: failureAssertionsFunc,
+			shouldFail:              true,
 		},
 		{
 			name: "SLI upload fails",
@@ -85,8 +81,8 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 				t:              t,
 				uploadSLIError: errors.New("SLI upload failed"),
 			},
-			assertFunc: failureAssertionFunc,
-			shouldFail: true,
+			sliResultAssertionsFunc: failureAssertionsFunc,
+			shouldFail:              true,
 		},
 		// success case:
 		{
@@ -94,12 +90,8 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 			resourceClientMock: &uploadErrorResourceClientMock{
 				t: t,
 			},
-			assertFunc: func(t *testing.T, actual *keptnv2.SLIResult) {
-				assert.EqualValues(t, indicator, actual.Metric)
-				assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
-				assert.True(t, actual.Success)
-			},
-			shouldFail: false,
+			sliResultAssertionsFunc: createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443),
+			shouldFail:              false,
 		},
 	}
 
@@ -113,21 +105,18 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			// we do not need custom queries, as we are using the dashboard here
-			// we need to instantiate this guy here!
-			kClient := &keptnClientMock{}
 
-			eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
+			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
 				if tc.shouldFail {
-					assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
-					assert.Contains(t, data.Message, "upload failed")
+					assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
+					assert.Contains(t, actual.Message, "upload failed")
 				} else {
-					assert.EqualValues(t, keptnv2.ResultPass, data.Result)
-					assert.Empty(t, data.Message)
+					assert.EqualValues(t, keptnv2.ResultPass, actual.Result)
+					assert.Empty(t, actual.Message)
 				}
 			}
 
-			assertThatDashboardTestIsCorrect(t, handler, kClient, tc.resourceClientMock, tc.assertFunc, eventAssertionsFunc)
+			runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, tc.resourceClientMock, getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }
@@ -148,24 +137,11 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
 		"./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
 
-	// we do not need custom queries, as we are using the dashboard
-	kClient := &keptnClientMock{}
-
 	// sli and slo upload works
 	rClient := &uploadErrorResourceClientMock{t: t}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
-		assert.EqualValues(t, true, actual.Success)
-	}
-
-	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
-		assert.Empty(t, data.Message)
-	}
-
-	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
+	// value is divided by 1000 from dynatrace API result!
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443))
 	assert.True(t, rClient.sliUploaded)
 	assert.True(t, rClient.sloUploaded)
 }
@@ -206,24 +182,15 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
 		"./testdata/sli_via_dashboard_test/response_time_p95_200_0_results.json")
 
-	// we do not need custom queries, as we are using the dashboard here
-	kClient := &keptnClientMock{}
-
 	// if an upload of sli would be triggered then this test would fail
 	rClient := &uploadWillFailResourceClientMock{t: t}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.False(t, actual.Success)
+	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
+		assert.Contains(t, actual.Message, "any SLI results")
 	}
 
-	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
-		assert.Contains(t, data.Message, "any SLI results")
-	}
-
-	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
 }
 
 // Retrieving a dashboard by ID works, but dashboard processing did not produce any results, so we expect an error
@@ -236,29 +203,23 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 	// we do not need metrics definition and metrics query, because we will should not be looking into the tile
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_without_matching_tile_name.json")
+	// sli and slo should not happen, otherwise we fail
+	rClient := &uploadWillFailResourceClientMock{t: t}
+
+	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
+		assert.Contains(t, actual.Message, "any SLI results")
+	}
+
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
+}
+
+func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient keptn.ResourceClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
 
 	// we do not need custom queries, as we are using the dashboard
 	kClient := &keptnClientMock{}
 
-	// sli and slo should not happen, otherwise we fail
-	rClient := &uploadWillFailResourceClientMock{t: t}
+	runTestAndAssertNoError(t, getSLIEventData, handler, kClient, rClient, testDashboardID)
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.False(t, actual.Success)
-	}
-
-	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
-		assert.Contains(t, data.Message, "any SLI results")
-	}
-
-	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
-}
-
-func assertThatDashboardTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
-	setupTestAndAssertNoError(t, testGetSLIEventData, handler, kClient, rClient, testDashboardID)
-
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, eventAssertionsFunc)
+	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
