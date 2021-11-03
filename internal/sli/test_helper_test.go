@@ -37,14 +37,20 @@ func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *kept
 	assert.NoError(t, err)
 }
 
-func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
+func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(*testing.T, *keptnv2.SLIResult)) {
 	data := assertThatEventsAreThere(t, events, eventAssertionsFunc)
 
-	if assertionsFunc != nil {
-		assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
-		assertionsFunc(t, data.GetSLI.IndicatorValues[0])
-	} else {
-		assert.EqualValues(t, 0, len(data.GetSLI.IndicatorValues), "you should assert something on your result!")
+	assert.EqualValues(t, len(sliResultAssertionsFuncs), len(data.GetSLI.IndicatorValues), "number of assertions should match number of SLI indicator values")
+	for i, assertionsFunction := range sliResultAssertionsFuncs {
+		assertionsFunction(t, data.GetSLI.IndicatorValues[i])
+	}
+}
+
+func createSLIResultAssertionsFunc(expectedMetric string, expectedValue float64, expectedSuccess bool) func(t *testing.T, actual *keptnv2.SLIResult) {
+	return func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, expectedMetric, actual.Metric)
+		assert.EqualValues(t, expectedValue, actual.Value)
+		assert.EqualValues(t, expectedSuccess, actual.Success)
 	}
 }
 

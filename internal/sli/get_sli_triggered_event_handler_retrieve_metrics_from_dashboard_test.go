@@ -54,17 +54,13 @@ func (m *uploadErrorResourceClientMock) UploadSLOs(project string, stage string,
 //   * if an upload of either SLO, SLI or dashboard file fails, then the test must fail
 func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 
-	failureAssertionFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.False(t, actual.Success)
-	}
+	failureAssertionsFunc := createSLIResultAssertionsFunc(indicator, 0, false)
 
 	testConfigs := []struct {
-		name               string
-		resourceClientMock keptn.ResourceClientInterface
-		assertFunc         func(t *testing.T, actual *keptnv2.SLIResult)
-		shouldFail         bool
+		name                    string
+		resourceClientMock      keptn.ResourceClientInterface
+		sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)
+		shouldFail              bool
 	}{
 		{
 			name: "SLO upload fails",
@@ -72,8 +68,8 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 				t:              t,
 				uploadSLOError: errors.New("SLO upload failed"),
 			},
-			assertFunc: failureAssertionFunc,
-			shouldFail: true,
+			sliResultAssertionsFunc: failureAssertionsFunc,
+			shouldFail:              true,
 		},
 		{
 			name: "SLI upload fails",
@@ -81,8 +77,8 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 				t:              t,
 				uploadSLIError: errors.New("SLI upload failed"),
 			},
-			assertFunc: failureAssertionFunc,
-			shouldFail: true,
+			sliResultAssertionsFunc: failureAssertionsFunc,
+			shouldFail:              true,
 		},
 		// success case:
 		{
@@ -90,12 +86,8 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 			resourceClientMock: &uploadErrorResourceClientMock{
 				t: t,
 			},
-			assertFunc: func(t *testing.T, actual *keptnv2.SLIResult) {
-				assert.EqualValues(t, indicator, actual.Metric)
-				assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
-				assert.True(t, actual.Success)
-			},
-			shouldFail: false,
+			sliResultAssertionsFunc: createSLIResultAssertionsFunc(indicator, 12.439619479902443, true),
+			shouldFail:              false,
 		},
 	}
 
@@ -123,7 +115,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 				}
 			}
 
-			assertThatDashboardTestIsCorrect(t, handler, kClient, tc.resourceClientMock, tc.assertFunc, eventAssertionsFunc)
+			assertThatDashboardTestIsCorrect(t, handler, kClient, tc.resourceClientMock, eventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }
@@ -150,18 +142,13 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	// sli and slo upload works
 	rClient := &uploadErrorResourceClientMock{t: t}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
-		assert.EqualValues(t, true, actual.Success)
-	}
-
 	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
 		assert.Empty(t, data.Message)
 	}
 
-	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
+	// value is divided by 1000 from dynatrace API result!
+	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, eventAssertionsFunc, createSLIResultAssertionsFunc(indicator, 12.439619479902443, true))
 	assert.True(t, rClient.sliUploaded)
 	assert.True(t, rClient.sloUploaded)
 }
@@ -208,18 +195,12 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 	// if an upload of sli would be triggered then this test would fail
 	rClient := &uploadWillFailResourceClientMock{t: t}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.False(t, actual.Success)
-	}
-
 	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
 		assert.Contains(t, data.Message, "any SLI results")
 	}
 
-	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
+	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, eventAssertionsFunc, createSLIResultAssertionsFunc(indicator, 0, false))
 }
 
 // Retrieving a dashboard by ID works, but dashboard processing did not produce any results, so we expect an error
@@ -239,22 +220,16 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 	// sli and slo should not happen, otherwise we fail
 	rClient := &uploadWillFailResourceClientMock{t: t}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.False(t, actual.Success)
-	}
-
 	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
 		assert.Contains(t, data.Message, "any SLI results")
 	}
 
-	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, assertionsFunc, eventAssertionsFunc)
+	assertThatDashboardTestIsCorrect(t, handler, kClient, rClient, eventAssertionsFunc, createSLIResultAssertionsFunc(indicator, 0, false))
 }
 
-func assertThatDashboardTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
+func assertThatDashboardTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
 	setupTestAndAssertNoError(t, handler, kClient, rClient, "12345678-1111-4444-8888-123456789012")
 
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, eventAssertionsFunc)
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, kClient.eventSink, eventAssertionsFunc, sliResultAssertionsFuncs...)
 }

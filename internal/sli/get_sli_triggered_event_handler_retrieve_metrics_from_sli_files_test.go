@@ -29,14 +29,14 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		},
 	}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
 		assert.Contains(t, actual.Message, "response_time_p95")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -59,7 +59,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		},
 	}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
@@ -67,7 +67,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.Contains(t, actual.Message, "400")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -84,14 +84,14 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		customQueriesError: fmt.Errorf(errorMessage),
 	}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
 		assert.Contains(t, actual.Message, errorMessage)
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -114,7 +114,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		},
 	}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
@@ -122,7 +122,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		assert.Contains(t, actual.Message, "Warning")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -145,7 +145,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		},
 	}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
@@ -153,7 +153,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -176,7 +176,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		},
 	}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
@@ -184,7 +184,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -234,7 +234,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 				},
 			}
 
-			assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+			sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 				assert.EqualValues(t, indicator, actual.Metric)
 				assert.EqualValues(t, 0, actual.Value)
 				assert.EqualValues(t, false, actual.Success)
@@ -242,7 +242,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 				assert.Contains(t, actual.Message, "SLI definition format")
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, true)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
 		})
 	}
 }
@@ -265,13 +265,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
 	kClient := &keptnClientMock{}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
-		assert.EqualValues(t, true, actual.Success)
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, false)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSLIResultAssertionsFunc(indicator, 12.439619479902443, true))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -290,16 +284,10 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		},
 	}
 
-	assertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 12.439619479902443, actual.Value) // div by 1000 from dynatrace API result!
-		assert.EqualValues(t, true, actual.Success)
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, assertionsFunc, false)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSLIResultAssertionsFunc(indicator, 12.439619479902443, true))
 }
 
-func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
+func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, shouldFail bool, sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
 	// we use the special mock for the resource client
 	// we do not want to query a dashboard, so we leave it empty
 	setupTestAndAssertNoError(t, handler, kClient, &resourceClientMock{t: t}, "")
@@ -314,5 +302,5 @@ func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClien
 		}
 	}
 
-	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, eventAssertionsFunc)
+	assertThatEventHasExpectedPayloadWithMatchingFunc(t, kClient.eventSink, eventAssertionsFunc, sliResultAssertionsFunc)
 }
