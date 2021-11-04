@@ -20,6 +20,8 @@ type uploadErrorResourceClientMock struct {
 	sloUploaded    bool
 	uploadSLIError error
 	sliUploaded    bool
+	uploadedSLIs   *dynatrace.SLI
+	uploadedSLOs   *keptnapi.ServiceLevelObjectives
 }
 
 func (m *uploadErrorResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
@@ -33,6 +35,7 @@ func (m *uploadErrorResourceClientMock) UploadSLI(project string, stage string, 
 		return m.uploadSLIError
 	}
 
+	m.uploadedSLIs = sli
 	m.sliUploaded = true
 	return nil
 }
@@ -42,6 +45,7 @@ func (m *uploadErrorResourceClientMock) UploadSLOs(project string, stage string,
 		return m.uploadSLOError
 	}
 
+	m.uploadedSLOs = dashboardSLOs
 	m.sloUploaded = true
 	return nil
 }
@@ -254,7 +258,7 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 }
 
 func assertThatDashboardTestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
-	setupTestAndAssertNoError(t, handler, kClient, rClient, testDashboardID)
+	setupTestAndAssertNoError(t, testGetSLIEventData, handler, kClient, rClient, testDashboardID)
 
 	assertThatEventHasExpectedPayloadWithMatchingFunc(t, assertionsFunc, kClient.eventSink, eventAssertionsFunc)
 }

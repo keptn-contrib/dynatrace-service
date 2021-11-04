@@ -302,7 +302,7 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, assertionsFunc func(t *testing.T, actual *keptnv2.SLIResult), shouldFail bool) {
 	// we use the special mock for the resource client
 	// we do not want to query a dashboard, so we leave it empty
-	setupTestAndAssertNoError(t, handler, kClient, &resourceClientMock{t: t}, "")
+	setupTestAndAssertNoError(t, testGetSLIEventData, handler, kClient, &resourceClientMock{t: t}, "")
 
 	eventAssertionsFunc := func(data *keptnv2.GetSLIFinishedEventData) {
 		if shouldFail {

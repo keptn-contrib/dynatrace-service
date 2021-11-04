@@ -22,14 +22,14 @@ const indicator = "response_time_p95"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 const testDashboardID = "12345678-1111-4444-8888-123456789012"
 
-func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
-	ev := &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-	}
+var testGetSLIEventData = &getSLIEventData{
+	project:    "sockshop",
+	stage:      "staging",
+	service:    "carts",
+	indicators: []string{indicator}, // we need this to check later on in the custom queries
+}
 
+func setupTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
 	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, kClient, rClient, dashboard)
 	defer teardown()
 
