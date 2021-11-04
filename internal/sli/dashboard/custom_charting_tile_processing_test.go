@@ -16,7 +16,8 @@ func TestGetEntitySelectorFromEntityFilter(t *testing.T) {
 			"AUTO_TAGS":         {"keptn_deployment:primary"},
 		},
 	}
-	actual := getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
+	actual, err := getEntitySelectorFromEntityFilter(filtersPerEntityType, "SERVICE")
 
 	assert.Equal(t, expected, actual)
+	assert.NoError(t, err)
 }

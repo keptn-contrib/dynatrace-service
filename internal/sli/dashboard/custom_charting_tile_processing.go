@@ -166,7 +166,10 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 
 	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entites or tags
 	// lets see if we have a FiltersPerEntityType for the tiles EntityType
-	entityTileFilter := getEntitySelectorFromEntityFilter(filtersPerEntityType, series.EntityType)
+	entityTileFilter, err := getEntitySelectorFromEntityFilter(filtersPerEntityType, series.EntityType)
+	if err != nil {
+		return nil, fmt.Errorf("could not get filter for entity type %s: %w", series.EntityType, err)
+	}
 
 	// lets get the true entity type as the one in the dashboard might not be accurate, e.g: IOT might be used instead of CUSTOM_DEVICE
 	// so - if the metric definition has EntityTypes defined we take the first one
@@ -200,17 +203,32 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 // getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -
 // the return value always starts with a , (comma)
 //   return example: ,entityId("ABAD-222121321321")
-func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace.FilterMap, entityType string) string {
+func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace.FilterMap, entityType string) (string, error) {
 	filterMap, containsEntityType := filtersPerEntityType[entityType]
 	if !containsEntityType {
-		return ""
+		return "", nil
 	}
 
-	filter := makeSpecificEntitiesFilter(filterMap["SPECIFIC_ENTITIES"]) + makeAutoTagsFilter(filterMap["AUTO_TAGS"])
+	filter := ""
+	for k, v := range filterMap {
+		switch k {
+		case "SPECIFIC_ENTITIES":
+			filter = filter + makeSpecificEntitiesFilter(v)
+			break
+
+		case "AUTO_TAGS":
+			filter = filter + makeAutoTagsFilter(v)
+			break
+
+		default:
+			return "", fmt.Errorf("unknown filter: %s", k)
+		}
+	}
+
 	if entityType == "SERVICE_KEY_REQUEST" {
 		filter = ",fromRelationships.isServiceMethodOfService(type(SERVICE)" + filter + ")"
 	}
-	return filter
+	return filter, nil
 }
 
 func makeSpecificEntitiesFilter(specificEntities []string) string {
