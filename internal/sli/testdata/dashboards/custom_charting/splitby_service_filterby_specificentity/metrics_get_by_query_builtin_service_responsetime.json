@@ -1,0 +1,28 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:service.response.time:avg:names",
+            "data": [
+                {
+                    "dimensions": [
+                        "JourneyService",
+                        "SERVICE-F2455557EF67362B"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "JourneyService",
+                        "dt.entity.service": "SERVICE-F2455557EF67362B"
+                    },
+                    "timestamps": [
+                        1631865600000
+                    ],
+                    "values": [
+                        20256.493055555555
+                    ]
+                }
+            ]
+        }
+    ]
+}
