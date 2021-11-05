@@ -111,9 +111,6 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_splitby_servicekeyrequest_filterby_serviceofservicemethod.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.keyRequest.totalProcessingTime", testDataFolder+"metrics_get_by_id_builtin_servicekeyrequest_totalprocessingtime.json")
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE_METHOD%29%2CfromRelationships.isServiceMethodOfService%28type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29%29&from=1631862000000&metricSelector=builtin%3Aservice.keyRequest.totalProcessingTime%3Aavg%3Anames&resolution=Inf&to=1631865600000",
-		testDataFolder+"metrics_get_by_query_builtin_servicekeyrequest_totalprocessingtime.json")
 
 	rClient := &uploadErrorResourceClientMock{t: t}
 	runAndAssertThatDashboardTestIsCorrect(t, testCustomChartingGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("tpt_key_requests_journeyService"))
