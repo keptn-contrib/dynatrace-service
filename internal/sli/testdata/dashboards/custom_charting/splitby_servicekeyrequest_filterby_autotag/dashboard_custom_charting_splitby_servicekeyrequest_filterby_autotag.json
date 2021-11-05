@@ -1,0 +1,64 @@
+{
+    "metadata": {
+        "configurationVersions": [
+            5
+        ],
+        "clusterVersion": "1.231.0.20211103-072326"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+        "name": "Test-369",
+        "shared": true,
+        "owner": ""
+    },
+    "tiles": [
+        {
+            "name": "Custom chart",
+            "tileType": "CUSTOM_CHARTING",
+            "configured": true,
+            "bounds": {
+                "top": 0,
+                "left": 266,
+                "width": 304,
+                "height": 304
+            },
+            "tileFilter": {},
+            "filterConfig": {
+                "type": "MIXED",
+                "customName": "Processing time;sli=processing_time;pass=<+10%,<5000",
+                "defaultName": "Custom chart",
+                "chartConfig": {
+                    "legendShown": true,
+                    "type": "TIMESERIES",
+                    "series": [
+                        {
+                            "metric": "builtin:service.keyRequest.totalProcessingTime",
+                            "aggregation": "AVG",
+                            "type": "LINE",
+                            "entityType": "SERVICE_KEY_REQUEST",
+                            "dimensions": [
+                                {
+                                    "id": "0",
+                                    "name": "dt.entity.service_method",
+                                    "values": [],
+                                    "entityDimension": true
+                                }
+                            ],
+                            "sortAscending": false,
+                            "sortColumn": true,
+                            "aggregationRate": "TOTAL"
+                        }
+                    ],
+                    "resultMetadata": {}
+                },
+                "filtersPerEntityType": {
+                    "SERVICE_KEY_REQUEST": {
+                        "AUTO_TAGS": [
+                            "keptnmanager"
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}

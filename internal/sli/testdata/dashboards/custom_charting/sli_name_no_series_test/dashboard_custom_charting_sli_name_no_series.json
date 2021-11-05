@@ -1,0 +1,40 @@
+{
+    "metadata": {
+        "configurationVersions": [
+            5
+        ],
+        "clusterVersion": "1.231.0.20211103-072326"
+    },
+    "id": "7bf0a321-1966-461a-9170-020a3a833b77",
+    "dashboardMetadata": {
+        "name": "Test-369",
+        "shared": true,
+        "owner": ""
+    },
+    "tiles": [
+        {
+            "name": "",
+            "tileType": "CUSTOM_CHARTING",
+            "configured": true,
+            "bounds": {
+                "top": 38,
+                "left": 38,
+                "width": 532,
+                "height": 190
+            },
+            "tileFilter": {},
+            "filterConfig": {
+                "type": "MIXED",
+                "customName": "Empty chart with SLI;sli=empty_chart",
+                "defaultName": "Custom chart",
+                "chartConfig": {
+                    "legendShown": true,
+                    "type": "TIMESERIES",
+                    "series": [],
+                    "resultMetadata": {}
+                },
+                "filtersPerEntityType": {}
+            }
+        }
+    ]
+}

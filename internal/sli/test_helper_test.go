@@ -20,35 +20,29 @@ import (
 
 const indicator = "response_time_p95"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
+const testDashboardID = "12345678-1111-4444-8888-123456789012"
 
-func setupTestAndAssertNoError(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
-	ev := &getSLIEventData{
+var testGetSLIEventDataWithDefaultStartAndEnd = createTestGetSLIEventDataWithStartAndEnd("", "")
+
+func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *getSLIEventData {
+	return &getSLIEventData{
 		project:    "sockshop",
 		stage:      "staging",
 		service:    "carts",
 		indicators: []string{indicator}, // we need this to check later on in the custom queries
+		sliStart:   sliStart,
+		sliEnd:     sliEnd,
 	}
+}
 
+func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
 	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, kClient, rClient, dashboard)
 	defer teardown()
 
-	err := eh.retrieveMetrics()
-
-	assert.NoError(t, err)
+	assert.NoError(t, eh.retrieveMetrics())
 }
 
-func assertThatEventHasExpectedPayloadWithMatchingFunc(t *testing.T, assertionsFunc func(*testing.T, *keptnv2.SLIResult), events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) {
-	data := assertThatEventsAreThere(t, events, eventAssertionsFunc)
-
-	if assertionsFunc != nil {
-		assert.EqualValues(t, 1, len(data.GetSLI.IndicatorValues))
-		assertionsFunc(t, data.GetSLI.IndicatorValues[0])
-	} else {
-		assert.EqualValues(t, 0, len(data.GetSLI.IndicatorValues), "you should assert something on your result!")
-	}
-}
-
-func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAssertionsFunc func(data *keptnv2.GetSLIFinishedEventData)) *keptnv2.GetSLIFinishedEventData {
+func assertCorrectGetSLIEvents(t *testing.T, events []*cloudevents.Event, getSLIFinishedEventAssertionsFunc func(*testing.T, *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(*testing.T, *keptnv2.SLIResult)) {
 	assert.EqualValues(t, 2, len(events))
 
 	assert.EqualValues(t, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), events[0].Type())
@@ -60,11 +54,43 @@ func assertThatEventsAreThere(t *testing.T, events []*cloudevents.Event, eventAs
 		t.Fatalf("could not parse event payload correctly: %s", err)
 	}
 
-	eventAssertionsFunc(&data)
+	getSLIFinishedEventAssertionsFunc(t, &data)
 
 	assert.EqualValues(t, keptnv2.StatusSucceeded, data.Status)
 
-	return &data
+	assertCorrectSLIResults(t, &data, sliResultAssertionsFuncs...)
+}
+
+func assertCorrectSLIResults(t *testing.T, getSLIFinishedEventData *keptnv2.GetSLIFinishedEventData, sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+	if !assert.EqualValues(t, len(sliResultAssertionsFuncs), len(getSLIFinishedEventData.GetSLI.IndicatorValues), "number of assertions should match number of SLI indicator values") {
+		return
+	}
+	for i, assertionsFunction := range sliResultAssertionsFuncs {
+		assertionsFunction(t, getSLIFinishedEventData.GetSLI.IndicatorValues[i])
+	}
+}
+
+func createSLIAssertionsFunc(expectedMetric string, expectedDefintion string) func(t *testing.T, actualMetric string, actualDefinition string) {
+	return func(t *testing.T, actualMetric string, actualDefinition string) {
+		assert.EqualValues(t, expectedMetric, actualMetric)
+		assert.EqualValues(t, expectedDefintion, actualDefinition)
+	}
+}
+
+func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValue float64) func(t *testing.T, actual *keptnv2.SLIResult) {
+	return func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, expectedMetric, actual.Metric)
+		assert.EqualValues(t, expectedValue, actual.Value)
+		assert.True(t, actual.Success)
+	}
+}
+
+func createFailedSLIResultAssertionsFunc(expectedMetric string) func(*testing.T, *keptnv2.SLIResult) {
+	return func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.False(t, actual.Success)
+		assert.EqualValues(t, expectedMetric, actual.Metric)
+		assert.Zero(t, actual.Value)
+	}
 }
 
 func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {

@@ -123,7 +123,7 @@ func createDynatraceDashboard(projectName string, shipyard keptnv2.Shipyard) *dy
 				Series:         []dynatrace.Series{},
 				ResultMetadata: dynatrace.ResultMetadata{},
 			},
-			FiltersPerEntityType: map[string]map[string][]string{},
+			FiltersPerEntityType: map[string]dynatrace.FilterMap{},
 		})
 	hostsTile.Bounds = createBounds(38, 0, 152)
 	dtDashboard.Tiles = append(dtDashboard.Tiles, hostsTile)
@@ -206,7 +206,7 @@ func createHostCPULoadTile() dynatrace.Tile {
 			CustomName:           "CPU",
 			DefaultName:          customChartName,
 			ChartConfig:          createTimeSeriesChartConfig("builtin:host.cpu.load", "AVG", "LINE", "HOST"),
-			FiltersPerEntityType: map[string]map[string][]string{},
+			FiltersPerEntityType: map[string]dynatrace.FilterMap{},
 		})
 }
 
@@ -289,11 +289,11 @@ func createTileWith(name string, tileType string, filterConfig *dynatrace.Filter
 	}
 }
 
-func createServiceAutoTagsEntityFilter(project string, stage string) map[string]map[string][]string {
+func createServiceAutoTagsEntityFilter(project string, stage string) map[string]dynatrace.FilterMap {
 	const service = "SERVICE"
 	const autoTags = "AUTO_TAGS"
 
-	result := make(map[string]map[string][]string)
+	result := make(map[string]dynatrace.FilterMap)
 	result[service] = make(map[string][]string)
 	result[service][autoTags] = []string{getKeptnProjectTag(project), getKeptnStageTag(stage)}
 

@@ -93,12 +93,14 @@ type NestedFilterDataExplorer struct {
 }
 
 type FilterConfig struct {
-	Type                 string                         `json:"type"`
-	CustomName           string                         `json:"customName"`
-	DefaultName          string                         `json:"defaultName"`
-	ChartConfig          ChartConfig                    `json:"chartConfig"`
-	FiltersPerEntityType map[string]map[string][]string `json:"filtersPerEntityType"`
+	Type                 string               `json:"type"`
+	CustomName           string               `json:"customName"`
+	DefaultName          string               `json:"defaultName"`
+	ChartConfig          ChartConfig          `json:"chartConfig"`
+	FiltersPerEntityType map[string]FilterMap `json:"filtersPerEntityType"`
 }
+
+type FilterMap map[string][]string
 
 /*
 FiltersPerEntityType struct {

@@ -2,15 +2,17 @@ package dashboard
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type CustomChartingTileProcessing struct {
@@ -52,28 +54,26 @@ func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFi
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	if tile.FilterConfig == nil {
-		return nil
+		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile is missing a filterConfig element")
 	}
 
-	var tileResults []*TileResult
-
-	// we can potentially have multiple series on that chart
-	for _, series := range tile.FilterConfig.ChartConfig.Series {
-
-		// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-		metricQuery, err := p.generateMetricQueryFromChart(series, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType, p.startUnix, p.endUnix)
-
-		// if there was no error we generate the SLO & SLO definition
-		if err != nil {
-			log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
-			continue
-		}
-
-		results := NewMetricsQueryProcessing(p.client).Process(len(series.Dimensions), sloDefinition, metricQuery)
-		tileResults = append(tileResults, results...)
+	if len(tile.FilterConfig.ChartConfig.Series) != 1 {
+		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile must have exactly one series")
 	}
 
-	return tileResults
+	return p.processSeries(sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
+}
+
+func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []*TileResult {
+
+	metricQuery, err := p.generateMetricQueryFromChart(series, tileManagementZoneFilter, filtersPerEntityType, p.startUnix, p.endUnix)
+
+	if err != nil {
+		log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
+		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile could not be converted to a metric query: "+err.Error())
+	}
+
+	return NewMetricsQueryProcessing(p.client).Process(len(series.Dimensions), sloDefinition, metricQuery)
 }
 
 // Looks at the ChartSeries configuration of a regular chart and generates the Metrics Query
@@ -85,7 +85,7 @@ func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFi
 //   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]map[string][]string, startUnix time.Time, endUnix time.Time) (*queryComponents, error) {
+func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap, startUnix time.Time, endUnix time.Time) (*queryComponents, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(series.Metric)
@@ -128,7 +128,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series dynat
 					// we need this for the generation of the SLI for each individual dimension value
 					// if the dimension is a dt.entity we have to add an addiotnal entityId to the entitySelector - otherwise we add a filter for the dimension
 					if strings.HasPrefix(seriesDim.Name, "dt.entity.") {
-						entitySelectorSLIDefinition = fmt.Sprintf(",entityId(FILTERDIMENSIONVALUE)")
+						entitySelectorSLIDefinition = fmt.Sprintf(",entityId(\"FILTERDIMENSIONVALUE\")")
 					} else {
 						filterSLIDefinitionAggregator = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", seriesDim.Name)
 					}
@@ -164,16 +164,19 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series dynat
 	// TODO - handle aggregation rates -> probably doesnt make sense as we always evalute a short timeframe
 	// if series.AggregationRate
 
+	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entites or tags
+	// lets see if we have a FiltersPerEntityType for the tiles EntityType
+	entityTileFilter, err := getEntitySelectorFromEntityFilter(filtersPerEntityType, series.EntityType)
+	if err != nil {
+		return nil, fmt.Errorf("could not get filter for entity type %s: %w", series.EntityType, err)
+	}
+
 	// lets get the true entity type as the one in the dashboard might not be accurate, e.g: IOT might be used instead of CUSTOM_DEVICE
 	// so - if the metric definition has EntityTypes defined we take the first one
 	entityType := series.EntityType
 	if len(metricDefinition.EntityType) > 0 {
 		entityType = metricDefinition.EntityType[0]
 	}
-
-	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entites or tags
-	// lets see if we have a FiltersPerEntityType for the tiles EntityType
-	entityTileFilter := getEntitySelectorFromEntityFilter(filtersPerEntityType, entityType)
 
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
@@ -200,23 +203,49 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series dynat
 // getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -
 // the return value always starts with a , (comma)
 //   return example: ,entityId("ABAD-222121321321")
-func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]map[string][]string, entityType string) string {
-	entityTileFilter := ""
-	if filtersPerEntityType, containsEntityType := filtersPerEntityType[entityType]; containsEntityType {
-		// Check for SPECIFIC_ENTITIES - if we have an array then we filter for each entity
-		if entityArray, containsSpecificEntities := filtersPerEntityType["SPECIFIC_ENTITIES"]; containsSpecificEntities {
-			for _, entityId := range entityArray {
-				entityTileFilter = entityTileFilter + ","
-				entityTileFilter = entityTileFilter + fmt.Sprintf("entityId(\"%s\")", entityId)
-			}
-		}
-		// Check for SPECIFIC_ENTITIES - if we have an array then we filter for each entity
-		if tagArray, containsAutoTags := filtersPerEntityType["AUTO_TAGS"]; containsAutoTags {
-			for _, tag := range tagArray {
-				entityTileFilter = entityTileFilter + ","
-				entityTileFilter = entityTileFilter + fmt.Sprintf("tag(\"%s\")", tag)
-			}
+func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace.FilterMap, entityType string) (string, error) {
+	filterMap, containsEntityType := filtersPerEntityType[entityType]
+	if !containsEntityType {
+		return "", nil
+	}
+
+	filter, err := makeEntitySelectorForFilterMap(filterMap)
+	if err != nil {
+		return "", err
+	}
+
+	if entityType == "SERVICE_KEY_REQUEST" {
+		filter = ",fromRelationships.isServiceMethodOfService(type(SERVICE)" + filter + ")"
+	}
+	return filter, nil
+}
+
+func makeEntitySelectorForFilterMap(filterMap dynatrace.FilterMap) (string, error) {
+	for k := range filterMap {
+		switch k {
+		case "SPECIFIC_ENTITIES", "AUTO_TAGS":
+			// do nothing - these are fine and will be used later
+
+		default:
+			return "", fmt.Errorf("unknown filter: %s", k)
 		}
 	}
-	return entityTileFilter
+
+	return makeSpecificEntitiesFilter(filterMap["SPECIFIC_ENTITIES"]) + makeAutoTagsFilter(filterMap["AUTO_TAGS"]), nil
+}
+
+func makeSpecificEntitiesFilter(specificEntities []string) string {
+	specificEntityFilter := ""
+	for _, entityId := range specificEntities {
+		specificEntityFilter = specificEntityFilter + fmt.Sprintf(",entityId(\"%s\")", entityId)
+	}
+	return specificEntityFilter
+}
+
+func makeAutoTagsFilter(autoTags []string) string {
+	autoTagsFilter := ""
+	for _, tag := range autoTags {
+		autoTagsFilter = autoTagsFilter + fmt.Sprintf(",tag(\"%s\")", tag)
+	}
+	return autoTagsFilter
 }
