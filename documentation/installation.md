@@ -31,21 +31,36 @@ To function correctly, the *dynatrace-service* requires access to a Dynatrace te
 
 ### 2. Create a secret with credentials
 
-* Create a secret (named `dynatrace` by default) containing the credentials for the Dynatrace Tenant (`DT_API_TOKEN` and `DT_TENANT`).
+There are two ways of creating a secret
+
+#### Create a secret with Keptn CLI
+
+Create a secret (named `dynatrace` by default) containing the credentials for the Dynatrace Tenant (`DT_API_TOKEN` and `DT_TENANT`).
 
     ```console
    keptn create secret dynatrace --from-literal="DT_TENANT=$DT_TENANT" --from-literal="DT_API_TOKEN=$DT_API_TOKEN"
     ```
 
+#### Create a secret with Keptn Bridge
+
+Navigate to your Keptn environment pointed to by `KEPTN_BRIDGE_URL` and go to **Keptn Uniform** screen. In the sub menu click on **Secrets** and add a new secret with scope `dynatrace-service`. Make sure that you have two key-value pairs - one for `DT_API_TOKEN` and one for `DT_TENANT`.
+
+![Create new Dynatrace secret](images/secrets/create-new-dynatrace-secret.png "Create new Dynatrace secret")
+
+After clicking **Add Secret** you should see an updated list of secrets including the one you just created.
+
+![New Dynatrace secret created](images/secrets/dynatrace-secret-created.png "New Dynatrace secret created")
+
+
 ### 3. Gather Keptn credentials
 
 The *dynatrace-service* also requires access to the Keptn API, provided through the `KEPTN_API_URL`, `KEPTN_API_TOKEN` and optionally `KEPTN_BRIDGE_URL`:
 
-* To get the values for `KEPTN_API_URL` (also known as `KEPTN_ENDPOINT`), please see [Authenticate Keptn CLI](../../../operate/install/#authenticate-keptn-cli).
+* To get the values for `KEPTN_API_URL` (also known as `KEPTN_ENDPOINT`), please see [Authenticate Keptn CLI](https://keptn.sh/docs/0.10.x/operate/install/#authenticate-keptn-cli).
 
 * By default the `KEPTN_API_TOKEN` is read from the `keptn-api-token` secret (i.e. the secret from the control-plane) and does not need to be set during installation.
 
-* If you would like to use backlinks from your Dynatrace tenant to the Keptn Bridge, provide the service with `KEPTN_BRIDGE_URL`. For further details about this value, please see [Authenticate Keptn Bridge](../../../operate/install/#authenticate-keptn-bridge).
+* If you would like to use backlinks from your Dynatrace tenant to the Keptn Bridge, provide the service with `KEPTN_BRIDGE_URL`. For further details about this value, please see [Authenticate Keptn Bridge](https://keptn.sh/docs/0.10.x/operate/install/#authenticate-keptn-bridge).
 
 * Similarly to the Dynatrace tenant credentials, if running on a Unix/Linux based system, you can use environment variables to set the values of the credentials. It is also fine to just replace the variables with values in the `helm` command in the following section.
 
