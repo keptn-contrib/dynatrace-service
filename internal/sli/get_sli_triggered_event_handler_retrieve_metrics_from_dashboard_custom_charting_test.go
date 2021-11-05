@@ -43,10 +43,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_getJourneyPageByTenant", "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.totalProcessingTime:avg:names&entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(SERVICE_METHOD-7E279028E3327C67)")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_findLocations", "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.totalProcessingTime:avg:names&entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(SERVICE_METHOD-935D5E52D2E0C97E)")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_getJourneyById", "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.totalProcessingTime:avg:names&entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(SERVICE_METHOD-3CE2B68F45050ED9)")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_findJourneys", "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.totalProcessingTime:avg:names&entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(SERVICE_METHOD-00542666DD40A496)")
+		assertSLIDefinitionIsPresent(t, actual, "processing_time_getJourneyPageByTenant", "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.totalProcessingTime:avg:names&entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-7E279028E3327C67\")")
+		assertSLIDefinitionIsPresent(t, actual, "processing_time_findLocations", "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.totalProcessingTime:avg:names&entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-935D5E52D2E0C97E\")")
+		assertSLIDefinitionIsPresent(t, actual, "processing_time_getJourneyById", "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.totalProcessingTime:avg:names&entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-3CE2B68F45050ED9\")")
+		assertSLIDefinitionIsPresent(t, actual, "processing_time_findJourneys", "MV2;MicroSecond;metricSelector=builtin:service.keyRequest.totalProcessingTime:avg:names&entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-00542666DD40A496\")")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -138,8 +138,8 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_JourneyService", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(SERVICE-F2455557EF67362B)")
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_EasytravelService", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(SERVICE-B67B3EC4C95E0FA7)")
+		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_JourneyService", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-F2455557EF67362B\")")
+		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_EasytravelService", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-B67B3EC4C95E0FA7\")")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)

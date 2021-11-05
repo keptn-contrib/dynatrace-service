@@ -128,7 +128,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 					// we need this for the generation of the SLI for each individual dimension value
 					// if the dimension is a dt.entity we have to add an addiotnal entityId to the entitySelector - otherwise we add a filter for the dimension
 					if strings.HasPrefix(seriesDim.Name, "dt.entity.") {
-						entitySelectorSLIDefinition = fmt.Sprintf(",entityId(FILTERDIMENSIONVALUE)")
+						entitySelectorSLIDefinition = fmt.Sprintf(",entityId(\"FILTERDIMENSIONVALUE\")")
 					} else {
 						filterSLIDefinitionAggregator = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", seriesDim.Name)
 					}
