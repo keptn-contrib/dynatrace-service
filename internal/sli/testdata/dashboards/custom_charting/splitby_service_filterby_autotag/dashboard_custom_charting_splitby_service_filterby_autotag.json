@@ -1,0 +1,64 @@
+{
+    "metadata": {
+        "configurationVersions": [
+            5
+        ],
+        "clusterVersion": "1.231.0.20211103-072326"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+        "name": "Test-369",
+        "shared": true,
+        "owner": ""
+    },
+    "tiles": [
+        {
+            "name": "",
+            "tileType": "CUSTOM_CHARTING",
+            "configured": true,
+            "bounds": {
+                "top": 1368,
+                "left": 38,
+                "width": 532,
+                "height": 190
+            },
+            "tileFilter": {},
+            "filterConfig": {
+                "type": "MIXED",
+                "customName": "SplitBy service, filterBy autoTags;SLI=services_response_time_splitby_service_filterby_autotags;pass=<30",
+                "defaultName": "Custom chart",
+                "chartConfig": {
+                    "legendShown": true,
+                    "type": "TIMESERIES",
+                    "series": [
+                        {
+                            "metric": "builtin:service.response.time",
+                            "aggregation": "AVG",
+                            "type": "LINE",
+                            "entityType": "SERVICE",
+                            "dimensions": [
+                                {
+                                    "id": "0",
+                                    "name": "dt.entity.service",
+                                    "values": [],
+                                    "entityDimension": true
+                                }
+                            ],
+                            "sortAscending": false,
+                            "sortColumn": true,
+                            "aggregationRate": "TOTAL"
+                        }
+                    ],
+                    "resultMetadata": {}
+                },
+                "filtersPerEntityType": {
+                    "SERVICE": {
+                        "AUTO_TAGS": [
+                            "keptn_managed"
+                        ]
+                    }
+                }
+            }
+        }
+    ]
+}
