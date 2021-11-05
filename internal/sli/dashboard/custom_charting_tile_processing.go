@@ -214,12 +214,8 @@ func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace
 		switch k {
 		case "SPECIFIC_ENTITIES":
 			filter = filter + makeSpecificEntitiesFilter(v)
-			break
-
 		case "AUTO_TAGS":
 			filter = filter + makeAutoTagsFilter(v)
-			break
-
 		default:
 			return "", fmt.Errorf("unknown filter: %s", k)
 		}
