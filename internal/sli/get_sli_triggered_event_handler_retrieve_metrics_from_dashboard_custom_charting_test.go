@@ -22,6 +22,8 @@ var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *keptnv2.
 
 var testCustomChartingGetSLIEventData = createTestGetSLIEventDataWithStartAndEnd("2021-09-17T07:00:00.000Z", "2021-09-17T08:00:00.000Z")
 
+// TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByAutoTag tests splitting by key service request and filtering by tag.
+// This is will result in a SLIResult with success, as this is supported.
 func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByAutoTag(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/custom_charting/splitby_servicekeyrequest_filterby_autotag/"
@@ -50,7 +52,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-func TestDashboardCustomChartingTile_WithSLIButNoSeries(t *testing.T) {
+// TestRetrieveMetricsFromDashboardCustomChartingTile_WithSLIButNoSeries tests a custom charting tile with an SLI name defined, i.e. in the title, but no series.
+// This is will result in a SLIResult with failure, as this is not allowed.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_WithSLIButNoSeries(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/custom_charting/sli_name_no_series_test/"
 
@@ -61,7 +65,9 @@ func TestDashboardCustomChartingTile_WithSLIButNoSeries(t *testing.T) {
 	runAndAssertThatDashboardTestIsCorrect(t, testCustomChartingGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("empty_chart"))
 }
 
-func TestDashboardCustomChartingTile_WithSLIAndTwoSeries(t *testing.T) {
+// TestRetrieveMetricsFromDashboardCustomChartingTile_WithSLIAndTwoSeries tests a custom charting tile with an SLI name defined and two series.
+// This is will result in a SLIResult with failure, as this is not allowed.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_WithSLIAndTwoSeries(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/custom_charting/sli_name_two_series_test/"
 
@@ -72,6 +78,8 @@ func TestDashboardCustomChartingTile_WithSLIAndTwoSeries(t *testing.T) {
 	runAndAssertThatDashboardTestIsCorrect(t, testCustomChartingGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("services_response_time_two_series"))
 }
 
+// TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy tests a custom charting tile with neither split by or filter by defined.
+// This is will result in a SLIResult with success, as this is supported.
 func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/custom_charting/no_splitby_no_filterby/"
@@ -94,7 +102,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *t
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-func TestDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByServiceOfServiceMethod(t *testing.T) {
+// TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByServiceOfServiceMethod tests a custom charting tile that splits by service key request and filters by service of service method.
+// This is will result in a SLIResult with failure, as this is not supported.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByServiceOfServiceMethod(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/custom_charting/splitby_servicekeyrequest_filterby_serviceofservicemethod/"
 
@@ -109,6 +119,8 @@ func TestDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByServiceOfSe
 	runAndAssertThatDashboardTestIsCorrect(t, testCustomChartingGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("tpt_key_requests_journeyService"))
 }
 
+// TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAutoTag tests a custom charting tile that splits by service and filters by tag.
+// This is will result in a SLIResult with success, as this is supported.
 func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAutoTag(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/custom_charting/splitby_service_filterby_autotag/"
@@ -133,6 +145,8 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
+// TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySpecificEntity tests a custom charting tile that splits by service and filters by specific entity.
+// This is will result in a SLIResult with success, as this is supported.
 func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySpecificEntity(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/custom_charting/splitby_service_filterby_specificentity/"
