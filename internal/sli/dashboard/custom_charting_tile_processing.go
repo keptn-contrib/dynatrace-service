@@ -209,22 +209,29 @@ func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace
 		return "", nil
 	}
 
-	filter := ""
-	for k, v := range filterMap {
-		switch k {
-		case "SPECIFIC_ENTITIES":
-			filter = filter + makeSpecificEntitiesFilter(v)
-		case "AUTO_TAGS":
-			filter = filter + makeAutoTagsFilter(v)
-		default:
-			return "", fmt.Errorf("unknown filter: %s", k)
-		}
+	filter, err := makeEntitySelectorForFilterMap(filterMap)
+	if err != nil {
+		return "", err
 	}
 
 	if entityType == "SERVICE_KEY_REQUEST" {
 		filter = ",fromRelationships.isServiceMethodOfService(type(SERVICE)" + filter + ")"
 	}
 	return filter, nil
+}
+
+func makeEntitySelectorForFilterMap(filterMap dynatrace.FilterMap) (string, error) {
+	for k := range filterMap {
+		switch k {
+		case "SPECIFIC_ENTITIES", "AUTO_TAGS":
+			// do nothing - these are fine and will be used later
+
+		default:
+			return "", fmt.Errorf("unknown filter: %s", k)
+		}
+	}
+
+	return makeSpecificEntitiesFilter(filterMap["SPECIFIC_ENTITIES"]) + makeAutoTagsFilter(filterMap["AUTO_TAGS"]), nil
 }
 
 func makeSpecificEntitiesFilter(specificEntities []string) string {
