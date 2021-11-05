@@ -56,11 +56,11 @@ After clicking **Add Secret** you should see an updated list of secrets includin
 
 The *dynatrace-service* also requires access to the Keptn API, provided through the `KEPTN_API_URL`, `KEPTN_API_TOKEN` and optionally `KEPTN_BRIDGE_URL`:
 
-* To get the values for `KEPTN_API_URL` (also known as `KEPTN_ENDPOINT`), please see [Authenticate Keptn CLI](../../../operate/install/#authenticate-keptn-cli).
+* To get the values for `KEPTN_API_URL` (also known as `KEPTN_ENDPOINT`), please see [Authenticate Keptn CLI](https://keptn.sh/docs/0.10.x/operate/install/#authenticate-keptn-cli).
 
 * By default the `KEPTN_API_TOKEN` is read from the `keptn-api-token` secret (i.e. the secret from the control-plane) and does not need to be set during installation.
 
-* If you would like to use backlinks from your Dynatrace tenant to the Keptn Bridge, provide the service with `KEPTN_BRIDGE_URL`. For further details about this value, please see [Authenticate Keptn Bridge](../../../operate/install/#authenticate-keptn-bridge).
+* If you would like to use backlinks from your Dynatrace tenant to the Keptn Bridge, provide the service with `KEPTN_BRIDGE_URL`. For further details about this value, please see [Authenticate Keptn Bridge](https://keptn.sh/docs/0.10.x/operate/install/#authenticate-keptn-bridge).
 
 * Similarly to the Dynatrace tenant credentials, if running on a Unix/Linux based system, you can use environment variables to set the values of the credentials. It is also fine to just replace the variables with values in the `helm` command in the following section.
 
