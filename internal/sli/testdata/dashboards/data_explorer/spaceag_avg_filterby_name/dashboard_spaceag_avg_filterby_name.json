@@ -1,0 +1,111 @@
+{
+    "metadata": {
+        "configurationVersions": [
+            5
+        ],
+        "clusterVersion": "1.231.0.20211103-072326"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+        "name": "Test-414",
+        "shared": true,
+        "owner": ""
+    },
+    "tiles": [
+        {
+            "name": "Any errors;sli=any_errors;pass=<200",
+            "tileType": "DATA_EXPLORER",
+            "configured": true,
+            "bounds": {
+                "top": 38,
+                "left": 342,
+                "width": 304,
+                "height": 304
+            },
+            "tileFilter": {},
+            "customName": "Data explorer results",
+            "queries": [
+                {
+                    "id": "A",
+                    "metric": "builtin:service.errors.total.count",
+                    "spaceAggregation": "AVG",
+                    "timeAggregation": "DEFAULT",
+                    "splitBy": [],
+                    "filterBy": {
+                        "filterOperator": "AND",
+                        "nestedFilters": [
+                            {
+                                "filter": "dt.entity.service",
+                                "filterType": "NAME",
+                                "filterOperator": "OR",
+                                "entityAttribute": "entityName",
+                                "nestedFilters": [],
+                                "criteria": [
+                                    {
+                                        "value": "/services/ConfigurationService/ on haproxy:80 (opaque)",
+                                        "evaluator": "IN"
+                                    }
+                                ]
+                            }
+                        ],
+                        "criteria": []
+                    },
+                    "enabled": true
+                }
+            ],
+            "visualConfig": {
+                "type": "GRAPH_CHART",
+                "global": {
+                    "theme": "DEFAULT",
+                    "seriesType": "LINE",
+                    "hideLegend": false
+                },
+                "rules": [],
+                "axes": {
+                    "xAxis": {
+                        "displayName": "",
+                        "visible": true
+                    },
+                    "yAxes": [
+                        {
+                            "displayName": "",
+                            "visible": true,
+                            "min": "AUTO",
+                            "max": "AUTO",
+                            "position": "LEFT",
+                            "queryIds": [
+                                "A"
+                            ],
+                            "defaultAxis": true
+                        }
+                    ]
+                },
+                "heatmapSettings": {},
+                "thresholds": [
+                    {
+                        "axisTarget": "LEFT",
+                        "rules": [
+                            {
+                                "color": "#7dc540"
+                            },
+                            {
+                                "color": "#f5d30f"
+                            },
+                            {
+                                "color": "#dc172a"
+                            }
+                        ],
+                        "queryId": "",
+                        "visible": true
+                    }
+                ],
+                "tableSettings": {
+                    "isThresholdBackgroundAppliedToCell": false
+                },
+                "graphChartSettings": {
+                    "connectNulls": false
+                }
+            }
+        }
+    ]
+}
