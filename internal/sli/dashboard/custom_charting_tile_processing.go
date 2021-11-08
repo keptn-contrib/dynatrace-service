@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -221,14 +222,22 @@ func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace
 }
 
 func makeEntitySelectorForFilterMap(filterMap dynatrace.FilterMap) (string, error) {
+	// look for all unknown filters
+	unknownFilters := []string{}
 	for k := range filterMap {
 		switch k {
 		case "SPECIFIC_ENTITIES", "AUTO_TAGS":
 			// do nothing - these are fine and will be used later
 
 		default:
-			return "", fmt.Errorf("unknown filter: %s", k)
+			unknownFilters = append(unknownFilters, k)
 		}
+	}
+
+	// if one was found, return error with the first one alphabetically
+	if len(unknownFilters) > 0 {
+		sort.Strings(unknownFilters)
+		return "", fmt.Errorf("unknown filter: %s", unknownFilters[0])
 	}
 
 	return makeSpecificEntitiesFilter(filterMap["SPECIFIC_ENTITIES"]) + makeAutoTagsFilter(filterMap["AUTO_TAGS"]), nil
