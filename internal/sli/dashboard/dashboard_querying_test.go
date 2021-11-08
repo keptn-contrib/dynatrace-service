@@ -30,13 +30,10 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.mem.usage", "./testdata/test_get_metrics_hostmemusage.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.disk.queueLength", "./testdata/test_get_metrics_hostdiskqueue.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.nonDbChildCallCount", "./testdata/test_get_metrics_nondbcallcount.json")
-	handler.AddExact(dynatrace.MetricsPath+"/jmeter.usermetrics.transaction.meantime", "./testdata/test_get_metrics_jmeter_usermetrics_transaction_meantime.json")
 
 	// TODO 2021-10-11: Check: these test data files may be out of date as the result data elements do not include a dimensionMap element
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1571649084000&metricSelector=builtin%3Atech.generic.processCount%3Amerge%28%22dt.entity.process_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1571649085000",
 		"./testdata/test_get_metrics_query_tech.generic.processCount.json")
-	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CentityId%28%22SERVICE-086C46F600BA1DC6%22%29%2Ctag%28%22keptn_deployment%3Aprimary%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1571649085000",
-		"./testdata/test_get_metrics_query_service.response.time_merge_service_percentile_95.json")
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2890.000000%29%3Anames&resolution=Inf&to=1571649085000",
 		"./testdata/test_get_metrics_query_service.response.time_merge_service_percentile_90.json")
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850.000000%29%3Anames&resolution=Inf&to=1571649085000",
@@ -57,8 +54,6 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 		"./testdata/test_get_metrics_query_host.disk.queueLength.json")
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1571649084000&metricSelector=builtin%3Aservice.nonDbChildCallCount%3Amerge%28%22dt.entity.service%22%29%3Avalue%3Anames&resolution=Inf&to=1571649085000",
 		"./testdata/test_get_metrics_query_service.nonDbChildCallCount.json")
-	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-FFD81F003E39B468%29&from=1571649084000&metricSelector=jmeter.usermetrics.transaction.meantime%3Aavg%3Anames&resolution=Inf&to=1571649085000",
-		"./testdata/test_get_metrics_query_jmeter.usermetrics.transaction.meantime.json")
 
 	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
 	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
@@ -79,7 +74,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	assert.NotNil(t, result.slo, "No SLO returned")
 	assert.NotNil(t, result.sliResults, "No SLI Results returned")
 
-	const expectedSLOs = 17
+	const expectedSLOs = 14
 	assert.Equal(t, expectedSLOs, len(result.sli.Indicators))
 	assert.Equal(t, expectedSLOs, len(result.slo.Objectives))
 	assert.EqualValues(t, &keptnapi.SLOScore{Pass: "90%", Warning: "70%"}, result.slo.TotalScore)

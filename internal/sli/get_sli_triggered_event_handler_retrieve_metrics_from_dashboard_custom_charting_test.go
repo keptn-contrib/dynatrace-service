@@ -166,6 +166,20 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySp
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
+// TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByFilterByServiceSoftwareTech tests a custom charting tile that filters by service software tech.
+// This is will result in a SLIResult with failure, as the SERVICE_SOFTWARE_TECH filter is not supported.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByFilterByServiceSoftwareTech(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/custom_charting/no_splitby_filterby_servicesoftwaretech/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_filterby_servicetopg.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	getSLIEventData := createTestGetSLIEventDataWithStartAndEnd("2019-10-21T09:11:24Z", "2019-10-21T09:11:25Z")
+	runAndAssertThatDashboardTestIsCorrect(t, getSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("svc_rt_p95"))
+}
+
 func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLIsAssertionsFunc func(t *testing.T, actual *dynatrace.SLI), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
 	kClient := &keptnClientMock{}
 	rClient := &uploadErrorResourceClientMock{t: t}

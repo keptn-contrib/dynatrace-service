@@ -80,63 +80,6 @@
       "tileType": "CUSTOM_CHARTING",
       "configured": true,
       "bounds": {
-        "top": 190,
-        "left": 0,
-        "width": 380,
-        "height": 228
-      },
-      "tileFilter": {
-        "timeframe": null,
-        "managementZone": null
-      },
-      "filterConfig": {
-        "type": "MIXED",
-        "customName": "Response time (P95);sli=svc_rt_p95;pass=<+10%,<600",
-        "defaultName": "Custom chart",
-        "chartConfig": {
-          "legendShown": true,
-          "type": "SINGLE_VALUE",
-          "series": [
-            {
-              "metric": "builtin:service.response.time",
-              "aggregation": "PERCENTILE",
-              "percentile": 95,
-              "type": "LINE",
-              "entityType": "SERVICE",
-              "dimensions": [],
-              "sortAscending": false,
-              "sortColumn": true,
-              "aggregationRate": "TOTAL"
-            }
-          ],
-          "resultMetadata": {}
-        },
-        "filtersPerEntityType": {
-          "SERVICE": {
-            "SERVICE_TO_PG": [
-              "PROCESS_GROUP-88C57C95F9A41B3C|keptn07project.simplenode.prod.primary"
-            ],
-            "SPECIFIC_ENTITIES": [
-              "SERVICE-086C46F600BA1DC6"
-            ],
-            "SERVICE_SOFTWARE_TECH": [
-              "NODE_JS"
-            ],
-            "SERVICE_TYPE": [
-              "1"
-            ],
-            "AUTO_TAGS": [
-              "keptn_deployment:primary"
-            ]
-          }
-        }
-      }
-    },
-    {
-      "name": "Custom chart",
-      "tileType": "CUSTOM_CHARTING",
-      "configured": true,
-      "bounds": {
         "top": 418,
         "left": 0,
         "width": 380,
@@ -717,49 +660,6 @@
       },
       "tileFilter": {},
       "chartVisible": true
-    },
-    {
-      "name": "JMeter Transactions Median;sli=jm_tx_med",
-      "tileType": "DATA_EXPLORER",
-      "configured": true,
-      "bounds": {
-          "top": 38,
-          "left": 304,
-          "width": 684,
-          "height": 304
-      },
-      "tileFilter": {},
-      "customName": "JMeter;slo=jmeter",
-      "queries": [{
-          "id": "A",
-          "metric": "jmeter.usermetrics.transaction.meantime",
-          "spaceAggregation": "AVG",
-          "timeAggregation": "DEFAULT",
-          "splitBy": ["transaction"],
-          "filterBy": {
-            "filterOperator": "AND",
-            "nestedFilters": [{
-                "filter": "dt.entity.service",
-                "filterType": "DIMENSION",
-                "filterOperator": "OR",
-                "nestedFilters": [],
-                "criteria": [{
-                    "value": "SERVICE-FFD81F003E39B468",
-                    "evaluator": "EQ"
-                }]
-            }],
-            "criteria": []
-        }          
-      }],
-      "visualConfig": {
-          "type": "GRAPH_CHART",
-          "global": {
-              "theme": "DEFAULT",
-              "thresholds": [],
-              "seriesType": "LINE"
-          },
-          "rules": []
-      }
-    }    
+    }  
   ]
 }
