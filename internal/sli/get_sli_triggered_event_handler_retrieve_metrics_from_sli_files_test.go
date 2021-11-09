@@ -63,8 +63,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "metricSelector to be specified")
-		assert.Contains(t, actual.Message, "400")
+		assert.Contains(t, actual.Message, "could not parse metrics query")
 	}
 
 	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)

@@ -21,9 +21,9 @@ func NewQueryParameters() *QueryParameters {
 // Add will add a key/value pair to the QueryParameters if there was no entry for the key
 // It will return an error if the key already exists
 func (p *QueryParameters) Add(key string, value string) error {
-	v, exists := p.values[key]
+	_, exists := p.values[key]
 	if exists {
-		return fmt.Errorf("duplicate query parameter '%s'", v)
+		return fmt.Errorf("duplicate key '%s'", key)
 	}
 
 	p.values[key] = value
