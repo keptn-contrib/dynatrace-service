@@ -101,8 +101,8 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 	metricAggregation := metricDefinition.DefaultAggregation.Type
 	mergeAggregator := ""
 	filterAggregator := ""
-	filterSLIDefinitionAggregator := ""
-	entitySelectorSLIDefinition := ""
+	metricSelectorTargetSnippet := ""
+	entitySelectorTargetSnippet := ""
 
 	// now we need to merge all the dimensions that are not part of the series.dimensions, e.g: if the metric has two dimensions but only one dimension is used in the chart we need to merge the others
 	// as multiple-merges are possible but as they are executed in sequence we have to use the right index
@@ -129,9 +129,9 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 					// we need this for the generation of the SLI for each individual dimension value
 					// if the dimension is a dt.entity we have to add an addiotnal entityId to the entitySelector - otherwise we add a filter for the dimension
 					if strings.HasPrefix(seriesDim.Name, "dt.entity.") {
-						entitySelectorSLIDefinition = fmt.Sprintf(",entityId(\"FILTERDIMENSIONVALUE\")")
+						entitySelectorTargetSnippet = fmt.Sprintf(",entityId(\"FILTERDIMENSIONVALUE\")")
 					} else {
-						filterSLIDefinitionAggregator = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", seriesDim.Name)
+						metricSelectorTargetSnippet = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", seriesDim.Name)
 					}
 				}
 			}
@@ -192,12 +192,12 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 	}
 
 	return &queryComponents{
-		metricID:                      metricID,
-		metricUnit:                    metricDefinition.Unit,
-		metricQuery:                   metricQuery,
-		fullMetricQueryString:         fullMetricQuery,
-		entitySelectorSLIDefinition:   entitySelectorSLIDefinition,
-		filterSLIDefinitionAggregator: filterSLIDefinitionAggregator,
+		metricID:                    metricID,
+		metricUnit:                  metricDefinition.Unit,
+		metricQuery:                 metricQuery,
+		fullMetricQueryString:       fullMetricQuery,
+		entitySelectorTargetSnippet: entitySelectorTargetSnippet,
+		metricSelectorTargetSnippet: metricSelectorTargetSnippet,
 	}, nil
 }
 

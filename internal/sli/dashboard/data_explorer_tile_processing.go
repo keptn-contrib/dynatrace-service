@@ -112,7 +112,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 		}
 	}
 
-	filterAggregator := &filterAggregator{}
+	processedFilter := &processedFilterComponents{}
 
 	// Create the right entity Selectors for the queries execute
 	if dataQuery.FilterBy != nil && len(dataQuery.FilterBy.NestedFilters) > 0 {
@@ -135,7 +135,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 			entityType = metricDefinition.EntityType[0]
 		}
 
-		filterAggregator, err = makeFilter(entityType, &dataQuery.FilterBy.NestedFilters[0])
+		processedFilter, err = processFilter(entityType, &dataQuery.FilterBy.NestedFilters[0])
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +149,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 
 	// if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
 	if len(dataQuery.SplitBy) == 1 {
-		filterAggregator.filterSLIDefinitionAggregator = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", filterAggregator.filterSLIDefinitionAggregator, dataQuery.SplitBy[0])
+		processedFilter.metricSelectorTargetSnippet = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", processedFilter.metricSelectorTargetSnippet, dataQuery.SplitBy[0])
 	}
 
 	metricAggregation, err := getSpaceAggregationTransformation(dataQuery.SpaceAggregation)
@@ -160,8 +160,8 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s%s",
-		dataQuery.Metric, mergeAggregator, filterAggregator.filterAggregator, strings.ToLower(metricAggregation),
-		filterAggregator.entityFilter, tileManagementZoneFilter.ForEntitySelector())
+		dataQuery.Metric, mergeAggregator, processedFilter.metricSelectorFilter, strings.ToLower(metricAggregation),
+		processedFilter.entitySelectorFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
 	fullMetricQuery, metricID, err := metrics.NewQueryBuilder(p.eventData, p.customFilters).Build(metricQuery, p.startUnix, p.endUnix)
@@ -170,48 +170,48 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	}
 
 	return &queryComponents{
-		metricID:                      metricID,
-		metricUnit:                    metricDefinition.Unit,
-		metricQuery:                   metricQuery,
-		fullMetricQueryString:         fullMetricQuery,
-		entitySelectorSLIDefinition:   filterAggregator.entitySelectorSLIDefinition,
-		filterSLIDefinitionAggregator: filterAggregator.filterSLIDefinitionAggregator,
+		metricID:                    metricID,
+		metricUnit:                  metricDefinition.Unit,
+		metricQuery:                 metricQuery,
+		fullMetricQueryString:       fullMetricQuery,
+		entitySelectorTargetSnippet: processedFilter.entitySelectorTargetSnippet,
+		metricSelectorTargetSnippet: processedFilter.metricSelectorTargetSnippet,
 	}, nil
 
 }
 
-type filterAggregator struct {
-	filterAggregator              string
-	filterSLIDefinitionAggregator string
-	entityFilter                  string
-	entitySelectorSLIDefinition   string
+type processedFilterComponents struct {
+	metricSelectorFilter        string
+	metricSelectorTargetSnippet string
+	entitySelectorFilter        string
+	entitySelectorTargetSnippet string
 }
 
 // TODO: 2021-11-09: Investigate adding support for other filter types, e.g. DIMENSION
-func makeFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*filterAggregator, error) {
+func processFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*processedFilterComponents, error) {
 	switch filter.FilterType {
 	case "ID":
-		return &filterAggregator{
-			entityFilter:                fmt.Sprintf("&entitySelector=entityId(%s)", filter.Criteria[0].Value),
-			entitySelectorSLIDefinition: ",entityId(FILTERDIMENSIONVALUE)",
+		return &processedFilterComponents{
+			entitySelectorFilter:        fmt.Sprintf("&entitySelector=entityId(%s)", filter.Criteria[0].Value),
+			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "NAME":
-		return &filterAggregator{
-			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
-			entitySelectorSLIDefinition: ",entityId(FILTERDIMENSIONVALUE)",
+		return &processedFilterComponents{
+			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
+			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "TAG":
-		return &filterAggregator{
-			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
-			entitySelectorSLIDefinition: ",entityId(FILTERDIMENSIONVALUE)",
+		return &processedFilterComponents{
+			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
+			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "ENTITY_ATTRIBUTE":
-		return &filterAggregator{
-			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
-			entitySelectorSLIDefinition: ",entityId(FILTERDIMENSIONVALUE)",
+		return &processedFilterComponents{
+			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
+			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	default:

@@ -61,9 +61,9 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 	singleResult := queryResult.Result[0]
 	log.WithFields(
 		log.Fields{
-			"metricId":                      singleResult.MetricID,
-			"filterSLIDefinitionAggregator": metricQueryComponents.filterSLIDefinitionAggregator,
-			"entitySelectorSLIDefinition":   metricQueryComponents.entitySelectorSLIDefinition,
+			"metricId":                    singleResult.MetricID,
+			"metricSelectorTargetSnippet": metricQueryComponents.metricSelectorTargetSnippet,
+			"entitySelectorTargetSnippet": metricQueryComponents.entitySelectorTargetSnippet,
 		}).Debug("Processing result")
 
 	dataResultCount := len(singleResult.Data)
@@ -97,11 +97,11 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 				dimensionValue := singleDataEntry.Dimensions[dimIx]
 				indicatorName = indicatorName + "_" + dimensionValue
 
-				filterSLIDefinitionAggregatorValue = ":names" + strings.Replace(metricQueryComponents.filterSLIDefinitionAggregator, "FILTERDIMENSIONVALUE", dimensionValue, 1)
+				filterSLIDefinitionAggregatorValue = ":names" + strings.Replace(metricQueryComponents.metricSelectorTargetSnippet, "FILTERDIMENSIONVALUE", dimensionValue, 1)
 
-				if metricQueryComponents.entitySelectorSLIDefinition != "" && dimensionIncrement == 2 {
+				if metricQueryComponents.entitySelectorTargetSnippet != "" && dimensionIncrement == 2 {
 					dimensionEntityID := singleDataEntry.Dimensions[dimIx+1]
-					metricQueryForSLI = metricQueryForSLI + strings.Replace(metricQueryComponents.entitySelectorSLIDefinition, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
+					metricQueryForSLI = metricQueryForSLI + strings.Replace(metricQueryComponents.entitySelectorTargetSnippet, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
 				}
 			}
 		}
