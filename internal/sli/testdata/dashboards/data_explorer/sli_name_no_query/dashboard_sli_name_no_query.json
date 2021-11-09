@@ -1,0 +1,28 @@
+{
+    "metadata": {
+        "configurationVersions": [
+            5
+        ],
+        "clusterVersion": "1.231.0.20211103-072326"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+        "name": "Test-414",
+        "shared": true,
+        "owner": ""
+    },
+    "tiles": [
+        {
+            "name": "New SLI;sli=new",
+            "tileType": "DATA_EXPLORER",
+            "configured": true,
+            "bounds": {
+                "top": 76,
+                "left": 1368,
+                "width": 304,
+                "height": 304
+            },
+            "tileFilter": {}
+        }
+    ]
+}
