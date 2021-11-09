@@ -187,6 +187,7 @@ type filterAggregator struct {
 	entitySelectorSLIDefinition   string
 }
 
+// TODO: 2021-11-09: Investigate adding support for other filter types, e.g. DIMENSION
 func makeFilter(entityType string, nestedFilter *dynatrace.DataExplorerFilter) (*filterAggregator, error) {
 	switch nestedFilter.FilterType {
 	case "ID":
