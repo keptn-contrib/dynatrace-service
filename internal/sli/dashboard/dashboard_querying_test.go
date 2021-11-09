@@ -88,6 +88,14 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 		},
 		result.slo.Comparison)
 	assert.Equal(t, expectedSLOs, len(result.sliResults))
+
+	for _, objective := range result.slo.Objectives {
+		assert.NotNil(t, objective)
+	}
+
+	for _, sliResult := range result.sliResults {
+		assert.True(t, sliResult.Success)
+	}
 }
 
 // If you do specify a Dashboard in dynatrace.conf.yaml (-> dashboard: "<some-dashboard-uuid>") then we will retrieve the
