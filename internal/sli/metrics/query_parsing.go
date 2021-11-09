@@ -113,7 +113,7 @@ func (p *QueryParsing) Parse() (*QueryParameters, error) {
 func splitKeyValuePair(keyValue string) (string, string, error) {
 	keyValue = strings.TrimSpace(keyValue)
 	if keyValue == "" {
-		return "", "", fmt.Errorf("empty key=value pair")
+		return "", "", fmt.Errorf("empty 'key=value' pair")
 	}
 
 	chunks := strings.Split(keyValue, keyValueDelimiter)
