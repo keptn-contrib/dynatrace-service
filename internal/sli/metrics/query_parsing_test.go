@@ -130,17 +130,17 @@ func TestParsingMetricQueryStringAndEncodingItAgainWorksAsExpected(t *testing.T)
 		{
 			name:           "standard service response time",
 			input:          "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:my-service)",
-			expectedResult: "metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29&entitySelector=type%28SERVICE%29%2Ctag%28keptn_managed%29%2Ctag%28keptn_service%3Amy-service%29",
+			expectedResult: "entitySelector=type%28SERVICE%29%2Ctag%28keptn_managed%29%2Ctag%28keptn_service%3Amy-service%29&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29",
 		},
 		{
 			name:           "standard total error rate",
 			input:          "metricSelector=builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:my-service)",
-			expectedResult: "metricSelector=builtin%3Aservice.errors.total.rate%3Amerge%28%22dt.entity.service%22%29%3Aavg&entitySelector=type%28SERVICE%29%2Ctag%28keptn_managed%29%2Ctag%28keptn_service%3Amy-service%29",
+			expectedResult: "entitySelector=type%28SERVICE%29%2Ctag%28keptn_managed%29%2Ctag%28keptn_service%3Amy-service%29&metricSelector=builtin%3Aservice.errors.total.rate%3Amerge%28%22dt.entity.service%22%29%3Aavg",
 		},
 		{
 			name:           "uri reserved character '/' and spaces in entity selector",
 			input:          "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:my-service),tag(my_tag2:tom / jerry)",
-			expectedResult: "metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29&entitySelector=type%28SERVICE%29%2Ctag%28keptn_managed%29%2Ctag%28keptn_service%3Amy-service%29%2Ctag%28my_tag2%3Atom+%2F+jerry%29",
+			expectedResult: "entitySelector=type%28SERVICE%29%2Ctag%28keptn_managed%29%2Ctag%28keptn_service%3Amy-service%29%2Ctag%28my_tag2%3Atom+%2F+jerry%29&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29",
 		},
 		{
 			name:           "uri reserved character '+' and spaces in metric selector",

@@ -3,19 +3,18 @@ package metrics
 import (
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 )
 
 // QueryParameters store not URL encoded key/value pairs
 type QueryParameters struct {
-	values         map[string]string
-	iterationOrder []string
+	values map[string]string
 }
 
 func NewQueryParameters() *QueryParameters {
 	return &QueryParameters{
-		values:         map[string]string{},
-		iterationOrder: []string{},
+		values: make(map[string]string, 10),
 	}
 }
 
@@ -28,7 +27,6 @@ func (p *QueryParameters) Add(key string, value string) error {
 	}
 
 	p.values[key] = value
-	p.iterationOrder = append(p.iterationOrder, key)
 	return nil
 }
 
@@ -39,22 +37,33 @@ func (p *QueryParameters) Get(key string) (string, bool) {
 
 // ForEach will iterate the QueryParameters in insertion order
 func (p *QueryParameters) ForEach(consumerFunc func(key string, value string)) {
-	for _, key := range p.iterationOrder {
+	for _, key := range p.getSortedKeys() {
 		consumerFunc(key, p.values[key])
 	}
 }
 
+func (p *QueryParameters) getSortedKeys() []string {
+	keys := make([]string, 0, len(p.values))
+	for key := range p.values {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 // Encode will encode the query parameters and return a correctly encoded URL query string
 func (p *QueryParameters) Encode() string {
-	queryString := ""
-	for _, key := range p.iterationOrder {
-		if queryString != "" {
-			queryString += "&"
+	var buffer strings.Builder
+	for _, key := range p.getSortedKeys() {
+		if buffer.Len() > 0 {
+			buffer.WriteByte('&')
 		}
-		queryString += key + "=" + url.QueryEscape(p.values[key])
+		buffer.WriteString(key)
+		buffer.WriteByte('=')
+		buffer.WriteString(url.QueryEscape(p.values[key]))
 	}
 
-	return queryString
+	return buffer.String()
 }
 
 const (
