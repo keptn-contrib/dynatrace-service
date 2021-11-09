@@ -215,7 +215,7 @@ func makeFilter(entityType string, nestedFilter *dynatrace.DataExplorerFilter) (
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("unsupported filter type")
+		return nil, fmt.Errorf("unsupported filter type: %s", nestedFilter.FilterType)
 	}
 }
 
