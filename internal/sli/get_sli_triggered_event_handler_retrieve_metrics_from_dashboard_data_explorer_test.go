@@ -330,3 +330,75 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy(t *tes
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById tests average space aggregation and filterby entity id.
+// This is will result in a SLIResult with success, as this is supported.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_id/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_id.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-B67B3EC4C95E0FA7%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136.52852484946527),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "rt_jid", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)")
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag tests average space aggregation and filterby tag.
+// This is will result in a SLIResult with success, as this is supported.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_tag/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_tag.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("rt_keptn_manager", 18.533351299277793),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "rt_keptn_manager", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),tag(\"keptnmanager\")")
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAttribute tests average space aggregation and filterby entity attribute.
+// This is will result in a SLIResult with success, as this is supported.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAttribute(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_entityattribute/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_entityattribute.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("rt_svc_etw_db", 1.0706877628404),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "rt_svc_etw_db", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),databaseName(\"EasyTravelWeatherCache\")")
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+}

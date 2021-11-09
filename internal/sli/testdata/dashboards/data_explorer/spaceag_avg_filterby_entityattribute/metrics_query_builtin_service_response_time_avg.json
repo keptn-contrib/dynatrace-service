@@ -1,0 +1,28 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "builtin:service.response.time:avg:names",
+      "data": [
+        {
+          "dimensions": [
+            "Service port: 27017",
+            "SERVICE-8BAD3267D6D7967D"
+          ],
+          "dimensionMap": {
+            "dt.entity.service.name": "Service port: 27017",
+            "dt.entity.service": "SERVICE-8BAD3267D6D7967D"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            1070.6877628404
+          ]
+        }
+      ]
+    }
+  ]
+}
