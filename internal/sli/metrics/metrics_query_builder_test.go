@@ -60,6 +60,14 @@ func TestBuildingMetricQueryWorks(t *testing.T) {
 			errMessage: "could not parse metrics query",
 		},
 		{
+			// actually this is a short coming in the current SLI format design - Dynatrace API would not complain
+			name:       "event context data cannot be correctly encoded because of '?' and fails",
+			input:      "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(my-tag:why?)",
+			shouldFail: true,
+			// legacy query transformation assumes that this is an old query because of the '?' inside
+			errMessage: "could not parse old format",
+		},
+		{
 			name:       "misspelled metricSelector key fails",
 			input:      "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE)",
 			shouldFail: true,

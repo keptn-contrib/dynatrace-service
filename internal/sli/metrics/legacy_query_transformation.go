@@ -57,13 +57,13 @@ func transformToMetricsV2QueryFormat(query string) (string, error) {
 			"helpDocument": metricsAPIOldFormatNewFormatDoc,
 		}).Warn("COMPATIBILITY WARNING: query uses the old format")
 
-	entitySelectorValue, err := transformScopeToEntitySelector(querySplit[1])
+	entitySelector, err := transformScopeToEntitySelector(querySplit[1])
 	if err != nil {
 		return "", err
 	}
 
 	// build the new query format: old format with "?" - everything left of the ? is the identifier, everything right are query params
-	return fmt.Sprintf("%s=%s&%s=%s", metricSelectorKey, querySplit[0], entitySelectorKey, entitySelectorValue), nil
+	return fmt.Sprintf("%s=%s&%s", metricSelectorKey, querySplit[0], entitySelector), nil
 }
 
 func transformScopeToEntitySelector(scope string) (string, error) {
@@ -77,16 +77,14 @@ func transformScopeToEntitySelector(scope string) (string, error) {
 		return "", fmt.Errorf("invalid metric query - missing value for 'scope=' key")
 	}
 
-	if scopeValue != "" {
-		log.WithField("helpDocument", metricsAPIOldFormatNewFormatDoc).Debug("COMPATIBILITY WARNING: querying the new metrics API requires use of entitySelector rather than scope")
-		// scope is no longer supported in the new API, it needs to be called "entitySelector" and contain type(SERVICE)
-		if !strings.Contains(scopeValue, serviceType) {
-			log.WithField("helpDocument", metricsAPIOldFormatNewFormatDoc).Debug("COMPATIBILITY WARNING: Automatically adding type(SERVICE) to entitySelector for compatibility with the new Metrics API")
-			scopeValue += "," + serviceType
-		}
+	log.WithField("helpDocument", metricsAPIOldFormatNewFormatDoc).Debug("COMPATIBILITY WARNING: querying the new metrics API requires use of entitySelector rather than scope")
+	// scope is no longer supported in the new API, it needs to be called "entitySelector" and contain type(SERVICE)
+	if !strings.Contains(scopeValue, serviceType) {
+		log.WithField("helpDocument", metricsAPIOldFormatNewFormatDoc).Debug("COMPATIBILITY WARNING: Automatically adding type(SERVICE) to entitySelector for compatibility with the new Metrics API")
+		scopeValue += "," + serviceType
 	}
 
-	return scopeValue, nil
+	return fmt.Sprintf("%s=%s", entitySelectorKey, scopeValue), nil
 }
 
 func removeQuestionMark(query string) string {
