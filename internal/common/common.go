@@ -16,8 +16,6 @@ import (
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 )
 
-// This is the label name for the Problem URL label
-const PROBLEMURL_LABEL = "Problem URL"
 const KEPTNSBRIDGE_LABEL = "Keptns Bridge"
 
 const shipyardController = "SHIPYARD_CONTROLLER"
