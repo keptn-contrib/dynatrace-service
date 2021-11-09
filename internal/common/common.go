@@ -1,14 +1,14 @@
 package common
 
 import (
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 
 	log "github.com/sirupsen/logrus"
 
@@ -29,7 +29,7 @@ func GetConfigurationServiceURL() string {
 	return getKeptnServiceURL(configurationService, keptn.ConfigurationServiceURL)
 }
 
-// GetConfigurationServiceURL Returns the endpoint to the configuration-service
+// GetDatastoreURL Returns the endpoint to the datastore
 func GetDatastoreURL() string {
 	return getKeptnServiceURL(datastore, keptn.DatastoreURL)
 }
@@ -39,21 +39,15 @@ func GetShipyardControllerURL() string {
 	return getKeptnServiceURL(shipyardController, defaultShipyardControllerURL)
 }
 
-func getKeptnServiceURL(servicename, defaultURL string) string {
-	url, err := keptn.GetServiceEndpoint(servicename)
+func getKeptnServiceURL(serviceName, defaultURL string) string {
+	url, err := keptn.GetServiceEndpoint(serviceName)
 	if err != nil {
 		return defaultURL
 	}
 	return url.String()
 }
 
-/**
- * Constants for supporting resource files in keptn repo
- */
-
-/**
- * Defines the Dynatrace Configuration File structure and supporting Constants
- */
+// DynatraceConfigDashboardQUERY defines the Dynatrace Configuration File structure and supporting Constants
 const DynatraceConfigDashboardQUERY = "query"
 
 // ReplaceQueryParameters replaces query parameters based on sli filters and keptn event data
@@ -68,58 +62,45 @@ func ReplaceQueryParameters(query string, customFilters []*keptnv2.SLIFilter, ke
 		query = strings.Replace(query, "$"+strings.ToUpper(filter.Key), filter.Value, -1)
 	}
 
-	// apply default values
-	/* query = strings.Replace(query, "$PROJECT", ph.Project, -1)
-	query = strings.Replace(query, "$STAGE", ph.Stage, -1)
-	query = strings.Replace(query, "$SERVICE", ph.Service, -1)
-	query = strings.Replace(query, "$DEPLOYMENT", ph.Deployment, -1)*/
-
 	query = ReplaceKeptnPlaceholders(query, keptnEvent)
 
 	return query
 }
 
-//
-// replaces $ placeholders with actual values
+// ReplaceKeptnPlaceholders will replaces $ placeholders with actual values
 // $CONTEXT, $EVENT, $SOURCE
 // $PROJECT, $STAGE, $SERVICE, $DEPLOYMENT
 // $TESTSTRATEGY
 // $LABEL.XXXX  -> will replace that with a label called XXXX
 // $ENV.XXXX    -> will replace that with an env variable called XXXX
 // $SECRET.YYYY -> will replace that with the k8s secret called YYYY
-//
 func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapter) string {
 	result := input
-
-	// FIXING on 27.5.2020: URL Escaping of parameters as described in https://github.com/keptn-contrib/dynatrace-sli-service/issues/54
-
 	// first we do the regular keptn values
-	result = strings.Replace(result, "$CONTEXT", url.QueryEscape(keptnEvent.GetShKeptnContext()), -1)
-	result = strings.Replace(result, "$EVENT", url.QueryEscape(keptnEvent.GetEvent()), -1)
-	result = strings.Replace(result, "$SOURCE", url.QueryEscape(keptnEvent.GetSource()), -1)
-	result = strings.Replace(result, "$PROJECT", url.QueryEscape(keptnEvent.GetProject()), -1)
-	result = strings.Replace(result, "$STAGE", url.QueryEscape(keptnEvent.GetStage()), -1)
-	result = strings.Replace(result, "$SERVICE", url.QueryEscape(keptnEvent.GetService()), -1)
-	result = strings.Replace(result, "$DEPLOYMENT", url.QueryEscape(keptnEvent.GetDeployment()), -1)
-	result = strings.Replace(result, "$TESTSTRATEGY", url.QueryEscape(keptnEvent.GetTestStrategy()), -1)
+	result = strings.Replace(result, "$CONTEXT", keptnEvent.GetShKeptnContext(), -1)
+	result = strings.Replace(result, "$EVENT", keptnEvent.GetEvent(), -1)
+	result = strings.Replace(result, "$SOURCE", keptnEvent.GetSource(), -1)
+	result = strings.Replace(result, "$PROJECT", keptnEvent.GetProject(), -1)
+	result = strings.Replace(result, "$STAGE", keptnEvent.GetStage(), -1)
+	result = strings.Replace(result, "$SERVICE", keptnEvent.GetService(), -1)
+	result = strings.Replace(result, "$DEPLOYMENT", keptnEvent.GetDeployment(), -1)
+	result = strings.Replace(result, "$TESTSTRATEGY", keptnEvent.GetTestStrategy(), -1)
 
 	// now we do the labels
 	for key, value := range keptnEvent.GetLabels() {
-		result = strings.Replace(result, "$LABEL."+key, url.QueryEscape(value), -1)
+		result = strings.Replace(result, "$LABEL."+key, value, -1)
 	}
 
 	// now we do all environment variables
 	for _, env := range os.Environ() {
 		pair := strings.SplitN(env, "=", 2)
-		result = strings.Replace(result, "$ENV."+pair[0], url.QueryEscape(pair[1]), -1)
+		result = strings.Replace(result, "$ENV."+pair[0], pair[1], -1)
 	}
-
-	// TODO: iterate through k8s secrets!
 
 	return result
 }
 
-// ParseUnixTimestamp parses a time stamp into Unix foramt
+// ParseUnixTimestamp parses a timestamp into Unix format
 func ParseUnixTimestamp(timestamp string) (time.Time, error) {
 	parsedTime, err := time.Parse(time.RFC3339, timestamp)
 	if err == nil {
