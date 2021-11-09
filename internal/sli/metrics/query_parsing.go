@@ -30,9 +30,8 @@ func (p *QueryParameters) Add(key string, value string) error {
 	return nil
 }
 
-func (p *QueryParameters) Get(key string) (string, bool) {
-	value, exists := p.values[key]
-	return value, exists
+func (p *QueryParameters) Get(key string) string {
+	return p.values[key]
 }
 
 // ForEach will iterate the QueryParameters in insertion order

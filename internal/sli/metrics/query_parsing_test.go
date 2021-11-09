@@ -210,9 +210,7 @@ func assertEqual(t *testing.T, expected *QueryParameters, actual *QueryParameter
 
 func assertAllContained(t *testing.T, subset *QueryParameters, superset *QueryParameters) {
 	subset.ForEach(func(keyFromSubset string, valueFromSubset string) {
-		valueFromSuperSet, exists := superset.Get(keyFromSubset)
-		assert.True(t, exists, "key: %s does not exist in super set", keyFromSubset)
-		assert.Equal(t, valueFromSubset, valueFromSuperSet)
+		assert.Equal(t, valueFromSubset, superset.Get(keyFromSubset))
 	})
 }
 
