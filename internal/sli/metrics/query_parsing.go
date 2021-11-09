@@ -34,6 +34,16 @@ func (p *QueryParameters) Get(key string) string {
 	return p.values[key]
 }
 
+func (p *QueryParameters) get(key string) (string, bool) {
+	value, exists := p.values[key]
+	return value, exists
+}
+
+func (p *QueryParameters) GetMetricSelector() string {
+	value, _ := p.get(metricSelectorKey)
+	return value
+}
+
 // ForEach will iterate the QueryParameters in insertion order
 func (p *QueryParameters) ForEach(consumerFunc func(key string, value string)) {
 	for _, key := range p.getSortedKeys() {
