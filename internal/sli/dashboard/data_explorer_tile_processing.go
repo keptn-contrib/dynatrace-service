@@ -188,34 +188,34 @@ type filterAggregator struct {
 }
 
 // TODO: 2021-11-09: Investigate adding support for other filter types, e.g. DIMENSION
-func makeFilter(entityType string, nestedFilter *dynatrace.DataExplorerFilter) (*filterAggregator, error) {
-	switch nestedFilter.FilterType {
+func makeFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*filterAggregator, error) {
+	switch filter.FilterType {
 	case "ID":
 		return &filterAggregator{
-			entityFilter:                fmt.Sprintf("&entitySelector=entityId(%s)", nestedFilter.Criteria[0].Value),
+			entityFilter:                fmt.Sprintf("&entitySelector=entityId(%s)", filter.Criteria[0].Value),
 			entitySelectorSLIDefinition: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "NAME":
 		return &filterAggregator{
-			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),entityName(\"%s\")", entityType, nestedFilter.Criteria[0].Value),
+			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
 			entitySelectorSLIDefinition: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "TAG":
 		return &filterAggregator{
-			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),tag(\"%s\")", entityType, nestedFilter.Criteria[0].Value),
+			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
 			entitySelectorSLIDefinition: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "ENTITY_ATTRIBUTE":
 		return &filterAggregator{
-			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),%s(\"%s\")", entityType, nestedFilter.EntityAttribute, nestedFilter.Criteria[0].Value),
+			entityFilter:                fmt.Sprintf("&entitySelector=type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
 			entitySelectorSLIDefinition: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("unsupported filter type: %s", nestedFilter.FilterType)
+		return nil, fmt.Errorf("unsupported filter type: %s", filter.FilterType)
 	}
 }
 
