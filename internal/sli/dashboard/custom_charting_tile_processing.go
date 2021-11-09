@@ -222,7 +222,6 @@ func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace
 }
 
 func makeEntitySelectorForFilterMap(filterMap dynatrace.FilterMap) (string, error) {
-	// look for all unknown filters
 	unknownFilters := []string{}
 	for k := range filterMap {
 		switch k {
@@ -234,10 +233,9 @@ func makeEntitySelectorForFilterMap(filterMap dynatrace.FilterMap) (string, erro
 		}
 	}
 
-	// if one was found, return error with the first one alphabetically
 	if len(unknownFilters) > 0 {
 		sort.Strings(unknownFilters)
-		return "", fmt.Errorf("unknown filter: %s", unknownFilters[0])
+		return "", fmt.Errorf("unknown filters: %s", strings.Join(unknownFilters, ", "))
 	}
 
 	return makeSpecificEntitiesFilter(filterMap["SPECIFIC_ENTITIES"]) + makeAutoTagsFilter(filterMap["AUTO_TAGS"]), nil
