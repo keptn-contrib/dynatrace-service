@@ -154,7 +154,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 
 	metricAggregation, err := getSpaceAggregationTransformation(dataQuery.SpaceAggregation)
 	if err != nil {
-		metricAggregation = metricDefinition.DefaultAggregation.Type
+		return nil, err
 	}
 
 	// lets create the metricSelector and entitySelector
