@@ -117,13 +117,17 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	// Create the right entity Selectors for the queries execute
 	if dataQuery.FilterBy != nil && len(dataQuery.FilterBy.NestedFilters) > 0 {
 
-		// TODO: 2021-10-29: we currently only support a single filter - if we want to support more we need to build this in
+		// TODO: 2021-10-29: consider supporting more than a single filter with a single criterion
 		if len(dataQuery.FilterBy.NestedFilters) != 1 {
 			return nil, fmt.Errorf("only a single filter is supported")
 		}
 
 		if len(dataQuery.FilterBy.NestedFilters[0].Criteria) != 1 {
 			return nil, fmt.Errorf("only a single filter criterion is supported")
+		}
+
+		if len(dataQuery.FilterBy.NestedFilters[0].NestedFilters) > 0 {
+			return nil, fmt.Errorf("nested filters are not permitted")
 		}
 
 		entityType := strings.ToUpper(strings.TrimPrefix(dataQuery.FilterBy.NestedFilters[0].Filter, "dt.entity."))
