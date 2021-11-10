@@ -308,7 +308,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy(t *te
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy tests no space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
+// This is will result in a SLIResult with failure, as a space aggregation must be supplied.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/data_explorer/no_spaceag_no_filterby/"
