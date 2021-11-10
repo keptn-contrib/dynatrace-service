@@ -47,10 +47,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *testing.T) {
 	// error here: metric(s)Selector=
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExactError(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricsSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
-		400,
-		"./testdata/response_time_p95_400_constraints-violated.json")
 
 	// error here as well: metric(s)Selector=
 	kClient := &keptnClientMock{
@@ -63,8 +59,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "metricSelector to be specified")
-		assert.Contains(t, actual.Message, "400")
+		assert.Contains(t, actual.Message, "could not parse metrics query")
 	}
 
 	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)

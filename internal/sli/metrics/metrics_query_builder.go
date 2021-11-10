@@ -2,17 +2,13 @@ package metrics
 
 import (
 	"fmt"
+	"time"
+
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	log "github.com/sirupsen/logrus"
-	"net/url"
-	"strings"
-	"time"
 )
-
-// store url to the metrics api format migration document
-const metricsAPIOldFormatNewFormatDoc = "https://github.com/keptn-contrib/dynatrace-sli-service/blob/master/docs/CustomQueryFormatMigration.md"
 
 type QueryBuilder struct {
 	eventData     adapter.EventContentAdapter
@@ -36,66 +32,32 @@ func (b *QueryBuilder) Build(metricQuery string, startUnix time.Time, endUnix ti
 	// replace query params (e.g., $PROJECT, $STAGE, $SERVICE ...)
 	metricQuery = common.ReplaceQueryParameters(metricQuery, b.customFilters, b.eventData)
 
-	if strings.HasPrefix(metricQuery, "?metricSelector=") {
-		log.WithFields(
-			log.Fields{
-				"query":        metricQuery,
-				"helpDocument": metricsAPIOldFormatNewFormatDoc,
-			}).Debug("COMPATIBILITY WARNING: query string is not compatible. Auto-removing the ? in front.")
-		metricQuery = strings.Replace(metricQuery, "?metricSelector=", "metricSelector=", 1)
-	}
-
-	// split query string by first occurrence of "?"
-	querySplit := strings.Split(metricQuery, "?")
-	metricSelector := ""
-	metricQueryParams := ""
-
-	// support the old format with "metricSelector:someFilters()?scope=..." as well as the new format with
-	// "?metricSelector=metricSelector&entitySelector=...&scope=..."
-	if len(querySplit) == 1 {
-		// new format without "?" -> everything within the query string are query parameters
-		metricQueryParams = querySplit[0]
-	} else {
-		log.WithFields(
-			log.Fields{
-				"query":        metricQueryParams,
-				"helpDocument": metricsAPIOldFormatNewFormatDoc,
-			}).Debug("COMPATIBILITY WARNING: query uses the old format")
-		// old format with "?" - everything left of the ? is the identifier, everything right are query params
-		metricSelector = querySplit[0]
-
-		// build the new query
-		metricQueryParams = fmt.Sprintf("metricSelector=%s&%s", querySplit[0], querySplit[1])
-	}
-
-	q, err := url.ParseQuery(metricQueryParams)
+	// try to do the legacy query transformation
+	metricQuery, err := NewLegacyQueryTransformation(metricQuery).Transform()
 	if err != nil {
-		return "", "", fmt.Errorf("could not parse metrics URL: %s", err.Error())
+		return "", "", fmt.Errorf("could not parse old format metrics query: %v, %w", metricQuery, err)
 	}
 
-	q.Add("resolution", "Inf") // resolution=Inf means that we only get 1 datapoint (per service)
-	q.Add("from", common.TimestampToString(startUnix))
-	q.Add("to", common.TimestampToString(endUnix))
-
-	// check if q contains "scope"
-	scopeData := q.Get("scope")
-
-	// compatibility with old scope=... custom queries
-	if scopeData != "" {
-		log.WithField("helpDocument", metricsAPIOldFormatNewFormatDoc).Debug("COMPATIBILITY WARNING: querying the new metrics API requires use of entitySelector rather than scope")
-		// scope is no longer supported in the new API, it needs to be called "entitySelector" and contain type(SERVICE)
-		if !strings.Contains(scopeData, "type(SERVICE)") {
-			log.WithField("helpDocument", metricsAPIOldFormatNewFormatDoc).Debug("COMPATIBILITY WARNING: Automatically adding type(SERVICE) to entitySelector for compatibility with the new Metrics API")
-			scopeData = fmt.Sprintf("%s,type(SERVICE)", scopeData)
-		}
-		// add scope as entitySelector
-		q.Add("entitySelector", scopeData)
+	q, err := NewQueryParsing(metricQuery).Parse()
+	if err != nil {
+		return "", "", fmt.Errorf("could not parse metrics query: %v, %w", metricQuery, err)
 	}
 
-	// check metricSelector
-	if metricSelector == "" {
-		metricSelector = q.Get("metricSelector")
+	// resolution=Inf means that we only get 1 datapoint (per service)
+	err = q.Add(resolutionKey, "Inf")
+	if err != nil {
+		return "", "", err
 	}
 
-	return q.Encode(), metricSelector, nil
+	err = q.Add(fromKey, common.TimestampToString(startUnix))
+	if err != nil {
+		return "", "", err
+	}
+
+	err = q.Add(toKey, common.TimestampToString(endUnix))
+	if err != nil {
+		return "", "", err
+	}
+
+	return q.Encode(), q.GetMetricSelector(), nil
 }

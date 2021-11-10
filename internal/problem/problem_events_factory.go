@@ -2,11 +2,13 @@ package problem
 
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 )
+
+const problemURLLabel = "Problem URL"
 
 type ProblemClosedEventFactory struct {
 	event ProblemAdapterInterface
@@ -36,7 +38,7 @@ func (f *ProblemClosedEventFactory) CreateCloudEvent() (*cloudevents.Event, erro
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176
 	// add problem URL as label so it becomes clickable
 	problemData.Labels = make(map[string]string)
-	problemData.Labels[common.PROBLEMURL_LABEL] = f.event.GetProblemURL()
+	problemData.Labels[problemURLLabel] = f.event.GetProblemURL()
 
 	return adapter.NewCloudEventFactoryBase(f.event, keptn.ProblemEventType, problemData).CreateCloudEvent()
 
@@ -78,7 +80,7 @@ func (f *RemediationTriggeredEventFactory) CreateCloudEvent() (*cloudevents.Even
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176
 	// add problem URL as label so it becomes clickable
 	remediationEventData.Labels = make(map[string]string)
-	remediationEventData.Labels[common.PROBLEMURL_LABEL] = f.event.GetProblemURL()
+	remediationEventData.Labels[problemURLLabel] = f.event.GetProblemURL()
 
 	eventType := keptnv2.GetTriggeredEventType(f.event.GetStage() + "." + remediationTaskName)
 
