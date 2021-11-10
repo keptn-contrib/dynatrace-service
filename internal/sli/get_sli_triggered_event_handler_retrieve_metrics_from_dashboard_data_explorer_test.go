@@ -393,3 +393,18 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAt
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgTwoFilters tests average space aggregation and two filters.
+// This is will result in a SLIResult with failure, as only a single filter is supported.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgTwoFilters(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_two_filters/"
+
+	handler := test.NewFileBasedURLHandler(t)
+
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_two_filters.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("rt_jt"))
+}
