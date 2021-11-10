@@ -66,30 +66,26 @@ type TileFilter struct {
 
 // DataExplorerQuery Query Definition for DATA_EXPLORER dashboard tile
 type DataExplorerQuery struct {
-	ID               string   `json:"id"`
-	Metric           string   `json:"metric"`
-	SpaceAggregation string   `json:"spaceAggregation"`
-	TimeAggregation  string   `json:"timeAggregation"`
-	SplitBy          []string `json:"splitBy"`
-	FilterBy         *struct {
-		FilterOperator string                     `json:"filterOperator"`
-		NestedFilters  []NestedFilterDataExplorer `json:"nestedFilters"`
-		Criteria       []struct {
-			Value     string `json:"value"`
-			Evaluator string `json:"evaluator"`
-		} `json:"criteria"`
-	} `json:"filterBy,omitempty"`
+	ID               string              `json:"id"`
+	Metric           string              `json:"metric"`
+	SpaceAggregation string              `json:"spaceAggregation"`
+	TimeAggregation  string              `json:"timeAggregation"`
+	SplitBy          []string            `json:"splitBy"`
+	FilterBy         *DataExplorerFilter `json:"filterBy,omitempty"`
 }
 
-type NestedFilterDataExplorer struct {
-	Filter         string                     `json:"filter"`
-	FilterType     string                     `json:"filterType"`
-	FilterOperator string                     `json:"filterOperator"`
-	NestedFilters  []NestedFilterDataExplorer `json:"nestedFilters"`
-	Criteria       []struct {
-		Value     string `json:"value"`
-		Evaluator string `json:"evaluator"`
-	} `json:"criteria"`
+type DataExplorerFilter struct {
+	Filter          string                  `json:"filter"`
+	FilterType      string                  `json:"filterType"`
+	FilterOperator  string                  `json:"filterOperator"`
+	EntityAttribute string                  `json:"entityAttribute"`
+	NestedFilters   []DataExplorerFilter    `json:"nestedFilters"`
+	Criteria        []DataExplorerCriterion `json:"criteria"`
+}
+
+type DataExplorerCriterion struct {
+	Value     string `json:"value"`
+	Evaluator string `json:"evaluator"`
 }
 
 type FilterConfig struct {

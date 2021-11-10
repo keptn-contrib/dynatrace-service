@@ -2,14 +2,16 @@ package dashboard
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 type DataExplorerTileProcessing struct {
@@ -31,10 +33,6 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 }
 
 func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
-	// get the tile specific management zone filter that might be needed by different tile processors
-	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
-
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
 	if sloDefinition.SLI == "" {
@@ -42,26 +40,27 @@ func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilt
 		return nil
 	}
 
-	var tileResults []*TileResult
-
-	// now lets process that tile - lets run through each query
-	for _, dataQuery := range tile.Queries {
-		log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
-
-		// First lets generate the query and extract all important metric information we need for generating SLIs & SLOs
-		metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(dataQuery, tileManagementZoneFilter, p.startUnix, p.endUnix)
-
-		// if there was no error we generate the SLO & SLO definition
-		if err != nil {
-			log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
-			continue
-		}
-
-		results := NewMetricsQueryProcessing(p.client).Process(len(dataQuery.SplitBy), sloDefinition, metricQuery)
-		tileResults = append(tileResults, results...)
+	if len(tile.Queries) != 1 {
+		return createFailureTileResult(sloDefinition.SLI, "", "Data Explorer tile must have exactly one query")
 	}
 
-	return tileResults
+	// get the tile specific management zone filter that might be needed by different tile processors
+	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
+	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
+
+	return p.processQuery(sloDefinition, tile.Queries[0], tileManagementZoneFilter)
+}
+
+func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter) []*TileResult {
+	log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
+
+	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(dataQuery, tileManagementZoneFilter)
+	if err != nil {
+		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
+		return createFailureTileResult(sloDefinition.SLI, "", "Data Explorer tile could not be converted to a metric query: "+err.Error())
+	}
+
+	return NewMetricsQueryProcessing(p.client).Process(len(dataQuery.SplitBy), sloDefinition, metricQuery)
 }
 
 // Looks at the DataExplorerQuery configuration of a data explorer chart and generates the Metrics Query.
@@ -73,29 +72,23 @@ func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilt
 //   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(dataQuery dynatrace.DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter, startUnix time.Time, endUnix time.Time) (*queryComponents, error) {
+func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(dataQuery dynatrace.DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter) (*queryComponents, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(dataQuery.Metric)
 	if err != nil {
-		log.WithError(err).WithField("metric", dataQuery.Metric).Debug("Error retrieving metric description")
 		return nil, err
 	}
 
 	// building the merge aggregator string, e.g: merge("dt.entity.disk"):merge("dt.entity.host") - or merge("dt.entity.service")
 	// TODO: 2021-09-20: Check for redundant code after update to use dimension keys rather than indexes
 	metricDimensionCount := len(metricDefinition.DimensionDefinitions)
-	metricAggregation := metricDefinition.DefaultAggregation.Type
-	mergeAggregator := ""
-	filterAggregator := ""
-	filterSLIDefinitionAggregator := ""
-	entitySelectorSLIDefinition := ""
-	entityFilter := ""
 
 	// we need to merge all those dimensions based on the metric definition that are not included in the "splitBy"
 	// so - we iterate through the dimensions based on the metric definition from the back to front - and then merge those not included in splitBy
+	mergeAggregator := ""
 	for metricDimIx := metricDimensionCount - 1; metricDimIx >= 0; metricDimIx-- {
 		log.WithField("metricDimIx", metricDimIx).Debug("Processing Dimension Ix")
 
@@ -119,52 +112,137 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 		}
 	}
 
+	processedFilter := &processedFilterComponents{}
+
 	// Create the right entity Selectors for the queries execute
-	// TODO: we currently only support a single filter - if we want to support more we need to build this in
 	if dataQuery.FilterBy != nil && len(dataQuery.FilterBy.NestedFilters) > 0 {
 
-		if len(dataQuery.FilterBy.NestedFilters[0].Criteria) == 1 {
-			if strings.HasPrefix(dataQuery.FilterBy.NestedFilters[0].Filter, "dt.entity.") {
-				entitySelectorSLIDefinition = ",entityId(FILTERDIMENSIONVALUE)"
-				entityFilter = fmt.Sprintf("&entitySelector=entityId(%s)", dataQuery.FilterBy.NestedFilters[0].Criteria[0].Value)
-			} else {
-				filterSLIDefinitionAggregator = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", dataQuery.FilterBy.NestedFilters[0].Filter)
-				filterAggregator = fmt.Sprintf(":filter(%s(%s,%s))", dataQuery.FilterBy.NestedFilters[0].Criteria[0].Evaluator, dataQuery.FilterBy.NestedFilters[0].Filter, dataQuery.FilterBy.NestedFilters[0].Criteria[0].Value)
-			}
-		} else {
-			log.Debug("Code only supports a single filter for data explorer")
+		// TODO: 2021-10-29: consider supporting more than a single filter with a single criterion
+		if len(dataQuery.FilterBy.NestedFilters) != 1 {
+			return nil, fmt.Errorf("only a single filter is supported")
+		}
+
+		if len(dataQuery.FilterBy.NestedFilters[0].Criteria) != 1 {
+			return nil, fmt.Errorf("only a single filter criterion is supported")
+		}
+
+		if len(dataQuery.FilterBy.NestedFilters[0].NestedFilters) > 0 {
+			return nil, fmt.Errorf("nested filters are not permitted")
+		}
+
+		entityType := strings.ToUpper(strings.TrimPrefix(dataQuery.FilterBy.NestedFilters[0].Filter, "dt.entity."))
+		if len(metricDefinition.EntityType) > 0 {
+			entityType = metricDefinition.EntityType[0]
+		}
+
+		processedFilter, err = processFilter(entityType, &dataQuery.FilterBy.NestedFilters[0])
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	// TODO: we currently only support one split dimension
-	// but - if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
-	if dataQuery.SplitBy != nil {
-		if len(dataQuery.SplitBy) == 1 {
-			filterSLIDefinitionAggregator = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", filterSLIDefinitionAggregator, dataQuery.SplitBy[0])
-		} else {
-			log.Debug("Code only supports a single splitby dimension for data explorer")
-		}
+	// optionally split by a single dimentision
+	// TODO: 2021-10-29: consider adding support for more than one split dimension
+	if len(dataQuery.SplitBy) > 1 {
+		return nil, fmt.Errorf("only a single splitBy dimension is supported")
+	}
+
+	// if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
+	if len(dataQuery.SplitBy) == 1 {
+		processedFilter.metricSelectorTargetSnippet = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", processedFilter.metricSelectorTargetSnippet, dataQuery.SplitBy[0])
+	}
+
+	metricAggregation, err := getSpaceAggregationTransformation(dataQuery.SpaceAggregation)
+	if err != nil {
+		return nil, err
 	}
 
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s%s",
-		dataQuery.Metric, mergeAggregator, filterAggregator, strings.ToLower(metricAggregation),
-		entityFilter, tileManagementZoneFilter.ForEntitySelector())
+		dataQuery.Metric, mergeAggregator, processedFilter.metricSelectorFilter, strings.ToLower(metricAggregation),
+		processedFilter.entitySelectorFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
-	fullMetricQuery, metricID, err := metrics.NewQueryBuilder(p.eventData, p.customFilters).Build(metricQuery, startUnix, endUnix)
+	fullMetricQuery, metricID, err := metrics.NewQueryBuilder(p.eventData, p.customFilters).Build(metricQuery, p.startUnix, p.endUnix)
 	if err != nil {
 		return nil, err
 	}
 
 	return &queryComponents{
-		metricID:                      metricID,
-		metricUnit:                    metricDefinition.Unit,
-		metricQuery:                   metricQuery,
-		fullMetricQueryString:         fullMetricQuery,
-		entitySelectorSLIDefinition:   entitySelectorSLIDefinition,
-		filterSLIDefinitionAggregator: filterSLIDefinitionAggregator,
+		metricID:                    metricID,
+		metricUnit:                  metricDefinition.Unit,
+		metricQuery:                 metricQuery,
+		fullMetricQueryString:       fullMetricQuery,
+		entitySelectorTargetSnippet: processedFilter.entitySelectorTargetSnippet,
+		metricSelectorTargetSnippet: processedFilter.metricSelectorTargetSnippet,
 	}, nil
+
+}
+
+type processedFilterComponents struct {
+	metricSelectorFilter        string
+	metricSelectorTargetSnippet string
+	entitySelectorFilter        string
+	entitySelectorTargetSnippet string
+}
+
+// TODO: 2021-11-09: Investigate adding support for other filter types, e.g. DIMENSION
+func processFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*processedFilterComponents, error) {
+	switch filter.FilterType {
+	case "ID":
+		return &processedFilterComponents{
+			entitySelectorFilter:        fmt.Sprintf("&entitySelector=entityId(%s)", filter.Criteria[0].Value),
+			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+		}, nil
+
+	case "NAME":
+		return &processedFilterComponents{
+			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
+			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+		}, nil
+
+	case "TAG":
+		return &processedFilterComponents{
+			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
+			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+		}, nil
+
+	case "ENTITY_ATTRIBUTE":
+		return &processedFilterComponents{
+			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
+			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported filter type: %s", filter.FilterType)
+	}
+}
+
+func getSpaceAggregationTransformation(spaceAggregation string) (string, error) {
+	switch spaceAggregation {
+	case "AVG":
+		return "avg", nil
+	case "SUM":
+		return "sum", nil
+	case "MIN":
+		return "min", nil
+	case "MAX":
+		return "max", nil
+	case "COUNT":
+		return "count", nil
+	case "MEDIAN":
+		return "median", nil
+	case "PERCENTILE_10":
+		return "percentile(10)", nil
+	case "PERCENTILE_75":
+		return "percentile(75)", nil
+	case "PERCENTILE_90":
+		return "percentile(90)", nil
+	case "VALUE":
+		return "value", nil
+	default:
+		return "", fmt.Errorf("unknown space aggregation: %s", spaceAggregation)
+	}
 
 }

@@ -1,0 +1,22 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(10):names",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            1000.0048892760917
+          ]
+        }
+      ]
+    }
+  ]
+}

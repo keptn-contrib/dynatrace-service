@@ -1,0 +1,48 @@
+{
+    "metricId": "builtin:service.errors.total.count",
+    "displayName": "Number of any errors",
+    "description": "",
+    "unit": "Count",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1635492737240,
+    "entityType": [
+        "SERVICE"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "value"
+    ],
+    "transformations": [
+        "filter",
+        "fold",
+        "limit",
+        "merge",
+        "names",
+        "parents",
+        "timeshift",
+        "rate",
+        "sort",
+        "last",
+        "splitBy",
+        "lastReal"
+    ],
+    "defaultAggregation": {
+        "type": "value"
+    },
+    "dimensionDefinitions": [
+        {
+            "key": "dt.entity.service",
+            "name": "Service",
+            "displayName": "Service",
+            "index": 0,
+            "type": "ENTITY"
+        }
+    ],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true
+}
