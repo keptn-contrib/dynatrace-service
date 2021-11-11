@@ -126,17 +126,17 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_splitby_service_filterby_autotag.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3Aavg%3Anames&resolution=Inf&to=1631865600000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_JourneyService", 20.256493055555555),
 		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_EasytravelService", 132.27823461853978),
+		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_JourneyService", 20.256493055555555),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_JourneyService", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-F2455557EF67362B\")")
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_EasytravelService", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-B67B3EC4C95E0FA7\")")
+		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_EasytravelService", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-B67B3EC4C95E0FA7\")")
+		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_JourneyService", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-F2455557EF67362B\")")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
