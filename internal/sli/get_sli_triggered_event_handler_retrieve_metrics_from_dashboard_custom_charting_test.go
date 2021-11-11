@@ -88,7 +88,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *t
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_no_splitby_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -96,7 +96,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *t
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "service_response_time", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE)")
+		assertSLIDefinitionIsPresent(t, actual, "service_response_time", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names&entitySelector=type(SERVICE)")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
