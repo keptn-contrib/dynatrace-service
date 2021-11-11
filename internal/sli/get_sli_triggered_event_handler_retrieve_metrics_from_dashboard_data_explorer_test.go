@@ -35,11 +35,10 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName(t *
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_FilterByDimension tests filtering by dimension.
-// The test was designed to produce a SLIResult with success but currently doesnt because filtering by dimension is not implemented.
+// TestRetrieveMetricsFromDashboardDataExplorerTile_FilterByDimension tests filtering by dimension and splitting by dimension.
+// TODO: 2021-11-11: Investigate and fix this test
 func TestRetrieveMetricsFromDashboardDataExplorerTile_FilterByDimension(t *testing.T) {
 
-	// TODO: 2021-11-08: Investigate if DIMENSION can still occur here and update test
 	t.Skip("Skipping test, as DIMENSION filter type needs to be investigated")
 
 	const testDataFolder = "./testdata/dashboards/data_explorer/filterby_dimension/"
@@ -392,6 +391,31 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAt
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimension tests average space aggregation and filterby dimension.
+// This is will result in a SLIResult with success, as this is supported.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimension(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_dimension/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_dimension.json")
+	handler.AddExact(dynatrace.MetricsPath+"/calc:service.dbcalls", testDataFolder+"metrics_calc_service_dbcalls.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?from=1636502400000&metricSelector=calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Reads+in+JourneyCollection%22%29%29%3Amerge%28%22Statement%22%29%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1636588800000",
+		testDataFolder+"metrics_query_calc_service_dbcalls_avg.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("svc_db_calls", 0.0106545355915858),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "svc_db_calls", "MV2;MicroSecond;metricSelector=calc:service.dbcalls:filter(EQ(\"Statement\",\"Reads in JourneyCollection\")):merge(\"Statement\"):merge(\"dt.entity.service\"):avg:names")
+	}
+
+	getSLIEventData := createTestGetSLIEventDataWithStartAndEnd("2021-11-10T00:00:00Z", "2021-11-11T00:00:00Z")
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, getSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgTwoFilters tests average space aggregation and two filters.
