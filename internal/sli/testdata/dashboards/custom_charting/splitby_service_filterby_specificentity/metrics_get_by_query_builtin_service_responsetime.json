@@ -4,7 +4,7 @@
     "resolution": "Inf",
     "result": [
         {
-            "metricId": "builtin:service.response.time:avg:names",
+            "metricId": "builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names",
             "data": [
                 {
                     "dimensions": [
