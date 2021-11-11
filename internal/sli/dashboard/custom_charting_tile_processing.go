@@ -1,9 +1,9 @@
 package dashboard
 
 import (
+	"errors"
 	"fmt"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -95,56 +95,8 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 		return nil, err
 	}
 
-	// building the merge aggregator string, e.g: merge("dt.entity.disk"):merge("dt.entity.host") - or merge("dt.entity.service")
-	// TODO: 2021-09-20: Check for redundant code after update to use dimension keys rather than indexes
-	metricDimensionCount := len(metricDefinition.DimensionDefinitions)
-	metricAggregation := metricDefinition.DefaultAggregation.Type
-	mergeAggregator := ""
-	filterAggregator := ""
-	metricSelectorTargetSnippet := ""
-	entitySelectorTargetSnippet := ""
-
-	// now we need to merge all the dimensions that are not part of the series.dimensions, e.g: if the metric has two dimensions but only one dimension is used in the chart we need to merge the others
-	// as multiple-merges are possible but as they are executed in sequence we have to use the right index
-	for metricDimIx := metricDimensionCount - 1; metricDimIx >= 0; metricDimIx-- {
-		doMergeDimension := true
-		metricDimIxAsString := strconv.Itoa(metricDimIx)
-		// lets check if this dimension is in the chart
-		for _, seriesDim := range series.Dimensions {
-			log.WithFields(
-				log.Fields{
-					"seriesDim.id": seriesDim.ID,
-					"metricDimIx":  metricDimIxAsString,
-				}).Debug("check")
-			if strings.Compare(seriesDim.ID, metricDimIxAsString) == 0 {
-				// this is a dimension we want to keep and not merge
-				log.WithField("dimension", metricDefinition.DimensionDefinitions[metricDimIx].Name).Debug("not merging dimension")
-				doMergeDimension = false
-
-				// lets check if we need to apply a dimension filter
-				// TODO: support multiple filters - right now we only support 1
-				if len(seriesDim.Values) > 0 {
-					filterAggregator = fmt.Sprintf(":filter(eq(%s,%s))", seriesDim.Name, seriesDim.Values[0])
-				} else {
-					// we need this for the generation of the SLI for each individual dimension value
-					// if the dimension is a dt.entity we have to add an addiotnal entityId to the entitySelector - otherwise we add a filter for the dimension
-					if strings.HasPrefix(seriesDim.Name, "dt.entity.") {
-						entitySelectorTargetSnippet = fmt.Sprintf(",entityId(\"FILTERDIMENSIONVALUE\")")
-					} else {
-						metricSelectorTargetSnippet = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", seriesDim.Name)
-					}
-				}
-			}
-		}
-
-		if doMergeDimension {
-			// this is a dimension we want to merge as it is not split by in the chart
-			log.WithField("dimension", metricDefinition.DimensionDefinitions[metricDimIx].Name).Debug("merging dimension")
-			mergeAggregator = mergeAggregator + fmt.Sprintf(":merge(\"%s\")", metricDefinition.DimensionDefinitions[metricDimIx].Key)
-		}
-	}
-
 	// handle aggregation. If "NONE" is specified we go to the defaultAggregration
+	metricAggregation := metricDefinition.DefaultAggregation.Type
 	if series.Aggregation != "NONE" {
 		metricAggregation = series.Aggregation
 	}
@@ -179,10 +131,40 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 		entityType = metricDefinition.EntityType[0]
 	}
 
+	// build split by
+	splitBy := ""
+	filterAggregator := ""
+	metricSelectorTargetSnippet := ""
+	entitySelectorTargetSnippet := ""
+	if len(series.Dimensions) > 1 {
+		return nil, errors.New("only a single dimension is supported")
+	} else if len(series.Dimensions) == 1 {
+		seriesDim := series.Dimensions[0]
+		splitBy = fmt.Sprintf(":splitBy(\"%s\")", seriesDim.Name)
+
+		// lets check if we need to apply a dimension filter
+		// TODO: support multiple filters - right now we only support 1
+		if len(seriesDim.Values) > 1 {
+			return nil, errors.New("only a single dimension filter is supported")
+		} else if len(seriesDim.Values) == 1 {
+			filterAggregator = fmt.Sprintf(":filter(eq(%s,%s))", seriesDim.Name, seriesDim.Values[0])
+		} else {
+			// we need this for the generation of the SLI for each individual dimension value
+			// if the dimension is a dt.entity we have to add an additional entityId to the entitySelector - otherwise we add a filter for the dimension
+			if strings.HasPrefix(seriesDim.Name, "dt.entity.") {
+				entitySelectorTargetSnippet = fmt.Sprintf(",entityId(\"FILTERDIMENSIONVALUE\")")
+			} else {
+				metricSelectorTargetSnippet = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", seriesDim.Name)
+			}
+		}
+	} else {
+		splitBy = ":splitBy()"
+	}
+
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names&entitySelector=type(%s)%s%s",
-		series.Metric, mergeAggregator, filterAggregator, strings.ToLower(metricAggregation),
+		series.Metric, splitBy, filterAggregator, strings.ToLower(metricAggregation),
 		entityType, entityTileFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additional filters!
