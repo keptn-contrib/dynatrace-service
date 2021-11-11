@@ -160,7 +160,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s%s",
-		dataQuery.Metric, mergeAggregator, processedFilter.metricSelectorFilter, strings.ToLower(metricAggregation),
+		dataQuery.Metric, processedFilter.metricSelectorFilter, mergeAggregator, strings.ToLower(metricAggregation),
 		processedFilter.entitySelectorFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
