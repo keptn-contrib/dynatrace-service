@@ -1,0 +1,28 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "warnings": [
+    "For the dimension 'Statement' the number of dimension values was reduced to its TopX of 10"
+  ],
+  "result": [
+    {
+      "metricId": "calc:service.dbcalls:filter(eq(Statement,\"Reads in JourneyCollection\")):merge(Statement):merge(\"dt.entity.service\"):avg:names",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1636588800000
+          ],
+          "values": [
+            10.6545355915858
+          ]
+        }
+      ],
+      "warnings": [
+        "For the dimension 'Statement' the number of dimension values was reduced to its TopX of 10"
+      ]
+    }
+  ]
+}

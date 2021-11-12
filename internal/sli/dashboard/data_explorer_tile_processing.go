@@ -160,7 +160,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s%s",
-		dataQuery.Metric, mergeAggregator, processedFilter.metricSelectorFilter, strings.ToLower(metricAggregation),
+		dataQuery.Metric, processedFilter.metricSelectorFilter, mergeAggregator, strings.ToLower(metricAggregation),
 		processedFilter.entitySelectorFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
@@ -187,7 +187,6 @@ type processedFilterComponents struct {
 	entitySelectorTargetSnippet string
 }
 
-// TODO: 2021-11-09: Investigate adding support for other filter types, e.g. DIMENSION
 func processFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*processedFilterComponents, error) {
 	switch filter.FilterType {
 	case "ID":
@@ -212,6 +211,12 @@ func processFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*pr
 		return &processedFilterComponents{
 			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
 			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+		}, nil
+
+	case "DIMENSION":
+		return &processedFilterComponents{
+			metricSelectorFilter:        fmt.Sprintf(":filter(%s(\"%s\",\"%s\"))", filter.Criteria[0].Evaluator, filter.Filter, filter.Criteria[0].Value),
+			metricSelectorTargetSnippet: fmt.Sprintf(":filter(eq(\"%s\",\"FILTERDIMENSIONVALUE\"))", filter.Filter),
 		}, nil
 
 	default:
