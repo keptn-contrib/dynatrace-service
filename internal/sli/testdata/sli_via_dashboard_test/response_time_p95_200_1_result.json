@@ -3,7 +3,7 @@
   "nextPageKey": null,
   "result": [
     {
-      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95.000000):names",
+      "metricId": "builtin:service.response.time:splitBy():percentile(95.000000):names",
       "data": [
         {
           "dimensions": [],
