@@ -164,7 +164,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names&entitySelector=type(%s)%s%s",
-		series.Metric, splitBy, filterAggregator, strings.ToLower(metricAggregation),
+		series.Metric, filterAggregator, splitBy, strings.ToLower(metricAggregation),
 		entityType, entityTileFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additional filters!
