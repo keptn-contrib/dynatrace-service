@@ -4,11 +4,17 @@
   "resolution": "Inf",
   "result": [
     {
-      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):avg:names",
+      "metricId": "builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names",
       "data": [
         {
-          "dimensions": [],
-          "dimensionMap": {},
+          "dimensions": [
+            "JourneyService",
+            "SERVICE-F2455557EF67362B"
+          ],
+          "dimensionMap": {
+            "dt.entity.service.name": "JourneyService",
+            "dt.entity.service": "SERVICE-F2455557EF67362B"
+          },
           "timestamps": [
             1609545600000
           ],
