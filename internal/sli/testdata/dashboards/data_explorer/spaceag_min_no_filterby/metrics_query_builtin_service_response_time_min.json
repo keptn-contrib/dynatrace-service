@@ -4,7 +4,7 @@
   "resolution": "Inf",
   "result": [
     {
-      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):min:names",
+      "metricId": "builtin:service.response.time:splitBy():min:names",
       "data": [
         {
           "dimensions": [],
