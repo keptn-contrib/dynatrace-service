@@ -76,8 +76,22 @@ If you are planning to upgrade to *dynatrace-service* version `0.18.0` from a pr
 
 ## Overview
 - [Installation](./documentation/installation.md)
+  - [Installation](./documentation/installation/installation.md)
+  - [Up- or Downgrading](./documentation/installation/up-or-downgrading.md)
+  - [Uninstall](./documentation/installation/uninstall.md)
+
 - [Configuration](./documentation/configuration.md)
+  - [Sending Events to Dynatrace Monitored Entities](./documentation/configuration/sending-events-to-dynatrace-monitored-entities.md)
+  - [Synchronizing Service Entities detected by Dynatrace](./documentation/configuration/synchronizing-service-entities-detected-by-dynatrace.md)
+  - [Sending Dynatrace Problems to Keptn for Auto-Remediation](./documentation/configuration/sending-dynatrace-problems-to-keptn-for-auto-remediation.md)
+
 - [SLI and SLO configuration](./documentation/sli-configuration.md)
+  - [Configurations of Dashboard SLI/SLO queries through `dynatrace.conf.yaml`](./documentation/sli-configuration/configuration-of-dashboard-sli-slo-queries.md)
+  - [SLI Configuration](./documentation/sli-configuration/sli-configuration.md)
+  - [SLIs & SLOs for Problem Remediation](./documentation/sli-configuration/slis-and-slos-for-problem-remediation.md)
+  - [SLIs & SLOs via Dynatrace Dashboard](./documentation/sli-configuration/slis-and-slos-via-dynatrace-dashboard.md)
+  - [Known Limitations](./documentation/sli-configuration/known-limitations.md)
+
 - [Development](./documentation/development.md)
 
 
