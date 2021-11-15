@@ -37,9 +37,9 @@ There are two ways of creating a secret
 
 Create a secret (named `dynatrace` by default) containing the credentials for the Dynatrace Tenant (`DT_API_TOKEN` and `DT_TENANT`).
 
-    ```console
-   keptn create secret dynatrace --from-literal="DT_TENANT=$DT_TENANT" --from-literal="DT_API_TOKEN=$DT_API_TOKEN"
-    ```
+  ```console
+  keptn create secret dynatrace --from-literal="DT_TENANT=$DT_TENANT" --from-literal="DT_API_TOKEN=$DT_API_TOKEN"
+  ```
 
 #### Create a secret with Keptn Bridge
 
