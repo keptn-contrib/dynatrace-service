@@ -64,7 +64,7 @@ indicators:
 
 So, if you are sending an event to Keptn and passing in a label with the name `dttag` and a value e.g. `evaluateforsli` then it will match a Dynatrace service that has this tag on it:
 
-![](./images/dynatrace_tag_evaluateforsli.png)
+![Service with tag](images/dynatrace_tag_evaluateforsli.png "Service with tag")
 
 You can also have SLIs that span multiple layers of your stack, e.g. services, process groups and host metrics. Here is an example that queries one metric from a service, one from a process group and one from a host. The tag names come from labels that are sent to Keptn:
 
@@ -85,7 +85,7 @@ Here are a couple of additional query options that have been added to the Dynatr
 
 With Dynatrace Version 207, Dynatrace introduced native support for SLO monitoring. The *dynatrace-service* is able to query these SLO definitions by referencing them by SLO-ID. Here is such an SLO as seen in a dashboard:
 
-![](./images/slo_tile_dynatrace.png)
+![SLO on a dashboard](images/slo_tile_dynatrace.png "SLO on a dashboard")
 
 And here is the corresponding SLI query which is specified as `SLO;<SLOID>`:
 

@@ -20,7 +20,7 @@ To function correctly, the *dynatrace-service* requires access to a Dynatrace te
     - Write configuration
     - Capture request data   
   
-  ![](./images/dt_api_token.png)
+  ![Dynatrace API token permissions](images/dt_api_token.png "Dynatrace API token permissions")
 
 * If running on a Unix/Linux based system, you can use environment variables to simplify the process of creating the credentials secret. Alternatively, It is also fine to just replace the variables with values in the `keptn` command in the following section.
 

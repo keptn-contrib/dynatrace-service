@@ -24,17 +24,17 @@ keptn create project dynatrace --shipyard=shipyard.yaml
 
 After the project has been created, you can import Service Entities detected by Dynatrace by applying the tags `keptn_managed` and `keptn_service: <service_name>`:
 
-![](./images/service_tags.png)
+![Keptn tags applied to a service](images/service_tags.png "Keptn tags applied to a service")
 
 To set the `keptn_managed` tag, you can use the Dynatrace UI: First, in the **Transactions and services** menu, open the Service Entity you would like to tag, and add the `keptn_managed` tag as shown in the screenshot below:
 
-![](./images/keptn_managed_tag.png)
+![Adding a keptn_managed tag](images/keptn_managed_tag.png "Adding a keptn_managed tag")
  
 The `keptn_service` tag can be set in two ways: 
 
 1. Using an automated tagging rule, which can be set up in the menu **Settings > Tags > Automatically applied tags**. Within this section, add a new rule with the settings shown below:
 
-    ![](./images/keptn_service_tag.png)
+    ![Adding an automated tagging rule](images/keptn_service_tag.png "Adding an automated tagging rule")
 
 1. Sending a POST API call to the `v2/tags` endpoint ([as described here](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/custom-tags/post-tags/)):
     ```console
@@ -43,7 +43,7 @@ The `keptn_service` tag can be set in two ways:
 
 The *dynatrace-service* will then periodically check for services containing those tags and create correlating services within the `dynatrace` project in Keptn. After the service synchronization, you should be able to see the newly created services within the Bridge:
 
-![](./images/keptn_services_imported.png)
+![Services in Keptn Bridge](images/keptn_services_imported.png "Services in Keptn Bridge")
 
 Note that if you would like to remove one of the imported services from Keptn, you will need to use the Keptn CLI to delete the service after removing the `keptn_managed` and `keptn_service` tags:
 

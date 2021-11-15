@@ -21,7 +21,7 @@ attachRules:
 
 If your services are deployed with Keptn's *helm-service*, chances are that your services are automatically tagged like this. Here is a screenshot of how these tags show up in Dynatrace for a service deployed with Keptn:
 
-![](./images/keptn_tags_in_dynatrace.png)
+![Keptn tags in Dynatrace](images/keptn_tags_in_dynatrace.png "Keptn tags in Dynatrace")
 
 If your services are however not tagged with these but other tags or if you want the *dynatrace-service* to send the events not to a service but rather an application, process group or host then you can overwrite the default behavior by providing a `dynatrace.conf.yaml` file. This file can either be located on project, stage or service level. This file allows you to define your own attachRules and also allows you to leverage placeholders such as `$SERVICE`, `$STAGE`, `$PROJECT`, `$LABEL.YOURLABEL` etc. 
 
@@ -84,7 +84,7 @@ Here is a sample Deployment Finished Event:
 
 It will result in the following events in Dynatrace:
 
-![](./images/deployevent.png)
+![Example deployment event in Dynatrace](images/deployevent.png "Example deployment event in Dynatrace")
 
 
 ## Sending Events to different Dynatrace Environments per Project, Stage or Service

@@ -78,4 +78,4 @@ When the *dynatrace-service* receives this `sh.keptn.events.problem` it will par
 
 Here is a screenshot of a workflow triggered by a Dynatrace problem and how it then executes in Keptn:
 
-![](./images/remediation_workflow.png)
+![Workflow triggered by a Dynatrace problem](images/remediation_workflow.png "Workflow triggered by a Dynatrace problem")

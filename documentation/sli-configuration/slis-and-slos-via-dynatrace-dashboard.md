@@ -20,7 +20,7 @@ For more details refer to the section above where we explained `dynatrace.conf.y
 
 Here is a sample dashboard for our simplenode sample application:
 
-![](./images/samplenode_slislo_dashboard.png)
+![An example dashboard](images/samplenode_slislo_dashboard.png "An example dashboard")
 
 Here is how the individual pieces matter:
 
@@ -88,7 +88,7 @@ Here a couple of examples from tiles and how they translate into `sli.yaml` and 
 
 *1: Service Response Time (p95)*
 
-![](./images/tileexample_1.png) 
+![Example tile: response time (p95) ](images/tileexample_1.png "Example tile: response time (p95)") 
 
 * Results in an `sli.yaml` like this:
 
@@ -111,7 +111,7 @@ Here a couple of examples from tiles and how they translate into `sli.yaml` and 
 
 *2: Test Step Response Time*
 
-![](./images/tileexample_2.png) 
+![Example tile: test step response time](images/tileexample_2.png "Example tile: test step response time") 
 
 * Result in an SLI definition like this
 
@@ -150,7 +150,7 @@ Here a couple of examples from tiles and how they translate into `sli.yaml` and 
 
 SLOs in Dynatrace are a new feature to monitor SLOs in production and report on status and error budget. As explained above the *dynatrace-service* already provides support for querying the SLO and returning the `evaluatedPercentage` field. All you need to do is add the SLO tile on your dashboard and it will be included. The *dynatrace-service* will not only return the value but also use the warning and pass criteria defined in the SLO definition for the `slo.yaml` for Keptn:
 
-![](./images/slo_tile_dynatrace.png)
+![Example tile: SLO](images/slo_tile_dynatrace.png "Example tile: SLO")
 
 ### Support for Problem Tiles
 
@@ -182,7 +182,7 @@ There are just some things to know for the different USQL result types:
 
 Here is an example with two USQL Tiles showing a single value of a query:
 
-![](./images/tileexample_usql.png)
+![Example tiles: USQL queries](images/tileexample_usql.png "Example tiles: USQL queries")
 
 This will translate into two SLIs called `camp_adoption` and `camp_conv`. The SLO definition is the same as explained above with regular time series. 
 
