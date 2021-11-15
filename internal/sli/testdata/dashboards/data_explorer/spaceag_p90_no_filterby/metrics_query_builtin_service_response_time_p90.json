@@ -4,7 +4,7 @@
   "resolution": "Inf",
   "result": [
     {
-      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(90):names",
+      "metricId": "builtin:service.response.time:splitBy():percentile(90):names",
       "data": [
         {
           "dimensions": [],

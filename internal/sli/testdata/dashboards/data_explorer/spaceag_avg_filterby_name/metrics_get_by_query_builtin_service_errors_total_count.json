@@ -1,9 +1,10 @@
 {
     "totalCount": 1,
     "nextPageKey": null,
+    "resolution": "Inf",
     "result": [
         {
-            "metricId": "builtin:service.errors.total.count:merge(\"dt.entity.service\"):avg:names",
+            "metricId": "builtin:service.errors.total.count:splitBy():avg:names",
             "data": [
                 {
                     "dimensions": [],

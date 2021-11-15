@@ -82,36 +82,6 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 		return nil, err
 	}
 
-	// building the merge aggregator string, e.g: merge("dt.entity.disk"):merge("dt.entity.host") - or merge("dt.entity.service")
-	// TODO: 2021-09-20: Check for redundant code after update to use dimension keys rather than indexes
-	metricDimensionCount := len(metricDefinition.DimensionDefinitions)
-
-	// we need to merge all those dimensions based on the metric definition that are not included in the "splitBy"
-	// so - we iterate through the dimensions based on the metric definition from the back to front - and then merge those not included in splitBy
-	mergeAggregator := ""
-	for metricDimIx := metricDimensionCount - 1; metricDimIx >= 0; metricDimIx-- {
-		log.WithField("metricDimIx", metricDimIx).Debug("Processing Dimension Ix")
-
-		doMergeDimension := true
-		for _, splitDimension := range dataQuery.SplitBy {
-			log.WithFields(
-				log.Fields{
-					"dimension1": splitDimension,
-					"dimension2": metricDefinition.DimensionDefinitions[metricDimIx].Key,
-				}).Debug("Comparing Dimensions %")
-
-			if strings.Compare(splitDimension, metricDefinition.DimensionDefinitions[metricDimIx].Key) == 0 {
-				doMergeDimension = false
-			}
-		}
-
-		if doMergeDimension {
-			// this is a dimension we want to merge as it is not split by in the chart
-			log.WithField("dimension", metricDefinition.DimensionDefinitions[metricDimIx].Key).Debug("merging dimension")
-			mergeAggregator = mergeAggregator + fmt.Sprintf(":merge(\"%s\")", metricDefinition.DimensionDefinitions[metricDimIx].Key)
-		}
-	}
-
 	processedFilter := &processedFilterComponents{}
 
 	// Create the right entity Selectors for the queries execute
@@ -141,15 +111,17 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 		}
 	}
 
-	// optionally split by a single dimentision
+	// optionally split by a single dimension
 	// TODO: 2021-10-29: consider adding support for more than one split dimension
+	var splitBy string
 	if len(dataQuery.SplitBy) > 1 {
 		return nil, fmt.Errorf("only a single splitBy dimension is supported")
-	}
-
-	// if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
-	if len(dataQuery.SplitBy) == 1 {
+	} else if len(dataQuery.SplitBy) == 1 {
+		splitBy = fmt.Sprintf(":splitBy(\"%s\")", dataQuery.SplitBy[0])
+		// if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
 		processedFilter.metricSelectorTargetSnippet = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", processedFilter.metricSelectorTargetSnippet, dataQuery.SplitBy[0])
+	} else {
+		splitBy = ":splitBy()"
 	}
 
 	metricAggregation, err := getSpaceAggregationTransformation(dataQuery.SpaceAggregation)
@@ -160,7 +132,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s%s",
-		dataQuery.Metric, processedFilter.metricSelectorFilter, mergeAggregator, strings.ToLower(metricAggregation),
+		dataQuery.Metric, processedFilter.metricSelectorFilter, splitBy, strings.ToLower(metricAggregation),
 		processedFilter.entitySelectorFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!

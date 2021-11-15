@@ -4,7 +4,7 @@
   "resolution": "Inf",
   "result": [
     {
-      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):median:names",
+      "metricId": "builtin:service.response.time:splitBy():median:names",
       "data": [
         {
           "dimensions": [],

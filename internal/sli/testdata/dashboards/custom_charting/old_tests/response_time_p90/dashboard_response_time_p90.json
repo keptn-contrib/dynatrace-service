@@ -1,0 +1,63 @@
+{
+    "metadata": {
+        "configurationVersions": [
+            3
+        ],
+        "clusterVersion": "1.202.80.20200921-133947"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+        "name": "KQG;project=qualitygate;service=evalservice;stage=qualitystage",
+        "shared": false,
+        "owner": "",
+        "sharingDetails": {
+            "linkShared": true,
+            "published": false
+        },
+        "dashboardFilter": {
+            "timeframe": "",
+            "managementZone": null
+        }
+    },
+    "tiles": [
+        {
+            "name": "Custom chart",
+            "tileType": "CUSTOM_CHARTING",
+            "configured": true,
+            "bounds": {
+                "top": 418,
+                "left": 0,
+                "width": 380,
+                "height": 228
+            },
+            "tileFilter": {
+                "timeframe": null,
+                "managementZone": null
+            },
+            "filterConfig": {
+                "type": "MIXED",
+                "customName": "Response time (P90);sli=svc_rt_p90;pass=<+10%,<550",
+                "defaultName": "Custom chart",
+                "chartConfig": {
+                    "legendShown": true,
+                    "type": "SINGLE_VALUE",
+                    "series": [
+                        {
+                            "metric": "builtin:service.response.time",
+                            "aggregation": "PERCENTILE",
+                            "percentile": 90,
+                            "type": "LINE",
+                            "entityType": "SERVICE",
+                            "dimensions": [],
+                            "sortAscending": false,
+                            "sortColumn": true,
+                            "aggregationRate": "TOTAL"
+                        }
+                    ],
+                    "resultMetadata": {}
+                },
+                "filtersPerEntityType": {}
+            }
+        }
+    ]
+}

@@ -1,0 +1,53 @@
+{
+  "metricId": "builtin:service.nonDbChildCallCount",
+  "displayName": "Number of calls to other services",
+  "description": "",
+  "unit": "Count",
+  "dduBillable": false,
+  "created": 0,
+  "lastWritten": 1636726237560,
+  "entityType": [
+    "SERVICE"
+  ],
+  "aggregationTypes": [
+    "auto",
+    "value"
+  ],
+  "transformations": [
+    "filter",
+    "fold",
+    "limit",
+    "merge",
+    "names",
+    "parents",
+    "timeshift",
+    "rate",
+    "sort",
+    "last",
+    "splitBy",
+    "default",
+    "delta",
+    "lastReal",
+    "smooth",
+    "rollup",
+    "partition"
+  ],
+  "defaultAggregation": {
+    "type": "value"
+  },
+  "dimensionDefinitions": [
+    {
+      "key": "dt.entity.service",
+      "name": "Service",
+      "displayName": "Service",
+      "index": 0,
+      "type": "ENTITY"
+    }
+  ],
+  "tags": [],
+  "metricValueType": {
+    "type": "unknown"
+  },
+  "scalar": false,
+  "resolutionInfSupported": true
+}

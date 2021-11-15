@@ -1,0 +1,22 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "builtin:host.mem.usage:splitBy():avg:names",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1631865600000
+          ],
+          "values": [
+            45.443796324058994
+          ]
+        }
+      ]
+    }
+  ]
+}

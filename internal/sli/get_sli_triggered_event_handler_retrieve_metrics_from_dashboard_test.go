@@ -99,7 +99,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
 		"./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
 
 	for _, testConfig := range testConfigs {
@@ -134,7 +134,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli_parse_only_on_change.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
 		"./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
 
 	// sli and slo upload works
@@ -179,7 +179,7 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
 		"./testdata/sli_via_dashboard_test/response_time_p95_200_0_results.json")
 
 	// if an upload of sli would be triggered then this test would fail

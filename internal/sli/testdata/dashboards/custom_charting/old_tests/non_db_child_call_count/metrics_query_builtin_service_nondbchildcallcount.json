@@ -1,0 +1,22 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "builtin:service.nonDbChildCallCount:splitBy():value:names",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1631865600000
+          ],
+          "values": [
+            13657068
+          ]
+        }
+      ]
+    }
+  ]
+}

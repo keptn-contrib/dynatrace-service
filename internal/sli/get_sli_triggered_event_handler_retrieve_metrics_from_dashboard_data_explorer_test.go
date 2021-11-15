@@ -21,7 +21,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName(t *
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_name.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.errors.total.count", testDataFolder+"metrics_get_by_id_builtin_service_errors_total_count.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CentityName%28%22%2Fservices%2FConfigurationService%2F+on+haproxy%3A80+%28opaque%29%22%29&from=1609459200000&metricSelector=builtin%3Aservice.errors.total.count%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CentityName%28%22%2Fservices%2FConfigurationService%2F+on+haproxy%3A80+%28opaque%29%22%29&from=1609459200000&metricSelector=builtin%3Aservice.errors.total.count%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_get_by_query_builtin_service_errors_total_count.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -29,7 +29,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName(t *
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "any_errors", "metricSelector=builtin:service.errors.total.count:merge(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE),entityName(\"/services/ConfigurationService/ on haproxy:80 (opaque)\")")
+		assertSLIDefinitionIsPresent(t, actual, "any_errors", "metricSelector=builtin:service.errors.total.count:splitBy():avg:names&entitySelector=type(SERVICE),entityName(\"/services/ConfigurationService/ on haproxy:80 (opaque)\")")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -100,7 +100,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgNoFilterBy(t *te
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -108,7 +108,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgNoFilterBy(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_avg", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):avg:names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_avg", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -124,7 +124,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgCountNoFilterBy(t *
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_count_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Acount%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Acount%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_count.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -132,7 +132,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgCountNoFilterBy(t *
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_count", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):count:names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_count", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():count:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -148,7 +148,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMaxNoFilterBy(t *te
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_max_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Amax%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Amax%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_max.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -156,7 +156,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMaxNoFilterBy(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_max", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):max:names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_max", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():max:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -172,7 +172,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMedianNoFilterBy(t 
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_median_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Amedian%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Amedian%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_median.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -180,7 +180,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMedianNoFilterBy(t 
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_median", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):median:names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_median", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():median:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -196,7 +196,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMinNoFilterBy(t *te
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_min_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Amin%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Amin%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_min.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -204,7 +204,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMinNoFilterBy(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_min", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):min:names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_min", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():min:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -220,7 +220,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP10NoFilterBy(t *te
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p10_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2810%29%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2810%29%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_p10.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -228,7 +228,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP10NoFilterBy(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_p10", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(10):names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_p10", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():percentile(10):names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -244,7 +244,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP75NoFilterBy(t *te
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p75_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2875%29%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2875%29%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_p75.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -252,7 +252,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP75NoFilterBy(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_p75", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(75):names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_p75", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():percentile(75):names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -268,7 +268,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgp90NoFilterBy(t *te
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p90_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2890%29%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890%29%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -276,7 +276,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgp90NoFilterBy(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_p90", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(90):names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_p90", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():percentile(90):names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -292,7 +292,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy(t *te
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_sum_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Asum%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Asum%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_sum.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -300,7 +300,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_sum", "MV2;MicroSecond;metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):sum:names")
+		assertSLIDefinitionIsPresent(t, actual, "rt_sum", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():sum:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -331,7 +331,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById(t *te
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_id.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-B67B3EC4C95E0FA7%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-B67B3EC4C95E0FA7%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -339,7 +339,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_jid", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)")
+		assertSLIDefinitionIsPresent(t, actual, "rt_jid", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names&entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -355,7 +355,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag(t *t
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_tag.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -363,7 +363,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag(t *t
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_keptn_manager", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),tag(\"keptnmanager\")")
+		assertSLIDefinitionIsPresent(t, actual, "rt_keptn_manager", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE),tag(\"keptnmanager\")")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -379,7 +379,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAt
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_entityattribute.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
@@ -387,7 +387,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAt
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_svc_etw_db", "MV2;MicroSecond;metricSelector=builtin:service.response.time:avg:names&entitySelector=type(SERVICE),databaseName(\"EasyTravelWeatherCache\")")
+		assertSLIDefinitionIsPresent(t, actual, "rt_svc_etw_db", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE),databaseName(\"EasyTravelWeatherCache\")")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -403,19 +403,18 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimensio
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_dimension.json")
 	handler.AddExact(dynatrace.MetricsPath+"/calc:service.dbcalls", testDataFolder+"metrics_calc_service_dbcalls.json")
 	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?from=1636502400000&metricSelector=calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Reads+in+JourneyCollection%22%29%29%3Amerge%28%22Statement%22%29%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1636588800000",
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Reads+in+JourneyCollection%22%29%29%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_calc_service_dbcalls_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_db_calls", 0.0106545355915858),
+		createSuccessfulSLIResultAssertionsFunc("svc_db_calls", 0.005373592355230029),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "svc_db_calls", "MV2;MicroSecond;metricSelector=calc:service.dbcalls:filter(EQ(\"Statement\",\"Reads in JourneyCollection\")):merge(\"Statement\"):merge(\"dt.entity.service\"):avg:names")
+		assertSLIDefinitionIsPresent(t, actual, "svc_db_calls", "MV2;MicroSecond;metricSelector=calc:service.dbcalls:filter(EQ(\"Statement\",\"Reads in JourneyCollection\")):splitBy():avg:names")
 	}
 
-	getSLIEventData := createTestGetSLIEventDataWithStartAndEnd("2021-11-10T00:00:00Z", "2021-11-11T00:00:00Z")
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, getSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgTwoFilters tests average space aggregation and two filters.

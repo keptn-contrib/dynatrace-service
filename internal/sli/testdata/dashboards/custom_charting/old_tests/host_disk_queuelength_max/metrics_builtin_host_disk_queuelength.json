@@ -1,0 +1,57 @@
+{
+  "metricId": "builtin:host.disk.queueLength",
+  "displayName": "Disk average queue length",
+  "description": "Average queue length",
+  "unit": "Count",
+  "dduBillable": false,
+  "created": 0,
+  "lastWritten": 1636724141148,
+  "entityType": [
+    "HOST"
+  ],
+  "aggregationTypes": [
+    "auto",
+    "avg",
+    "max",
+    "min"
+  ],
+  "transformations": [
+    "filter",
+    "fold",
+    "limit",
+    "merge",
+    "names",
+    "parents",
+    "timeshift",
+    "sort",
+    "last",
+    "splitBy",
+    "lastReal"
+  ],
+  "defaultAggregation": {
+    "type": "avg"
+  },
+  "dimensionDefinitions": [
+    {
+      "key": "dt.entity.host",
+      "name": "Host",
+      "displayName": "Host",
+      "index": 0,
+      "type": "ENTITY"
+    },
+    {
+      "key": "dt.entity.disk",
+      "name": "Disk",
+      "displayName": "Disk",
+      "index": 1,
+      "type": "ENTITY"
+    }
+  ],
+  "tags": [],
+  "metricValueType": {
+    "type": "error"
+  },
+  "minimumValue": 0,
+  "scalar": false,
+  "resolutionInfSupported": true
+}
