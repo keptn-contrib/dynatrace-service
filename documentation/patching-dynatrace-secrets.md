@@ -14,7 +14,7 @@ This would have resulted in a secret looking similar to this:
 ![Dynatrace secret by kubectl](images/secrets/secret-by-kubectl.png "Dynatrace secret by kubectl")
 
 From **dynatrace-service** version `0.18.0` onwards its **ServiceAccount** will no longer have the rights to read all secrets that are available, but only those that are bound to a specific read-only **Role**. 
-This is automatically done if you create your secret with **Keptn Secret Service** (from version `0.10.0` onwards) via the **Uniform** UI. Please see [installation details](installation.md#create-a-secret-with-keptn-bridge) for further information on how to do this.
+This is automatically done if you create your secret with **Keptn Secret Service** (from version `0.10.0` onwards) via the **Uniform** UI. Please see [installation details](installation/installation.md#create-a-secret-with-keptn-bridge) for further information on how to do this.
 
 A secret created by **Keptn Secret Service** will look like this (please note the labels `managed-by` and `scope`):
 
@@ -54,5 +54,5 @@ If you wish to "migrate" your secrets manually then you can do so as well from *
   kubectl delete secret <your-secret-name> -n keptn 
   ```
   Repeat this step for all your existing secrets.
-- Recreate all your secrets using **Keptn Bridge**. Please see [installation details](installation.md#create-a-secret-with-keptn-bridge) for further information on how to do this.
+- Recreate all your secrets using **Keptn Bridge**. Please see [installation details](installation/installation.md#create-a-secret-with-keptn-bridge) for further information on how to do this.
 
