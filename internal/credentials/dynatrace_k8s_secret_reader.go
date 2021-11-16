@@ -31,12 +31,12 @@ func NewDefaultDynatraceK8sSecretReader() (*DynatraceK8sSecretReader, error) {
 func (cr *DynatraceK8sSecretReader) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
 	tenant, err := cr.secretReader.ReadSecret(secretName, dynatraceTenantKey)
 	if err != nil {
-		return nil, fmt.Errorf("key %s was not found in secret \"%s\": %w", dynatraceTenantKey, secretName, err)
+		return nil, err
 	}
 
 	apiToken, err := cr.secretReader.ReadSecret(secretName, dynatraceAPITokenKey)
 	if err != nil {
-		return nil, fmt.Errorf("key %s was not found in secret \"%s\": %w", dynatraceAPITokenKey, secretName, err)
+		return nil, err
 	}
 
 	return NewDynatraceCredentials(tenant, apiToken)

@@ -70,7 +70,7 @@ func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(key 
 		return val, nil
 	}
 
-	return "", fmt.Errorf("key %s was not found in secret \"%s\" or environment variables: %w", key, dynatraceSecretName, err)
+	return "", fmt.Errorf("key \"%s\" was not found in secret \"%s\" or environment variables: %w", key, dynatraceSecretName, err)
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret

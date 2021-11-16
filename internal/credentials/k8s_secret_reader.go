@@ -2,7 +2,6 @@ package credentials
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -10,8 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
-
-var ErrKeyNotFound = errors.New("key not found")
 
 type K8sSecretReader struct {
 	K8sClient kubernetes.Interface
@@ -38,7 +35,7 @@ func (kcr *K8sSecretReader) ReadSecret(secretName string, secretKey string) (str
 
 	secretData, found := secret.Data[secretKey]
 	if !found {
-		return "", ErrKeyNotFound
+		return "", fmt.Errorf("key \"%s\" was not found in secret \"%s\"", secretKey, secretName)
 	}
 	return string(secretData), nil
 }
