@@ -29,28 +29,37 @@ func NewCredentialsProviderSLIServiceFallbackDecorator(cp DynatraceCredentialsPr
 }
 
 func (cp *DynatraceCredentialsProviderFallbackDecorator) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
-	secrets := []string{secretName}
-	secrets = append(secrets, cp.fallbackSecretNames...)
+	// if provided, try the provided secret name first, otherwise try the fallback secret names in order
+	secretNames := []string{}
+	if secretName != "" {
+		secretNames = append(secretNames, secretName)
+	}
+	secretNames = append(secretNames, cp.fallbackSecretNames...)
 
-	// let's see whether we are fine with the given secret name first, if not, we will try all our fallback secret names
-	for _, secret := range secrets {
-		if secret == "" {
-			continue
-		}
-
-		dynatraceCredentials, err := cp.credentialsProvider.GetDynatraceCredentials(secret)
-		if err == nil && dynatraceCredentials != nil {
+	var secretsErrorMessageBuilder strings.Builder
+	for i, sn := range secretNames {
+		dynatraceCredentials, err := cp.credentialsProvider.GetDynatraceCredentials(sn)
+		if err == nil {
 			log.WithFields(
 				log.Fields{
-					"secret": secret,
+					"secret": sn,
 					"tenant": dynatraceCredentials.GetTenant(),
 				}).Info("Found secret with credentials")
-			cp.secretName = secret
+			cp.secretName = sn
 			return dynatraceCredentials, nil
+		} else {
+			if i > 0 {
+				secretsErrorMessageBuilder.WriteString(", ")
+			}
+			secretsErrorMessageBuilder.WriteString(sn)
+			secretsErrorMessageBuilder.WriteString(" (")
+			secretsErrorMessageBuilder.WriteString(err.Error())
+			secretsErrorMessageBuilder.WriteString(")")
 		}
 	}
 
-	return nil, fmt.Errorf("could not find any Dynatrace specific secrets with the following names: %s", strings.Join(secrets, ","))
+	cp.secretName = ""
+	return nil, fmt.Errorf("could not read the following Dynatrace secrets: %s", secretsErrorMessageBuilder.String())
 }
 
 func (cp *DynatraceCredentialsProviderFallbackDecorator) GetSecretName() string {

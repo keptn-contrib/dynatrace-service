@@ -2,7 +2,6 @@ package credentials
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -10,8 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
-
-var ErrSecretNotFound = errors.New("secret not found")
 
 type K8sSecretReader struct {
 	K8sClient kubernetes.Interface
@@ -35,13 +32,16 @@ func (kcr *K8sSecretReader) ReadSecret(secretName string, secretKey string) (str
 	if err != nil {
 		return "", err
 	}
-	if string(secret.Data[secretKey]) == "" {
-		return "", ErrSecretNotFound
+
+	secretData, found := secret.Data[secretKey]
+	if !found {
+		return "", fmt.Errorf("key \"%s\" was not found in secret \"%s\"", secretKey, secretName)
 	}
-	return string(secret.Data[secretKey]), nil
+	return string(secretData), nil
 }
 
 func getPodNamespace() string {
+	// TODO: 2021-11-16: centralize access to environment variables, maybe use mock?
 	ns := os.Getenv("POD_NAMESPACE")
 	if ns == "" {
 		return "keptn"

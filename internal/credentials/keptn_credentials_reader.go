@@ -10,6 +10,10 @@ import (
 
 const dynatraceSecretName = "dynatrace"
 
+const keptnAPIURLKey = "KEPTN_API_URL"
+const keptnAPITokenKey = "KEPTN_API_TOKEN"
+const keptnBridgeURLKey = "KEPTN_BRIDGE_URL"
+
 //go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/keptn_credentials_provider_mock.go . KeptnCredentialsProvider
 type KeptnCredentialsProvider interface {
 	GetKeptnCredentials() (*KeptnCredentials, error)
@@ -37,36 +41,36 @@ func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
 }
 
 func (cr *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
-	apiURL, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPIURLName)
+	apiURL, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPIURLKey)
 	if err != nil {
 		return nil, err
 	}
 
-	apiToken, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPITokenName)
+	apiToken, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPITokenKey)
 	if err != nil {
 		return nil, err
 	}
 
-	bridgeURL, err := cr.secretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLName)
+	bridgeURL, err := cr.secretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLKey)
 	if err != nil {
-		bridgeURL, _ = cr.environmentVariableReader.Read(keptnBridgeURLName)
+		bridgeURL, _ = cr.environmentVariableReader.Read(keptnBridgeURLKey)
 	}
 
 	return NewKeptnCredentials(apiURL, apiToken, bridgeURL)
 }
 
-func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(secretName string) (string, error) {
-	val, err := cr.secretReader.ReadSecret(dynatraceSecretName, secretName)
+func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(key string) (string, error) {
+	val, err := cr.secretReader.ReadSecret(dynatraceSecretName, key)
 	if err == nil {
 		return val, nil
 	}
 
-	val, found := cr.environmentVariableReader.Read(secretName)
+	val, found := cr.environmentVariableReader.Read(key)
 	if found {
 		return val, nil
 	}
 
-	return "", fmt.Errorf("key %s was not found in secret \"%s\" or environment variables: %w", secretName, dynatraceSecretName, err)
+	return "", fmt.Errorf("key \"%s\" was not found in secret \"%s\" or environment variables: %w", key, dynatraceSecretName, err)
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret

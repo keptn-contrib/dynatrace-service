@@ -4,11 +4,8 @@ import (
 	"fmt"
 )
 
-const dynatraceTenantSecretName = "DT_TENANT"
-const dynatraceAPITokenSecretName = "DT_API_TOKEN"
-const keptnAPIURLName = "KEPTN_API_URL"
-const keptnAPITokenName = "KEPTN_API_TOKEN"
-const keptnBridgeURLName = "KEPTN_BRIDGE_URL"
+const dynatraceTenantKey = "DT_TENANT"
+const dynatraceAPITokenKey = "DT_API_TOKEN"
 
 //go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/dynatrace_credentials_provider_mock.go . DynatraceCredentialsProvider
 type DynatraceCredentialsProvider interface {
@@ -32,14 +29,14 @@ func NewDefaultDynatraceK8sSecretReader() (*DynatraceK8sSecretReader, error) {
 }
 
 func (cr *DynatraceK8sSecretReader) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
-	tenant, err := cr.secretReader.ReadSecret(secretName, dynatraceTenantSecretName)
+	tenant, err := cr.secretReader.ReadSecret(secretName, dynatraceTenantKey)
 	if err != nil {
-		return nil, fmt.Errorf("key %s was not found in secret \"%s\": %w", dynatraceTenantSecretName, secretName, err)
+		return nil, err
 	}
 
-	apiToken, err := cr.secretReader.ReadSecret(secretName, dynatraceAPITokenSecretName)
+	apiToken, err := cr.secretReader.ReadSecret(secretName, dynatraceAPITokenKey)
 	if err != nil {
-		return nil, fmt.Errorf("key %s was not found in secret \"%s\": %w", dynatraceAPITokenSecretName, secretName, err)
+		return nil, err
 	}
 
 	return NewDynatraceCredentials(tenant, apiToken)
