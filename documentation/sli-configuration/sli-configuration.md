@@ -62,7 +62,7 @@ indicators:
     throughput:  "metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=tag($LABEL.dttag),type(SERVICE)"
 ```
 
-So, if you are sending an event to Keptn and passing in a label with the name `dttag` and a value e.g. `evaluateforsli` then it will match a Dynatrace service that has this tag on it:
+So, if you are sending an event to Keptn and passing in a label with the name `dttag` and a value e.g. `evaluateforsli` then it will match an entity that has this tag on it:
 
 ![Service with tag](images/dynatrace_tag_evaluateforsli.png "Service with tag")
 
