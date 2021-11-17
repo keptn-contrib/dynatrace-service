@@ -144,16 +144,15 @@ func TestDynatraceK8CredentialsReader_GetDynatraceCredentials(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		// TODO: 2021-10-25: Improve tests to cover DynatraceCredentialsProviderFallbackDecorator
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
-			cm := NewDynatraceK8sSecretReader(secretReader)
-			decorator := NewDefaultCredentialsProviderFallbackDecorator(cm)
+			credentialsProvider := NewDynatraceK8sSecretReader(secretReader)
+			credentialsProviderWithDefault := NewDynatraceCredentialsProviderWithDefault(credentialsProvider)
 
-			got, err := decorator.GetDynatraceCredentials(tt.args.secretName)
+			got, err := credentialsProviderWithDefault.GetDynatraceCredentials(tt.args.secretName)
 
 			if tt.wantErr {
 				assert.Error(t, err)

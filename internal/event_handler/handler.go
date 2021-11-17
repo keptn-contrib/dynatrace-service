@@ -38,26 +38,18 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 		}
 	}
 
-	cm, err := credentials.NewDefaultDynatraceK8sSecretReader()
+	credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
 	if err != nil {
 		return nil, nil, "", err
 	}
 
-	// TODO 2021-09-01: remove temporary fallback behaviour later on
-	var fallbackDecorator *credentials.DynatraceCredentialsProviderFallbackDecorator
-	switch keptnEvent.(type) {
-	case *sli.GetSLITriggeredAdapter:
-		fallbackDecorator = credentials.NewCredentialsProviderSLIServiceFallbackDecorator(cm, keptnEvent.GetProject())
-	default:
-		fallbackDecorator = credentials.NewDefaultCredentialsProviderFallbackDecorator(cm)
-	}
-
-	creds, err := fallbackDecorator.GetDynatraceCredentials(dynatraceConfig.DtCreds)
+	var credentialsProviderWithDefault = credentials.NewDynatraceCredentialsProviderWithDefault(credentialsProvider)
+	creds, err := credentialsProviderWithDefault.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
 		return nil, nil, "", err
 	}
 
-	return dynatraceConfig, creds, fallbackDecorator.GetSecretName(), nil
+	return dynatraceConfig, creds, credentialsProviderWithDefault.GetSecretName(), nil
 }
 
 func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
