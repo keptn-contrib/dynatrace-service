@@ -46,7 +46,6 @@ imagePullSecrets: []                         # Secrets to use for container regi
 serviceAccount:
   create: true                               # Enables the service account creation
   annotations: {}                            # Annotations to add to the service account
-  name: ""                                   # The name of the service account to use.
 
 podAnnotations: {}                           # Annotations to add to the created pods
 

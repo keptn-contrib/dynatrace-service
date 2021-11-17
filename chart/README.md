@@ -41,7 +41,6 @@ The following table lists the configurable parameters of the *dynatrace-service*
 | `imagePullSecrets` | Secrets to use for container registry credentials | `[]` |
 | `serviceAccount.create` | Enables the service account creation | `true` |
 | `serviceAccount.annotations` | Annotations to add to the service account | `{}` |
-| `serviceAccount.name` | The name of the service account to use. | `""` |
 | `podAnnotations` | Annotations to add to the created pods | `{}` |
 | `podSecurityContext` | Set the pod security context (e.g. `fsgroups`) | `{}` |
 | `securityContext` | Set the security context (e.g. `runasuser`) | `{}` |
