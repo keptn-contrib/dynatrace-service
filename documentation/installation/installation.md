@@ -99,12 +99,6 @@ The Dynatrace integration into Keptn is handled by the *dynatrace-service*.
  
 * The `dynatrace-service` by default validates the SSL certificate of the Dynatrace API. If your Dynatrace API only has a self-signed certificate, you can disable the SSL certificate check by setting the environment variable `dynatraceService.config.httpSSLVerify` (default `true`) specified in the [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml) to `false`.
 
-* The `dynatrace-service` can be configured to use a proxy server via the `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables as described in [`httpproxy.FromEnvironment()`](https://golang.org/pkg/vendor/golang.org/x/net/http/httpproxy/#FromEnvironment). As the `dynatrace-service` connects to a `distributor` as well as to some Keptn services directly, a `NO_PROXY` entry including `"127.0.0.1,mongodb-datastore,configuration-service,shipyard-controller"` should be used to prevent these from being proxied. These environment variables can be configured using the `dynatraceService.config.httpProxy`, `dynatraceService.config.httpsProxy` and `dynatraceService.config.noProxy` variables defined in [values.yml](https://raw.githubusercontent.com/keptn-contrib/dynatrace-service/$VERSION/chart/values.yaml). For example:
-
-  ```console
-  helm upgrade --install dynatrace-service -n keptn https://github.com/keptn-contrib/dynatrace-service/releases/download/$VERSION/dynatrace-service.tgz --set dynatraceService.config.httpProxy=http://mylocalproxy:1234 --set dynatraceService.config.httpsProxy=https://mylocalproxy:1234
-  ```
-
 * When an event is sent out by Keptn, you see an event in Dynatrace for the correlating service:
 
   ![Dynatrace events](images/events.png?raw=true "Dynatrace Events")
@@ -120,6 +114,14 @@ keptn configure monitoring dynatrace --project=<PROJECT_NAME>
 **ATTENTION:** If you have different Dynatrace Tenants (or Managed Environments) and want to make sure a Keptn project is linked to the correct Dynatrace Tenant/Environment please have a look at the `dynatrace.conf.yaml` file option as explained below. It allows you to specify which Dynatrace Tenant/Environment to use on a project level. This requires that you first upload `dynatrace.conf.yaml` on project level before executing `keptn configure monitoring`.
 
 ## Additional Installation Options
+
+### Configuring the *dynatrace-service* to use a proxy
+
+In certain instances where the *dynatrace-service* is installed behind a firewall, it may need to use a proxy to access a Dynatrace tenant. This can be configured via the `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables as described in [`httpproxy.FromEnvironment()`](https://golang.org/pkg/vendor/golang.org/x/net/http/httpproxy/#FromEnvironment).
+
+For convience these may be set using the `dynatraceService.config.httpProxy`, `dynatraceService.config.httpsProxy` and `dynatraceService.config.noProxy` variables defined in the service chart's [values.yml](https://github.com/keptn-contrib/dynatrace-service/blob/master/chart/values.yaml) and applied during a `helm upgrade`
+
+Due to the large variety of configurations, the *dynatrace-service* no longer provides defaults for `NO_PROXY`. In general, entries should be added to prevent requests to other Keptn services as well as Kubernetes services operating within the cluster. For example, this may be done by setting `NO_PROXY` to `"127.0.0.1,mongodb-datastore,configuration-service,shipyard-controller,kubernetes.default.svc.cluster.local"`, however the exact values depend on the specific set up.
 
 ### Configuration of project- & Keptn-wide Dynatrace credentials
 

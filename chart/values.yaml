@@ -16,7 +16,7 @@ dynatraceService:
     httpSSLVerify: true                      # Verify HTTPS SSL certificates
     httpProxy: ""                            # Proxy for HTTP requests
     httpsProxy: ""                           # Proxy for HTTPS requests
-    noProxy: "127.0.0.1,mongodb-datastore,configuration-service,shipyard-controller"      # Proxy exceptions for HTTP and HTTPS requests
+    noProxy: ""                              # Proxy exceptions for HTTP and HTTPS requests
     logLevel: "info"                         # Minimum log level to log
     keptnApiUrl: ""                          # URL of keptn API
     keptnBridgeUrl: ""                       # URL of keptn bridge
