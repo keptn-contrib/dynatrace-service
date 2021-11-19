@@ -46,15 +46,15 @@ func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilt
 
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
+	managementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
-	return p.processQuery(sloDefinition, tile.Queries[0], tileManagementZoneFilter)
+	return p.processQuery(sloDefinition, tile.Queries[0], managementZoneFilter)
 }
 
-func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter) []*TileResult {
+func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []*TileResult {
 	log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
 
-	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(dataQuery, tileManagementZoneFilter)
+	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(dataQuery, managementZoneFilter)
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
 		return createFailureTileResult(sloDefinition.SLI, "", "Data Explorer tile could not be converted to a metric query: "+err.Error())
@@ -72,7 +72,7 @@ func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, d
 //   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(dataQuery dynatrace.DataExplorerQuery, tileManagementZoneFilter *ManagementZoneFilter) (*queryComponents, error) {
+func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) (*queryComponents, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
@@ -130,12 +130,12 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	}
 
 	// optionally add management zone filter to entity selector filter
-	managementZoneFilter := tileManagementZoneFilter.ForEntitySelector()
-	if managementZoneFilter != "" {
+	managementZoneFilterString := managementZoneFilter.ForEntitySelector()
+	if managementZoneFilterString != "" {
 		if processedFilter.entitySelectorFilter == "" {
 			processedFilter.entitySelectorFilter = fmt.Sprintf("&entitySelector=type(%s)", metricDefinition.EntityType[0])
 		}
-		processedFilter.entitySelectorFilter = processedFilter.entitySelectorFilter + managementZoneFilter
+		processedFilter.entitySelectorFilter = processedFilter.entitySelectorFilter + managementZoneFilterString
 	}
 
 	// lets create the metricSelector and entitySelector
