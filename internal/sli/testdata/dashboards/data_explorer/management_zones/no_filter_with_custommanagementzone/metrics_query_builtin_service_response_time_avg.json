@@ -1,0 +1,22 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "builtin:service.response.time:splitBy():avg:names",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            7045.031103506126
+          ]
+        }
+      ]
+    }
+  ]
+}
