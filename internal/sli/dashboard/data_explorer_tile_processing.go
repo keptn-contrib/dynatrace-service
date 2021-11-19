@@ -129,11 +129,20 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 		return nil, err
 	}
 
+	// optionally add management zone filter to entity selector filter
+	managementZoneFilter := tileManagementZoneFilter.ForEntitySelector()
+	if managementZoneFilter != "" {
+		if processedFilter.entitySelectorFilter == "" {
+			processedFilter.entitySelectorFilter = fmt.Sprintf("&entitySelector=type(%s)", metricDefinition.EntityType[0])
+		}
+		processedFilter.entitySelectorFilter = processedFilter.entitySelectorFilter + managementZoneFilter
+	}
+
 	// lets create the metricSelector and entitySelector
 	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
-	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s%s",
+	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s",
 		dataQuery.Metric, processedFilter.metricSelectorFilter, splitBy, strings.ToLower(metricAggregation),
-		processedFilter.entitySelectorFilter, tileManagementZoneFilter.ForEntitySelector())
+		processedFilter.entitySelectorFilter)
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
 	fullMetricQuery, metricID, err := metrics.NewQueryBuilder(p.eventData, p.customFilters).Build(metricQuery, p.startUnix, p.endUnix)
