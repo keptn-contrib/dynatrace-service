@@ -504,7 +504,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_WithCustomManagem
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCustomManagementZone tests applying service tag filter and no management zone.
+// TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCustomManagementZone tests applying service tag filter and custom management zone.
 // This is will result in a SLIResult with success, as this is supported.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCustomManagementZone(t *testing.T) {
 
