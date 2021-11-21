@@ -2,17 +2,18 @@ package config
 
 import (
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"os"
 	"strings"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
 //go:generate moq --skip-ensure -pkg adapter_mock -out ./mock/dynatrace_config_mock.go . DynatraceConfigGetterInterface
-type DynatraceConfigGetterInterface interface {
+type DynatraceConfigProvider interface {
 	GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfigFile, error)
 }
 
