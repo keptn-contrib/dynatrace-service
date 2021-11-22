@@ -28,84 +28,112 @@ func TestDynatraceK8CredentialsReader_GetDynatraceCredentials(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "with no secret, no config",
-			secret:  &v1.Secret{},
+			name:   "with no secret",
+			secret: &v1.Secret{},
+			args: args{
+				secretName: "dynatrace",
+			},
 			wantErr: true,
 		},
 		{
-			name: "with dynatrace secret, no config",
+			name: "with dynatrace secret",
 			secret: createTestSecret(
 				"dynatrace",
 				map[string]string{
 					"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
 					"DT_API_TOKEN": testDynatraceAPIToken,
 				}),
+			args: args{
+				secretName: "dynatrace",
+			},
 			want:    wantDynatraceCredentials,
 			wantErr: false,
 		},
 		{
-			name: "with dynatrace secret, no config - want HTTPS",
+			name: "with dynatrace secret - want HTTPS",
 			secret: createTestSecret(
 				"dynatrace",
 				map[string]string{
 					"DT_TENANT":    "mySampleEnv.live.dynatrace.com",
 					"DT_API_TOKEN": testDynatraceAPIToken,
 				}),
+			args: args{
+				secretName: "dynatrace",
+			},
 			want:    wantDynatraceCredentials,
 			wantErr: false,
 		},
 		{
-			name: "with dynatrace secret, no config - want HTTP",
+			name: "with dynatrace secret - want HTTP",
 			secret: createTestSecret(
 				"dynatrace",
 				map[string]string{
 					"DT_TENANT":    "http://mySampleEnv.live.dynatrace.com",
 					"DT_API_TOKEN": testDynatraceAPIToken,
 				}),
+			args: args{
+				secretName: "dynatrace",
+			},
 			want:    wantDynatraceHTTPCredentials,
 			wantErr: false,
 		},
 		{
-			name: "with dynatrace secret, no config - invalid URL",
+			name: "with dynatrace secret - invalid URL",
 			secret: createTestSecret(
 				"dynatrace",
 				map[string]string{
 					"DT_TENANT":    "//mySampleEnv.live.dynatrace.com",
 					"DT_API_TOKEN": testDynatraceAPIToken,
 				}),
+			args: args{
+				secretName: "dynatrace",
+			},
+
 			wantErr: true,
 		},
 		{
-			name: "with dynatrace secret, no config - invalid scheme",
+			name: "with dynatrace secret - invalid scheme",
 			secret: createTestSecret(
 				"dynatrace",
 				map[string]string{
 					"DT_TENANT":    "ftp://mySampleEnv.live.dynatrace.com",
 					"DT_API_TOKEN": testDynatraceAPIToken,
 				}),
+			args: args{
+				secretName: "dynatrace",
+			},
+
 			wantErr: true,
 		},
 		{
-			name: "with dynatrace secret, no config - invalid token",
+			name: "with dynatrace secret - invalid token",
 			secret: createTestSecret(
 				"dynatrace",
 				map[string]string{
 					"DT_TENANT":    "ftp://mySampleEnv.live.dynatrace.com",
 					"DT_API_TOKEN": "dcO.public.private",
 				}),
+			args: args{
+				secretName: "dynatrace",
+			},
+
 			wantErr: true,
 		},
 		{
-			name: "with dynatrace secret, no config - no token",
+			name: "with dynatrace secret - no token",
 			secret: createTestSecret(
 				"dynatrace",
 				map[string]string{
 					"DT_TENANT": "ftp://mySampleEnv.live.dynatrace.com",
 				}),
+			args: args{
+				secretName: "dynatrace",
+			},
+
 			wantErr: true,
 		},
 		{
-			name: "with dynatrace_other secret, with good config",
+			name: "with dynatrace_other secret, with other secret name",
 			secret: createTestSecret(
 				"dynatrace_other",
 				map[string]string{
@@ -119,7 +147,7 @@ func TestDynatraceK8CredentialsReader_GetDynatraceCredentials(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "with dynatrace_other secret, with bad config",
+			name: "with dynatrace_other secret, with invalid secret name",
 			secret: createTestSecret(
 				"dynatrace_other",
 				map[string]string{
@@ -132,16 +160,13 @@ func TestDynatraceK8CredentialsReader_GetDynatraceCredentials(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "with dynatrace_other secret, no config",
+			name: "with dynatrace secret, empty secret name",
 			secret: createTestSecret(
-				"dynatrace_other",
+				"dynatrace",
 				map[string]string{
 					"DT_TENANT":    "https://mySampleEnv.live.dynatrace.com",
 					"DT_API_TOKEN": testDynatraceAPIToken,
 				}),
-			args: args{
-				secretName: "",
-			},
 			wantErr: true,
 		},
 	}
@@ -150,9 +175,7 @@ func TestDynatraceK8CredentialsReader_GetDynatraceCredentials(t *testing.T) {
 
 			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 			credentialsProvider := NewDynatraceK8sSecretReader(secretReader)
-			credentialsProviderWithDefault := NewDynatraceCredentialsProviderWithDefault(credentialsProvider)
-
-			got, err := credentialsProviderWithDefault.GetDynatraceCredentials(tt.args.secretName)
+			got, err := credentialsProvider.GetDynatraceCredentials(tt.args.secretName)
 
 			if tt.wantErr {
 				assert.Error(t, err)

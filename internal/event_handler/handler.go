@@ -23,25 +23,23 @@ type DynatraceEventHandler interface {
 	HandleEvent() error
 }
 
-// Retrieves Dynatrace Credential information
-func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, configProvider config.DynatraceConfigProvider) (*config.DynatraceConfig, *credentials.DynatraceCredentials, string, error) {
+func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, configProvider config.DynatraceConfigProvider) (*config.DynatraceConfig, *credentials.DynatraceCredentials, error) {
 	dynatraceConfig, err := configProvider.GetDynatraceConfig(keptnEvent)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, nil, err
 	}
 
 	credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
 	if err != nil {
-		return nil, nil, "", err
+		return nil, nil, err
 	}
 
-	var credentialsProviderWithDefault = credentials.NewDynatraceCredentialsProviderWithDefault(credentialsProvider)
-	creds, err := credentialsProviderWithDefault.GetDynatraceCredentials(dynatraceConfig.DtCreds)
+	creds, err := credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
-		return nil, nil, "", err
+		return nil, nil, err
 	}
 
-	return dynatraceConfig, creds, credentialsProviderWithDefault.GetSecretName(), nil
+	return dynatraceConfig, creds, nil
 }
 
 func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
@@ -58,8 +56,8 @@ func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
 		return NoOpHandler{}
 	}
 
-	dtConfigGetter := config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
-	dynatraceConfig, dynatraceCredentials, secretName, err := getDynatraceCredentialsAndConfig(keptnEvent, dtConfigGetter)
+	dynatraceConfigGetter := config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
+	dynatraceConfig, dynatraceCredentials, err := getDynatraceCredentialsAndConfig(keptnEvent, dynatraceConfigGetter)
 	if err != nil {
 		log.WithError(err).Error("Could not get dynatrace credentials and config")
 		return NewErrorHandler(err, event)
@@ -86,7 +84,7 @@ func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
 	case *problem.ActionFinishedAdapter:
 		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules)
 	case *sli.GetSLITriggeredAdapter:
-		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), secretName, dynatraceConfig.Dashboard)
+		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard)
 	case *deployment.DeploymentFinishedAdapter:
 		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules)
 	case *deployment.TestTriggeredAdapter:

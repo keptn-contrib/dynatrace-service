@@ -35,12 +35,11 @@ func main() {
 func _main(args []string, envCfg envConfig) int {
 
 	if env.IsServiceSyncEnabled() {
-		cp, err := credentials.NewDefaultDynatraceK8sSecretReader()
+		credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
 		if err != nil {
 			log.WithError(err).Fatal("Failed to initialize CredentialsProvider")
 		}
-		onboard.ActivateServiceSynchronizer(
-			credentials.NewDynatraceCredentialsProviderWithDefault(cp))
+		onboard.ActivateServiceSynchronizer(credentialsProvider)
 	}
 
 	ctx := context.Background()
