@@ -9,3 +9,13 @@ type DynatraceConfig struct {
 	Dashboard   string                 `json:"dashboard,omitempty" yaml:"dashboard,omitempty"`
 	AttachRules *dynatrace.AttachRules `json:"attachRules,omitempty" yaml:"attachRules,omitempty"`
 }
+
+// NewDynatraceConfigWithDefaults returns a new DynatraceConfig with values set to defaults
+func NewDynatraceConfigWithDefaults() *DynatraceConfig {
+	return &DynatraceConfig{
+		SpecVersion: "0.1.0",
+		DtCreds:     "dynatrace",
+		Dashboard:   "",
+		AttachRules: nil,
+	}
+}

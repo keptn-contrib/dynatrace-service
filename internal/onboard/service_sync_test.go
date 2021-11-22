@@ -411,7 +411,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 		},
 		configProvider: &adapter_mock.DynatraceConfigProviderMock{
 			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter) (*config.DynatraceConfig, error) {
-				return &config.DynatraceConfig{}, nil
+				return config.NewDynatraceConfigWithDefaults(), nil
 			}},
 	}
 	s.synchronizeServices()

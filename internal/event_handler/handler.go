@@ -30,12 +30,7 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, co
 		log.WithError(err).Warn("Failed to load Dynatrace config - will use a default one!")
 
 		// TODO 2021-09-08: think about a better way of handling it on a use-case per use-case basis
-		dynatraceConfig = &config.DynatraceConfig{
-			SpecVersion: "0.1.0",
-			DtCreds:     "dynatrace",
-			Dashboard:   "",
-			AttachRules: nil,
-		}
+		dynatraceConfig = config.NewDynatraceConfigWithDefaults()
 	}
 
 	credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()

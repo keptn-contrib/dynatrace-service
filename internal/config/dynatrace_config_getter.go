@@ -91,7 +91,7 @@ func replaceKeptnPlaceholders(input string, event adapter.EventContentAdapter) s
 }
 
 func parseDynatraceConfigYAML(input string) (*DynatraceConfig, error) {
-	dynatraceConfig := &DynatraceConfig{}
+	dynatraceConfig := NewDynatraceConfigWithDefaults()
 	err := yaml.Unmarshal([]byte(input), dynatraceConfig)
 	if err != nil {
 		return nil, err

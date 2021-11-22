@@ -16,7 +16,7 @@ func Test_parseDynatraceConfigYAML(t *testing.T) {
 		{
 			name:       "empty string",
 			yamlString: "",
-			want:       &DynatraceConfig{},
+			want:       NewDynatraceConfigWithDefaults(),
 			wantErr:    false,
 		},
 		{
