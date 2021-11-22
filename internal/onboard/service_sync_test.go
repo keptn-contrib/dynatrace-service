@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/adapter/mock"
+	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/config/mock"
 	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/stretchr/testify/assert"
@@ -409,9 +409,9 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 				return mockCredentials, nil
 			},
 		},
-		configProvider: &adapter_mock.DynatraceConfigGetterInterfaceMock{
-			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter) (*config.DynatraceConfigFile, error) {
-				return &config.DynatraceConfigFile{}, nil
+		configProvider: &adapter_mock.DynatraceConfigProviderMock{
+			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter) (*config.DynatraceConfig, error) {
+				return &config.DynatraceConfig{}, nil
 			}},
 	}
 	s.synchronizeServices()

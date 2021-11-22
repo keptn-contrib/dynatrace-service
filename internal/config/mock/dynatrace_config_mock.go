@@ -9,24 +9,24 @@ import (
 	"sync"
 )
 
-// DynatraceConfigGetterInterfaceMock is a mock implementation of adapter.DynatraceConfigGetterInterface.
+// DynatraceConfigProviderMock is a mock implementation of config.DynatraceConfigProvider.
 //
-// 	func TestSomethingThatUsesDynatraceConfigGetterInterface(t *testing.T) {
+// 	func TestSomethingThatUsesDynatraceConfigProvider(t *testing.T) {
 //
-// 		// make and configure a mocked adapter.DynatraceConfigGetterInterface
-// 		mockedDynatraceConfigGetterInterface := &DynatraceConfigGetterInterfaceMock{
-// 			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter, logger keptn.LoggerInterface) (*config.DynatraceConfigFile, error) {
+// 		// make and configure a mocked config.DynatraceConfigProvider
+// 		mockedDynatraceConfigProvider := &DynatraceConfigProviderMock{
+// 			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter) (*config.DynatraceConfig, error) {
 // 				panic("mock out the GetDynatraceConfig method")
 // 			},
 // 		}
 //
-// 		// use mockedDynatraceConfigGetterInterface in code that requires adapter.DynatraceConfigGetterInterface
+// 		// use mockedDynatraceConfigProvider in code that requires config.DynatraceConfigProvider
 // 		// and then make assertions.
 //
 // 	}
-type DynatraceConfigGetterInterfaceMock struct {
+type DynatraceConfigProviderMock struct {
 	// GetDynatraceConfigFunc mocks the GetDynatraceConfig method.
-	GetDynatraceConfigFunc func(event adapter.EventContentAdapter) (*config.DynatraceConfigFile, error)
+	GetDynatraceConfigFunc func(event adapter.EventContentAdapter) (*config.DynatraceConfig, error)
 
 	// calls tracks calls to the methods.
 	calls struct {
@@ -40,9 +40,9 @@ type DynatraceConfigGetterInterfaceMock struct {
 }
 
 // GetDynatraceConfig calls GetDynatraceConfigFunc.
-func (mock *DynatraceConfigGetterInterfaceMock) GetDynatraceConfig(event adapter.EventContentAdapter) (*config.DynatraceConfigFile, error) {
+func (mock *DynatraceConfigProviderMock) GetDynatraceConfig(event adapter.EventContentAdapter) (*config.DynatraceConfig, error) {
 	if mock.GetDynatraceConfigFunc == nil {
-		panic("DynatraceConfigGetterInterfaceMock.GetDynatraceConfigFunc: method is nil but DynatraceConfigGetterInterface.GetDynatraceConfig was just called")
+		panic("DynatraceConfigProviderMock.GetDynatraceConfigFunc: method is nil but DynatraceConfigProvider.GetDynatraceConfig was just called")
 	}
 	callInfo := struct {
 		Event adapter.EventContentAdapter
@@ -57,8 +57,8 @@ func (mock *DynatraceConfigGetterInterfaceMock) GetDynatraceConfig(event adapter
 
 // GetDynatraceConfigCalls gets all the calls that were made to GetDynatraceConfig.
 // Check the length with:
-//     len(mockedDynatraceConfigGetterInterface.GetDynatraceConfigCalls())
-func (mock *DynatraceConfigGetterInterfaceMock) GetDynatraceConfigCalls() []struct {
+//     len(mockedDynatraceConfigProvider.GetDynatraceConfigCalls())
+func (mock *DynatraceConfigProviderMock) GetDynatraceConfigCalls() []struct {
 	Event adapter.EventContentAdapter
 } {
 	var calls []struct {

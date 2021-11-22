@@ -6,17 +6,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_parseDynatraceConfigFile(t *testing.T) {
+func Test_parseDynatraceConfigYAML(t *testing.T) {
 	tests := []struct {
 		name       string
 		yamlString string
-		want       *DynatraceConfigFile
+		want       *DynatraceConfig
 		wantErr    bool
 	}{
 		{
 			name:       "empty string",
 			yamlString: "",
-			want:       &DynatraceConfigFile{},
+			want:       &DynatraceConfig{},
 			wantErr:    false,
 		},
 		{
@@ -24,7 +24,7 @@ func Test_parseDynatraceConfigFile(t *testing.T) {
 			yamlString: `
 spec_version: '0.1.0'
 dtCreds: dyna`,
-			want: &DynatraceConfigFile{
+			want: &DynatraceConfig{
 				SpecVersion: "0.1.0",
 				DtCreds:     "dyna",
 			},
@@ -36,7 +36,7 @@ dtCreds: dyna`,
 spec_version: '0.1.0'
 dtCreds: dyna
 dashboard: dash`,
-			want: &DynatraceConfigFile{
+			want: &DynatraceConfig{
 				SpecVersion: "0.1.0",
 				DtCreds:     "dyna",
 				Dashboard:   "dash",
@@ -58,7 +58,7 @@ dashboard: ****`,
 spec_version: '0.1.0'
 dtCreds: dyna
 dashboard: '****'`,
-			want: &DynatraceConfigFile{
+			want: &DynatraceConfig{
 				SpecVersion: "0.1.0",
 				DtCreds:     "dyna",
 				Dashboard:   "****",
@@ -68,7 +68,7 @@ dashboard: '****'`,
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseDynatraceConfigFile([]byte(tt.yamlString))
+			got, err := parseDynatraceConfigYAML(tt.yamlString)
 
 			if tt.wantErr {
 				assert.Error(t, err)
