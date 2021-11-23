@@ -6,6 +6,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 )
@@ -407,6 +408,15 @@ func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler,
 	runTestAndAssertNoError(t, getSLIEventData, handler, kClient, rClient, testDashboardID)
 	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
 	uploadedSLIsAssertionsFunc(t, rClient.uploadedSLIs)
+}
+
+func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLIsAssertionsFunc func(t *testing.T, actual *dynatrace.SLI), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+	kClient := &keptnClientMock{}
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runTestAndAssertNoError(t, getSLIEventData, handler, kClient, rClient, testDashboardID)
+	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+	uploadedSLIsAssertionsFunc(t, rClient.uploadedSLIs)
+	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
 }
 
 func assertSLIDefinitionIsPresent(t *testing.T, slis *dynatrace.SLI, metric string, definition string) {
