@@ -55,11 +55,11 @@ func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFi
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	if tile.FilterConfig == nil {
-		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile is missing a filterConfig element")
+		return createFailedTileResultFromSLODefinition(sloDefinition, "", "Custom charting tile is missing a filterConfig element")
 	}
 
 	if len(tile.FilterConfig.ChartConfig.Series) != 1 {
-		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile must have exactly one series")
+		return createFailedTileResultFromSLODefinition(sloDefinition, "", "Custom charting tile must have exactly one series")
 	}
 
 	return p.processSeries(sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
@@ -71,7 +71,7 @@ func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO
 
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
-		return createFailureTileResult(sloDefinition.SLI, "", "Custom charting tile could not be converted to a metric query: "+err.Error())
+		return createFailedTileResultFromSLODefinition(sloDefinition, "", "Custom charting tile could not be converted to a metric query: "+err.Error())
 	}
 
 	return NewMetricsQueryProcessing(p.client).Process(len(series.Dimensions), sloDefinition, metricQuery)
