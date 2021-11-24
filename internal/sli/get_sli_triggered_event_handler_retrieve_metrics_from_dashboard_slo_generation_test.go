@@ -31,6 +31,10 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *t
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		if !assert.NotNil(t, actual) {
+			return
+		}
+
 		if !assert.EqualValues(t, 1, len(actual.Objectives)) {
 			return
 		}
@@ -63,6 +67,10 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		if !assert.NotNil(t, actual) {
+			return
+		}
+
 		if !assert.EqualValues(t, 1, len(actual.Objectives)) {
 			return
 		}
@@ -70,6 +78,45 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 		assert.EqualValues(t, &keptnapi.SLO{
 			SLI:    "response_time",
 			Pass:   []*keptnapi.SLOCriteria{{Criteria: []string{"<1200"}}},
+			Weight: 1,
+		}, actual.Objectives[0])
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile tests that an SLO objective is created for a data explorer tile which results in a metrics query that returns no data.
+func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/slo_generation/data_explorer_tile_no_data/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-C33B8A4C73748469%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		testDataFolder+"metrics_query_builtin_service_response_time.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createFailedSLIResultAssertionsFunc("srt_service"),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "srt_service", "metricSelector=builtin:service.response.time:splitBy():avg:names&entitySelector=entityId(SERVICE-C33B8A4C73748469)")
+	}
+
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		if !assert.NotNil(t, actual) {
+			return
+		}
+
+		if !assert.EqualValues(t, 1, len(actual.Objectives)) {
+			return
+		}
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:    "srt_service",
+			Pass:   []*keptnapi.SLOCriteria{{Criteria: []string{"<10"}}},
 			Weight: 1,
 		}, actual.Objectives[0])
 	}

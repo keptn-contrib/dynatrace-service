@@ -1,0 +1,11 @@
+{
+  "totalCount": 0,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "builtin:service.response.time:splitBy():avg:names",
+      "data": []
+    }
+  ]
+}
