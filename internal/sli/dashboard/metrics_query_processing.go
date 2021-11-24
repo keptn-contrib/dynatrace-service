@@ -68,8 +68,9 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 	dataResultCount := len(singleResult.Data)
 	if dataResultCount == 0 {
-		log.Debug("No data for metric")
+		return createFailedTileResultFromSLODefinition(sloDefinition, metricQueryComponents.metricQuery, "Metrics query result has no data")
 	}
+
 	for _, singleDataEntry := range singleResult.Data {
 		//
 		// we need to generate the indicator name based on the base name + all dimensions, e.g: teststep_MYTESTSTEP, teststep_MYOTHERTESTSTEP
