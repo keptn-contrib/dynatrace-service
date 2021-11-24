@@ -54,7 +54,6 @@ func getDynatraceCredentialsAndConfig(keptnEvent adapter.EventContentAdapter, dt
 
 func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
 	log.WithField("eventType", event.Type()).Debug("Received event")
-	dtConfigGetter := config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
 
 	keptnEvent, err := getEventAdapter(event)
 	if err != nil {
@@ -67,13 +66,14 @@ func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
 		return NoOpHandler{}
 	}
 
+	dtConfigGetter := config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
 	dynatraceConfig, dynatraceCredentials, secretName, err := getDynatraceCredentialsAndConfig(keptnEvent, dtConfigGetter)
 	if err != nil {
 		log.WithError(err).Error("Could not get dynatrace credentials and config")
 		return NewErrorHandler(err, event)
 	}
-
 	dtClient := dynatrace.NewClient(dynatraceCredentials)
+
 	kClient, err := keptn.NewDefaultClient(event)
 	if err != nil {
 		log.WithError(err).Error("Could not get create Keptn client")
