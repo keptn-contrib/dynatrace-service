@@ -32,7 +32,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 	// we could not query data - so - we return the error back as part of our SLIResults
 	if err != nil {
 		log.WithError(err).Debug("No result for query")
-		return createFailureTileResult(sloDefinition.SLI, metricQueryComponents.metricQuery, err.Error())
+		return createFailedTileResultFromSLODefinition(sloDefinition, metricQueryComponents.metricQuery, err.Error())
 	}
 
 	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
@@ -43,7 +43,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 			log.Fields{
 				"wantedMetricId": metricQueryComponents.metricID,
 			}).Error(errorMessage)
-		return createFailureTileResult(sloDefinition.SLI, metricQueryComponents.metricQuery, errorMessage)
+		return createFailedTileResultFromSLODefinition(sloDefinition, metricQueryComponents.metricQuery, errorMessage)
 	}
 
 	if len(queryResult.Result) > 1 {
@@ -52,7 +52,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 			log.Fields{
 				"wantedMetricId": metricQueryComponents.metricID,
 			}).Error(errorMessage)
-		return createFailureTileResult(sloDefinition.SLI, metricQueryComponents.metricQuery, errorMessage)
+		return createFailedTileResultFromSLODefinition(sloDefinition, metricQueryComponents.metricQuery, errorMessage)
 	}
 
 	var tileResults []*TileResult
@@ -159,17 +159,17 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 	return tileResults
 }
 
-func createFailureTileResult(sliName string, sliQuery string, message string) []*TileResult {
+func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, sliQuery string, message string) []*TileResult {
 	return []*TileResult{
 		{
 			sliResult: &keptnv2.SLIResult{
-				Metric:  sliName,
+				Metric:  sloDefinition.SLI,
 				Value:   0,
 				Success: false,
 				Message: message,
 			},
-			objective: nil,
-			sliName:   sliName,
+			objective: sloDefinition,
+			sliName:   sloDefinition.SLI,
 			sliQuery:  sliQuery,
 		},
 	}

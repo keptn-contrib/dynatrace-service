@@ -41,7 +41,7 @@ func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilt
 	}
 
 	if len(tile.Queries) != 1 {
-		return createFailureTileResult(sloDefinition.SLI, "", "Data Explorer tile must have exactly one query")
+		return createFailedTileResultFromSLODefinition(sloDefinition, "", "Data Explorer tile must have exactly one query")
 	}
 
 	// get the tile specific management zone filter that might be needed by different tile processors
@@ -57,7 +57,7 @@ func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, d
 	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(dataQuery, managementZoneFilter)
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
-		return createFailureTileResult(sloDefinition.SLI, "", "Data Explorer tile could not be converted to a metric query: "+err.Error())
+		return createFailedTileResultFromSLODefinition(sloDefinition, "", "Data Explorer tile could not be converted to a metric query: "+err.Error())
 	}
 
 	return NewMetricsQueryProcessing(p.client).Process(len(dataQuery.SplitBy), sloDefinition, metricQuery)
@@ -75,6 +75,10 @@ func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, d
 func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) (*queryComponents, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
+
+	if dataQuery.Metric == "" {
+		return nil, fmt.Errorf("Metric query generation requires that data explorer query has a metric")
+	}
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(dataQuery.Metric)
