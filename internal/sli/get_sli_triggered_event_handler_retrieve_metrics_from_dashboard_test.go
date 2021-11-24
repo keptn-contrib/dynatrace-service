@@ -182,12 +182,11 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
 		"./testdata/sli_via_dashboard_test/response_time_p95_200_0_results.json")
 
-	// if an upload of sli would be triggered then this test would fail
-	rClient := &uploadWillFailResourceClientMock{t: t}
+	rClient := &uploadErrorResourceClientMock{t: t}
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "any SLI results")
+		assert.Contains(t, actual.Message, "Metrics query result has no data")
 	}
 
 	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
