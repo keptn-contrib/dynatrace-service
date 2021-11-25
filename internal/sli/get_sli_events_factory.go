@@ -1,10 +1,11 @@
 package sli
 
 import (
+	"strings"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"strings"
 )
 
 type GetSliStartedEventFactory struct {
@@ -35,13 +36,24 @@ func (f *GetSliStartedEventFactory) CreateCloudEvent() (*cloudevents.Event, erro
 
 type GetSliFinishedEventFactory struct {
 	event           GetSLITriggeredAdapterInterface
+	status          keptnv2.StatusType
 	indicatorValues []*keptnv2.SLIResult
 	err             error
 }
 
-func NewGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) *GetSliFinishedEventFactory {
+func NewSucceededGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) *GetSliFinishedEventFactory {
 	return &GetSliFinishedEventFactory{
 		event:           event,
+		status:          keptnv2.StatusSucceeded,
+		indicatorValues: indicatorValues,
+		err:             err,
+	}
+}
+
+func NewErroredGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) *GetSliFinishedEventFactory {
+	return &GetSliFinishedEventFactory{
+		event:           event,
+		status:          keptnv2.StatusErrored,
 		indicatorValues: indicatorValues,
 		err:             err,
 	}
@@ -62,13 +74,17 @@ func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 		message = strings.Join(sliErrorMessages, "; ")
 	}
 
+	if f.status == keptnv2.StatusErrored {
+		result = keptnv2.ResultFailed
+	}
+
 	getSLIFinishedEvent := keptnv2.GetSLIFinishedEventData{
 		EventData: keptnv2.EventData{
 			Project: f.event.GetProject(),
 			Stage:   f.event.GetStage(),
 			Service: f.event.GetService(),
 			Labels:  f.event.GetLabels(),
-			Status:  keptnv2.StatusSucceeded,
+			Status:  f.status,
 			Result:  result,
 			Message: message,
 		},
@@ -81,6 +97,7 @@ func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 
 	return adapter.NewCloudEventFactory(f.event, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), getSLIFinishedEvent).CreateCloudEvent()
 }
+
 func getErrorMessagesFromSLIResults(indicatorValues []*keptnv2.SLIResult) []string {
 	var errorMessages []string
 	for _, indicator := range indicatorValues {

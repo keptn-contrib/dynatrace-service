@@ -383,11 +383,10 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
  * Sends the SLI Done Event. If err != nil it will send an error message
  */
 func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(indicatorValues []*keptnv2.SLIResult, err error) error {
-
 	// if an error was set - the indicators will be set to failed and error message is set to each
 	indicatorValues = resetIndicatorsInCaseOfError(err, eh.event, indicatorValues)
 
-	return eh.sendEvent(NewGetSLIFinishedEventFactory(eh.event, indicatorValues, err))
+	return eh.sendEvent(NewSucceededGetSLIFinishedEventFactory(eh.event, indicatorValues, err))
 }
 
 func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
