@@ -1,7 +1,6 @@
 package event_handler
 
 import (
-	"errors"
 	"fmt"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -69,7 +68,6 @@ func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
 
 	dtConfigGetter := config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
 	dynatraceConfig, dynatraceCredentials, secretName, err := getDynatraceCredentialsAndConfig(keptnEvent, dtConfigGetter)
-	err = errors.New("Fake error")
 	if err != nil {
 		log.WithError(err).Error("Could not get dynatrace credentials and config")
 		return NewErrorHandler(err, event)
