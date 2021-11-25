@@ -159,11 +159,11 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 
 func (eh *ConfigureMonitoringEventHandler) handleError(err error) error {
 	log.Error(err)
-	return eh.sendConfigureMonitoringFinishedEvent(NewFailureEventFactory(eh.event, err.Error()))
+	return eh.sendConfigureMonitoringFinishedEvent(NewErroredConfigureMonitoringFinishedEventFactory(eh.event, err))
 }
 
 func (eh *ConfigureMonitoringEventHandler) handleSuccess(message string) error {
-	return eh.sendConfigureMonitoringFinishedEvent(NewSuccessEventFactory(eh.event, message))
+	return eh.sendConfigureMonitoringFinishedEvent(NewSucceededConfigureMonitoringFinishedEventFactory(eh.event, message))
 }
 
 func (eh *ConfigureMonitoringEventHandler) sendConfigureMonitoringFinishedEvent(factory adapter.CloudEventFactoryInterface) error {

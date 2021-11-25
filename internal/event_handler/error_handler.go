@@ -47,7 +47,7 @@ func (eh ErrorHandler) sendErroredConfigureMonitoringFinishedEvent(keptnClient *
 	if err != nil {
 		return eh.sendErrorEvent(keptnClient)
 	}
-	return keptnClient.SendCloudEvent(monitoring.NewFailureEventFactory(adapter, eh.err.Error()))
+	return keptnClient.SendCloudEvent(monitoring.NewErroredConfigureMonitoringFinishedEventFactory(adapter, eh.err))
 }
 
 func (eh ErrorHandler) sendErroredGetSLIFinishedEvent(keptnClient *keptn.Client) error {
