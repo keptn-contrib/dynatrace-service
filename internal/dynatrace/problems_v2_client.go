@@ -8,6 +8,9 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
+const ProblemStatusOpen = "OPEN"
+const ProblemStatusClosed = "CLOSED"
+
 const problemsV2Path = "/api/v2/problems"
 
 // ProblemQueryResult result of query to /api/v2/problems

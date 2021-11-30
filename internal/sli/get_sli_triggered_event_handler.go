@@ -283,7 +283,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 
 	if status != "" {
 		success = true
-		if status == "OPEN" {
+		if status == dynatrace.ProblemStatusOpen {
 			openProblemValue = 1.0
 		}
 	}
