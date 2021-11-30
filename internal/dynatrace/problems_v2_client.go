@@ -8,7 +8,10 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
+// ProblemStatusOpen is the status of an open problem
 const ProblemStatusOpen = "OPEN"
+
+// ProblemStatusClosed is the status of an closed problem
 const ProblemStatusClosed = "CLOSED"
 
 const problemsV2Path = "/api/v2/problems"
