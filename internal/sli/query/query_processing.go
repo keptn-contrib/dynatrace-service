@@ -156,13 +156,13 @@ func (p *Processing) executeSecurityProblemQuery(metricsQuery string, startUnix 
 		return 0, fmt.Errorf("Security Problemv2 Indicator query has wrong format. Should be SECPV2;securityProblemSelector=selector but is: %s", metricsQuery)
 	}
 
-	problemQuery := querySplits[1]
-	problemQueryResult, err := dynatrace.NewSecurityProblemsClient(p.client).GetByQuery(problemQuery, startUnix, endUnix)
+	securityProblemQuery := querySplits[1]
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(securityProblemQuery, startUnix, endUnix)
 	if err != nil {
 		return 0, err
 	}
 
-	return float64(problemQueryResult.TotalCount), nil
+	return float64(totalSecurityProblemCount), nil
 }
 
 func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
