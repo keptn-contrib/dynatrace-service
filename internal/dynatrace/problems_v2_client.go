@@ -11,9 +11,6 @@ import (
 // ProblemStatusOpen is the status of an open problem
 const ProblemStatusOpen = "OPEN"
 
-// ProblemStatusClosed is the status of an closed problem
-const ProblemStatusClosed = "CLOSED"
-
 const problemsV2Path = "/api/v2/problems"
 
 // ProblemQueryResult result of query to /api/v2/problems
