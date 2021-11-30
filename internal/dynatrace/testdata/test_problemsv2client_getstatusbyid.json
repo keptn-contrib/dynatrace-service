@@ -1,0 +1,247 @@
+{
+  "problemId": "-6004362228644432354_1638271020000V2",
+  "displayId": "P-211117376",
+  "title": "Mobile app slow user actions",
+  "impactLevel": "APPLICATION",
+  "severityLevel": "PERFORMANCE",
+  "status": "OPEN",
+  "affectedEntities": [
+    {
+      "entityId": {
+        "id": "MOBILE_APPLICATION-89B1A1E7FE894151",
+        "type": "MOBILE_APPLICATION"
+      },
+      "name": "📱 easyTravel Mobile"
+    }
+  ],
+  "impactedEntities": [
+    {
+      "entityId": {
+        "id": "MOBILE_APPLICATION-89B1A1E7FE894151",
+        "type": "MOBILE_APPLICATION"
+      },
+      "name": "📱 easyTravel Mobile"
+    }
+  ],
+  "rootCauseEntity": null,
+  "managementZones": [
+    {
+      "id": "9130632296508575249",
+      "name": "Easytravel"
+    },
+    {
+      "id": "-6239538939987181652",
+      "name": "allTypes"
+    }
+  ],
+  "entityTags": [
+    {
+      "context": "CONTEXTLESS",
+      "key": "MyApplication",
+      "stringRepresentation": "MyApplication"
+    },
+    {
+      "context": "CONTEXTLESS",
+      "key": "wolfgangMaintenanceTest",
+      "stringRepresentation": "wolfgangMaintenanceTest"
+    }
+  ],
+  "problemFilters": [
+    {
+      "id": "152959ff-2a7a-47f9-9578-63b1bcadb756",
+      "name": "Keptn"
+    },
+    {
+      "id": "7079bbb1-afa5-315f-a6d3-e7b59426cc59",
+      "name": "test"
+    }
+  ],
+  "startTime": 1638271320000,
+  "endTime": -1,
+  "evidenceDetails": {
+    "totalCount": 2,
+    "details": [
+      {
+        "evidenceType": "EVENT",
+        "displayName": "Mobile app slow user actions",
+        "entity": {
+          "entityId": {
+            "id": "MOBILE_APPLICATION-89B1A1E7FE894151",
+            "type": "MOBILE_APPLICATION"
+          },
+          "name": "📱 easyTravel Mobile"
+        },
+        "groupingEntity": null,
+        "rootCauseRelevant": false,
+        "eventId": "1555357959786336648_1638272040000",
+        "eventType": "MOBILE_APPLICATION_SLOWDOWN",
+        "data": {
+          "eventId": "1555357959786336648_1638272040000",
+          "startTime": 1638272040000,
+          "endTime": -1,
+          "eventType": "MOBILE_APPLICATION_SLOWDOWN",
+          "title": "Mobile app slow user actions",
+          "entityId": {
+            "entityId": {
+              "id": "MOBILE_APPLICATION-89B1A1E7FE894151",
+              "type": "MOBILE_APPLICATION"
+            },
+            "name": "📱 easyTravel Mobile"
+          },
+          "properties": [
+            {
+              "key": "dt.event.baseline.total_load",
+              "value": "14.0"
+            },
+            {
+              "key": "dt.event.group_label",
+              "value": "Mobile app slowdown"
+            },
+            {
+              "key": "dt.event.is_rootcause_relevant",
+              "value": "true"
+            }
+          ],
+          "status": "OPEN",
+          "correlationId": "720AB1928F1789F2",
+          "entityTags": [
+            {
+              "context": "CONTEXTLESS",
+              "key": "MyApplication",
+              "stringRepresentation": "MyApplication"
+            },
+            {
+              "context": "CONTEXTLESS",
+              "key": "wolfgangMaintenanceTest",
+              "stringRepresentation": "wolfgangMaintenanceTest"
+            }
+          ],
+          "managementZones": [
+            {
+              "id": "9130632296508575249",
+              "name": "Easytravel"
+            }
+          ],
+          "underMaintenance": false,
+          "suppressAlert": false,
+          "suppressProblem": false,
+          "frequentEvent": false
+        },
+        "startTime": 1638272040000,
+        "endTime": -1
+      },
+      {
+        "evidenceType": "EVENT",
+        "displayName": "Mobile app slow user actions",
+        "entity": {
+          "entityId": {
+            "id": "MOBILE_APPLICATION-89B1A1E7FE894151",
+            "type": "MOBILE_APPLICATION"
+          },
+          "name": "📱 easyTravel Mobile"
+        },
+        "groupingEntity": null,
+        "rootCauseRelevant": false,
+        "eventId": "-6004362228644432354_1638271020000",
+        "eventType": "MOBILE_APPLICATION_SLOWDOWN",
+        "data": {
+          "eventId": "-6004362228644432354_1638271020000",
+          "startTime": 1638271020000,
+          "endTime": 1638271860000,
+          "eventType": "MOBILE_APPLICATION_SLOWDOWN",
+          "title": "Mobile app slow user actions",
+          "entityId": {
+            "entityId": {
+              "id": "MOBILE_APPLICATION-89B1A1E7FE894151",
+              "type": "MOBILE_APPLICATION"
+            },
+            "name": "📱 easyTravel Mobile"
+          },
+          "properties": [
+            {
+              "key": "dt.event.baseline.total_load",
+              "value": "11.0"
+            },
+            {
+              "key": "dt.event.group_label",
+              "value": "Mobile app slowdown"
+            },
+            {
+              "key": "dt.event.is_rootcause_relevant",
+              "value": "true"
+            }
+          ],
+          "status": "CLOSED",
+          "correlationId": "7E24B27BC9F14689",
+          "entityTags": [
+            {
+              "context": "CONTEXTLESS",
+              "key": "MyApplication",
+              "stringRepresentation": "MyApplication"
+            },
+            {
+              "context": "CONTEXTLESS",
+              "key": "wolfgangMaintenanceTest",
+              "stringRepresentation": "wolfgangMaintenanceTest"
+            }
+          ],
+          "managementZones": [
+            {
+              "id": "9130632296508575249",
+              "name": "Easytravel"
+            }
+          ],
+          "underMaintenance": false,
+          "suppressAlert": false,
+          "suppressProblem": false,
+          "frequentEvent": false
+        },
+        "startTime": 1638271020000,
+        "endTime": 1638271860000
+      }
+    ]
+  },
+  "recentComments": {
+    "totalCount": 0,
+    "comments": []
+  },
+  "impactAnalysis": {
+    "impacts": [
+      {
+        "impactType": "MOBILE",
+        "impactedEntity": {
+          "entityId": {
+            "id": "MOBILE_APPLICATION-89B1A1E7FE894151",
+            "type": "MOBILE_APPLICATION"
+          },
+          "name": "📱 easyTravel Mobile"
+        },
+        "estimatedAffectedUsers": 54
+      },
+      {
+        "impactType": "SERVICE",
+        "impactedEntity": {
+          "entityId": {
+            "id": "SERVICE-B67B3EC4C95E0FA7",
+            "type": "SERVICE"
+          },
+          "name": "EasytravelService"
+        },
+        "estimatedAffectedUsers": 22,
+        "numberOfPotentiallyAffectedServiceCalls": 568
+      },
+      {
+        "impactType": "SERVICE",
+        "impactedEntity": {
+          "entityId": {
+            "id": "SERVICE-6B86E26CE4291674",
+            "type": "SERVICE"
+          },
+          "name": "EasytravelService"
+        },
+        "estimatedAffectedUsers": 25,
+        "numberOfPotentiallyAffectedServiceCalls": 738
+      }
+    ]
+  }
+}

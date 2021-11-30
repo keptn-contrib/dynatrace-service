@@ -2,11 +2,12 @@ package dashboard
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 type ProblemTileProcessing struct {
@@ -51,7 +52,7 @@ func (p *ProblemTileProcessing) processOpenProblemTile(problemSelector string, s
 	}
 
 	// Step 1: Query the Dynatrace API to get the number of actual problems matching that query and timeframe
-	problemQueryResult, err := dynatrace.NewProblemsV2Client(p.client).GetByQuery(problemQuery, startUnix, endUnix)
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(problemQuery, startUnix, endUnix)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +61,7 @@ func (p *ProblemTileProcessing) processOpenProblemTile(problemSelector string, s
 	// IndicatorName is based on the slo Name
 	// the value defaults to the E
 	indicatorName := "problems"
-	value := float64(problemQueryResult.TotalCount)
+	value := float64(totalProblemCount)
 	sliResult := &keptnv2.SLIResult{
 		Metric:  indicatorName,
 		Value:   value,
