@@ -23,3 +23,16 @@ func TestProblemsV2Client_GetTotalCountByQuery(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, totalProblemCount)
 }
+
+func TestProblemsV2Client_GetStatusById(t *testing.T) {
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact("/api/v2/problems/-6004362228644432354_1638271020000V2", "./testdata/test_problemsv2client_getstatusbyid.json")
+
+	dtClient, _, teardown := createDynatraceClient(t, handler)
+	defer teardown()
+
+	status, err := NewProblemsV2Client(dtClient).GetStatusById("-6004362228644432354_1638271020000V2")
+
+	assert.NoError(t, err)
+	assert.EqualValues(t, ProblemStatusOpen, status)
+}
