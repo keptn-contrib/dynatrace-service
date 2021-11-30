@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExecuteGetDynatraceProblems(t *testing.T) {
+func TestProblemsV2Client_GetTotalCountByQuery(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
+	handler.AddExact("/api/v2/problems?from=1571649084000&to=1571649085000&problemEntity=status(open)", "./testdata/test_problemsv2client_gettotalcountbyquery.json")
 
 	dtClient, _, teardown := createDynatraceClient(t, handler)
 	defer teardown()
