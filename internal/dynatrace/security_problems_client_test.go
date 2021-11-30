@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExecuteGetDynatraceSecurityProblems(t *testing.T) {
+func TestSecurityProblemsClient_GetTotalCountByQuery_None(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact("/api/v2/securityProblems?from=1571649084000&to=1571649085000&securityProblemSelector=status(OPEN)", "./testdata/test_get_securityproblems.json")
+	handler.AddExact("/api/v2/securityProblems?from=1571649084000&to=1571649085000&securityProblemSelector=status(OPEN)", "./testdata/test_securityproblemsclient_gettotalcountbyquery_0.json")
 
 	dtClient, _, teardown := createDynatraceClient(t, handler)
 	defer teardown()
