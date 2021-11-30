@@ -3,61 +3,23 @@ package dynatrace
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
 const problemsV2Path = "/api/v2/problems"
 
-// ProblemQueryResult Result of /api/v2/problems
-type ProblemQueryResult struct {
-	TotalCount int       `json:"totalCount"`
-	PageSize   int       `json:"pageSize"`
-	Problems   []Problem `json:"problems"`
+// ProblemQueryResult result of query to /api/v2/problems
+// Here only totalCount is considered as that is the only field that is used
+type problemQueryResult struct {
+	TotalCount int `json:"totalCount"`
 }
 
-// Problem problem details returned by /api/v2/problems
-type Problem struct {
-	ProblemID        string `json:"problemId"`
-	DisplayID        string `json:"displayId"`
-	Title            string `json:"title"`
-	ImpactLevel      string `json:"impactLevel"`
-	SeverityLevel    string `json:"severityLevel"`
-	Status           string `json:"status"`
-	AffectedEntities []struct {
-		EntityID struct {
-			ID   string `json:"id"`
-			Type string `json:"type"`
-		} `json:"entityId"`
-		Name string `json:"name"`
-	} `json:"affectedEntities"`
-	ImpactedEntities []struct {
-		EntityID struct {
-			ID   string `json:"id"`
-			Type string `json:"type"`
-		} `json:"entityId"`
-		Name string `json:"name"`
-	} `json:"impactedEntities"`
-	RootCauseEntity struct {
-		EntityID struct {
-			ID   string `json:"id"`
-			Type string `json:"type"`
-		} `json:"entityId"`
-		Name string `json:"name"`
-	} `json:"rootCauseEntity"`
-	ManagementZones []interface{} `json:"managementZones"`
-	EntityTags      []struct {
-		Context              string `json:"context"`
-		Key                  string `json:"key"`
-		Value                string `json:"value"`
-		StringRepresentation string `json:"stringRepresentation"`
-	} `json:"entityTags"`
-	ProblemFilters []struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"problemFilters"`
-	StartTime int64 `json:"startTime"`
-	EndTime   int64 `json:"endTime"`
+// Problem problem details returned by /api/v2/problems/{PROBLEM-ID}
+// Here only status is considered as that is the only field that is used
+type problem struct {
+	Status string `json:"status"`
 }
 
 // ProblemsV2Client is a client for interacting with the Dynatrace problems endpoints
@@ -72,9 +34,8 @@ func NewProblemsV2Client(client ClientInterface) *ProblemsV2Client {
 	}
 }
 
-// GetByQuery Calls the Dynatrace V2 API to retrieve the the list of problems for that timeframe
-// It returns a ProblemQueryResult object on success, an error otherwise
-func (pc *ProblemsV2Client) GetByQuery(problemQuery string, startUnix time.Time, endUnix time.Time) (*ProblemQueryResult, error) {
+// GetTotalCountByQuery calls the Dynatrace V2 API to retrieve the total count of problems for a given query and timeframe
+func (pc *ProblemsV2Client) GetTotalCountByQuery(problemQuery string, startUnix time.Time, endUnix time.Time) (int, error) {
 	body, err := pc.client.Get(
 		fmt.Sprintf("%s?from=%s&to=%s&%s",
 			problemsV2Path,
@@ -82,32 +43,31 @@ func (pc *ProblemsV2Client) GetByQuery(problemQuery string, startUnix time.Time,
 			common.TimestampToString(endUnix),
 			problemQuery))
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	var result ProblemQueryResult
+	var result problemQueryResult
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	return &result, nil
+	return result.TotalCount, nil
 }
 
-// GetById Calls the Dynatrace API to retrieve Problem Details for a given problemID
-// It returns a Problem object on success, an error otherwise
-func (pc *ProblemsV2Client) GetById(problemID string) (*Problem, error) {
+// GetStatusById calls the Dynatrace API to retrieve the status of a given problemID
+func (pc *ProblemsV2Client) GetStatusById(problemID string) (string, error) {
 	body, err := pc.client.Get(problemsV2Path + "/" + problemID)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// parse response json
-	var result Problem
+	var result problem
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return &result, nil
+	return result.Status, nil
 }

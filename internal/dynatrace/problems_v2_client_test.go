@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExecuteGetDynatraceProblems(t *testing.T) {
@@ -17,17 +18,8 @@ func TestExecuteGetDynatraceProblems(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 	problemQuery := "problemEntity=status(open)"
-	problemResult, err := NewProblemsV2Client(dtClient).GetByQuery(problemQuery, startTime, endTime)
+	totalProblemCount, err := NewProblemsV2Client(dtClient).GetTotalCountByQuery(problemQuery, startTime, endTime)
 
-	if err != nil {
-		t.Error(err)
-	}
-
-	if problemResult == nil {
-		t.Fatal("No Problem Result returned for " + problemQuery)
-	}
-
-	if problemResult.TotalCount != 1 {
-		t.Error("Not returning expected value for Problem Query")
-	}
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1, totalProblemCount)
 }

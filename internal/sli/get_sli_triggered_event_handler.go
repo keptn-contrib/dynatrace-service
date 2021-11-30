@@ -276,14 +276,14 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 	message := ""
 
 	// lets query the status of this problem and add it to the SLI Result
-	dynatraceProblem, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetById(problemID)
+	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusById(problemID)
 	if err != nil {
 		message = err.Error()
 	}
 
-	if dynatraceProblem != nil {
+	if status != "" {
 		success = true
-		if dynatraceProblem.Status == "OPEN" {
+		if status == "OPEN" {
 			openProblemValue = 1.0
 		}
 	}
