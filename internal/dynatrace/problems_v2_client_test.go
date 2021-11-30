@@ -31,7 +31,7 @@ func TestProblemsV2Client_GetStatusById(t *testing.T) {
 	dtClient, _, teardown := createDynatraceClient(t, handler)
 	defer teardown()
 
-	status, err := NewProblemsV2Client(dtClient).GetStatusById("-6004362228644432354_1638271020000V2")
+	status, err := NewProblemsV2Client(dtClient).GetStatusByID("-6004362228644432354_1638271020000V2")
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, ProblemStatusOpen, status)

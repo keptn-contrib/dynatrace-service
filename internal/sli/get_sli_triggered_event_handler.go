@@ -276,7 +276,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 	message := ""
 
 	// lets query the status of this problem and add it to the SLI Result
-	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusById(problemID)
+	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(problemID)
 	if err != nil {
 		message = err.Error()
 	}

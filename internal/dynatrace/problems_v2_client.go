@@ -58,8 +58,8 @@ func (pc *ProblemsV2Client) GetTotalCountByQuery(problemQuery string, startUnix 
 	return result.TotalCount, nil
 }
 
-// GetStatusById calls the Dynatrace API to retrieve the status of a given problemID
-func (pc *ProblemsV2Client) GetStatusById(problemID string) (string, error) {
+// GetStatusByID calls the Dynatrace API to retrieve the status of a given problemID
+func (pc *ProblemsV2Client) GetStatusByID(problemID string) (string, error) {
 	body, err := pc.client.Get(problemsV2Path + "/" + problemID)
 	if err != nil {
 		return "", err
