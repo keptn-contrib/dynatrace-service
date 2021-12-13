@@ -1,0 +1,205 @@
+name: Pre-Release
+on:
+  workflow_dispatch:
+    inputs:
+      semver-type:
+        description: 'Can be one of [major,minor,patch]. CAUTION: This will enforce a new pre-release with the specified semantic version type bumped.'
+        required: false
+      keptn-version:
+        description: 'The current Keptn version that this release shall be used with. This version also determines the value for the Distributor version in values.yml'
+        required: true
+        type: string
+env:
+  NODE_VERSION: 14
+  KEPTN_BOT_NAME: "Keptn Contrib Bot"
+  KEPTN_BOT_EMAIL: "Keptn Contrib Bot <keptn-contrib-bot@users.noreply.github.com>"
+  RELEASE_NOTES_FILE: "RELEASE-BODY.md" # If you change this, then also adapt .gitignore!
+  PRERELEASE_KEYWORD: "next"
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  prepare:
+    name: Prepare pre-release run
+    runs-on: ubuntu-20.04
+    outputs:
+      next-version: ${{ steps.version_number.outputs.next-version }}
+      branch: ${{ steps.current_branch.outputs.branch }}
+    steps:
+      - name: Check SemVer input
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+        run: |
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            echo "SemVer Type is defined. Checking for valid SemVer type..."
+            if [[ "$SEMVER_TYPE" == "major" ]] || [[ "$SEMVER_TYPE" == "minor" ]] || [[ "$SEMVER_TYPE" == "patch" ]]; then
+              echo "::notice::SemVer Type is correctly set to $SEMVER_TYPE! Continuing with this version bump..."
+            else
+              echo "::error::ERROR: Enforced SemVer does not match any of [major,minor,patch]!"
+              echo "Exiting..."
+              exit 1
+            fi
+          else
+            echo "::notice::No SemVer type defined, continuing with auto generated version number..."
+          fi
+
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.KEPTN_BOT_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2.5.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Find next version number
+        id: version_number
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+        run: |
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            npx standard-version@^9.3.2 \
+              --skip.commit \
+              --skip.tag \
+              --skip.changelog \
+              --prerelease "${{ env.PRERELEASE_KEYWORD }}" \
+              --release-as "$SEMVER_TYPE"
+          else
+            npx standard-version@^9.3.2 \
+              --skip.commit \
+              --skip.tag \
+              --skip.changelog \
+              --prerelease "${{ env.PRERELEASE_KEYWORD }}"
+          fi
+
+          NEXT_VERSION=$(cat VERSION.txt)
+          echo "::set-output name=next-version::${NEXT_VERSION}"
+          git checkout HEAD -- VERSION.txt
+
+      - name: Find current branch
+        id: current_branch
+        run: |
+          branch=${GITHUB_REF#refs/heads/}
+          echo "::set-output name=branch::${branch}"
+
+  ############################################################################
+  # Build Docker Image
+  ############################################################################
+  docker_build:
+    needs: prepare
+    name: Docker Build
+    uses: keptn-contrib/dynatrace-service/.github/workflows/build-docker-image.yml@master
+    with:
+      version: ${{ needs.prepare.outputs.next-version }}
+
+  ############################################################################
+  # Build Helm Chart
+  ############################################################################
+  build-helm-chart:
+    needs: prepare
+    name: Build Helm Charts
+    uses: keptn-contrib/dynatrace-service/.github/workflows/build-helm-chart.yml@master
+    with:
+      branch: ${{ needs.prepare.outputs.branch }}
+      version: ${{ needs.prepare.outputs.next-version }}
+      distributor-version: ${{ github.event.inputs.keptn-version }}
+      release: true
+
+  ############################################################################
+  # Pre-Release
+  ############################################################################
+  pre-release:
+    name: "Pre-Release"
+    runs-on: ubuntu-20.04
+    needs: [prepare, docker_build, build-helm-chart]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.KEPTN_BOT_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2.5.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Configure Git
+        env:
+          KEPTN_BOT_NAME: ${{ env.KEPTN_BOT_NAME }}
+          KEPTN_BOT_EMAIL: ${{ env.KEPTN_BOT_EMAIL }}
+        run: |
+          git config user.name "$KEPTN_BOT_NAME"
+          git config user.email "$KEPTN_BOT_EMAIL"
+
+      - name: Prepare GitHub Pre-Release Notes
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+        run: |
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            npx standard-version@^9.3.2 \
+              --prerelease "${{ env.PRERELEASE_KEYWORD }}" \
+              -i "${{ env.RELEASE_NOTES_FILE }}" \
+              --skip.commit \
+              --skip.tag \
+              --header "" \
+              --release-as "$SEMVER_TYPE"
+          else
+            npx standard-version@^9.3.2 \
+              --prerelease "${{ env.PRERELEASE_KEYWORD }}" \
+              -i "${{ env.RELEASE_NOTES_FILE }}" \
+              --skip.commit \
+              --skip.tag \
+              --header ""
+          fi
+
+      - name: Create Pre-Release Package
+        id: create-release-package
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+        run: |
+          echo "🚀 Creating release package now..."
+
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            npx standard-version@^9.3.2 \
+              --release-as "$SEMVER_TYPE" \
+              --prerelease "${{ env.PRERELEASE_KEYWORD }}" \
+              --skip.commit \
+              --skip.changelog
+          else
+            npx standard-version@^9.3.2 \
+              --prerelease "${{ env.PRERELEASE_KEYWORD }}" \
+              --skip.commit \
+              --skip.changelog
+          fi
+
+          echo "::set-output name=tag-name::$(git describe --tags --abbrev=0)"
+
+      # No need for a PR here, because we do not want any changes to be committed. Just push the pre-release tag
+      - name: Push Tags
+        run: |
+          git push --follow-tags
+
+      - name: Download Pre-Release Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ./dist
+
+      - name: Create GitHub Pre-Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
+        run: |
+          gh release create "$RELEASE_TAG" --draft --prerelease --notes-file "${{ env.RELEASE_NOTES_FILE }}" --title "$RELEASE_TAG"
+
+      - name: Upload Pre-Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
+        run: |
+          gh release upload "$RELEASE_TAG" ./dist/installer/*.tgz
