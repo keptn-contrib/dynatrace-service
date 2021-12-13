@@ -1,0 +1,53 @@
+name: Build Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  GO_VERSION: "^1.16"
+
+jobs:
+  docker_build:
+    name: Build Docker Image
+    runs-on: ubuntu-20.04
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2.4.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      # load DOCKER_ORGANIZATION & IMAGE variable from .ci_env
+      - name: Load CI Environment from .ci_env
+        id: load_ci_env
+        uses: c-py/action-dotenv-to-setenv@v3
+        with:
+          env-file: .ci_env
+
+      - id: docker_build_image
+        name: "Docker Build and Push"
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          tags: |
+            ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}
+          build-args: |
+            version=${{ env.VERSION }}
+          push: true
+          pull: true
