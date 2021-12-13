@@ -262,7 +262,7 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.KEPTN_BOT_TOKEN }}
-          commit-message: "build(release): ${{ steps.create-release-package.outputs.tag-name }}"
+          commit-message: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
           committer: ${{ env.KEPTN_BOT_EMAIL }}
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: true

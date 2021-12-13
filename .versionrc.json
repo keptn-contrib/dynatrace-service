@@ -1,7 +1,7 @@
 {
   "preMajor": true,
   "issueUrlFormat": "https://github.com/keptn-contrib/dynatrace-service/issues/{{id}}",
-  "releaseCommitMessageFormat": "build(release): {{currentTag}}",
+  "releaseCommitMessageFormat": "build: release {{currentTag}}",
   "scripts": {
     "postchangelog": "./gh-actions-scripts/post-changelog-actions.sh"
   },
