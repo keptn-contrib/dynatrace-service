@@ -268,7 +268,7 @@ jobs:
           signoff: true
           branch: release/${{ steps.create-release-package.outputs.tag-name }}
           delete-branch: true
-          title: Release ${{ steps.create-release-package.outputs.tag-name }}
+          title: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
           body: |
             Updates to CHANGELOG.md, VERSION.txt, README.md and version-compatibility.md
           labels: |
