@@ -5,7 +5,7 @@ The dynatrace-service can dynamically create SLIs and SLOs from a Dynatrace dash
 - `query`: the dynatrace-service will use the first dashboard found with a name beginning with `KQG;project=<project>;service=<service>;stage=<stage>`, where `<project>`, `<service>` and `<stage>` are taken from the `sh.keptn.event.get-sli.triggered` event. To further customize the name, append any additional description as `;<custom-description>` after the stage.
 - `<dashboard-uuid>`: set the `dashboard` property to the UUID of a specific dashboard to use it.
 
-In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-service will transform each supported tile into Dynatrace API queries. An SLI is created for each result together with a corresponding SLO. The SLOs are then stored in an `slo.yaml` in the appropriate service and stage or the Keptn project, and values of the SLIs are queried and returned in the `sh.keptn.event.get-sli.finished` event.
+In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-service will transform each supported tile into Dynatrace API queries. An SLI is created for each result together with a corresponding SLO. The SLOs are then stored in an `slo.yaml` in the appropriate service and stage of the Keptn project, and values of the SLIs are queried and returned in the `sh.keptn.event.get-sli.finished` event.
 
 
 ## Defining SLIs and SLOs
@@ -30,7 +30,7 @@ THe following dashboard tile types are supported:
 
 ### Data explorer tiles
 
-Data explorer tiles must only include a single query (i.e. one metric) and include up to one filter by and up to one split by clause. Metric selectors provided via the code tab are currently not supported.
+Data explorer tiles must only include a single query (i.e., one metric) and include up to one filter by and up to one split by clause. Metric selectors provided via the code tab are currently not supported.
 
 
 ### Custom chart tiles

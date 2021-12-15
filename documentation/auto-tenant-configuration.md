@@ -2,7 +2,7 @@
 
 This section describes the configuration entities created by the dynatrace-service on the Dynatrace tenant when it receives a `sh.keptn.event.monitoring.configure` event. This makes it easy to configure your Dynatrace tenant to fully interact with the Keptn installation using the `keptn configure monitoring` CLI command.
 
-To enable or disable the creation of any of the following entity types, please see [Configuring automatic generation of Dynatrace entities](additional-installation-options.md#configuring-automatic-dynatrace-tenant-configuration). Once processing of the configure monitoring event is complete, the dynatrace-service sends a `sh.keptn.event.configure-monitoring.finished` event with a summary of the operations performed.
+To enable or disable the creation of the following entity types, please see [Configuring automatic generation of Dynatrace entities](additional-installation-options.md#configuring-automatic-dynatrace-tenant-configuration). Once processing of the configure monitoring event is complete, the dynatrace-service sends a `sh.keptn.event.configure-monitoring.finished` event with a summary of the operations performed.
 
 
 ## Tagging rules
@@ -47,7 +47,7 @@ When `dynatraceService.config.generateTaggingRules` is set to `true`, the dynatr
 
 ## Problem notifications
 
-When `dynatraceService.config.generateProblemNotifications` is set to `true`, the dynatrace-service will try create a problem alerting profile named `Keptn` with rules for `AVAILABILITY`, `ERROR`, `PERFORMANCE`, `RESOURCE_CONTENTION`, `CUSTOM_ALERT` and `MONITORING_UNAVAILABLE` that trigger problem notifications after 0 minutes for all entities in all management zones. If an alerting profile is already available it is not overwritten.
+When `dynatraceService.config.generateProblemNotifications` is set to `true`, the dynatrace-service will try to create a problem alerting profile named `Keptn` with rules for `AVAILABILITY`, `ERROR`, `PERFORMANCE`, `RESOURCE_CONTENTION`, `CUSTOM_ALERT` and `MONITORING_UNAVAILABLE` that trigger problem notifications after 0 minutes for all entities in all management zones. If an alerting profile is already available it is not overwritten.
 
 The alerting profile is then used to create a webhook named `Keptn Problem Notification` to send problem events to Keptn using the event API. The webhook has the following form:
 

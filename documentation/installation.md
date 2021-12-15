@@ -14,7 +14,7 @@ The dynatrace-service requires access to the Keptn API consisting of `KEPTN_API_
 
 * To get the values for `KEPTN_API_URL` (also known as `KEPTN_ENDPOINT`), please see [Authenticate Keptn CLI](https://keptn.sh/docs/0.10.x/operate/install/#authenticate-keptn-cli).
 
-* By default the `KEPTN_API_TOKEN` is read from the `keptn-api-token` secret (i.e. the secret from the control-plane) and does not need to be set during installation.
+* By default, the `KEPTN_API_TOKEN` is read from the `keptn-api-token` secret (i.e., the secret from the control-plane) and does not need to be set during installation.
 
 * If you would like to use backlinks from your Dynatrace tenant to the Keptn Bridge, provide the service with `KEPTN_BRIDGE_URL`. For further details about this value, please see [Authenticate Keptn Bridge](https://keptn.sh/docs/0.10.x/operate/install/#authenticate-keptn-bridge).
 

@@ -38,9 +38,9 @@ indicators:
     throughput:  "metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=tag($LABEL.dttag),type(SERVICE)"
 ```
 
-If an event was then sent to including a label with the name `dttag` and a value e.g. `evaluateforsli`, it will match an entity that has this tag on it.
+If an event was then sent to the dynatrace-service including a label with the name `dttag` and a value e.g. `evaluateforsli`, it will match an entity that has this tag on it.
 
-Using multiple labels it is possible to define SLIs that span multiple layers of your stack, e.g. services, process groups and host metrics. For example, the following `dynatrace/sli.yaml` would query one metric from a service, one from a process group and one from a host:
+By using multiple labels it is possible to define SLIs that span multiple layers of your stack, e.g., services, process groups and host metrics. For example, the following `dynatrace/sli.yaml` would query one metric from a service, one from a process group and one from a host:
 
 ```yaml
 spec_version: "1.0"
@@ -71,7 +71,7 @@ This queries the SLO using the `/api/v2/slo/<SLO_ID>` endpoint and will return t
 
 ### Open problems (prefix: `PV2`)
 
-The dynatrace-service may query the [Problems API v2](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/problems-v2/) number of open problems in a particular environment or those that match a particular problem type using the syntax `PV2;<query>` where `<query>` may include a `problemSelector` and / or `entitySelector`, e.g. `problemSelector=...&entitySelector=...`:
+The dynatrace-service may query the [Problems API v2](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/problems-v2/) number of open problems in a particular environment, or those that match a particular problem type using the syntax `PV2;<query>` where `<query>` may include a `problemSelector` and / or `entitySelector`, e.g., `problemSelector=...&entitySelector=...`:
 
 ```yaml
 spec_version: "1.0"
@@ -79,7 +79,7 @@ indicators:
     problems: PV2;problemSelector=status(open)&entitySelector=managementZoneIds(7030365576649815430)
 ```
 
-This passes the `problemSelector` and `entitySelector` to the `/api/v2/problems` endpoint and will return the `totalCount` field, i.e. the total number of problems matching the query, as the SLI value.
+This passes the `problemSelector` and `entitySelector` to the `/api/v2/problems` endpoint and will return the `totalCount` field, i.e., the total number of problems matching the query, as the SLI value.
 
 
 ### Open security problems (prefix: `SECPV2`)
@@ -93,7 +93,7 @@ indicators:
     security_problems: SECPV2;securityProblemSelector=status(open)
 ```
 
-This passes the `securityProblemSelector` to the `/api/v2/securityProblems` endpoint and will return the `totalCount` field, i.e. the total number of security problems matching the query, as the SLI value.
+This passes the `securityProblemSelector` to the `/api/v2/securityProblems` endpoint and will return the `totalCount` field, i.e., the total number of security problems matching the query, as the SLI value.
 
 
 ### User sessions (prefix: `USQL`)

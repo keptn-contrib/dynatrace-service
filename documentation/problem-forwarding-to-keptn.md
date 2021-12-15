@@ -37,7 +37,7 @@ The dynatrace-service will parse the `Tags` field and use the `keptn_project`, `
 *Note:* Dynatrace Alerting Profiles that include problems on services without Keptn tags cannot be mapped through this capability.
 
 
-## Setting up problem notifications for any type of detected problem, e.g. infrastructure**
+## Setting up problem notifications for any type of detected problem, e.g., infrastructure**
 
 To send any type of problem to Keptn and orchestrate auto-remediation workflows, simply specify the project, service and stage as part of the data structure that is sent to Keptn. For example, the following Dynatrace custom notification integration payload will send all problems to a Keptn project called `dynatrace`, stage called `production` and service called `allproblems`:
 

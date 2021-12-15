@@ -1,6 +1,6 @@
 # Forwarding deployment and test events from Keptn to Dynatrace
 
-By default, the dynatrace-service assumes that all events it sends to Dynatrace, e.g. deployment or test start/stop events, are sent to a monitored entity that has the following attach rules:
+By default, the dynatrace-service assumes that all events it sends to Dynatrace, e.g., deployment or test start/stop events, are sent to a monitored entity that has the following attach rules:
 
 ```yaml
 attachRules:
