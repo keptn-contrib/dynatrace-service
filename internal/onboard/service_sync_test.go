@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/adapter/mock"
+	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/config/mock"
 	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/stretchr/testify/assert"
@@ -409,9 +409,9 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 				return mockCredentials, nil
 			},
 		},
-		dtConfigGetter: &adapter_mock.DynatraceConfigGetterInterfaceMock{
-			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter) (*config.DynatraceConfigFile, error) {
-				return &config.DynatraceConfigFile{}, nil
+		configProvider: &adapter_mock.DynatraceConfigProviderMock{
+			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter) (*config.DynatraceConfig, error) {
+				return config.NewDynatraceConfigWithDefaults(), nil
 			}},
 	}
 	s.synchronizeServices()
@@ -536,7 +536,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		syncTimer           *time.Ticker
 		keptnHandler        *keptnv2.Keptn
 		servicesInKeptn     []string
-		dtConfigGetter      config.DynatraceConfigGetterInterface
+		configProvider      config.DynatraceConfigProvider
 	}
 	type args struct {
 		serviceName string
@@ -578,7 +578,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 				syncTimer:           tt.fields.syncTimer,
 				keptnHandler:        tt.fields.keptnHandler,
 				servicesInKeptn:     tt.fields.servicesInKeptn,
-				dtConfigGetter:      tt.fields.dtConfigGetter,
+				configProvider:      tt.fields.configProvider,
 			}
 			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {
 				t.Errorf("serviceSynchronizer.addServiceToKeptn() error = %v, wantErr %v", err, tt.wantErr)

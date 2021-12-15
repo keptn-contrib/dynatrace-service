@@ -2,18 +2,19 @@ package config
 
 import (
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"os"
 	"strings"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
-//go:generate moq --skip-ensure -pkg adapter_mock -out ./mock/dynatrace_config_mock.go . DynatraceConfigGetterInterface
-type DynatraceConfigGetterInterface interface {
-	GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfigFile, error)
+//go:generate moq --skip-ensure -pkg adapter_mock -out ./mock/dynatrace_config_mock.go . DynatraceConfigProvider
+type DynatraceConfigProvider interface {
+	GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfig, error)
 }
 
 type DynatraceConfigGetter struct {
@@ -27,7 +28,7 @@ func NewDynatraceConfigGetter(client keptn.DynatraceConfigResourceClientInterfac
 }
 
 // GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo
-func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfigFile, error) {
+func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfig, error) {
 
 	fileContent, err := d.resourceClient.GetDynatraceConfig(event.GetProject(), event.GetStage(), event.GetService())
 	if err != nil {
@@ -43,12 +44,12 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 	}
 
 	// unmarshal the file
-	dynatraceConfFile, err := parseDynatraceConfigFile([]byte(fileContent))
+	dynatraceConfig, err := parseDynatraceConfigYAML(fileContent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse dynatrace config file found for service %s in stage %s in project %s: %s", event.GetService(), event.GetStage(), event.GetProject(), err.Error())
 	}
 
-	return dynatraceConfFile, nil
+	return dynatraceConfig, nil
 }
 
 //
@@ -84,18 +85,17 @@ func replaceKeptnPlaceholders(input string, event adapter.EventContentAdapter) s
 		result = strings.Replace(result, "$ENV."+pair[0], pair[1], -1)
 	}
 
-	// TODO: iterate through k8s secrets!
+	// TODO: 2021-11-22: check: iterate through k8s secrets?
 
 	return result
 }
 
-func parseDynatraceConfigFile(input []byte) (*DynatraceConfigFile, error) {
-	dynatraceConfFile := &DynatraceConfigFile{}
-	err := yaml.Unmarshal(input, dynatraceConfFile)
-
+func parseDynatraceConfigYAML(input string) (*DynatraceConfig, error) {
+	dynatraceConfig := NewDynatraceConfigWithDefaults()
+	err := yaml.Unmarshal([]byte(input), dynatraceConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return dynatraceConfFile, nil
+	return dynatraceConfig, nil
 }

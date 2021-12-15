@@ -74,7 +74,7 @@ type serviceSynchronizer struct {
 	syncTimer           *time.Ticker
 	keptnHandler        *keptnv2.Keptn
 	servicesInKeptn     []string
-	dtConfigGetter      config.DynatraceConfigGetterInterface
+	configProvider      config.DynatraceConfigProvider
 }
 
 var serviceSynchronizerInstance *serviceSynchronizer
@@ -92,7 +92,7 @@ func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) {
 
 		resourceClient := keptn.NewDefaultResourceClient()
 
-		serviceSynchronizerInstance.dtConfigGetter = config.NewDynatraceConfigGetter(resourceClient)
+		serviceSynchronizerInstance.configProvider = config.NewDynatraceConfigGetter(resourceClient)
 		serviceSynchronizerInstance.EntitiesClientFunc =
 			func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
 				dtClient := dynatrace.NewClient(credentials)
@@ -181,7 +181,7 @@ func (s *serviceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
 }
 
 func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.DynatraceCredentials, error) {
-	dynatraceConfig, err := s.dtConfigGetter.GetDynatraceConfig(initSyncEventAdapter{})
+	dynatraceConfig, err := s.configProvider.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
 	}
