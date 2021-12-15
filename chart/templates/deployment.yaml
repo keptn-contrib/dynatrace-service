@@ -88,7 +88,15 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 10999
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
         {{ end }}
@@ -99,7 +107,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 10999
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 5
           imagePullPolicy: Always
