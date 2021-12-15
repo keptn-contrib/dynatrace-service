@@ -46,7 +46,7 @@ If you are planning to upgrade to dynatrace-service version `0.18.0` or newer fr
 - Other topics
   - [Additional installation options](documentation/additional-installation-options.md)
   - [Keptn placeholders](documentation/keptn-placeholders.md)
-  - [Automatic creation of Dynatrace entities](documentation/generation-of-dynatrace-entities.md)
+  - [Automatic configuration of a Dynatrace tenant](documentation/auto-tenant-configuration.md)
   - [Upgrading the dynatrace-service](documentation/other-topics.md#upgrading-the-dynatrace-service)
   - [Uninstalling the dynatrace-service](documentation/other-topics.md#uninstalling-the-dynatrace-service)
   - [Developing the dynatrace-service](documentation/other-topics.md#developing-the-dynatrace-service)
