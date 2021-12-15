@@ -17,7 +17,7 @@ The configuration file must be a well-formed [YAML file](https://yaml.org/). The
 
 ## Dynatrace API credentials secret name (`dtCreds`)
 
-The `dtCreds` property allows you to specify the  name of the Kubernetes secret containing Dynatrace API credentials. By default, the value `dynatrace` is used.  Further details about the structure of this secret and how to create it can be found the section [Create a Dynatrace API credentials secret](installation.md#1-create-a-dynatrace-api-credentials-secret).
+The `dtCreds` property allows you to specify the  name of the Kubernetes secret containing Dynatrace API credentials. By default, the value `dynatrace` is used.  Further details about the structure of this secret and how to create it can be found the section [Create a Dynatrace API credentials secret](project-setup.md#1-create-a-dynatrace-api-credentials-secret).
 
 
 ## Dashboard SLI-mode configuration (`dashboard`)

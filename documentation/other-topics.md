@@ -3,7 +3,7 @@
  
 ## Upgrading the dynatrace-service
 
-As outlined in [the installation guide](installation.md#download-the-latest-dynatrace-service-helm-chart), download [the latest dynatrace-service Helm chart](https://github.com/keptn-contrib/dynatrace-service/releases/latest/) from GitHub.
+As outlined in [the installation guide](installation.md#1-download-the-latest-dynatrace-service-helm-chart), download [the latest dynatrace-service Helm chart](https://github.com/keptn-contrib/dynatrace-service/releases/latest/) from GitHub.
 
 Then, to upgrade the dynatrace-service, execute:
 

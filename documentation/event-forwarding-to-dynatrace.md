@@ -23,7 +23,7 @@ Most services that are deployed with Keptn's helm-service are automatically tagg
 
 ![Keptn tags in Dynatrace](images/keptn_tags_in_dynatrace.png "Keptn tags in Dynatrace")
 
-If your services are however not tagged with these but other tags or if you want the dynatrace-service to send the events not to a service but rather an application, process group or host, overwrite the default [attach rules in a `dynatrace/dynatrace.conf.yaml` file](dynatrace-conf-yaml-file.md#attach-rules-for-connecting-dynatrace-entities-with-events-attachRules).
+If your services are however not tagged with these but other tags or if you want the dynatrace-service to send the events not to a service but rather an application, process group or host, overwrite the default [attach rules in a `dynatrace/dynatrace.conf.yaml` file](dynatrace-conf-yaml-file.md#attach-rules-for-connecting-dynatrace-entities-with-events-attachrules).
 
 The following example instructs the dynatrace-service to send its events to a monitored entity that holds a tag with the key that matches your Keptn service name (`$SERVICE`) as well as holds an additional auto-tag that defines the environment to be pulled from a label that has been sent to Keptn:
 
