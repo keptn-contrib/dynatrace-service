@@ -16,7 +16,7 @@ The dynatrace-service allows you to integrate Dynatrace monitoring in your Keptn
 
 - [**SLI-provider**](documentation/sli-provider.md): To support the evaluation of the quality gates, the dynatrace-service can be configured to retrieve SLIs for a Keptn project, stage or service. 
 
-- [**Forwarding deployment and test events from Keptn to Dynatrace**](documentation/event-forwarding-to-dynatrace.md): The dynatrace-service can forward events such deployment or test start/stop events to Dynatrace along with attach rules to ensure that the correct monitored entities are associated with the event.
+- [**Forwarding deployment and test events from Keptn to Dynatrace**](documentation/event-forwarding-to-dynatrace.md): The dynatrace-service can forward events such as deployment or test start/stop events to Dynatrace along with attach rules to ensure that the correct monitored entities are associated with the event.
 
 - [**Forwarding problem notifications from Dynatrace to Keptn**](documentation/problem-forwarding-to-keptn.md): The dynatrace-service can support auto-remediation by forwarding problem notifications from Dynatrace to a Keptn environment and ensuring that the `sh.keptn.events.problem` event is mapped to the correct project, service and stage.
 
@@ -29,15 +29,15 @@ If you are planning to upgrade to dynatrace-service version `0.18.0` or newer fr
 ## Table of contents
 
 - [Installation](documentation/installation.md)
-  - [Downloading the latest Helm chart](documentation/installation.md#download-the-latest-dynatrace-service-helm-chart)
-  - [Gathering Keptn credentials](documentation/installation.md#gather-keptn-credentials)
-  - [Installing the dynatrace-service](documentation/installation.md#install-the-dynatrace-service)
+  - [Downloading the latest Helm chart](documentation/installation.md#1-download-the-latest-dynatrace-service-helm-chart)
+  - [Gathering Keptn credentials](documentation/installation.md#2-gather-keptn-credentials)
+  - [Installing the dynatrace-service](documentation/installation.md#3-install-the-dynatrace-service )
 - [Project setup](documentation/project-setup.md)
   - [Creating a Dynatrace API credentials secret](documentation/project-setup.md#1-create-a-dynatrace-api-credentials-secret)
-  - [Creating a dynatrace-service configuration file](documentation/project-setup.md#2-create-a-dynatrace-service-configuration-file)
+  - [Creating a dynatrace-service configuration file](documentation/project-setup.md#2-create-a-dynatrace-service-configuration-file-dynatracedynatraceconfyaml)
   - [Configuring Dynatrace as the monitoring provider](documentation/project-setup.md#3-configure-dynatrace-as-the-monitoring-provider)
 - [Feature overview](documentation/feature-overview.md)
-  - [SLI provider](documentation/use-case-sli-proviider.md)
+  - [SLI provider](documentation/sli-provider.md)
     - [SLIs via `dynatrace/sli.yaml` files](documentation/slis-via-files.md)
     - [SLIs via a Dynatrace dashboard](documentation/slis-via-dashboard.md)
   - [Forwarding deployment and test events from Keptn to Dynatrace](documentation/event-forwarding-to-dynatrace.md)
