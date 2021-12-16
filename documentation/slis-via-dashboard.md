@@ -5,7 +5,7 @@ The dynatrace-service can dynamically create SLIs and SLOs from a Dynatrace dash
 - `query`: the dynatrace-service will use the first dashboard found with a name beginning with `KQG;project=<project>;service=<service>;stage=<stage>`, where `<project>`, `<service>` and `<stage>` are taken from the `sh.keptn.event.get-sli.triggered` event. To further customize the name, append any additional description as `;<custom-description>` after the stage.
 - `<dashboard-uuid>`: set the `dashboard` property to the UUID of a specific dashboard to use it.
 
-In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-service will transform each supported tile into Dynatrace API queries. An SLI is created for each result together with a corresponding SLO. The SLOs are then stored in an `slo.yaml` in the appropriate service and stage of the Keptn project, and values of the SLIs are queried and returned in the `sh.keptn.event.get-sli.finished` event.
+In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-service will transform each supported tile into Dynatrace API queries. An SLI is created for each result together with a corresponding SLO. The SLOs are then stored in a file called `slo.yaml` in the appropriate service and stage of the Keptn project, and values of the SLIs are queried and returned in the `sh.keptn.event.get-sli.finished` event.
 
 
 ## Defining SLIs and SLOs
@@ -25,17 +25,17 @@ Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo
 
 ## Supported tile types
 
-THe following dashboard tile types are supported:
+The following dashboard tile types are supported:
 
 
 ### Data explorer tiles
 
-Data explorer tiles must only include a single query (i.e., one metric) and include up to one filter by and up to one split by clause. Metric selectors provided via the code tab are currently not supported.
+Data explorer tiles must only include a single query (i.e., one metric) and include up to one *filter by* and up to one *split by* clause. Metric selectors provided via the code tab are currently not supported.
 
 
 ### Custom chart tiles
 
-Each custom chart tile may only contain a single series. Furthermore, the series may only contain zero or one dimensions and optionally a single filter. Only filter
+Each custom chart tile may only contain a single series. Furthermore, the series may only contain zero or one *dimensions* and optionally a single *filter*.
 
 
 ### Problems tiles
@@ -52,12 +52,12 @@ An SLO tile will produce an SLI with the same name as the underlying SLO and the
 
 ### USQL tiles
 
-Depending on the query and visualization type, a USQL tiles with produce one or more SLIs. Single value queries always produce a single SLI, whereas bar charts, pie charts and tables produce an SLI (and SLO) for each value of the selected dimension. Line chart and funnel visualization types are currently not supported.
+Depending on the query and visualization type, a USQL tile will produce one or more SLIs. Single value queries always produce a single SLI, whereas bar charts, pie charts and tables produce an SLI (and SLO) for each value of the selected dimension. Line chart and funnel visualization types are currently not supported.
 
 
 ## Automatic expansion of results including one or more dimensions
 
-Results from queries created Data Explorer, Custom Charting or USQL tiles that include one or more dimensions are automatically expanded into multiple SLIs and SLOs. In this case the SLI name specified in the tile's title is used as base and dimension values are concatenated to it to produce unique names.
+Results from queries created in Data Explorer, Custom Charting or USQL tiles that include one or more dimensions are automatically expanded into multiple SLIs and SLOs. In this case the SLI name specified in the tile's title is used as base and dimension values are concatenated to it to produce unique names.
 
 For example, a Data Explorer query titled `sli=response_time;pass=<20` targeting the metric `builtin:service.response.time` and split by `dt.entity.service` that returns values for `journey service` and `account service` will result in an SLI `response_time_journey_service` and `response_time_account_service`.
 
