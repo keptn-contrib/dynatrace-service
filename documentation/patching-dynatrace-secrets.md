@@ -35,7 +35,7 @@ If you have multiple secrets - e.g., for different projects, stages, services th
 The script will do the following:
 - updates all existing Dynatrace secrets (each secret that has a key `DT_TENANT`) with labels `app.kubernetes.io/managed-by: keptn-secret-service` and `app.kubernetes.io/scope: dynatrace-service`. This is basically the same that the Keptn Secret Service would do, if you would create a new secret via the UI in Keptn Bridge
 - adds a role `keptn-dynatrace-svc-read` that is restricted to reading secrets, and it will list all available Dynatrace secret resource names.
-- adds a role binding `dynatrace-service-rolebinding` that will bind the service account to the above role* 
+- adds a role binding `dynatrace-service-rolebinding` that will bind the service account to the above role 
 
 Here's the script: [Patch Dynatrace Secrets](assets/patch-dynatrace-secrets.sh?raw=true)
 
