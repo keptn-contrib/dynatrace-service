@@ -30,5 +30,5 @@ Alternatively, if you'd like to add a custom SLO definition, simply override the
 
 ## Known Limitations
 
-- The Dynatrace Metrics API provides data with the "eventual consistency" approach. Therefore, the metrics data retrieved can be incomplete or even contain inconsistencies in case of timeframes that are within two hours of the current datetime. Usually, it takes a minute to catch up, but in extreme situations this might not be enough. The dynatrace-service tries to mitigate this issue by delaying calls to the metrics API by 60 seconds.
+- The Dynatrace Metrics API provides data with the "eventual consistency" approach. Therefore, the metrics data retrieved can be incomplete or even contain inconsistencies for timeframes within two hours of the current time. Usually, it takes a minute to catch up, but in extreme situations this might not be enough. The dynatrace-service tries to mitigate this issue by delaying SLI retrieval by up to 120 seconds in situations where the evaluation end time is close to the current time.
 
