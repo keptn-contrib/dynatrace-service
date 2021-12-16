@@ -57,7 +57,7 @@ objectives:
   - sli: throughput
 total_score:
   pass: "90%"
-  warning: "75%"`
+  warning: "75%"
 ```
 
 After service onboarding, you should be able to see the newly created services within the Bridge:
