@@ -53,7 +53,7 @@ Thus if a different configuration is required on a stage or service level, creat
 
 | Level | Branch | Location on branch|
 |---|---|---|
-| Project | default (master) | `dynatrace/dynatrace.conf.yaml` |
+| Project | default branch (main) | `dynatrace/dynatrace.conf.yaml` |
 | Stage | { stage branch } | `dynatrace/dynatrace.conf.yaml` |
 | Service| { stage branch } | `{service}/dynatrace/dynatrace.conf.yaml` |
 
