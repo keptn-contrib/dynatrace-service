@@ -66,7 +66,7 @@ indicators:
     rt_faster_500ms: SLO;524ca177-849b-3e8c-8175-42b93fbc33c5
 ```
 
-This queries the SLO using the `/api/v2/slo/<SLO_ID>` endpoint and will return the `evaluatedPercentage` field.
+This queries the SLO using the `/api/v2/slo/<SLO_ID>` endpoint and will return the value of the `evaluatedPercentage` field.
 
 
 ### Open problems (prefix: `PV2`)
@@ -79,7 +79,7 @@ indicators:
     problems: PV2;problemSelector=status(open)&entitySelector=managementZoneIds(7030365576649815430)
 ```
 
-This passes the `problemSelector` and `entitySelector` to the `/api/v2/problems` endpoint and will return the `totalCount` field, i.e., the total number of problems matching the query, as the SLI value.
+This passes the `problemSelector` and `entitySelector` to the `/api/v2/problems` endpoint and will return the value of the `totalCount` field, i.e., the total number of problems matching the query, as the SLI value.
 
 
 ### Open security problems (prefix: `SECPV2`)
@@ -93,7 +93,7 @@ indicators:
     security_problems: SECPV2;securityProblemSelector=status(open)
 ```
 
-This passes the `securityProblemSelector` to the `/api/v2/securityProblems` endpoint and will return the `totalCount` field, i.e., the total number of security problems matching the query, as the SLI value.
+This passes the `securityProblemSelector` to the `/api/v2/securityProblems` endpoint and will return the value of the `totalCount` field, i.e., the total number of security problems matching the query, as the SLI value.
 
 
 ### User sessions (prefix: `USQL`)
@@ -102,10 +102,10 @@ With the syntax `USQL;<tile_type>;<dimension>;<query>`, the dynatrace-service ca
 
 | Tile type | Description |
 |---|---|
-| SINGLE_VALUE | Select the first value of the first row as the result; `<dimension>` must be empty. |
-| PIE_CHART | Select the first row with first value = `<dimension>`, take the second value as the result. |
-| COLUMN_CHART | Select the first row  with first value = `<dimension>`, take the second value as the result. |
-| TABLE | Select the first row with first value = `<dimension>`, take the last value as the result. |
+| SINGLE_VALUE | Select the first column of the first row as the result; `<dimension>` must be empty. |
+| PIE_CHART | Select the first row where the value in the first column equals `<dimension>`, take the value in the second column as the result. |
+| COLUMN_CHART | Select the first row where the value in the first column equals `<dimension>`, take the value in the second column as the result. |
+| TABLE | Select the first row where the value in the first column equals `<dimension>`, take the value of the last column as the result. |
 
 Fox example, the following SLI definition will calculate the average duration of iPad mini user sessions in Austria:
 
