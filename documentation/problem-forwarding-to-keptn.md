@@ -60,7 +60,7 @@ To send any type of problem to Keptn and orchestrate auto-remediation workflows,
         "Tags":"{Tags}",
         "ImpactedEntities":{ImpactedEntities},
         "ImpactedEntity":"{ImpactedEntity}",
-        "KeptnProject" : "demo-remediation",
+        "KeptnProject" : "dynatrace",
         "KeptnService" : "allproblems",
         "KeptnStage" : "production"
     }
