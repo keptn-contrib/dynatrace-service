@@ -3,6 +3,15 @@
 To specify SLIs via files, add one or more `dynatrace/sli.yaml` files to Keptn project's Git repository on the project, stage or service level. Each `dynatrace/sli.yaml` file must be a well-formed [YAML file](https://yaml.org/) and contain an `indicators` element which in turn contains key-value pairs for each SLI. 
 
 
+**Notes:**
+
+Definitions can target any type of metric available in Dynatrace and any entity type (`APPLICATION`, `SERVICE`, `PROCESS_GROUP`, `HOST`, `CUSTOM_DEVICE`, etc.).
+
+- As users commonly would commonly like the `builtin:service.response.time` metric to be specified in milliseconds, the dynatrace-service automatically converts SLIs using this metric from microseconds to milliseconds. To convert other metrics, see [Converted metrics](#converted-metrics-prefix-mv2))
+
+- This service uses the Dynatrace Metrics v2 API by default but can also parse v1 metrics query. If you use the v1 query language you will see warning log outputs in the *dynatrace-service* which encourages you to update your queries to v2. More information about Metrics v2 API can be found in the [Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/dynatrace-api/environment-api/metric-v2/)
+
+
 ## Example `dynatrace/sli.yaml` file
 
 To assist you in getting started, consult [the example `dynatrace/sli.yaml` file](assets/sli.yaml) which contains definitions for `throughput`, `error_rate`, `response_time_p50`, `response_time_p90` and `response_time_p95`:
@@ -16,14 +25,6 @@ indicators:
  response_time_p90: "metricSelector=builtin:service.response.time:splitBy():percentile(90)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
  response_time_p95: "metricSelector=builtin:service.response.time:splitBy():percentile(95)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
 ```
-
-Definitions can target any type of metric available in Dynatrace and any entity type (`APPLICATION`, `SERVICE`, `PROCESS_GROUP`, `HOST`, `CUSTOM_DEVICE`, etc.).
-
-**Notes:**
-
-- As users commonly would commonly like the `builtin:service.response.time` metric to be specified in milliseconds, the dynatrace-service automatically converts SLIs using this metric from microseconds to milliseconds. To convert other metrics, see [Converted metrics](#converted-metrics-prefix-mv2))
-
-- This service uses the Dynatrace Metrics v2 API by default but can also parse v1 metrics query. If you use the v1 query language you will see warning log outputs in the *dynatrace-service* which encourages you to update your queries to v2. More information about Metrics v2 API can be found in the [Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/dynatrace-api/environment-api/metric-v2/)
 
 
 ## Using placeholders in SLI definitions
