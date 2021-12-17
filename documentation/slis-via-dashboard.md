@@ -52,12 +52,12 @@ An SLO tile will produce an SLI with the same name as the underlying SLO and the
 
 ### USQL tiles
 
-Depending on the query and visualization type, a USQL tiles with produce one or more SLIs. Single value queries always produce a single SLI, whereas bar charts, pie charts and tables produce an SLI (and SLO) for each value of the selected dimension. Line chart and funnel visualization types are currently not supported.
+Depending on the query and visualization type, a USQL tile will produce one or more SLIs. Single value queries always produce a single SLI, whereas bar charts, pie charts and tables produce an SLI (and SLO) for each value of the selected dimension. Line chart and funnel visualization types are currently not supported.
 
 
 ## Automatic expansion of results including one or more dimensions
 
-Results from queries created Data Explorer, Custom Charting or USQL tiles that include one or more dimensions are automatically expanded into multiple SLIs and SLOs. In this case the SLI name specified in the tile's title is used as base and dimension values are concatenated to it to produce unique names.
+Results from queries created from Data Explorer, Custom Charting or USQL tiles that include one or more dimensions are automatically expanded into multiple SLIs and SLOs. In this case the SLI name specified in the tile's title is used as base and dimension values are concatenated to it to produce unique names.
 
 For example, a Data Explorer query titled `sli=response_time;pass=<20` targeting the metric `builtin:service.response.time` and split by `dt.entity.service` that returns values for `journey service` and `account service` will result in an SLI `response_time_journey_service` and `response_time_account_service`.
 
