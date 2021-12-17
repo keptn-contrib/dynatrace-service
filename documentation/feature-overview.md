@@ -6,7 +6,7 @@ The dynatrace-service supports the following use cases:
 
 - [**Forwarding deployment and test events from Keptn to Dynatrace**](event-forwarding-to-dynatrace.md): The dynatrace-service can forward events such deployment or test start/stop events to Dynatrace along with attach rules to ensure that the correct monitored entities are associated with the event.
 
-- [**Forwarding problem notifications from Dynatrace to Keptn**](problem-forwarding-to-keptn.md): The dynatrace-service can support auto-remediation by forwarding problem notifications from Dynatrace to a Keptn environment and ensuring that the `sh.keptn.events.problem` event is mapped to the correct project, service and stage.
+- [**Forwarding problem notifications from Dynatrace to Keptn**](problem-forwarding-to-keptn.md): The dynatrace-service can support triggering remediation sequences by forwarding problem notifications from Dynatrace to a Keptn environment and ensuring that the `sh.keptn.events.problem` event is mapped to the correct project, service and stage.
 
 - [**Automatic onboarding of monitored service entities**](auto-service-onboarding.md): The dynatrace-service can be configured to periodically check for new service entities detected by Dynatrace and automatically import these into Keptn.
 
