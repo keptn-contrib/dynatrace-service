@@ -18,7 +18,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddStartsWith(dynatrace.SLOPath+"/7d07efde-b714-3e6e-ad95-08490e2540c4", testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
+	handler.AddExact(dynatrace.SLOPath+"/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1631862000000&to=1631865600000", testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
 		createSuccessfulSLIResultAssertionsFunc("Static_SLO_-_Pass", 95),

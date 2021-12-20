@@ -21,7 +21,7 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, startUnix time.Time,
 	return &SLOTileProcessing{
 		client:    client,
 		startUnix: startUnix,
-		endUnix:   startUnix,
+		endUnix:   endUnix,
 	}
 }
 
