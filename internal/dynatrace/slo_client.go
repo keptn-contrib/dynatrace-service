@@ -8,7 +8,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
-const sloPath = "/api/v2/slo"
+const SLOPath = "/api/v2/slo"
 
 type SLOResult struct {
 	ID                  string  `json:"id"`
@@ -45,7 +45,7 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 func (c *SLOClient) Get(sloID string, startUnix time.Time, endUnix time.Time) (*SLOResult, error) {
 	body, err := c.client.Get(
 		fmt.Sprintf("%s/%s?from=%s&to=%s",
-			sloPath,
+			SLOPath,
 			sloID,
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix)))
