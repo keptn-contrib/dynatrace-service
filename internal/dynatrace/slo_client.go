@@ -3,8 +3,9 @@ package dynatrace
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
 const sloPath = "/api/v2/slo"
@@ -22,8 +23,6 @@ type SLOResult struct {
 	MetricRate          string  `json:"metricRate"`
 	MetricNumerator     string  `json:"metricNumerator"`
 	MetricDenominator   string  `json:"metricDenominator"`
-	TargetSuccessOLD    float64 `json:"targetSuccess"`
-	TargetWarningOLD    float64 `json:"targetWarning"`
 	Target              float64 `json:"target"`
 	Warning             float64 `json:"warning"`
 	EvaluationType      string  `json:"evaluationType"`

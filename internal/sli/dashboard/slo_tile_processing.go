@@ -2,12 +2,13 @@ package dashboard
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 type SLOTileProcessing struct {
@@ -81,20 +82,10 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 	// we prepend this with SLO;<SLO-ID>
 	sliQuery := fmt.Sprintf("SLO;%s", sloID)
 
-	// lets add the SLO definition in case we need to generate an SLO.yaml
-	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
+	// TODO: 2021-12-20: check: maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 
-	// Please see https://github.com/keptn-contrib/dynatrace-sli-service/issues/97 - for more information on that change of Dynatrace SLO API
-	// if we still run against an old API we fall back to the old fields
-	warning := sloResult.Warning
-	if warning <= 0.0 {
-		warning = sloResult.TargetWarningOLD
-	}
-	target := sloResult.Target
-	if target <= 0.0 {
-		target = sloResult.TargetSuccessOLD
-	}
-	sloString := fmt.Sprintf("sli=%s;pass=>=%f;warning=>=%f", indicatorName, warning, target)
+	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/97#issuecomment-766110172 for explanation about mappings to pass and warning
+	sloString := fmt.Sprintf("sli=%s;pass=>=%f;warning=>=%f", indicatorName, sloResult.Warning, sloResult.Target)
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
 	return sliResult, indicatorName, sliQuery, sloDefinition, nil
