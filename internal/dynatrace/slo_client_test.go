@@ -10,7 +10,7 @@ import (
 
 func TestExecuteGetDynatraceSLO(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(SLOPath+"/524ca177-849b-3e8c-8175-42b93fbc33c5?from=1571649084000&to=1571649085000", "./testdata/test_get_slo_id.json")
+	handler.AddExact(SLOPath+"/524ca177-849b-3e8c-8175-42b93fbc33c5?from=1571649084000&to=1571649085000&timeFrame=GTF", "./testdata/test_get_slo_id.json")
 	dtClient, _, teardown := createDynatraceClient(t, handler)
 	defer teardown()
 

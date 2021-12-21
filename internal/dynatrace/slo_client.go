@@ -44,7 +44,7 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 // It returns a SLOResult object on success, an error otherwise
 func (c *SLOClient) Get(sloID string, startUnix time.Time, endUnix time.Time) (*SLOResult, error) {
 	body, err := c.client.Get(
-		fmt.Sprintf("%s/%s?from=%s&to=%s",
+		fmt.Sprintf("%s/%s?from=%s&to=%s&timeFrame=GTF",
 			SLOPath,
 			sloID,
 			common.TimestampToString(startUnix),
