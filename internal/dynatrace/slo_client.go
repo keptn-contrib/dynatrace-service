@@ -11,23 +11,11 @@ import (
 const SLOPath = "/api/v2/slo"
 
 type SLOResult struct {
-	ID                  string  `json:"id"`
-	Enabled             bool    `json:"enabled"`
 	Name                string  `json:"name"`
-	Description         string  `json:"description"`
 	EvaluatedPercentage float64 `json:"evaluatedPercentage"`
-	ErrorBudget         float64 `json:"errorBudget"`
-	Status              string  `json:"status"`
 	Error               string  `json:"error"`
-	UseRateMetric       bool    `json:"useRateMetric"`
-	MetricRate          string  `json:"metricRate"`
-	MetricNumerator     string  `json:"metricNumerator"`
-	MetricDenominator   string  `json:"metricDenominator"`
 	Target              float64 `json:"target"`
 	Warning             float64 `json:"warning"`
-	EvaluationType      string  `json:"evaluationType"`
-	Timeframe           string  `json:"timeframe"`
-	Filter              string  `json:"filter"`
 }
 
 type SLOClient struct {
