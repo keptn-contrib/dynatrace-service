@@ -26,6 +26,36 @@ indicators:
  response_time_p95: "metricSelector=builtin:service.response.time:splitBy():percentile(95)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)"
 ```
 
+These SLIs may then be used by Keptn in conjunction with service-level objectives (SLOs) to evaluate quality gates. For example, the following sample SLOs could be defined in a [`slo.yaml` file](assets/slo.yaml): 
+
+```yaml
+spec_version: "1.0"
+comparison:
+  aggregate_function: "avg"
+  compare_with: "single_result"
+  include_result_with_score: "pass"
+  number_of_comparison_results: 1
+filter:
+objectives:
+  - sli: "response_time_p95"
+    key_sli: false
+    pass:             
+      - criteria:
+          - "<600"    
+    warning:        
+      - criteria:
+          - "<=800"
+    weight: 1
+  - sli: "error_rate"
+    key_sli: false
+    pass:
+      - criteria:
+          - "<5"
+  - sli: throughput
+total_score:
+  pass: "90%"
+  warning: "75%"
+```
 
 ## Using placeholders in SLI definitions
 
