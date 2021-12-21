@@ -3,32 +3,19 @@ package dynatrace
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
-const sloPath = "/api/v2/slo"
+const SLOPath = "/api/v2/slo"
 
 type SLOResult struct {
-	ID                  string  `json:"id"`
-	Enabled             bool    `json:"enabled"`
 	Name                string  `json:"name"`
-	Description         string  `json:"description"`
 	EvaluatedPercentage float64 `json:"evaluatedPercentage"`
-	ErrorBudget         float64 `json:"errorBudget"`
-	Status              string  `json:"status"`
 	Error               string  `json:"error"`
-	UseRateMetric       bool    `json:"useRateMetric"`
-	MetricRate          string  `json:"metricRate"`
-	MetricNumerator     string  `json:"metricNumerator"`
-	MetricDenominator   string  `json:"metricDenominator"`
-	TargetSuccessOLD    float64 `json:"targetSuccess"`
-	TargetWarningOLD    float64 `json:"targetWarning"`
 	Target              float64 `json:"target"`
 	Warning             float64 `json:"warning"`
-	EvaluationType      string  `json:"evaluationType"`
-	TimeWindow          string  `json:"timeWindow"`
-	Filter              string  `json:"filter"`
 }
 
 type SLOClient struct {
@@ -45,8 +32,8 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 // It returns a SLOResult object on success, an error otherwise
 func (c *SLOClient) Get(sloID string, startUnix time.Time, endUnix time.Time) (*SLOResult, error) {
 	body, err := c.client.Get(
-		fmt.Sprintf("%s/%s?from=%s&to=%s",
-			sloPath,
+		fmt.Sprintf("%s/%s?from=%s&to=%s&timeFrame=GTF",
+			SLOPath,
 			sloID,
 			common.TimestampToString(startUnix),
 			common.TimestampToString(endUnix)))
