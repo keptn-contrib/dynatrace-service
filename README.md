@@ -40,7 +40,7 @@ If you are planning to upgrade to dynatrace-service version `0.18.0` or newer fr
   - [SLI provider](documentation/sli-provider.md)
     - [SLIs via `dynatrace/sli.yaml` files](documentation/slis-via-files.md)
     - [SLIs via a Dynatrace dashboard](documentation/slis-via-dashboard.md)
-  - [Forwarding deployment and test events from Keptn to Dynatrace](documentation/event-forwarding-to-dynatrace.md)
+  - [Forwarding events from Keptn to Dynatrace](documentation/event-forwarding-to-dynatrace.md)
   - [Forwarding problem notifications from Dynatrace to Keptn](documentation/problem-forwarding-to-keptn.md)
   - [Automatic onboarding of monitored service entities](documentation/auto-service-onboarding.md)
 - Other topics
