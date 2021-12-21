@@ -5,7 +5,7 @@ The dynatrace-service can dynamically create SLIs and SLOs from a Dynatrace dash
 - `query`: the dynatrace-service will use the first dashboard found with a name beginning with `KQG;project=<project>;service=<service>;stage=<stage>`, where `<project>`, `<service>` and `<stage>` are taken from the `sh.keptn.event.get-sli.triggered` event. To further customize the name, append any additional description as `;<custom-description>` after the stage.
 - `<dashboard-uuid>`: set the `dashboard` property to the UUID of a specific dashboard to use it.
 
-In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-service will transform each supported tile into Dynatrace API queries. An SLI is created for each result together with a corresponding SLO. The SLOs are then stored in an `slo.yaml` file in the appropriate service and stage of the Keptn project, and values of the SLIs are queried and returned in the `sh.keptn.event.get-sli.finished` event.
+In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-service will transform each supported tile into Dynatrace API queries. An SLI is created for each result together with a corresponding SLO. The SLOs are then stored in an `slo.yaml` in the appropriate service and stage of the Keptn project, and values of the SLIs are queried and returned in the `sh.keptn.event.get-sli.finished` event.
 
 
 ## Defining SLIs and SLOs
@@ -18,7 +18,7 @@ The base name of the SLI as well as the properties of the SLO must be set by app
 | `pass` | Add `<value>` as a pass criterion to the SLO | No | `pass=<200` |
 | `warning` | Add `<value>` as a warning criterion to the SLO | No | `warning=<300` |
 | `key` | Mark SLI as a key SLI | No | `key=true` |
-| `weight` | Set the weight of the SLO to `<value>` | No | `weight=2.2` |
+| `weight` | Set the weight of the SLO to `<value>` | No | `weight=2` |
 
 Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo/#objectives) for more details on configuring objectives.
 
