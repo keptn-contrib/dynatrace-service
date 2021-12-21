@@ -16,7 +16,7 @@ The dynatrace-service allows you to integrate Dynatrace monitoring in your Keptn
 
 - [**SLI-provider**](documentation/sli-provider.md): To support the evaluation of the quality gates, the dynatrace-service can be configured to retrieve SLIs for a Keptn project, stage or service. 
 
-- [**Forwarding deployment and test events from Keptn to Dynatrace**](documentation/event-forwarding-to-dynatrace.md): The dynatrace-service can forward events such as deployment or test start/stop events to Dynatrace using attach rules to ensure that the correct monitored entities are associated with the event.
+- [**Forwarding events from Keptn to Dynatrace**](documentation/event-forwarding-to-dynatrace.md): The dynatrace-service can forward events such as remediation, deployment, test start/stop, evaluation or release events to Dynatrace using attach rules to ensure that the correct monitored entities are associated with the event.
 
 - [**Forwarding problem notifications from Dynatrace to Keptn**](documentation/problem-forwarding-to-keptn.md): The dynatrace-service can support triggering remediation sequences by forwarding problem notifications from Dynatrace to a Keptn environment and ensuring that the `sh.keptn.events.problem` event is mapped to the correct project, service and stage.
 

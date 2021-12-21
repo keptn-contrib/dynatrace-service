@@ -7,7 +7,7 @@ To specify SLIs via files, add one or more `dynatrace/sli.yaml` files to Keptn p
 
 Definitions can target any type of metric available in Dynatrace and any entity type (`APPLICATION`, `SERVICE`, `PROCESS_GROUP`, `HOST`, `CUSTOM_DEVICE`, etc.).
 
-- As users commonly would commonly like the `builtin:service.response.time` metric to be specified in milliseconds, the dynatrace-service automatically converts SLIs using this metric from microseconds to milliseconds. To convert other metrics, see [Converted metrics](#converted-metrics-prefix-mv2))
+- As users would commonly like the `builtin:service.response.time` metric to be specified in milliseconds, the dynatrace-service automatically converts SLIs using this metric from microseconds to milliseconds. To convert other metrics, see [Converted metrics](#converted-metrics-prefix-mv2))
 
 - This service uses the Dynatrace Metrics v2 API by default but can also parse v1 metrics query. If you use the v1 query language you will see warning log outputs in the *dynatrace-service* which encourages you to update your queries to v2. More information about Metrics v2 API can be found in the [Dynatrace documentation](https://www.dynatrace.com/support/help/extend-dynatrace/dynatrace-api/environment-api/metric-v2/)
 

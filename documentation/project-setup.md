@@ -1,7 +1,7 @@
 # Set up a Keptn project to use Dynatrace monitoring
 
 To use the dynatrace-service in a new or existing Keptn project, create a Kubernetes secret for accessing a Dynatrace tenant, add a dynatrace-service configuration file (`dynatrace/dynatrace.conf.yaml`) to the project's Git repository, and execute `keptn configure monitoring` using the Keptn CLI.
-Those steps are described in detail below.
+These steps are described in detail in the sections below.
 
 
 ## Prerequisite: Keptn project
@@ -65,7 +65,7 @@ After clicking **Add Secret** you should see an updated list of secrets includin
 
 ## 2. Create a dynatrace-service configuration file (`dynatrace/dynatrace.conf.yaml`)
 
-To utilize the dynatrace-service with your Keptn project, add a configuration file (located at `dynatrace/dynatrace.conf.yaml`) to project's Git repository. At a minimum, this YAML file instructs the dynatrace-service about which Dynatrace credentials secret to use, but depending on the use-case, specifies how to retrieve SLIs, and optionally, which attach rules to use for identifying the entity monitored by Dynatrace. See [Configuring the dynatrace-service with `dynatrace/dynatrace.conf.yaml`](dynatrace-conf-yaml-file.md) for details. The [minimum configuration](assets/dynatrace.conf.yaml) is:
+To utilize the dynatrace-service with your Keptn project, add a configuration file (located at `dynatrace/dynatrace.conf.yaml`) to project's Git repository. At a minimum, this YAML file instructs the dynatrace-service about which Dynatrace credentials secret to use, but depending on the use-case, specifies how to retrieve SLIs, and optionally, which attach rules to use for selecting entities monitored by Dynatrace. See [Configuring the dynatrace-service with `dynatrace/dynatrace.conf.yaml`](dynatrace-conf-yaml-file.md) for details. The [minimum configuration](assets/dynatrace.conf.yaml) is:
 
 ```yaml
 spec_version: '0.1.0'
