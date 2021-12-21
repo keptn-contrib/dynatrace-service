@@ -2,10 +2,9 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
 	log "github.com/sirupsen/logrus"
@@ -39,7 +38,7 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 
 		// replace the placeholders
 		log.WithField("fileContent", fileContent).Debug("Original contents of configuration file")
-		fileContent = replaceKeptnPlaceholders(fileContent, event)
+		fileContent = common.ReplaceKeptnPlaceholders(fileContent, event)
 		log.WithField("fileContent", fileContent).Debug("Contents of configuration file after replacements")
 	}
 
@@ -50,44 +49,6 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 	}
 
 	return dynatraceConfig, nil
-}
-
-//
-// replaces $ placeholders with actual values
-// $CONTEXT, $EVENT, $SOURCE
-// $PROJECT, $STAGE, $SERVICE, $DEPLOYMENT
-// $TESTSTRATEGY
-// $LABEL.XXXX  -> will replace that with a label called XXXX
-// $ENV.XXXX    -> will replace that with an env variable called XXXX
-// $SECRET.YYYY -> will replace that with the k8s secret called YYYY
-//
-func replaceKeptnPlaceholders(input string, event adapter.EventContentAdapter) string {
-	result := input
-
-	// first we do the regular keptn values
-	result = strings.Replace(result, "$CONTEXT", event.GetShKeptnContext(), -1)
-	result = strings.Replace(result, "$EVENT", event.GetEvent(), -1)
-	result = strings.Replace(result, "$SOURCE", event.GetSource(), -1)
-	result = strings.Replace(result, "$PROJECT", event.GetProject(), -1)
-	result = strings.Replace(result, "$STAGE", event.GetStage(), -1)
-	result = strings.Replace(result, "$SERVICE", event.GetService(), -1)
-	result = strings.Replace(result, "$DEPLOYMENT", event.GetDeployment(), -1)
-	result = strings.Replace(result, "$TESTSTRATEGY", event.GetTestStrategy(), -1)
-
-	// now we do the labels
-	for key, value := range event.GetLabels() {
-		result = strings.Replace(result, "$LABEL."+key, value, -1)
-	}
-
-	// now we do all environment variables
-	for _, env := range os.Environ() {
-		pair := strings.SplitN(env, "=", 2)
-		result = strings.Replace(result, "$ENV."+pair[0], pair[1], -1)
-	}
-
-	// TODO: 2021-11-22: check: iterate through k8s secrets?
-
-	return result
 }
 
 func parseDynatraceConfigYAML(input string) (*DynatraceConfig, error) {
