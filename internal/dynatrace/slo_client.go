@@ -26,7 +26,7 @@ type SLOResult struct {
 	Target              float64 `json:"target"`
 	Warning             float64 `json:"warning"`
 	EvaluationType      string  `json:"evaluationType"`
-	TimeWindow          string  `json:"timeWindow"`
+	Timeframe           string  `json:"timeframe"`
 	Filter              string  `json:"filter"`
 }
 
