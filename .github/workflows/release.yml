@@ -320,14 +320,6 @@ jobs:
         run: |
           git push --follow-tags origin "release/$RELEASE_TAG"
 
-      - name: Automatically merge Pull Request
-        # this only happens as soon as all checks have passed and the auto-merge functionality is enabled
-        env:
-          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
-          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
-        run: |
-          gh pr merge "release/$RELEASE_TAG" --auto --merge --delete-branch
-
       - name: Download Release Artifacts
         uses: actions/download-artifact@v2
         with:
