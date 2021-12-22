@@ -46,7 +46,7 @@ func _main(args []string, envCfg envConfig) int {
 	ctx = cloudevents.WithEncodingStructured(ctx)
 
 	log.WithFields(log.Fields{"port": envCfg.Port, "path": envCfg.Path}).Debug("Initializing cloudevents client")
-	p, err := cloudevents.NewHTTP(cloudevents.WithPath(envCfg.Path), cloudevents.WithPort(envCfg.Port))
+	p, err := cloudevents.NewHTTP(cloudevents.WithPath(envCfg.Path), cloudevents.WithPort(envCfg.Port), cloudevents.WithGetHandlerFunc(HTTPGetHandler))
 	if err != nil {
 		log.WithError(err).Fatal("Failed to create client")
 	}
