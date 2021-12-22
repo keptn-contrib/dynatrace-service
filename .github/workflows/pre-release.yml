@@ -12,7 +12,7 @@ on:
 env:
   NODE_VERSION: 14
   KEPTN_BOT_NAME: "Keptn Contrib Bot"
-  KEPTN_BOT_EMAIL: "Keptn Contrib Bot <keptn-contrib-bot@users.noreply.github.com>"
+  KEPTN_BOT_EMAIL: "keptn-contrib-bot@users.noreply.github.com"
   RELEASE_NOTES_FILE: "RELEASE-BODY.md" # If you change this, then also adapt .gitignore!
   PRERELEASE_KEYWORD: "next"
 
