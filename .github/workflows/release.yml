@@ -289,6 +289,9 @@ jobs:
           echo "Fetching previously deleted old tags..."
           git fetch origin --tags -f
 
+          echo "Sign off commit"
+          git commit --amend --signoff
+
       - name: Create Release Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
