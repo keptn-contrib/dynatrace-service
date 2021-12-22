@@ -1,0 +1,314 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      semver-type:
+        description: 'Can be one of [major,minor,patch]. CAUTION: This will enforce a new release with the specified semantic version type bumped.'
+        required: false
+        type: string
+      keptn-version:
+        description: 'The version of Keptn this release has been tested with. This version also determines the value for the Distributor version in values.yml and will be included in all compatibility updates. E.g. `0.11.3`'
+        required: true
+        type: string
+      dynatrace-version:
+        description: 'The version of Dynatrace this release has been tested with. This version will be included in all compatibility updates. E.g. `1.233`'
+        required: true
+        type: string
+
+env:
+  NODE_VERSION: 14
+  KEPTN_BOT_NAME: "Keptn Contrib Bot"
+  KEPTN_BOT_EMAIL: "Keptn Contrib Bot <keptn-contrib-bot@users.noreply.github.com>"
+  RELEASE_NOTES_FILE: "RELEASE-BODY.md"  # If you change this, then also adapt .gitignore!
+  COMPATIBILITY_MATRIX_FILE: "documentation/compatibility.md"
+
+defaults:
+  run:
+    shell: bash
+jobs:
+  prepare:
+    name: Prepare release run
+    runs-on: ubuntu-20.04
+    outputs:
+      next-version: ${{ steps.version_number.outputs.next-version }}
+      branch: ${{ steps.current_branch.outputs.branch }}
+    steps:
+      - name: Check SemVer input
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+        run: |
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            echo "SemVer Type is defined. Checking for valid SemVer type..."
+            if [[ "$SEMVER_TYPE" == "major" ]] || [[ "$SEMVER_TYPE" == "minor" ]] || [[ "$SEMVER_TYPE" == "patch" ]]; then
+              echo "::notice::SemVer Type is correctly set to $SEMVER_TYPE! Continuing with this version bump..."
+            else
+              echo "::error::ERROR: Enforced SemVer does not match any of [major,minor,patch]!"
+              echo "Exiting..."
+              exit 1
+            fi
+          else
+            echo "::notice::No SemVer type defined, continuing with auto generated version number..."
+          fi
+
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.KEPTN_BOT_TOKEN }}
+
+      - name: Validate Keptn Version
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+        run: |
+          ./gh-actions-scripts/check-version.sh "$KEPTN_VERSION" release-3
+
+      - name: Validate Dynatrace Version
+        env:
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          ./gh-actions-scripts/check-version.sh "$DYNATRACE_VERSION" release-2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2.5.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Find next version number
+        id: version_number
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+        run: |
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            echo "Determine version based on next $SEMVER_TYPE version"
+            npx standard-version@^9.3.2 \
+              --skip.commit \
+              --skip.tag \
+              --skip.changelog \
+              --release-as "$SEMVER_TYPE"
+          else
+            echo "Determine version based on next SemVer"
+            npx standard-version@^9.3.2 \
+              --skip.commit \
+              --skip.tag \
+              --skip.changelog
+          fi
+
+          NEXT_VERSION=$(cat VERSION.txt)
+          echo "::set-output name=next-version::${NEXT_VERSION}"
+          git checkout HEAD -- VERSION.txt
+
+          echo "::notice::Next version number: ${NEXT_VERSION}"
+
+      - name: Find current branch
+        id: current_branch
+        run: |
+          branch=${GITHUB_REF#refs/heads/}
+          echo "::set-output name=branch::${branch}"
+
+
+  ############################################################################
+  # Build Docker Image
+  ############################################################################
+  docker_build:
+    needs: prepare
+    name: Docker Build
+    uses: keptn-contrib/dynatrace-service/.github/workflows/build-docker-image.yml@master
+    with:
+      version: ${{ needs.prepare.outputs.next-version }}
+
+  ############################################################################
+  # Build Helm Chart
+  ############################################################################
+  build-helm-chart:
+    needs: prepare
+    name: Build Helm Charts
+    uses: keptn-contrib/dynatrace-service/.github/workflows/build-helm-chart.yml@master
+    with:
+      branch: ${{ needs.prepare.outputs.branch }}
+      version: ${{ needs.prepare.outputs.next-version }}
+      distributor-version: ${{ github.event.inputs.keptn-version }}
+      release: true
+
+  ############################################################################
+  # Release
+  ############################################################################
+  release:
+    name: "Release"
+    runs-on: ubuntu-20.04
+    needs: [prepare, docker_build, build-helm-chart]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.KEPTN_BOT_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2.5.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Configure Git
+        env:
+          KEPTN_BOT_NAME: ${{ env.KEPTN_BOT_NAME }}
+          KEPTN_BOT_EMAIL: ${{ env.KEPTN_BOT_EMAIL }}
+        run: |
+          git config user.name "$KEPTN_BOT_NAME"
+          git config user.email "$KEPTN_BOT_EMAIL"
+
+      - name: Prepare GitHub Release Notes
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+        run: |
+          # Delete pre-release tags to be able to generate a changelog from last 'real' release
+          # This is a workaround for a known limitation of standard-version
+          # Reference: https://github.com/conventional-changelog/standard-version/issues/203#issuecomment-872415140
+          git tag -l | grep -vE '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$' | xargs git tag -d
+
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            npx standard-version@^9.3.2 \
+              -i "${{ env.RELEASE_NOTES_FILE }}" \
+              --skip.commit \
+              --skip.tag \
+              --header "" \
+              --release-as "$SEMVER_TYPE"
+          else
+            npx standard-version@^9.3.2 \
+              -i "${{ env.RELEASE_NOTES_FILE }}" \
+              --skip.commit \
+              --skip.tag \
+              --header ""
+          fi
+
+      - name: Update Github Release Notes with version compatibility
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          sed -r "0,/^##(#)? \[[0-9]+\.[0-9]+\.[0-9]+\].*$/ s//&\n\n### Release validated with\n | Dynatrace-service: \`$(cat VERSION.txt)\` | Keptn: \`$KEPTN_VERSION\` | Dynatrace: \`$DYNATRACE_VERSION\` |\n |---|---|---|/" \
+            -i "${{ env.RELEASE_NOTES_FILE }}"
+
+      - name: Bump Version Compatibility
+        # also adding the file to git to have it in the same commit later on
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          printf '| `%s` | `%s` | `%s` |\n' \
+            "$(cat VERSION.txt)" "$KEPTN_VERSION" "$DYNATRACE_VERSION" \
+            >> "${{ env.COMPATIBILITY_MATRIX_FILE }}"
+          git add "${{ env.COMPATIBILITY_MATRIX_FILE }}"
+
+      - name: Update README.md
+        # also adding the file to git to have it in the same commit later on
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          sed "s/^.*|.*Dynatrace-service.*|.*Keptn.*|.*Dynatrace.*$/| Dynatrace-service: \`$(cat VERSION.txt)\` | Keptn: \`$KEPTN_VERSION\` | Dynatrace: \`$DYNATRACE_VERSION\` |/" \
+            -i README.md
+          git add README.md
+
+      - name: Prepare Release Package
+        id: prepare-release-package
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+        run: |
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            npx standard-version@^9.3.2 \
+              --skip.commit \
+              --skip.tag \
+              --release-as "$SEMVER_TYPE"
+          else
+            npx standard-version@^9.3.2 \
+              --skip.commit \
+              --skip.tag
+          fi
+
+      - name: Update Changelog with version compatibility
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          sed -r "0,/^##(#)? \[[0-9]+\.[0-9]+\.[0-9]+\].*$/ s//&\n\n### Release validated with\n | Dynatrace-service: \`$(cat VERSION.txt)\` | Keptn: \`$KEPTN_VERSION\` | Dynatrace: \`$DYNATRACE_VERSION\` |\n |---|---|---|/" \
+            -i CHANGELOG.md
+          git add CHANGELOG.md
+
+      - name: Create Release Package
+        id: create-release-package
+        env:
+          SEMVER_TYPE: ${{ github.event.inputs.semver-type }}
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+        run: |
+          echo "🚀 Creating release package now..."
+
+          # to also include the changes to the compatibility matrix we need to use the '-a' flag
+          if [[ ! -z "$SEMVER_TYPE" ]]; then
+            npx standard-version@^9.3.2 -a \
+              --skip.changelog \
+              --release-as "$SEMVER_TYPE"
+          else
+            npx standard-version@^9.3.2 -a \
+              --skip.changelog
+          fi
+
+          echo "::set-output name=tag-name::$(git describe --tags --abbrev=0)"
+
+          echo "Fetching previously deleted old tags..."
+          git fetch origin --tags -f
+
+      - name: Create Release Pull Request
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.KEPTN_BOT_TOKEN }}
+          commit-message: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
+          committer: ${{ env.KEPTN_BOT_EMAIL }}
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: true
+          branch: release/${{ steps.create-release-package.outputs.tag-name }}
+          delete-branch: true
+          title: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
+          body: |
+            Updates to CHANGELOG.md, VERSION.txt, README.md and compatibility.md
+          labels: |
+            release
+          assignees: ${{ github.actor }}
+          team-reviewers: |
+            owners
+            maintainers
+          draft: false
+
+      - name: Push Tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
+        run: |
+          git push --follow-tags origin "release/$RELEASE_TAG"
+
+      - name: Automatically merge Pull Request
+        # this only happens as soon as all checks have passed and the auto-merge functionality is enabled
+        env:
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
+        run: |
+          gh pr merge "release/$RELEASE_TAG" --auto --merge --delete-branch
+
+      - name: Download Release Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          path: ./dist
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
+        run: |
+          gh release create "$RELEASE_TAG" --notes-file "${{ env.RELEASE_NOTES_FILE }}" --title "$RELEASE_TAG"
+
+      - name: Upload Release Assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
+        run: |
+          gh release upload "$RELEASE_TAG" ./dist/installer/*.tgz

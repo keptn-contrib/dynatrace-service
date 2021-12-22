@@ -1,50 +1,61 @@
 {
-    "tagPrefix": "",
-    "types": [
-      {
-        "type": "feat",
-        "section": "Features"
-      },
-      {
-        "type": "fix",
-        "section": "Bug Fixes"
-      },
-      {
-        "type": "chore",
-        "section": "Other"
-      },
-      {
-        "type": "docs",
-        "section": "Docs"
-      },
-      {
-        "type": "perf",
-        "section": "Performance"
-      },
-      {
-        "type": "build",
-        "hidden": true
-      },
-      {
-        "type": "ci",
-        "hidden": true
-      },
-      {
-        "type": "refactor",
-        "section": "Refactoring"
-      },
-      {
-        "type": "revert",
-        "hidden": true
-      },
-      {
-        "type": "style",
-        "hidden": true
-      },
-      {
-        "type": "test",
-        "hidden": true
-      }
-    ]
-  }
-  
+  "preMajor": true,
+  "issueUrlFormat": "https://github.com/keptn-contrib/dynatrace-service/issues/{{id}}",
+  "releaseCommitMessageFormat": "build: release {{currentTag}}",
+  "scripts": {
+    "postchangelog": "./gh-actions-scripts/post-changelog-actions.sh"
+  },
+  "bumpFiles": [
+    {
+      "filename": "VERSION.txt",
+      "type": "plain-text"
+    }
+  ],
+  "tagPrefix": "",
+  "types": [
+    {
+      "type": "feat",
+      "section": "Features"
+    },
+    {
+      "type": "fix",
+      "section": "Bug Fixes"
+    },
+    {
+      "type": "chore",
+      "section": "Other"
+    },
+    {
+      "type": "docs",
+      "section": "Docs"
+    },
+    {
+      "type": "perf",
+      "section": "Performance"
+    },
+    {
+      "type": "build",
+      "hidden": true
+    },
+    {
+      "type": "ci",
+      "hidden": true
+    },
+    {
+      "type": "refactor",
+      "section": "Refactoring"
+    },
+    {
+      "type": "revert",
+      "hidden": true
+    },
+    {
+      "type": "style",
+      "hidden": true
+    },
+    {
+      "type": "test",
+      "hidden": true
+    }
+  ]
+}

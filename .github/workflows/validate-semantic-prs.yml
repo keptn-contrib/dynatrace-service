@@ -34,13 +34,10 @@ jobs:
           # Configure which scopes are allowed.
           scopes: |
             api
-            cli
             core
             install
-            cloudevents
             deps
             deps-dev
-            distributor
             docs
           # Configure that a scope must always be provided.
           requireScope: false

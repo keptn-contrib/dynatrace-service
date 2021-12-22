@@ -1,6 +1,3 @@
-# Binary
-dynatrace-service
-
 # local files
 _*
 
@@ -9,3 +6,6 @@ _*
 
 # VS Code
 .vscode/*
+
+# Release Artifacts
+RELEASE-BODY.md
