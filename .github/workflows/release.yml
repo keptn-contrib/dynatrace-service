@@ -20,7 +20,7 @@ env:
   KEPTN_BOT_NAME: "Keptn Contrib Bot"
   KEPTN_BOT_EMAIL: "Keptn Contrib Bot <keptn-contrib-bot@users.noreply.github.com>"
   RELEASE_NOTES_FILE: "RELEASE-BODY.md"  # If you change this, then also adapt .gitignore!
-  COMPATIBILITY_MATRIX_FILE: "documentation/version-compatibility.md"
+  COMPATIBILITY_MATRIX_FILE: "documentation/compatibility.md"
 
 defaults:
   run:
@@ -270,7 +270,7 @@ jobs:
           delete-branch: true
           title: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
           body: |
-            Updates to CHANGELOG.md, VERSION.txt, README.md and version-compatibility.md
+            Updates to CHANGELOG.md, VERSION.txt, README.md and compatibility.md
           labels: |
             release
           assignees: ${{ github.actor }}
