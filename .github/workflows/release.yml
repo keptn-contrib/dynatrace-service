@@ -18,7 +18,7 @@ on:
 env:
   NODE_VERSION: 14
   KEPTN_BOT_NAME: "Keptn Contrib Bot"
-  KEPTN_BOT_EMAIL: "Keptn Contrib Bot <keptn-contrib-bot@users.noreply.github.com>"
+  KEPTN_BOT_EMAIL: "keptn-contrib-bot@users.noreply.github.com"
   RELEASE_NOTES_FILE: "RELEASE-BODY.md"  # If you change this, then also adapt .gitignore!
   COMPATIBILITY_MATRIX_FILE: "documentation/compatibility.md"
 
@@ -297,7 +297,7 @@ jobs:
         with:
           token: ${{ secrets.KEPTN_BOT_TOKEN }}
           commit-message: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
-          committer: ${{ env.KEPTN_BOT_EMAIL }}
+          committer: ${{ env.KEPTN_BOT_NAME }} <${{ env.KEPTN_BOT_EMAIL }}>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: true
           branch: release/${{ steps.create-release-package.outputs.tag-name }}
