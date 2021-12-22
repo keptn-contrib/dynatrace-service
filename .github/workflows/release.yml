@@ -290,7 +290,7 @@ jobs:
           git fetch origin --tags -f
 
           echo "Sign off commit"
-          git commit --amend --signoff
+          git commit --amend --signoff --no-edit
 
       - name: Create Release Pull Request
         uses: peter-evans/create-pull-request@v3
