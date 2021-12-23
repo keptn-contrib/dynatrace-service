@@ -83,8 +83,8 @@ dashboard: '****'`,
 	}
 }
 
+// TestDynatraceConfigGetter_GetDynatraceConfig tests that placeholders are replaced correctly using data from an event.
 func TestDynatraceConfigGetter_GetDynatraceConfig(t *testing.T) {
-
 	mockEvent := test.EventData{
 		Context:            "01234567-0123-0123-0123-012345678901",
 		Event:              "sh.keptn.event.get-sli.triggered",
@@ -102,8 +102,16 @@ func TestDynatraceConfigGetter_GetDynatraceConfig(t *testing.T) {
 			"key":       "special_tag",
 			"value":     "special_value"},
 	}
-	configGetter := NewDynatraceConfigGetter(&dynatraceConfigResourceClientMock{
-		configString: `spec_version: '0.1.0'
+
+	tests := []struct {
+		name         string
+		configString string
+		wantConfig   DynatraceConfig
+		wantErr      bool
+	}{
+		{
+			name: "Test with attach rules",
+			configString: `spec_version: '0.1.0'
 dtCreds: dynatrace-$PROJECT
 dashboard: $LABEL.dashboard
 attachRules:
@@ -122,49 +130,118 @@ attachRules:
       value: $STAGE
     - context: $LABEL.context
       key: $LABEL.key
-      value: $LABEL.value`})
-
-	wantConfig := DynatraceConfig{
-		SpecVersion: "0.1.0",
-		DtCreds:     "dynatrace-myproject",
-		Dashboard:   "12345678-1111-4444-8888-123456789012",
-		AttachRules: &dynatrace.AttachRules{
-			TagRule: []dynatrace.TagRule{
-				dynatrace.TagRule{
-					MeTypes: []string{
-						"SERVICE",
-					},
-					Tags: []dynatrace.TagEntry{
-						dynatrace.TagEntry{
-							Context: "CONTEXTLESS",
-							Key:     "keptn_project",
-							Value:   "myproject",
-						},
-						dynatrace.TagEntry{
-							Context: "CONTEXTLESS",
-							Key:     "keptn_service",
-							Value:   "myservice",
-						},
-						dynatrace.TagEntry{
-							Context: "CONTEXTLESS",
-							Key:     "keptn_stage",
-							Value:   "mystage",
-						},
-						dynatrace.TagEntry{
-							Context: "CONTEXT1",
-							Key:     "special_tag",
-							Value:   "special_value",
+      value: $LABEL.value`,
+			wantConfig: DynatraceConfig{
+				SpecVersion: "0.1.0",
+				DtCreds:     "dynatrace-myproject",
+				Dashboard:   "12345678-1111-4444-8888-123456789012",
+				AttachRules: &dynatrace.AttachRules{
+					TagRule: []dynatrace.TagRule{
+						{
+							MeTypes: []string{
+								"SERVICE",
+							},
+							Tags: []dynatrace.TagEntry{
+								{
+									Context: "CONTEXTLESS",
+									Key:     "keptn_project",
+									Value:   "myproject",
+								},
+								{
+									Context: "CONTEXTLESS",
+									Key:     "keptn_service",
+									Value:   "myservice",
+								},
+								{
+									Context: "CONTEXTLESS",
+									Key:     "keptn_stage",
+									Value:   "mystage",
+								},
+								{
+									Context: "CONTEXT1",
+									Key:     "special_tag",
+									Value:   "special_value",
+								},
+							},
 						},
 					},
 				},
 			},
 		},
+		{
+			name: "Test with partial attach rules",
+			configString: `spec_version: '0.1.0'
+dtCreds: dynatrace-$PROJECT
+dashboard: $LABEL.dashboard
+attachRules:
+  tagRule:
+  - meTypes:
+    - $LABEL.metype`,
+			wantConfig: DynatraceConfig{
+				SpecVersion: "0.1.0",
+				DtCreds:     "dynatrace-myproject",
+				Dashboard:   "12345678-1111-4444-8888-123456789012",
+				AttachRules: &dynatrace.AttachRules{
+					TagRule: []dynatrace.TagRule{
+						{
+							MeTypes: []string{
+								"SERVICE",
+							},
+							Tags: []dynatrace.TagEntry{},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "Test without attach rules",
+			configString: `spec_version: '0.1.0'
+dtCreds: dynatrace-$PROJECT
+dashboard: $LABEL.dashboard`,
+			wantConfig: DynatraceConfig{
+				SpecVersion: "0.1.0",
+				DtCreds:     "dynatrace-myproject",
+				Dashboard:   "12345678-1111-4444-8888-123456789012",
+			},
+		},
+		{
+			name: "Test with label that does not exist",
+			configString: `spec_version: '0.1.0'
+dtCreds: dynatrace-$PROJECT
+dashboard: $LABEL.my_dashboard`,
+			wantConfig: DynatraceConfig{
+				SpecVersion: "0.1.0",
+				DtCreds:     "dynatrace-myproject",
+				Dashboard:   "$LABEL.my_dashboard",
+			},
+		},
+		{
+			name: "Test with label with prefix that exists",
+			configString: `spec_version: '0.1.0'
+dtCreds: dynatrace-$PROJECT
+dashboard: $LABEL.dashboard_name`,
+			wantConfig: DynatraceConfig{
+				SpecVersion: "0.1.0",
+				DtCreds:     "dynatrace-myproject",
+				Dashboard:   "12345678-1111-4444-8888-123456789012_name",
+			},
+		},
 	}
 
-	dynatraceConfig, err := configGetter.GetDynatraceConfig(&mockEvent)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configGetter := NewDynatraceConfigGetter(&dynatraceConfigResourceClientMock{configString: tt.configString})
+			config, err := configGetter.GetDynatraceConfig(&mockEvent)
 
-	assert.NoError(t, err)
-	assert.EqualValues(t, &wantConfig, dynatraceConfig)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, config)
+			} else {
+				assert.NoError(t, err)
+				assert.EqualValues(t, &tt.wantConfig, config)
+			}
+		})
+	}
 }
 
 type dynatraceConfigResourceClientMock struct {
