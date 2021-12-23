@@ -73,7 +73,6 @@ func ReplaceQueryParameters(query string, customFilters []*keptnv2.SLIFilter, ke
 // $TESTSTRATEGY
 // $LABEL.XXXX  -> will replace that with a label called XXXX
 // $ENV.XXXX    -> will replace that with an env variable called XXXX
-// $SECRET.YYYY -> will replace that with the k8s secret called YYYY
 func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapter) string {
 	result := input
 	// first we do the regular keptn values
@@ -96,6 +95,8 @@ func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapt
 		pair := strings.SplitN(env, "=", 2)
 		result = strings.Replace(result, "$ENV."+pair[0], pair[1], -1)
 	}
+
+	// TODO: 2021-12-21: Consider adding support for $SECRET.YYYY would be replaced with the k8s secret called YYYY
 
 	return result
 }

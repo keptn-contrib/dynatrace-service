@@ -2,13 +2,12 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -35,59 +34,62 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 		return nil, err
 	}
 
-	if len(fileContent) > 0 {
-
-		// replace the placeholders
-		log.WithField("fileContent", fileContent).Debug("Original contents of configuration file")
-		fileContent = replaceKeptnPlaceholders(fileContent, event)
-		log.WithField("fileContent", fileContent).Debug("Contents of configuration file after replacements")
-	}
-
 	// unmarshal the file
 	dynatraceConfig, err := parseDynatraceConfigYAML(fileContent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse dynatrace config file found for service %s in stage %s in project %s: %s", event.GetService(), event.GetStage(), event.GetProject(), err.Error())
 	}
 
-	return dynatraceConfig, nil
+	return replacePlaceholdersInDynatraceConfig(dynatraceConfig, event), nil
 }
 
-//
-// replaces $ placeholders with actual values
-// $CONTEXT, $EVENT, $SOURCE
-// $PROJECT, $STAGE, $SERVICE, $DEPLOYMENT
-// $TESTSTRATEGY
-// $LABEL.XXXX  -> will replace that with a label called XXXX
-// $ENV.XXXX    -> will replace that with an env variable called XXXX
-// $SECRET.YYYY -> will replace that with the k8s secret called YYYY
-//
-func replaceKeptnPlaceholders(input string, event adapter.EventContentAdapter) string {
-	result := input
+func replacePlaceholdersInDynatraceConfig(dynatraceConfig *DynatraceConfig, event adapter.EventContentAdapter) *DynatraceConfig {
+	return &DynatraceConfig{
+		SpecVersion: dynatraceConfig.SpecVersion,
+		DtCreds:     common.ReplaceKeptnPlaceholders(dynatraceConfig.DtCreds, event),
+		Dashboard:   common.ReplaceKeptnPlaceholders(dynatraceConfig.Dashboard, event),
+		AttachRules: replacePlaceholdersInAttachRules(dynatraceConfig.AttachRules, event),
+	}
+}
 
-	// first we do the regular keptn values
-	result = strings.Replace(result, "$CONTEXT", event.GetShKeptnContext(), -1)
-	result = strings.Replace(result, "$EVENT", event.GetEvent(), -1)
-	result = strings.Replace(result, "$SOURCE", event.GetSource(), -1)
-	result = strings.Replace(result, "$PROJECT", event.GetProject(), -1)
-	result = strings.Replace(result, "$STAGE", event.GetStage(), -1)
-	result = strings.Replace(result, "$SERVICE", event.GetService(), -1)
-	result = strings.Replace(result, "$DEPLOYMENT", event.GetDeployment(), -1)
-	result = strings.Replace(result, "$TESTSTRATEGY", event.GetTestStrategy(), -1)
-
-	// now we do the labels
-	for key, value := range event.GetLabels() {
-		result = strings.Replace(result, "$LABEL."+key, value, -1)
+func replacePlaceholdersInAttachRules(attachRules *dynatrace.AttachRules, event adapter.EventContentAdapter) *dynatrace.AttachRules {
+	if attachRules == nil {
+		return nil
 	}
 
-	// now we do all environment variables
-	for _, env := range os.Environ() {
-		pair := strings.SplitN(env, "=", 2)
-		result = strings.Replace(result, "$ENV."+pair[0], pair[1], -1)
+	tagRulesWithReplacedPlaceholders := make([]dynatrace.TagRule, 0, len(attachRules.TagRule))
+	for _, tagRule := range attachRules.TagRule {
+		tagRulesWithReplacedPlaceholders = append(tagRulesWithReplacedPlaceholders, replacePlaceholdersInTagRule(tagRule, event))
 	}
 
-	// TODO: 2021-11-22: check: iterate through k8s secrets?
+	return &dynatrace.AttachRules{
+		TagRule: tagRulesWithReplacedPlaceholders,
+	}
+}
 
-	return result
+func replacePlaceholdersInTagRule(tagRule dynatrace.TagRule, event adapter.EventContentAdapter) dynatrace.TagRule {
+	meTypesWithReplacedPlaceholders := make([]string, 0, len(tagRule.MeTypes))
+	for _, meType := range tagRule.MeTypes {
+		meTypesWithReplacedPlaceholders = append(meTypesWithReplacedPlaceholders, common.ReplaceKeptnPlaceholders(meType, event))
+	}
+
+	tagsWithReplacedPlaceholders := make([]dynatrace.TagEntry, 0, len(tagRule.Tags))
+	for _, tag := range tagRule.Tags {
+		tagsWithReplacedPlaceholders = append(tagsWithReplacedPlaceholders, replacePlaceholdersInTagEntry(tag, event))
+	}
+
+	return dynatrace.TagRule{
+		MeTypes: meTypesWithReplacedPlaceholders,
+		Tags:    tagsWithReplacedPlaceholders,
+	}
+}
+
+func replacePlaceholdersInTagEntry(tag dynatrace.TagEntry, event adapter.EventContentAdapter) dynatrace.TagEntry {
+	return dynatrace.TagEntry{
+		Context: common.ReplaceKeptnPlaceholders(tag.Context, event),
+		Key:     common.ReplaceKeptnPlaceholders(tag.Key, event),
+		Value:   common.ReplaceKeptnPlaceholders(tag.Value, event),
+	}
 }
 
 func parseDynatraceConfigYAML(input string) (*DynatraceConfig, error) {
