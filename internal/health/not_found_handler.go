@@ -1,4 +1,4 @@
-package main
+package health
 
 import (
 	"encoding/json"
@@ -13,8 +13,8 @@ type notFoundError struct {
 	Message string `json:"message"`
 }
 
-// EndpointNotFoundHandler will return 404 for requests
-func EndpointNotFoundHandler(w http.ResponseWriter, r *http.Request) {
+// endpointNotFoundHandler will return 404 for requests
+func endpointNotFoundHandler(w http.ResponseWriter, r *http.Request) {
 	payload, err := json.Marshal(
 		notFoundError{
 			Status:  404,
