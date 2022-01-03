@@ -110,7 +110,6 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		return nil
 	}
 
-	// Log the problem ID and state for better troubleshooting
 	log.WithFields(
 		log.Fields{
 			"PID":       eh.event.GetPID(),
@@ -118,7 +117,6 @@ func (eh ProblemEventHandler) HandleEvent() error {
 			"state":     eh.event.GetState(),
 		}).Info("Received event")
 
-	// ignore problem events if they are closed
 	if eh.event.IsResolved() {
 		return eh.handleClosedProblemFromDT()
 	}
@@ -137,7 +135,6 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT() error {
 }
 
 func (eh ProblemEventHandler) handleOpenedProblemFromDT() error {
-	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
 	err := eh.sendEvent(NewRemediationTriggeredEventFactory(eh.event))
 	if err != nil {
 		return err
