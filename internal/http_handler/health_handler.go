@@ -6,8 +6,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// HealthEndpointHandler will return 204 for requests
-func HealthEndpointHandler(w http.ResponseWriter, _ *http.Request) {
+// healthEndpointHandler will return 204 for requests
+func healthEndpointHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 	log.Trace("alive...")
 }

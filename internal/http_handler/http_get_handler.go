@@ -8,10 +8,10 @@ import (
 func HTTPGetHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/health":
-		HealthEndpointHandler(w, r)
+		healthEndpointHandler(w, r)
 	case "/ready":
-		ReadinessEndpointHandler(w, r)
+		readinessEndpointHandler(w, r)
 	default:
-		EndpointNotFoundHandler(w, r)
+		endpointNotFoundHandler(w, r)
 	}
 }
