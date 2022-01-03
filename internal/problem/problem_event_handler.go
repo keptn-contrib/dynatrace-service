@@ -127,7 +127,7 @@ func (eh ProblemEventHandler) HandleEvent() error {
 }
 
 func (eh ProblemEventHandler) handleClosedProblemFromDT() error {
-	err := eh.sendEvent(NewRemediationTriggeredEventFactory(eh.event))
+	err := eh.sendEvent(NewProblemClosedEventFactory(eh.event))
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (eh ProblemEventHandler) handleClosedProblemFromDT() error {
 
 func (eh ProblemEventHandler) handleOpenedProblemFromDT() error {
 	// Send a sh.keptn.event.${STAGE}.remediation.triggered event
-	err := eh.sendEvent(NewProblemClosedEventFactory(eh.event))
+	err := eh.sendEvent(NewRemediationTriggeredEventFactory(eh.event))
 	if err != nil {
 		return err
 	}
