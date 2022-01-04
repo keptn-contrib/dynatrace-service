@@ -73,8 +73,6 @@ func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
 	switch aType := keptnEvent.(type) {
 	case *monitoring.ConfigureMonitoringAdapter:
 		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient())
-	case *monitoring.ProjectCreateFinishedAdapter:
-		return monitoring.NewProjectCreateFinishedEventHandler(keptnEvent.(*monitoring.ProjectCreateFinishedAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient())
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), kClient)
 	case *problem.ActionTriggeredAdapter:
@@ -104,8 +102,6 @@ func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 	switch e.Type() {
 	case keptnevents.ConfigureMonitoringEventType:
 		return monitoring.NewConfigureMonitoringAdapterFromEvent(e)
-	case keptnv2.GetFinishedEventType(keptnv2.ProjectCreateTaskName):
-		return monitoring.NewProjectCreateFinishedAdapterFromEvent(e)
 	case keptnevents.ProblemEventType:
 		return problem.NewProblemAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName):

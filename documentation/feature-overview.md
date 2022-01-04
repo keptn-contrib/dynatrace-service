@@ -27,4 +27,4 @@ The dynatrace-service listens for the following events:
 - `sh.keptn.event.release.finished`
 - `sh.keptn.events.problem`
 - `sh.keptn.event.monitoring.configure`
-- `sh.keptn.event.project.create.finished`
+
