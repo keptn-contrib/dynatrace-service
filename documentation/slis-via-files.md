@@ -107,7 +107,7 @@ The dynatrace-service may query the [Problems API v2](https://www.dynatrace.com/
 ```yaml
 spec_version: "1.0"
 indicators:
-    problems: PV2;problemSelector=status(open)&entitySelector=managementZoneIds(7030365576649815430)
+    problems: PV2;problemSelector=status(open)&entitySelector=mzId(7030365576649815430)
 ```
 
 This passes the `problemSelector` and `entitySelector` to the `/api/v2/problems` endpoint and will return the value of the `totalCount` field, i.e., the total number of problems matching the query, as the SLI value.
