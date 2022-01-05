@@ -21,27 +21,33 @@ func NewProblemClosedEventFactory(event ProblemAdapterInterface) *ProblemClosedE
 }
 
 func (f *ProblemClosedEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
-	problemData := keptn.ProblemEventData{
-		State:          "CLOSED",
-		PID:            f.event.GetPID(),
-		ProblemID:      f.event.GetProblemID(),
-		ProblemTitle:   f.event.GetProblemTitle(),
-		ProblemDetails: f.event.GetProblemDetails(),
-		ProblemURL:     f.event.GetProblemURL(),
-		ImpactedEntity: f.event.GetImpactedEntity(),
-		Tags:           f.event.GetProblemTags(),
-		Project:        f.event.GetProject(),
-		Stage:          f.event.GetStage(),
-		Service:        f.event.GetService(),
+	rawProblem := shallowCopyRawProblem(f.event.GetRawProblem())
+
+	rawProblem["State"] = "CLOSED"
+	rawProblem["project"] = f.event.GetProject()
+	rawProblem["stage"] = f.event.GetStage()
+	rawProblem["service"] = f.event.GetService()
+
+	// create labels map if it is not already already there
+	labels, ok := rawProblem["labels"].(map[string]interface{})
+	if !ok {
+		labels = make(map[string]interface{})
+		rawProblem["labels"] = labels
 	}
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176
 	// add problem URL as label so it becomes clickable
-	problemData.Labels = make(map[string]string)
-	problemData.Labels[problemURLLabel] = f.event.GetProblemURL()
+	labels[problemURLLabel] = f.event.GetProblemURL()
 
-	return adapter.NewCloudEventFactoryBase(f.event, keptn.ProblemEventType, problemData).CreateCloudEvent()
+	return adapter.NewCloudEventFactoryBase(f.event, keptn.ProblemEventType, rawProblem).CreateCloudEvent()
+}
 
+func shallowCopyRawProblem(rawProblem RawProblem) RawProblem {
+	rawProblemCopy := make(RawProblem, len(rawProblem))
+	for key, value := range rawProblem {
+		rawProblemCopy[key] = value
+	}
+	return rawProblemCopy
 }
 
 type RemediationTriggeredEventFactory struct {
@@ -61,20 +67,7 @@ func (f *RemediationTriggeredEventFactory) CreateCloudEvent() (*cloudevents.Even
 			Stage:   f.event.GetStage(),
 			Service: f.event.GetService(),
 		},
-		Problem: ProblemDetails{
-			State:              "OPEN",
-			PID:                f.event.GetPID(),
-			ProblemID:          f.event.GetProblemID(),
-			ProblemTitle:       f.event.GetProblemTitle(),
-			ProblemDetails:     f.event.GetProblemDetails(),
-			ProblemDetailsHTML: f.event.GetProblemDetailsHTML(),
-			ProblemDetailsText: f.event.GetProblemDetailsText(),
-			ProblemImpact:      f.event.GetProblemImpact(),
-			ProblemSeverity:    f.event.GetProblemSeverity(),
-			ProblemURL:         f.event.GetProblemURL(),
-			ImpactedEntity:     f.event.GetImpactedEntity(),
-			Tags:               f.event.GetProblemTags(),
-		},
+		Problem: f.event.GetRawProblem(),
 	}
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/176

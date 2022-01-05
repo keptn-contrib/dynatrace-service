@@ -1,41 +1,33 @@
 package problem
 
 import (
-	"encoding/json"
-	"fmt"
 	"strings"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	keptn "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	log "github.com/sirupsen/logrus"
 )
 
 const remediationTaskName = "remediation"
 
+// RawProblem is the raw problem datastructure
+type RawProblem map[string]interface{}
+
 type ProblemAdapterInterface interface {
 	adapter.EventContentAdapter
-
 	IsNotFromDynatrace() bool
 	GetState() string
 	GetPID() string
 	GetProblemID() string
+	IsOpen() bool
 	IsResolved() bool
-	GetProblemTitle() string
 	GetProblemURL() string
-	GetImpactedEntity() string
-	GetProblemTags() string
-	GetProblemDetails() json.RawMessage
-	GetProblemDetailsHTML() string
-	GetProblemDetailsText() string
-	GetProblemImpact() string
-	GetProblemSeverity() string
+	GetRawProblem() RawProblem
 }
 
 // ProblemAdapter is a content adaptor for events of type sh.keptn.event.action.finished
 type ProblemAdapter struct {
 	event      DTProblemEvent
+	rawProblem RawProblem
 	cloudEvent adapter.CloudEventAdapter
 }
 
@@ -49,11 +41,18 @@ func NewProblemAdapterFromEvent(e cloudevents.Event) (*ProblemAdapter, error) {
 		return nil, err
 	}
 
+	var problem RawProblem
+	err = ceAdapter.PayloadAs(&problem)
+	if err != nil {
+		return nil, err
+	}
+
 	// we need to set the project, stage and service names also from tags, if available
 	setProjectStageAndServiceFromTags(pData)
 
 	return &ProblemAdapter{
 		event:      *pData,
+		rawProblem: problem,
 		cloudEvent: ceAdapter,
 	}, nil
 }
@@ -70,12 +69,7 @@ func (a ProblemAdapter) GetSource() string {
 
 // GetEvent returns the event type
 func (a ProblemAdapter) GetEvent() string {
-	if a.IsResolved() {
-		return keptn.ProblemEventType
-	}
-
-	// fix get stage here below -> needs also tags evaluation
-	return keptnv2.GetTriggeredEventType(fmt.Sprintf("%s.%s", a.GetStage(), remediationTaskName))
+	return a.cloudEvent.GetType()
 }
 
 // GetProject returns the project
@@ -113,75 +107,44 @@ func (a ProblemAdapter) GetLabels() map[string]string {
 	return nil
 }
 
+// IsNotFromDynatrace returns true if the source of the event is not dynatrace
 func (a ProblemAdapter) IsNotFromDynatrace() bool {
 	return a.cloudEvent.GetSource() != "dynatrace"
 }
 
+// GetState returns problem state as OPEN or RESOLVED
 func (a ProblemAdapter) GetState() string {
 	return a.event.State
 }
 
+// GetPID returns the PID
 func (a ProblemAdapter) GetPID() string {
 	return a.event.PID
 }
 
+// GetProblemID returns the problem ID
 func (a ProblemAdapter) GetProblemID() string {
 	return a.event.ProblemID
 }
 
-func (a ProblemAdapter) GetProblemTitle() string {
-	return a.event.ProblemTitle
-}
-
+// GetProblemURL returns the problem URL
 func (a ProblemAdapter) GetProblemURL() string {
 	return a.event.ProblemURL
 }
 
-func (a ProblemAdapter) GetImpactedEntity() string {
-	return a.event.ImpactedEntity
+// GetRawProblem returns the raw problem datastructure
+func (a ProblemAdapter) GetRawProblem() RawProblem {
+	return a.rawProblem
 }
 
-func (a ProblemAdapter) GetProblemTags() string {
-	return a.event.Tags
+// IsOpen returns true if the problem is open
+func (a ProblemAdapter) IsOpen() bool {
+	return a.GetState() == "OPEN"
 }
 
-func (a ProblemAdapter) GetProblemDetails() json.RawMessage {
-	return marshalProblemDetails(a.event.ProblemDetails)
-}
-
-// GetProblemDetailsHTML returns all problem event details including root cause as an HTML-formatted string
-func (a ProblemAdapter) GetProblemDetailsHTML() string {
-	return a.event.ProblemDetailsHTML
-}
-
-// GetProblemDetailsText returns all problem event details including root cause as a text-formatted string
-func (a ProblemAdapter) GetProblemDetailsText() string {
-	return a.event.ProblemDetailsText
-}
-
-// GetProblemImpact return the impact level of the problem.
-// Possible values are APPLICATION, SERVICE, or INFRASTRUCTURE.
-func (a ProblemAdapter) GetProblemImpact() string {
-	return a.event.ProblemImpact
-}
-
-// GetProblemSeverity returns the severity level of the problem.
-// Possible values are AVAILABILITY, ERROR, PERFORMANCE, RESOURCE_CONTENTION, or CUSTOM_ALERT.
-func (a ProblemAdapter) GetProblemSeverity() string {
-	return a.event.ProblemSeverity
-}
-
+// IsResolved returns true if the problem is resolved
 func (a ProblemAdapter) IsResolved() bool {
 	return a.GetState() == "RESOLVED"
-}
-
-func marshalProblemDetails(details DTProblemDetails) []byte {
-	problemDetailsString, err := json.Marshal(details)
-	if err != nil {
-		log.WithError(err).Error("Could not marshal problem details")
-	}
-
-	return problemDetailsString
 }
 
 func setProjectStageAndServiceFromTags(dtProblemEvent *DTProblemEvent) {
