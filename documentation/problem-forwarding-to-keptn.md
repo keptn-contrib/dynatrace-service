@@ -1,6 +1,6 @@
 # Forwarding problem notifications from Dynatrace to Keptn
 
-To allow a Dynatrace problem to trigger a remediation workflow in Keptn, the dynatrace-service listens for `sh.keptn.events.problem` events originating from Dynatrace (i.e. with `"source": "dynatrace"`) and emits corresponding `sh.keptn.event.<stage>.remediation.triggered` events for problems with `State="OPEN"` or `sh.keptn.events.problem` events for problems with `State="RESOLVED"`. All relevant problem details such as `PID`, `ProblemTitle` and `ProblemURL`are forwarded.
+To allow a Dynatrace problem to trigger a remediation workflow in Keptn, the dynatrace-service listens for `sh.keptn.events.problem` events originating from Dynatrace (i.e. with `"source": "dynatrace"`) and emits corresponding `sh.keptn.event.<stage>.remediation.triggered` events for problems with `State="OPEN"` or `sh.keptn.events.problem` events for problems with `State="RESOLVED"`. All details present in the original problem such as `PID`, `ProblemTitle` and `ProblemURL` are forwarded.
 
 ## Routing problem notifications to a specific Keptn service
 
