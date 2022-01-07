@@ -1,0 +1,36 @@
+{
+    "data": {
+        "ImpactedEntities": [
+            {
+                "entity": "HOST-XXXXXXXXXXXXX",
+                "name": "MyHost1",
+                "type": "HOST"
+            },
+            {
+                "entity": "SERVICE-XXXXXXXXXXXXX",
+                "name": "MyService1",
+                "type": "SERVICE"
+            }
+        ],
+        "ImpactedEntity": "Myhost1, Myservice1",
+        "KeptnProject": "shop",
+        "KeptnStage": "",
+        "KeptnService": "carts",
+        "PID": "99999",
+        "ProblemDetails": {
+            "id": "99999"
+        },
+        "ProblemID": "999",
+        "ProblemTitle": "Dynatrace problem notification test run",
+        "ProblemURL": "https://example.com",
+        "State": "OPEN",
+        "Tags": "testtag1, testtag2"
+    },
+    "id": "343cd015-72ac-4e10-b241-1136a22e4cd0",
+    "source": "dynatrace",
+    "specversion": "1.0",
+    "time": "2022-01-04T21:58:45.263Z",
+    "type": "sh.keptn.events.problem",
+    "shkeptncontext": "39393939-3920-4020-a020-202020202020",
+    "shkeptnspecversion": "0.2.3"
+}

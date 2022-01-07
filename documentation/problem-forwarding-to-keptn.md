@@ -65,7 +65,8 @@ The dynatrace-service can [configure this feature automatically in a Dynatrace t
 
 **Notes**
 1. The dynatrace-service requires a valid project to process problem events. We recommend always including a `KeptnProject` field set to a valid project in the custom notification integration payload definition.
-2. Dynatrace alerting profiles can be used to filter certain problem types, e.g. infrastructure problems in production or slow performance in a developer environment. By creating a Keptn project to handle these remediation workflows and a Keptn service for each alerting profile, it is easy to define workflows for particular problem types. Furthermore, individual environment names such as `pre-prod` or `production` can be represented as stages within the project.
+2. `sh.keptn.events.problem` open events without a stage cannot be processed and are discarded.
+3. Dynatrace alerting profiles can be used to filter certain problem types, e.g. infrastructure problems in production or slow performance in a developer environment. By creating a Keptn project to handle these remediation workflows and a Keptn service for each alerting profile, it is easy to define workflows for particular problem types. Furthermore, individual environment names such as `pre-prod` or `production` can be represented as stages within the project.
 
 Here is a screenshot of a workflow triggered by a Dynatrace problem and how it then executes in Keptn:
 
