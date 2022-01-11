@@ -3,6 +3,8 @@ package keptn
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	keptnmodels "github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
@@ -77,7 +79,7 @@ func getLocation(service string, stage string, project string) string {
 		location += fmt.Sprintf(" of project '%s'", project)
 	}
 
-	return location
+	return strings.TrimLeft(location, " ")
 }
 
 // ConfigResourceClient is the default implementation for the ConfigResourceClientInterface using a Keptn api.ResourceHandler
