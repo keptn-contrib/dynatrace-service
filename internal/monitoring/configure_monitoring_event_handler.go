@@ -99,7 +99,7 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 	}
 	msg := "Dynatrace monitoring setup done.\nThe following entities have been configured:\n\n"
 
-	if entities.ManagementZonesEnabled && len(entities.ManagementZones) > 0 {
+	if len(entities.ManagementZones) > 0 {
 		msg = msg + "---Management Zones:--- \n"
 		for _, mz := range entities.ManagementZones {
 			if mz.Success {
@@ -111,7 +111,7 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 		msg = msg + "\n\n"
 	}
 
-	if entities.TaggingRulesEnabled && len(entities.TaggingRules) > 0 {
+	if len(entities.TaggingRules) > 0 {
 		msg = msg + "---Automatic Tagging Rules:--- \n"
 		for _, mz := range entities.TaggingRules {
 			if mz.Success {
@@ -123,13 +123,13 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 		msg = msg + "\n\n"
 	}
 
-	if entities.ProblemNotificationsEnabled {
+	if entities.ProblemNotifications != nil {
 		msg = msg + "---Problem Notification:--- \n"
 		msg = msg + "  - " + entities.ProblemNotifications.Message
 		msg = msg + "\n\n"
 	}
 
-	if entities.MetricEventsEnabled && len(entities.MetricEvents) > 0 {
+	if len(entities.MetricEvents) > 0 {
 		msg = msg + "---Metric Events:--- \n"
 		for _, mz := range entities.MetricEvents {
 			if mz.Success {
@@ -141,7 +141,7 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 		msg = msg + "\n\n"
 	}
 
-	if entities.DashboardEnabled && entities.Dashboard.Message != "" {
+	if entities.Dashboard != nil {
 		msg = msg + "---Dashboard:--- \n"
 		msg = msg + "  - " + entities.Dashboard.Message
 		msg = msg + "\n\n"

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -27,17 +26,13 @@ func NewDashboardCreation(client dynatrace.ClientInterface) *DashboardCreation {
 }
 
 // Create creates a new dashboard for the provided project
-func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) ConfigResult {
-	if !env.IsDashboardsGenerationEnabled() {
-		return ConfigResult{}
-	}
-
+func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) *ConfigResult {
 	// first, check if dashboard for this project already exists and delete that
 	dashboardClient := dynatrace.NewDashboardsClient(dc.client)
 	err := deleteExistingDashboard(project, dashboardClient)
 	if err != nil {
 		log.WithError(err).Error("Could not delete existing dashboard")
-		return ConfigResult{
+		return &ConfigResult{
 			Success: false,
 			Message: "Could not delete existing dashboard: " + err.Error(),
 		}
@@ -48,13 +43,13 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) C
 	err = dashboardClient.Create(dashboard)
 	if err != nil {
 		log.WithError(err).Error("Failed to create Dynatrace dashboards")
-		return ConfigResult{
+		return &ConfigResult{
 			Success: false,
 			Message: err.Error(),
 		}
 	}
 	log.WithField("dashboardUrl", dc.client.Credentials().GetTenant()+"/#dashboards").Info("Dynatrace dashboard created successfully")
-	return ConfigResult{
+	return &ConfigResult{
 		Success: true, // I guess this should be true not false?
 		Message: "Dynatrace dashboard created successfully. You can view it here: " + dc.client.Credentials().GetTenant() + "/#dashboards",
 	}
