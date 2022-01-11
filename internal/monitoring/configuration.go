@@ -49,7 +49,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard keptnv2.Sh
 	}
 
 	if env.IsProblemNotificationsGenerationEnabled() {
-		configuredEntities.ProblemNotifications = NewProblemNotificationCreation(mc.dtClient).Create()
+		configuredEntities.ProblemNotifications = NewProblemNotificationCreation(mc.dtClient).Create(project)
 	}
 
 	if env.IsManagementZonesGenerationEnabled() {
