@@ -40,7 +40,7 @@ func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient kep
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*ConfiguredEntities, error) {
+func (mc *Configuration) ConfigureMonitoring(project string, shipyard keptnv2.Shipyard) (*ConfiguredEntities, error) {
 
 	configuredEntities := &ConfiguredEntities{}
 
@@ -52,23 +52,22 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.S
 		configuredEntities.ProblemNotifications = NewProblemNotificationCreation(mc.dtClient).Create()
 	}
 
-	if project != "" && shipyard != nil {
-		if env.IsManagementZonesGenerationEnabled() {
-			configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(project, *shipyard)
-		}
-
-		if env.IsDashboardsGenerationEnabled() {
-			configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(project, *shipyard)
-		}
-
-		if env.IsMetricEventsGenerationEnabled() {
-			var metricEvents []ConfigResult
-			for _, stage := range shipyard.Spec.Stages {
-				metricEvents = append(metricEvents, mc.createMetricEventsForStage(project, stage)...)
-			}
-			configuredEntities.MetricEvents = metricEvents
-		}
+	if env.IsManagementZonesGenerationEnabled() {
+		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(project, shipyard)
 	}
+
+	if env.IsDashboardsGenerationEnabled() {
+		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(project, shipyard)
+	}
+
+	if env.IsMetricEventsGenerationEnabled() {
+		var metricEvents []ConfigResult
+		for _, stage := range shipyard.Spec.Stages {
+			metricEvents = append(metricEvents, mc.createMetricEventsForStage(project, stage)...)
+		}
+		configuredEntities.MetricEvents = metricEvents
+	}
+
 	return configuredEntities, nil
 }
 

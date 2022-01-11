@@ -7,7 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
@@ -74,17 +73,14 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		}
 	}
 
-	var shipyard *keptnv2.Shipyard
-	if eh.event.GetProject() != "" {
-		shipyard, err = eh.kClient.GetShipyard()
-		if err != nil {
-			return eh.handleError(err)
-		}
+	shipyard, err := eh.kClient.GetShipyard()
+	if err != nil {
+		return eh.handleError(err)
 	}
 
 	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sloReader, eh.serviceClient)
 
-	configuredEntities, err := cfg.ConfigureMonitoring(eh.event.GetProject(), shipyard)
+	configuredEntities, err := cfg.ConfigureMonitoring(eh.event.GetProject(), *shipyard)
 	if err != nil {
 		return eh.handleError(err)
 	}
