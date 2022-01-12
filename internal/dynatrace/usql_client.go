@@ -41,7 +41,7 @@ func (uc *USQLClient) GetByQuery(usql string) (*DTUSQLResult, error) {
 	// if no data comes back
 	if len(result.Values) == 0 {
 		// there are no data points - try again?
-		return nil, errors.New("dynatrace USQL Query didnt return any DataPoints")
+		return nil, errors.New("Dynatrace USQL API returned zero data points")
 	}
 
 	return &result, nil
