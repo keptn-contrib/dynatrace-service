@@ -1,8 +1,16 @@
 # Automatic configuration of a Dynatrace tenant
 
-This section describes the configuration entities created by the dynatrace-service on the Dynatrace tenant when it receives a `sh.keptn.event.monitoring.configure` event. This makes it easy to configure your Dynatrace tenant to fully interact with the Keptn installation using the `keptn configure monitoring` CLI command.
+This section describes the configuration entities created by the dynatrace-service on the Dynatrace tenant when it receives a `sh.keptn.event.monitoring.configure` event. This makes it easy to configure your Dynatrace tenant to fully interact with the Keptn installation.
 
-To enable or disable the creation of the following entity types, please see [Configuring automatic generation of Dynatrace entities](additional-installation-options.md#configuring-automatic-dynatrace-tenant-configuration). Once processing of the configure monitoring event is complete, the dynatrace-service sends a `sh.keptn.event.configure-monitoring.finished` event with a summary of the operations performed.
+To trigger automatic configuration, execute the following CLI command where `<PROJECT_NAME>` is the name of the associated Keptn project:
+
+```
+keptn configure monitoring dynatrace --project=<PROJECT_NAME>
+```
+
+To enable or disable the creation of the following entity types, please see [Configuring automatic generation of Dynatrace entities](additional-installation-options.md#configuring-automatic-dynatrace-tenant-configuration).
+
+Once processing of the configure monitoring event is complete, the dynatrace-service sends a `sh.keptn.event.configure-monitoring.finished` event with a summary of the operations performed.
 
 
 ## Tagging rules
@@ -55,25 +63,25 @@ The alerting profile is then used to create a webhook named `Keptn Problem Notif
 {
     "type": "WEBHOOK",
     "name": "Keptn Problem Notification",
-    "alertingProfile": "<alerting-profile-id>",
+    "alertingProfile": "<ALERTING_PROFILE_ID>",
     "active": true,
-    "url": "<keptn-endpoint>/api/v1/event",
+    "url": "<KEPTN_ENDPOINT>/api/v1/event",
     "acceptAnyCertificate": true,
     "headers": [
         {
             "name": "x-token",
-            "value": "<keptn-api-token>"
+            "value": "<KEPTN_API_TOKEN>"
         },
         {
             "name": "Content-Type",
             "value": "application/cloudevents+json"
         }
     ],
-    "payload": "<payload>"
+    "payload": "<PAYLOAD>"
 }
 ```
 
-Values are set for `<alerting-profile-id>`, `<keptn-endpoint>` and `<keptn-api-token>`. The actual template, added as `<payload>`, has the form:
+Values are set for `<ALERTING_PROFILE_ID>`, `<KEPTN_ENDPOINT>` and `<KEPTN_API_TOKEN>`. The actual template, added as `<PAYLOAD>`, has the form:
 
 ```json
 {
@@ -93,17 +101,20 @@ Values are set for `<alerting-profile-id>`, `<keptn-endpoint>` and `<keptn-api-t
         "ProblemDetails": {ProblemDetailsJSON},
         "Tags": "{Tags}",
         "ImpactedEntities": {ImpactedEntities},
-        "ImpactedEntity": "{ImpactedEntity}"
+        "ImpactedEntity": "{ImpactedEntity}",
+        "KeptnProject": "<PROJECT_NAME>"
     }
 }
 ```
+
+The value of `<PROJECT_NAME>` is set to the Keptn project being configured.
 
 If a problem notification named `Keptn Problem Notification` already exists it is overwritten.
 
 
 ## Management zones
 
-When `dynatraceService.config.generateManagementZones` is set to `true`, the dynatrace-service tries to create a management zone for the project and for each stage it contains. The project management zone, named `Keptn: <project-name>`, contains services tagged with `keptn_project: <project-name>`, whereas each stage management zone, named `Keptn: <project-name> <stage-name>`, contains services tagged with `keptn_project: <project-name>` and `keptn_stage: <stage-name>`. If a management zone with the same name already exists, it is not overwritten.
+When `dynatraceService.config.generateManagementZones` is set to `true`, the dynatrace-service tries to create a management zone for the project and for each stage it contains. The project management zone, named `Keptn: <PROJECT_NAME>`, contains services tagged with `keptn_project: <PROJECT_NAME>`, whereas each stage management zone, named `Keptn: <PROJECT_NAME> <STAGE_NAME>`, contains services tagged with `keptn_project: <PROJECT_NAME>` and `keptn_stage: <STAGE_NAME>`. If a management zone with the same name already exists, it is not overwritten.
 
 
 ## Dashboards

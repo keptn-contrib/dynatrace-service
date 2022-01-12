@@ -10,16 +10,11 @@ import (
 
 // ConfiguredEntities contains information about the entities configures in Dynatrace
 type ConfiguredEntities struct {
-	TaggingRulesEnabled         bool
-	TaggingRules                []ConfigResult
-	ProblemNotificationsEnabled bool
-	ProblemNotifications        ConfigResult
-	ManagementZonesEnabled      bool
-	ManagementZones             []ConfigResult
-	DashboardEnabled            bool
-	Dashboard                   ConfigResult
-	MetricEventsEnabled         bool
-	MetricEvents                []ConfigResult
+	TaggingRules         []ConfigResult
+	ProblemNotifications *ConfigResult
+	ManagementZones      []ConfigResult
+	Dashboard            *ConfigResult
+	MetricEvents         []ConfigResult
 }
 
 type ConfigResult struct {
@@ -45,51 +40,64 @@ func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient kep
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (mc *Configuration) ConfigureMonitoring(project string, shipyard *keptnv2.Shipyard) (*ConfiguredEntities, error) {
+func (mc *Configuration) ConfigureMonitoring(project string, shipyard keptnv2.Shipyard) (*ConfiguredEntities, error) {
 
-	configuredEntities := &ConfiguredEntities{
-		TaggingRulesEnabled:         env.IsTaggingRulesGenerationEnabled(),
-		TaggingRules:                NewAutoTagCreation(mc.dtClient).Create(),
-		ProblemNotificationsEnabled: env.IsProblemNotificationsGenerationEnabled(),
-		ProblemNotifications:        NewProblemNotificationCreation(mc.dtClient).Create(),
-		ManagementZonesEnabled:      env.IsManagementZonesGenerationEnabled(),
-		ManagementZones:             []ConfigResult{},
-		DashboardEnabled:            env.IsDashboardsGenerationEnabled(),
-		Dashboard:                   ConfigResult{},
-		MetricEventsEnabled:         env.IsMetricEventsGenerationEnabled(),
-		MetricEvents:                []ConfigResult{},
+	configuredEntities := &ConfiguredEntities{}
+
+	if env.IsTaggingRulesGenerationEnabled() {
+		configuredEntities.TaggingRules = NewAutoTagCreation(mc.dtClient).Create()
 	}
 
-	if project != "" && shipyard != nil {
-		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(project, *shipyard)
-		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(project, *shipyard)
+	if env.IsProblemNotificationsGenerationEnabled() {
+		configuredEntities.ProblemNotifications = NewProblemNotificationCreation(mc.dtClient).Create(project)
+	}
 
+	if env.IsManagementZonesGenerationEnabled() {
+		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(project, shipyard)
+	}
+
+	if env.IsDashboardsGenerationEnabled() {
+		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(project, shipyard)
+	}
+
+	if env.IsMetricEventsGenerationEnabled() {
 		var metricEvents []ConfigResult
-		// try to create metric events - if one fails, don't fail the whole setup
 		for _, stage := range shipyard.Spec.Stages {
-			if shouldCreateMetricEvents(stage) {
-				serviceNames, err := mc.serviceClient.GetServiceNames(project, stage.Name)
-				if err != nil {
-					return nil, err
-				}
-				for _, serviceName := range serviceNames {
-					metricEvents = append(
-						metricEvents,
-						NewMetricEventCreation(mc.dtClient, mc.kClient, mc.sloReader).Create(project, stage.Name, serviceName)...)
-				}
-			}
+			metricEvents = append(metricEvents, mc.createMetricEventsForStage(project, stage)...)
 		}
 		configuredEntities.MetricEvents = metricEvents
 	}
+
 	return configuredEntities, nil
 }
 
-// shouldCreateMetricEvents checks if a task sequence with the name 'remediation' is available - this would be the equivalent of remediation_strategy: automated of Keptn < 0.8.x
-func shouldCreateMetricEvents(stage keptnv2.Stage) bool {
+func (mc *Configuration) createMetricEventsForStage(project string, stage keptnv2.Stage) []ConfigResult {
+	if isStageMissingRemediationSequence(stage) {
+		return nil
+	}
+
+	serviceNames, err := mc.serviceClient.GetServiceNames(project, stage.Name)
+	if err != nil {
+		return []ConfigResult{{
+			Success: false,
+			Message: err.Error(),
+		}}
+	}
+
+	var metricEvents []ConfigResult
+	for _, serviceName := range serviceNames {
+		metricEvents = append(
+			metricEvents,
+			NewMetricEventCreation(mc.dtClient, mc.kClient, mc.sloReader).Create(project, stage.Name, serviceName)...)
+	}
+	return metricEvents
+}
+
+func isStageMissingRemediationSequence(stage keptnv2.Stage) bool {
 	for _, taskSequence := range stage.Sequences {
 		if taskSequence.Name == "remediation" {
-			return true
+			return false
 		}
 	}
-	return false
+	return true
 }

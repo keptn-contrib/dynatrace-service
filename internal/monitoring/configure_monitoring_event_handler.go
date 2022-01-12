@@ -7,7 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
@@ -74,17 +73,14 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 		}
 	}
 
-	var shipyard *keptnv2.Shipyard
-	if eh.event.GetProject() != "" {
-		shipyard, err = eh.kClient.GetShipyard()
-		if err != nil {
-			return eh.handleError(err)
-		}
+	shipyard, err := eh.kClient.GetShipyard()
+	if err != nil {
+		return eh.handleError(err)
 	}
 
 	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sloReader, eh.serviceClient)
 
-	configuredEntities, err := cfg.ConfigureMonitoring(eh.event.GetProject(), shipyard)
+	configuredEntities, err := cfg.ConfigureMonitoring(eh.event.GetProject(), *shipyard)
 	if err != nil {
 		return eh.handleError(err)
 	}
@@ -99,7 +95,7 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 	}
 	msg := "Dynatrace monitoring setup done.\nThe following entities have been configured:\n\n"
 
-	if entities.ManagementZonesEnabled && len(entities.ManagementZones) > 0 {
+	if len(entities.ManagementZones) > 0 {
 		msg = msg + "---Management Zones:--- \n"
 		for _, mz := range entities.ManagementZones {
 			if mz.Success {
@@ -111,7 +107,7 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 		msg = msg + "\n\n"
 	}
 
-	if entities.TaggingRulesEnabled && len(entities.TaggingRules) > 0 {
+	if len(entities.TaggingRules) > 0 {
 		msg = msg + "---Automatic Tagging Rules:--- \n"
 		for _, mz := range entities.TaggingRules {
 			if mz.Success {
@@ -123,13 +119,13 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 		msg = msg + "\n\n"
 	}
 
-	if entities.ProblemNotificationsEnabled {
+	if entities.ProblemNotifications != nil {
 		msg = msg + "---Problem Notification:--- \n"
 		msg = msg + "  - " + entities.ProblemNotifications.Message
 		msg = msg + "\n\n"
 	}
 
-	if entities.MetricEventsEnabled && len(entities.MetricEvents) > 0 {
+	if len(entities.MetricEvents) > 0 {
 		msg = msg + "---Metric Events:--- \n"
 		for _, mz := range entities.MetricEvents {
 			if mz.Success {
@@ -141,7 +137,7 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 		msg = msg + "\n\n"
 	}
 
-	if entities.DashboardEnabled && entities.Dashboard.Message != "" {
+	if entities.Dashboard != nil {
 		msg = msg + "---Dashboard:--- \n"
 		msg = msg + "  - " + entities.Dashboard.Message
 		msg = msg + "\n\n"

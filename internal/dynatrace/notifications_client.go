@@ -21,7 +21,7 @@ const problemNotificationPayload string = `{
         { "name": "x-token", "value": "$KEPTN_TOKEN" },
         { "name": "Content-Type", "value": "application/cloudevents+json" }
       ],
-      "payload": "{\n    \"specversion\":\"1.0\",\n    \"type\":\"sh.keptn.events.problem\",\n    \"shkeptncontext\":\"{PID}\",\n    \"source\":\"dynatrace\",\n    \"id\":\"{PID}\",\n    \"time\":\"\",\n    \"contenttype\":\"application/json\",\n    \"data\": {\n        \"State\":\"{State}\",\n        \"ProblemID\":\"{ProblemID}\",\n        \"PID\":\"{PID}\",\n        \"ProblemTitle\":\"{ProblemTitle}\",\n        \"ProblemURL\":\"{ProblemURL}\",\n        \"ProblemDetails\":{ProblemDetailsJSON},\n        \"Tags\":\"{Tags}\",\n        \"ImpactedEntities\":{ImpactedEntities},\n        \"ImpactedEntity\":\"{ImpactedEntity}\"\n    }\n}\n" 
+      "payload": "{\n    \"specversion\":\"1.0\",\n    \"type\":\"sh.keptn.events.problem\",\n    \"shkeptncontext\":\"{PID}\",\n    \"source\":\"dynatrace\",\n    \"id\":\"{PID}\",\n    \"time\":\"\",\n    \"contenttype\":\"application/json\",\n    \"data\": {\n        \"State\":\"{State}\",\n        \"ProblemID\":\"{ProblemID}\",\n        \"PID\":\"{PID}\",\n        \"ProblemTitle\":\"{ProblemTitle}\",\n        \"ProblemURL\":\"{ProblemURL}\",\n        \"ProblemDetails\":{ProblemDetailsJSON},\n        \"Tags\":\"{Tags}\",\n        \"ImpactedEntities\":{ImpactedEntities},\n        \"ImpactedEntity\":\"{ImpactedEntity}\",\n        \"KeptnProject\":\"$KEPTN_PROJECT\"\n    }\n}\n" 
 
       }`
 
@@ -98,12 +98,13 @@ func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications() error {
 }
 
 // Create creates a new default notification for the given KeptnAPICredentials and the alertingProfileID
-func (nc *NotificationsClient) Create(credentials *credentials.KeptnCredentials, alertingProfileID string) error {
+func (nc *NotificationsClient) Create(credentials *credentials.KeptnCredentials, alertingProfileID string, project string) error {
 	notification := problemNotificationPayload
 	notification = strings.ReplaceAll(notification, "$KEPTN_DNS", credentials.GetAPIURL())
 	notification = strings.ReplaceAll(notification, "$KEPTN_TOKEN", credentials.GetAPIToken())
 	notification = strings.ReplaceAll(notification, "$ALERTING_PROFILE_ID", alertingProfileID)
 	notification = strings.ReplaceAll(notification, "$KEPTN_PROBLEM_NOTIFICATION_NAME", keptnProblemNotificationName)
+	notification = strings.ReplaceAll(notification, "$KEPTN_PROJECT", project)
 
 	_, err := nc.client.Post(notificationsPath, []byte(notification))
 	if err != nil {

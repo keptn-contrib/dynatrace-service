@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
 
@@ -42,10 +41,6 @@ func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClie
 
 // Create creates new metric events if SLOs are specified
 func (mec MetricEventCreation) Create(project string, stage string, service string) []ConfigResult {
-	if !env.IsMetricEventsGenerationEnabled() {
-		return nil
-	}
-
 	log.Info("Creating custom metric events for project SLIs")
 	slos, err := mec.sloReader.GetSLOs(project, stage, service)
 	if err != nil {
