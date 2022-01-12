@@ -121,6 +121,11 @@ func (eh ProblemEventHandler) HandleEvent() error {
 		return eh.handleClosedProblemFromDT()
 	}
 
+	if eh.event.GetStage() == "" {
+		log.Debug("Dropping open problen event as it has no stage")
+		return nil
+	}
+
 	return eh.handleOpenedProblemFromDT()
 }
 
