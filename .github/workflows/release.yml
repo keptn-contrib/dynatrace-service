@@ -26,6 +26,15 @@ defaults:
   run:
     shell: bash
 jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Unit tests
+        uses: ./.github/actions/unit-tests
+
   prepare:
     name: Prepare release run
     runs-on: ubuntu-20.04
