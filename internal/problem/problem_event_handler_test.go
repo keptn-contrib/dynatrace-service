@@ -44,6 +44,12 @@ func TestProblemEventHandler_HandleEvent(t *testing.T) {
 			wantEmittedEvent:     true,
 			expectedEmittedEvent: readCloudEventFromFile("./testdata/closed_problem/expected_emitted_ce.json"),
 		},
+		{
+			name:                 "closed problem event with existing labels",
+			receivedEvent:        readCloudEventFromFile("./testdata/closed_problem_existing_labels/received_ce.json"),
+			wantEmittedEvent:     true,
+			expectedEmittedEvent: readCloudEventFromFile("./testdata/closed_problem_existing_labels/expected_emitted_ce.json"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
