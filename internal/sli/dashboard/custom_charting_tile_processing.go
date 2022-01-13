@@ -168,7 +168,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 		entityType, entityTileFilter, tileManagementZoneFilter.ForEntitySelector())
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additional filters!
-	fullMetricQuery, metricID, err := metrics.NewQueryBuilder(p.eventData, p.customFilters).Build(metricQuery, startUnix, endUnix)
+	fullMetricQuery, metricID, err := metrics.NewQueryBuilder().Build(metricQuery, startUnix, endUnix)
 	if err != nil {
 		return nil, err
 	}

@@ -4,24 +4,11 @@ import (
 	"testing"
 	"time"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
 func TestBuildingMetricQueryWorks(t *testing.T) {
 
-	ev := &test.EventData{
-		Project: "my-project",
-		Stage:   "my-stage",
-		Service: "my-service",
-		Labels: map[string]string{
-			"good-label1": "tom and jerry",
-			"good-label2": "tom + jerry/gerry",
-			"bad-label1":  "tom & jerry",
-		},
-	}
 	startTime := time.Unix(1636000000, 0)
 	endTime := time.Unix(1636000120, 0)
 
@@ -30,7 +17,6 @@ func TestBuildingMetricQueryWorks(t *testing.T) {
 		input                  string
 		expectedMetricQuery    string
 		expectedMetricSelector string
-		sliFilter              []*keptnv2.SLIFilter
 		shouldFail             bool
 		errMessage             string
 	}{
@@ -42,7 +28,7 @@ func TestBuildingMetricQueryWorks(t *testing.T) {
 		},
 		{
 			name:                   "event context data is correctly encoded in metric V2 query",
-			input:                  "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag($LABEL.good-label1),tag($LABEL.good-label2)",
+			input:                  "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(keptn_service:my-service),tag(tom and jerry),tag(tom + jerry/gerry)",
 			expectedMetricQuery:    "entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Amy-project%29%2Ctag%28keptn_stage%3Amy-stage%29%2Ctag%28keptn_service%3Amy-service%29%2Ctag%28tom+and+jerry%29%2Ctag%28tom+%2B+jerry%2Fgerry%29&from=1636000000000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1636000120000",
 			expectedMetricSelector: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)",
 		},
@@ -55,27 +41,27 @@ func TestBuildingMetricQueryWorks(t *testing.T) {
 		{
 			// actually this is a short coming in the current SLI format design - Dynatrace API would not complain
 			name:       "event context data cannot be correctly encoded because of '&' and fails",
-			input:      "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag($LABEL.bad-label1)",
+			input:      "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(keptn_service:my-service),tag(tom & jerry)",
 			shouldFail: true,
 			errMessage: "could not parse metrics query",
 		},
 		{
 			// actually this is a short coming in the current SLI format design - Dynatrace API would not complain
 			name:       "event context data cannot be correctly encoded because of '?' and fails",
-			input:      "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(my-tag:why?)",
+			input:      "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(keptn_service:my-service),tag(my-tag:why?)",
 			shouldFail: true,
 			// legacy query transformation assumes that this is an old query because of the '?' inside
 			errMessage: "could not parse old format",
 		},
 		{
 			name:       "misspelled metricSelector key fails",
-			input:      "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE)",
+			input:      "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(keptn_service:my-service)",
 			shouldFail: true,
 			errMessage: "unknown key",
 		},
 		{
 			name:       "duplicate entitySelector key fails",
-			input:      "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE)&entitySelector=type(SERVICE)",
+			input:      "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(keptn_service:my-service)&entitySelector=type(SERVICE)",
 			shouldFail: true,
 			errMessage: "duplicate key",
 		},
@@ -83,15 +69,15 @@ func TestBuildingMetricQueryWorks(t *testing.T) {
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			actualMetricQuery, actualMetricSelector, err := NewQueryBuilder(ev, tc.sliFilter).Build(tc.input, startTime, endTime)
+			metricQuery, actualMetricSelector, err := NewQueryBuilder().Build(tc.input, startTime, endTime)
 			if tc.shouldFail {
 				assert.Error(t, err)
-				assert.Empty(t, actualMetricQuery)
+				assert.Empty(t, metricQuery)
 				assert.Empty(t, actualMetricSelector)
 				assert.Contains(t, err.Error(), tc.errMessage)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tc.expectedMetricQuery, actualMetricQuery)
+				assert.Equal(t, tc.expectedMetricQuery, metricQuery)
 				assert.Equal(t, tc.expectedMetricSelector, actualMetricSelector)
 				assert.Empty(t, tc.errMessage, "fix test setup")
 			}

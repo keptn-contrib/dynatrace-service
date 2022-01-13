@@ -4,22 +4,14 @@ import (
 	"fmt"
 	"time"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
 type QueryBuilder struct {
-	eventData     adapter.EventContentAdapter
-	customFilters []*keptnv2.SLIFilter
 }
 
-func NewQueryBuilder(eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter) *QueryBuilder {
-	return &QueryBuilder{
-		eventData:     eventData,
-		customFilters: customFilters,
-	}
+func NewQueryBuilder() *QueryBuilder {
+	return &QueryBuilder{}
 }
 
 // Build builds the complete query string based on start, end and filters
@@ -29,9 +21,6 @@ func NewQueryBuilder(eventData adapter.EventContentAdapter, customFilters []*kep
 //  #2: Metric selector that this query will return, e.g: builtin:host.cpu
 //  #3: error
 func (b *QueryBuilder) Build(metricQuery string, startUnix time.Time, endUnix time.Time) (string, string, error) {
-	// replace query params (e.g., $PROJECT, $STAGE, $SERVICE ...)
-	metricQuery = common.ReplaceQueryParameters(metricQuery, b.customFilters, b.eventData)
-
 	// try to do the legacy query transformation
 	transformedQuery, err := NewLegacyQueryTransformation(metricQuery).Transform()
 	if err != nil {

@@ -149,7 +149,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 		processedFilter.entitySelectorFilter)
 
 	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
-	fullMetricQuery, metricID, err := metrics.NewQueryBuilder(p.eventData, p.customFilters).Build(metricQuery, p.startUnix, p.endUnix)
+	fullMetricQuery, metricID, err := metrics.NewQueryBuilder().Build(metricQuery, p.startUnix, p.endUnix)
 	if err != nil {
 		return nil, err
 	}

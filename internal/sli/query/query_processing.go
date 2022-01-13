@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
@@ -42,15 +43,18 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 func (p *Processing) GetSLIValue(name string) (float64, error) {
 	// first we get the query from the SLI configuration based on its logical name
 	// no default values here anymore if indicator could not be matched (e.g. due to a misspelling) and custom SLIs were defined
-	sliQuery, err := p.customQueries.GetQueryByNameOrDefaultIfEmpty(name)
+	rawQuery, err := p.customQueries.GetQueryByNameOrDefaultIfEmpty(name)
 	if err != nil {
 		return 0, err
 	}
 
+	sliQuery := common.ReplaceQueryParameters(rawQuery, p.customFilters, p.eventData)
+
 	log.WithFields(
 		log.Fields{
-			"name":  name,
-			"query": sliQuery,
+			"name":     name,
+			"rawQuery": rawQuery,
+			"query":    sliQuery,
 		}).Debug("Retrieved SLI query")
 
 	switch {
@@ -223,7 +227,7 @@ func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.T
 
 func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
 
-	metricsQuery, metricSelector, err := metrics.NewQueryBuilder(p.eventData, p.customFilters).Build(metricsQuery, startUnix, endUnix)
+	metricsQuery, metricSelector, err := metrics.NewQueryBuilder().Build(metricsQuery, startUnix, endUnix)
 	if err != nil {
 		return 0, err
 	}

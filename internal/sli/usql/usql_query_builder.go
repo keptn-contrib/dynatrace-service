@@ -1,12 +1,13 @@
 package usql
 
 import (
+	"net/url"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"net/url"
-	"time"
 )
 
 type QueryBuilder struct {
@@ -28,7 +29,7 @@ func (b *QueryBuilder) Build(query string, startUnix time.Time, endUnix time.Tim
 	// replace query params (e.g., $PROJECT, $STAGE, $SERVICE ...)
 	// default query params that are required: resolution, from and to
 	q := make(url.Values)
-	q.Add("query", common.ReplaceQueryParameters(query, b.customFilters, b.eventData))
+	q.Add("query", query)
 	q.Add("explain", "false")
 	q.Add("addDeepLinkFields", "false")
 	q.Add("startTimestamp", common.TimestampToString(startUnix))
