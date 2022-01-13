@@ -212,14 +212,20 @@ func (s *serviceSynchronizer) fetchExistingServices() error {
 }
 
 func getKeptnServiceName(entity dynatrace.Entity) (string, error) {
-	if entity.Tags != nil {
-		for _, tag := range entity.Tags {
-			if tag.Key == "keptn_service" && tag.Value != "" {
-				return tag.Value, nil
-			}
+	serviceTags := make([]string, 0)
+	for _, tag := range entity.Tags {
+		if tag.Key == "keptn_service" && tag.Value != "" {
+			serviceTags = append(serviceTags, tag.Value)
 		}
 	}
-	return "", fmt.Errorf("entity %v has no 'keptn_service' tag", entity.EntityID)
+	if len(serviceTags) == 0 {
+		return "", fmt.Errorf("entity %v has no valid 'keptn_service' tag", entity.EntityID)
+	}
+	if len(serviceTags) > 1 {
+		return "", fmt.Errorf("entity %v has multiple 'keptn_service' tags", entity.EntityID)
+	}
+
+	return serviceTags[0], nil
 }
 
 func doesServiceExist(services []string, serviceName string) bool {
