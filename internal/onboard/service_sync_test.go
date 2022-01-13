@@ -474,7 +474,6 @@ func Test_getKeptnServiceName(t *testing.T) {
 					Tags:        nil,
 				},
 			},
-			want:    "",
 			wantErr: true,
 		},
 		{
@@ -496,16 +495,57 @@ func Test_getKeptnServiceName(t *testing.T) {
 			want:    "my-service",
 			wantErr: false,
 		},
+		{
+			name: "keptn_service tag with no value",
+			args: args{
+				entity: dynatrace.Entity{
+					EntityID:    "entity-id",
+					DisplayName: ":10999",
+					Tags: []dynatrace.Tag{
+						{
+							Context:              "CONTEXTLESS",
+							Key:                  "keptn_service",
+							StringRepresentation: "keptn_service",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "two keptn_service tags",
+			args: args{
+				entity: dynatrace.Entity{
+					EntityID:    "entity-id",
+					DisplayName: ":10999",
+					Tags: []dynatrace.Tag{
+						{
+							Context:              "CONTEXTLESS",
+							Key:                  "keptn_service",
+							StringRepresentation: "keptn_service:value1",
+							Value:                "value1",
+						},
+						{
+							Context:              "CONTEXTLESS",
+							Key:                  "keptn_service",
+							StringRepresentation: "keptn_service:value2",
+							Value:                "value2",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := getKeptnServiceName(tt.args.entity)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("getKeptnServiceName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("getKeptnServiceName() = %v, want %v", got, tt.want)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.EqualValues(t, tt.want, got)
 			}
 		})
 	}
