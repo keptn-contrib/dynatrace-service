@@ -1,6 +1,7 @@
 package query
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -89,7 +90,7 @@ func (p *Processing) executeUSQLQuery(metricsQuery string, startUnix time.Time, 
 
 	requestedDimensionName := querySplits[2]
 	if requestedDimensionName == "" && resultType != resultTypeSingleValue {
-		return 0, fmt.Errorf("USQL dimension must not be empty, unless you use %s result type", resultTypeSingleValue)
+		return 0, fmt.Errorf("USQL dimension should not be empty, unless you use %s result type", resultTypeSingleValue)
 	}
 
 	usqlRawQuery := querySplits[3]
@@ -149,7 +150,7 @@ func tryCastDimensionValueToNumeric(dimensionValue interface{}) (float64, error)
 		return value, nil
 	}
 
-	return 0, fmt.Errorf("dimension value is not numeric but, %T", dimensionValue)
+	return 0, errors.New("dimension value should be a number")
 }
 
 func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
@@ -158,7 +159,7 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 		return value, nil
 	}
 
-	return "", fmt.Errorf("dimension name is not a string but, %T", dimensionName)
+	return "", errors.New("dimension name should be a string ")
 }
 
 // query a specific SLO
