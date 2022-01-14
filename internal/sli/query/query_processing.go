@@ -90,7 +90,7 @@ func (p *Processing) executeUSQLQuery(metricsQuery string, startUnix time.Time, 
 
 	requestedDimensionName := querySplits[2]
 	if requestedDimensionName == "" && resultType != resultTypeSingleValue {
-		return 0, fmt.Errorf("USQL dimension should not be empty, unless result type is %s", resultTypeSingleValue)
+		return 0, fmt.Errorf("USQL dimension should not be empty unless result type is %s", resultTypeSingleValue)
 	}
 
 	usqlRawQuery := querySplits[3]
