@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-const usqlPath = "/api/v1/userSessionQueryLanguage/table"
+const USQLPath = "/api/v1/userSessionQueryLanguage/table"
 
 // DTUSQLResult struct
 type DTUSQLResult struct {
@@ -26,7 +26,7 @@ func NewUSQLClient(client ClientInterface) *USQLClient {
 
 // GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set
 func (uc *USQLClient) GetByQuery(usql string) (*DTUSQLResult, error) {
-	body, err := uc.client.Get(usqlPath + "?" + usql)
+	body, err := uc.client.Get(USQLPath + "?" + usql)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (uc *USQLClient) GetByQuery(usql string) (*DTUSQLResult, error) {
 	// if no data comes back
 	if len(result.Values) == 0 {
 		// there are no data points - try again?
-		return nil, errors.New("dynatrace USQL Query didnt return any DataPoints")
+		return nil, errors.New("Dynatrace USQL API returned zero data points")
 	}
 
 	return &result, nil

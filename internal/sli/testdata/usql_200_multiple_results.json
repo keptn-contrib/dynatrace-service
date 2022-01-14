@@ -1,0 +1,29 @@
+{
+  "extrapolationLevel": 1,
+  "columnNames": [
+    "osVersion",
+    "avg(duration)"
+  ],
+  "values": [
+    [
+      "Android 6.0.1",
+      21862.428571428572
+    ],
+    [
+      "Android 7.0.1",
+      26304
+    ],
+    [
+      "Android 5.1.1",
+      908
+    ],
+    [
+      "iOS 11.4.1",
+      23576
+    ],
+    [
+      "iOS 12.1.4",
+      21478
+    ]
+  ]
+}
