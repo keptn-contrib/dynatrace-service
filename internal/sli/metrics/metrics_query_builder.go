@@ -33,14 +33,14 @@ func (b *QueryBuilder) Build(metricQuery string, startUnix time.Time, endUnix ti
 	metricQuery = common.ReplaceQueryParameters(metricQuery, b.customFilters, b.eventData)
 
 	// try to do the legacy query transformation
-	metricQuery, err := NewLegacyQueryTransformation(metricQuery).Transform()
+	transformedQuery, err := NewLegacyQueryTransformation(metricQuery).Transform()
 	if err != nil {
 		return "", "", fmt.Errorf("could not parse old format metrics query: %v, %w", metricQuery, err)
 	}
 
-	q, err := NewQueryParsing(metricQuery).Parse()
+	q, err := NewQueryParsing(transformedQuery).Parse()
 	if err != nil {
-		return "", "", fmt.Errorf("could not parse metrics query: %v, %w", metricQuery, err)
+		return "", "", fmt.Errorf("could not parse metrics query: %v, %w", transformedQuery, err)
 	}
 
 	// resolution=Inf means that we only get 1 datapoint (per service)
