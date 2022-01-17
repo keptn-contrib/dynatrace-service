@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.20.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.19.0...0.20.0) (2022-01-17)
+
+### Release validated with
+ | Dynatrace-service: `0.20.0` | Keptn: `0.11.4` | Dynatrace: `1.233` |
+ |---|---|---|
+
+
+### Features
+
+* Forward all Dynatrace problem details ([#665](https://github.com/keptn-contrib/dynatrace-service/issues/665)) ([dc04c6d](https://github.com/keptn-contrib/dynatrace-service/commit/dc04c6dccc2fc0eb89991855beb095a5519552ac))
+
+
+### Bug Fixes
+
+*  Ensure problem notifications created using `keptn configure monitoring` refer to a valid project ([#671](https://github.com/keptn-contrib/dynatrace-service/issues/671)) ([fc9bdc5](https://github.com/keptn-contrib/dynatrace-service/commit/fc9bdc5b3c88ac87bdbbfa8998fb7e9e372e6f6f))
+*  Only support Keptn placeholders in values in dynatrace/dynatrace.conf.yaml where it makes sense ([#654](https://github.com/keptn-contrib/dynatrace-service/issues/654)) ([ce16c01](https://github.com/keptn-contrib/dynatrace-service/commit/ce16c01937330f02f5c34ba8bde44ed78ade8198))
+* `ProblemEventHandler` sends `sh.keptn.event.[STAGE].remediation.triggered` event even if stage is not set  ([#672](https://github.com/keptn-contrib/dynatrace-service/issues/672)) ([ac06bf8](https://github.com/keptn-contrib/dynatrace-service/commit/ac06bf86cb297401236dffa11761e0fe6c3bdb66))
+* Improve errors when unable to process events ([#679](https://github.com/keptn-contrib/dynatrace-service/issues/679)) ([b0f024c](https://github.com/keptn-contrib/dynatrace-service/commit/b0f024c6b91f4f4d0e1bd51e54546e87ac74ed1a))
+* ProblemEventHandler forwards wrong events  ([#664](https://github.com/keptn-contrib/dynatrace-service/issues/664)) ([1663b77](https://github.com/keptn-contrib/dynatrace-service/commit/1663b77a7fc3cf3ecff6c2da639cc9a4eacc76bf))
+* Remove automatic configure monitoring for new projects  ([#661](https://github.com/keptn-contrib/dynatrace-service/issues/661)) ([e5405eb](https://github.com/keptn-contrib/dynatrace-service/commit/e5405eb02f48539fa87c635eb865f156ba8fa62f))
+* Service entities tagged with multiple `keptn_service` tags should produce an error ([#673](https://github.com/keptn-contrib/dynatrace-service/issues/673)) ([d542669](https://github.com/keptn-contrib/dynatrace-service/commit/d54266985ab74583bda38fbc042c171c027de0e1))
+* Use event type as task for non-task events ([#670](https://github.com/keptn-contrib/dynatrace-service/issues/670)) ([b112d2c](https://github.com/keptn-contrib/dynatrace-service/commit/b112d2cd24dcca9f325376adc032e88b87a49888))
+* USQL processing will not panic in case of errors ([#677](https://github.com/keptn-contrib/dynatrace-service/issues/677)) ([111d569](https://github.com/keptn-contrib/dynatrace-service/commit/111d569e2598c1db481faff4eced499db57c15b1))
+
+
+### Refactoring
+
+* Move `HTTPGetHandler` to `health` package ([#660](https://github.com/keptn-contrib/dynatrace-service/issues/660)) ([26a06d0](https://github.com/keptn-contrib/dynatrace-service/commit/26a06d0b55da5ddad3290630f36fc6ef25ffa2dd))
+
+
+### Docs
+
+* Fix management zone criterion in PV2 entity selector ([#662](https://github.com/keptn-contrib/dynatrace-service/issues/662)) ([bd5955f](https://github.com/keptn-contrib/dynatrace-service/commit/bd5955ff57dce6dfea8c876120c18ad505343c97))
+
+
+### Other
+
+* Re-use docker-build action from keptn/gh-automation ([#676](https://github.com/keptn-contrib/dynatrace-service/issues/676)) ([745885e](https://github.com/keptn-contrib/dynatrace-service/commit/745885e5bedf4f0ff53f888acb1fde9cf7537641))
+
 ## [0.19.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.18.2...0.19.0) (2021-12-22)
 
 ### Release validated with
