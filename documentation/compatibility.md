@@ -6,3 +6,4 @@ With each release, the dynatrace-service is tested and verified to work with a r
 |---|---|---|
 | `0.18.1` | `0.10.0` | `1.232` |
 | `0.19.0` | `0.11.3` | `1.232` |
+| `0.20.0` | `0.11.4` | `1.233` |
