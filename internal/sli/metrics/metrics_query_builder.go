@@ -21,15 +21,9 @@ func NewQueryBuilder() *QueryBuilder {
 //  #2: Metric selector that this query will return, e.g: builtin:host.cpu
 //  #3: error
 func (b *QueryBuilder) Build(metricQuery string, startUnix time.Time, endUnix time.Time) (string, string, error) {
-	// try to do the legacy query transformation
-	transformedQuery, err := NewLegacyQueryTransformation(metricQuery).Transform()
+	q, err := NewQueryParsing(metricQuery).Parse()
 	if err != nil {
-		return "", "", fmt.Errorf("could not parse old format metrics query: %v, %w", metricQuery, err)
-	}
-
-	q, err := NewQueryParsing(transformedQuery).Parse()
-	if err != nil {
-		return "", "", fmt.Errorf("could not parse metrics query: %v, %w", transformedQuery, err)
+		return "", "", fmt.Errorf("could not parse metrics query: %v, %w", metricQuery, err)
 	}
 
 	// resolution=Inf means that we only get 1 datapoint (per service)

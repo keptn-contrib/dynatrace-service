@@ -226,8 +226,13 @@ func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.T
 }
 
 func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
+	// try to do the legacy query transformation
+	transformedQuery, err := metrics.NewLegacyQueryTransformation(metricsQuery).Transform()
+	if err != nil {
+		return 0, fmt.Errorf("could not parse old format metrics query: %v, %w", metricsQuery, err)
+	}
 
-	metricsQuery, metricSelector, err := metrics.NewQueryBuilder().Build(metricsQuery, startUnix, endUnix)
+	metricsQuery, metricSelector, err := metrics.NewQueryBuilder().Build(transformedQuery, startUnix, endUnix)
 	if err != nil {
 		return 0, err
 	}
