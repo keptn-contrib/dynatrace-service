@@ -3,6 +3,10 @@ package dynatrace
 import (
 	"encoding/json"
 	"errors"
+	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/url"
 )
 
 // MetricsPath is the base endpoint for Metrics API v2
@@ -10,6 +14,14 @@ const MetricsPath = "/api/v2/metrics"
 
 // MetricsQueryPath is the query endpoint for Metrics API v2
 const MetricsQueryPath = MetricsPath + "/query"
+
+const (
+	fromKey           = "from"
+	toKey             = "to"
+	metricSelectorKey = "metricSelector"
+	resolutionKey     = "resolution"
+	entitySelectorKey = "entitySelector"
+)
 
 // MetricDefinition defines the output of /metrics/<metricID>
 type MetricDefinition struct {
@@ -80,8 +92,14 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 }
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (mc *MetricsClient) GetByQuery(metricsQuery string) (*MetricsQueryResult, error) {
-	body, err := mc.client.Get(MetricsQueryPath + "?" + metricsQuery)
+func (mc *MetricsClient) GetByQuery(metricSelector string, entitySelector string, from time.Time, to time.Time) (*MetricsQueryResult, error) {
+
+	queryParameters := url.NewQueryParameters().Add(metricSelectorKey, metricSelector).Add(fromKey, common.TimestampToString(from)).Add(toKey, common.TimestampToString(to)).Add(resolutionKey, "Inf")
+	if entitySelector != "" {
+		queryParameters.Add(entitySelectorKey, entitySelector)
+	}
+
+	body, err := mc.client.Get(MetricsQueryPath + "?" + queryParameters.Encode())
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +111,7 @@ func (mc *MetricsClient) GetByQuery(metricsQuery string) (*MetricsQueryResult, e
 	}
 
 	if len(result.Result) == 0 {
-		// there are no data points - try again?
-		return nil, errors.New("dynatrace Metrics API returned no DataPoints")
+		return nil, errors.New("Dynatrace Metrics API returned no datapoints")
 	}
 
 	return &result, nil

@@ -41,7 +41,7 @@ func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilt
 	}
 
 	if len(tile.Queries) != 1 {
-		return createFailedTileResultFromSLODefinition(sloDefinition, "", "Data Explorer tile must have exactly one query")
+		return createFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile must have exactly one query")
 	}
 
 	// get the tile specific management zone filter that might be needed by different tile processors
@@ -57,7 +57,7 @@ func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, d
 	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(dataQuery, managementZoneFilter)
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
-		return createFailedTileResultFromSLODefinition(sloDefinition, "", "Data Explorer tile could not be converted to a metric query: "+err.Error())
+		return createFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())
 	}
 
 	return NewMetricsQueryProcessing(p.client).Process(len(dataQuery.SplitBy), sloDefinition, metricQuery)
@@ -137,28 +137,25 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	managementZoneFilterString := managementZoneFilter.ForEntitySelector()
 	if managementZoneFilterString != "" {
 		if processedFilter.entitySelectorFilter == "" {
-			processedFilter.entitySelectorFilter = fmt.Sprintf("&entitySelector=type(%s)", metricDefinition.EntityType[0])
+			processedFilter.entitySelectorFilter = fmt.Sprintf("type(%s)", metricDefinition.EntityType[0])
 		}
 		processedFilter.entitySelectorFilter = processedFilter.entitySelectorFilter + managementZoneFilterString
 	}
 
-	// lets create the metricSelector and entitySelector
-	// ATTENTION: adding :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
-	metricQuery := fmt.Sprintf("metricSelector=%s%s%s:%s:names%s",
-		dataQuery.Metric, processedFilter.metricSelectorFilter, splitBy, strings.ToLower(metricAggregation),
-		processedFilter.entitySelectorFilter)
+	// NOTE: add :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
+	metricSelector := fmt.Sprintf("%s%s%s:%s:names",
+		dataQuery.Metric, processedFilter.metricSelectorFilter, splitBy, strings.ToLower(metricAggregation))
 
-	// lets build the Dynatrace API Metric query for the proposed timeframe and additonal filters!
-	fullMetricQuery, metricID, err := metrics.NewQueryBuilder().Build(metricQuery, p.startUnix, p.endUnix)
+	metricsQuery, err := metrics.NewQuery(metricSelector, processedFilter.entitySelectorFilter)
 	if err != nil {
 		return nil, err
 	}
 
 	return &queryComponents{
-		metricID:                    metricID,
+		metricsQuery:                metricsQuery,
+		startTime:                   p.startUnix,
+		endTime:                     p.endUnix,
 		metricUnit:                  metricDefinition.Unit,
-		metricQuery:                 metricQuery,
-		fullMetricQueryString:       fullMetricQuery,
 		entitySelectorTargetSnippet: processedFilter.entitySelectorTargetSnippet,
 		metricSelectorTargetSnippet: processedFilter.metricSelectorTargetSnippet,
 	}, nil
@@ -176,25 +173,25 @@ func processFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*pr
 	switch filter.FilterType {
 	case "ID":
 		return &processedFilterComponents{
-			entitySelectorFilter:        fmt.Sprintf("&entitySelector=entityId(%s)", filter.Criteria[0].Value),
+			entitySelectorFilter:        fmt.Sprintf("entityId(%s)", filter.Criteria[0].Value),
 			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "NAME":
 		return &processedFilterComponents{
-			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
+			entitySelectorFilter:        fmt.Sprintf("type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
 			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "TAG":
 		return &processedFilterComponents{
-			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
+			entitySelectorFilter:        fmt.Sprintf("type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
 			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 
 	case "ENTITY_ATTRIBUTE":
 		return &processedFilterComponents{
-			entitySelectorFilter:        fmt.Sprintf("&entitySelector=type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
+			entitySelectorFilter:        fmt.Sprintf("type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
 			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
 		}, nil
 

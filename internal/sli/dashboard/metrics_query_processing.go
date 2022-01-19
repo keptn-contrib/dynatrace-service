@@ -5,6 +5,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -26,33 +27,25 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(metricQueryComponents.fullMetricQueryString)
+	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(
+		metricQueryComponents.metricsQuery.GetMetricSelector(),
+		metricQueryComponents.metricsQuery.GetEntitySelector(),
+		metricQueryComponents.startTime,
+		metricQueryComponents.endTime)
 
 	// ERROR-CASE: Metric API return no values or an error
 	// we could not query data - so - we return the error back as part of our SLIResults
 	if err != nil {
-		log.WithError(err).Debug("No result for query")
-		return createFailedTileResultFromSLODefinition(sloDefinition, metricQueryComponents.metricQuery, err.Error())
+		return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Error querying Metrics API: "+err.Error())
 	}
 
 	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
 	if len(queryResult.Result) == 0 {
-		const errorMessage = "Expected a single result but got no result for metric ID"
-
-		log.WithFields(
-			log.Fields{
-				"wantedMetricId": metricQueryComponents.metricID,
-			}).Error(errorMessage)
-		return createFailedTileResultFromSLODefinition(sloDefinition, metricQueryComponents.metricQuery, errorMessage)
+		return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Expected a single result but got no result for metric ID")
 	}
 
 	if len(queryResult.Result) > 1 {
-		const errorMessage = "Expected a result only for a single metric ID but got multiple results"
-		log.WithFields(
-			log.Fields{
-				"wantedMetricId": metricQueryComponents.metricID,
-			}).Error(errorMessage)
-		return createFailedTileResultFromSLODefinition(sloDefinition, metricQueryComponents.metricQuery, errorMessage)
+		return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Expected a result only for a single metric ID but got multiple results")
 	}
 
 	var tileResults []*TileResult
@@ -68,7 +61,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 	dataResultCount := len(singleResult.Data)
 	if dataResultCount == 0 {
-		return createFailedTileResultFromSLODefinition(sloDefinition, metricQueryComponents.metricQuery, "Metrics query result has no data")
+		return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Metrics query result has no data")
 	}
 
 	for _, singleDataEntry := range singleResult.Data {
@@ -77,7 +70,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 		// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
 		indicatorName := sloDefinition.SLI
 
-		metricQueryForSLI := metricQueryComponents.metricQuery
+		metricQueryForSLI, err := metricQueryComponents.metricsQuery.Build()
 
 		// we need this one to "fake" the MetricQuery for the SLi.yaml to include the dynamic dimension name for each value
 		// we initialize it with ":names" as this is the part of the metric query string we will replace
@@ -118,9 +111,9 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 		value = value / float64(len(singleDataEntry.Values))
 
 		// lets scale the metric
-		value = unit.ScaleData(metricQueryComponents.metricID, metricQueryComponents.metricUnit, value)
+		value = unit.ScaleData(metricQueryComponents.metricsQuery.GetMetricSelector(), metricQueryComponents.metricUnit, value)
 
-		// we got our metric, slos and the value
+		// we got our metric, SLOs and the value
 		log.WithFields(
 			log.Fields{
 				"name":  indicatorName,
@@ -160,7 +153,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 	return tileResults
 }
 
-func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, sliQuery string, message string) []*TileResult {
+func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, message string) []*TileResult {
 	return []*TileResult{
 		{
 			sliResult: &keptnv2.SLIResult{
@@ -171,7 +164,26 @@ func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, sli
 			},
 			objective: sloDefinition,
 			sliName:   sloDefinition.SLI,
-			sliQuery:  sliQuery,
+		},
+	}
+}
+
+func createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition *keptncommon.SLO, metricsQuery *metrics.Query, message string) []*TileResult {
+	metricsQueryString, err := metricsQuery.Build()
+	if err != nil {
+		metricsQueryString = err.Error()
+	}
+	return []*TileResult{
+		{
+			sliResult: &keptnv2.SLIResult{
+				Metric:  sloDefinition.SLI,
+				Value:   0,
+				Success: false,
+				Message: message,
+			},
+			objective: sloDefinition,
+			sliName:   sloDefinition.SLI,
+			sliQuery:  metricsQueryString,
 		},
 	}
 }

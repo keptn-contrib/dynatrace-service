@@ -225,18 +225,19 @@ func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.T
 	return p.executeMetricsQuery(metricsQuery, metricUnit, startUnix, endUnix)
 }
 
-func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (p *Processing) executeMetricsQuery(metricsQueryString string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
 	// try to do the legacy query transformation
-	transformedQuery, err := metrics.NewLegacyQueryTransformation(metricsQuery).Transform()
+	transformedQueryString, err := metrics.NewLegacyQueryTransformation(metricsQueryString).Transform()
 	if err != nil {
-		return 0, fmt.Errorf("could not parse old format metrics query: %v, %w", metricsQuery, err)
+		return 0, fmt.Errorf("could not parse old format metrics query: %v, %w", metricsQueryString, err)
 	}
 
-	metricsQuery, metricSelector, err := metrics.NewQueryBuilder().Build(transformedQuery, startUnix, endUnix)
+	metricsQuery, err := metrics.ParseQuery(transformedQueryString)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("could not parse metrics query: %v, %w", metricsQuery, err)
 	}
-	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(metricsQuery)
+
+	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(metricsQuery.GetMetricSelector(), metricsQuery.GetEntitySelector(), startUnix, endUnix)
 
 	if err != nil {
 		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %s. This was the query executed: %s", err.Error(), metricsQuery)
@@ -287,5 +288,5 @@ func (p *Processing) executeMetricsQuery(metricsQuery string, metricUnit string,
 	}
 
 	singleValue := singleDataPoint.Values[0]
-	return unit.ScaleData(metricSelector, metricUnit, singleValue), nil
+	return unit.ScaleData(metricsQuery.GetMetricSelector(), metricUnit, singleValue), nil
 }
