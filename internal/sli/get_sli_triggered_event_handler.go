@@ -25,6 +25,7 @@ import (
 )
 
 const ProblemOpenSLI = "problem_open"
+const NoMetricIndicator = "no metric"
 
 type GetSLIEventHandler struct {
 	event          GetSLITriggeredAdapterInterface
@@ -381,7 +382,7 @@ func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInt
 	if len(sliResults) == 0 {
 		var errType *dashboard.QueryError
 		if len(indicators) == 0 || errors.As(err, &errType) {
-			indicators = []string{"no metric"}
+			indicators = []string{NoMetricIndicator}
 		}
 
 		for _, indicatorName := range indicators {
