@@ -171,22 +171,22 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	// Lets see if we have a Dashboard in Dynatrace that we should parse
 	result, err := sliQuerying.GetSLIValues(eh.dashboard, startUnix, endUnix)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
+		return nil, nil, dashboard.NewQueryError(err)
 	}
 
-	// lets write the SLI to the config repo
+	// let's write the SLI to the config repo
 	if result.HasSLIs() {
 		err = eh.resourceClient.UploadSLI(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLI())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, dashboard.NewUploadFileError("SLI", err)
 		}
 	}
 
-	// lets write the SLO to the config repo
+	// let's write the SLO to the config repo
 	if result.HasSLOs() {
 		err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLO())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, dashboard.NewUploadFileError("SLO", err)
 		}
 	}
 
@@ -389,32 +389,35 @@ func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(indicatorValues []*keptnv2
 	return eh.sendEvent(NewSucceededGetSLIFinishedEventFactory(eh.event, indicatorValues, err))
 }
 
-func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
-	if err != nil {
-		indicators := eventData.GetIndicators()
-		if (indicatorValues == nil) || (len(indicatorValues) == 0) {
-			if indicators == nil || len(indicators) == 0 {
-				indicators = []string{"no metric"}
-			}
+func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, sliResults []*keptnv2.SLIResult) []*keptnv2.SLIResult {
+	if err == nil {
+		return sliResults
+	}
 
-			for _, indicatorName := range indicators {
-				indicatorValues = []*keptnv2.SLIResult{
-					{
-						Metric: indicatorName,
-						Value:  0.0,
-					},
-				}
-			}
+	indicators := eventData.GetIndicators()
+	if len(sliResults) == 0 {
+		var errType *dashboard.QueryError
+		if len(indicators) == 0 || errors.As(err, &errType) {
+			indicators = []string{"no metric"}
 		}
 
-		errMessage := err.Error()
-		for _, indicator := range indicatorValues {
-			indicator.Success = false
-			indicator.Message = errMessage
+		for _, indicatorName := range indicators {
+			sliResults = []*keptnv2.SLIResult{
+				{
+					Metric: indicatorName,
+					Value:  0.0,
+				},
+			}
 		}
 	}
 
-	return indicatorValues
+	errMessage := err.Error()
+	for _, indicator := range sliResults {
+		indicator.Success = false
+		indicator.Message = errMessage
+	}
+
+	return sliResults
 }
 
 func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
