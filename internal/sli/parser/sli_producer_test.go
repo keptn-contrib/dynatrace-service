@@ -58,7 +58,7 @@ func TestQueryBuilder(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			output, err := NewQueryBuilder(tc.inputQueryParameters, tc.keyOrderer).Build()
+			output, err := NewSLIProducer(tc.inputQueryParameters, tc.keyOrderer).Produce()
 			if tc.expectError {
 				assert.Error(t, err)
 				assert.EqualValues(t, "", output)

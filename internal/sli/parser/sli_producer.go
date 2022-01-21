@@ -12,22 +12,22 @@ type KeyOrderer interface {
 	GetKeyPosition(key string) (int, bool)
 }
 
-// QueryBuilder build a query string from QueryParameters.
-type QueryBuilder struct {
-	parameters *KeyValuePairs
+// SLIProducer build a SLI string from KeyValuePairs.
+type SLIProducer struct {
+	keyValues  *KeyValuePairs
 	keyOrderer KeyOrderer
 }
 
-// NewQueryBuilder creates a new QueryBuilder based on the specified parameters and key orderer.
-func NewQueryBuilder(parameters *KeyValuePairs, keyOrderer KeyOrderer) *QueryBuilder {
-	return &QueryBuilder{
-		parameters: parameters,
+// NewSLIProducer creates a new SLIProducer based on the specified KeyValuePairs and key orderer.
+func NewSLIProducer(keyValues *KeyValuePairs, keyOrderer KeyOrderer) *SLIProducer {
+	return &SLIProducer{
+		keyValues:  keyValues,
 		keyOrderer: keyOrderer,
 	}
 }
 
-// Builder builds a query string based on the QueryParameters or returns an error if the key is unexpected or cannot be ordered.
-func (b *QueryBuilder) Build() (string, error) {
+// Produce produces a SLI string based on the KeyValuePairs or returns an error if the key is unexpected or cannot be ordered.
+func (b *SLIProducer) Produce() (string, error) {
 	if b.keyOrderer == nil {
 		return "", fmt.Errorf("key orderer should not be nil")
 	}
@@ -40,10 +40,10 @@ func (b *QueryBuilder) Build() (string, error) {
 	return strings.Join(sortPairs(pairs), delimiter), nil
 }
 
-// makePairs combines the parameters into key-value pairs indexed by their order or returns an error.
-func (b *QueryBuilder) makePairs() (map[int]string, error) {
+// makePairs combines the key-value pairs indexed by their order or returns an error.
+func (b *SLIProducer) makePairs() (map[int]string, error) {
 	pairs := make(map[int]string)
-	for key, value := range b.parameters.keyValues {
+	for key, value := range b.keyValues.keyValues {
 
 		order, shouldAppear := b.keyOrderer.GetKeyPosition(key)
 		if !shouldAppear {
