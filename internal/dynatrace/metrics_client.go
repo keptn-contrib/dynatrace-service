@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 )
 
 // MetricsPath is the base endpoint for Metrics API v2
@@ -21,6 +22,35 @@ const (
 	resolutionKey     = "resolution"
 	entitySelectorKey = "entitySelector"
 )
+
+// MetricsClientQueryParameters encapsulates the query parameters for the MetricsClient's GetByQuery method.
+type MetricsClientQueryParameters struct {
+	query metrics.Query
+	from  time.Time
+	to    time.Time
+}
+
+// NewMetricsClientQueryParameters creates new MetricsClientQueryParameters.
+func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to time.Time) MetricsClientQueryParameters {
+	return MetricsClientQueryParameters{
+		query: query,
+		from:  from,
+		to:    to,
+	}
+}
+
+// Encode encodes MetricsClientQueryParameters into a URL-encoded string.
+func (q *MetricsClientQueryParameters) Encode() string {
+	queryParameters := NewQueryParameters()
+	queryParameters.Add(metricSelectorKey, q.query.GetMetricSelector())
+	queryParameters.Add(fromKey, common.TimestampToString(q.from))
+	queryParameters.Add(toKey, common.TimestampToString(q.to))
+	queryParameters.Add(resolutionKey, "Inf")
+	if q.query.GetEntitySelector() != "" {
+		queryParameters.Add(entitySelectorKey, q.query.GetEntitySelector())
+	}
+	return queryParameters.Encode()
+}
 
 // MetricDefinition defines the output of /metrics/<metricID>
 type MetricDefinition struct {
@@ -91,14 +121,8 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 }
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (mc *MetricsClient) GetByQuery(metricSelector string, entitySelector string, from time.Time, to time.Time) (*MetricsQueryResult, error) {
-
-	queryParameters := NewQueryParameters().Add(metricSelectorKey, metricSelector).Add(fromKey, common.TimestampToString(from)).Add(toKey, common.TimestampToString(to)).Add(resolutionKey, "Inf")
-	if entitySelector != "" {
-		queryParameters.Add(entitySelectorKey, entitySelector)
-	}
-
-	body, err := mc.client.Get(MetricsQueryPath + "?" + queryParameters.Encode())
+func (mc *MetricsClient) GetByQuery(parameters MetricsClientQueryParameters) (*MetricsQueryResult, error) {
+	body, err := mc.client.Get(MetricsQueryPath + "?" + parameters.Encode())
 	if err != nil {
 		return nil, err
 	}

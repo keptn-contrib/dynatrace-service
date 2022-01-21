@@ -237,7 +237,7 @@ func (p *Processing) executeMetricsQuery(metricsQueryString string, metricUnit s
 		return 0, fmt.Errorf("could not parse metrics query: %v, %w", metricsQuery, err)
 	}
 
-	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(metricsQuery.GetMetricSelector(), metricsQuery.GetEntitySelector(), startUnix, endUnix)
+	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(*metricsQuery, startUnix, endUnix))
 
 	if err != nil {
 		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %s. This was the query executed: %s", err.Error(), metricsQuery)
