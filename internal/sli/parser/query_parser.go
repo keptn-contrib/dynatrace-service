@@ -31,7 +31,7 @@ func NewQueryParser(query string, validator KeyValidator) *QueryParser {
 }
 
 // Parse parses an un-encoded query string (usually found in sli.yaml files) into QueryParameters or returns an error.
-func (p *QueryParser) Parse() (*QueryParameters, error) {
+func (p *QueryParser) Parse() (*KeyValuePairs, error) {
 	if p.query == "" {
 		return nil, fmt.Errorf("query should not be empty")
 	}
@@ -55,7 +55,7 @@ func (p *QueryParser) Parse() (*QueryParameters, error) {
 		}
 	}
 
-	return NewQueryParameters(parameters), nil
+	return NewKeyValuePairs(parameters), nil
 }
 
 // add adds the specified key and value to the map or returns an error if the map already contains the key.

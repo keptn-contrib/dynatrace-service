@@ -23,7 +23,7 @@ func (b *queryBuilder) build() (string, error) {
 	if b.query.GetEntitySelector() != "" {
 		rawParameters[entitySelectorKey] = b.query.GetEntitySelector()
 	}
-	return parser.NewQueryBuilder(parser.NewQueryParameters(rawParameters), b).Build()
+	return parser.NewQueryBuilder(parser.NewKeyValuePairs(rawParameters), b).Build()
 }
 
 func (b *queryBuilder) GetKeyPosition(key string) (int, bool) {

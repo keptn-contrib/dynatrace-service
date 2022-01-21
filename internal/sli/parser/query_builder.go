@@ -14,12 +14,12 @@ type KeyOrderer interface {
 
 // QueryBuilder build a query string from QueryParameters.
 type QueryBuilder struct {
-	parameters *QueryParameters
+	parameters *KeyValuePairs
 	keyOrderer KeyOrderer
 }
 
 // NewQueryBuilder creates a new QueryBuilder based on the specified parameters and key orderer.
-func NewQueryBuilder(parameters *QueryParameters, keyOrderer KeyOrderer) *QueryBuilder {
+func NewQueryBuilder(parameters *KeyValuePairs, keyOrderer KeyOrderer) *QueryBuilder {
 	return &QueryBuilder{
 		parameters: parameters,
 		keyOrderer: keyOrderer,
@@ -43,7 +43,7 @@ func (b *QueryBuilder) Build() (string, error) {
 // makePairs combines the parameters into key-value pairs indexed by their order or returns an error.
 func (b *QueryBuilder) makePairs() (map[int]string, error) {
 	pairs := make(map[int]string)
-	for key, value := range b.parameters.parameters {
+	for key, value := range b.parameters.keyValues {
 
 		order, shouldAppear := b.keyOrderer.GetKeyPosition(key)
 		if !shouldAppear {

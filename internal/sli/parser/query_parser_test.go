@@ -12,7 +12,7 @@ func TestQueryParser(t *testing.T) {
 		name                                 string
 		input                                string
 		keyValidator                         KeyValidator
-		expectedQueryParametersAssertionFunc func(t assert.TestingT, q *QueryParameters)
+		expectedQueryParametersAssertionFunc func(t assert.TestingT, q *KeyValuePairs)
 		expectError                          bool
 		expectedErrorMessage                 string
 	}{
@@ -20,17 +20,17 @@ func TestQueryParser(t *testing.T) {
 			name:         "one key-value, expecting one",
 			input:        "key1=value1",
 			keyValidator: &validatorWithOneKey{},
-			expectedQueryParametersAssertionFunc: func(t assert.TestingT, q *QueryParameters) {
-				assert.EqualValues(t, "value1", q.Get("key1"))
+			expectedQueryParametersAssertionFunc: func(t assert.TestingT, q *KeyValuePairs) {
+				assert.EqualValues(t, "value1", q.GetValue("key1"))
 			},
 		},
 		{
 			name:         "two key-values, expecting two",
 			input:        "key1=value1&key2=value2",
 			keyValidator: &validatorWithTwoKeys{},
-			expectedQueryParametersAssertionFunc: func(t assert.TestingT, q *QueryParameters) {
-				assert.EqualValues(t, "value1", q.Get("key1"))
-				assert.EqualValues(t, "value2", q.Get("key2"))
+			expectedQueryParametersAssertionFunc: func(t assert.TestingT, q *KeyValuePairs) {
+				assert.EqualValues(t, "value1", q.GetValue("key1"))
+				assert.EqualValues(t, "value2", q.GetValue("key2"))
 			},
 		},
 

@@ -10,7 +10,7 @@ import (
 func TestQueryBuilder(t *testing.T) {
 	tests := []struct {
 		name                 string
-		inputQueryParameters *QueryParameters
+		inputQueryParameters *KeyValuePairs
 		keyOrderer           KeyOrderer
 		expectedOutput       string
 		expectError          bool
@@ -18,24 +18,24 @@ func TestQueryBuilder(t *testing.T) {
 	}{
 		{
 			name:                 "Empty query parameters",
-			inputQueryParameters: NewQueryParameters(map[string]string{}),
+			inputQueryParameters: NewKeyValuePairs(map[string]string{}),
 			keyOrderer:           &testKeyOrderer{},
 		},
 		{
 			name:                 "One key",
-			inputQueryParameters: NewQueryParameters(map[string]string{"key1": "value1"}),
+			inputQueryParameters: NewKeyValuePairs(map[string]string{"key1": "value1"}),
 			keyOrderer:           &testKeyOrderer{},
 			expectedOutput:       "key1=value1",
 		},
 		{
 			name:                 "Two keys",
-			inputQueryParameters: NewQueryParameters(map[string]string{"key1": "value1", "key2": "value2"}),
+			inputQueryParameters: NewKeyValuePairs(map[string]string{"key1": "value1", "key2": "value2"}),
 			keyOrderer:           &testKeyOrderer{},
 			expectedOutput:       "key1=value1&key2=value2",
 		},
 		{
 			name:                 "Two keys - potentially different order",
-			inputQueryParameters: NewQueryParameters(map[string]string{"key2": "value2", "key1": "value1"}),
+			inputQueryParameters: NewKeyValuePairs(map[string]string{"key2": "value2", "key1": "value1"}),
 			keyOrderer:           &testKeyOrderer{},
 			expectedOutput:       "key1=value1&key2=value2",
 		},
@@ -43,14 +43,14 @@ func TestQueryBuilder(t *testing.T) {
 		// The following cases expect errors
 		{
 			name:                 "One unknown key",
-			inputQueryParameters: NewQueryParameters(map[string]string{"key3": "value3"}),
+			inputQueryParameters: NewKeyValuePairs(map[string]string{"key3": "value3"}),
 			keyOrderer:           &testKeyOrderer{},
 			expectError:          true,
 			expectedErrorMessage: "unexpected key",
 		},
 		{
 			name:                 "Two keys - ambiguous ordering",
-			inputQueryParameters: NewQueryParameters(map[string]string{"key1": "value1", "key2": "value2"}),
+			inputQueryParameters: NewKeyValuePairs(map[string]string{"key1": "value1", "key2": "value2"}),
 			keyOrderer:           &testAmbiguousKeyOrderer{},
 			expectError:          true,
 			expectedErrorMessage: "ambiguous ordering",

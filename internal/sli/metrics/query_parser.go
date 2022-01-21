@@ -25,7 +25,7 @@ func (p *queryParser) parse() (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewQuery(queryParameters.Get(metricSelectorKey), queryParameters.Get(entitySelectorKey))
+	return NewQuery(queryParameters.GetValue(metricSelectorKey), queryParameters.GetValue(entitySelectorKey))
 }
 
 // ValidateKey returns true if the specified key is part of a metrics query.
