@@ -25,6 +25,7 @@ import (
 )
 
 const ProblemOpenSLI = "problem_open"
+const NoMetricIndicator = "no metric"
 
 type GetSLIEventHandler struct {
 	event          GetSLITriggeredAdapterInterface
@@ -115,9 +116,7 @@ func ensureRightTimestamps(start string, end string) (time.Time, time.Time, erro
 	return startUnix, endUnix, nil
 }
 
-/**
- * Adds an SLO Entry to the SLO.yaml
- */
+// addSLO adds an SLO Entry to the SLO.yaml
 func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 
 	// first - lets load the SLO.yaml from the config repo
@@ -159,45 +158,35 @@ func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 	return nil
 }
 
-// Tries to find a dynatrace dashboard that matches our project. If so - returns the SLI, SLO and SLIResults
+// getDataFromDynatraceDashboard will process dynatrace dashboard (if found) and return the SLI, SLO and SLIResults
 func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time, endUnix time.Time) (*dashboard.DashboardLink, []*keptnv2.SLIResult, error) {
 
-	// creating Dynatrace Retrieval which allows us to call the Dynatrace API
 	sliQuerying := dashboard.NewQuerying(eh.event, eh.event.GetCustomSLIFilters(), eh.dtClient)
-
-	//
-	// Option 1: We query the data from a dashboard instead of the uploaded SLI.yaml
-	// ==============================================================================
-	// Lets see if we have a Dashboard in Dynatrace that we should parse
 	result, err := sliQuerying.GetSLIValues(eh.dashboard, startUnix, endUnix)
 	if err != nil {
-		return nil, nil, fmt.Errorf("could not query Dynatrace dashboard for SLIs: %v", err)
+		return nil, nil, dashboard.NewQueryError(err)
 	}
 
-	// lets write the SLI to the config repo
+	// let's write the SLI to the config repo
 	if result.HasSLIs() {
 		err = eh.resourceClient.UploadSLI(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLI())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, dashboard.NewUploadFileError("SLI", err)
 		}
 	}
 
-	// lets write the SLO to the config repo
+	// let's write the SLO to the config repo
 	if result.HasSLOs() {
 		err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), result.SLO())
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, dashboard.NewUploadFileError("SLO", err)
 		}
 	}
 
 	return result.DashboardLink(), result.SLIResults(), nil
 }
 
-/**
- * getDynatraceProblemContext
- *
- * Will evaluate the event and - if it finds a dynatrace problem ID - will return this - otherwise it will return 0
- */
+//getDynatraceProblemContext will evaluate the event and - returns dynatrace problem ID if found, 0 otherwise
 func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) string {
 
 	// iterate through the labels and find Problem URL
@@ -220,7 +209,6 @@ func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) strin
 	return ""
 }
 
-//
 func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(startUnix time.Time, endUnix time.Time) ([]*keptnv2.SLIResult, error) {
 	// get custom metrics for project if they exist
 	projectCustomQueries, err := eh.kClient.GetCustomQueries(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
@@ -275,7 +263,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 	success := false
 	message := ""
 
-	// lets query the status of this problem and add it to the SLI Result
+	// let's query the status of this problem and add it to the SLI Result
 	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(problemID)
 	if err != nil {
 		message = err.Error()
@@ -288,7 +276,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 		}
 	}
 
-	// lets add this to the sliResults
+	// let's add this to the sliResults
 	sliResult := &keptnv2.SLIResult{
 		Metric:  problemIndicator,
 		Value:   openProblemValue,
@@ -296,7 +284,8 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 		Message: message,
 	}
 
-	// lets add this to the SLO in case this indicator is not yet in SLO.yaml. Becuase if it doesnt get added the lighthouse wont evaluate the SLI values
+	// let's add this to the SLO in case this indicator is not yet in SLO.yaml.
+	// Because if it does not get added the lighthouse will not evaluate the SLI values
 	// we default it to open_problems<=0
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", problemIndicator)
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
@@ -310,10 +299,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 	return sliResult
 }
 
-// retrieveMetrics Handles keptn.InternalGetSLIEventType
-//
-// First tries to find a Dynatrace dashboard and then parses it for SLIs and SLOs
-// Second will go to parse the SLI.yaml and returns the SLI as passed in by the event
+// retrieveMetrics will retrieve metrics either from a dashboard or from an SLI file
 func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	// send get-sli.started event
 	if err := eh.sendGetSLIStartedEvent(); err != nil {
@@ -379,51 +365,49 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 	return eh.sendGetSLIFinishedEvent(sliResults, err)
 }
 
-/**
- * Sends the SLI Done Event. If err != nil it will send an error message
- */
-func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(indicatorValues []*keptnv2.SLIResult, err error) error {
-	// if an error was set - the indicators will be set to failed and error message is set to each
-	indicatorValues = resetIndicatorsInCaseOfError(err, eh.event, indicatorValues)
+// sendGetSLIFinishedEvent sends the SLI finished event. If err != nil it will send an error message
+func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(sliResults []*keptnv2.SLIResult, err error) error {
+	// if an error was set - the SLI results will be set to failed and an error message is set to each
+	sliResults = resetSLIResultsInCaseOfError(err, eh.event, sliResults)
 
-	return eh.sendEvent(NewSucceededGetSLIFinishedEventFactory(eh.event, indicatorValues, err))
+	return eh.sendEvent(NewSucceededGetSLIFinishedEventFactory(eh.event, sliResults, err))
 }
 
-func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult) []*keptnv2.SLIResult {
-	if err != nil {
-		indicators := eventData.GetIndicators()
-		if (indicatorValues == nil) || (len(indicatorValues) == 0) {
-			if indicators == nil || len(indicators) == 0 {
-				indicators = []string{"no metric"}
-			}
+func resetSLIResultsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, sliResults []*keptnv2.SLIResult) []*keptnv2.SLIResult {
+	if err == nil {
+		return sliResults
+	}
 
-			for _, indicatorName := range indicators {
-				indicatorValues = []*keptnv2.SLIResult{
-					{
-						Metric: indicatorName,
-						Value:  0.0,
-					},
-				}
-			}
+	indicators := eventData.GetIndicators()
+	if len(sliResults) == 0 {
+		var errType *dashboard.QueryError
+		if len(indicators) == 0 || errors.As(err, &errType) {
+			indicators = []string{NoMetricIndicator}
 		}
 
-		errMessage := err.Error()
-		for _, indicator := range indicatorValues {
-			indicator.Success = false
-			indicator.Message = errMessage
+		for _, indicatorName := range indicators {
+			sliResults = []*keptnv2.SLIResult{
+				{
+					Metric: indicatorName,
+					Value:  0.0,
+				},
+			}
 		}
 	}
 
-	return indicatorValues
+	errMessage := err.Error()
+	for _, sliResult := range sliResults {
+		sliResult.Success = false
+		sliResult.Message = errMessage
+	}
+
+	return sliResults
 }
 
 func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
 	return eh.sendEvent(NewGetSliStartedEventFactory(eh.event))
 }
 
-/**
- * sends cloud event back to keptn
- */
 func (eh *GetSLIEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {
 	err := eh.kClient.SendCloudEvent(factory)
 	if err != nil {
