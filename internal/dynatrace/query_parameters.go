@@ -1,4 +1,4 @@
-package url
+package dynatrace
 
 import "net/url"
 

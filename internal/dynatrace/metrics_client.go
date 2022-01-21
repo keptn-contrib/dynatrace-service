@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/url"
 )
 
 // MetricsPath is the base endpoint for Metrics API v2
@@ -94,7 +93,7 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (mc *MetricsClient) GetByQuery(metricSelector string, entitySelector string, from time.Time, to time.Time) (*MetricsQueryResult, error) {
 
-	queryParameters := url.NewQueryParameters().Add(metricSelectorKey, metricSelector).Add(fromKey, common.TimestampToString(from)).Add(toKey, common.TimestampToString(to)).Add(resolutionKey, "Inf")
+	queryParameters := NewQueryParameters().Add(metricSelectorKey, metricSelector).Add(fromKey, common.TimestampToString(from)).Add(toKey, common.TimestampToString(to)).Add(resolutionKey, "Inf")
 	if entitySelector != "" {
 		queryParameters.Add(entitySelectorKey, entitySelector)
 	}
