@@ -366,14 +366,14 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 }
 
 // sendGetSLIFinishedEvent sends the SLI finished event. If err != nil it will send an error message
-func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(indicatorValues []*keptnv2.SLIResult, err error) error {
-	// if an error was set - the indicators will be set to failed and error message is set to each
-	indicatorValues = resetIndicatorsInCaseOfError(err, eh.event, indicatorValues)
+func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(sliResults []*keptnv2.SLIResult, err error) error {
+	// if an error was set - the SLI results will be set to failed and an error message is set to each
+	sliResults = resetSLIResultsInCaseOfError(err, eh.event, sliResults)
 
-	return eh.sendEvent(NewSucceededGetSLIFinishedEventFactory(eh.event, indicatorValues, err))
+	return eh.sendEvent(NewSucceededGetSLIFinishedEventFactory(eh.event, sliResults, err))
 }
 
-func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, sliResults []*keptnv2.SLIResult) []*keptnv2.SLIResult {
+func resetSLIResultsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, sliResults []*keptnv2.SLIResult) []*keptnv2.SLIResult {
 	if err == nil {
 		return sliResults
 	}
@@ -396,9 +396,9 @@ func resetIndicatorsInCaseOfError(err error, eventData GetSLITriggeredAdapterInt
 	}
 
 	errMessage := err.Error()
-	for _, indicator := range sliResults {
-		indicator.Success = false
-		indicator.Message = errMessage
+	for _, sliResult := range sliResults {
+		sliResult.Success = false
+		sliResult.Message = errMessage
 	}
 
 	return sliResults
