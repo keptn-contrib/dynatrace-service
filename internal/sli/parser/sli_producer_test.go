@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestQueryBuilder tests QueryBuilder.
-func TestQueryBuilder(t *testing.T) {
+// TestSLIProducer tests SLIProducer.
+func TestSLIProducer(t *testing.T) {
 	tests := []struct {
 		name                 string
 		inputQueryParameters *KeyValuePairs

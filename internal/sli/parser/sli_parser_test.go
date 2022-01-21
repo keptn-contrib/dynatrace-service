@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestQueryParser tests parsing of queries.
-func TestQueryParser(t *testing.T) {
+// TestSLIParser tests parsing of SLIs.
+func TestSLIParser(t *testing.T) {
 	tests := []struct {
 		name                                 string
 		input                                string
@@ -79,7 +79,7 @@ func TestQueryParser(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			queryParameters, err := NewQueryParser(tc.input, tc.keyValidator).Parse()
+			queryParameters, err := NewSLIParser(tc.input, tc.keyValidator).Parse()
 			if tc.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, queryParameters)

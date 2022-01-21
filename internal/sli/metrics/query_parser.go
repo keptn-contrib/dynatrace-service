@@ -21,11 +21,11 @@ func newQueryParser(query string) *queryParser {
 // parse parses an un-encoded metrics query string (usually found in sli.yaml files) into a Query or returns an error.
 // It only supports the current Metrics API V2 format (without a '?' prefix)
 func (p *queryParser) parse() (*Query, error) {
-	queryParameters, err := parser.NewQueryParser(p.query, p).Parse()
+	keyValuePairs, err := parser.NewSLIParser(p.query, p).Parse()
 	if err != nil {
 		return nil, err
 	}
-	return NewQuery(queryParameters.GetValue(metricSelectorKey), queryParameters.GetValue(entitySelectorKey))
+	return NewQuery(keyValuePairs.GetValue(metricSelectorKey), keyValuePairs.GetValue(entitySelectorKey))
 }
 
 // ValidateKey returns true if the specified key is part of a metrics query.

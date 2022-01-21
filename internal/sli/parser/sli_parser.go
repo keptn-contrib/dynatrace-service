@@ -16,22 +16,22 @@ type KeyValidator interface {
 	ValidateKey(key string) bool
 }
 
-// QueryParser parses an un-encoded query string (usually found in sli.yaml files) into QueryParameters.
-type QueryParser struct {
+// SLIParser parses an un-encoded query string (usually found in sli.yaml files) into key-value pairs.
+type SLIParser struct {
 	query     string
 	validator KeyValidator
 }
 
-// NewQueryParser creates a QueryParser for the specified query and validator.
-func NewQueryParser(query string, validator KeyValidator) *QueryParser {
-	return &QueryParser{
+// NewSLIParser creates a SLIParser for the specified query and validator.
+func NewSLIParser(query string, validator KeyValidator) *SLIParser {
+	return &SLIParser{
 		query:     strings.TrimSpace(query),
 		validator: validator,
 	}
 }
 
-// Parse parses an un-encoded query string (usually found in sli.yaml files) into QueryParameters or returns an error.
-func (p *QueryParser) Parse() (*KeyValuePairs, error) {
+// Parse parses an un-encoded query string (usually found in sli.yaml files) into KeyValuePairs or returns an error.
+func (p *SLIParser) Parse() (*KeyValuePairs, error) {
 	if p.query == "" {
 		return nil, fmt.Errorf("query should not be empty")
 	}
