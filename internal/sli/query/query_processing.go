@@ -13,9 +13,9 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
+	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
 )
 
 type Processing struct {
@@ -227,12 +227,12 @@ func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.T
 
 func (p *Processing) executeMetricsQuery(metricsQueryString string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
 	// try to do the legacy query transformation
-	transformedQueryString, err := metrics.NewLegacyQueryTransformation(metricsQueryString).Transform()
+	transformedQueryString, err := v1metrics.NewLegacyQueryTransformation(metricsQueryString).Transform()
 	if err != nil {
 		return 0, fmt.Errorf("could not parse old format metrics query: %v, %w", metricsQueryString, err)
 	}
 
-	metricsQuery, err := metrics.ParseQuery(transformedQueryString)
+	metricsQuery, err := v1metrics.NewQueryParser(transformedQueryString).Parse()
 	if err != nil {
 		return 0, fmt.Errorf("could not parse metrics query: %v, %w", metricsQuery, err)
 	}

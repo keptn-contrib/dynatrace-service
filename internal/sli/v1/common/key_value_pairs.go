@@ -1,4 +1,4 @@
-package parser
+package common
 
 // KeyValuePairs encapsulates a map of keys to values.
 type KeyValuePairs struct {

@@ -7,6 +7,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
+	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -66,7 +67,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 		// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
 		indicatorName := sloDefinition.SLI
 
-		metricQueryForSLI, err := metricQueryComponents.metricsQuery.Build()
+		metricQueryForSLI, err := v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce()
 
 		// we need this one to "fake" the MetricQuery for the SLi.yaml to include the dynamic dimension name for each value
 		// we initialize it with ":names" as this is the part of the metric query string we will replace
@@ -165,7 +166,7 @@ func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, mes
 }
 
 func createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition *keptncommon.SLO, metricsQuery *metrics.Query, message string) []*TileResult {
-	metricsQueryString, err := metricsQuery.Build()
+	metricsQueryString, err := v1metrics.NewQueryProducer(metricsQuery).Produce()
 	if err != nil {
 		metricsQueryString = err.Error()
 	}
