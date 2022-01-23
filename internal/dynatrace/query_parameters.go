@@ -14,9 +14,8 @@ func NewQueryParameters() *QueryParameters {
 }
 
 // Add adds the value to the key
-func (q *QueryParameters) Add(key string, value string) *QueryParameters {
+func (q *QueryParameters) Add(key string, value string) {
 	q.values.Add(key, value)
-	return q
 }
 
 // Encode URL encodes the values
