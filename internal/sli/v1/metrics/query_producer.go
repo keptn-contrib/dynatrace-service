@@ -17,10 +17,10 @@ func NewQueryProducer(query *metrics.Query) *QueryProducer {
 
 // Produce returns the unencoded metrics query string for a Query.
 func (b *QueryProducer) Produce() string {
-	rawParameters := make(map[string]string, 2)
-	rawParameters[metricSelectorKey] = b.query.GetMetricSelector()
+	keyValues := make(map[string]string, 2)
+	keyValues[metricSelectorKey] = b.query.GetMetricSelector()
 	if b.query.GetEntitySelector() != "" {
-		rawParameters[entitySelectorKey] = b.query.GetEntitySelector()
+		keyValues[entitySelectorKey] = b.query.GetEntitySelector()
 	}
-	return common.NewSLIProducer(common.NewKeyValuePairs(rawParameters)).Produce()
+	return common.NewSLIProducer(common.NewKeyValuePairs(keyValues)).Produce()
 }

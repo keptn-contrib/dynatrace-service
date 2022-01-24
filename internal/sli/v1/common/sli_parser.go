@@ -42,7 +42,7 @@ func (p *SLIParser) Parse() (*KeyValuePairs, error) {
 
 	chunks := strings.Split(p.query, delimiter)
 
-	parameters := make(map[string]string)
+	keyValues := make(map[string]string)
 	for _, chunk := range chunks {
 		key, value, err := splitKeyValuePair(chunk)
 		if err != nil {
@@ -53,13 +53,13 @@ func (p *SLIParser) Parse() (*KeyValuePairs, error) {
 			return nil, fmt.Errorf("unknown key: %s", key)
 		}
 
-		err = add(parameters, key, value)
+		err = add(keyValues, key, value)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return NewKeyValuePairs(parameters), nil
+	return NewKeyValuePairs(keyValues), nil
 }
 
 // add adds the specified key and value to the map or returns an error if the map already contains the key.
