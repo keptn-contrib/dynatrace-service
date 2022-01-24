@@ -67,7 +67,8 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 		// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
 		indicatorName := sloDefinition.SLI
 
-		metricQueryForSLI, err := v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce()
+		metricSelectorForSLI := metricQueryComponents.metricsQuery.GetMetricSelector()
+		entitySelectorForSLI := metricQueryComponents.metricsQuery.GetEntitySelector()
 
 		// we need this one to "fake" the MetricQuery for the SLi.yaml to include the dynamic dimension name for each value
 		// we initialize it with ":names" as this is the part of the metric query string we will replace
@@ -92,10 +93,20 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 				if metricQueryComponents.entitySelectorTargetSnippet != "" && dimensionIncrement == 2 {
 					dimensionEntityID := singleDataEntry.Dimensions[dimIx+1]
-					metricQueryForSLI = metricQueryForSLI + strings.Replace(metricQueryComponents.entitySelectorTargetSnippet, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
+					entitySelectorForSLI = entitySelectorForSLI + strings.Replace(metricQueryComponents.entitySelectorTargetSnippet, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
 				}
 			}
 		}
+
+		// we use ":names" to find the right spot to add our custom dimension filter
+		metricSelectorForSLI = strings.Replace(metricSelectorForSLI, ":names", filterSLIDefinitionAggregatorValue, 1)
+
+		metricQueryForSLI, err := metrics.NewQuery(metricSelectorForSLI, entitySelectorForSLI)
+		if err != nil {
+			return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Could not create metrics query for SLI")
+		}
+
+		sliQueryString := v1metrics.NewQueryProducer(metricQueryForSLI).Produce()
 
 		// make sure we have a valid indicator name by getting rid of special characters
 		indicatorName = common.CleanIndicatorName(indicatorName)
@@ -117,12 +128,9 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 				"value": value,
 			}).Debug("Got indicator value")
 
-		// we use ":names" to find the right spot to add our custom dimension filter
-		sliQuery := strings.Replace(metricQueryForSLI, ":names", filterSLIDefinitionAggregatorValue, 1)
-
-		finalSLIQuery, err := unit.ConvertToMV2Query(sliQuery, metricQueryComponents.metricUnit)
+		finalSLIQuery, err := unit.ConvertToMV2Query(sliQueryString, metricQueryComponents.metricUnit)
 		if err != nil {
-			finalSLIQuery = sliQuery
+			finalSLIQuery = sliQueryString
 		}
 
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
@@ -166,10 +174,7 @@ func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, mes
 }
 
 func createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition *keptncommon.SLO, metricsQuery *metrics.Query, message string) []*TileResult {
-	metricsQueryString, err := v1metrics.NewQueryProducer(metricsQuery).Produce()
-	if err != nil {
-		metricsQueryString = err.Error()
-	}
+	metricsQueryString := v1metrics.NewQueryProducer(metricsQuery).Produce()
 	return []*TileResult{
 		{
 			sliResult: &keptnv2.SLIResult{

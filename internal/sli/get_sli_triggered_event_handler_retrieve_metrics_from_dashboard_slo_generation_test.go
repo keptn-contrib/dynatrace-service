@@ -102,7 +102,7 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "srt_service", "metricSelector=builtin:service.response.time:splitBy():avg:names&entitySelector=entityId(SERVICE-C33B8A4C73748469)")
+		assertSLIDefinitionIsPresent(t, actual, "srt_service", "entitySelector=entityId(SERVICE-C33B8A4C73748469)&metricSelector=builtin:service.response.time:splitBy():avg:names")
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {

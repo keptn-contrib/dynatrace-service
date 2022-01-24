@@ -29,7 +29,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName(t *
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "any_errors", "metricSelector=builtin:service.errors.total.count:splitBy():avg:names&entitySelector=type(SERVICE),entityName(\"/services/ConfigurationService/ on haproxy:80 (opaque)\")")
+		assertSLIDefinitionIsPresent(t, actual, "any_errors", "entitySelector=type(SERVICE),entityName(\"/services/ConfigurationService/ on haproxy:80 (opaque)\")&metricSelector=builtin:service.errors.total.count:splitBy():avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -339,7 +339,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById(t *te
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_jid", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names&entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)")
+		assertSLIDefinitionIsPresent(t, actual, "rt_jid", "MV2;MicroSecond;entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -363,7 +363,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag(t *t
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_keptn_manager", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE),tag(\"keptnmanager\")")
+		assertSLIDefinitionIsPresent(t, actual, "rt_keptn_manager", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptnmanager\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -387,7 +387,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAt
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "rt_svc_etw_db", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE),databaseName(\"EasyTravelWeatherCache\")")
+		assertSLIDefinitionIsPresent(t, actual, "rt_svc_etw_db", "MV2;MicroSecond;entitySelector=type(SERVICE),databaseName(\"EasyTravelWeatherCache\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -474,7 +474,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_NoManage
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "srt_servicetag_filter_no_mz", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names&entitySelector=type(SERVICE),tag(\"service_tag\")")
+		assertSLIDefinitionIsPresent(t, actual, "srt_servicetag_filter_no_mz", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"service_tag\")&metricSelector=builtin:service.response.time:splitBy():avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -498,7 +498,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_WithCustomManagem
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "srt_no_filter_custom_mz", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names&entitySelector=type(SERVICE),mzId(2311420533206603714)")
+		assertSLIDefinitionIsPresent(t, actual, "srt_no_filter_custom_mz", "MV2;MicroSecond;entitySelector=type(SERVICE),mzId(2311420533206603714)&metricSelector=builtin:service.response.time:splitBy():avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -522,7 +522,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCust
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "srt_servicetag_filter_custom_mz", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names&entitySelector=type(SERVICE),tag(\"service_tag\"),mzId(2311420533206603714)")
+		assertSLIDefinitionIsPresent(t, actual, "srt_servicetag_filter_custom_mz", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"service_tag\"),mzId(2311420533206603714)&metricSelector=builtin:service.response.time:splitBy():avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
