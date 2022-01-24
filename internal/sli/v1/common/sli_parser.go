@@ -44,9 +44,13 @@ func (p *SLIParser) Parse() (*KeyValuePairs, error) {
 
 	parameters := make(map[string]string)
 	for _, chunk := range chunks {
-		key, value, err := splitKeyValuePair(chunk, p.validator)
+		key, value, err := splitKeyValuePair(chunk)
 		if err != nil {
 			return nil, err
+		}
+
+		if !p.validator.ValidateKey(key) {
+			return nil, fmt.Errorf("unknown key: %s", key)
 		}
 
 		err = add(parameters, key, value)
@@ -71,7 +75,7 @@ func add(parameters map[string]string, key string, value string) error {
 
 // splitKeyValuePair returns the split key-value pair or an error.
 // The pair must have both a non-empty key and value, i.e. 'key=' or just 'key' are not allowed.
-func splitKeyValuePair(keyValue string, validator KeyValidator) (string, string, error) {
+func splitKeyValuePair(keyValue string) (string, string, error) {
 	keyValue = strings.TrimSpace(keyValue)
 	if keyValue == "" {
 		return "", "", fmt.Errorf("empty 'key=value' pair")
@@ -80,10 +84,6 @@ func splitKeyValuePair(keyValue string, validator KeyValidator) (string, string,
 	chunks := strings.Split(keyValue, keyValueDelimiter)
 	if len(chunks) != 2 || chunks[0] == "" || chunks[1] == "" {
 		return "", "", fmt.Errorf("could not parse 'key=value' pair correctly: %s", keyValue)
-	}
-
-	if !validator.ValidateKey(chunks[0]) {
-		return "", "", fmt.Errorf("unknown key: %s", chunks[0])
 	}
 
 	return chunks[0], chunks[1], nil
