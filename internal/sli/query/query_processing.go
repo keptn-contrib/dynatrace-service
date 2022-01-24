@@ -102,8 +102,7 @@ func (p *Processing) executeUSQLQuery(metricsQuery string, startUnix time.Time, 
 		return 0, fmt.Errorf("USQL query is emtpy")
 	}
 
-	usqlQuery := usql.NewQueryBuilder(p.eventData, p.customFilters).Build(usqlRawQuery, startUnix, endUnix)
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(usqlQuery)
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(usql.NewQuery(usqlRawQuery), startUnix, endUnix))
 	if err != nil {
 		return 0, fmt.Errorf("error executing USQL Query: %v", err)
 	}
@@ -238,7 +237,6 @@ func (p *Processing) executeMetricsQuery(metricsQueryString string, metricUnit s
 	}
 
 	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(*metricsQuery, startUnix, endUnix))
-
 	if err != nil {
 		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %s. This was the query executed: %s", err.Error(), metricsQuery)
 	}

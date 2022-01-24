@@ -3,9 +3,48 @@ package dynatrace
 import (
 	"encoding/json"
 	"errors"
+	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 )
 
 const USQLPath = "/api/v1/userSessionQueryLanguage/table"
+
+const (
+	queryKey             = "query"
+	explainKey           = "explain"
+	addDeepLinkFieldsKey = "addDeepLinkFields"
+	startTimestampKey    = "startTimestamp"
+	endTimestampKey      = "endTimestamp"
+)
+
+// USQLClientQueryParameters encapsulates the query parameters for the USQLClient's GetByQuery method.
+type USQLClientQueryParameters struct {
+	query          usql.Query
+	startTimestamp time.Time
+	endTimestamp   time.Time
+}
+
+// NewUSQLClientQueryParameters creates new USQLClientQueryParameters.
+func NewUSQLClientQueryParameters(query usql.Query, startTimestamp time.Time, endTimestamp time.Time) USQLClientQueryParameters {
+	return USQLClientQueryParameters{
+		query:          query,
+		startTimestamp: startTimestamp,
+		endTimestamp:   endTimestamp,
+	}
+}
+
+// Encode encodes MetricsClientQueryParameters into a URL-encoded string.
+func (q *USQLClientQueryParameters) Encode() string {
+	queryParameters := newQueryParameters()
+	queryParameters.add(queryKey, q.query.GetQuery())
+	queryParameters.add(explainKey, "false")
+	queryParameters.add(addDeepLinkFieldsKey, "false")
+	queryParameters.add(startTimestampKey, common.TimestampToString(q.startTimestamp))
+	queryParameters.add(endTimestampKey, common.TimestampToString(q.endTimestamp))
+	return queryParameters.encode()
+}
 
 // DTUSQLResult struct
 type DTUSQLResult struct {
@@ -25,8 +64,8 @@ func NewUSQLClient(client ClientInterface) *USQLClient {
 }
 
 // GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set
-func (uc *USQLClient) GetByQuery(usql string) (*DTUSQLResult, error) {
-	body, err := uc.client.Get(USQLPath + "?" + usql)
+func (uc *USQLClient) GetByQuery(parameters USQLClientQueryParameters) (*DTUSQLResult, error) {
+	body, err := uc.client.Get(USQLPath + "?" + parameters.Encode())
 	if err != nil {
 		return nil, err
 	}

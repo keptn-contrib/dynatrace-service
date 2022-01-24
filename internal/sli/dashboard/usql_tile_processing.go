@@ -2,6 +2,8 @@ package dashboard
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -9,7 +11,6 @@ import (
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 type USQLTileProcessing struct {
@@ -35,9 +36,7 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	// SINGLE_VALUE: we just take the one value that comes back
 	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
 	// TABLE: we assume the first column is the dimension and the last is the value
-
-	usqlQuery := usql.NewQueryBuilder(p.eventData, p.customFilters).Build(tile.Query, p.startUnix, p.endUnix)
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(usqlQuery)
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(usql.NewQuery(tile.Query), p.startUnix, p.endUnix))
 	if err != nil {
 		log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
 		return nil
