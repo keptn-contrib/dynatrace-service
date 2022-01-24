@@ -28,7 +28,7 @@ func (b *SLIProducer) Produce() string {
 
 func (b *SLIProducer) getSortedKeys() []string {
 	keys := make([]string, 0, len(b.keyValues.keyValues))
-	for key, _ := range b.keyValues.keyValues {
+	for key := range b.keyValues.keyValues {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
