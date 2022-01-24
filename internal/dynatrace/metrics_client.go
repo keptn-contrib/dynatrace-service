@@ -41,15 +41,15 @@ func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to tim
 
 // Encode encodes MetricsClientQueryParameters into a URL-encoded string.
 func (q *MetricsClientQueryParameters) Encode() string {
-	queryParameters := NewQueryParameters()
-	queryParameters.Add(metricSelectorKey, q.query.GetMetricSelector())
-	queryParameters.Add(fromKey, common.TimestampToString(q.from))
-	queryParameters.Add(toKey, common.TimestampToString(q.to))
-	queryParameters.Add(resolutionKey, "Inf")
+	queryParameters := newQueryParameters()
+	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
+	queryParameters.add(fromKey, common.TimestampToString(q.from))
+	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(resolutionKey, "Inf")
 	if q.query.GetEntitySelector() != "" {
-		queryParameters.Add(entitySelectorKey, q.query.GetEntitySelector())
+		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
 	}
-	return queryParameters.Encode()
+	return queryParameters.encode()
 }
 
 // MetricDefinition defines the output of /metrics/<metricID>

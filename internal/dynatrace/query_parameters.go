@@ -2,23 +2,23 @@ package dynatrace
 
 import "net/url"
 
-type QueryParameters struct {
+type queryParameters struct {
 	values url.Values
 }
 
-// NewQueryParameters creates a new QueryParameters
-func NewQueryParameters() *QueryParameters {
-	return &QueryParameters{
+// newQueryParameters creates a new QueryParameters
+func newQueryParameters() *queryParameters {
+	return &queryParameters{
 		values: make(url.Values),
 	}
 }
 
-// Add adds the value to the key
-func (q *QueryParameters) Add(key string, value string) {
+// add adds the value to the key
+func (q *queryParameters) add(key string, value string) {
 	q.values.Add(key, value)
 }
 
-// Encode URL encodes the values
-func (q *QueryParameters) Encode() string {
+// encode URL encodes the values
+func (q *queryParameters) encode() string {
 	return q.values.Encode()
 }
