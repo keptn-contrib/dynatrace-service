@@ -97,12 +97,12 @@ func (p *Processing) executeUSQLQuery(metricsQuery string, startUnix time.Time, 
 		return 0, fmt.Errorf("USQL dimension should not be empty unless result type is %s", resultTypeSingleValue)
 	}
 
-	usqlRawQuery := querySplits[3]
-	if usqlRawQuery == "" {
-		return 0, fmt.Errorf("USQL query is emtpy")
+	query, err := usql.NewQuery(querySplits[3])
+	if err != nil {
+		return 0, err
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(usql.NewQuery(usqlRawQuery), startUnix, endUnix))
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, startUnix, endUnix))
 	if err != nil {
 		return 0, fmt.Errorf("error executing USQL Query: %v", err)
 	}

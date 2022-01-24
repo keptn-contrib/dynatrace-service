@@ -36,9 +36,15 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	// SINGLE_VALUE: we just take the one value that comes back
 	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
 	// TABLE: we assume the first column is the dimension and the last is the value
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(usql.NewQuery(tile.Query), p.startUnix, p.endUnix))
+	query, err := usql.NewQuery(tile.Query)
 	if err != nil {
-		log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
+		log.WithError(err).Error("Could not create USQL query")
+		return nil
+	}
+
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, p.startUnix, p.endUnix))
+	if err != nil {
+		log.WithError(err).Error("Error executing USQL query")
 		return nil
 	}
 
