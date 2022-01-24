@@ -6,11 +6,11 @@ import (
 
 // SLIProducer build a SLI string from KeyValuePairs.
 type SLIProducer struct {
-	pairs *KeyValuePairs
+	pairs KeyValuePairs
 }
 
 // NewSLIProducer creates a new SLIProducer based on the specified KeyValuePairs and key orderer.
-func NewSLIProducer(keyValues *KeyValuePairs) *SLIProducer {
+func NewSLIProducer(keyValues KeyValuePairs) *SLIProducer {
 	return &SLIProducer{
 		pairs: keyValues,
 	}

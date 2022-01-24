@@ -59,7 +59,8 @@ func (p *SLIParser) Parse() (*KeyValuePairs, error) {
 		}
 	}
 
-	return NewKeyValuePairs(keyValues), nil
+	kvp := NewKeyValuePairs(keyValues)
+	return &kvp, nil
 }
 
 // add adds the specified key and value to the map or returns an error if the map already contains the key.

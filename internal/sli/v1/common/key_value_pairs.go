@@ -8,8 +8,8 @@ type KeyValuePairs struct {
 }
 
 // NewKeyValuePairs creates a KeyValuePairs instance from the specified map of keys to values.
-func NewKeyValuePairs(keyValues map[string]string) *KeyValuePairs {
-	return &KeyValuePairs{
+func NewKeyValuePairs(keyValues map[string]string) KeyValuePairs {
+	return KeyValuePairs{
 		keyValues: keyValues,
 	}
 }

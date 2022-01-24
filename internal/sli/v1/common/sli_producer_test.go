@@ -10,7 +10,7 @@ import (
 func TestSLIProducer(t *testing.T) {
 	tests := []struct {
 		name               string
-		inputKeyValuePairs *KeyValuePairs
+		inputKeyValuePairs KeyValuePairs
 		expectedOutput     string
 	}{
 		{
