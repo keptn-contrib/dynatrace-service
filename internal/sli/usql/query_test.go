@@ -24,7 +24,7 @@ func TestNewQuery(t *testing.T) {
 		{
 			name:                 "with no query",
 			expectError:          true,
-			expectedErrorMessage: "USQL query must not be empty",
+			expectedErrorMessage: "USQL query should not be empty",
 		},
 	}
 	for _, tc := range tests {

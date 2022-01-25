@@ -18,6 +18,6 @@ func NewQuery(query string) (*Query, error) {
 }
 
 // GetQuery returns the USQL query.
-func (m *Query) GetQuery() string {
+func (m Query) GetQuery() string {
 	return m.query
 }

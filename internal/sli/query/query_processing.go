@@ -14,8 +14,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
+	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 )
 
 type Processing struct {
@@ -58,7 +58,7 @@ func (p *Processing) GetSLIValue(name string) (float64, error) {
 		}).Debug("Retrieved SLI query")
 
 	switch {
-	case strings.HasPrefix(sliQuery, "USQL;"):
+	case strings.HasPrefix(sliQuery, v1usql.USQLPrefix):
 		return p.executeUSQLQuery(sliQuery, p.startUnix, p.endUnix)
 	case strings.HasPrefix(sliQuery, "SLO;"):
 		return p.executeSLOQuery(sliQuery, p.startUnix, p.endUnix)
@@ -74,64 +74,43 @@ func (p *Processing) GetSLIValue(name string) (float64, error) {
 }
 
 // USQL query
-func (p *Processing) executeUSQLQuery(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	// In this case we need to parse USQL;TYPE;DIMENSION;QUERY
-	const resultTypeSingleValue = "SINGLE_VALUE"
-	const resultTypeTable = "TABLE"
-	const resultTypeColumnChart = "COLUMN_CHART"
-	const resultTypePieChart = "PIE_CHART"
+func (p *Processing) executeUSQLQuery(usqlQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
 
-	querySplits := strings.Split(metricsQuery, ";")
-	if len(querySplits) != 4 {
-		return 0, fmt.Errorf("USQL Query incorrect format: %s", metricsQuery)
-	}
-
-	resultType := querySplits[1]
-	if resultType == "" {
-		return 0, fmt.Errorf("USQL result type is empty - only %s, %s, %s and %s allowed",
-			resultTypeSingleValue, resultTypeColumnChart, resultTypePieChart, resultTypeTable)
-	}
-
-	requestedDimensionName := querySplits[2]
-	if requestedDimensionName == "" && resultType != resultTypeSingleValue {
-		return 0, fmt.Errorf("USQL dimension should not be empty unless result type is %s", resultTypeSingleValue)
-	}
-
-	query, err := usql.NewQuery(querySplits[3])
+	query, err := v1usql.NewQueryParser(usqlQuery).Parse()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("error parsing USQL query: %w", err)
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, startUnix, endUnix))
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(query.GetQuery(), startUnix, endUnix))
 	if err != nil {
-		return 0, fmt.Errorf("error executing USQL Query: %v", err)
+		return 0, fmt.Errorf("error executing USQL query: %w", err)
 	}
 
-	if resultType == resultTypeSingleValue {
+	if query.GetResultType() == v1usql.SingleValueResultType {
 		if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
-			return 0, fmt.Errorf("USQL result type %s should only return a single result", resultTypeSingleValue)
+			return 0, fmt.Errorf("USQL result type %s should only return a single result", v1usql.SingleValueResultType)
 		}
 		return tryCastDimensionValueToNumeric(usqlResult.Values[0][0])
 	}
 
 	// all other types must at least have 2 columns to work properly
 	if len(usqlResult.ColumnNames) < 2 {
-		return 0, fmt.Errorf("USQL result type %s should at least have two columns", resultType)
+		return 0, fmt.Errorf("USQL result type %s should at least have two columns", query.GetResultType())
 	}
 
 	for _, rowValue := range usqlResult.Values {
 		var dimensionName interface{}
 		var dimensionValue interface{}
 
-		switch resultType {
-		case resultTypePieChart, resultTypeColumnChart:
+		switch query.GetResultType() {
+		case v1usql.PieChartResultType, v1usql.ColumnChartResultType:
 			dimensionName = rowValue[0]
 			dimensionValue = rowValue[1]
-		case resultTypeTable:
+		case v1usql.TableResultType:
 			dimensionName = rowValue[0]
 			dimensionValue = rowValue[len(rowValue)-1]
 		default:
-			return 0, fmt.Errorf("unknown USQL result type: %s", resultType)
+			return 0, fmt.Errorf("unknown USQL result type: %s", query.GetResultType())
 		}
 
 		name, err := tryCastDimensionNameToString(dimensionName)
@@ -139,12 +118,12 @@ func (p *Processing) executeUSQLQuery(metricsQuery string, startUnix time.Time, 
 			return 0, err
 		}
 
-		if name == requestedDimensionName {
+		if name == query.GetDimension() {
 			return tryCastDimensionValueToNumeric(dimensionValue)
 		}
 	}
 
-	return 0, fmt.Errorf("could not find dimension name '%s' in result", requestedDimensionName)
+	return 0, fmt.Errorf("could not find dimension name '%s' in result", query.GetDimension())
 }
 
 func tryCastDimensionValueToNumeric(dimensionValue interface{}) (float64, error) {

@@ -79,15 +79,15 @@ func TestSLIParser(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			queryParameters, err := NewSLIParser(tc.input, tc.keyValidator).Parse()
+			keyValuePairs, err := NewSLIParser(tc.input, tc.keyValidator).Parse()
 			if tc.expectError {
 				assert.Error(t, err)
-				assert.Nil(t, queryParameters)
+				assert.Nil(t, keyValuePairs)
 				assert.Contains(t, err.Error(), tc.expectedErrorMessage)
 			} else {
 				assert.NoError(t, err)
-				if assert.NotNil(t, queryParameters) {
-					tc.expectedKeyValuePairsAssertionFunc(t, queryParameters)
+				if assert.NotNil(t, keyValuePairs) {
+					tc.expectedKeyValuePairsAssertionFunc(t, keyValuePairs)
 				}
 				assert.Empty(t, tc.expectedErrorMessage, "fix test setup")
 			}
