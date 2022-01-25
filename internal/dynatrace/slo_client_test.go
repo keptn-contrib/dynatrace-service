@@ -10,14 +10,14 @@ import (
 
 func TestExecuteGetDynatraceSLO(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(SLOPath+"/524ca177-849b-3e8c-8175-42b93fbc33c5?from=1571649084000&to=1571649085000&timeFrame=GTF", "./testdata/test_get_slo_id.json")
+	handler.AddExact(SLOPath+"/524ca177-849b-3e8c-8175-42b93fbc33c5?from=1571649084000&timeFrame=GTF&to=1571649085000", "./testdata/test_get_slo_id.json")
 	dtClient, _, teardown := createDynatraceClient(t, handler)
 	defer teardown()
 
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 	sloID := "524ca177-849b-3e8c-8175-42b93fbc33c5"
-	sloResult, err := NewSLOClient(dtClient).Get(sloID, startTime, endTime)
+	sloResult, err := NewSLOClient(dtClient).Get(NewSLOClientGetParameters(sloID, startTime, endTime))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sloResult, "No SLO Result returned for "+sloID)

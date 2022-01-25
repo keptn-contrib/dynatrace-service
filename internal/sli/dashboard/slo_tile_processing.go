@@ -56,7 +56,7 @@ func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(sloID, startUnix, endUnix)
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(sloID, startUnix, endUnix))
 	if err != nil {
 		return nil, "", "", nil, err
 	}

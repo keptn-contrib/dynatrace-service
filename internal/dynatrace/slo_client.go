@@ -10,6 +10,35 @@ import (
 
 const SLOPath = "/api/v2/slo"
 
+const (
+	timeFrameKey = "timeFrame"
+)
+
+// SLOClientGetParameters encapsulates the parameters for the SLOClient's Get method.
+type SLOClientGetParameters struct {
+	sloID string
+	from  time.Time
+	to    time.Time
+}
+
+// NewSLOClientGetParameters creates new SLOClientGetParameters.
+func NewSLOClientGetParameters(sloID string, from time.Time, to time.Time) SLOClientGetParameters {
+	return SLOClientGetParameters{
+		sloID: sloID,
+		from:  from,
+		to:    to,
+	}
+}
+
+// Encode encodes MetricsClientQueryParameters into a URL-encoded string.
+func (q *SLOClientGetParameters) Encode() string {
+	queryParameters := newQueryParameters()
+	queryParameters.add(fromKey, common.TimestampToString(q.from))
+	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(timeFrameKey, "GTF")
+	return q.sloID + "?" + queryParameters.encode()
+}
+
 type SLOResult struct {
 	Name                string  `json:"name"`
 	EvaluatedPercentage float64 `json:"evaluatedPercentage"`
@@ -30,13 +59,8 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 
 // Get calls Dynatrace API to retrieve the values of the Dynatrace SLO for that timeframe
 // It returns a SLOResult object on success, an error otherwise
-func (c *SLOClient) Get(sloID string, startUnix time.Time, endUnix time.Time) (*SLOResult, error) {
-	body, err := c.client.Get(
-		fmt.Sprintf("%s/%s?from=%s&to=%s&timeFrame=GTF",
-			SLOPath,
-			sloID,
-			common.TimestampToString(startUnix),
-			common.TimestampToString(endUnix)))
+func (c *SLOClient) Get(parameters SLOClientGetParameters) (*SLOResult, error) {
+	body, err := c.client.Get(SLOPath + "/" + parameters.Encode())
 	if err != nil {
 		return nil, err
 	}

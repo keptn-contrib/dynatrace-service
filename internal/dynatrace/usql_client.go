@@ -35,7 +35,7 @@ func NewUSQLClientQueryParameters(query usql.Query, startTimestamp time.Time, en
 	}
 }
 
-// Encode encodes MetricsClientQueryParameters into a URL-encoded string.
+// Encode encodes USQLClientQueryParameters into a URL-encoded string.
 func (q *USQLClientQueryParameters) Encode() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(queryKey, q.query.GetQuery())

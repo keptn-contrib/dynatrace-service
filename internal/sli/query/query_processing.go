@@ -15,6 +15,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
+	v1slo "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
 	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 )
 
@@ -60,7 +61,7 @@ func (p *Processing) GetSLIValue(name string) (float64, error) {
 	switch {
 	case strings.HasPrefix(sliQuery, v1usql.USQLPrefix):
 		return p.executeUSQLQuery(sliQuery, p.startUnix, p.endUnix)
-	case strings.HasPrefix(sliQuery, "SLO;"):
+	case strings.HasPrefix(sliQuery, v1slo.SLOPrefix):
 		return p.executeSLOQuery(sliQuery, p.startUnix, p.endUnix)
 	case strings.HasPrefix(sliQuery, "PV2;"):
 		return p.executeProblemQuery(sliQuery, p.startUnix, p.endUnix)
@@ -146,14 +147,12 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 
 // query a specific SLO
 func (p *Processing) executeSLOQuery(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-
-	querySplits := strings.Split(metricsQuery, ";")
-	if len(querySplits) != 2 {
-		return 0, fmt.Errorf("SLO Indicator query has wrong format. Should be SLO;<SLID> but is: %s", metricsQuery)
+	query, err := v1slo.NewQueryParser(metricsQuery).Parse()
+	if err != nil {
+		return 0, fmt.Errorf("error parsing USQL query: %w", err)
 	}
 
-	sloID := querySplits[1]
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(sloID, startUnix, endUnix)
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), startUnix, endUnix))
 	if err != nil {
 		return 0, err
 	}
