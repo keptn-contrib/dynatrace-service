@@ -10,12 +10,12 @@ type QueryProducer struct {
 	query problems.Query
 }
 
-// NewQueryProducer creates a QueryProducer the specified metrics Query.
+// NewQueryProducer creates a QueryProducer for the specified problems v2 Query.
 func NewQueryProducer(query problems.Query) QueryProducer {
 	return QueryProducer{query: query}
 }
 
-// Produce returns the unencoded metrics query string for a Query.
+// Produce returns the problems v2 query string for a Query.
 func (p QueryProducer) Produce() string {
 	keyValues := make(map[string]string, 2)
 	if p.query.GetProblemSelector() != "" {

@@ -2,13 +2,45 @@ package dynatrace
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
 )
 
 const securityProblemsPath = "/api/v2/securityProblems"
+
+const (
+	securityProblemSelectorKey = "securityProblemSelector"
+)
+
+// SecurityProblemsV2ClientQueryParameters encapsulates the query parameters for the SecurityProblemsClient's GetTotalCountByQuery method.
+type SecurityProblemsV2ClientQueryParameters struct {
+	query secpv2.Query
+	from  time.Time
+	to    time.Time
+}
+
+// NewSecurityProblemsV2ClientQueryParameters creates new SecurityProblemsV2ClientQueryParameters.
+func NewSecurityProblemsV2ClientQueryParameters(query secpv2.Query, from time.Time, to time.Time) SecurityProblemsV2ClientQueryParameters {
+	return SecurityProblemsV2ClientQueryParameters{
+		query: query,
+		from:  from,
+		to:    to,
+	}
+}
+
+// Encode encodes SecurityProblemsV2ClientQueryParameters into a URL-encoded string.
+func (q *SecurityProblemsV2ClientQueryParameters) Encode() string {
+	queryParameters := newQueryParameters()
+	if q.query.GetSecurityProblemSelector() != "" {
+		queryParameters.add(securityProblemSelectorKey, q.query.GetSecurityProblemSelector())
+	}
+
+	queryParameters.add(fromKey, common.TimestampToString(q.from))
+	queryParameters.add(toKey, common.TimestampToString(q.to))
+	return queryParameters.encode()
+}
 
 type securityProblemQueryResult struct {
 	TotalCount int `json:"totalCount"`
@@ -27,13 +59,8 @@ func NewSecurityProblemsClient(client ClientInterface) *SecurityProblemsClient {
 }
 
 // GetTotalCountByQuery calls the Dynatrace API to retrieve the total count of security problems for the given query and timeframe
-func (sc *SecurityProblemsClient) GetTotalCountByQuery(securityProblemQuery string, startUnix time.Time, endUnix time.Time) (int, error) {
-	body, err := sc.client.Get(
-		fmt.Sprintf("%s?from=%s&to=%s&%s",
-			securityProblemsPath,
-			common.TimestampToString(startUnix),
-			common.TimestampToString(endUnix),
-			securityProblemQuery))
+func (sc *SecurityProblemsClient) GetTotalCountByQuery(parameters SecurityProblemsV2ClientQueryParameters) (int, error) {
+	body, err := sc.client.Get(securityProblemsPath + "?" + parameters.Encode())
 	if err != nil {
 		return 0, err
 	}

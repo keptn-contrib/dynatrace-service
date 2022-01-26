@@ -16,6 +16,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
 	v1problems "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
+	v1secpv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/secpv2"
 	v1slo "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
 	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 )
@@ -176,15 +177,13 @@ func (p *Processing) executeProblemQuery(problemsQuery string, startUnix time.Ti
 }
 
 //  query number of problems
-func (p *Processing) executeSecurityProblemQuery(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-
-	querySplits := strings.Split(metricsQuery, ";")
-	if len(querySplits) != 2 {
-		return 0, fmt.Errorf("Security Problemv2 Indicator query has wrong format. Should be SECPV2;securityProblemSelector=selector but is: %s", metricsQuery)
+func (p *Processing) executeSecurityProblemQuery(queryString string, startUnix time.Time, endUnix time.Time) (float64, error) {
+	query, err := v1secpv2.NewQueryParser(queryString).Parse()
+	if err != nil {
+		return 0, fmt.Errorf("error parsing Security Problems V2 query: %w", err)
 	}
 
-	securityProblemQuery := querySplits[1]
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(securityProblemQuery, startUnix, endUnix)
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(*query, startUnix, endUnix))
 	if err != nil {
 		return 0, err
 	}

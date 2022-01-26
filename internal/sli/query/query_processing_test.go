@@ -334,7 +334,7 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 		},
 		{
 			indicator: "security_problems",
-			query:     "SECPV2;problemEntity=status(open)",
+			query:     "SECPV2;securityProblemSelector=status(open)",
 		},
 		{
 			indicator: "RT_faster_500ms",
