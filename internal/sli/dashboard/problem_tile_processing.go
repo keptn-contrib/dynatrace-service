@@ -6,6 +6,8 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -30,10 +32,9 @@ func (p *ProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *d
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
-	// we will query the number of open problems based on the specification of that tile
+	// query the number of open problems based on the management zone filter of the tile
 	problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
-
-	tileResult, err := p.processOpenProblemTile(problemSelector, p.startUnix, p.endUnix)
+	tileResult, err := p.processOpenProblemTile(problems.NewQuery(problemSelector, ""), p.startUnix, p.endUnix)
 	if err != nil {
 		log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
 		return nil
@@ -44,15 +45,10 @@ func (p *ProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *d
 
 // processOpenProblemTile Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
 // If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *ProblemTileProcessing) processOpenProblemTile(problemSelector string, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
-
-	problemQuery := ""
-	if problemSelector != "" {
-		problemQuery = fmt.Sprintf("problemSelector=%s", problemSelector)
-	}
+func (p *ProblemTileProcessing) processOpenProblemTile(query problems.Query, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
 
 	// Step 1: Query the Dynatrace API to get the number of actual problems matching that query and timeframe
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(problemQuery, startUnix, endUnix)
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(query, startUnix, endUnix))
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +71,7 @@ func (p *ProblemTileProcessing) processOpenProblemTile(problemSelector string, s
 		}).Debug("Adding SLO to sloResult")
 
 	// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-	// we prepend this with PV2;entitySelector=asdaf&problemSelector=asdf
-	sliQuery := fmt.Sprintf("PV2;%s", problemQuery)
+	sliQuery := problemsv2.NewQueryProducer(query).Produce()
 
 	// lets add the SLO definitin in case we need to generate an SLO.yaml
 	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli

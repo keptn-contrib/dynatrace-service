@@ -32,10 +32,6 @@ func NewSLIParser(query string, validator KeyValidator) *SLIParser {
 
 // Parse parses an un-encoded query string (usually found in sli.yaml files) into KeyValuePairs or returns an error.
 func (p *SLIParser) Parse() (*KeyValuePairs, error) {
-	if p.query == "" {
-		return nil, fmt.Errorf("query should not be empty")
-	}
-
 	if p.validator == nil {
 		return nil, fmt.Errorf("key validator should not be nil")
 	}
@@ -44,6 +40,9 @@ func (p *SLIParser) Parse() (*KeyValuePairs, error) {
 
 	keyValues := make(map[string]string)
 	for _, chunk := range chunks {
+		if chunk == "" {
+			continue
+		}
 		key, value, err := splitKeyValuePair(chunk)
 		if err != nil {
 			return nil, err

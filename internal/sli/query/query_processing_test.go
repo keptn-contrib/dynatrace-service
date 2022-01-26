@@ -330,7 +330,7 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 	}{
 		{
 			indicator: "problems",
-			query:     "PV2;problemEntity=status(open)",
+			query:     "PV2;problemSelector=status(open)",
 		},
 		{
 			indicator: "security_problems",

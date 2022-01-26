@@ -36,10 +36,11 @@ func TestSLIParser(t *testing.T) {
 
 		// Expect error in these cases
 		{
-			name:                 "empty input",
-			keyValidator:         &validatorWithOneKey{},
-			expectError:          true,
-			expectedErrorMessage: "query should not be empty",
+			name:         "empty input",
+			keyValidator: &validatorWithOneKey{},
+			expectedKeyValuePairsAssertionFunc: func(t assert.TestingT, p *KeyValuePairs) {
+				assert.EqualValues(t, 0, p.count())
+			},
 		},
 		{
 			name:                 "just key",
@@ -63,11 +64,12 @@ func TestSLIParser(t *testing.T) {
 			expectedErrorMessage: "could not parse 'key=value' pair correctly",
 		},
 		{
-			name:                 "empty key-value pair",
-			input:                "key1=value1&",
-			keyValidator:         &validatorWithOneKey{},
-			expectError:          true,
-			expectedErrorMessage: "empty 'key=value' pair",
+			name:         "empty key-value pair",
+			input:        "key1=value1&",
+			keyValidator: &validatorWithOneKey{},
+			expectedKeyValuePairsAssertionFunc: func(t assert.TestingT, p *KeyValuePairs) {
+				assert.EqualValues(t, "value1", p.GetValue("key1"))
+			},
 		},
 		{
 			name:                 "unexpected key",

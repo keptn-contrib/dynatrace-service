@@ -15,6 +15,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
+	v1problems "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
 	v1slo "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
 	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 )
@@ -146,10 +147,10 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 }
 
 // query a specific SLO
-func (p *Processing) executeSLOQuery(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	query, err := v1slo.NewQueryParser(metricsQuery).Parse()
+func (p *Processing) executeSLOQuery(sloQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
+	query, err := v1slo.NewQueryParser(sloQuery).Parse()
 	if err != nil {
-		return 0, fmt.Errorf("error parsing USQL query: %w", err)
+		return 0, fmt.Errorf("error parsing SLO query: %w", err)
 	}
 
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), startUnix, endUnix))
@@ -160,15 +161,13 @@ func (p *Processing) executeSLOQuery(metricsQuery string, startUnix time.Time, e
 	return sloResult.EvaluatedPercentage, nil
 }
 
-func (p *Processing) executeProblemQuery(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	// we query number of problems
-	querySplits := strings.Split(metricsQuery, ";")
-	if len(querySplits) != 2 {
-		return 0, fmt.Errorf("Problemv2 Indicator query has wrong format. Should be PV2;entitySelectory=selector&problemSelector=selector but is: %s", metricsQuery)
+func (p *Processing) executeProblemQuery(problemsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
+	query, err := v1problems.NewQueryParser(problemsQuery).Parse()
+	if err != nil {
+		return 0, fmt.Errorf("error parsing Problems V2 query: %w", err)
 	}
 
-	problemQuery := querySplits[1]
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(problemQuery, startUnix, endUnix)
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(*query, startUnix, endUnix))
 	if err != nil {
 		return 0, fmt.Errorf("Error executing Dynatrace Problem v2 Query %v", err)
 	}

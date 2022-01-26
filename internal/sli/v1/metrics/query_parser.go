@@ -12,7 +12,7 @@ const (
 	entitySelectorKey = "entitySelector"
 )
 
-// QueryParser will parse an un-encoded metric query string (usually found in sli.yaml files) into a Query
+// QueryParser will parse an un-encoded metrics query string (usually found in sli.yaml files) into a Query
 type QueryParser struct {
 	query string
 }
