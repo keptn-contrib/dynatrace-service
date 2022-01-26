@@ -13,8 +13,6 @@ func TestQueryParser(t *testing.T) {
 		inputQuery              string
 		expectedProblemSelector string
 		expectedEntitySelector  string
-		expectError             bool
-		expectedErrorMessage    string
 	}{
 		{
 			name:                    "valid",
@@ -40,17 +38,11 @@ func TestQueryParser(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			query, err := NewQueryParser(tc.inputQuery).Parse()
-			if tc.expectError {
-				assert.Nil(t, query)
-				if assert.Error(t, err) {
-					assert.Contains(t, err.Error(), tc.expectedErrorMessage)
-				}
-			} else {
-				assert.NoError(t, err)
-				if assert.NotNil(t, query) {
-					assert.EqualValues(t, tc.expectedProblemSelector, query.GetProblemSelector())
-					assert.EqualValues(t, tc.expectedEntitySelector, query.GetEntitySelector())
-				}
+
+			assert.NoError(t, err)
+			if assert.NotNil(t, query) {
+				assert.EqualValues(t, tc.expectedProblemSelector, query.GetProblemSelector())
+				assert.EqualValues(t, tc.expectedEntitySelector, query.GetEntitySelector())
 			}
 		})
 	}
