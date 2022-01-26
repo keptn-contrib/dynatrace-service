@@ -32,6 +32,8 @@ func NewSLOClientGetParameters(sloID string, from time.Time, to time.Time) SLOCl
 
 // Encode encodes MetricsClientQueryParameters into a URL-encoded string.
 func (q *SLOClientGetParameters) Encode() string {
+
+	// TODO:  2022-01-26: Fix string composition and think about a better struct for REST parameters for all Dynatrace clients
 	queryParameters := newQueryParameters()
 	queryParameters.add(fromKey, common.TimestampToString(q.from))
 	queryParameters.add(toKey, common.TimestampToString(q.to))
