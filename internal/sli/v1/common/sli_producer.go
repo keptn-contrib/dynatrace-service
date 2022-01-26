@@ -18,7 +18,7 @@ func NewSLIProducer(keyValues KeyValuePairs) *SLIProducer {
 
 // Produce produces a SLI string based on the KeyValuePairs ordered by key.
 func (b *SLIProducer) Produce() string {
-	sortedPairs := make([]string, 0, b.pairs.count())
+	sortedPairs := make([]string, 0, b.pairs.Count())
 	for _, key := range b.pairs.getSortedKeys() {
 		sortedPairs = append(sortedPairs, makeKeyValuePair(key, b.pairs.GetValue(key)))
 	}

@@ -29,7 +29,7 @@ func (q *KeyValuePairs) getSortedKeys() []string {
 	return keys
 }
 
-// count returns the number of key value pairs.
-func (q *KeyValuePairs) count() int {
+// Count returns the number of key value pairs.
+func (q *KeyValuePairs) Count() int {
 	return len(q.keyValues)
 }

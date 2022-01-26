@@ -13,6 +13,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
 	v1problems "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
@@ -72,7 +73,7 @@ func (p *Processing) GetSLIValue(name string) (float64, error) {
 	case strings.HasPrefix(sliQuery, "MV2;"):
 		return p.executeMetricsV2Query(sliQuery, p.startUnix, p.endUnix)
 	default:
-		return p.executeMetricsQuery(sliQuery, "", p.startUnix, p.endUnix)
+		return p.executeMetricsQuery(sliQuery, p.startUnix, p.endUnix)
 	}
 }
 
@@ -191,30 +192,37 @@ func (p *Processing) executeSecurityProblemQuery(queryString string, startUnix t
 	return float64(totalSecurityProblemCount), nil
 }
 
-func (p *Processing) executeMetricsV2Query(metricsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	metricsQuery, metricUnit, err := unit.ParseMV2Query(metricsQuery)
+func (p *Processing) executeMetricsV2Query(queryString string, startUnix time.Time, endUnix time.Time) (float64, error) {
+	queryString, metricUnit, err := unit.ParseMV2Query(queryString)
 	if err != nil {
 		return 0, err
 	}
 
-	return p.executeMetricsQuery(metricsQuery, metricUnit, startUnix, endUnix)
+	query, err := v1metrics.NewQueryParser(queryString).Parse()
+	if err != nil {
+		return 0, fmt.Errorf("could not parse metrics query: %v, %w", queryString, err)
+	}
+
+	return p.processMetricsQuery(*query, metricUnit, startUnix, endUnix)
 }
 
-func (p *Processing) executeMetricsQuery(metricsQueryString string, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	// try to do the legacy query transformation
-	transformedQueryString, err := v1metrics.NewLegacyQueryTransformation(metricsQueryString).Transform()
-	if err != nil {
-		return 0, fmt.Errorf("could not parse old format metrics query: %v, %w", metricsQueryString, err)
+func (p *Processing) executeMetricsQuery(queryString string, startUnix time.Time, endUnix time.Time) (float64, error) {
+	query, err := v1metrics.NewQueryParser(queryString).Parse()
+	if err == nil {
+		return p.processMetricsQuery(*query, "", startUnix, endUnix)
 	}
 
-	metricsQuery, err := v1metrics.NewQueryParser(transformedQueryString).Parse()
-	if err != nil {
-		return 0, fmt.Errorf("could not parse metrics query: %v, %w", metricsQuery, err)
+	query, legacyErr := v1metrics.NewLegacyQueryParser(queryString).Parse()
+	if legacyErr != nil {
+		return 0, fmt.Errorf("could not parse legacy metrics query: %v, %w", queryString, err)
 	}
+	return p.processMetricsQuery(*query, "", startUnix, endUnix)
+}
 
-	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(*metricsQuery, startUnix, endUnix))
+func (p *Processing) processMetricsQuery(query metrics.Query, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
+	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(query, startUnix, endUnix))
 	if err != nil {
-		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %s. This was the query executed: %s", err.Error(), metricsQuery)
+		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %w", err)
 	}
 
 	// TODO 2021-10-13: Collect and log all warnings
@@ -232,14 +240,14 @@ func (p *Processing) executeMetricsQuery(metricsQueryString string, metricUnit s
 
 	if len(singleResult.Data) == 0 {
 		if len(singleResult.Warnings) > 0 {
-			return 0, fmt.Errorf("Dynatrace Metrics API returned zero data points. Warnings: %s, Query: %s", strings.Join(singleResult.Warnings, ", "), metricsQuery)
+			return 0, fmt.Errorf("Dynatrace Metrics API returned zero data points. Warnings: %s", strings.Join(singleResult.Warnings, ", "))
 		}
 		return 0, fmt.Errorf("Dynatrace Metrics API returned zero data points")
 	}
 
 	if len(singleResult.Data) > 1 {
 		if len(singleResult.Warnings) > 0 {
-			return 0, fmt.Errorf("expected only a single data point from Dynatrace Metrics API but got multiple. Warnings: %s, Query: %s", strings.Join(singleResult.Warnings, ", "), metricsQuery)
+			return 0, fmt.Errorf("expected only a single data point from Dynatrace Metrics API but got multiple. Warnings: %s", strings.Join(singleResult.Warnings, ", "))
 		}
 		return 0, fmt.Errorf("expected only a single data point from Dynatrace Metrics API but got multiple")
 	}
@@ -249,18 +257,18 @@ func (p *Processing) executeMetricsQuery(metricsQueryString string, metricUnit s
 	// TODO 2021-10-13: Check if having a query result with zero values is even plausable
 	if len(singleDataPoint.Values) == 0 {
 		if len(singleResult.Warnings) > 0 {
-			return 0, fmt.Errorf("Dynatrace Metrics API returned zero data point values. Warnings: %s, Query: %s", strings.Join(singleResult.Warnings, ", "), metricsQuery)
+			return 0, fmt.Errorf("Dynatrace Metrics API returned zero data point values. Warnings: %s", strings.Join(singleResult.Warnings, ", "))
 		}
 		return 0, fmt.Errorf("Dynatrace Metrics API returned zero data point values")
 	}
 
 	if len(singleDataPoint.Values) > 1 {
 		if len(singleResult.Warnings) > 0 {
-			return 0, fmt.Errorf("expected only a single data point value from Dynatrace Metrics API but got multiple. Warnings: %s, Query: %s", strings.Join(singleResult.Warnings, ", "), metricsQuery)
+			return 0, fmt.Errorf("expected only a single data point value from Dynatrace Metrics API but got multiple. Warnings: %s", strings.Join(singleResult.Warnings, ", "))
 		}
 		return 0, fmt.Errorf("expected only a single data point value from Dynatrace Metrics API but got multiple")
 	}
 
 	singleValue := singleDataPoint.Values[0]
-	return unit.ScaleData(metricsQuery.GetMetricSelector(), metricUnit, singleValue), nil
+	return unit.ScaleData(query.GetMetricSelector(), metricUnit, singleValue), nil
 }

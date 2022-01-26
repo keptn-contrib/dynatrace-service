@@ -39,7 +39,7 @@ func TestSLIParser(t *testing.T) {
 			name:         "empty input",
 			keyValidator: &validatorWithOneKey{},
 			expectedKeyValuePairsAssertionFunc: func(t assert.TestingT, p *KeyValuePairs) {
-				assert.EqualValues(t, 0, p.count())
+				assert.EqualValues(t, 0, p.Count())
 			},
 		},
 		{
