@@ -1,5 +1,7 @@
 package common
 
+import "errors"
+
 // SLIPieces represents the parsed pieces of an SLI, typically created from a ;-delimited string.
 type SLIPieces struct {
 	pieces []string
@@ -13,8 +15,12 @@ func NewSLIPieces(pieces []string) SLIPieces {
 }
 
 // Get gets the indexed piece.
-func (p *SLIPieces) Get(index int) string {
-	return p.pieces[index]
+func (p *SLIPieces) Get(index int) (string, error) {
+	if (index < 0) || (index >= len(p.pieces)) {
+		return "", errors.New("piece index of out of bounds")
+	}
+
+	return p.pieces[index], nil
 }
 
 // Count returns the number of pieces.

@@ -18,9 +18,12 @@ func NewSLIPrefixProducer(pieces SLIPieces) SLIPrefixProducer {
 
 // Produce produces a SLI prefix string based on the pieces.
 func (b SLIPrefixProducer) Produce() string {
-	p := make([]string, 0, b.pieces.Count())
+	allPieces := make([]string, 0, b.pieces.Count())
 	for i := 0; i < b.pieces.Count(); i++ {
-		p = append(p, b.pieces.Get(i))
+		piece, err := b.pieces.Get(i)
+		if err == nil {
+			allPieces = append(allPieces, piece)
+		}
 	}
-	return strings.Join(p, prefixDelimiter)
+	return strings.Join(allPieces, prefixDelimiter)
 }

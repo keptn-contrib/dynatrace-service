@@ -34,9 +34,17 @@ func (p QueryParser) Parse() (*Query, error) {
 		return nil, err
 	}
 
-	unit := pieces.Get(1)
+	unit, err := pieces.Get(1)
+	if err != nil {
+		return nil, err
+	}
 
-	query, err := v1metrics.NewQueryParser(pieces.Get(2)).Parse()
+	mv2QueryString, err := pieces.Get(2)
+	if err != nil {
+		return nil, err
+	}
+
+	query, err := v1metrics.NewQueryParser(mv2QueryString).Parse()
 	if err != nil {
 		return nil, err
 	}

@@ -36,7 +36,12 @@ func (p *QueryParser) Parse() (*secpv2.Query, error) {
 		return nil, err
 	}
 
-	keyValuePairs, err := common.NewSLIParser(pieces.Get(1), &securityProblemsQueryKeyValidator{}).Parse()
+	secpv2QueryString, err := pieces.Get(1)
+	if err != nil {
+		return nil, err
+	}
+
+	keyValuePairs, err := common.NewSLIParser(secpv2QueryString, &securityProblemsQueryKeyValidator{}).Parse()
 	if err != nil {
 		return nil, err
 	}

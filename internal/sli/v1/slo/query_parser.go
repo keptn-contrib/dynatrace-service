@@ -33,5 +33,10 @@ func (p *QueryParser) Parse() (*Query, error) {
 		return nil, err
 	}
 
-	return NewQuery(pieces.Get(1))
+	sloID, err := pieces.Get(1)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewQuery(sloID)
 }

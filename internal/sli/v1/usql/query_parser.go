@@ -34,10 +34,25 @@ func (p *QueryParser) Parse() (*Query, error) {
 		return nil, err
 	}
 
-	innerQuery, err := usql.NewQuery(pieces.Get(3))
+	usqlQueryString, err := pieces.Get(3)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewQuery(pieces.Get(1), pieces.Get(2), *innerQuery)
+	innerQuery, err := usql.NewQuery(usqlQueryString)
+	if err != nil {
+		return nil, err
+	}
+
+	resultType, err := pieces.Get(1)
+	if err != nil {
+		return nil, err
+	}
+
+	dimension, err := pieces.Get(2)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewQuery(resultType, dimension, *innerQuery)
 }

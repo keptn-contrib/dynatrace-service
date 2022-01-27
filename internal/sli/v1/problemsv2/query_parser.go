@@ -39,7 +39,12 @@ func (p *QueryParser) Parse() (*problems.Query, error) {
 		return nil, err
 	}
 
-	keyValuePairs, err := common.NewSLIParser(pieces.Get(1), &problemsQueryKeyValidator{}).Parse()
+	problemsQueryString, err := pieces.Get(1)
+	if err != nil {
+		return nil, err
+	}
+
+	keyValuePairs, err := common.NewSLIParser(problemsQueryString, &problemsQueryKeyValidator{}).Parse()
 	if err != nil {
 		return nil, err
 	}
