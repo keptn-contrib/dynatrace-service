@@ -20,11 +20,11 @@ func NewQuery(metricSelector string, entitySelector string) (*Query, error) {
 }
 
 // GetMetricSelector returns the metric selector.
-func (m *Query) GetMetricSelector() string {
+func (m Query) GetMetricSelector() string {
 	return m.metricSelector
 }
 
 // GetEntitySelector returns the entity selector.
-func (m *Query) GetEntitySelector() string {
+func (m Query) GetEntitySelector() string {
 	return m.entitySelector
 }
