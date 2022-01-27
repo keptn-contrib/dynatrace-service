@@ -8,6 +8,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
+	v1mv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/mv2"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -106,8 +107,6 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 			return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Could not create metrics query for SLI")
 		}
 
-		sliQueryString := v1metrics.NewQueryProducer(*metricQueryForSLI).Produce()
-
 		// make sure we have a valid indicator name by getting rid of special characters
 		indicatorName = common.CleanIndicatorName(indicatorName)
 
@@ -128,11 +127,6 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 				"value": value,
 			}).Debug("Got indicator value")
 
-		finalSLIQuery, err := unit.ConvertToMV2Query(sliQueryString, metricQueryComponents.metricUnit)
-		if err != nil {
-			finalSLIQuery = sliQueryString
-		}
-
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
 		// we also add the SLO definition in case we need to generate an SLO.yaml
 		tileResults = append(
@@ -151,11 +145,21 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 					Warning: sloDefinition.Warning,
 				},
 				sliName:  indicatorName,
-				sliQuery: finalSLIQuery,
+				sliQuery: getMetricsQueryString(metricQueryComponents.metricUnit, *metricQueryForSLI),
 			})
 	}
 
 	return tileResults
+}
+
+// getMetricsQueryString gets the query string for the metrics query, either MV2 or normal.
+func getMetricsQueryString(unit string, query metrics.Query) string {
+	mv2Query, err := v1mv2.NewQuery(unit, query)
+	if err == nil {
+		return v1mv2.NewQueryProducer(*mv2Query).Produce()
+	}
+
+	return v1metrics.NewQueryProducer(query).Produce()
 }
 
 func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, message string) []*TileResult {
