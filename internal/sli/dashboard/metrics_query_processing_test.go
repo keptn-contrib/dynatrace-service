@@ -42,7 +42,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery("builtin:service.response.client:merge(\"dt.entity.service\"):avg:names", "type(SERVICE)"),
+					metricsQuery: createMetricsQuery(t, "builtin:service.response.client:merge(\"dt.entity.service\"):avg:names", "type(SERVICE)"),
 					metricUnit:   "MicroSecond",
 					startTime:    startTime,
 					endTime:      endTime,
@@ -75,7 +75,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery("builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
 					startTime:    startTime,
 					endTime:      endTime,
@@ -108,7 +108,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery("builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names", "type(HOST)"),
+					metricsQuery: createMetricsQuery(t, "builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names", "type(HOST)"),
 					metricUnit:   "Count",
 					startTime:    startTime,
 					endTime:      endTime,
@@ -143,7 +143,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery("builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
 					startTime:    startTime,
 					endTime:      endTime,
@@ -177,7 +177,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 				metricQueryComponents: &queryComponents{
 
-					metricsQuery: createMetricsQuery("builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
 					startTime:    startTime,
 					endTime:      endTime,
@@ -210,7 +210,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery("builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
 					startTime:    startTime,
 					endTime:      endTime,
@@ -243,7 +243,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery("builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
 					startTime:    startTime,
 					endTime:      endTime,
@@ -283,7 +283,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 	}
 }
 
-func createMetricsQuery(metricSelector string, entitySelector string) *metrics.Query {
-	query, _ := metrics.NewQuery(metricSelector, entitySelector)
-	return query
+func createMetricsQuery(t *testing.T, metricSelector string, entitySelector string) metrics.Query {
+	query, err := metrics.NewQuery(metricSelector, entitySelector)
+	assert.NoError(t, err)
+	return *query
 }

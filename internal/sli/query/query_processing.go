@@ -16,6 +16,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
+	v1mv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/mv2"
 	v1problems "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
 	v1secpv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/secpv2"
 	v1slo "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
@@ -193,17 +194,13 @@ func (p *Processing) executeSecurityProblemQuery(queryString string, startUnix t
 }
 
 func (p *Processing) executeMetricsV2Query(queryString string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	queryString, metricUnit, err := unit.ParseMV2Query(queryString)
+
+	query, err := v1mv2.NewQueryParser(queryString).Parse()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("could not parse MV2 query: %v, %w", queryString, err)
 	}
 
-	query, err := v1metrics.NewQueryParser(queryString).Parse()
-	if err != nil {
-		return 0, fmt.Errorf("could not parse metrics query: %v, %w", queryString, err)
-	}
-
-	return p.processMetricsQuery(*query, metricUnit, startUnix, endUnix)
+	return p.processMetricsQuery(query.GetQuery(), query.GetUnit(), startUnix, endUnix)
 }
 
 func (p *Processing) executeMetricsQuery(queryString string, startUnix time.Time, endUnix time.Time) (float64, error) {

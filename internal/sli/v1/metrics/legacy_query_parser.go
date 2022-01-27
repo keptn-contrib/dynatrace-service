@@ -70,7 +70,7 @@ func (p *LegacyQueryParser) createMetricsQueryAndLog(metricSelector string, enti
 	log.WithFields(
 		log.Fields{
 			"oldQuery":     p.query,
-			"newQuery":     NewQueryProducer(query).Produce(),
+			"newQuery":     NewQueryProducer(*query).Produce(),
 			"helpDocument": metricsAPIOldFormatNewFormatDoc,
 		}).Warn("COMPATIBILITY WARNING: query uses the old format")
 

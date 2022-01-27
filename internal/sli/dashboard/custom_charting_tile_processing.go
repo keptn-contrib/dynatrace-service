@@ -172,7 +172,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 	}
 
 	return &queryComponents{
-		metricsQuery:                metricsQuery,
+		metricsQuery:                *metricsQuery,
 		startTime:                   startUnix,
 		endTime:                     endUnix,
 		metricUnit:                  metricDefinition.Unit,

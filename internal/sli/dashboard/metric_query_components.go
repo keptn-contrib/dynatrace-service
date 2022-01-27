@@ -7,7 +7,7 @@ import (
 )
 
 type queryComponents struct {
-	metricsQuery                *metrics.Query
+	metricsQuery                metrics.Query
 	startTime                   time.Time
 	endTime                     time.Time
 	metricUnit                  string

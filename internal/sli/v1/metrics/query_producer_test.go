@@ -28,7 +28,7 @@ func TestQueryProducer_Produce(t *testing.T) {
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			metricQueryString := NewQueryProducer(&tc.inputMetricQuery).Produce()
+			metricQueryString := NewQueryProducer(tc.inputMetricQuery).Produce()
 			assert.Equal(t, tc.expectedMetricQueryString, metricQueryString)
 		})
 	}

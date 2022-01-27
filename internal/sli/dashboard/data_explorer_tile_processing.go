@@ -152,7 +152,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 	}
 
 	return &queryComponents{
-		metricsQuery:                metricsQuery,
+		metricsQuery:                *metricsQuery,
 		startTime:                   p.startUnix,
 		endTime:                     p.endUnix,
 		metricUnit:                  metricDefinition.Unit,

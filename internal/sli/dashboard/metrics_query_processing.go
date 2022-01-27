@@ -28,7 +28,7 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(*metricQueryComponents.metricsQuery, metricQueryComponents.startTime, metricQueryComponents.endTime))
+	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(metricQueryComponents.metricsQuery, metricQueryComponents.startTime, metricQueryComponents.endTime))
 
 	// ERROR-CASE: Metric API return no values or an error
 	// we could not query data - so - we return the error back as part of our SLIResults
@@ -106,7 +106,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 			return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Could not create metrics query for SLI")
 		}
 
-		sliQueryString := v1metrics.NewQueryProducer(metricQueryForSLI).Produce()
+		sliQueryString := v1metrics.NewQueryProducer(*metricQueryForSLI).Produce()
 
 		// make sure we have a valid indicator name by getting rid of special characters
 		indicatorName = common.CleanIndicatorName(indicatorName)
@@ -173,7 +173,7 @@ func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, mes
 	}
 }
 
-func createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition *keptncommon.SLO, metricsQuery *metrics.Query, message string) []*TileResult {
+func createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition *keptncommon.SLO, metricsQuery metrics.Query, message string) []*TileResult {
 	metricsQueryString := v1metrics.NewQueryProducer(metricsQuery).Produce()
 	return []*TileResult{
 		{
