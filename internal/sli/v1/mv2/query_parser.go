@@ -8,9 +8,8 @@ import (
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
 )
 
-const (
-	MV2Prefix = "MV2;"
-)
+// MV2Prefix is the prefix of MV2 queries
+const MV2Prefix = "MV2;"
 
 // QueryParser will parse a MV2 query string (usually found in sli.yaml files) into a Query
 type QueryParser struct {

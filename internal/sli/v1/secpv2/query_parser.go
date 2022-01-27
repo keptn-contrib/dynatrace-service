@@ -8,13 +8,10 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/common"
 )
 
-const (
-	SecurityProblemsV2Prefix = "SECPV2;"
-)
+// SecurityProblemsV2Prefix is the prefix of Security Problems v2 queries.
+const SecurityProblemsV2Prefix = "SECPV2;"
 
-const (
-	securityProblemSelectorKey = "securityProblemSelector"
-)
+const securityProblemSelectorKey = "securityProblemSelector"
 
 // QueryParser will parse a v1 Security Problems v2 query string (usually found in sli.yaml files) into a Query
 type QueryParser struct {

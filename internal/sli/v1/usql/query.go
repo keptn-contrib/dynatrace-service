@@ -8,10 +8,17 @@ import (
 )
 
 const (
+	// SingleValueResultType is the result type for queries based on a single value.
 	SingleValueResultType = "SINGLE_VALUE"
-	TableResultType       = "TABLE"
+
+	// TableResultType is the result type for queries based on a table.
+	TableResultType = "TABLE"
+
+	// ColumnChartResultType is the result type for queries based on a column chart.
 	ColumnChartResultType = "COLUMN_CHART"
-	PieChartResultType    = "PIE_CHART"
+
+	// PieChartResultType is the result type for queries based on a pie chart.
+	PieChartResultType = "PIE_CHART"
 )
 
 // Query represents a v1 USQL query.

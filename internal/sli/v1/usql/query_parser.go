@@ -8,9 +8,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/common"
 )
 
-const (
-	USQLPrefix = "USQL;"
-)
+// USQLPrefix is the prefix of USQL queries.
+const USQLPrefix = "USQL;"
 
 // QueryParser will parse a v1 USQL query string (usually found in sli.yaml files) into a Query
 type QueryParser struct {

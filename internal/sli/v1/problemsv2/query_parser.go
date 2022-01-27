@@ -8,9 +8,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/common"
 )
 
-const (
-	ProblemsV2Prefix = "PV2;"
-)
+// ProblemsV2Prefix is the prefix of Problems v2 queries.
+const ProblemsV2Prefix = "PV2;"
 
 const (
 	problemSelectorKey = "problemSelector"

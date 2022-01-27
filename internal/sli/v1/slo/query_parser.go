@@ -7,9 +7,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/common"
 )
 
-const (
-	SLOPrefix = "SLO;"
-)
+// SLOPrefix is the prefix of SLO queries.
+const SLOPrefix = "SLO;"
 
 // QueryParser will parse a v1 SLO query string (usually found in sli.yaml files) into a Query
 type QueryParser struct {
