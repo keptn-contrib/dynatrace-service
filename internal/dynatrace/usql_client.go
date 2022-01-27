@@ -35,8 +35,8 @@ func NewUSQLClientQueryParameters(query usql.Query, startTimestamp time.Time, en
 	}
 }
 
-// Encode encodes USQLClientQueryParameters into a URL-encoded string.
-func (q *USQLClientQueryParameters) Encode() string {
+// encode encodes USQLClientQueryParameters into a URL-encoded string.
+func (q *USQLClientQueryParameters) encode() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(queryKey, q.query.GetQuery())
 	queryParameters.add(explainKey, "false")
@@ -65,7 +65,7 @@ func NewUSQLClient(client ClientInterface) *USQLClient {
 
 // GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set
 func (uc *USQLClient) GetByQuery(parameters USQLClientQueryParameters) (*DTUSQLResult, error) {
-	body, err := uc.client.Get(USQLPath + "?" + parameters.Encode())
+	body, err := uc.client.Get(USQLPath + "?" + parameters.encode())
 	if err != nil {
 		return nil, err
 	}

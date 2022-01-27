@@ -33,8 +33,8 @@ func NewProblemsV2ClientQueryParameters(query problems.Query, from time.Time, to
 	}
 }
 
-// Encode encodes ProblemsV2ClientQueryParameters into a URL-encoded string.
-func (q *ProblemsV2ClientQueryParameters) Encode() string {
+// encode encodes ProblemsV2ClientQueryParameters into a URL-encoded string.
+func (q *ProblemsV2ClientQueryParameters) encode() string {
 	queryParameters := newQueryParameters()
 	if q.query.GetProblemSelector() != "" {
 		queryParameters.add(problemSelectorKey, q.query.GetProblemSelector())
@@ -74,7 +74,7 @@ func NewProblemsV2Client(client ClientInterface) *ProblemsV2Client {
 
 // GetTotalCountByQuery calls the Dynatrace V2 API to retrieve the total count of problems for a given query and timeframe
 func (pc *ProblemsV2Client) GetTotalCountByQuery(parameters ProblemsV2ClientQueryParameters) (int, error) {
-	body, err := pc.client.Get(problemsV2Path + "?" + parameters.Encode())
+	body, err := pc.client.Get(problemsV2Path + "?" + parameters.encode())
 	if err != nil {
 		return 0, err
 	}

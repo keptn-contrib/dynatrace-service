@@ -30,8 +30,8 @@ func NewSecurityProblemsV2ClientQueryParameters(query secpv2.Query, from time.Ti
 	}
 }
 
-// Encode encodes SecurityProblemsV2ClientQueryParameters into a URL-encoded string.
-func (q *SecurityProblemsV2ClientQueryParameters) Encode() string {
+// encode encodes SecurityProblemsV2ClientQueryParameters into a URL-encoded string.
+func (q *SecurityProblemsV2ClientQueryParameters) encode() string {
 	queryParameters := newQueryParameters()
 	if q.query.GetSecurityProblemSelector() != "" {
 		queryParameters.add(securityProblemSelectorKey, q.query.GetSecurityProblemSelector())
@@ -60,7 +60,7 @@ func NewSecurityProblemsClient(client ClientInterface) *SecurityProblemsClient {
 
 // GetTotalCountByQuery calls the Dynatrace API to retrieve the total count of security problems for the given query and timeframe
 func (sc *SecurityProblemsClient) GetTotalCountByQuery(parameters SecurityProblemsV2ClientQueryParameters) (int, error) {
-	body, err := sc.client.Get(securityProblemsPath + "?" + parameters.Encode())
+	body, err := sc.client.Get(securityProblemsPath + "?" + parameters.encode())
 	if err != nil {
 		return 0, err
 	}

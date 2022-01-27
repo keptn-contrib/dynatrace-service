@@ -39,8 +39,8 @@ func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to tim
 	}
 }
 
-// Encode encodes MetricsClientQueryParameters into a URL-encoded string.
-func (q *MetricsClientQueryParameters) Encode() string {
+// encode encodes MetricsClientQueryParameters into a URL-encoded string.
+func (q *MetricsClientQueryParameters) encode() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
 	queryParameters.add(fromKey, common.TimestampToString(q.from))
@@ -122,7 +122,7 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (mc *MetricsClient) GetByQuery(parameters MetricsClientQueryParameters) (*MetricsQueryResult, error) {
-	body, err := mc.client.Get(MetricsQueryPath + "?" + parameters.Encode())
+	body, err := mc.client.Get(MetricsQueryPath + "?" + parameters.encode())
 	if err != nil {
 		return nil, err
 	}

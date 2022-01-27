@@ -30,8 +30,8 @@ func NewSLOClientGetParameters(sloID string, from time.Time, to time.Time) SLOCl
 	}
 }
 
-// Encode encodes MetricsClientQueryParameters into a URL-encoded string.
-func (q *SLOClientGetParameters) Encode() string {
+// encode encodes MetricsClientQueryParameters into a URL-encoded string.
+func (q *SLOClientGetParameters) encode() string {
 
 	// TODO:  2022-01-26: Fix string composition and think about a better struct for REST parameters for all Dynatrace clients
 	queryParameters := newQueryParameters()
@@ -62,7 +62,7 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 // Get calls Dynatrace API to retrieve the values of the Dynatrace SLO for that timeframe
 // It returns a SLOResult object on success, an error otherwise
 func (c *SLOClient) Get(parameters SLOClientGetParameters) (*SLOResult, error) {
-	body, err := c.client.Get(SLOPath + "/" + parameters.Encode())
+	body, err := c.client.Get(SLOPath + "/" + parameters.encode())
 	if err != nil {
 		return nil, err
 	}
