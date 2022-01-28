@@ -67,11 +67,11 @@ func (p *Processing) GetSLIValue(name string) (float64, error) {
 		return p.executeUSQLQuery(sliQuery, p.startUnix, p.endUnix)
 	case strings.HasPrefix(sliQuery, v1slo.SLOPrefix):
 		return p.executeSLOQuery(sliQuery, p.startUnix, p.endUnix)
-	case strings.HasPrefix(sliQuery, "PV2;"):
+	case strings.HasPrefix(sliQuery, v1problems.ProblemsV2Prefix):
 		return p.executeProblemQuery(sliQuery, p.startUnix, p.endUnix)
-	case strings.HasPrefix(sliQuery, "SECPV2;"):
+	case strings.HasPrefix(sliQuery, v1secpv2.SecurityProblemsV2Prefix):
 		return p.executeSecurityProblemQuery(sliQuery, p.startUnix, p.endUnix)
-	case strings.HasPrefix(sliQuery, "MV2;"):
+	case strings.HasPrefix(sliQuery, v1mv2.MV2Prefix):
 		return p.executeMetricsV2Query(sliQuery, p.startUnix, p.endUnix)
 	default:
 		return p.executeMetricsQuery(sliQuery, p.startUnix, p.endUnix)
