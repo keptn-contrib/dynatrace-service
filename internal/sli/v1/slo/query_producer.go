@@ -4,12 +4,12 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/common"
 )
 
-// QueryProducer for security problems v2 queries.
+// QueryProducer for SLO queries.
 type QueryProducer struct {
 	query Query
 }
 
-// NewQueryProducer creates a QueryProducer for the specified security problems Query.
+// NewQueryProducer creates a QueryProducer for the specified SLO Query.
 func NewQueryProducer(query Query) QueryProducer {
 	return QueryProducer{query: query}
 }

@@ -13,7 +13,7 @@ func TestQueryProducer_Produce(t *testing.T) {
 		expectedSLOQueryString string
 	}{
 		{
-			name:                   "valid with security problem selector",
+			name:                   "valid",
 			inputSLOQuery:          newQuery(t, "524ca177-849b-3e8c-8175-42b93fbc33c5"),
 			expectedSLOQueryString: "SLO;524ca177-849b-3e8c-8175-42b93fbc33c5",
 		},
@@ -21,8 +21,8 @@ func TestQueryProducer_Produce(t *testing.T) {
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			pv2QueryString := NewQueryProducer(tc.inputSLOQuery).Produce()
-			assert.Equal(t, tc.expectedSLOQueryString, pv2QueryString)
+			sloQueryString := NewQueryProducer(tc.inputSLOQuery).Produce()
+			assert.Equal(t, tc.expectedSLOQueryString, sloQueryString)
 		})
 	}
 }
