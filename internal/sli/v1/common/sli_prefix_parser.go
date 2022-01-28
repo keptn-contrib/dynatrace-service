@@ -30,19 +30,11 @@ func (e SLIPrefixParser) Parse() (*SLIPieces, error) {
 		return nil, errors.New("must parse into at least one piece")
 	}
 
-	pieces := make([]string, 0, e.count)
-
-	rest := e.sli
-	for i := 0; i < e.count-1; i++ {
-		prefixDelimiterIndex := strings.Index(rest, prefixDelimiter)
-		if prefixDelimiterIndex == -1 {
-			return nil, errors.New("incorrect prefix")
-		}
-		pieces = append(pieces, rest[:prefixDelimiterIndex])
-		rest = rest[prefixDelimiterIndex+1:]
+	pieces := strings.SplitN(e.sli, prefixDelimiter, e.count)
+	if len(pieces) < e.count {
+		return nil, errors.New("incorrect prefix")
 	}
 
-	pieces = append(pieces, rest)
 	sliPieces := NewSLIPieces(pieces)
 	return &sliPieces, nil
 }
