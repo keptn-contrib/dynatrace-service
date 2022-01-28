@@ -9,7 +9,7 @@ import (
 )
 
 // ProblemsV2Prefix is the prefix of Problems v2 queries.
-const ProblemsV2Prefix = "PV2;"
+const ProblemsV2Prefix = "PV2"
 
 const (
 	problemSelectorKey = "problemSelector"
@@ -30,13 +30,17 @@ func NewQueryParser(query string) *QueryParser {
 
 // Parse parses the query string into a Query or returns an error.
 func (p *QueryParser) Parse() (*problems.Query, error) {
-	if !strings.HasPrefix(p.query, ProblemsV2Prefix) {
-		return nil, fmt.Errorf("Problems V2 queries should start with %s", ProblemsV2Prefix)
-	}
-
 	pieces, err := common.NewSLIPrefixParser(p.query, 2).Parse()
 	if err != nil {
 		return nil, err
+	}
+
+	prefix, err := pieces.Get(0)
+	if err != nil {
+		return nil, err
+	}
+	if prefix != ProblemsV2Prefix {
+		return nil, fmt.Errorf("Problems V2 queries should start with %s", ProblemsV2Prefix)
 	}
 
 	problemsQueryString, err := pieces.Get(1)

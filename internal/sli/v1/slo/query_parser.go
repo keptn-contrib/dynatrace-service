@@ -8,7 +8,7 @@ import (
 )
 
 // SLOPrefix is the prefix of SLO queries.
-const SLOPrefix = "SLO;"
+const SLOPrefix = "SLO"
 
 // QueryParser will parse a v1 SLO query string (usually found in sli.yaml files) into a Query
 type QueryParser struct {
@@ -24,13 +24,17 @@ func NewQueryParser(query string) *QueryParser {
 
 // Parse parses the SLO string into a Query or returns an error.
 func (p *QueryParser) Parse() (*Query, error) {
-	if !strings.HasPrefix(p.query, SLOPrefix) {
-		return nil, fmt.Errorf("SLO queries should start with %s", SLOPrefix)
-	}
-
 	pieces, err := common.NewSLIPrefixParser(p.query, 2).Parse()
 	if err != nil {
 		return nil, err
+	}
+
+	prefix, err := pieces.Get(0)
+	if err != nil {
+		return nil, err
+	}
+	if prefix != SLOPrefix {
+		return nil, fmt.Errorf("SLO queries should start with %s", SLOPrefix)
 	}
 
 	sloID, err := pieces.Get(1)

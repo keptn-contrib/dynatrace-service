@@ -9,7 +9,7 @@ import (
 )
 
 // MV2Prefix is the prefix of MV2 queries
-const MV2Prefix = "MV2;"
+const MV2Prefix = "MV2"
 
 // QueryParser will parse a MV2 query string (usually found in sli.yaml files) into a Query
 type QueryParser struct {
@@ -25,13 +25,17 @@ func NewQueryParser(query string) QueryParser {
 
 // Parse parses the query string into a Query or returns an error.
 func (p QueryParser) Parse() (*Query, error) {
-	if !strings.HasPrefix(p.query, MV2Prefix) {
-		return nil, fmt.Errorf("MV2 queries should start with %s", MV2Prefix)
-	}
-
 	pieces, err := common.NewSLIPrefixParser(p.query, 3).Parse()
 	if err != nil {
 		return nil, err
+	}
+
+	prefix, err := pieces.Get(0)
+	if err != nil {
+		return nil, err
+	}
+	if prefix != MV2Prefix {
+		return nil, fmt.Errorf("MV2 queries should start with %s", MV2Prefix)
 	}
 
 	unit, err := pieces.Get(1)

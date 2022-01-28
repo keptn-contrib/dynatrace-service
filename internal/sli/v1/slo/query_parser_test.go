@@ -24,7 +24,7 @@ func TestQueryParser(t *testing.T) {
 			name:                 "invalid - no SLO prefix",
 			inputQuery:           ";524ca177-849b-3e8c-8175-42b93fbc33c5",
 			expectError:          true,
-			expectedErrorMessage: "SLO queries should start with SLO;",
+			expectedErrorMessage: "SLO queries should start with SLO",
 		},
 		{
 			name:                 "invalid - no SLO ID",

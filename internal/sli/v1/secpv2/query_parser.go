@@ -9,7 +9,7 @@ import (
 )
 
 // SecurityProblemsV2Prefix is the prefix of Security Problems v2 queries.
-const SecurityProblemsV2Prefix = "SECPV2;"
+const SecurityProblemsV2Prefix = "SECPV2"
 
 const securityProblemSelectorKey = "securityProblemSelector"
 
@@ -27,13 +27,17 @@ func NewQueryParser(query string) *QueryParser {
 
 // Parse parses the query string into a Query or returns an error.
 func (p *QueryParser) Parse() (*secpv2.Query, error) {
-	if !strings.HasPrefix(p.query, SecurityProblemsV2Prefix) {
-		return nil, fmt.Errorf("Security Problems V2 queries should start with %s", SecurityProblemsV2Prefix)
-	}
-
 	pieces, err := common.NewSLIPrefixParser(p.query, 2).Parse()
 	if err != nil {
 		return nil, err
+	}
+
+	prefix, err := pieces.Get(0)
+	if err != nil {
+		return nil, err
+	}
+	if prefix != SecurityProblemsV2Prefix {
+		return nil, fmt.Errorf("Security Problems V2 queries should start with %s", SecurityProblemsV2Prefix)
 	}
 
 	secpv2QueryString, err := pieces.Get(1)
