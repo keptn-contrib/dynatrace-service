@@ -39,6 +39,7 @@ func (e SLIPrefixParser) Parse() (*SLIPieces, error) {
 	return &sliPieces, nil
 }
 
+// ProducePrefixedSLI concatenates a prefix and pieces to produce a prefixed SLI string.
 func ProducePrefixedSLI(prefix string, otherPieces ...string) string {
 	pieces := append([]string{prefix}, otherPieces...)
 	return strings.Join(pieces, prefixDelimiter)
