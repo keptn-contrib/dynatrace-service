@@ -6,7 +6,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	keptncommon "github.com/keptn/go-utils/pkg/lib"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -32,20 +32,13 @@ func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	for _, sloEntity := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
 
-		sliResult, sliIndicator, sliQuery, sloDefinition, err := p.processSLOTile(sloEntity, p.startUnix, p.endUnix)
+		tileResult, err := p.processSLOTile(sloEntity, p.startUnix, p.endUnix)
 		if err != nil {
 			log.WithError(err).Error("Error Processing SLO")
 			continue
 		}
 
-		results = append(
-			results,
-			&TileResult{
-				sliResult: sliResult,
-				objective: sloDefinition,
-				sliName:   sliIndicator,
-				sliQuery:  sliQuery,
-			})
+		results = append(results, tileResult)
 	}
 
 	return results
@@ -53,12 +46,12 @@ func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 
 // processSLOTile Processes an SLO Tile and queries the data from the Dynatrace API.
 // If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, endUnix time.Time) (*keptnv2.SLIResult, string, string, *keptncommon.SLO, error) {
+func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(sloID, startUnix, endUnix))
 	if err != nil {
-		return nil, "", "", nil, err
+		return nil, err
 	}
 
 	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
@@ -78,9 +71,10 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 			"value":         value,
 		}).Debug("Adding SLO to sloResult")
 
-	// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-	// we prepend this with SLO;<SLO-ID>
-	sliQuery := fmt.Sprintf("SLO;%s", sloID)
+	query, err := slo.NewQuery(sloID)
+	if err != nil {
+		return nil, err
+	}
 
 	// TODO: 2021-12-20: check: maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 
@@ -88,5 +82,11 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 	sloString := fmt.Sprintf("sli=%s;pass=>=%f;warning=>=%f", indicatorName, sloResult.Warning, sloResult.Target)
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
 
-	return sliResult, indicatorName, sliQuery, sloDefinition, nil
+	return &TileResult{
+		sliResult: sliResult,
+		objective: sloDefinition,
+		sliName:   indicatorName,
+		sliQuery:  slo.NewQueryProducer(*query).Produce(),
+	}, nil
+
 }
