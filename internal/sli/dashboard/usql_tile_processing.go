@@ -1,13 +1,13 @@
 package dashboard
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
+	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -95,6 +95,16 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 				"dimensionValue": dimensionValue,
 			}).Debug("Appending SLIResult")
 
+		innerQuery, err := usql.NewQuery(tile.Query)
+		if err != nil {
+			return nil
+		}
+
+		query, err := v1usql.NewQuery(tile.Type, dimensionName, *innerQuery)
+		if err != nil {
+			return nil
+		}
+
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
 		// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
 		// we also add the SLO definition in case we need to generate an SLO.yaml
@@ -114,7 +124,7 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 					Warning: sloDefinition.Warning,
 				},
 				sliName:  indicatorName,
-				sliQuery: fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query),
+				sliQuery: v1usql.NewQueryProducer(*query).Produce(),
 			})
 	}
 
