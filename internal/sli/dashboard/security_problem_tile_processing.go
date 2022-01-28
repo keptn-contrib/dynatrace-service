@@ -69,9 +69,6 @@ func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Quer
 			"value":         value,
 		}).Debug("Adding SLO to sloResult")
 
-	// add this to our SLI indicator in case we need to generate an SLI.yaml
-	sliQuery := v1secpv2.NewQueryProducer(query).Produce()
-
 	// lets add the SLO definition in case we need to generate an SLO.yaml
 	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
@@ -81,6 +78,6 @@ func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Quer
 		sliResult: sliResult,
 		objective: sloDefinition,
 		sliName:   indicatorName,
-		sliQuery:  sliQuery,
+		sliQuery:  v1secpv2.NewQueryProducer(query).Produce(),
 	}, nil
 }
