@@ -1,0 +1,21 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "result": [
+    {
+      "metricId": "builtin:service.response.time",
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1634115780000
+          ],
+          "values": [
+            290
+          ]
+        }
+      ]
+    }
+  ]
+}
