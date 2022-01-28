@@ -211,7 +211,7 @@ func (p *Processing) executeMetricsQuery(queryString string, startUnix time.Time
 
 	query, legacyErr := v1metrics.NewLegacyQueryParser(queryString).Parse()
 	if legacyErr != nil {
-		return 0, fmt.Errorf("could not parse legacy metrics query: %v, %w", queryString, err)
+		return 0, fmt.Errorf("could not parse metrics query: %v, %w", queryString, err)
 	}
 	return p.processMetricsQuery(*query, "", startUnix, endUnix)
 }
