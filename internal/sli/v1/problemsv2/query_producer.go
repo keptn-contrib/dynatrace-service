@@ -25,5 +25,6 @@ func (p QueryProducer) Produce() string {
 	if p.query.GetEntitySelector() != "" {
 		keyValues[entitySelectorKey] = p.query.GetEntitySelector()
 	}
-	return ProblemsV2Prefix + ";" + common.NewSLIProducer(common.NewKeyValuePairs(keyValues)).Produce()
+
+	return common.ProducePrefixedSLI(ProblemsV2Prefix, common.NewSLIProducer(common.NewKeyValuePairs(keyValues)).Produce())
 }

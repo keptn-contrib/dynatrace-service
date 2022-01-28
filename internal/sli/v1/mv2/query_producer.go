@@ -17,10 +17,5 @@ func NewQueryProducer(query Query) QueryProducer {
 
 // Produce returns the MV2 query string for a Query.
 func (p QueryProducer) Produce() string {
-	pieces := make([]string, 0, 3)
-	pieces = append(pieces, MV2Prefix)
-	pieces = append(pieces, p.query.unit)
-	pieces = append(pieces, metrics.NewQueryProducer(p.query.GetQuery()).Produce())
-
-	return common.NewSLIPrefixProducer(common.NewSLIPieces(pieces)).Produce()
+	return common.ProducePrefixedSLI(MV2Prefix, p.query.unit, metrics.NewQueryProducer(p.query.GetQuery()).Produce())
 }

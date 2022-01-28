@@ -22,5 +22,5 @@ func (p QueryProducer) Produce() string {
 		keyValues[securityProblemSelectorKey] = p.query.GetSecurityProblemSelector()
 	}
 
-	return SecurityProblemsV2Prefix + ";" + common.NewSLIProducer(common.NewKeyValuePairs(keyValues)).Produce()
+	return common.ProducePrefixedSLI(SecurityProblemsV2Prefix, common.NewSLIProducer(common.NewKeyValuePairs(keyValues)).Produce())
 }

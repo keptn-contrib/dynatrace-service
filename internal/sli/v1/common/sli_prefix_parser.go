@@ -46,3 +46,8 @@ func (e SLIPrefixParser) Parse() (*SLIPieces, error) {
 	sliPieces := NewSLIPieces(pieces)
 	return &sliPieces, nil
 }
+
+func ProducePrefixedSLI(prefix string, otherPieces ...string) string {
+	pieces := append([]string{prefix}, otherPieces...)
+	return strings.Join(pieces, prefixDelimiter)
+}
