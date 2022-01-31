@@ -367,31 +367,18 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	startTime := time.Unix(1571649084, 0).UTC()
 	endTime := time.Unix(1571649085, 0).UTC()
 
-	testConfigs := []struct {
-		indicator        string
-		query            string
-		expectedSLIValue float64
-	}{
-		{
-			indicator:        "response_time_env",
-			query:            "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time",
-			expectedSLIValue: 0.29,
-		},
-	}
+	indicator := "response_time_env"
 
 	os.Setenv("MY_ENV_TAG", "some_tag")
 
-	for _, testConfig := range testConfigs {
-		customQueries := make(map[string]string)
-		customQueries[testConfig.indicator] = testConfig.query
+	customQueries := make(map[string]string)
+	customQueries[indicator] = "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time"
 
-		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), startTime, endTime)
+	ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), startTime, endTime)
+	sliValue, err := ret.GetSLIValue(indicator)
 
-		sliValue, err := ret.GetSLIValue(testConfig.indicator)
-
-		assert.NoError(t, err)
-		assert.EqualValues(t, testConfig.expectedSLIValue, sliValue)
-	}
+	assert.NoError(t, err)
+	assert.EqualValues(t, 0.29, sliValue)
 
 	os.Unsetenv("MY_ENV_TAG")
 }
