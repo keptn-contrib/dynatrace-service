@@ -150,12 +150,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 				},
 			}
 
-			sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-				assert.EqualValues(t, indicator, actual.Metric)
-				assert.EqualValues(t, 0, actual.Value)
-				assert.EqualValues(t, false, actual.Success)
-				assert.Contains(t, actual.Message, "MV2;")
-				assert.Contains(t, actual.Message, "SLI definition format")
+			sliResultAssertionsFunc := func(t *testing.T, sliResult *keptnv2.SLIResult) {
+				assert.EqualValues(t, indicator, sliResult.Metric)
+				assert.EqualValues(t, 0, sliResult.Value)
+				assert.EqualValues(t, false, sliResult.Success)
+				assert.Contains(t, sliResult.Message, "MV2;")
+				assert.Contains(t, sliResult.Message, "could not parse MV2 query")
 			}
 
 			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)

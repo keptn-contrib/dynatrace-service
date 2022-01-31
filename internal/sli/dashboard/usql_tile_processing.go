@@ -1,15 +1,16 @@
 package dashboard
 
 import (
-	"fmt"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
+	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 type USQLTileProcessing struct {
@@ -35,11 +36,15 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	// SINGLE_VALUE: we just take the one value that comes back
 	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
 	// TABLE: we assume the first column is the dimension and the last is the value
-
-	usqlQuery := usql.NewQueryBuilder(p.eventData, p.customFilters).Build(tile.Query, p.startUnix, p.endUnix)
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(usqlQuery)
+	query, err := usql.NewQuery(tile.Query)
 	if err != nil {
-		log.WithError(err).Warn("executeGetDynatraceUSQLQuery returned an error")
+		log.WithError(err).Error("Could not create USQL query")
+		return nil
+	}
+
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, p.startUnix, p.endUnix))
+	if err != nil {
+		log.WithError(err).Error("Error executing USQL query")
 		return nil
 	}
 
@@ -90,6 +95,16 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 				"dimensionValue": dimensionValue,
 			}).Debug("Appending SLIResult")
 
+		innerQuery, err := usql.NewQuery(tile.Query)
+		if err != nil {
+			return nil
+		}
+
+		query, err := v1usql.NewQuery(tile.Type, dimensionName, *innerQuery)
+		if err != nil {
+			return nil
+		}
+
 		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
 		// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
 		// we also add the SLO definition in case we need to generate an SLO.yaml
@@ -109,7 +124,7 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 					Warning: sloDefinition.Warning,
 				},
 				sliName:  indicatorName,
-				sliQuery: fmt.Sprintf("USQL;%s;%s;%s", tile.Type, dimensionName, tile.Query),
+				sliQuery: v1usql.NewQueryProducer(*query).Produce(),
 			})
 	}
 

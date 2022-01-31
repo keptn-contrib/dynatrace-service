@@ -3,6 +3,8 @@ package dashboard
 import (
 	"testing"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	"github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -10,6 +12,10 @@ import (
 )
 
 func TestMetricsQueryProcessing_Process(t *testing.T) {
+
+	startTime, _ := common.ParseUnixTimestamp("2021-10-05T08:00:00Z") // 1633420800000
+	endTime, _ := common.ParseUnixTimestamp("2021-10-06T08:00:00Z")   // 1633507200000
+
 	type args struct {
 		noOfDimensionsInChart int
 		sloDefinition         *keptncommon.SLO
@@ -19,6 +25,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 	tests := []struct {
 		name                        string
 		metricQueryResponseFilename string
+		fullMetricQueryString       string
 		args                        args
 		expectedResults             []*TileResult
 	}{
@@ -27,6 +34,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 		{
 			name:                        "csrt - MicroSecond - should MV2 prefix",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_service.response.client.json",
+			fullMetricQueryString:       "entitySelector=type%28SERVICE%29&from=1633420800000&metricSelector=builtin%3Aservice.response.client%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
 				sloDefinition: &keptncommon.SLO{
@@ -34,10 +42,10 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricID:              "builtin:service.response.client:merge(\"dt.entity.service\"):avg:names",
-					metricUnit:            "MicroSecond",
-					metricQuery:           "metricSelector=builtin:service.response.client:merge(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE)",
-					fullMetricQueryString: "entitySelector=type%28SERVICE%29&from=1633420800000&metricSelector=builtin%3Aservice.response.client%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+					metricsQuery: createMetricsQuery(t, "builtin:service.response.client:merge(\"dt.entity.service\"):avg:names", "type(SERVICE)"),
+					metricUnit:   "MicroSecond",
+					startTime:    startTime,
+					endTime:      endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -52,13 +60,14 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 						Weight: 1,
 					},
 					sliName:  "csrt",
-					sliQuery: "MV2;MicroSecond;metricSelector=builtin:service.response.client:merge(\"dt.entity.service\"):avg:names&entitySelector=type(SERVICE)",
+					sliQuery: "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.client:merge(\"dt.entity.service\"):avg:names",
 				},
 			},
 		},
 		{
 			name:                        "cmu - Byte - should MV2 prefix",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
 				sloDefinition: &keptncommon.SLO{
@@ -66,10 +75,10 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricID:              "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names",
-					metricUnit:            "Byte",
-					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
-					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricUnit:   "Byte",
+					startTime:    startTime,
+					endTime:      endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -84,13 +93,14 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 						Weight: 1,
 					},
 					sliName:  "cmu",
-					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					sliQuery: "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names",
 				},
 			},
 		},
 		{
 			name:                        "hdqc - Count - should not MV2 prefix",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_host.dns.queryCount.json",
+			fullMetricQueryString:       "entitySelector=type%28HOST%29&from=1633420800000&metricSelector=builtin%3Ahost.dns.queryCount%3Amerge%28%22dnsServerIp%22%29%3Amerge%28%22dt.entity.host%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
 				sloDefinition: &keptncommon.SLO{
@@ -98,10 +108,10 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricID:              "builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names",
-					metricUnit:            "Count",
-					metricQuery:           "metricSelector=builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)",
-					fullMetricQueryString: "entitySelector=type%28HOST%29&from=1633420800000&metricSelector=builtin%3Ahost.dns.queryCount%3Amerge%28%22dnsServerIp%22%29%3Amerge%28%22dt.entity.host%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+					metricsQuery: createMetricsQuery(t, "builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names", "type(HOST)"),
+					metricUnit:   "Count",
+					startTime:    startTime,
+					endTime:      endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -116,7 +126,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 						Weight: 1,
 					},
 					sliName:  "hdqc",
-					sliQuery: "metricSelector=builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names&entitySelector=type(HOST)",
+					sliQuery: "entitySelector=type(HOST)&metricSelector=builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names",
 				},
 			},
 		},
@@ -125,6 +135,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 		{
 			name:                        "cmu - All dimensions quotes",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
 				sloDefinition: &keptncommon.SLO{
@@ -132,10 +143,10 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricID:              "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names",
-					metricUnit:            "Byte",
-					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
-					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricUnit:   "Byte",
+					startTime:    startTime,
+					endTime:      endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -150,13 +161,14 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 						Weight: 1,
 					},
 					sliName:  "cmu",
-					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					sliQuery: "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names",
 				},
 			},
 		},
 		{
 			name:                        "cmu - No dimensions quotes",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
 				sloDefinition: &keptncommon.SLO{
@@ -164,10 +176,11 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricID:              "builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names",
-					metricUnit:            "Byte",
-					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
-					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricUnit:   "Byte",
+					startTime:    startTime,
+					endTime:      endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -182,13 +195,14 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 						Weight: 1,
 					},
 					sliName:  "cmu",
-					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					sliQuery: "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names",
 				},
 			},
 		},
 		{
 			name:                        "cmu - Just entity dimensions quotes",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
 				sloDefinition: &keptncommon.SLO{
@@ -196,10 +210,10 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricID:              "builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names",
-					metricUnit:            "Byte",
-					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
-					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricUnit:   "Byte",
+					startTime:    startTime,
+					endTime:      endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -214,13 +228,14 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 						Weight: 1,
 					},
 					sliName:  "cmu",
-					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					sliQuery: "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names",
 				},
 			},
 		},
 		{
 			name:                        "cmu - Just non-entity dimensions quotes",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
+			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
 				sloDefinition: &keptncommon.SLO{
@@ -228,10 +243,10 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					Weight: 1,
 				},
 				metricQueryComponents: &queryComponents{
-					metricID:              "builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names",
-					metricUnit:            "Byte",
-					metricQuery:           "metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
-					fullMetricQueryString: "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
+					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
+					metricUnit:   "Byte",
+					startTime:    startTime,
+					endTime:      endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -246,7 +261,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 						Weight: 1,
 					},
 					sliName:  "cmu",
-					sliQuery: "MV2;Byte;metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names&entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)",
+					sliQuery: "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names",
 				},
 			},
 		},
@@ -254,7 +269,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact("/api/v2/metrics/query?"+tt.args.metricQueryComponents.fullMetricQueryString,
+			handler.AddExact("/api/v2/metrics/query?"+tt.fullMetricQueryString,
 				tt.metricQueryResponseFilename)
 
 			dtClient, _, teardown := createDynatraceClient(t, handler)
@@ -266,4 +281,10 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			assert.EqualValues(t, tt.expectedResults, tileResults)
 		})
 	}
+}
+
+func createMetricsQuery(t *testing.T, metricSelector string, entitySelector string) metrics.Query {
+	query, err := metrics.NewQuery(metricSelector, entitySelector)
+	assert.NoError(t, err)
+	return *query
 }

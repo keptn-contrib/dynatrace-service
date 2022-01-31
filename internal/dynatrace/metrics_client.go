@@ -3,6 +3,10 @@ package dynatrace
 import (
 	"encoding/json"
 	"errors"
+	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 )
 
 // MetricsPath is the base endpoint for Metrics API v2
@@ -10,6 +14,43 @@ const MetricsPath = "/api/v2/metrics"
 
 // MetricsQueryPath is the query endpoint for Metrics API v2
 const MetricsQueryPath = MetricsPath + "/query"
+
+const (
+	fromKey           = "from"
+	toKey             = "to"
+	metricSelectorKey = "metricSelector"
+	resolutionKey     = "resolution"
+	entitySelectorKey = "entitySelector"
+)
+
+// MetricsClientQueryParameters encapsulates the query parameters for the MetricsClient's GetByQuery method.
+type MetricsClientQueryParameters struct {
+	query metrics.Query
+	from  time.Time
+	to    time.Time
+}
+
+// NewMetricsClientQueryParameters creates new MetricsClientQueryParameters.
+func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to time.Time) MetricsClientQueryParameters {
+	return MetricsClientQueryParameters{
+		query: query,
+		from:  from,
+		to:    to,
+	}
+}
+
+// encode encodes MetricsClientQueryParameters into a URL-encoded string.
+func (q *MetricsClientQueryParameters) encode() string {
+	queryParameters := newQueryParameters()
+	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
+	queryParameters.add(fromKey, common.TimestampToString(q.from))
+	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(resolutionKey, "Inf")
+	if q.query.GetEntitySelector() != "" {
+		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
+	}
+	return queryParameters.encode()
+}
 
 // MetricDefinition defines the output of /metrics/<metricID>
 type MetricDefinition struct {
@@ -80,8 +121,8 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 }
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (mc *MetricsClient) GetByQuery(metricsQuery string) (*MetricsQueryResult, error) {
-	body, err := mc.client.Get(MetricsQueryPath + "?" + metricsQuery)
+func (mc *MetricsClient) GetByQuery(parameters MetricsClientQueryParameters) (*MetricsQueryResult, error) {
+	body, err := mc.client.Get(MetricsQueryPath + "?" + parameters.encode())
 	if err != nil {
 		return nil, err
 	}
@@ -93,8 +134,7 @@ func (mc *MetricsClient) GetByQuery(metricsQuery string) (*MetricsQueryResult, e
 	}
 
 	if len(result.Result) == 0 {
-		// there are no data points - try again?
-		return nil, errors.New("dynatrace Metrics API returned no DataPoints")
+		return nil, errors.New("Dynatrace Metrics API returned no datapoints")
 	}
 
 	return &result, nil

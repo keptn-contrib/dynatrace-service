@@ -48,12 +48,11 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 				},
 			}
 
-			sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-				assert.EqualValues(t, indicator, actual.Metric)
-				assert.EqualValues(t, 0, actual.Value)
-				assert.EqualValues(t, false, actual.Success)
-				assert.Contains(t, actual.Message, "USQL;")
-				assert.Contains(t, actual.Message, "USQL Query incorrect format")
+			sliResultAssertionsFunc := func(t *testing.T, sliResult *keptnv2.SLIResult) {
+				assert.EqualValues(t, indicator, sliResult.Metric)
+				assert.EqualValues(t, 0, sliResult.Value)
+				assert.EqualValues(t, false, sliResult.Success)
+				assert.Contains(t, sliResult.Message, "incorrect prefix")
 			}
 
 			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
@@ -77,7 +76,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 		{
 			name:                 "unknown type fails",
 			usqlPrefix:           "USQL;COLUMN_CHARTS;iOS 11.4.1;",
-			expectedErrorMessage: "unknown USQL result type: COLUMN_CHARTS",
+			expectedErrorMessage: "unknown result type: COLUMN_CHARTS",
 		},
 		{
 			name:                 "unknown dimension name fails",
@@ -87,7 +86,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 		{
 			name:                 "missing fields fails",
 			usqlPrefix:           "USQL;;;",
-			expectedErrorMessage: "result type is empty",
+			expectedErrorMessage: "result type should not be empty",
 		},
 	}
 	for _, testConfig := range testConfigs {
@@ -200,7 +199,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			name:                 "dimension name is not allowed for single value result type",
 			usqlQuery:            "USQL;SINGLE_VALUE;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			dataReturned:         "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage: "return a single result",
+			expectedErrorMessage: "dimension should be empty",
 		},
 		{
 			name:                 "dimension name should not be empty for COLUMN_CHART result types",
