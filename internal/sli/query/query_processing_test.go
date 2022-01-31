@@ -358,7 +358,7 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 // TestGetSLIValueSupportsEnvPlaceholders tests that environment variable placeholders are replaced correctly in SLI definitions.
 func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact("/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28%22env_tag%3Asome_tag%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time&resolution=Inf&to=1571649085000", "./testdata/get_sli_value_supports_placeholders_test/metrics_query_result.json")
+	handler.AddExact("/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28%22env_tag%3Asome_tag%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time&resolution=Inf&to=1571649085000", "./testdata/get_sli_value_env_placeholders_test/metrics_query_result.json")
 
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
@@ -399,12 +399,12 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 // TestGetSLIValueSupportsPlaceholders tests that placeholders are replaced correctly in SLI definitions.
 func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact("/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29%2Ctag%28%22keptn_project%3Amyproject%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time&resolution=Inf&to=1571649085000", "./testdata/get_sli_value_supports_placeholders_test/metrics_query_result.json")
-	handler.AddExact("/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28%22keptn_deployment%3Amydeployment%22%29%2Ctag%28%22context%3Amycontext%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time&resolution=Inf&to=1571649085000", "./testdata/get_sli_value_supports_placeholders_test/metrics_query_result.json")
-	handler.AddExact("/api/v2/problems?from=1571649084000&problemSelector=status%28open%29&to=1571649085000", "./testdata/get_sli_value_supports_placeholders_test/problems_query_result.json")
-	handler.AddExact("/api/v2/securityProblems?from=1571649084000&securityProblemSelector=status%28open%29&to=1571649085000", "./testdata/get_sli_value_supports_placeholders_test/security_problems_query_result.json")
-	handler.AddExact("/api/v2/slo/$LABELS.slo_id?from=1571649084000&timeFrame=GTF&to=1571649085000", "./testdata/get_sli_value_supports_placeholders_test/slo_query_result.json")
-	handler.AddExact("/api/v1/userSessionQueryLanguage/table?addDeepLinkFields=false&endTimestamp=1571649085000&explain=false&query=SELECT+osVersion%2C+AVG%28duration%29+FROM+usersession+WHERE+country+IN%28%27Austria%27%29+GROUP+BY+osVersion&startTimestamp=1571649084000", "./testdata/get_sli_value_supports_placeholders_test/usql_query_results.json")
+	handler.AddExact("/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29%2Ctag%28%22keptn_project%3Amyproject%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time&resolution=Inf&to=1571649085000", "./testdata/get_sli_value_placeholders_test/metrics_query_result.json")
+	handler.AddExact("/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28%22keptn_deployment%3Amydeployment%22%29%2Ctag%28%22context%3Amycontext%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time&resolution=Inf&to=1571649085000", "./testdata/get_sli_value_placeholders_test/metrics_query_result.json")
+	handler.AddExact("/api/v2/problems?from=1571649084000&problemSelector=status%28open%29&to=1571649085000", "./testdata/get_sli_value_placeholders_test/problems_query_result.json")
+	handler.AddExact("/api/v2/securityProblems?from=1571649084000&securityProblemSelector=status%28open%29&to=1571649085000", "./testdata/get_sli_value_placeholders_test/security_problems_query_result.json")
+	handler.AddExact("/api/v2/slo/$LABELS.slo_id?from=1571649084000&timeFrame=GTF&to=1571649085000", "./testdata/get_sli_value_placeholders_test/slo_query_result.json")
+	handler.AddExact("/api/v1/userSessionQueryLanguage/table?addDeepLinkFields=false&endTimestamp=1571649085000&explain=false&query=SELECT+osVersion%2C+AVG%28duration%29+FROM+usersession+WHERE+country+IN%28%27Austria%27%29+GROUP+BY+osVersion&startTimestamp=1571649084000", "./testdata/get_sli_value_placeholders_test/usql_query_results.json")
 
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
