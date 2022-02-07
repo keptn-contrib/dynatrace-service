@@ -10,9 +10,9 @@ Download [the latest dynatrace-service Helm chart](https://github.com/keptn-cont
 
 ## 2. Gather Keptn credentials
 
-The dynatrace-service requires access to the Keptn API consisting of `KEPTN_API_URL`, `KEPTN_API_TOKEN` and optionally `KEPTN_BRIDGE_URL`.
+The dynatrace-service requires access to the Keptn API consisting of `KEPTN_ENDPOINT`, `KEPTN_API_TOKEN` and optionally `KEPTN_BRIDGE_URL`.
 
-* To get the values for `KEPTN_API_URL` (also known as `KEPTN_ENDPOINT`), please see [Authenticate Keptn CLI](https://keptn.sh/docs/0.10.x/operate/install/#authenticate-keptn-cli).
+* To get the values for `KEPTN_ENDPOINT`, please see [Authenticate Keptn CLI](https://keptn.sh/docs/0.10.x/operate/install/#authenticate-keptn-cli).
 
 * By default, the `KEPTN_API_TOKEN` is read from the `keptn-api-token` secret (i.e., the secret from the control-plane) and does not need to be set during installation.
 
@@ -21,7 +21,7 @@ The dynatrace-service requires access to the Keptn API consisting of `KEPTN_API_
 If running on a Linux or Unix based system, you can assign these to environment variables to simplify the installation process: 
 
 ```console
-KEPTN_API_URL=<KEPTN_API_URL>
+KEPTN_ENDPOINT=<KEPTN_ENDPOINT>
 KEPTN_BRIDGE_URL=<KEPTN_BRIDGE_URL> # optional
 ```
 
@@ -35,7 +35,7 @@ To install the dynatrace-service in the standard `keptn` namespace, execute:
 ```console
 helm upgrade --install dynatrace-service -n keptn \
     <HELM_CHART_FILENAME> \
-    --set dynatraceService.config.keptnApiUrl=$KEPTN_API_URL \
+    --set dynatraceService.config.keptnApiUrl=$KEPTN_ENDPOINT \
     --set dynatraceService.config.keptnBridgeUrl=$KEPTN_BRIDGE_URL
 ```
 
