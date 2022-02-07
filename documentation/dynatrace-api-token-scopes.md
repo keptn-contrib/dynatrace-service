@@ -6,12 +6,12 @@ To interact with a Dynatrace tenant, the dynatrace-service requires access to th
 
 |Feature | Required scope(s)|
 |:--------|:-----------------|
-| [SLIs via `dynatrace/sli.yaml` files](documentation/slis-via-files.md) | - |
-| [SLIs via a Dynatrace dashboard](documentation/slis-via-dashboard.md) | Read configuration (`ReadConfig`)|
-| [Forwarding events from Keptn to Dynatrace](documentation/event-forwarding-to-dynatrace.md) | Access problem and event feed, metrics, and topology (`DataExport`) |
-| [Forwarding problem notifications from Dynatrace to Keptn](documentation/problem-forwarding-to-keptn.md) | - |
-| [Automatic onboarding of monitored service entities](documentation/auto-service-onboarding.md) | Read entities (`entities.read`) |
-| [Automatic configuration of a Dynatrace tenant](documentation/auto-tenant-configuration.md) | Read configuration (`ReadConfig`), Write configuration (`WriteConfig`) |
+| [SLIs via `dynatrace/sli.yaml` files](slis-via-files.md) | - |
+| [SLIs via a Dynatrace dashboard](slis-via-dashboard.md) | Read configuration (`ReadConfig`)|
+| [Forwarding events from Keptn to Dynatrace](event-forwarding-to-dynatrace.md) | Access problem and event feed, metrics, and topology (`DataExport`) |
+| [Forwarding problem notifications from Dynatrace to Keptn](problem-forwarding-to-keptn.md) | - |
+| [Automatic onboarding of monitored service entities](auto-service-onboarding.md) | Read entities (`entities.read`) |
+| [Automatic configuration of a Dynatrace tenant](auto-tenant-configuration.md) | Read configuration (`ReadConfig`), Write configuration (`WriteConfig`) |
 
 ## Scopes required for SLIs
 

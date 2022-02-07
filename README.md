@@ -45,6 +45,7 @@ If you are planning to upgrade to dynatrace-service version `0.18.0` or newer fr
   - [Automatic onboarding of monitored service entities](documentation/auto-service-onboarding.md)
 - Other topics
   - [Additional installation options](documentation/additional-installation-options.md)
+  - [Dynatrace API token scopes](documentation/dynatrace-api-token-scopes.md)
   - [Keptn placeholders](documentation/keptn-placeholders.md)
   - [Automatic configuration of a Dynatrace tenant](documentation/auto-tenant-configuration.md)
   - [Upgrading the dynatrace-service](documentation/other-topics.md#upgrading-the-dynatrace-service)
