@@ -17,21 +17,21 @@ To function correctly, the dynatrace-service requires a Kubernetes secret contai
     - Dynatrace SaaS tenant: `<your-environment-id>.live.dynatrace.com`
     - Dynatrace-managed tenant: `<your-domain>/e/{your-environment-id}`
 
-* To create a Dynatrace API token `DT_API_TOKEN`, log in to your Dynatrace tenant and go to **Manage > Settings > Integration > Dynatrace API**. In this settings page, create a new API token with the following permissions:
-    - Read metrics
-    - Ingest metrics
-    - Read logs
-    - Read entities
-    - Read problems
-    - Access problem and event feed, metrics, and topology
-    - Read configuration
-    - Write configuration
-    - Capture request data   
+* To create a Dynatrace API token `DT_API_TOKEN`, log in to your Dynatrace tenant, go to **Manage > Access tokens** and click **Generate token**.  Select scopes depending on the features you would like to use. An outline of the requirements is provided in [Dynatrace API token scopes](dynatrace-api-token-scopes.md). To enable all functionality, create a new API token with the following scopes:
+
+  - Read entities (`entities.read`)
+  - Read metrics (`metrics.read`)
+  - Read problems (`problems.read`)
+  - Read security problems (`securityProblems.read`)
+  - Read SLO (`slo.read`)
+  - Access problem and event feed, metrics, and topology (`DataExport`)
+  - User sessions (`DTAQLAccess`)
+  - Read configuration (`ReadConfig`)
+  - Write configuration (`WriteConfig`)
   
   ![Dynatrace API token permissions](images/dt_api_token.png "Dynatrace API token permissions")
 
-The actual Kubernetes secret can be created using the Keptn Bridge UI or the Keptn CLI. Both of these methods ensure that the resulting secret has the correct Kubernetes labels (`app.kubernetes.io/managed-by=keptn-secret-service`, `app.kubernetes.io/scope=dynatrace-service`) and is bound to the correct role (`
-keptn-dynatrace-svc-read`) which allow the dynatrace-service to access it.
+The actual Kubernetes secret can be created using the Keptn Bridge UI or the Keptn CLI. Both of these methods ensure that the resulting secret has the correct Kubernetes labels (`app.kubernetes.io/managed-by=keptn-secret-service`, `app.kubernetes.io/scope=dynatrace-service`) and is bound to the correct role (`keptn-dynatrace-svc-read`) which allow the dynatrace-service to access it.
 
 Note: Secrets can also be shared among multiple Keptn projects that utilize the same Dynatrace tenant.
 
