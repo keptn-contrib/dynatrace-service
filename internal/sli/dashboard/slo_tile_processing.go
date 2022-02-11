@@ -65,7 +65,15 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(sloID, startUnix, endUnix))
 	if err != nil {
-		return nil, err
+		indicatorName := common.CleanIndicatorName("SLO_" + sloID)
+		return &TileResult{
+			sliResult: &keptnv2.SLIResult{
+				Metric:  indicatorName,
+				Success: false,
+				Message: err.Error(),
+			},
+			sliName: indicatorName,
+		}, nil
 	}
 
 	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
