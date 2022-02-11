@@ -7,6 +7,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -79,8 +80,16 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 	// TODO: 2021-12-20: check: maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/97#issuecomment-766110172 for explanation about mappings to pass and warning
-	sloString := fmt.Sprintf("sli=%s;pass=>=%f;warning=>=%f", indicatorName, sloResult.Warning, sloResult.Target)
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
+	passCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Warning)}}
+	warningCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Target)}}
+
+	sloDefinition := &keptn.SLO{
+		SLI:     indicatorName,
+		Pass:    []*keptn.SLOCriteria{&passCriterion},
+		Warning: []*keptn.SLOCriteria{&warningCriterion},
+		Weight:  1,
+		KeySLI:  false,
+	}
 
 	return &TileResult{
 		sliResult: sliResult,
