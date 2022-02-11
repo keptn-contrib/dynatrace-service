@@ -30,10 +30,10 @@ func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	// we will take the SLO definition from Dynatrace
 	var results []*TileResult
 
-	for _, sloEntity := range tile.AssignedEntities {
-		log.WithField("sloEntity", sloEntity).Debug("Processing SLO Definition")
+	for _, sloID := range tile.AssignedEntities {
+		log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
 
-		tileResult, err := p.processSLOTile(sloEntity, p.startUnix, p.endUnix)
+		tileResult, err := p.processSLOTile(sloID, p.startUnix, p.endUnix)
 		if err != nil {
 			log.WithError(err).Error("Error Processing SLO")
 			continue
@@ -48,6 +48,19 @@ func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 // processSLOTile Processes an SLO Tile and queries the data from the Dynatrace API.
 // If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
 func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
+	query, err := slo.NewQuery(sloID)
+	if err != nil {
+		// TODO: 2021-02-11: What indicator name should be used for SLOs without ID?
+		indicatorName := "SLO_without_name"
+		return &TileResult{
+			sliResult: &keptnv2.SLIResult{
+				Metric:  indicatorName,
+				Success: false,
+				Message: err.Error(),
+			},
+			sliName: indicatorName,
+		}, nil
+	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(sloID, startUnix, endUnix))
@@ -57,26 +70,18 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 
 	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
 	// IndicatorName is based on the slo Name
-	// the value defaults to the E
 	indicatorName := common.CleanIndicatorName(sloResult.Name)
-	value := sloResult.EvaluatedPercentage
 	sliResult := &keptnv2.SLIResult{
 		Metric:  indicatorName,
-		Value:   value,
+		Value:   sloResult.EvaluatedPercentage,
 		Success: true,
 	}
 
 	log.WithFields(
 		log.Fields{
 			"indicatorName": indicatorName,
-			"value":         value,
+			"value":         sloResult.EvaluatedPercentage,
 		}).Debug("Adding SLO to sloResult")
-
-	query, err := slo.NewQuery(sloID)
-	if err != nil {
-		return nil, err
-	}
-
 	// TODO: 2021-12-20: check: maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/97#issuecomment-766110172 for explanation about mappings to pass and warning
@@ -97,5 +102,4 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 		sliName:   indicatorName,
 		sliQuery:  slo.NewQueryProducer(*query).Produce(),
 	}, nil
-
 }
