@@ -27,27 +27,17 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, startUnix time.Time,
 }
 
 func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
-	// we will take the SLO definition from Dynatrace
 	var results []*TileResult
-
 	for _, sloID := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
-
-		tileResult, err := p.processSLOTile(sloID, p.startUnix, p.endUnix)
-		if err != nil {
-			log.WithError(err).Error("Error Processing SLO")
-			continue
-		}
-
-		results = append(results, tileResult)
+		results = append(results, p.processSLO(sloID, p.startUnix, p.endUnix))
 	}
-
 	return results
 }
 
-// processSLOTile Processes an SLO Tile and queries the data from the Dynatrace API.
-// If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
+// processSLO processes an SLO by querying the data from the Dynatrace API.
+// Returns a TileResult with sliResult, sliIndicatorName, sliQuery & sloDefinition
+func (p *SLOTileProcessing) processSLO(sloID string, startUnix time.Time, endUnix time.Time) *TileResult {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
 		// TODO: 2021-02-11: What indicator name should be used for SLOs without ID?
@@ -59,11 +49,11 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 				Message: err.Error(),
 			},
 			sliName: indicatorName,
-		}, nil
+		}
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(sloID, startUnix, endUnix))
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), startUnix, endUnix))
 	if err != nil {
 		indicatorName := common.CleanIndicatorName("SLO_" + sloID)
 		return &TileResult{
@@ -73,11 +63,11 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 				Message: err.Error(),
 			},
 			sliName: indicatorName,
-		}, nil
+		}
 	}
 
-	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
-	// IndicatorName is based on the slo Name
+	// Step 2: Transform the SLO result into an SLI result and SLO definition
+	// IndicatorName is based on the SLO Name
 	indicatorName := common.CleanIndicatorName(sloResult.Name)
 	sliResult := &keptnv2.SLIResult{
 		Metric:  indicatorName,
@@ -109,5 +99,5 @@ func (p *SLOTileProcessing) processSLOTile(sloID string, startUnix time.Time, en
 		objective: sloDefinition,
 		sliName:   indicatorName,
 		sliQuery:  slo.NewQueryProducer(*query).Produce(),
-	}, nil
+	}
 }
