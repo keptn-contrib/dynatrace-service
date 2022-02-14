@@ -27,6 +27,19 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, startUnix time.Time,
 }
 
 func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
+	if len(tile.AssignedEntities) == 0 {
+		// TODO: 2021-02-11: What indicator name should be used when no SLO ID is present?
+		indicatorName := "slo_tile_without_slo"
+		return []*TileResult{&TileResult{
+			sliResult: &keptnv2.SLIResult{
+				Metric:  indicatorName,
+				Success: false,
+				Message: "SLO tile contains no SLO IDs",
+			},
+			sliName: indicatorName,
+		}}
+	}
+
 	var results []*TileResult
 	for _, sloID := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
