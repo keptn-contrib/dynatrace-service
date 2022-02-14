@@ -28,7 +28,6 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, startUnix time.Time,
 
 func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	if len(tile.AssignedEntities) == 0 {
-		// TODO: 2021-02-11: What indicator name should be used when no SLO ID is present?
 		indicatorName := "slo_tile_without_slo"
 		return []*TileResult{&TileResult{
 			sliResult: &keptnv2.SLIResult{
@@ -53,7 +52,7 @@ func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 func (p *SLOTileProcessing) processSLO(sloID string, startUnix time.Time, endUnix time.Time) *TileResult {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
-		// TODO: 2021-02-11: What indicator name should be used for SLOs without ID?
+		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
 		indicatorName := "slo_without_id"
 		return &TileResult{
 			sliResult: &keptnv2.SLIResult{
