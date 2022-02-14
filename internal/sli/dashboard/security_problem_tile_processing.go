@@ -11,6 +11,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const securityProblemsIndicatorName = "security_problems"
+
 type SecurityProblemTileProcessing struct {
 	client    dynatrace.ClientInterface
 	startUnix time.Time
@@ -54,7 +56,7 @@ func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Quer
 		}).Debug("Adding SLO to sloResult")
 
 	sloDefinition := &keptn.SLO{
-		SLI:    sliResult.Metric,
+		SLI:    securityProblemsIndicatorName,
 		Pass:   []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
 		Weight: 1,
 		KeySLI: true,
@@ -63,25 +65,23 @@ func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Quer
 	return &TileResult{
 		sliResult: &sliResult,
 		objective: sloDefinition,
-		sliName:   sliResult.Metric,
+		sliName:   securityProblemsIndicatorName,
 		sliQuery:  v1secpv2.NewQueryProducer(query).Produce(),
 	}, nil
 }
 
 func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query, startUnix time.Time, endUnix time.Time) keptnv2.SLIResult {
-	indicatorName := "security_problems"
-
 	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, startUnix, endUnix))
 	if err != nil {
 		return keptnv2.SLIResult{
-			Metric:  indicatorName,
+			Metric:  securityProblemsIndicatorName,
 			Success: false,
 			Message: err.Error(),
 		}
 	}
 
 	return keptnv2.SLIResult{
-		Metric:  indicatorName,
+		Metric:  securityProblemsIndicatorName,
 		Value:   float64(totalSecurityProblemCount),
 		Success: true,
 	}
