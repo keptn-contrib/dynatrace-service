@@ -37,13 +37,13 @@ func (p *SecurityProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardF
 
 	// query the number of open security problems based on the management zone filter of the tile
 	securityProblemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
-	tileResult := p.processSecurityProblemSelector(secpv2.NewQuery(securityProblemSelector), p.startUnix, p.endUnix)
+	tileResult := p.processSecurityProblemSelector(secpv2.NewQuery(securityProblemSelector))
 
 	return tileResult
 }
 
-func (p *SecurityProblemTileProcessing) processSecurityProblemSelector(query secpv2.Query, startUnix time.Time, endUnix time.Time) *TileResult {
-	sliResult := p.getSecurityProblemCountAsSLIResult(query, startUnix, endUnix)
+func (p *SecurityProblemTileProcessing) processSecurityProblemSelector(query secpv2.Query) *TileResult {
+	sliResult := p.getSecurityProblemCountAsSLIResult(query)
 
 	log.WithFields(
 		log.Fields{
@@ -66,8 +66,8 @@ func (p *SecurityProblemTileProcessing) processSecurityProblemSelector(query sec
 	}
 }
 
-func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query, startUnix time.Time, endUnix time.Time) keptnv2.SLIResult {
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, startUnix, endUnix))
+func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query) keptnv2.SLIResult {
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, p.startUnix, p.endUnix))
 	if err != nil {
 		return keptnv2.SLIResult{
 			Metric:  securityProblemsIndicatorName,
