@@ -1,0 +1,33 @@
+{
+    "metadata": {
+      "configurationVersions": [
+        5
+      ],
+      "clusterVersion": "1.233.0.20211217-153056"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+      "name": "SLO tile dashboard",
+      "shared": false,
+      "owner": ""
+    },
+    "tiles": [
+      {
+        "name": "Service-level objective",
+        "tileType": "SLO",
+        "configured": true,
+        "bounds": {
+          "top": 38,
+          "left": 0,
+          "width": 304,
+          "height": 152
+        },
+        "tileFilter": {
+          "timeframe": "-72h to now"
+        },
+        "assignedEntities": [
+          "7d07efde-b714-3e6e-ad95-08490e2540c5"
+        ]
+      }
+    ]
+  }
