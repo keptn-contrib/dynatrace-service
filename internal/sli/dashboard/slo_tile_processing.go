@@ -41,7 +41,7 @@ func (p *SLOTileProcessing) processSLO(sloID string, startUnix time.Time, endUni
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
 		// TODO: 2021-02-11: What indicator name should be used for SLOs without ID?
-		indicatorName := "SLO_without_name"
+		indicatorName := "slo_without_id"
 		return &TileResult{
 			sliResult: &keptnv2.SLIResult{
 				Metric:  indicatorName,
@@ -55,7 +55,7 @@ func (p *SLOTileProcessing) processSLO(sloID string, startUnix time.Time, endUni
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), startUnix, endUnix))
 	if err != nil {
-		indicatorName := common.CleanIndicatorName("SLO_" + sloID)
+		indicatorName := common.CleanIndicatorName("slo_" + sloID)
 		return &TileResult{
 			sliResult: &keptnv2.SLIResult{
 				Metric:  indicatorName,
