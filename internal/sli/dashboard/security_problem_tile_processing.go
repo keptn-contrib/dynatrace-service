@@ -45,40 +45,44 @@ func (p *SecurityProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardF
 // processProblemSelector Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
 // If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
 func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Query, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
-	// Step 1: Query the Dynatrace API to get the number of actual security problems matching that query and timeframe
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, startUnix, endUnix))
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
-	// IndicatorName is based on the slo Name
-	// the value defaults to the E
-	indicatorName := "security_problems"
-	value := float64(totalSecurityProblemCount)
-	sliResult := &keptnv2.SLIResult{
-		Metric:  indicatorName,
-		Value:   value,
-		Success: true,
-	}
+	sliResult := p.getSecurityProblemCountAsSLIResult(query, startUnix, endUnix)
 
 	log.WithFields(
 		log.Fields{
-			"indicatorName": indicatorName,
-			"value":         value,
+			"indicatorName": sliResult.Metric,
+			"value":         sliResult.Value,
 		}).Debug("Adding SLO to sloResult")
 
 	sloDefinition := &keptn.SLO{
-		SLI:    indicatorName,
+		SLI:    sliResult.Metric,
 		Pass:   []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
 		Weight: 1,
 		KeySLI: true,
 	}
 
 	return &TileResult{
-		sliResult: sliResult,
+		sliResult: &sliResult,
 		objective: sloDefinition,
-		sliName:   indicatorName,
+		sliName:   sliResult.Metric,
 		sliQuery:  v1secpv2.NewQueryProducer(query).Produce(),
 	}, nil
+}
+
+func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query, startUnix time.Time, endUnix time.Time) keptnv2.SLIResult {
+	indicatorName := "security_problems"
+
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, startUnix, endUnix))
+	if err != nil {
+		return keptnv2.SLIResult{
+			Metric:  indicatorName,
+			Success: false,
+			Message: err.Error(),
+		}
+	}
+
+	return keptnv2.SLIResult{
+		Metric:  indicatorName,
+		Value:   float64(totalSecurityProblemCount),
+		Success: true,
+	}
 }
