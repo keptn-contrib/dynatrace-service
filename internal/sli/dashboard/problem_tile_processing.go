@@ -36,9 +36,7 @@ func (p *ProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *d
 
 	// query the number of open problems based on the management zone filter of the tile
 	problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
-	tileResult := p.processOpenProblemTile(problems.NewQuery(problemSelector, ""))
-
-	return tileResult
+	return p.processOpenProblemTile(problems.NewQuery(problemSelector, ""))
 }
 
 func (p *ProblemTileProcessing) processOpenProblemTile(query problems.Query) *TileResult {
