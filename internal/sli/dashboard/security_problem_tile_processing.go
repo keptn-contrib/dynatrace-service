@@ -1,13 +1,12 @@
 package dashboard
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
 	v1secpv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/secpv2"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
@@ -69,10 +68,12 @@ func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Quer
 			"value":         value,
 		}).Debug("Adding SLO to sloResult")
 
-	// lets add the SLO definition in case we need to generate an SLO.yaml
-	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
-	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
+	sloDefinition := &keptn.SLO{
+		SLI:    indicatorName,
+		Pass:   []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
+		Weight: 1,
+		KeySLI: true,
+	}
 
 	return &TileResult{
 		sliResult: sliResult,
