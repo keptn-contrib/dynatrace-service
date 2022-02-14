@@ -47,3 +47,26 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 
 	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testSLOTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
+
+// TestRetrieveMetricsFromDashboardSLOTile_TileWithNoIDs tests that an unsuccessful tile result is produced for SLO tiles reference no SLOs.
+func TestRetrieveMetricsFromDashboardSLOTile_TileWithNoIDs(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/slo_tiles/tile_no_slo_ids/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createFailedSLIResultAssertionsFunc("slo_tile_without_slo"),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "slo_tile_without_slo", "")
+	}
+
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		assert.Nil(t, actual)
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testSLOTileGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
