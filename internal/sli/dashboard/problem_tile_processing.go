@@ -27,26 +27,21 @@ func NewProblemTileProcessing(client dynatrace.ClientInterface, startUnix time.T
 	}
 }
 
+// Process retrieves the open problem count and returns this as a TileResult.
+// An SLO definition with a pass criteria of <= 0 is also included as we don't allow problems.
 func (p *ProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) *TileResult {
-
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	// query the number of open problems based on the management zone filter of the tile
 	problemSelector := "status(open)" + tileManagementZoneFilter.ForProblemSelector()
-	tileResult, err := p.processOpenProblemTile(problems.NewQuery(problemSelector, ""), p.startUnix, p.endUnix)
-	if err != nil {
-		log.WithError(err).Error("Error Processing OPEN_PROBLEMS")
-		return nil
-	}
+	tileResult := p.processOpenProblemTile(problems.NewQuery(problemSelector, ""))
 
 	return tileResult
 }
 
-// processOpenProblemTile Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
-// If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *ProblemTileProcessing) processOpenProblemTile(query problems.Query, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
+func (p *ProblemTileProcessing) processOpenProblemTile(query problems.Query) *TileResult {
 
 	sliResult := p.getProblemCountAsSLIResult(query)
 
@@ -69,7 +64,7 @@ func (p *ProblemTileProcessing) processOpenProblemTile(query problems.Query, sta
 		objective: sloDefinition,
 		sliName:   problemsIndicatorName,
 		sliQuery:  problemsv2.NewQueryProducer(query).Produce(),
-	}, nil
+	}
 }
 
 func (p *ProblemTileProcessing) getProblemCountAsSLIResult(query problems.Query) keptnv2.SLIResult {
