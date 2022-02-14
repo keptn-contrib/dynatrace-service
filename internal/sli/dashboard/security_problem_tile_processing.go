@@ -27,6 +27,8 @@ func NewSecurityProblemTileProcessing(client dynatrace.ClientInterface, startUni
 	}
 }
 
+// Process retrieves the open security problem count and returns this as a TileResult.
+// An SLO definition with a pass criteria of <= 0 is also included as we don't allow security problems
 func (p *SecurityProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) *TileResult {
 
 	// get the tile specific management zone filter that might be needed by different tile processors
@@ -35,18 +37,12 @@ func (p *SecurityProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardF
 
 	// query the number of open security problems based on the management zone filter of the tile
 	securityProblemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
-	tileResult, err := p.processProblemSelector(secpv2.NewQuery(securityProblemSelector), p.startUnix, p.endUnix)
-	if err != nil {
-		log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
-		return nil
-	}
+	tileResult := p.processSecurityProblemSelector(secpv2.NewQuery(securityProblemSelector), p.startUnix, p.endUnix)
 
 	return tileResult
 }
 
-// processProblemSelector Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
-// If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Query, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
+func (p *SecurityProblemTileProcessing) processSecurityProblemSelector(query secpv2.Query, startUnix time.Time, endUnix time.Time) *TileResult {
 	sliResult := p.getSecurityProblemCountAsSLIResult(query, startUnix, endUnix)
 
 	log.WithFields(
@@ -67,7 +63,7 @@ func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Quer
 		objective: sloDefinition,
 		sliName:   securityProblemsIndicatorName,
 		sliQuery:  v1secpv2.NewQueryProducer(query).Produce(),
-	}, nil
+	}
 }
 
 func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query, startUnix time.Time, endUnix time.Time) keptnv2.SLIResult {
