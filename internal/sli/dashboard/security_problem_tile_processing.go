@@ -36,7 +36,7 @@ func (p *SecurityProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardF
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	// query the number of open security problems based on the management zone filter of the tile
-	securityProblemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
+	securityProblemSelector := "status(\"open\")" + tileManagementZoneFilter.ForProblemSelector()
 	return p.processSecurityProblemSelector(secpv2.NewQuery(securityProblemSelector))
 }
 
