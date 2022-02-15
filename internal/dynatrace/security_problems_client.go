@@ -8,6 +8,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
 )
 
+// SecurityProblemsPath is the base endpoint for Security Problems API v2
 const SecurityProblemsPath = "/api/v2/securityProblems"
 
 const (

@@ -11,6 +11,7 @@ import (
 // ProblemStatusOpen is the status of an open problem
 const ProblemStatusOpen = "OPEN"
 
+// ProblemsV2Path is the base endpoint for Problems API v2
 const ProblemsV2Path = "/api/v2/problems"
 
 const (
