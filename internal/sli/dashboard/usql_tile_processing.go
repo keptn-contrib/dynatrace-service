@@ -32,6 +32,13 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 }
 
 func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
+	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Title())
+	if sloDefinition.SLI == "" {
+		log.WithField("tileTitle", tile.Title()).Debug("Tile not included as name doesnt include sli=SLINAME")
+		return nil
+	}
+
 	// for Dynatrace Query Language we currently support the following
 	// SINGLE_VALUE: we just take the one value that comes back
 	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
@@ -45,15 +52,6 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, p.startUnix, p.endUnix))
 	if err != nil {
 		log.WithError(err).Error("Error executing USQL query")
-		return nil
-	}
-
-	tileTitle := tile.Title()
-
-	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
-	if sloDefinition.SLI == "" {
-		log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
 		return nil
 	}
 
