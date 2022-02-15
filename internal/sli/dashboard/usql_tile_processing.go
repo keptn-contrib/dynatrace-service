@@ -93,12 +93,7 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 				"dimensionValue": dimensionValue,
 			}).Debug("Appending SLIResult")
 
-		innerQuery, err := usql.NewQuery(tile.Query)
-		if err != nil {
-			return nil
-		}
-
-		query, err := v1usql.NewQuery(tile.Type, dimensionName, *innerQuery)
+		v1USQLQuery, err := v1usql.NewQuery(tile.Type, dimensionName, *query)
 		if err != nil {
 			return nil
 		}
@@ -122,7 +117,7 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 					Warning: sloDefinition.Warning,
 				},
 				sliName:  indicatorName,
-				sliQuery: v1usql.NewQueryProducer(*query).Produce(),
+				sliQuery: v1usql.NewQueryProducer(*v1USQLQuery).Produce(),
 			})
 	}
 
