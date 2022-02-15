@@ -45,14 +45,14 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	// TABLE: we assume the first column is the dimension and the last is the value
 	query, err := usql.NewQuery(tile.Query)
 	if err != nil {
-		log.WithError(err).Error("Could not create USQL query")
-		return nil
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "could not create USQL query: "+err.Error())
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, p.startUnix, p.endUnix))
 	if err != nil {
-		log.WithError(err).Error("Error executing USQL query")
-		return nil
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "error executing USQL query: "+err.Error())
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	var tileResults []*TileResult
