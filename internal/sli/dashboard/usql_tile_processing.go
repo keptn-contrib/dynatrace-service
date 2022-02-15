@@ -78,9 +78,6 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 			continue
 		}
 
-		// lets scale the metric
-		// value = scaleData(metricDefinition.MetricID, metricDefinition.Unit, value)
-
 		// we got our metric, slos and the value
 		indicatorName := sloDefinition.SLI
 		if dimensionName != "" {
