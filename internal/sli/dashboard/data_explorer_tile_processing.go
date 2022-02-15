@@ -41,7 +41,8 @@ func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilt
 	}
 
 	if len(tile.Queries) != 1 {
-		return createFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile must have exactly one query")
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "Data Explorer tile must have exactly one query")
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	// get the tile specific management zone filter that might be needed by different tile processors
@@ -57,7 +58,8 @@ func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, d
 	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(dataQuery, managementZoneFilter)
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
-		return createFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	return NewMetricsQueryProcessing(p.client).Process(len(dataQuery.SplitBy), sloDefinition, metricQuery)
@@ -231,5 +233,4 @@ func getSpaceAggregationTransformation(spaceAggregation string) (string, error) 
 	default:
 		return "", fmt.Errorf("unknown space aggregation: %s", spaceAggregation)
 	}
-
 }
