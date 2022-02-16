@@ -76,30 +76,30 @@ func (p *Processing) Process(dashboard *dynatrace.Dashboard) *QueryResult {
 	// now lets iterate through the dashboard to find our SLIs
 	for _, tile := range dashboard.Tiles {
 		switch tile.TileType {
-		case "MARKDOWN":
+		case dynatrace.MarkdownTileType:
 			score, comparison := NewMarkdownTileProcessing().Process(&tile, createDefaultSLOScore(), createDefaultSLOComparison())
 			if score != nil && comparison != nil {
 				result.slo.TotalScore = score
 				result.slo.Comparison = comparison
 			}
-		case "SLO":
+		case dynatrace.SLOTileType:
 			tileResults := NewSLOTileProcessing(p.client, p.startUnix, p.endUnix).Process(&tile)
 			result.addTileResults(tileResults)
-		case "OPEN_PROBLEMS":
+		case dynatrace.OpenProblemsTileType:
 			tileResult := NewProblemTileProcessing(p.client, p.startUnix, p.endUnix).Process(&tile, dashboard.GetFilter())
 			result.addTileResult(tileResult)
 
 			// current logic also does security tile processing for open problem tiles
 			tileResult = NewSecurityProblemTileProcessing(p.client, p.startUnix, p.endUnix).Process(&tile, dashboard.GetFilter())
 			result.addTileResult(tileResult)
-		case "DATA_EXPLORER":
+		case dynatrace.DataExplorerTileType:
 			// here we handle the new Metric Data Explorer Tile
 			tileResults := NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.startUnix, p.endUnix).Process(&tile, dashboard.GetFilter())
 			result.addTileResults(tileResults)
-		case "CUSTOM_CHARTING":
+		case dynatrace.CustomChartingTileType:
 			tileResults := NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.startUnix, p.endUnix).Process(&tile, dashboard.GetFilter())
 			result.addTileResults(tileResults)
-		case "DTAQL":
+		case dynatrace.USQLTileType:
 			tileResults := NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.startUnix, p.endUnix).Process(&tile)
 			result.addTileResults(tileResults)
 		default:

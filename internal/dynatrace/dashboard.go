@@ -1,5 +1,25 @@
 package dynatrace
 
+const (
+	// CustomChartingTileType is the tile type for custom charting dashboard tiles
+	CustomChartingTileType = "CUSTOM_CHARTING"
+
+	// DataExplorerTileType is the tile type for data explorer dashboard tiles
+	DataExplorerTileType = "DATA_EXPLORER"
+
+	// MarkdownTileType is the tile type for markdown dashboard tiles
+	MarkdownTileType = "MARKDOWN"
+
+	// OpenProblemsTileType is the tile type for open problems dashboard tiles
+	OpenProblemsTileType = "OPEN_PROBLEMS"
+
+	// SLOTileType is the tile type for SLO dashboard tiles
+	SLOTileType = "SLO"
+
+	// USQLTileType is the tile type for USQL dashboard tiles
+	USQLTileType = "DTAQL"
+)
+
 type Dashboard struct {
 	Metadata          *Metadata         `json:"metadata,omitempty"`
 	ID                string            `json:"id,omitempty"`
