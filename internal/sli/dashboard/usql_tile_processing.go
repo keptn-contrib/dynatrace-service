@@ -78,45 +78,38 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 			continue
 		}
 
-		// we got our metric, slos and the value
-		indicatorName := sloDefinition.SLI
-		if dimensionName != "" {
-			indicatorName = indicatorName + "_" + dimensionName
-		}
-
-		log.WithFields(
-			log.Fields{
-				"name":           indicatorName,
-				"dimensionValue": dimensionValue,
-			}).Debug("Appending SLIResult")
-
-		v1USQLQuery, err := v1usql.NewQuery(tile.Type, dimensionName, *query)
-		if err != nil {
-			return nil
-		}
-
-		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-		// in that case we also need to mask it with USQL, TITLE_TYPE, DIMENSIONNAME
-		// we also add the SLO definition in case we need to generate an SLO.yaml
-		tileResults = append(
-			tileResults,
-			&TileResult{
-				sliResult: &keptnv2.SLIResult{
-					Metric:  indicatorName,
-					Value:   dimensionValue,
-					Success: true,
-				},
-				objective: &keptncommon.SLO{
-					SLI:     indicatorName,
-					Weight:  sloDefinition.Weight,
-					KeySLI:  sloDefinition.KeySLI,
-					Pass:    sloDefinition.Pass,
-					Warning: sloDefinition.Warning,
-				},
-				sliName:  indicatorName,
-				sliQuery: v1usql.NewQueryProducer(*v1USQLQuery).Produce(),
-			})
+		tileResult := createTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, tile.Type, *query)
+		tileResults = append(tileResults, &tileResult)
 	}
 
 	return tileResults
+}
+
+func createTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition *keptncommon.SLO, tileType string, baseQuery usql.Query) TileResult {
+	indicatorName := sloDefinition.SLI
+	if dimensionName != "" {
+		indicatorName = indicatorName + "_" + dimensionName
+	}
+
+	v1USQLQuery, err := v1usql.NewQuery(tileType, dimensionName, baseQuery)
+	if err != nil {
+		return newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "could not create USQL v1 query: "+err.Error())
+	}
+
+	return TileResult{
+		sliResult: &keptnv2.SLIResult{
+			Metric:  indicatorName,
+			Value:   dimensionValue,
+			Success: true,
+		},
+		objective: &keptncommon.SLO{
+			SLI:     indicatorName,
+			Weight:  sloDefinition.Weight,
+			KeySLI:  sloDefinition.KeySLI,
+			Pass:    sloDefinition.Pass,
+			Warning: sloDefinition.Warning,
+		},
+		sliName:  indicatorName,
+		sliQuery: v1usql.NewQueryProducer(*v1USQLQuery).Produce(),
+	}
 }
