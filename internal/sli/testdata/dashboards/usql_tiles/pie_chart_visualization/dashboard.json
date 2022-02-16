@@ -1,0 +1,33 @@
+{
+    "metadata": {
+      "configurationVersions": [
+        5
+      ],
+      "clusterVersion": "1.233.0.20211217-153056"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+      "name": "SLO tile dashboard",
+      "shared": false,
+      "owner": ""
+    },
+    "tiles": [
+      {
+        "name": "User Sessions Query",
+        "nameSize": "",
+        "tileType": "DTAQL",
+        "configured": true,
+        "bounds": {
+          "top": 494,
+          "left": 722,
+          "width": 304,
+          "height": 304
+        },
+        "tileFilter": {},
+        "customName": "User sessions query results;sli=usql_metric;pass=<=100",
+        "query": "SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3",
+        "type": "PIE_CHART",
+        "limit": 50
+      }
+    ]
+  }
