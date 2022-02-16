@@ -1,6 +1,8 @@
 package dashboard
 
 import (
+	"errors"
+	"fmt"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -39,10 +41,6 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 		return nil
 	}
 
-	// for Dynatrace Query Language we currently support the following
-	// SINGLE_VALUE: we just take the one value that comes back
-	// PIE_CHART, COLUMN_CHART: we assume the first column is the dimension and the second column is the value column
-	// TABLE: we assume the first column is the dimension and the last is the value
 	query, err := usql.NewQuery(tile.Query)
 	if err != nil {
 		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "could not create USQL query: "+err.Error())
@@ -55,43 +53,102 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 		return []*TileResult{&unsuccessfulTileResult}
 	}
 
+	switch tile.Type {
+	case "SINGLE_VALUE":
+		tileResult := processQueryResultForSingleValue(*usqlResult, sloDefinition, *query)
+		return []*TileResult{&tileResult}
+	case "PIE_CHART", "COLUMN_CHART", "TABLE":
+		return processQueryResultForMultipleValues(*usqlResult, sloDefinition, tile.Type, *query)
+	default:
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "unsupported USQL visualization type: "+tile.Type)
+		return []*TileResult{&unsuccessfulTileResult}
+	}
+}
+
+func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition *keptncommon.SLO, baseQuery usql.Query) TileResult {
+	if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
+		return newUnsuccessfulTileResultFromSLODefinition(sloDefinition, fmt.Sprintf("USQL visualization type %s should only return a single result", "SINGLE_VALUE"))
+	}
+	dimensionValue, err := tryCastDimensionValueToNumeric(usqlResult.Values[0][0])
+	if err != nil {
+		return newUnsuccessfulTileResultFromSLODefinition(sloDefinition, err.Error())
+	}
+
+	return createSuccessfulTileResultForDimensionNameAndValue("", dimensionValue, sloDefinition, "SINGLE_VALUE", baseQuery)
+}
+
+func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition *keptncommon.SLO, visualizationType string, baseQuery usql.Query) []*TileResult {
+	if len(usqlResult.ColumnNames) < 2 {
+		tileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, fmt.Sprintf("USQL result type %s should have at least two columns", visualizationType))
+		return []*TileResult{&tileResult}
+	}
+
 	var tileResults []*TileResult
-
 	for _, rowValue := range usqlResult.Values {
-		dimensionName := ""
-		dimensionValue := 0.0
-
-		switch tile.Type {
-		case "SINGLE_VALUE":
-			dimensionValue = rowValue[0].(float64)
-		case "PIE_CHART":
-			dimensionName = rowValue[0].(string)
-			dimensionValue = rowValue[1].(float64)
-		case "COLUMN_CHART":
-			dimensionName = rowValue[0].(string)
-			dimensionValue = rowValue[1].(float64)
-		case "TABLE":
-			dimensionName = rowValue[0].(string)
-			dimensionValue = rowValue[len(rowValue)-1].(float64)
-		default:
-			log.WithField("tileType", tile.Type).Debug("Unsupport USQL tile type")
+		dimensionName, err := tryCastDimensionNameToString(rowValue[0])
+		if err != nil {
+			tileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, err.Error())
+			tileResults = append(tileResults, &tileResult)
 			continue
 		}
 
-		tileResult := createTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, tile.Type, *query)
+		dimensionValue, err := tryGetDimensionValueForVisualizationType(rowValue, visualizationType)
+		if err != nil {
+			tileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, err.Error())
+			tileResults = append(tileResults, &tileResult)
+			continue
+		}
+
+		tileResult := createSuccessfulTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, visualizationType, baseQuery)
 		tileResults = append(tileResults, &tileResult)
 	}
-
 	return tileResults
 }
 
-func createTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition *keptncommon.SLO, tileType string, baseQuery usql.Query) TileResult {
+func tryGetDimensionValueForVisualizationType(rowValue []interface{}, visualizationType string) (float64, error) {
+	var rawValue interface{}
+	switch visualizationType {
+	case "PIE_CHART", "COLUMN_CHART":
+		rawValue = rowValue[1]
+	case "TABLE":
+		rawValue = rowValue[len(rowValue)-1]
+	default:
+		return 0, fmt.Errorf("unsupported USQL visualization type: %s", visualizationType)
+	}
+
+	value, err := tryCastDimensionValueToNumeric(rawValue)
+	if err != nil {
+		return 0, err
+	}
+
+	return value, nil
+}
+
+func tryCastDimensionValueToNumeric(dimensionValue interface{}) (float64, error) {
+	value, ok := dimensionValue.(float64)
+	if ok {
+		return value, nil
+	}
+
+	return 0, errors.New("dimension value should be a number")
+}
+
+func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
+	value, ok := dimensionName.(string)
+	if ok {
+		return value, nil
+	}
+
+	return "", errors.New("dimension name should be a string")
+}
+
+func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition *keptncommon.SLO, visualizationType string, baseQuery usql.Query) TileResult {
 	indicatorName := sloDefinition.SLI
 	if dimensionName != "" {
 		indicatorName = indicatorName + "_" + dimensionName
 	}
 
-	v1USQLQuery, err := v1usql.NewQuery(tileType, dimensionName, baseQuery)
+	v1USQLQuery, err := v1usql.NewQuery(visualizationType, dimensionName, baseQuery)
 	if err != nil {
 		return newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "could not create USQL v1 query: "+err.Error())
 	}
