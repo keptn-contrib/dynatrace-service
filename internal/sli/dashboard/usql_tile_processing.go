@@ -54,10 +54,10 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	}
 
 	switch tile.Type {
-	case "SINGLE_VALUE":
+	case dynatrace.SingleValueVisualizationType:
 		tileResult := processQueryResultForSingleValue(*usqlResult, sloDefinition, *query)
 		return []*TileResult{&tileResult}
-	case "PIE_CHART", "COLUMN_CHART", "TABLE":
+	case dynatrace.ColumnChartVisualizationType, dynatrace.PieChartVisualizationType, dynatrace.TableVisualizationType:
 		return processQueryResultForMultipleValues(*usqlResult, sloDefinition, tile.Type, *query)
 	default:
 		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "unsupported USQL visualization type: "+tile.Type)
@@ -67,14 +67,14 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 
 func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition *keptncommon.SLO, baseQuery usql.Query) TileResult {
 	if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
-		return newUnsuccessfulTileResultFromSLODefinition(sloDefinition, fmt.Sprintf("USQL visualization type %s should only return a single result", "SINGLE_VALUE"))
+		return newUnsuccessfulTileResultFromSLODefinition(sloDefinition, fmt.Sprintf("USQL visualization type %s should only return a single result", dynatrace.SingleValueVisualizationType))
 	}
 	dimensionValue, err := tryCastDimensionValueToNumeric(usqlResult.Values[0][0])
 	if err != nil {
 		return newUnsuccessfulTileResultFromSLODefinition(sloDefinition, err.Error())
 	}
 
-	return createSuccessfulTileResultForDimensionNameAndValue("", dimensionValue, sloDefinition, "SINGLE_VALUE", baseQuery)
+	return createSuccessfulTileResultForDimensionNameAndValue("", dimensionValue, sloDefinition, dynatrace.SingleValueVisualizationType, baseQuery)
 }
 
 func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition *keptncommon.SLO, visualizationType string, baseQuery usql.Query) []*TileResult {
@@ -108,9 +108,9 @@ func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloD
 func tryGetDimensionValueForVisualizationType(rowValue []interface{}, visualizationType string) (float64, error) {
 	var rawValue interface{}
 	switch visualizationType {
-	case "PIE_CHART", "COLUMN_CHART":
+	case dynatrace.ColumnChartVisualizationType, dynatrace.PieChartVisualizationType:
 		rawValue = rowValue[1]
-	case "TABLE":
+	case dynatrace.TableVisualizationType:
 		rawValue = rowValue[len(rowValue)-1]
 	default:
 		return 0, fmt.Errorf("unsupported USQL visualization type: %s", visualizationType)
