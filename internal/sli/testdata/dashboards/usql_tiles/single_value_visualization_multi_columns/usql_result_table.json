@@ -1,0 +1,13 @@
+{
+  "extrapolationLevel": 1,
+  "columnNames": [
+    "city",
+    "avg(duration)"
+  ],
+  "values": [
+    [
+      "Ashburn",
+      53567.040172786175
+    ]
+  ]
+}
