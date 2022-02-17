@@ -217,3 +217,56 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType(t *t
 	rClient := &uploadErrorResourceClientMock{t: t}
 	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
 }
+
+// TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns tests that extracting SLIs from a USQL tile with table visualization type with not enough columns does not work.
+func TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_not_enough_columns/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+3&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createFailedSLIResultAssertionsFunc("usql_metric"),
+	}
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName tests that extracting SLIs from a USQL tile with table visualization type with non-string dimension names does not work.
+func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_invalid_dimension_name/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+totalErrorCount%2C+totalLicenseCreditCount%2C+userActionCount+FROM+usersession+LIMIT+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createFailedSLIResultAssertionsFunc("usql_metric"),
+		createFailedSLIResultAssertionsFunc("usql_metric"),
+	}
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue tests that extracting SLIs from a USQL tile with table visualization type with non-numerical dimension values does not work.
+func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_invalid_dimension_value/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+totalErrorCount%2C+city+FROM+usersession+LIMIT+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createFailedSLIResultAssertionsFunc("usql_metric"),
+		createFailedSLIResultAssertionsFunc("usql_metric"),
+	}
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
+}
