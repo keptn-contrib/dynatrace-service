@@ -5,6 +5,7 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
+// TileResult stores the result of processing a dashboard tile and retrieving the SLIResult.
 type TileResult struct {
 	sliResult *keptnv2.SLIResult
 	objective *keptnapi.SLO
