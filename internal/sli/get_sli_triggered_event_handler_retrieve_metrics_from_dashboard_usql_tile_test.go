@@ -133,3 +133,19 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Funnel(t *testing.T) {
 	rClient := &uploadErrorResourceClientMock{t: t}
 	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
 }
+
+// TestRetrieveMetricsFromDashboardUSQLTile_NoQuery tests that extracting SLIs from a USQL tile with no query does not work.
+func TestRetrieveMetricsFromDashboardUSQLTile_NoQuery(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/usql_tiles/tile_with_no_query/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createFailedSLIResultAssertionsFunc("usql_metric"),
+	}
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
+}
