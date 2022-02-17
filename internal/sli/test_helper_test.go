@@ -79,17 +79,17 @@ func createSLIAssertionsFunc(expectedMetric string, expectedDefintion string) fu
 
 func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValue float64) func(t *testing.T, actual *keptnv2.SLIResult) {
 	return func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, expectedMetric, actual.Metric)
-		assert.EqualValues(t, expectedValue, actual.Value)
-		assert.True(t, actual.Success)
+		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
+		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
+		assert.True(t, actual.Success, "Indicator success should be true")
 	}
 }
 
 func createFailedSLIResultAssertionsFunc(expectedMetric string) func(*testing.T, *keptnv2.SLIResult) {
 	return func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.False(t, actual.Success)
-		assert.EqualValues(t, expectedMetric, actual.Metric)
-		assert.Zero(t, actual.Value)
+		assert.False(t, actual.Success, "Indicator success should be false")
+		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
+		assert.Zero(t, actual.Value, "Indicator value should be zero")
 	}
 }
 

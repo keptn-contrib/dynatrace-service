@@ -8,7 +8,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
 )
 
-const securityProblemsPath = "/api/v2/securityProblems"
+// SecurityProblemsPath is the base endpoint for Security Problems API v2
+const SecurityProblemsPath = "/api/v2/securityProblems"
 
 const (
 	securityProblemSelectorKey = "securityProblemSelector"
@@ -60,7 +61,7 @@ func NewSecurityProblemsClient(client ClientInterface) *SecurityProblemsClient {
 
 // GetTotalCountByQuery calls the Dynatrace API to retrieve the total count of security problems for the given query and timeframe
 func (sc *SecurityProblemsClient) GetTotalCountByQuery(parameters SecurityProblemsV2ClientQueryParameters) (int, error) {
-	body, err := sc.client.Get(securityProblemsPath + "?" + parameters.encode())
+	body, err := sc.client.Get(SecurityProblemsPath + "?" + parameters.encode())
 	if err != nil {
 		return 0, err
 	}

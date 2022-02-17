@@ -11,7 +11,8 @@ import (
 // ProblemStatusOpen is the status of an open problem
 const ProblemStatusOpen = "OPEN"
 
-const problemsV2Path = "/api/v2/problems"
+// ProblemsV2Path is the base endpoint for Problems API v2
+const ProblemsV2Path = "/api/v2/problems"
 
 const (
 	problemSelectorKey = "problemSelector"
@@ -74,7 +75,7 @@ func NewProblemsV2Client(client ClientInterface) *ProblemsV2Client {
 
 // GetTotalCountByQuery calls the Dynatrace V2 API to retrieve the total count of problems for a given query and timeframe
 func (pc *ProblemsV2Client) GetTotalCountByQuery(parameters ProblemsV2ClientQueryParameters) (int, error) {
-	body, err := pc.client.Get(problemsV2Path + "?" + parameters.encode())
+	body, err := pc.client.Get(ProblemsV2Path + "?" + parameters.encode())
 	if err != nil {
 		return 0, err
 	}
@@ -90,7 +91,7 @@ func (pc *ProblemsV2Client) GetTotalCountByQuery(parameters ProblemsV2ClientQuer
 
 // GetStatusByID calls the Dynatrace API to retrieve the status of a given problemID
 func (pc *ProblemsV2Client) GetStatusByID(problemID string) (string, error) {
-	body, err := pc.client.Get(problemsV2Path + "/" + problemID)
+	body, err := pc.client.Get(ProblemsV2Path + "/" + problemID)
 	if err != nil {
 		return "", err
 	}

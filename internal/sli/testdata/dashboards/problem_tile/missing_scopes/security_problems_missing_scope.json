@@ -1,0 +1,6 @@
+{
+  "error": {
+    "code": 403,
+    "message": "Token is missing required scope. Use one of: securityProblems.read (Read security problems)"
+  }
+}

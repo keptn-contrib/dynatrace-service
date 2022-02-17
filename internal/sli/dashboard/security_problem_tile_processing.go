@@ -1,16 +1,17 @@
 package dashboard
 
 import (
-	"fmt"
 	"time"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
 	v1secpv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/secpv2"
+	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
+
+const securityProblemsIndicatorName = "security_problems"
 
 type SecurityProblemTileProcessing struct {
 	client    dynatrace.ClientInterface
@@ -26,6 +27,8 @@ func NewSecurityProblemTileProcessing(client dynatrace.ClientInterface, startUni
 	}
 }
 
+// Process retrieves the open security problem count and returns this as a TileResult.
+// An SLO definition with a pass criteria of <= 0 is also included as we don't allow security problems
 func (p *SecurityProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) *TileResult {
 
 	// get the tile specific management zone filter that might be needed by different tile processors
@@ -33,51 +36,47 @@ func (p *SecurityProblemTileProcessing) Process(tile *dynatrace.Tile, dashboardF
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	// query the number of open security problems based on the management zone filter of the tile
-	securityProblemSelector := "status(OPEN)" + tileManagementZoneFilter.ForProblemSelector()
-	tileResult, err := p.processProblemSelector(secpv2.NewQuery(securityProblemSelector), p.startUnix, p.endUnix)
-	if err != nil {
-		log.WithError(err).Error("Error Processing OPEN_SECURITY_PROBLEMS")
-		return nil
-	}
-
-	return tileResult
+	securityProblemSelector := "status(\"open\")" + tileManagementZoneFilter.ForProblemSelector()
+	return p.processSecurityProblemSelector(secpv2.NewQuery(securityProblemSelector))
 }
 
-// processProblemSelector Processes an Open Problem Tile and queries the number of open problems. The current default is that there is a pass criteria of <= 0 as we dont allow problems
-// If successful returns sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SecurityProblemTileProcessing) processProblemSelector(query secpv2.Query, startUnix time.Time, endUnix time.Time) (*TileResult, error) {
-	// Step 1: Query the Dynatrace API to get the number of actual security problems matching that query and timeframe
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, startUnix, endUnix))
-	if err != nil {
-		return nil, err
-	}
-
-	// Step 2: As we have the SLO Result including SLO Definition we add it to the SLI & SLO objects
-	// IndicatorName is based on the slo Name
-	// the value defaults to the E
-	indicatorName := "security_problems"
-	value := float64(totalSecurityProblemCount)
-	sliResult := &keptnv2.SLIResult{
-		Metric:  indicatorName,
-		Value:   value,
-		Success: true,
-	}
+func (p *SecurityProblemTileProcessing) processSecurityProblemSelector(query secpv2.Query) *TileResult {
+	sliResult := p.getSecurityProblemCountAsSLIResult(query)
 
 	log.WithFields(
 		log.Fields{
-			"indicatorName": indicatorName,
-			"value":         value,
+			"indicatorName": sliResult.Metric,
+			"value":         sliResult.Value,
 		}).Debug("Adding SLO to sloResult")
 
-	// lets add the SLO definition in case we need to generate an SLO.yaml
-	// we normally parse these values from the tile name. In this case we just build that tile name -> maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
-	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", indicatorName)
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
+	sloDefinition := &keptn.SLO{
+		SLI:    securityProblemsIndicatorName,
+		Pass:   []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
+		Weight: 1,
+		KeySLI: true,
+	}
 
 	return &TileResult{
-		sliResult: sliResult,
+		sliResult: &sliResult,
 		objective: sloDefinition,
-		sliName:   indicatorName,
+		sliName:   securityProblemsIndicatorName,
 		sliQuery:  v1secpv2.NewQueryProducer(query).Produce(),
-	}, nil
+	}
+}
+
+func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query) keptnv2.SLIResult {
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, p.startUnix, p.endUnix))
+	if err != nil {
+		return keptnv2.SLIResult{
+			Metric:  securityProblemsIndicatorName,
+			Success: false,
+			Message: err.Error(),
+		}
+	}
+
+	return keptnv2.SLIResult{
+		Metric:  securityProblemsIndicatorName,
+		Value:   float64(totalSecurityProblemCount),
+		Success: true,
+	}
 }
