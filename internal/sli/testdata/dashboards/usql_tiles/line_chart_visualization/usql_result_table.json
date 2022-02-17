@@ -1,0 +1,17 @@
+{
+  "extrapolationLevel": 1,
+  "columnNames": [
+    "continent",
+    "userActionCount"
+  ],
+  "values": [
+    [
+      "North America",
+      1
+    ],
+    [
+      "Europe",
+      2
+    ]
+  ]
+}
