@@ -108,7 +108,7 @@ func (p *Processing) executeUSQLQuery(usqlQuery string, startUnix time.Time, end
 		var dimensionValue interface{}
 
 		switch query.GetResultType() {
-		case v1usql.PieChartResultType, v1usql.ColumnChartResultType:
+		case v1usql.PieChartResultType, v1usql.ColumnChartResultType, v1usql.LineChartResultType:
 			dimensionName = rowValue[0]
 			dimensionValue = rowValue[1]
 		case v1usql.TableResultType:
