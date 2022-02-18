@@ -100,7 +100,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-// TestRetrieveMetricsFromDashboardUSQLTile_LineChart tests that extracting SLIs from a USQL tile with line chart visualization type does not work.
+// TestRetrieveMetricsFromDashboardUSQLTile_LineChart tests that extracting SLIs from a USQL tile with line chart visualization type works as expected.
 func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 
 	const testDataFolder = "./testdata/dashboards/usql_tiles/line_chart_visualization/"
@@ -110,11 +110,16 @@ func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+continent%2C+userActionCount+FROM+usersession+limit+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createFailedSLIResultAssertionsFunc("usql_metric"),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_North_America", 1),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_Europe", 2),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_North_America", "USQL;LINE_CHART;North America;SELECT continent, userActionCount FROM usersession limit 2")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_Europe", "USQL;LINE_CHART;Europe;SELECT continent, userActionCount FROM usersession limit 2")
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_Funnel tests that extracting SLIs from a USQL tile with funnel visualization type does not work.

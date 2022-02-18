@@ -57,7 +57,7 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	case dynatrace.SingleValueVisualizationType:
 		tileResult := processQueryResultForSingleValue(*usqlResult, sloDefinition, *query)
 		return []*TileResult{&tileResult}
-	case dynatrace.ColumnChartVisualizationType, dynatrace.PieChartVisualizationType, dynatrace.TableVisualizationType:
+	case dynatrace.ColumnChartVisualizationType, dynatrace.LineChartVisualizationType, dynatrace.PieChartVisualizationType, dynatrace.TableVisualizationType:
 		return processQueryResultForMultipleValues(*usqlResult, sloDefinition, tile.Type, *query)
 	default:
 		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "unsupported USQL visualization type: "+tile.Type)
@@ -108,7 +108,7 @@ func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloD
 func tryGetDimensionValueForVisualizationType(rowValue []interface{}, visualizationType string) (float64, error) {
 	var rawValue interface{}
 	switch visualizationType {
-	case dynatrace.ColumnChartVisualizationType, dynatrace.PieChartVisualizationType:
+	case dynatrace.ColumnChartVisualizationType, dynatrace.LineChartVisualizationType, dynatrace.PieChartVisualizationType:
 		rawValue = rowValue[1]
 	case dynatrace.TableVisualizationType:
 		rawValue = rowValue[len(rowValue)-1]
