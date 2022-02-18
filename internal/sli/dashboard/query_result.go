@@ -7,13 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
-type TileResult struct {
-	sliResult *keptnv2.SLIResult
-	objective *keptnapi.SLO
-	sliName   string
-	sliQuery  string
-}
-
 // QueryResult is the object returned by querying a Dynatrace dashboard for SLIs
 type QueryResult struct {
 	dashboardLink *DashboardLink

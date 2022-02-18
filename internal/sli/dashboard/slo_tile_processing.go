@@ -28,15 +28,8 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, startUnix time.Time,
 
 func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	if len(tile.AssignedEntities) == 0 {
-		indicatorName := "slo_tile_without_slo"
-		return []*TileResult{&TileResult{
-			sliResult: &keptnv2.SLIResult{
-				Metric:  indicatorName,
-				Success: false,
-				Message: "SLO tile contains no SLO IDs",
-			},
-			sliName: indicatorName,
-		}}
+		unsuccessfulTileResult := newUnsuccessfulTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	var results []*TileResult
@@ -53,29 +46,15 @@ func (p *SLOTileProcessing) processSLO(sloID string, startUnix time.Time, endUni
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
 		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
-		indicatorName := "slo_without_id"
-		return &TileResult{
-			sliResult: &keptnv2.SLIResult{
-				Metric:  indicatorName,
-				Success: false,
-				Message: err.Error(),
-			},
-			sliName: indicatorName,
-		}
+		unsuccessfulTileResult := newUnsuccessfulTileResult("slo_without_id", err.Error())
+		return &unsuccessfulTileResult
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), startUnix, endUnix))
 	if err != nil {
-		indicatorName := common.CleanIndicatorName("slo_" + sloID)
-		return &TileResult{
-			sliResult: &keptnv2.SLIResult{
-				Metric:  indicatorName,
-				Success: false,
-				Message: err.Error(),
-			},
-			sliName: indicatorName,
-		}
+		unsuccessfulTileResult := newUnsuccessfulTileResult(common.CleanIndicatorName("slo_"+sloID), err.Error())
+		return &unsuccessfulTileResult
 	}
 
 	// Step 2: Transform the SLO result into an SLI result and SLO definition

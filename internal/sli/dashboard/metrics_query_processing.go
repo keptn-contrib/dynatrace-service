@@ -34,16 +34,19 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 	// ERROR-CASE: Metric API return no values or an error
 	// we could not query data - so - we return the error back as part of our SLIResults
 	if err != nil {
-		return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Error querying Metrics API: "+err.Error())
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Error querying Metrics API: "+err.Error())
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
 	if len(queryResult.Result) == 0 {
-		return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Expected a single result but got no result for metric ID")
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a single result but got no result for metric ID")
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	if len(queryResult.Result) > 1 {
-		return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Expected a result only for a single metric ID but got multiple results")
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a result only for a single metric ID but got multiple results")
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	var tileResults []*TileResult
@@ -59,7 +62,8 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 	dataResultCount := len(singleResult.Data)
 	if dataResultCount == 0 {
-		return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Metrics query result has no data")
+		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics query result has no data")
+		return []*TileResult{&unsuccessfulTileResult}
 	}
 
 	for _, singleDataEntry := range singleResult.Data {
@@ -104,7 +108,8 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 		metricQueryForSLI, err := metrics.NewQuery(metricSelectorForSLI, entitySelectorForSLI)
 		if err != nil {
-			return createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition, metricQueryComponents.metricsQuery, "Could not create metrics query for SLI")
+			unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Could not create metrics query for SLI")
+			return []*TileResult{&unsuccessfulTileResult}
 		}
 
 		// make sure we have a valid indicator name by getting rid of special characters
@@ -160,36 +165,4 @@ func getMetricsQueryString(unit string, query metrics.Query) string {
 	}
 
 	return v1metrics.NewQueryProducer(query).Produce()
-}
-
-func createFailedTileResultFromSLODefinition(sloDefinition *keptncommon.SLO, message string) []*TileResult {
-	return []*TileResult{
-		{
-			sliResult: &keptnv2.SLIResult{
-				Metric:  sloDefinition.SLI,
-				Value:   0,
-				Success: false,
-				Message: message,
-			},
-			objective: sloDefinition,
-			sliName:   sloDefinition.SLI,
-		},
-	}
-}
-
-func createFailedTileResultFromSLODefinitionAndMetricsQuery(sloDefinition *keptncommon.SLO, metricsQuery metrics.Query, message string) []*TileResult {
-	metricsQueryString := v1metrics.NewQueryProducer(metricsQuery).Produce()
-	return []*TileResult{
-		{
-			sliResult: &keptnv2.SLIResult{
-				Metric:  sloDefinition.SLI,
-				Value:   0,
-				Success: false,
-				Message: message,
-			},
-			objective: sloDefinition,
-			sliName:   sloDefinition.SLI,
-			sliQuery:  metricsQueryString,
-		},
-	}
 }
