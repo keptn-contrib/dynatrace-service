@@ -25,6 +25,13 @@ func TestQueryParser(t *testing.T) {
 			expectedQuery:      "SELECT device, AVG(duration) FROM usersession WHERE country IN('Austria') GROUP BY device",
 		},
 		{
+			name:               "valid - line chart",
+			inputQuery:         "USQL;LINE_CHART;iPad mini;SELECT device, AVG(duration) FROM usersession WHERE country IN('Austria') GROUP BY device",
+			expectedResultType: "LINE_CHART",
+			expectedDimension:  "iPad mini",
+			expectedQuery:      "SELECT device, AVG(duration) FROM usersession WHERE country IN('Austria') GROUP BY device",
+		},
+		{
 			name:               "valid - extra semi colon in query",
 			inputQuery:         "USQL;COLUMN_CHART;iPad mini;SELECT device, AVG(duration) FROM usersession WHERE country IN('Austria;Italy') GROUP BY device",
 			expectedResultType: "COLUMN_CHART",

@@ -70,7 +70,7 @@ func (u *Query) GetQuery() usql.Query {
 
 func isValidResultType(resultType string) bool {
 	switch resultType {
-	case SingleValueResultType, TableResultType, ColumnChartResultType, PieChartResultType:
+	case SingleValueResultType, TableResultType, ColumnChartResultType, LineChartResultType, PieChartResultType:
 		return true
 	}
 	return false
