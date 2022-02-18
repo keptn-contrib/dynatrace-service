@@ -17,6 +17,9 @@ const (
 	// ColumnChartResultType is the result type for queries based on a column chart.
 	ColumnChartResultType = "COLUMN_CHART"
 
+	// LineChartResultType is the result type for queries based on a line chart.
+	LineChartResultType = "LINE_CHART"
+
 	// PieChartResultType is the result type for queries based on a pie chart.
 	PieChartResultType = "PIE_CHART"
 )
@@ -67,7 +70,7 @@ func (u *Query) GetQuery() usql.Query {
 
 func isValidResultType(resultType string) bool {
 	switch resultType {
-	case SingleValueResultType, TableResultType, ColumnChartResultType, PieChartResultType:
+	case SingleValueResultType, TableResultType, ColumnChartResultType, LineChartResultType, PieChartResultType:
 		return true
 	}
 	return false

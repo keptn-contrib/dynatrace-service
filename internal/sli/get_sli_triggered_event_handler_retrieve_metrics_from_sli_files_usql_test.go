@@ -123,18 +123,51 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
+
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(
-		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
+		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
 		"./testdata/usql_200_multiple_results.json")
 
-	kClient := &keptnClientMock{
-		customQueries: map[string]string{
-			indicator: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+	testConfigs := []struct {
+		name          string
+		query         string
+		expectedValue float64
+	}{
+		{
+			name:          "column chart",
+			query:         "USQL;COLUMN_CHART;Android 6.0.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
+			expectedValue: 21862.42,
+		},
+		{
+			name:          "line chart",
+			query:         "USQL;LINE_CHART;Android 7.0.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
+			expectedValue: 26304,
+		},
+		{
+			name:          "pie chart",
+			query:         "USQL;PIE_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
+			expectedValue: 23576,
+		},
+		{
+			name:          "table",
+			query:         "USQL;TABLE;iOS 12.1.4;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
+			expectedValue: 24824,
 		},
 	}
+	for _, testConfig := range testConfigs {
+		tc := testConfig
+		t.Run(tc.name, func(t *testing.T) {
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSuccessfulSLIResultAssertionsFunc(indicator, 23576))
+			kClient := &keptnClientMock{
+				customQueries: map[string]string{
+					indicator: tc.query,
+				},
+			}
+
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSuccessfulSLIResultAssertionsFunc(indicator, tc.expectedValue))
+		})
+	}
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
