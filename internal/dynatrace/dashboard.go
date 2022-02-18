@@ -24,6 +24,9 @@ const (
 	// ColumnChartVisualizationType is the column chart visualization type for USQL tiles
 	ColumnChartVisualizationType = "COLUMN_CHART"
 
+	// LineChartVisualizationType is the line chart visualization type for USQL tiles
+	LineChartVisualizationType = "LINE_CHART"
+
 	// PieChartVisualizationType is the pie chart visualization type for USQL tiles
 	PieChartVisualizationType = "PIE_CHART"
 

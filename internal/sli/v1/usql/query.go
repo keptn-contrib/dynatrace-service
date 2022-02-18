@@ -17,6 +17,9 @@ const (
 	// ColumnChartResultType is the result type for queries based on a column chart.
 	ColumnChartResultType = "COLUMN_CHART"
 
+	// LineChartResultType is the result type for queries based on a line chart.
+	LineChartResultType = "LINE_CHART"
+
 	// PieChartResultType is the result type for queries based on a pie chart.
 	PieChartResultType = "PIE_CHART"
 )
