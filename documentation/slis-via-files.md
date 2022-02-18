@@ -136,6 +136,7 @@ With the syntax `USQL;<tile_type>;<dimension>;<query>`, the dynatrace-service ca
 | SINGLE_VALUE | Select the first column of the first row as the result; `<dimension>` should be empty. The type of the first column should be *number*. |
 | PIE_CHART | Select the first row where the value in the first column equals `<dimension>`, take the value in the second column as the result. The type of the first column should be *string*, the type of the second column should be *number*. |
 | COLUMN_CHART | Select the first row where the value in the first column equals `<dimension>`, take the value in the second column as the result. The type of the first column should be *string*, the type of the second column should be *number*.|
+| LINE_CHART | Select the first row where the value in the first column equals `<dimension>`, take the value in the second column as the result. The type of the first column should be *string*, the type of the second column should be *number*.|
 | TABLE | Select the first row where the value in the first column equals `<dimension>`, take the value of the last column as the result. The type of the first column should be *string*, the type of the last column should be *number*.|
 
 Fox example, the following SLI definition will calculate the average duration of iPad mini user sessions in Austria:

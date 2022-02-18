@@ -52,7 +52,7 @@ An SLO tile will produce an SLI with the same name as the underlying SLO and the
 
 ### USQL tiles
 
-Depending on the query and visualization type, a USQL tile will produce one or more SLIs. Single value queries always produce a single SLI, whereas bar charts, pie charts and tables produce an SLI (and SLO) for each value of the selected dimension. Line chart and funnel visualization types are currently not supported.
+Depending on the query and visualization type, a USQL tile will produce one or more SLIs. Single value queries always produce a single SLI, whereas bar charts, line charts, pie charts and tables produce an SLI (and SLO) for each value of the selected dimension. The funnel visualization type is currently not supported.
 
 
 ## Automatic expansion of results including one or more dimensions
