@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.21.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.20.0...0.21.0) (2022-02-21)
+
+### Release validated with
+ | Dynatrace-service: `0.21.0` | Keptn: `0.12.2` | Dynatrace: `1.234` |
+ |---|---|---|
+
+
+### Features
+
+* Add support for the line chart visualization type in USQL queries and dashboard tiles ([#716](https://github.com/keptn-contrib/dynatrace-service/issues/716)) ([29ea965](https://github.com/keptn-contrib/dynatrace-service/commit/29ea965634f58efc04f8b78214ac95edc5eb71db))
+* Support placeholders in all SLIs defined in `dynatrace/sli.yaml` files ([#681](https://github.com/keptn-contrib/dynatrace-service/issues/681)) ([6dd69d9](https://github.com/keptn-contrib/dynatrace-service/commit/6dd69d91bc31c64cbf8820836badac299c073331))
+
+
+### Bug Fixes
+
+* Ensure problem tile processing always produces indicators ([#707](https://github.com/keptn-contrib/dynatrace-service/issues/707)) ([1027225](https://github.com/keptn-contrib/dynatrace-service/commit/102722563dfe3885f6d82f741bfde4d5a54aae76))
+* Ensure SLO tile processing always produces an indicator ([#706](https://github.com/keptn-contrib/dynatrace-service/issues/706)) ([0f9870a](https://github.com/keptn-contrib/dynatrace-service/commit/0f9870a961cbf113c4e8a3c20ce8960b6a8c9ac1))
+* Ensure USQL tile processing always produces an indicator ([#710](https://github.com/keptn-contrib/dynatrace-service/issues/710)) ([b3ca3d1](https://github.com/keptn-contrib/dynatrace-service/commit/b3ca3d1a9f6dbd429970ad49384e9a7353bf3417))
+* error messages are no longer attached to indicator from event if dashboard processing fails ([#687](https://github.com/keptn-contrib/dynatrace-service/issues/687)) ([51e1e9a](https://github.com/keptn-contrib/dynatrace-service/commit/51e1e9a0d45ea2911b3d3d247ff6ecda888849b6))
+
+
+### Other
+
+* Improve CI pipeline and make unit tests reusable ([#675](https://github.com/keptn-contrib/dynatrace-service/issues/675)) ([f9c1bec](https://github.com/keptn-contrib/dynatrace-service/commit/f9c1bec32a1bd7e56903f992c80ff61ec8679f77))
+
+
+### Docs
+
+* Document Dynatrace API token scopes ([#701](https://github.com/keptn-contrib/dynatrace-service/issues/701)) ([5e93933](https://github.com/keptn-contrib/dynatrace-service/commit/5e93933d1dd20a851e7e929f953c374bc6a2e3de))
+* Update documentation links ([#702](https://github.com/keptn-contrib/dynatrace-service/issues/702)) ([20cd1d0](https://github.com/keptn-contrib/dynatrace-service/commit/20cd1d0383c170ab803a35f507138c2167451637))
+* Use KEPTN_ENDPOINT in installation documentation ([#700](https://github.com/keptn-contrib/dynatrace-service/issues/700)) ([88860fd](https://github.com/keptn-contrib/dynatrace-service/commit/88860fdff039e9170f1e570da9f1c59f1c9cd7d3))
+
 ## [0.20.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.19.0...0.20.0) (2022-01-17)
 
 ### Release validated with
