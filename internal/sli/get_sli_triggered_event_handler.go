@@ -86,25 +86,9 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]*keptnv2.SLIResult, error)
 		return nil, err
 	}
 
-	var sliResults []*keptnv2.SLIResult
-	if eh.dashboard != "" {
-		// Option 1: See if we can get the data from a Dynatrace Dashboard
-		var dashboardLinkAsLabel *dashboard.DashboardLink
-		dashboardLinkAsLabel, sliResults, err = eh.getDataFromDynatraceDashboard(startUnix, endUnix)
-		if err != nil {
-			return nil, err
-		}
-
-		// add link to dynatrace dashboard to labels
-		if dashboardLinkAsLabel != nil {
-			eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
-		}
-	} else {
-		// Option 2: Let's query the SLIs based on the SLI.yaml definition
-		sliResults, err = eh.getSLIResultsFromCustomQueries(startUnix, endUnix)
-		if err != nil {
-			return nil, err
-		}
+	sliResults, err := eh.getSLIResults(startUnix, endUnix)
+	if err != nil {
+		return nil, err
 	}
 
 	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
@@ -177,8 +161,28 @@ func ensureRightTimestamps(start string, end string) (time.Time, time.Time, erro
 	return startUnix, endUnix, nil
 }
 
-// getDataFromDynatraceDashboard will process dynatrace dashboard (if found) and return the SLI, SLO and SLIResults
-func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time, endUnix time.Time) (*dashboard.DashboardLink, []*keptnv2.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResults(startUnix time.Time, endUnix time.Time) ([]*keptnv2.SLIResult, error) {
+	// If no dashboard specified, query the SLIs based on the SLI.yaml definition
+	if eh.dashboard == "" {
+		return eh.getSLIResultsFromCustomQueries(startUnix, endUnix)
+	}
+
+	// See if we can get the data from a Dynatrace Dashboard
+	var dashboardLinkAsLabel *dashboard.DashboardLink
+	dashboardLinkAsLabel, sliResults, err := eh.getSLIResultsFromDynatraceDashboard(startUnix, endUnix)
+	if err != nil {
+		return nil, err
+	}
+
+	// add link to dynatrace dashboard to labels
+	if dashboardLinkAsLabel != nil {
+		eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
+	}
+	return sliResults, nil
+}
+
+// getSLIResultsFromDynatraceDashboard will process dynatrace dashboard (if found) and return SLIResults
+func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(startUnix time.Time, endUnix time.Time) (*dashboard.DashboardLink, []*keptnv2.SLIResult, error) {
 
 	sliQuerying := dashboard.NewQuerying(eh.event, eh.event.GetCustomSLIFilters(), eh.dtClient)
 	result, err := sliQuerying.GetSLIValues(eh.dashboard, startUnix, endUnix)
