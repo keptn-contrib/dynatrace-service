@@ -49,16 +49,30 @@ func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient d
 }
 
 func (eh GetSLIEventHandler) HandleEvent() error {
-	// prepare event
-
 	// do not continue if SLIProvider is not dynatrace
 	if eh.event.IsNotForDynatrace() {
 		return nil
 	}
 
-	go eh.retrieveMetrics()
+	if err := eh.sendGetSLIStartedEvent(); err != nil {
+		return err
+	}
 
-	return nil
+	log.WithFields(
+		log.Fields{
+			"project": eh.event.GetProject(),
+			"stage":   eh.event.GetStage(),
+			"service": eh.event.GetService(),
+		}).Info("Processing sh.keptn.event.get-sli.triggered")
+
+	sliResults, err := eh.retrieveSLIResults()
+	if err != nil {
+		log.WithError(err).Error("error retrieving SLIs")
+		return eh.sendGetSLIFinishedEvent(nil, err)
+	}
+
+	log.Info("Finished retrieving SLI results, sending sh.keptn.event.get-sli.finished event now...")
+	return eh.sendGetSLIFinishedEvent(sliResults, err)
 }
 
 /**
@@ -299,29 +313,15 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 	return sliResult
 }
 
-// retrieveMetrics will retrieve metrics either from a dashboard or from an SLI file
-func (eh *GetSLIEventHandler) retrieveMetrics() error {
-	// send get-sli.started event
-	if err := eh.sendGetSLIStartedEvent(); err != nil {
-		return eh.sendGetSLIFinishedEvent(nil, err)
-	}
-
-	log.WithFields(
-		log.Fields{
-			"project": eh.event.GetProject(),
-			"stage":   eh.event.GetStage(),
-			"service": eh.event.GetService(),
-		}).Info("Processing sh.keptn.internal.event.get-sli")
-
+// retrieveSLIResults will retrieve metrics either from a dashboard or from an SLI file
+func (eh *GetSLIEventHandler) retrieveSLIResults() ([]*keptnv2.SLIResult, error) {
 	// Adding DtCreds as a label so users know which DtCreds was used
 	eh.event.AddLabel("DtCreds", eh.secretName)
 
-	//
 	// parse start and end (which are datetime strings) and convert them into unix timestamps
 	startUnix, endUnix, err := ensureRightTimestamps(eh.event.GetSLIStart(), eh.event.GetSLIEnd())
 	if err != nil {
-		log.WithError(err).Error("ensureRightTimestamps failed")
-		return eh.sendGetSLIFinishedEvent(nil, err)
+		return nil, err
 	}
 
 	var sliResults []*keptnv2.SLIResult
@@ -330,8 +330,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		var dashboardLinkAsLabel *dashboard.DashboardLink
 		dashboardLinkAsLabel, sliResults, err = eh.getDataFromDynatraceDashboard(startUnix, endUnix)
 		if err != nil {
-			log.WithError(err).Error("Could not retrieve SLI results via Dynatrace dashboard")
-			return eh.sendGetSLIFinishedEvent(nil, err)
+			return nil, err
 		}
 
 		// add link to dynatrace dashboard to labels
@@ -342,8 +341,7 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		// Option 2: Let's query the SLIs based on the SLI.yaml definition
 		sliResults, err = eh.getSLIResultsFromCustomQueries(startUnix, endUnix)
 		if err != nil {
-			log.WithError(err).Error("Could not retrieve SLI results via sli.yaml file")
-			return eh.sendGetSLIFinishedEvent(nil, err)
+			return nil, err
 		}
 	}
 
@@ -354,15 +352,12 @@ func (eh *GetSLIEventHandler) retrieveMetrics() error {
 		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(problemID))
 	}
 
-	// now - lets see if we have captured any result values - if not - return send an error
-	err = nil
+	// if no result values have been captured, return an error
 	if len(sliResults) == 0 {
-		err = errors.New("could not retrieve any SLI results")
+		return nil, errors.New("could not retrieve any SLI results")
 	}
 
-	log.Info("Finished fetching metrics; Sending SLIDone event now ...")
-
-	return eh.sendGetSLIFinishedEvent(sliResults, err)
+	return sliResults, nil
 }
 
 // sendGetSLIFinishedEvent sends the SLI finished event. If err != nil it will send an error message
