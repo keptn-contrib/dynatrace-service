@@ -57,7 +57,7 @@
         "image": {
           "properties": {
             "repository": {
-              "pattern": "^$|^[a-z0-9][a-z0-9-./]{0,511}$"
+              "pattern": "^[a-z0-9][a-z0-9-./]{0,511}$"
             },
             "pullPolicy": {
               "enum": [

@@ -27,7 +27,6 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        {{- if .Values.dynatraceService.image.repository}}
         - name: dynatrace-service
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -99,7 +98,6 @@ spec:
             periodSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-        {{ end }}
         - name: distributor
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
