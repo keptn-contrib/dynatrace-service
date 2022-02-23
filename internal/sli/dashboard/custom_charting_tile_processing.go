@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -20,17 +19,15 @@ type CustomChartingTileProcessing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
-	startUnix     time.Time
-	endUnix       time.Time
+	timeframe     common.Timeframe
 }
 
-func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, startUnix time.Time, endUnix time.Time) *CustomChartingTileProcessing {
+func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *CustomChartingTileProcessing {
 	return &CustomChartingTileProcessing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
-		startUnix:     startUnix,
-		endUnix:       endUnix,
+		timeframe:     timeframe,
 	}
 }
 
@@ -69,7 +66,7 @@ func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFi
 
 func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []*TileResult {
 
-	metricQuery, err := p.generateMetricQueryFromChart(series, tileManagementZoneFilter, filtersPerEntityType, p.startUnix, p.endUnix)
+	metricQuery, err := p.generateMetricQueryFromChart(series, tileManagementZoneFilter, filtersPerEntityType)
 
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
@@ -89,7 +86,7 @@ func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO
 //   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
 //   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
 //   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap, startUnix time.Time, endUnix time.Time) (*queryComponents, error) {
+func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) (*queryComponents, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(series.Metric)
@@ -176,8 +173,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dyna
 
 	return &queryComponents{
 		metricsQuery:                *metricsQuery,
-		startTime:                   startUnix,
-		endTime:                     endUnix,
+		timeframe:                   p.timeframe,
 		metricUnit:                  metricDefinition.Unit,
 		entitySelectorTargetSnippet: entitySelectorTargetSnippet,
 		metricSelectorTargetSnippet: metricSelectorTargetSnippet,

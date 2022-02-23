@@ -2,7 +2,6 @@ package dashboard
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -10,22 +9,19 @@ import (
 
 type DashboardLink struct {
 	apiURL          string
-	startTimestamp  time.Time
-	endTimestamp    time.Time
+	timeframe       common.Timeframe
 	dashboardID     string
 	dashboardFilter *dynatrace.DashboardFilter
 }
 
 func NewLink(
 	apiURL string,
-	startTimestamp time.Time,
-	endTimestamp time.Time,
+	timeframe common.Timeframe,
 	dashboardID string,
 	dashboardFilter *dynatrace.DashboardFilter) *DashboardLink {
 	return &DashboardLink{
 		apiURL:          apiURL,
-		startTimestamp:  startTimestamp,
-		endTimestamp:    endTimestamp,
+		timeframe:       timeframe,
 		dashboardID:     dashboardID,
 		dashboardFilter: dashboardFilter,
 	}
@@ -40,7 +36,7 @@ func (dashboardLink *DashboardLink) String() string {
 	return fmt.Sprintf("%s#dashboard;id=%s;gtf=c_%s_%s%s",
 		dashboardLink.apiURL,
 		dashboardLink.dashboardID,
-		common.TimestampToUnixMillisecondsString(dashboardLink.startTimestamp),
-		common.TimestampToUnixMillisecondsString(dashboardLink.endTimestamp),
+		common.TimestampToUnixMillisecondsString(dashboardLink.timeframe.Start()),
+		common.TimestampToUnixMillisecondsString(dashboardLink.timeframe.End()),
 		managementZone)
 }

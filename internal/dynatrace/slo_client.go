@@ -3,7 +3,6 @@ package dynatrace
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
@@ -16,17 +15,15 @@ const (
 
 // SLOClientGetParameters encapsulates the parameters for the SLOClient's Get method.
 type SLOClientGetParameters struct {
-	sloID string
-	from  time.Time
-	to    time.Time
+	sloID     string
+	timeframe common.Timeframe
 }
 
 // NewSLOClientGetParameters creates new SLOClientGetParameters.
-func NewSLOClientGetParameters(sloID string, from time.Time, to time.Time) SLOClientGetParameters {
+func NewSLOClientGetParameters(sloID string, timeframe common.Timeframe) SLOClientGetParameters {
 	return SLOClientGetParameters{
-		sloID: sloID,
-		from:  from,
-		to:    to,
+		sloID:     sloID,
+		timeframe: timeframe,
 	}
 }
 
@@ -35,8 +32,8 @@ func (q *SLOClientGetParameters) encode() string {
 
 	// TODO:  2022-01-26: Fix string composition and think about a better struct for REST parameters for all Dynatrace clients
 	queryParameters := newQueryParameters()
-	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.from))
-	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	queryParameters.add(timeFrameKey, "GTF")
 	return q.sloID + "?" + queryParameters.encode()
 }

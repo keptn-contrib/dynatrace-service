@@ -3,7 +3,6 @@ package dynatrace
 import (
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
@@ -21,17 +20,15 @@ const (
 
 // USQLClientQueryParameters encapsulates the query parameters for the USQLClient's GetByQuery method.
 type USQLClientQueryParameters struct {
-	query          usql.Query
-	startTimestamp time.Time
-	endTimestamp   time.Time
+	query     usql.Query
+	timeframe common.Timeframe
 }
 
 // NewUSQLClientQueryParameters creates new USQLClientQueryParameters.
-func NewUSQLClientQueryParameters(query usql.Query, startTimestamp time.Time, endTimestamp time.Time) USQLClientQueryParameters {
+func NewUSQLClientQueryParameters(query usql.Query, timeframe common.Timeframe) USQLClientQueryParameters {
 	return USQLClientQueryParameters{
-		query:          query,
-		startTimestamp: startTimestamp,
-		endTimestamp:   endTimestamp,
+		query:     query,
+		timeframe: timeframe,
 	}
 }
 
@@ -41,8 +38,8 @@ func (q *USQLClientQueryParameters) encode() string {
 	queryParameters.add(queryKey, q.query.GetQuery())
 	queryParameters.add(explainKey, "false")
 	queryParameters.add(addDeepLinkFieldsKey, "false")
-	queryParameters.add(startTimestampKey, common.TimestampToUnixMillisecondsString(q.startTimestamp))
-	queryParameters.add(endTimestampKey, common.TimestampToUnixMillisecondsString(q.endTimestamp))
+	queryParameters.add(startTimestampKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(endTimestampKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	return queryParameters.encode()
 }
 

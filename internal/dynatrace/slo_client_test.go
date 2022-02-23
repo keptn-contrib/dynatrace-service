@@ -2,8 +2,8 @@ package dynatrace
 
 import (
 	"testing"
-	"time"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,10 +14,11 @@ func TestExecuteGetDynatraceSLO(t *testing.T) {
 	dtClient, _, teardown := createDynatraceClient(t, handler)
 	defer teardown()
 
-	startTime := time.Unix(1571649084, 0).UTC()
-	endTime := time.Unix(1571649085, 0).UTC()
+	timeframe, err := common.NewTimeframeParser("2019-10-21T09:11:24Z", "2019-10-21T09:11:25Z").Parse()
+	assert.NoError(t, err)
+
 	sloID := "524ca177-849b-3e8c-8175-42b93fbc33c5"
-	sloResult, err := NewSLOClient(dtClient).Get(NewSLOClientGetParameters(sloID, startTime, endTime))
+	sloResult, err := NewSLOClient(dtClient).Get(NewSLOClientGetParameters(sloID, *timeframe))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sloResult, "No SLO Result returned for "+sloID)

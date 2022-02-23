@@ -1,13 +1,12 @@
 package dashboard
 
 import (
-	"time"
-
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
@@ -32,18 +31,16 @@ type Processing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
-	startUnix     time.Time
-	endUnix       time.Time
+	timeframe     common.Timeframe
 }
 
 // NewProcessing will create a new Processing
-func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, startUnix time.Time, endUnix time.Time) *Processing {
+func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *Processing {
 	return &Processing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
-		startUnix:     startUnix,
-		endUnix:       endUnix,
+		timeframe:     timeframe,
 	}
 }
 
@@ -51,7 +48,7 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 func (p *Processing) Process(dashboard *dynatrace.Dashboard) *QueryResult {
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewLink(p.client.Credentials().GetTenant(), p.startUnix, p.endUnix, dashboard.ID, dashboard.GetFilter())
+	dashboardLinkAsLabel := NewLink(p.client.Credentials().GetTenant(), p.timeframe, dashboard.ID, dashboard.GetFilter())
 
 	totalScore := createDefaultSLOScore()
 	comparison := createDefaultSLOComparison()
@@ -83,24 +80,24 @@ func (p *Processing) Process(dashboard *dynatrace.Dashboard) *QueryResult {
 				result.slo.Comparison = comparison
 			}
 		case dynatrace.SLOTileType:
-			tileResults := NewSLOTileProcessing(p.client, p.startUnix, p.endUnix).Process(&tile)
+			tileResults := NewSLOTileProcessing(p.client, p.timeframe).Process(&tile)
 			result.addTileResults(tileResults)
 		case dynatrace.OpenProblemsTileType:
-			tileResult := NewProblemTileProcessing(p.client, p.startUnix, p.endUnix).Process(&tile, dashboard.GetFilter())
+			tileResult := NewProblemTileProcessing(p.client, p.timeframe).Process(&tile, dashboard.GetFilter())
 			result.addTileResult(tileResult)
 
 			// current logic also does security tile processing for open problem tiles
-			tileResult = NewSecurityProblemTileProcessing(p.client, p.startUnix, p.endUnix).Process(&tile, dashboard.GetFilter())
+			tileResult = NewSecurityProblemTileProcessing(p.client, p.timeframe).Process(&tile, dashboard.GetFilter())
 			result.addTileResult(tileResult)
 		case dynatrace.DataExplorerTileType:
 			// here we handle the new Metric Data Explorer Tile
-			tileResults := NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.startUnix, p.endUnix).Process(&tile, dashboard.GetFilter())
+			tileResults := NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(&tile, dashboard.GetFilter())
 			result.addTileResults(tileResults)
 		case dynatrace.CustomChartingTileType:
-			tileResults := NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.startUnix, p.endUnix).Process(&tile, dashboard.GetFilter())
+			tileResults := NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(&tile, dashboard.GetFilter())
 			result.addTileResults(tileResults)
 		case dynatrace.USQLTileType:
-			tileResults := NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.startUnix, p.endUnix).Process(&tile)
+			tileResults := NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(&tile)
 			result.addTileResults(tileResults)
 		default:
 			// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)

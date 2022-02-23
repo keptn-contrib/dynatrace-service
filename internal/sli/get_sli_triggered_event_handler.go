@@ -12,7 +12,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/dashboard"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/query"
 
-	"github.com/keptn/go-utils/pkg/common/timeutils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 
@@ -77,13 +76,17 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]*keptnv2.SLIResult, error)
 	// Adding DtCreds as a label so users know which DtCreds was used
 	eh.event.AddLabel("DtCreds", eh.secretName)
 
-	// parse start and end (which are datetime strings) and convert them into unix timestamps
-	startUnix, endUnix, err := ensureRightTimestamps(eh.event.GetSLIStart(), eh.event.GetSLIEnd())
+	timeframe, err := common.NewTimeframeParser(eh.event.GetSLIStart(), eh.event.GetSLIEnd()).Parse()
 	if err != nil {
 		return nil, err
 	}
 
-	sliResults, err := eh.getSLIResults(startUnix, endUnix)
+	err = waitForDataToBeAvailable(*timeframe)
+	if err != nil {
+		return nil, err
+	}
+
+	sliResults, err := eh.getSLIResults(*timeframe)
 	if err != nil {
 		return nil, err
 	}
@@ -103,39 +106,21 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]*keptnv2.SLIResult, error)
 	return sliResults, nil
 }
 
-/**
- * AG-27052020: When using keptn send event start-evaluation and clocks are not 100% in sync, e.g: workstation is 1-2 seconds off
- *              we might run into the issue that we detect the endtime to be in the future. I ran into this problem after my laptop ran out of sync for about 1.5s
- *              to circumvent this issue I am changing the check to also allow a time difference of up to 2 minutes (120 seconds). This shouldnt be a problem as our SLI Service retries the DYnatrace API anyway
- * Here is the issue: https://github.com/keptn-contrib/dynatrace-sli-service/issues/55
- */
-func ensureRightTimestamps(start string, end string) (time.Time, time.Time, error) {
+// waitForDataToBeAvailable waits for data to be ingested into the Dynatrace tenant or returns an error if the timeframe ends too far in the future.
+func waitForDataToBeAvailable(timeframe common.Timeframe) error {
 
-	startUnix, err := timeutils.ParseTimestamp(start)
-	if err != nil {
-		return time.Now(), time.Now(), errors.New("Error parsing start date: " + err.Error())
-	}
-	endUnix, err := timeutils.ParseTimestamp(end)
-	if err != nil {
-		return *startUnix, time.Now(), errors.New("Error parsing end date: " + err.Error())
-	}
-
-	// ensure end time is not in the future
+	// ensure end time is not too far (>120 seconds) the future
 	now := time.Now()
-	timeDiffInSeconds := now.Sub(*endUnix).Seconds()
+	timeDiffInSeconds := now.Sub(timeframe.End()).Seconds()
 	if timeDiffInSeconds < -120 { // used to be 0
-		return *startUnix, *endUnix, fmt.Errorf("error validating time range: Supplied end-time %v is too far (>120seconds) in the future (now: %v - diff in sec: %v)\n", endUnix, now, timeDiffInSeconds)
+		return fmt.Errorf("error validating time range: Supplied end-time %v is too far (>120seconds) in the future (now: %v - diff in sec: %v)\n", timeframe.End(), now, timeDiffInSeconds)
 	}
 
-	// ensure start time is before end time
-	timeframeInSeconds := endUnix.Sub(*startUnix).Seconds()
-	if timeframeInSeconds < 0 {
-		return *startUnix, *endUnix, errors.New("error validating time range: start time needs to be before end time")
-	}
+	timeframeInSeconds := timeframe.End().Sub(timeframe.Start()).Seconds()
 
-	// AG-2020-07-16: Wait so Dynatrace has enough data but dont wait every time to shorten processing time
-	// if we have a very short evaluation window and the end timestampe is now then we need to give Dynatrace some time to make sure we have relevant data
-	// if the evalutaion timeframe is > 2 minutes we dont wait and just live with the fact that we may miss one minute or two at the end
+	// AG-2020-07-16: Wait so Dynatrace has enough data but don't wait every time to shorten processing time
+	// if we have a very short evaluation window and the end timestamp is now then we need to give Dynatrace some time to make sure we have relevant data
+	// if the evaluation timeframe is > 2 minutes we don't wait and just live with the fact that we may miss one minute or two at the end
 
 	waitForSeconds := 120.0        // by default lets make sure we are at least 120 seconds away from "now()"
 	if timeframeInSeconds >= 300 { // if our evaluated timeframe however is larger than 5 minutes its ok to continue right away. 5 minutes is the default timeframe for most evaluations
@@ -145,28 +130,28 @@ func ensureRightTimestamps(start string, end string) (time.Time, time.Time, erro
 	}
 
 	// log output while we are waiting
-	if time.Now().Sub(*endUnix).Seconds() < waitForSeconds {
+	if time.Now().Sub(timeframe.End()).Seconds() < waitForSeconds {
 		log.Debug("As the end date is too close to Now() we are going to wait to make sure we have all the data for the requested timeframe(start-end)")
 	}
 
 	// make sure the end timestamp is at least waitForSeconds seconds in the past such that dynatrace metrics API has processed data
-	for time.Now().Sub(*endUnix).Seconds() < waitForSeconds {
-		log.WithField("sleepSeconds", int(waitForSeconds-time.Now().Sub(*endUnix).Seconds())).Debug("Sleeping while waiting for Dynatrace Metrics API")
+	for time.Now().Sub(timeframe.End()).Seconds() < waitForSeconds {
+		log.WithField("sleepSeconds", int(waitForSeconds-time.Now().Sub(timeframe.End()).Seconds())).Debug("Sleeping while waiting for Dynatrace Metrics API")
 		time.Sleep(10 * time.Second)
 	}
 
-	return *startUnix, *endUnix, nil
+	return nil
 }
 
-func (eh *GetSLIEventHandler) getSLIResults(startUnix time.Time, endUnix time.Time) ([]*keptnv2.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResults(timeframe common.Timeframe) ([]*keptnv2.SLIResult, error) {
 	// If no dashboard specified, query the SLIs based on the SLI.yaml definition
 	if eh.dashboard == "" {
-		return eh.getSLIResultsFromCustomQueries(startUnix, endUnix)
+		return eh.getSLIResultsFromCustomQueries(timeframe)
 	}
 
 	// See if we can get the data from a Dynatrace Dashboard
 	var dashboardLinkAsLabel *dashboard.DashboardLink
-	dashboardLinkAsLabel, sliResults, err := eh.getSLIResultsFromDynatraceDashboard(startUnix, endUnix)
+	dashboardLinkAsLabel, sliResults, err := eh.getSLIResultsFromDynatraceDashboard(timeframe)
 	if err != nil {
 		return nil, err
 	}
@@ -179,10 +164,10 @@ func (eh *GetSLIEventHandler) getSLIResults(startUnix time.Time, endUnix time.Ti
 }
 
 // getSLIResultsFromDynatraceDashboard will process dynatrace dashboard (if found) and return SLIResults
-func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(startUnix time.Time, endUnix time.Time) (*dashboard.DashboardLink, []*keptnv2.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(timeframe common.Timeframe) (*dashboard.DashboardLink, []*keptnv2.SLIResult, error) {
 
 	sliQuerying := dashboard.NewQuerying(eh.event, eh.event.GetCustomSLIFilters(), eh.dtClient)
-	result, err := sliQuerying.GetSLIValues(eh.dashboard, startUnix, endUnix)
+	result, err := sliQuerying.GetSLIValues(eh.dashboard, timeframe)
 	if err != nil {
 		return nil, nil, dashboard.NewQueryError(err)
 	}
@@ -206,7 +191,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(startUnix time
 	return result.DashboardLink(), result.SLIResults(), nil
 }
 
-func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(startUnix time.Time, endUnix time.Time) ([]*keptnv2.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(timeframe common.Timeframe) ([]*keptnv2.SLIResult, error) {
 	// get custom metrics for project if they exist
 	projectCustomQueries, err := eh.kClient.GetCustomQueries(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
@@ -214,7 +199,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(startUnix time.Time
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
 	}
 
-	queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), projectCustomQueries, startUnix, endUnix)
+	queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), projectCustomQueries, timeframe)
 
 	var sliResults []*keptnv2.SLIResult
 

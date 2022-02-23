@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -28,18 +27,16 @@ type Processing struct {
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
 	customQueries *keptn.CustomQueries
-	startUnix     time.Time
-	endUnix       time.Time
+	timeframe     common.Timeframe
 }
 
-func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, customQueries *keptn.CustomQueries, startUnix time.Time, endUnix time.Time) *Processing {
+func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, customQueries *keptn.CustomQueries, timeframe common.Timeframe) *Processing {
 	return &Processing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
 		customQueries: customQueries,
-		startUnix:     startUnix,
-		endUnix:       endUnix,
+		timeframe:     timeframe,
 	}
 }
 
@@ -64,29 +61,29 @@ func (p *Processing) GetSLIValue(name string) (float64, error) {
 
 	switch {
 	case strings.HasPrefix(sliQuery, v1usql.USQLPrefix):
-		return p.executeUSQLQuery(sliQuery, p.startUnix, p.endUnix)
+		return p.executeUSQLQuery(sliQuery)
 	case strings.HasPrefix(sliQuery, v1slo.SLOPrefix):
-		return p.executeSLOQuery(sliQuery, p.startUnix, p.endUnix)
+		return p.executeSLOQuery(sliQuery)
 	case strings.HasPrefix(sliQuery, v1problems.ProblemsV2Prefix):
-		return p.executeProblemQuery(sliQuery, p.startUnix, p.endUnix)
+		return p.executeProblemQuery(sliQuery)
 	case strings.HasPrefix(sliQuery, v1secpv2.SecurityProblemsV2Prefix):
-		return p.executeSecurityProblemQuery(sliQuery, p.startUnix, p.endUnix)
+		return p.executeSecurityProblemQuery(sliQuery)
 	case strings.HasPrefix(sliQuery, v1mv2.MV2Prefix):
-		return p.executeMetricsV2Query(sliQuery, p.startUnix, p.endUnix)
+		return p.executeMetricsV2Query(sliQuery)
 	default:
-		return p.executeMetricsQuery(sliQuery, p.startUnix, p.endUnix)
+		return p.executeMetricsQuery(sliQuery)
 	}
 }
 
 // USQL query
-func (p *Processing) executeUSQLQuery(usqlQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (p *Processing) executeUSQLQuery(usqlQuery string) (float64, error) {
 
 	query, err := v1usql.NewQueryParser(usqlQuery).Parse()
 	if err != nil {
 		return 0, fmt.Errorf("error parsing USQL query: %w", err)
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(query.GetQuery(), startUnix, endUnix))
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(query.GetQuery(), p.timeframe))
 	if err != nil {
 		return 0, fmt.Errorf("error executing USQL query: %w", err)
 	}
@@ -150,13 +147,13 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 }
 
 // query a specific SLO
-func (p *Processing) executeSLOQuery(sloQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (p *Processing) executeSLOQuery(sloQuery string) (float64, error) {
 	query, err := v1slo.NewQueryParser(sloQuery).Parse()
 	if err != nil {
 		return 0, fmt.Errorf("error parsing SLO query: %w", err)
 	}
 
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), startUnix, endUnix))
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
 	if err != nil {
 		return 0, err
 	}
@@ -164,13 +161,13 @@ func (p *Processing) executeSLOQuery(sloQuery string, startUnix time.Time, endUn
 	return sloResult.EvaluatedPercentage, nil
 }
 
-func (p *Processing) executeProblemQuery(problemsQuery string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (p *Processing) executeProblemQuery(problemsQuery string) (float64, error) {
 	query, err := v1problems.NewQueryParser(problemsQuery).Parse()
 	if err != nil {
 		return 0, fmt.Errorf("error parsing Problems V2 query: %w", err)
 	}
 
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(*query, startUnix, endUnix))
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(*query, p.timeframe))
 	if err != nil {
 		return 0, fmt.Errorf("Error executing Dynatrace Problem v2 Query %v", err)
 	}
@@ -179,13 +176,13 @@ func (p *Processing) executeProblemQuery(problemsQuery string, startUnix time.Ti
 }
 
 //  query number of problems
-func (p *Processing) executeSecurityProblemQuery(queryString string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (p *Processing) executeSecurityProblemQuery(queryString string) (float64, error) {
 	query, err := v1secpv2.NewQueryParser(queryString).Parse()
 	if err != nil {
 		return 0, fmt.Errorf("error parsing Security Problems V2 query: %w", err)
 	}
 
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(*query, startUnix, endUnix))
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(*query, p.timeframe))
 	if err != nil {
 		return 0, err
 	}
@@ -193,31 +190,31 @@ func (p *Processing) executeSecurityProblemQuery(queryString string, startUnix t
 	return float64(totalSecurityProblemCount), nil
 }
 
-func (p *Processing) executeMetricsV2Query(queryString string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (p *Processing) executeMetricsV2Query(queryString string) (float64, error) {
 
 	query, err := v1mv2.NewQueryParser(queryString).Parse()
 	if err != nil {
 		return 0, fmt.Errorf("could not parse MV2 query: %v, %w", queryString, err)
 	}
 
-	return p.processMetricsQuery(query.GetQuery(), query.GetUnit(), startUnix, endUnix)
+	return p.processMetricsQuery(query.GetQuery(), query.GetUnit())
 }
 
-func (p *Processing) executeMetricsQuery(queryString string, startUnix time.Time, endUnix time.Time) (float64, error) {
+func (p *Processing) executeMetricsQuery(queryString string) (float64, error) {
 	query, err := v1metrics.NewQueryParser(queryString).Parse()
 	if err == nil {
-		return p.processMetricsQuery(*query, "", startUnix, endUnix)
+		return p.processMetricsQuery(*query, "")
 	}
 
 	query, legacyErr := v1metrics.NewLegacyQueryParser(queryString).Parse()
 	if legacyErr != nil {
 		return 0, fmt.Errorf("could not parse metrics query: %v, %w", queryString, err)
 	}
-	return p.processMetricsQuery(*query, "", startUnix, endUnix)
+	return p.processMetricsQuery(*query, "")
 }
 
-func (p *Processing) processMetricsQuery(query metrics.Query, metricUnit string, startUnix time.Time, endUnix time.Time) (float64, error) {
-	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(query, startUnix, endUnix))
+func (p *Processing) processMetricsQuery(query metrics.Query, metricUnit string) (float64, error) {
+	result, err := dynatrace.NewMetricsClient(p.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(query, p.timeframe))
 	if err != nil {
 		return 0, fmt.Errorf("Dynatrace Metrics API returned an error: %w", err)
 	}

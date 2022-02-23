@@ -3,7 +3,6 @@ package dynatrace
 import (
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
@@ -25,17 +24,15 @@ const (
 
 // MetricsClientQueryParameters encapsulates the query parameters for the MetricsClient's GetByQuery method.
 type MetricsClientQueryParameters struct {
-	query metrics.Query
-	from  time.Time
-	to    time.Time
+	query     metrics.Query
+	timeframe common.Timeframe
 }
 
 // NewMetricsClientQueryParameters creates new MetricsClientQueryParameters.
-func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to time.Time) MetricsClientQueryParameters {
+func NewMetricsClientQueryParameters(query metrics.Query, timeframe common.Timeframe) MetricsClientQueryParameters {
 	return MetricsClientQueryParameters{
-		query: query,
-		from:  from,
-		to:    to,
+		query:     query,
+		timeframe: timeframe,
 	}
 }
 
@@ -43,8 +40,8 @@ func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to tim
 func (q *MetricsClientQueryParameters) encode() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
-	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.from))
-	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	queryParameters.add(resolutionKey, "Inf")
 	if q.query.GetEntitySelector() != "" {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -186,8 +187,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 
 	keptnEvent := createDefaultTestEventData()
 
-	start := time.Unix(1571649084, 0).UTC()
-	end := time.Unix(1571649085, 0).UTC()
+	timeframe := createTestTimeframe(t)
 
 	testQueries := []string{
 		"metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)",
@@ -199,7 +199,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		customQueries := make(map[string]string)
 		customQueries[keptn.ResponseTimeP50] = testQuery
 
-		p := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), start, end)
+		p := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 		value, err := p.GetSLIValue(keptn.ResponseTimeP50)
 
 		assert.EqualValues(t, nil, err)
@@ -240,11 +240,9 @@ func runGetSLIValueTest(t *testing.T, handler http.Handler) (float64, error) {
 	defer teardown()
 
 	keptnEvent := createDefaultTestEventData()
+	timeframe := createTestTimeframe(t)
 
-	start := time.Unix(1571649084, 0).UTC()
-	end := time.Unix(1571649085, 0).UTC()
-
-	dh := createQueryProcessing(t, keptnEvent, httpClient, start, end)
+	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
 	return dh.GetSLIValue(keptn.ResponseTimeP50)
 }
@@ -280,10 +278,11 @@ func TestGetSLISleep(t *testing.T) {
 
 	keptnEvent := createDefaultTestEventData()
 
-	start := time.Now().Add(-5 * time.Minute)
-	// artificially increase end time to be in the future
-	end := time.Now().Add(-80 * time.Second)
-	dh := createQueryProcessing(t, keptnEvent, httpClient, start, end)
+	// make timeframe with end time extending into the future
+	timeframe, err := common.NewTimeframe(time.Now().Add(-5*time.Minute), time.Now().Add(-80*time.Second))
+	assert.NoError(t, err)
+
+	dh := createQueryProcessing(t, keptnEvent, httpClient, *timeframe)
 
 	value, err := dh.GetSLIValue(keptn.ResponseTimeP50)
 
@@ -300,10 +299,9 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 	defer teardown()
 
 	keptnEvent := createDefaultTestEventData()
+	timeframe := createTestTimeframe(t)
 
-	start := time.Unix(1571649084, 0).UTC()
-	end := time.Unix(1571649085, 0).UTC()
-	dh := createQueryProcessing(t, keptnEvent, httpClient, start, end)
+	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
 	value, err := dh.GetSLIValue(keptn.Throughput)
 
@@ -321,8 +319,7 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 	defer teardown()
 
 	keptnEvent := createDefaultTestEventData()
-	startTime := time.Unix(1571649084, 0).UTC()
-	endTime := time.Unix(1571649085, 0).UTC()
+	timeframe := createTestTimeframe(t)
 
 	testConfigs := []struct {
 		indicator string
@@ -346,7 +343,7 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 		customQueries := make(map[string]string)
 		customQueries[testConfig.indicator] = testConfig.query
 
-		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), startTime, endTime)
+		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 
 		res, err := ret.GetSLIValue(testConfig.indicator)
 
@@ -364,8 +361,7 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	defer teardown()
 
 	keptnEvent := &test.EventData{}
-	startTime := time.Unix(1571649084, 0).UTC()
-	endTime := time.Unix(1571649085, 0).UTC()
+	timeframe := createTestTimeframe(t)
 
 	indicator := "response_time_env"
 
@@ -374,7 +370,7 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	customQueries := make(map[string]string)
 	customQueries[indicator] = "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time"
 
-	ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), startTime, endTime)
+	ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 	sliValue, err := ret.GetSLIValue(indicator)
 
 	assert.NoError(t, err)
@@ -410,8 +406,8 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			"country":        "Austria",
 		},
 	}
-	startTime := time.Unix(1571649084, 0).UTC()
-	endTime := time.Unix(1571649085, 0).UTC()
+
+	timeframe := createTestTimeframe(t)
 
 	testConfigs := []struct {
 		indicator        string
@@ -454,7 +450,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 		customQueries := make(map[string]string)
 		customQueries[testConfig.indicator] = testConfig.query
 
-		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), startTime, endTime)
+		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 
 		sliValue, err := ret.GetSLIValue(testConfig.indicator)
 
@@ -463,17 +459,16 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 	}
 }
 
-func createQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAdapter, httpClient *http.Client, start time.Time, end time.Time) *Processing {
+func createQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAdapter, httpClient *http.Client, timeframe common.Timeframe) *Processing {
 	return createCustomQueryProcessing(
 		t,
 		keptnEvent,
 		httpClient,
 		keptn.NewEmptyCustomQueries(),
-		start,
-		end)
+		timeframe)
 }
 
-func createCustomQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAdapter, httpClient *http.Client, queries *keptn.CustomQueries, start time.Time, end time.Time) *Processing {
+func createCustomQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAdapter, httpClient *http.Client, queries *keptn.CustomQueries, timeframe common.Timeframe) *Processing {
 	credentials, err := credentials.NewDynatraceCredentials("http://dynatrace", testDynatraceAPIToken)
 	assert.NoError(t, err)
 
@@ -484,8 +479,7 @@ func createCustomQueryProcessing(t *testing.T, keptnEvent adapter.EventContentAd
 		keptnEvent,
 		[]*keptnv2.SLIFilter{},
 		queries,
-		start,
-		end)
+		timeframe)
 }
 
 func createDefaultTestEventData() adapter.EventContentAdapter {
@@ -494,4 +488,10 @@ func createDefaultTestEventData() adapter.EventContentAdapter {
 		Stage:   "dev",
 		Service: "carts",
 	}
+}
+
+func createTestTimeframe(t *testing.T) common.Timeframe {
+	timeframe, err := common.NewTimeframeParser("2019-10-21T09:11:24Z", "2019-10-21T09:11:25Z").Parse()
+	assert.NoError(t, err)
+	return *timeframe
 }

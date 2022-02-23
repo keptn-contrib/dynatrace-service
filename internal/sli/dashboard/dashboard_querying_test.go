@@ -28,9 +28,9 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	querying, _, teardown := createQueryingWithHandler(t, keptnEvent, handler)
 	defer teardown()
 
-	startTime := time.Unix(1571649084, 0).UTC()
-	endTime := time.Unix(1571649085, 0).UTC()
-	result, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, startTime, endTime)
+	timeframe, err := common.NewTimeframeParser("2019-10-21T09:11:24Z", "2019-10-21T09:11:25Z").Parse()
+	assert.NoError(t, err)
+	result, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, *timeframe)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, result, "No result returned")
@@ -80,7 +80,9 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(t, ev, handler)
 	defer teardown()
 
-	actualResult, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+	timeframe, err := common.NewTimeframe(time.Now(), time.Now())
+	assert.NoError(t, err)
+	actualResult, err := querying.GetSLIValues(dashboardID, *timeframe)
 
 	assert.Error(t, err)
 	assert.Nil(t, actualResult)
@@ -108,7 +110,9 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	querying, _, teardown := createCustomQuerying(t, ev, handler)
 	defer teardown()
 
-	actualResult, err := querying.GetSLIValues(dashboardID, time.Now(), time.Now())
+	timeframe, err := common.NewTimeframe(time.Now(), time.Now())
+	assert.NoError(t, err)
+	actualResult, err := querying.GetSLIValues(dashboardID, *timeframe)
 
 	assert.Error(t, err)
 	assert.Nil(t, actualResult)

@@ -2,7 +2,6 @@ package dynatrace
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
@@ -17,17 +16,15 @@ const (
 
 // SecurityProblemsV2ClientQueryParameters encapsulates the query parameters for the SecurityProblemsClient's GetTotalCountByQuery method.
 type SecurityProblemsV2ClientQueryParameters struct {
-	query secpv2.Query
-	from  time.Time
-	to    time.Time
+	query     secpv2.Query
+	timeframe common.Timeframe
 }
 
 // NewSecurityProblemsV2ClientQueryParameters creates new SecurityProblemsV2ClientQueryParameters.
-func NewSecurityProblemsV2ClientQueryParameters(query secpv2.Query, from time.Time, to time.Time) SecurityProblemsV2ClientQueryParameters {
+func NewSecurityProblemsV2ClientQueryParameters(query secpv2.Query, timeframe common.Timeframe) SecurityProblemsV2ClientQueryParameters {
 	return SecurityProblemsV2ClientQueryParameters{
-		query: query,
-		from:  from,
-		to:    to,
+		query:     query,
+		timeframe: timeframe,
 	}
 }
 
@@ -38,8 +35,8 @@ func (q *SecurityProblemsV2ClientQueryParameters) encode() string {
 		queryParameters.add(securityProblemSelectorKey, q.query.GetSecurityProblemSelector())
 	}
 
-	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.from))
-	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	return queryParameters.encode()
 }
 

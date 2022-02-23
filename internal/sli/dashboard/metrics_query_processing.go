@@ -29,7 +29,7 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(metricQueryComponents.metricsQuery, metricQueryComponents.startTime, metricQueryComponents.endTime))
+	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe))
 
 	// ERROR-CASE: Metric API return no values or an error
 	// we could not query data - so - we return the error back as part of our SLIResults

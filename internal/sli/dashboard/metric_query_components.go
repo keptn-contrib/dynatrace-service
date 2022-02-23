@@ -1,15 +1,13 @@
 package dashboard
 
 import (
-	"time"
-
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 )
 
 type queryComponents struct {
 	metricsQuery                metrics.Query
-	startTime                   time.Time
-	endTime                     time.Time
+	timeframe                   common.Timeframe
 	metricUnit                  string
 	entitySelectorTargetSnippet string
 	metricSelectorTargetSnippet string

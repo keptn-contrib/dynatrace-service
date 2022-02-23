@@ -2,7 +2,6 @@ package dynatrace
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
@@ -20,17 +19,15 @@ const (
 
 // ProblemsV2ClientQueryParameters encapsulates the query parameters for the ProblemsV2Client's GetTotalCountByQuery method.
 type ProblemsV2ClientQueryParameters struct {
-	query problems.Query
-	from  time.Time
-	to    time.Time
+	query     problems.Query
+	timeframe common.Timeframe
 }
 
 // NewProblemsV2ClientQueryParameters creates new ProblemsV2ClientQueryParameters.
-func NewProblemsV2ClientQueryParameters(query problems.Query, from time.Time, to time.Time) ProblemsV2ClientQueryParameters {
+func NewProblemsV2ClientQueryParameters(query problems.Query, timeframe common.Timeframe) ProblemsV2ClientQueryParameters {
 	return ProblemsV2ClientQueryParameters{
-		query: query,
-		from:  from,
-		to:    to,
+		query:     query,
+		timeframe: timeframe,
 	}
 }
 
@@ -44,8 +41,8 @@ func (q *ProblemsV2ClientQueryParameters) encode() string {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
 	}
 
-	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.from))
-	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	return queryParameters.encode()
 }
 

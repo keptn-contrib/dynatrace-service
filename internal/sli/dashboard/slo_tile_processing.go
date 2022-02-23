@@ -2,7 +2,6 @@ package dashboard
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -14,15 +13,13 @@ import (
 
 type SLOTileProcessing struct {
 	client    dynatrace.ClientInterface
-	startUnix time.Time
-	endUnix   time.Time
+	timeframe common.Timeframe
 }
 
-func NewSLOTileProcessing(client dynatrace.ClientInterface, startUnix time.Time, endUnix time.Time) *SLOTileProcessing {
+func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Timeframe) *SLOTileProcessing {
 	return &SLOTileProcessing{
 		client:    client,
-		startUnix: startUnix,
-		endUnix:   endUnix,
+		timeframe: timeframe,
 	}
 }
 
@@ -35,14 +32,14 @@ func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	var results []*TileResult
 	for _, sloID := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
-		results = append(results, p.processSLO(sloID, p.startUnix, p.endUnix))
+		results = append(results, p.processSLO(sloID))
 	}
 	return results
 }
 
 // processSLO processes an SLO by querying the data from the Dynatrace API.
 // Returns a TileResult with sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SLOTileProcessing) processSLO(sloID string, startUnix time.Time, endUnix time.Time) *TileResult {
+func (p *SLOTileProcessing) processSLO(sloID string) *TileResult {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
 		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
@@ -51,7 +48,7 @@ func (p *SLOTileProcessing) processSLO(sloID string, startUnix time.Time, endUni
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), startUnix, endUnix))
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
 	if err != nil {
 		unsuccessfulTileResult := newUnsuccessfulTileResult(common.CleanIndicatorName("slo_"+sloID), err.Error())
 		return &unsuccessfulTileResult
