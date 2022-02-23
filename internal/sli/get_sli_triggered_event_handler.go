@@ -18,10 +18,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	// configutils "github.com/keptn/go-utils/pkg/configuration-service/utils"
-	// keptnevents "github.com/keptn/go-utils/pkg/events"
-	// keptnutils "github.com/keptn/go-utils/pkg/utils"
-	// v1 "k8s.io/client-go/kubernetes/typed/core/// "
 )
 
 const ProblemOpenSLI = "problem_open"
