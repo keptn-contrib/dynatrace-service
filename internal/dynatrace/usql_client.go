@@ -41,8 +41,8 @@ func (q *USQLClientQueryParameters) encode() string {
 	queryParameters.add(queryKey, q.query.GetQuery())
 	queryParameters.add(explainKey, "false")
 	queryParameters.add(addDeepLinkFieldsKey, "false")
-	queryParameters.add(startTimestampKey, common.TimestampToString(q.startTimestamp))
-	queryParameters.add(endTimestampKey, common.TimestampToString(q.endTimestamp))
+	queryParameters.add(startTimestampKey, common.TimestampToUnixMillisecondsString(q.startTimestamp))
+	queryParameters.add(endTimestampKey, common.TimestampToUnixMillisecondsString(q.endTimestamp))
 	return queryParameters.encode()
 }
 

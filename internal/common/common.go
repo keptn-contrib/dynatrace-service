@@ -101,23 +101,8 @@ func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapt
 	return result
 }
 
-// ParseUnixTimestamp parses a timestamp into Unix format
-func ParseUnixTimestamp(timestamp string) (time.Time, error) {
-	parsedTime, err := time.Parse(time.RFC3339, timestamp)
-	if err == nil {
-		return parsedTime, nil
-	}
-
-	timestampInt, err := strconv.ParseInt(timestamp, 10, 64)
-	if err != nil {
-		return time.Now(), err
-	}
-	unix := time.Unix(timestampInt, 0)
-	return unix, nil
-}
-
-// TimestampToString converts time stamp into string
-func TimestampToString(time time.Time) string {
+// TimestampToUnixMillisecondsString converts timestamp into a Unix milliseconds string.
+func TimestampToUnixMillisecondsString(time time.Time) string {
 	return strconv.FormatInt(time.Unix()*1000, 10)
 }
 

@@ -44,8 +44,8 @@ func (q *ProblemsV2ClientQueryParameters) encode() string {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
 	}
 
-	queryParameters.add(fromKey, common.TimestampToString(q.from))
-	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.from))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.to))
 	return queryParameters.encode()
 }
 

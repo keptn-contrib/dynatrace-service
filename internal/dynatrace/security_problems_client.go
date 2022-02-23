@@ -38,8 +38,8 @@ func (q *SecurityProblemsV2ClientQueryParameters) encode() string {
 		queryParameters.add(securityProblemSelectorKey, q.query.GetSecurityProblemSelector())
 	}
 
-	queryParameters.add(fromKey, common.TimestampToString(q.from))
-	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.from))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.to))
 	return queryParameters.encode()
 }
 

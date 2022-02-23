@@ -3,9 +3,9 @@ package dashboard
 import (
 	"testing"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	"github.com/keptn/go-utils/pkg/common/timeutils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	"github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
@@ -13,8 +13,8 @@ import (
 
 func TestMetricsQueryProcessing_Process(t *testing.T) {
 
-	startTime, _ := common.ParseUnixTimestamp("2021-10-05T08:00:00Z") // 1633420800000
-	endTime, _ := common.ParseUnixTimestamp("2021-10-06T08:00:00Z")   // 1633507200000
+	startTime, _ := timeutils.ParseTimestamp("2021-10-05T08:00:00Z") // 1633420800000
+	endTime, _ := timeutils.ParseTimestamp("2021-10-06T08:00:00Z")   // 1633507200000
 
 	type args struct {
 		noOfDimensionsInChart int
@@ -44,8 +44,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				metricQueryComponents: &queryComponents{
 					metricsQuery: createMetricsQuery(t, "builtin:service.response.client:merge(\"dt.entity.service\"):avg:names", "type(SERVICE)"),
 					metricUnit:   "MicroSecond",
-					startTime:    startTime,
-					endTime:      endTime,
+					startTime:    *startTime,
+					endTime:      *endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -77,8 +77,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				metricQueryComponents: &queryComponents{
 					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
-					startTime:    startTime,
-					endTime:      endTime,
+					startTime:    *startTime,
+					endTime:      *endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -110,8 +110,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				metricQueryComponents: &queryComponents{
 					metricsQuery: createMetricsQuery(t, "builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names", "type(HOST)"),
 					metricUnit:   "Count",
-					startTime:    startTime,
-					endTime:      endTime,
+					startTime:    *startTime,
+					endTime:      *endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -145,8 +145,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				metricQueryComponents: &queryComponents{
 					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
-					startTime:    startTime,
-					endTime:      endTime,
+					startTime:    *startTime,
+					endTime:      *endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -179,8 +179,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 
 					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
-					startTime:    startTime,
-					endTime:      endTime,
+					startTime:    *startTime,
+					endTime:      *endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -212,8 +212,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				metricQueryComponents: &queryComponents{
 					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
-					startTime:    startTime,
-					endTime:      endTime,
+					startTime:    *startTime,
+					endTime:      *endTime,
 				},
 			},
 			expectedResults: []*TileResult{
@@ -245,8 +245,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				metricQueryComponents: &queryComponents{
 					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 					metricUnit:   "Byte",
-					startTime:    startTime,
-					endTime:      endTime,
+					startTime:    *startTime,
+					endTime:      *endTime,
 				},
 			},
 			expectedResults: []*TileResult{

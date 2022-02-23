@@ -2,9 +2,10 @@ package dashboard
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"time"
 )
 
 type DashboardLink struct {
@@ -39,7 +40,7 @@ func (dashboardLink *DashboardLink) String() string {
 	return fmt.Sprintf("%s#dashboard;id=%s;gtf=c_%s_%s%s",
 		dashboardLink.apiURL,
 		dashboardLink.dashboardID,
-		common.TimestampToString(dashboardLink.startTimestamp),
-		common.TimestampToString(dashboardLink.endTimestamp),
+		common.TimestampToUnixMillisecondsString(dashboardLink.startTimestamp),
+		common.TimestampToUnixMillisecondsString(dashboardLink.endTimestamp),
 		managementZone)
 }

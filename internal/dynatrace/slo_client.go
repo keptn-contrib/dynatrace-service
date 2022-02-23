@@ -35,8 +35,8 @@ func (q *SLOClientGetParameters) encode() string {
 
 	// TODO:  2022-01-26: Fix string composition and think about a better struct for REST parameters for all Dynatrace clients
 	queryParameters := newQueryParameters()
-	queryParameters.add(fromKey, common.TimestampToString(q.from))
-	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.from))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.to))
 	queryParameters.add(timeFrameKey, "GTF")
 	return q.sloID + "?" + queryParameters.encode()
 }

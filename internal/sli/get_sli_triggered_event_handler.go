@@ -12,6 +12,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/dashboard"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/query"
 
+	"github.com/keptn/go-utils/pkg/common/timeutils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 
@@ -110,26 +111,26 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]*keptnv2.SLIResult, error)
  */
 func ensureRightTimestamps(start string, end string) (time.Time, time.Time, error) {
 
-	startUnix, err := common.ParseUnixTimestamp(start)
+	startUnix, err := timeutils.ParseTimestamp(start)
 	if err != nil {
 		return time.Now(), time.Now(), errors.New("Error parsing start date: " + err.Error())
 	}
-	endUnix, err := common.ParseUnixTimestamp(end)
+	endUnix, err := timeutils.ParseTimestamp(end)
 	if err != nil {
-		return startUnix, time.Now(), errors.New("Error parsing end date: " + err.Error())
+		return *startUnix, time.Now(), errors.New("Error parsing end date: " + err.Error())
 	}
 
 	// ensure end time is not in the future
 	now := time.Now()
-	timeDiffInSeconds := now.Sub(endUnix).Seconds()
+	timeDiffInSeconds := now.Sub(*endUnix).Seconds()
 	if timeDiffInSeconds < -120 { // used to be 0
-		return startUnix, endUnix, fmt.Errorf("error validating time range: Supplied end-time %v is too far (>120seconds) in the future (now: %v - diff in sec: %v)\n", endUnix, now, timeDiffInSeconds)
+		return *startUnix, *endUnix, fmt.Errorf("error validating time range: Supplied end-time %v is too far (>120seconds) in the future (now: %v - diff in sec: %v)\n", endUnix, now, timeDiffInSeconds)
 	}
 
 	// ensure start time is before end time
-	timeframeInSeconds := endUnix.Sub(startUnix).Seconds()
+	timeframeInSeconds := endUnix.Sub(*startUnix).Seconds()
 	if timeframeInSeconds < 0 {
-		return startUnix, endUnix, errors.New("error validating time range: start time needs to be before end time")
+		return *startUnix, *endUnix, errors.New("error validating time range: start time needs to be before end time")
 	}
 
 	// AG-2020-07-16: Wait so Dynatrace has enough data but dont wait every time to shorten processing time
@@ -144,17 +145,17 @@ func ensureRightTimestamps(start string, end string) (time.Time, time.Time, erro
 	}
 
 	// log output while we are waiting
-	if time.Now().Sub(endUnix).Seconds() < waitForSeconds {
+	if time.Now().Sub(*endUnix).Seconds() < waitForSeconds {
 		log.Debug("As the end date is too close to Now() we are going to wait to make sure we have all the data for the requested timeframe(start-end)")
 	}
 
 	// make sure the end timestamp is at least waitForSeconds seconds in the past such that dynatrace metrics API has processed data
-	for time.Now().Sub(endUnix).Seconds() < waitForSeconds {
-		log.WithField("sleepSeconds", int(waitForSeconds-time.Now().Sub(endUnix).Seconds())).Debug("Sleeping while waiting for Dynatrace Metrics API")
+	for time.Now().Sub(*endUnix).Seconds() < waitForSeconds {
+		log.WithField("sleepSeconds", int(waitForSeconds-time.Now().Sub(*endUnix).Seconds())).Debug("Sleeping while waiting for Dynatrace Metrics API")
 		time.Sleep(10 * time.Second)
 	}
 
-	return startUnix, endUnix, nil
+	return *startUnix, *endUnix, nil
 }
 
 func (eh *GetSLIEventHandler) getSLIResults(startUnix time.Time, endUnix time.Time) ([]*keptnv2.SLIResult, error) {

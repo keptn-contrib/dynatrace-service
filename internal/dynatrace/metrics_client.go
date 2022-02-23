@@ -43,8 +43,8 @@ func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to tim
 func (q *MetricsClientQueryParameters) encode() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
-	queryParameters.add(fromKey, common.TimestampToString(q.from))
-	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.from))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.to))
 	queryParameters.add(resolutionKey, "Inf")
 	if q.query.GetEntitySelector() != "" {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
