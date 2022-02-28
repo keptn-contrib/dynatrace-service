@@ -1,14 +1,22 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 )
 
 const USQLPath = "/api/v1/userSessionQueryLanguage/table"
+
+// USQLRequiredDelay is delay required between the end of a timeframe and an USQL API request using it.
+const USQLRequiredDelay = 6 * time.Minute
+
+// USQLMaximumWait is maximum acceptable wait time between the end of a timeframe and an USQL API request using it.
+const USQLMaximumWait = 8 * time.Minute
 
 const (
 	queryKey             = "query"
@@ -62,6 +70,11 @@ func NewUSQLClient(client ClientInterface) *USQLClient {
 
 // GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set
 func (uc *USQLClient) GetByQuery(parameters USQLClientQueryParameters) (*DTUSQLResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, USQLRequiredDelay, USQLMaximumWait).Wait(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
 	body, err := uc.client.Get(USQLPath + "?" + parameters.encode())
 	if err != nil {
 		return nil, err

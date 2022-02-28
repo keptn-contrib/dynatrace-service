@@ -1,7 +1,9 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
@@ -9,6 +11,12 @@ import (
 
 // SecurityProblemsPath is the base endpoint for Security Problems API v2
 const SecurityProblemsPath = "/api/v2/securityProblems"
+
+// SecurityProblemsV2RequiredDelay is delay required between the end of a timeframe and an SECPV2 API request using it.
+const SecurityProblemsV2RequiredDelay = 2 * time.Minute
+
+// SecurityProblemsV2MaximumWait is maximum acceptable wait time between the end of a timeframe and an SECPV2 API request using it.
+const SecurityProblemsV2MaximumWait = 4 * time.Minute
 
 const (
 	securityProblemSelectorKey = "securityProblemSelector"
@@ -58,6 +66,11 @@ func NewSecurityProblemsClient(client ClientInterface) *SecurityProblemsClient {
 
 // GetTotalCountByQuery calls the Dynatrace API to retrieve the total count of security problems for the given query and timeframe
 func (sc *SecurityProblemsClient) GetTotalCountByQuery(parameters SecurityProblemsV2ClientQueryParameters) (int, error) {
+	err := NewTimeframeDelay(parameters.timeframe, SecurityProblemsV2RequiredDelay, SecurityProblemsV2MaximumWait).Wait(context.TODO())
+	if err != nil {
+		return 0, err
+	}
+
 	body, err := sc.client.Get(SecurityProblemsPath + "?" + parameters.encode())
 	if err != nil {
 		return 0, err

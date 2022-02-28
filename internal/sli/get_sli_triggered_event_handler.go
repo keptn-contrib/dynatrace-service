@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -81,11 +80,6 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]*keptnv2.SLIResult, error)
 		return nil, err
 	}
 
-	err = waitForDataToBeAvailable(*timeframe)
-	if err != nil {
-		return nil, err
-	}
-
 	sliResults, err := eh.getSLIResults(*timeframe)
 	if err != nil {
 		return nil, err
@@ -104,43 +98,6 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]*keptnv2.SLIResult, error)
 	}
 
 	return sliResults, nil
-}
-
-// waitForDataToBeAvailable waits for data to be ingested into the Dynatrace tenant or returns an error if the timeframe ends too far in the future.
-func waitForDataToBeAvailable(timeframe common.Timeframe) error {
-
-	// ensure end time is not too far (>120 seconds) the future
-	now := time.Now()
-	timeDiffInSeconds := now.Sub(timeframe.End()).Seconds()
-	if timeDiffInSeconds < -120 { // used to be 0
-		return fmt.Errorf("error validating time range: Supplied end-time %v is too far (>120seconds) in the future (now: %v - diff in sec: %v)\n", timeframe.End(), now, timeDiffInSeconds)
-	}
-
-	timeframeInSeconds := timeframe.End().Sub(timeframe.Start()).Seconds()
-
-	// AG-2020-07-16: Wait so Dynatrace has enough data but don't wait every time to shorten processing time
-	// if we have a very short evaluation window and the end timestamp is now then we need to give Dynatrace some time to make sure we have relevant data
-	// if the evaluation timeframe is > 2 minutes we don't wait and just live with the fact that we may miss one minute or two at the end
-
-	waitForSeconds := 120.0        // by default lets make sure we are at least 120 seconds away from "now()"
-	if timeframeInSeconds >= 300 { // if our evaluated timeframe however is larger than 5 minutes its ok to continue right away. 5 minutes is the default timeframe for most evaluations
-		waitForSeconds = 0.0
-	} else if timeframeInSeconds >= 120 { // if the evaluation span is between 2 and 5 minutes make sure we at least have the last minute of data
-		waitForSeconds = 60.0
-	}
-
-	// log output while we are waiting
-	if time.Now().Sub(timeframe.End()).Seconds() < waitForSeconds {
-		log.Debug("As the end date is too close to Now() we are going to wait to make sure we have all the data for the requested timeframe(start-end)")
-	}
-
-	// make sure the end timestamp is at least waitForSeconds seconds in the past such that dynatrace metrics API has processed data
-	for time.Now().Sub(timeframe.End()).Seconds() < waitForSeconds {
-		log.WithField("sleepSeconds", int(waitForSeconds-time.Now().Sub(timeframe.End()).Seconds())).Debug("Sleeping while waiting for Dynatrace Metrics API")
-		time.Sleep(10 * time.Second)
-	}
-
-	return nil
 }
 
 func (eh *GetSLIEventHandler) getSLIResults(timeframe common.Timeframe) ([]*keptnv2.SLIResult, error) {

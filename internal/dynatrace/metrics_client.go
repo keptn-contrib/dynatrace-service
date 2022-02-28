@@ -1,8 +1,10 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
@@ -13,6 +15,12 @@ const MetricsPath = "/api/v2/metrics"
 
 // MetricsQueryPath is the query endpoint for Metrics API v2
 const MetricsQueryPath = MetricsPath + "/query"
+
+// MetricsRequiredDelay is delay required between the end of a timeframe and an Metric V2 API request using it.
+const MetricsRequiredDelay = 2 * time.Minute
+
+// MetricsMaximumWait is maximum acceptable wait time between the end of a timeframe and an Metrics V2 API request using it.
+const MetricsMaximumWait = 4 * time.Minute
 
 const (
 	fromKey           = "from"
@@ -119,6 +127,11 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (mc *MetricsClient) GetByQuery(parameters MetricsClientQueryParameters) (*MetricsQueryResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
 	body, err := mc.client.Get(MetricsQueryPath + "?" + parameters.encode())
 	if err != nil {
 		return nil, err

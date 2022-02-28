@@ -1,13 +1,21 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
 const SLOPath = "/api/v2/slo"
+
+// SLORequiredDelay is delay required between the end of a timeframe and an SLO API request using it.
+const SLORequiredDelay = 2 * time.Minute
+
+// SLOMaximumWait is maximum acceptable wait time between the end of a timeframe and an SLO API request using it.
+const SLOMaximumWait = 4 * time.Minute
 
 const (
 	timeFrameKey = "timeFrame"
@@ -59,6 +67,11 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 // Get calls Dynatrace API to retrieve the values of the Dynatrace SLO for that timeframe
 // It returns a SLOResult object on success, an error otherwise
 func (c *SLOClient) Get(parameters SLOClientGetParameters) (*SLOResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, SLORequiredDelay, SLOMaximumWait).Wait(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
 	body, err := c.client.Get(SLOPath + "/" + parameters.encode())
 	if err != nil {
 		return nil, err
