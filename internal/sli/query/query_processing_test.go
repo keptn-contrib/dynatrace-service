@@ -247,7 +247,7 @@ func runGetSLIValueTest(t *testing.T, handler http.Handler) (float64, error) {
 	return dh.GetSLIValue(keptn.ResponseTimeP50)
 }
 
-// Tests what happens when end time is too close to now
+// Tests what happens when end time is too close to now. This test results in a short delay.
 func TestGetSLISleep(t *testing.T) {
 	okResponse := `{
 		"totalCount": 3,
@@ -278,16 +278,21 @@ func TestGetSLISleep(t *testing.T) {
 
 	keptnEvent := createDefaultTestEventData()
 
-	// make timeframe with end time extending into the future
-	timeframe, err := common.NewTimeframe(time.Now().Add(-5*time.Minute), time.Now().Add(-80*time.Second))
+	// make timeframe with end in the near past, -115 seconds, causing a short delay of 120 - 115 = ~5 seconds while waiting for the Metrics V2 API
+	timeframe, err := common.NewTimeframe(time.Now().Add(-5*time.Minute), time.Now().Add(-115*time.Second))
 	assert.NoError(t, err)
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, *timeframe)
 
+	// time how long getting the SLI value takes
+	timeBeforeGetSLIValue := time.Now()
 	value, err := dh.GetSLIValue(keptn.ResponseTimeP50)
+	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
 	assert.NoError(t, err)
 	assert.InDelta(t, 8.43340, value, 0.001)
+
+	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
 }
 
 // Tests the behaviour of the GetSLIValue function in case of a HTTP 400 return code
