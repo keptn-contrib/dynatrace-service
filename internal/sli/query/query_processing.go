@@ -22,6 +22,7 @@ import (
 	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 )
 
+// Processing representing the processing of custom SLI queries.
 type Processing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
@@ -30,6 +31,7 @@ type Processing struct {
 	timeframe     common.Timeframe
 }
 
+// NewProcessing creates a new Processing.
 func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, customQueries *keptn.CustomQueries, timeframe common.Timeframe) *Processing {
 	return &Processing{
 		client:        client,

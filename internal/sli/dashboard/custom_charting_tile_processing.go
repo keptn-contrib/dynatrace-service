@@ -15,6 +15,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// CustomChartingTileProcessing represents the processing of a Custom Charting dashboard tile.
 type CustomChartingTileProcessing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
@@ -22,6 +23,7 @@ type CustomChartingTileProcessing struct {
 	timeframe     common.Timeframe
 }
 
+// NewCustomChartingTileProcessing creates a new CustomChartingTileProcessing.
 func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *CustomChartingTileProcessing {
 	return &CustomChartingTileProcessing{
 		client:        client,
@@ -31,6 +33,7 @@ func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData
 	}
 }
 
+// Process processes the specified Custom Charting dashboard tile.
 func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
 	tileTitle := tile.Title()
 

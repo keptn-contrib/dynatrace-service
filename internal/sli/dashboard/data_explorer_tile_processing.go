@@ -13,6 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// DataExplorerTileProcessing represents the processing of a Data Explorer dashboard tile.
 type DataExplorerTileProcessing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
@@ -20,6 +21,7 @@ type DataExplorerTileProcessing struct {
 	timeframe     common.Timeframe
 }
 
+// NewDataExplorerTileProcessing creates a new DataExplorerTileProcessing.
 func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *DataExplorerTileProcessing {
 	return &DataExplorerTileProcessing{
 		client:        client,
@@ -29,6 +31,7 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 	}
 }
 
+// Process processes the specified Data Explorer dashboard tile.
 func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)

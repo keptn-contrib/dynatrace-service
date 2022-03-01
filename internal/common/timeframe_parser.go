@@ -6,13 +6,13 @@ import (
 	"github.com/keptn/go-utils/pkg/common/timeutils"
 )
 
-// Timeframe represents a timeframe with a start and end time.
+// TimeframeParser represents a timeframe ready to be parsed.
 type TimeframeParser struct {
 	start string
 	end   string
 }
 
-// NewTimeframe creates a new timeframe from start and end strings.
+// NewTimeframeParser creates a new TimeframeParser ready to parse the specified start and end strings.
 func NewTimeframeParser(start string, end string) TimeframeParser {
 	return TimeframeParser{
 		start: start,
@@ -20,6 +20,7 @@ func NewTimeframeParser(start string, end string) TimeframeParser {
 	}
 }
 
+// Parse parses the start and end strings to create a Timeframe.
 func (p TimeframeParser) Parse() (*Timeframe, error) {
 	start, err := timeutils.ParseTimestamp(p.start)
 	if err != nil {

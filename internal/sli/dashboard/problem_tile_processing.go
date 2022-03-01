@@ -12,11 +12,13 @@ import (
 
 const problemsIndicatorName = "problems"
 
+// ProblemTileProcessing represents the processing of a problems dashboard tile.
 type ProblemTileProcessing struct {
 	client    dynatrace.ClientInterface
 	timeframe common.Timeframe
 }
 
+// NewProblemTileProcessing creates a new ProblemTileProcessing.
 func NewProblemTileProcessing(client dynatrace.ClientInterface, timeframe common.Timeframe) *ProblemTileProcessing {
 	return &ProblemTileProcessing{
 		client:    client,

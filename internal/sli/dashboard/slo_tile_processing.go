@@ -11,11 +11,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// SLOTileProcessing represents the processing of a SLO dashboard tile.
 type SLOTileProcessing struct {
 	client    dynatrace.ClientInterface
 	timeframe common.Timeframe
 }
 
+// NewSLOTileProcessing creates a new SLOTileProcessing.
 func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Timeframe) *SLOTileProcessing {
 	return &SLOTileProcessing{
 		client:    client,
@@ -23,6 +25,7 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Tim
 	}
 }
 
+// Process processes the specified SLO dashboard tile.
 func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	if len(tile.AssignedEntities) == 0 {
 		unsuccessfulTileResult := newUnsuccessfulTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")

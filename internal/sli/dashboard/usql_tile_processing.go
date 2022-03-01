@@ -14,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// USQLTileProcessing represents the processing of a USQL dashboard tile.
 type USQLTileProcessing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
@@ -21,6 +22,7 @@ type USQLTileProcessing struct {
 	timeframe     common.Timeframe
 }
 
+// NewUSQLTileProcessing creates a new USQLTileProcessing.
 func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *USQLTileProcessing {
 	return &USQLTileProcessing{
 		client:        client,
@@ -30,6 +32,7 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 	}
 }
 
+// Process processes the specified USQL dashboard tile.
 func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Title())
