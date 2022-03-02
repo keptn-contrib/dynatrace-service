@@ -43,6 +43,7 @@ If you are planning to upgrade to dynatrace-service version `0.18.0` or newer fr
   - [Forwarding events from Keptn to Dynatrace](documentation/event-forwarding-to-dynatrace.md)
   - [Forwarding problem notifications from Dynatrace to Keptn](documentation/problem-forwarding-to-keptn.md)
   - [Automatic onboarding of monitored service entities](documentation/auto-service-onboarding.md)
+- [Troubleshooting common problems](documentation/troubleshooting.md)
 - Other topics
   - [Additional installation options](documentation/additional-installation-options.md)
   - [Dynatrace API token scopes](documentation/dynatrace-api-token-scopes.md)
