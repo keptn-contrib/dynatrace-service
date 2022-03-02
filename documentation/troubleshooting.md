@@ -40,7 +40,7 @@ Likely cause:
 
 Suggested solution:
 - If SLIs and SLOs should be defined using YAML files, define SLOs by creating a `slo.yaml` file, or
-- If SLIs and SLOs should be sourced from a dashboard, add a `dashboard` entry to the `dynatrace/dynatrace.conf.yaml` configuration file
+- If SLIs and SLOs should be sourced from a dashboard, add a [`dashboard` entry to the `dynatrace/dynatrace.conf.yaml` configuration file](dynatrace-conf-yaml-file.md#dashboard-sli-mode-configuration-dashboard)
 
 ## Evaluation fails: Dynatrace Metrics API returned zero data points
 
@@ -67,7 +67,7 @@ Likely cause:
 
 Suggested solution:
 - If SLIs and SLOs should be sourced from a dashboard, create a dashboard named with the pattern `KQG;project=<project>;service=<service>;stage=<stage>` in the Dynatrace tenant, or
-- If SLIs and SLOs should be defined using YAML files, remove the `dashboard: query` entry from `dynatrace/dynatrace.conf.yaml`
+- If SLIs and SLOs should be defined using YAML files, remove the [`dashboard: query` entry from `dynatrace/dynatrace.conf.yaml`](dynatrace-conf-yaml-file.md#dashboard-sli-mode-configuration-dashboard)
 
 ## Evaluation fails: Could not query Dynatrace dashboard for SLIs: ...Dashboard "..." not found
 
@@ -77,7 +77,7 @@ Evaluation fails and the shipyard-controller reports:
 ![Dashboard not found](images/dashboard-not-found.png)
 
 Likely cause:
-- Dynatrace-service is configured to query a specific dashboard for SLIs (i.e. `dynatrace/dynatrace.conf.yaml` contains `dashboard: <dashboard-id>`) but no dashboard with the specified ID is available
+- Dynatrace-service is configured to query a specific dashboard for SLIs (i.e. [`dynatrace/dynatrace.conf.yaml` contains `dashboard: <dashboard-id>`](dynatrace-conf-yaml-file.md#dashboard-sli-mode-configuration-dashboard)) but no dashboard with the specified ID is available
 
 Suggested solution:
 - If SLIs and SLOs should be sourced from a dashboard, ensure `dynatrace/dynatrace.conf.yaml` contains a `dashboard: <dashboard-id>` entry with the correct dashboard ID, or
