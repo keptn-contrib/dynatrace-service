@@ -21,7 +21,7 @@ jobs:
       BRANCH: ${{ steps.determine_branch.outputs.BRANCH }}
     steps:
       - name: Check out code.
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
 
       - name: Create downloads folder
         run: mkdir ~/downloads
@@ -71,7 +71,7 @@ jobs:
       REPO_SLUG: "keptn-contrib/dynatrace-service"
     steps:
       - name: Check out code
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
 
       - name: Debug - Output Branch
         run: echo $BRANCH

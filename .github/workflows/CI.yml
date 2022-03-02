@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Unit tests
         uses: ./.github/actions/unit-tests
 
@@ -50,7 +50,7 @@ jobs:
       GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -90,7 +90,7 @@ jobs:
       GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v3
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
