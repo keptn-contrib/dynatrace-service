@@ -3,7 +3,6 @@ package dashboard
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -14,24 +13,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// DataExplorerTileProcessing represents the processing of a Data Explorer dashboard tile.
 type DataExplorerTileProcessing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
-	startUnix     time.Time
-	endUnix       time.Time
+	timeframe     common.Timeframe
 }
 
-func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, startUnix time.Time, endUnix time.Time) *DataExplorerTileProcessing {
+// NewDataExplorerTileProcessing creates a new DataExplorerTileProcessing.
+func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *DataExplorerTileProcessing {
 	return &DataExplorerTileProcessing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
-		startUnix:     startUnix,
-		endUnix:       endUnix,
+		timeframe:     timeframe,
 	}
 }
 
+// Process processes the specified Data Explorer dashboard tile.
 func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
@@ -155,8 +155,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(da
 
 	return &queryComponents{
 		metricsQuery:                *metricsQuery,
-		startTime:                   p.startUnix,
-		endTime:                     p.endUnix,
+		timeframe:                   p.timeframe,
 		metricUnit:                  metricDefinition.Unit,
 		entitySelectorTargetSnippet: processedFilter.entitySelectorTargetSnippet,
 		metricSelectorTargetSnippet: processedFilter.metricSelectorTargetSnippet,

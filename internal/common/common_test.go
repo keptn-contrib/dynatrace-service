@@ -1,35 +1,20 @@
 package common
 
 import (
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestTimestampToString(t *testing.T) {
+func TestTimestampToUnixMillisecondsString(t *testing.T) {
 	dt := time.Date(1970, 1, 1, 0, 1, 23, 456, time.UTC)
 	expected := "83000" // = (1*60 + 23) * 1000 ms
 
-	got := TimestampToString(dt)
+	got := TimestampToUnixMillisecondsString(dt)
 
 	assert.EqualValues(t, expected, got)
-}
-
-// tests the parseUnixTimestamp with invalid params
-func TestParseInvalidUnixTimestamp(t *testing.T) {
-	_, err := ParseUnixTimestamp("")
-
-	assert.NotNil(t, err)
-}
-
-// tests the parseUnixTimestamp with valid params
-func TestParseValidUnixTimestamp(t *testing.T) {
-	expectedTime := time.Date(2019, 10, 24, 15, 44, 27, 152330783, time.UTC)
-
-	got, _ := ParseUnixTimestamp("2019-10-24T15:44:27.152330783Z")
-
-	assert.EqualValues(t, expectedTime, got)
 }
 
 func TestParsePassAndWarningFromString(t *testing.T) {

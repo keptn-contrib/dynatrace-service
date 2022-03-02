@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -11,23 +12,27 @@ import (
 // SecurityProblemsPath is the base endpoint for Security Problems API v2
 const SecurityProblemsPath = "/api/v2/securityProblems"
 
+// SecurityProblemsV2RequiredDelay is delay required between the end of a timeframe and an SECPV2 API request using it.
+const SecurityProblemsV2RequiredDelay = 2 * time.Minute
+
+// SecurityProblemsV2MaximumWait is maximum acceptable wait time between the end of a timeframe and an SECPV2 API request using it.
+const SecurityProblemsV2MaximumWait = 4 * time.Minute
+
 const (
 	securityProblemSelectorKey = "securityProblemSelector"
 )
 
 // SecurityProblemsV2ClientQueryParameters encapsulates the query parameters for the SecurityProblemsClient's GetTotalCountByQuery method.
 type SecurityProblemsV2ClientQueryParameters struct {
-	query secpv2.Query
-	from  time.Time
-	to    time.Time
+	query     secpv2.Query
+	timeframe common.Timeframe
 }
 
 // NewSecurityProblemsV2ClientQueryParameters creates new SecurityProblemsV2ClientQueryParameters.
-func NewSecurityProblemsV2ClientQueryParameters(query secpv2.Query, from time.Time, to time.Time) SecurityProblemsV2ClientQueryParameters {
+func NewSecurityProblemsV2ClientQueryParameters(query secpv2.Query, timeframe common.Timeframe) SecurityProblemsV2ClientQueryParameters {
 	return SecurityProblemsV2ClientQueryParameters{
-		query: query,
-		from:  from,
-		to:    to,
+		query:     query,
+		timeframe: timeframe,
 	}
 }
 
@@ -38,8 +43,8 @@ func (q *SecurityProblemsV2ClientQueryParameters) encode() string {
 		queryParameters.add(securityProblemSelectorKey, q.query.GetSecurityProblemSelector())
 	}
 
-	queryParameters.add(fromKey, common.TimestampToString(q.from))
-	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	return queryParameters.encode()
 }
 
@@ -61,6 +66,11 @@ func NewSecurityProblemsClient(client ClientInterface) *SecurityProblemsClient {
 
 // GetTotalCountByQuery calls the Dynatrace API to retrieve the total count of security problems for the given query and timeframe
 func (sc *SecurityProblemsClient) GetTotalCountByQuery(parameters SecurityProblemsV2ClientQueryParameters) (int, error) {
+	err := NewTimeframeDelay(parameters.timeframe, SecurityProblemsV2RequiredDelay, SecurityProblemsV2MaximumWait).Wait(context.TODO())
+	if err != nil {
+		return 0, err
+	}
+
 	body, err := sc.client.Get(SecurityProblemsPath + "?" + parameters.encode())
 	if err != nil {
 		return 0, err

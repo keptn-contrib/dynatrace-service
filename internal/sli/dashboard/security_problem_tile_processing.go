@@ -1,8 +1,7 @@
 package dashboard
 
 import (
-	"time"
-
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
 	v1secpv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/secpv2"
@@ -13,17 +12,17 @@ import (
 
 const securityProblemsIndicatorName = "security_problems"
 
+// SecurityProblemTileProcessing represents the processing of a problems dashboard tile for security problems .
 type SecurityProblemTileProcessing struct {
 	client    dynatrace.ClientInterface
-	startUnix time.Time
-	endUnix   time.Time
+	timeframe common.Timeframe
 }
 
-func NewSecurityProblemTileProcessing(client dynatrace.ClientInterface, startUnix time.Time, endUnix time.Time) *SecurityProblemTileProcessing {
+// NewSecurityProblemTileProcessing creates a new SecurityProblemTileProcessing.
+func NewSecurityProblemTileProcessing(client dynatrace.ClientInterface, timeframe common.Timeframe) *SecurityProblemTileProcessing {
 	return &SecurityProblemTileProcessing{
 		client:    client,
-		startUnix: startUnix,
-		endUnix:   endUnix,
+		timeframe: timeframe,
 	}
 }
 
@@ -65,7 +64,7 @@ func (p *SecurityProblemTileProcessing) processSecurityProblemSelector(query sec
 }
 
 func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query) keptnv2.SLIResult {
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, p.startUnix, p.endUnix))
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, p.timeframe))
 	if err != nil {
 		return keptnv2.SLIResult{
 			Metric:  securityProblemsIndicatorName,

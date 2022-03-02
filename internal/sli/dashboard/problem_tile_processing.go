@@ -1,8 +1,7 @@
 package dashboard
 
 import (
-	"time"
-
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
@@ -13,17 +12,17 @@ import (
 
 const problemsIndicatorName = "problems"
 
+// ProblemTileProcessing represents the processing of a problems dashboard tile.
 type ProblemTileProcessing struct {
 	client    dynatrace.ClientInterface
-	startUnix time.Time
-	endUnix   time.Time
+	timeframe common.Timeframe
 }
 
-func NewProblemTileProcessing(client dynatrace.ClientInterface, startUnix time.Time, endUnix time.Time) *ProblemTileProcessing {
+// NewProblemTileProcessing creates a new ProblemTileProcessing.
+func NewProblemTileProcessing(client dynatrace.ClientInterface, timeframe common.Timeframe) *ProblemTileProcessing {
 	return &ProblemTileProcessing{
 		client:    client,
-		startUnix: startUnix,
-		endUnix:   endUnix,
+		timeframe: timeframe,
 	}
 }
 
@@ -66,7 +65,7 @@ func (p *ProblemTileProcessing) processOpenProblemTile(query problems.Query) *Ti
 }
 
 func (p *ProblemTileProcessing) getProblemCountAsSLIResult(query problems.Query) keptnv2.SLIResult {
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(query, p.startUnix, p.endUnix))
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(query, p.timeframe))
 	if err != nil {
 		return keptnv2.SLIResult{
 			Metric:  problemsIndicatorName,

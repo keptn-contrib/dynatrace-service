@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -18,10 +17,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	// configutils "github.com/keptn/go-utils/pkg/configuration-service/utils"
-	// keptnevents "github.com/keptn/go-utils/pkg/events"
-	// keptnutils "github.com/keptn/go-utils/pkg/utils"
-	// v1 "k8s.io/client-go/kubernetes/typed/core/// "
 )
 
 const ProblemOpenSLI = "problem_open"
@@ -49,120 +44,87 @@ func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient d
 }
 
 func (eh GetSLIEventHandler) HandleEvent() error {
-	// prepare event
-
 	// do not continue if SLIProvider is not dynatrace
 	if eh.event.IsNotForDynatrace() {
 		return nil
 	}
 
-	go eh.retrieveMetrics()
-
-	return nil
-}
-
-/**
- * AG-27052020: When using keptn send event start-evaluation and clocks are not 100% in sync, e.g: workstation is 1-2 seconds off
- *              we might run into the issue that we detect the endtime to be in the future. I ran into this problem after my laptop ran out of sync for about 1.5s
- *              to circumvent this issue I am changing the check to also allow a time difference of up to 2 minutes (120 seconds). This shouldnt be a problem as our SLI Service retries the DYnatrace API anyway
- * Here is the issue: https://github.com/keptn-contrib/dynatrace-sli-service/issues/55
- */
-func ensureRightTimestamps(start string, end string) (time.Time, time.Time, error) {
-
-	startUnix, err := common.ParseUnixTimestamp(start)
-	if err != nil {
-		return time.Now(), time.Now(), errors.New("Error parsing start date: " + err.Error())
-	}
-	endUnix, err := common.ParseUnixTimestamp(end)
-	if err != nil {
-		return startUnix, time.Now(), errors.New("Error parsing end date: " + err.Error())
-	}
-
-	// ensure end time is not in the future
-	now := time.Now()
-	timeDiffInSeconds := now.Sub(endUnix).Seconds()
-	if timeDiffInSeconds < -120 { // used to be 0
-		return startUnix, endUnix, fmt.Errorf("error validating time range: Supplied end-time %v is too far (>120seconds) in the future (now: %v - diff in sec: %v)\n", endUnix, now, timeDiffInSeconds)
-	}
-
-	// ensure start time is before end time
-	timeframeInSeconds := endUnix.Sub(startUnix).Seconds()
-	if timeframeInSeconds < 0 {
-		return startUnix, endUnix, errors.New("error validating time range: start time needs to be before end time")
-	}
-
-	// AG-2020-07-16: Wait so Dynatrace has enough data but dont wait every time to shorten processing time
-	// if we have a very short evaluation window and the end timestampe is now then we need to give Dynatrace some time to make sure we have relevant data
-	// if the evalutaion timeframe is > 2 minutes we dont wait and just live with the fact that we may miss one minute or two at the end
-
-	waitForSeconds := 120.0        // by default lets make sure we are at least 120 seconds away from "now()"
-	if timeframeInSeconds >= 300 { // if our evaluated timeframe however is larger than 5 minutes its ok to continue right away. 5 minutes is the default timeframe for most evaluations
-		waitForSeconds = 0.0
-	} else if timeframeInSeconds >= 120 { // if the evaluation span is between 2 and 5 minutes make sure we at least have the last minute of data
-		waitForSeconds = 60.0
-	}
-
-	// log output while we are waiting
-	if time.Now().Sub(endUnix).Seconds() < waitForSeconds {
-		log.Debug("As the end date is too close to Now() we are going to wait to make sure we have all the data for the requested timeframe(start-end)")
-	}
-
-	// make sure the end timestamp is at least waitForSeconds seconds in the past such that dynatrace metrics API has processed data
-	for time.Now().Sub(endUnix).Seconds() < waitForSeconds {
-		log.WithField("sleepSeconds", int(waitForSeconds-time.Now().Sub(endUnix).Seconds())).Debug("Sleeping while waiting for Dynatrace Metrics API")
-		time.Sleep(10 * time.Second)
-	}
-
-	return startUnix, endUnix, nil
-}
-
-// addSLO adds an SLO Entry to the SLO.yaml
-func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
-
-	// first - lets load the SLO.yaml from the config repo
-	dashboardSLO, err := eh.resourceClient.GetSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
-	if err != nil {
-		var rnfErr *keptn.ResourceNotFoundError
-		if !errors.As(err, &rnfErr) {
-			return err
-		}
-
-		// this is the default SLO in case none has yet been uploaded
-		dashboardSLO = &keptncommon.ServiceLevelObjectives{
-			Objectives: []*keptncommon.SLO{},
-			TotalScore: &keptncommon.SLOScore{
-				Pass:    "90%",
-				Warning: "75%"},
-			Comparison: &keptncommon.SLOComparison{
-				CompareWith:               "single_result",
-				IncludeResultWithScore:    "pass",
-				NumberOfComparisonResults: 1,
-				AggregateFunction:         "avg"},
-		}
-	}
-
-	// now we add the SLO Definition to the objectives - but first validate if it is not already there
-	for _, objective := range dashboardSLO.Objectives {
-		if objective.SLI == newSLO.SLI {
-			return nil
-		}
-	}
-
-	// now - lets add our newSLO to the list
-	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
-	err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
-	if err != nil {
+	if err := eh.sendGetSLIStartedEvent(); err != nil {
 		return err
 	}
 
-	return nil
+	log.WithFields(
+		log.Fields{
+			"project": eh.event.GetProject(),
+			"stage":   eh.event.GetStage(),
+			"service": eh.event.GetService(),
+		}).Info("Processing sh.keptn.event.get-sli.triggered")
+
+	sliResults, err := eh.retrieveSLIResults()
+	if err != nil {
+		log.WithError(err).Error("error retrieving SLIs")
+		return eh.sendGetSLIFinishedEvent(nil, err)
+	}
+
+	log.Info("Finished retrieving SLI results, sending sh.keptn.event.get-sli.finished event now...")
+	return eh.sendGetSLIFinishedEvent(sliResults, err)
 }
 
-// getDataFromDynatraceDashboard will process dynatrace dashboard (if found) and return the SLI, SLO and SLIResults
-func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time, endUnix time.Time) (*dashboard.DashboardLink, []*keptnv2.SLIResult, error) {
+// retrieveSLIResults will retrieve metrics either from a dashboard or from an SLI file
+func (eh *GetSLIEventHandler) retrieveSLIResults() ([]*keptnv2.SLIResult, error) {
+	// Adding DtCreds as a label so users know which DtCreds was used
+	eh.event.AddLabel("DtCreds", eh.secretName)
+
+	timeframe, err := common.NewTimeframeParser(eh.event.GetSLIStart(), eh.event.GetSLIEnd()).Parse()
+	if err != nil {
+		return nil, err
+	}
+
+	sliResults, err := eh.getSLIResults(*timeframe)
+	if err != nil {
+		return nil, err
+	}
+
+	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
+	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
+	problemID := getDynatraceProblemContext(eh.event)
+	if problemID != "" {
+		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(problemID))
+	}
+
+	// if no result values have been captured, return an error
+	if len(sliResults) == 0 {
+		return nil, errors.New("could not retrieve any SLI results")
+	}
+
+	return sliResults, nil
+}
+
+func (eh *GetSLIEventHandler) getSLIResults(timeframe common.Timeframe) ([]*keptnv2.SLIResult, error) {
+	// If no dashboard specified, query the SLIs based on the SLI.yaml definition
+	if eh.dashboard == "" {
+		return eh.getSLIResultsFromCustomQueries(timeframe)
+	}
+
+	// See if we can get the data from a Dynatrace Dashboard
+	var dashboardLinkAsLabel *dashboard.DashboardLink
+	dashboardLinkAsLabel, sliResults, err := eh.getSLIResultsFromDynatraceDashboard(timeframe)
+	if err != nil {
+		return nil, err
+	}
+
+	// add link to dynatrace dashboard to labels
+	if dashboardLinkAsLabel != nil {
+		eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
+	}
+	return sliResults, nil
+}
+
+// getSLIResultsFromDynatraceDashboard will process dynatrace dashboard (if found) and return SLIResults
+func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(timeframe common.Timeframe) (*dashboard.DashboardLink, []*keptnv2.SLIResult, error) {
 
 	sliQuerying := dashboard.NewQuerying(eh.event, eh.event.GetCustomSLIFilters(), eh.dtClient)
-	result, err := sliQuerying.GetSLIValues(eh.dashboard, startUnix, endUnix)
+	result, err := sliQuerying.GetSLIValues(eh.dashboard, timeframe)
 	if err != nil {
 		return nil, nil, dashboard.NewQueryError(err)
 	}
@@ -186,30 +148,7 @@ func (eh *GetSLIEventHandler) getDataFromDynatraceDashboard(startUnix time.Time,
 	return result.DashboardLink(), result.SLIResults(), nil
 }
 
-//getDynatraceProblemContext will evaluate the event and - returns dynatrace problem ID if found, 0 otherwise
-func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) string {
-
-	// iterate through the labels and find Problem URL
-	if eventData.GetLabels() == nil || len(eventData.GetLabels()) == 0 {
-		return ""
-	}
-
-	for labelName, labelValue := range eventData.GetLabels() {
-		if strings.ToLower(labelName) == "problem url" {
-			// the value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
-			// so - lets get the last part after pid=
-
-			ix := strings.LastIndex(labelValue, ";pid=")
-			if ix > 0 {
-				return labelValue[ix+5:]
-			}
-		}
-	}
-
-	return ""
-}
-
-func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(startUnix time.Time, endUnix time.Time) ([]*keptnv2.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(timeframe common.Timeframe) ([]*keptnv2.SLIResult, error) {
 	// get custom metrics for project if they exist
 	projectCustomQueries, err := eh.kClient.GetCustomQueries(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
@@ -217,7 +156,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(startUnix time.Time
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
 	}
 
-	queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), projectCustomQueries, startUnix, endUnix)
+	queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), projectCustomQueries, timeframe)
 
 	var sliResults []*keptnv2.SLIResult
 
@@ -255,6 +194,29 @@ func getSLIResultFromIndicator(indicator string, queryProcessing *query.Processi
 		Value:   sliValue,
 		Success: true, // mark as success
 	}
+}
+
+//getDynatraceProblemContext will evaluate the event and - returns dynatrace problem ID if found, 0 otherwise
+func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) string {
+
+	// iterate through the labels and find Problem URL
+	if eventData.GetLabels() == nil || len(eventData.GetLabels()) == 0 {
+		return ""
+	}
+
+	for labelName, labelValue := range eventData.GetLabels() {
+		if strings.ToLower(labelName) == "problem url" {
+			// the value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
+			// so - lets get the last part after pid=
+
+			ix := strings.LastIndex(labelValue, ";pid=")
+			if ix > 0 {
+				return labelValue[ix+5:]
+			}
+		}
+	}
+
+	return ""
 }
 
 func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) *keptnv2.SLIResult {
@@ -299,70 +261,50 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 	return sliResult
 }
 
-// retrieveMetrics will retrieve metrics either from a dashboard or from an SLI file
-func (eh *GetSLIEventHandler) retrieveMetrics() error {
-	// send get-sli.started event
-	if err := eh.sendGetSLIStartedEvent(); err != nil {
-		return eh.sendGetSLIFinishedEvent(nil, err)
-	}
+// addSLO adds an SLO Entry to the SLO.yaml
+func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 
-	log.WithFields(
-		log.Fields{
-			"project": eh.event.GetProject(),
-			"stage":   eh.event.GetStage(),
-			"service": eh.event.GetService(),
-		}).Info("Processing sh.keptn.internal.event.get-sli")
-
-	// Adding DtCreds as a label so users know which DtCreds was used
-	eh.event.AddLabel("DtCreds", eh.secretName)
-
-	//
-	// parse start and end (which are datetime strings) and convert them into unix timestamps
-	startUnix, endUnix, err := ensureRightTimestamps(eh.event.GetSLIStart(), eh.event.GetSLIEnd())
+	// first - lets load the SLO.yaml from the config repo
+	dashboardSLO, err := eh.resourceClient.GetSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
-		log.WithError(err).Error("ensureRightTimestamps failed")
-		return eh.sendGetSLIFinishedEvent(nil, err)
-	}
-
-	var sliResults []*keptnv2.SLIResult
-	if eh.dashboard != "" {
-		// Option 1: See if we can get the data from a Dynatrace Dashboard
-		var dashboardLinkAsLabel *dashboard.DashboardLink
-		dashboardLinkAsLabel, sliResults, err = eh.getDataFromDynatraceDashboard(startUnix, endUnix)
-		if err != nil {
-			log.WithError(err).Error("Could not retrieve SLI results via Dynatrace dashboard")
-			return eh.sendGetSLIFinishedEvent(nil, err)
+		var rnfErr *keptn.ResourceNotFoundError
+		if !errors.As(err, &rnfErr) {
+			return err
 		}
 
-		// add link to dynatrace dashboard to labels
-		if dashboardLinkAsLabel != nil {
-			eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
-		}
-	} else {
-		// Option 2: Let's query the SLIs based on the SLI.yaml definition
-		sliResults, err = eh.getSLIResultsFromCustomQueries(startUnix, endUnix)
-		if err != nil {
-			log.WithError(err).Error("Could not retrieve SLI results via sli.yaml file")
-			return eh.sendGetSLIFinishedEvent(nil, err)
+		// this is the default SLO in case none has yet been uploaded
+		dashboardSLO = &keptncommon.ServiceLevelObjectives{
+			Objectives: []*keptncommon.SLO{},
+			TotalScore: &keptncommon.SLOScore{
+				Pass:    "90%",
+				Warning: "75%"},
+			Comparison: &keptncommon.SLOComparison{
+				CompareWith:               "single_result",
+				IncludeResultWithScore:    "pass",
+				NumberOfComparisonResults: 1,
+				AggregateFunction:         "avg"},
 		}
 	}
 
-	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
-	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
-	problemID := getDynatraceProblemContext(eh.event)
-	if problemID != "" {
-		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(problemID))
+	// now we add the SLO Definition to the objectives - but first validate if it is not already there
+	for _, objective := range dashboardSLO.Objectives {
+		if objective.SLI == newSLO.SLI {
+			return nil
+		}
 	}
 
-	// now - lets see if we have captured any result values - if not - return send an error
-	err = nil
-	if len(sliResults) == 0 {
-		err = errors.New("could not retrieve any SLI results")
+	// now - lets add our newSLO to the list
+	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
+	err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
+	if err != nil {
+		return err
 	}
 
-	log.Info("Finished fetching metrics; Sending SLIDone event now ...")
+	return nil
+}
 
-	return eh.sendGetSLIFinishedEvent(sliResults, err)
+func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
+	return eh.sendEvent(NewGetSliStartedEventFactory(eh.event))
 }
 
 // sendGetSLIFinishedEvent sends the SLI finished event. If err != nil it will send an error message
@@ -402,10 +344,6 @@ func resetSLIResultsInCaseOfError(err error, eventData GetSLITriggeredAdapterInt
 	}
 
 	return sliResults
-}
-
-func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
-	return eh.sendEvent(NewGetSliStartedEventFactory(eh.event))
 }
 
 func (eh *GetSLIEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {

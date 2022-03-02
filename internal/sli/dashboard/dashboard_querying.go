@@ -2,11 +2,11 @@ package dashboard
 
 import (
 	"fmt"
-	"time"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
@@ -30,12 +30,12 @@ func NewQuerying(eventData adapter.EventContentAdapter, customFilters []*keptnv2
 // Queries Dynatrace for the existence of a dashboard tagged with keptn_project:project, keptn_stage:stage, keptn_service:service, SLI
 // if this dashboard exists it will be parsed and a custom SLI_dashboard.yaml and an SLO_dashboard.yaml will be created
 // Returns a QueryResult or an error
-func (q *Querying) GetSLIValues(dashboardID string, startUnix time.Time, endUnix time.Time) (*QueryResult, error) {
+func (q *Querying) GetSLIValues(dashboardID string, timeframe common.Timeframe) (*QueryResult, error) {
 	// let's load the dashboard if needed
 	dashbd, dashboardID, err := NewRetrieval(q.dtClient, q.eventData).Retrieve(dashboardID)
 	if err != nil {
 		return nil, fmt.Errorf("error while processing dashboard config '%s' - %w", dashboardID, err)
 	}
 
-	return NewProcessing(q.dtClient, q.eventData, q.customSLIFilters, startUnix, endUnix).Process(dashbd), nil
+	return NewProcessing(q.dtClient, q.eventData, q.customSLIFilters, timeframe).Process(dashbd), nil
 }

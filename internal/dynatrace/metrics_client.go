@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"time"
@@ -15,6 +16,12 @@ const MetricsPath = "/api/v2/metrics"
 // MetricsQueryPath is the query endpoint for Metrics API v2
 const MetricsQueryPath = MetricsPath + "/query"
 
+// MetricsRequiredDelay is delay required between the end of a timeframe and an Metric V2 API request using it.
+const MetricsRequiredDelay = 2 * time.Minute
+
+// MetricsMaximumWait is maximum acceptable wait time between the end of a timeframe and an Metrics V2 API request using it.
+const MetricsMaximumWait = 4 * time.Minute
+
 const (
 	fromKey           = "from"
 	toKey             = "to"
@@ -25,17 +32,15 @@ const (
 
 // MetricsClientQueryParameters encapsulates the query parameters for the MetricsClient's GetByQuery method.
 type MetricsClientQueryParameters struct {
-	query metrics.Query
-	from  time.Time
-	to    time.Time
+	query     metrics.Query
+	timeframe common.Timeframe
 }
 
 // NewMetricsClientQueryParameters creates new MetricsClientQueryParameters.
-func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to time.Time) MetricsClientQueryParameters {
+func NewMetricsClientQueryParameters(query metrics.Query, timeframe common.Timeframe) MetricsClientQueryParameters {
 	return MetricsClientQueryParameters{
-		query: query,
-		from:  from,
-		to:    to,
+		query:     query,
+		timeframe: timeframe,
 	}
 }
 
@@ -43,8 +48,8 @@ func NewMetricsClientQueryParameters(query metrics.Query, from time.Time, to tim
 func (q *MetricsClientQueryParameters) encode() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
-	queryParameters.add(fromKey, common.TimestampToString(q.from))
-	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	queryParameters.add(resolutionKey, "Inf")
 	if q.query.GetEntitySelector() != "" {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
@@ -122,6 +127,11 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
 func (mc *MetricsClient) GetByQuery(parameters MetricsClientQueryParameters) (*MetricsQueryResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
 	body, err := mc.client.Get(MetricsQueryPath + "?" + parameters.encode())
 	if err != nil {
 		return nil, err

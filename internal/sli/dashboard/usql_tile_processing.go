@@ -3,7 +3,6 @@ package dashboard
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -15,24 +14,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// USQLTileProcessing represents the processing of a USQL dashboard tile.
 type USQLTileProcessing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
-	startUnix     time.Time
-	endUnix       time.Time
+	timeframe     common.Timeframe
 }
 
-func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, startUnix time.Time, endUnix time.Time) *USQLTileProcessing {
+// NewUSQLTileProcessing creates a new USQLTileProcessing.
+func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *USQLTileProcessing {
 	return &USQLTileProcessing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
-		startUnix:     startUnix,
-		endUnix:       endUnix,
+		timeframe:     timeframe,
 	}
 }
 
+// Process processes the specified USQL dashboard tile.
 func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Title())
@@ -47,7 +47,7 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 		return []*TileResult{&unsuccessfulTileResult}
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, p.startUnix, p.endUnix))
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, p.timeframe))
 	if err != nil {
 		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinition(sloDefinition, "error executing USQL query: "+err.Error())
 		return []*TileResult{&unsuccessfulTileResult}

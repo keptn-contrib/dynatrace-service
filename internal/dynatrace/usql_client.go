@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"time"
@@ -10,6 +11,12 @@ import (
 )
 
 const USQLPath = "/api/v1/userSessionQueryLanguage/table"
+
+// USQLRequiredDelay is delay required between the end of a timeframe and an USQL API request using it.
+const USQLRequiredDelay = 6 * time.Minute
+
+// USQLMaximumWait is maximum acceptable wait time between the end of a timeframe and an USQL API request using it.
+const USQLMaximumWait = 8 * time.Minute
 
 const (
 	queryKey             = "query"
@@ -21,17 +28,15 @@ const (
 
 // USQLClientQueryParameters encapsulates the query parameters for the USQLClient's GetByQuery method.
 type USQLClientQueryParameters struct {
-	query          usql.Query
-	startTimestamp time.Time
-	endTimestamp   time.Time
+	query     usql.Query
+	timeframe common.Timeframe
 }
 
 // NewUSQLClientQueryParameters creates new USQLClientQueryParameters.
-func NewUSQLClientQueryParameters(query usql.Query, startTimestamp time.Time, endTimestamp time.Time) USQLClientQueryParameters {
+func NewUSQLClientQueryParameters(query usql.Query, timeframe common.Timeframe) USQLClientQueryParameters {
 	return USQLClientQueryParameters{
-		query:          query,
-		startTimestamp: startTimestamp,
-		endTimestamp:   endTimestamp,
+		query:     query,
+		timeframe: timeframe,
 	}
 }
 
@@ -41,8 +46,8 @@ func (q *USQLClientQueryParameters) encode() string {
 	queryParameters.add(queryKey, q.query.GetQuery())
 	queryParameters.add(explainKey, "false")
 	queryParameters.add(addDeepLinkFieldsKey, "false")
-	queryParameters.add(startTimestampKey, common.TimestampToString(q.startTimestamp))
-	queryParameters.add(endTimestampKey, common.TimestampToString(q.endTimestamp))
+	queryParameters.add(startTimestampKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(endTimestampKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	return queryParameters.encode()
 }
 
@@ -65,6 +70,11 @@ func NewUSQLClient(client ClientInterface) *USQLClient {
 
 // GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set
 func (uc *USQLClient) GetByQuery(parameters USQLClientQueryParameters) (*DTUSQLResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, USQLRequiredDelay, USQLMaximumWait).Wait(context.TODO())
+	if err != nil {
+		return nil, err
+	}
+
 	body, err := uc.client.Get(USQLPath + "?" + parameters.encode())
 	if err != nil {
 		return nil, err

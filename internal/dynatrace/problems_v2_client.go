@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -14,23 +15,27 @@ const ProblemStatusOpen = "OPEN"
 // ProblemsV2Path is the base endpoint for Problems API v2
 const ProblemsV2Path = "/api/v2/problems"
 
+// ProblemsV2RequiredDelay is delay required between the end of a timeframe and an PV2 API request using it.
+const ProblemsV2RequiredDelay = 2 * time.Minute
+
+// ProblemsV2MaximumWait is maximum acceptable wait time between the end of a timeframe and an PV2 API request using it.
+const ProblemsV2MaximumWait = 4 * time.Minute
+
 const (
 	problemSelectorKey = "problemSelector"
 )
 
 // ProblemsV2ClientQueryParameters encapsulates the query parameters for the ProblemsV2Client's GetTotalCountByQuery method.
 type ProblemsV2ClientQueryParameters struct {
-	query problems.Query
-	from  time.Time
-	to    time.Time
+	query     problems.Query
+	timeframe common.Timeframe
 }
 
 // NewProblemsV2ClientQueryParameters creates new ProblemsV2ClientQueryParameters.
-func NewProblemsV2ClientQueryParameters(query problems.Query, from time.Time, to time.Time) ProblemsV2ClientQueryParameters {
+func NewProblemsV2ClientQueryParameters(query problems.Query, timeframe common.Timeframe) ProblemsV2ClientQueryParameters {
 	return ProblemsV2ClientQueryParameters{
-		query: query,
-		from:  from,
-		to:    to,
+		query:     query,
+		timeframe: timeframe,
 	}
 }
 
@@ -44,8 +49,8 @@ func (q *ProblemsV2ClientQueryParameters) encode() string {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
 	}
 
-	queryParameters.add(fromKey, common.TimestampToString(q.from))
-	queryParameters.add(toKey, common.TimestampToString(q.to))
+	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
+	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	return queryParameters.encode()
 }
 
@@ -75,6 +80,11 @@ func NewProblemsV2Client(client ClientInterface) *ProblemsV2Client {
 
 // GetTotalCountByQuery calls the Dynatrace V2 API to retrieve the total count of problems for a given query and timeframe
 func (pc *ProblemsV2Client) GetTotalCountByQuery(parameters ProblemsV2ClientQueryParameters) (int, error) {
+	err := NewTimeframeDelay(parameters.timeframe, ProblemsV2RequiredDelay, ProblemsV2MaximumWait).Wait(context.TODO())
+	if err != nil {
+		return 0, err
+	}
+
 	body, err := pc.client.Get(ProblemsV2Path + "?" + parameters.encode())
 	if err != nil {
 		return 0, err
