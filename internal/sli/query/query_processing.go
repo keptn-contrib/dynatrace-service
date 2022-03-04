@@ -13,6 +13,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
 	v1mv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/mv2"
@@ -43,27 +44,16 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 }
 
 // GetSLIResultFromIndicator queries a single SLI value ultimately from the Dynatrace API and returns an SLIResult.
-func (p *Processing) GetSLIResultFromIndicator(indicator string) keptnv2.SLIResult {
+func (p *Processing) GetSLIResultFromIndicator(indicator string) result.SLIResult {
 	log.WithField("indicator", indicator).Info("Fetching indicator")
 
 	sliValue, err := p.getSLIValue(indicator)
 	if err != nil {
-		// failed to fetch metric
 		log.WithError(err).Error("getSLIValue failed")
-		return keptnv2.SLIResult{
-			Metric:  indicator,
-			Value:   0,
-			Success: false, // mark as failure
-			Message: err.Error(),
-		}
+		return result.NewFailedSLIResult(indicator, err.Error())
 	}
 
-	// successfully fetched metric
-	return keptnv2.SLIResult{
-		Metric:  indicator,
-		Value:   sliValue,
-		Success: true, // mark as success
-	}
+	return result.NewSuccessfulSLIResult(indicator, sliValue)
 }
 
 // getSLIValue queries a single SLI value ultimately from the Dynatrace API.

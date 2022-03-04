@@ -3,10 +3,10 @@ package dashboard
 import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/secpv2"
 	v1secpv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/secpv2"
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -56,26 +56,18 @@ func (p *SecurityProblemTileProcessing) processSecurityProblemSelector(query sec
 	}
 
 	return &TileResult{
-		sliResult: &sliResult,
+		sliResult: sliResult,
 		objective: sloDefinition,
 		sliName:   securityProblemsIndicatorName,
 		sliQuery:  v1secpv2.NewQueryProducer(query).Produce(),
 	}
 }
 
-func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query) keptnv2.SLIResult {
+func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query) result.SLIResult {
 	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, p.timeframe))
 	if err != nil {
-		return keptnv2.SLIResult{
-			Metric:  securityProblemsIndicatorName,
-			Success: false,
-			Message: err.Error(),
-		}
+		return result.NewFailedSLIResult(securityProblemsIndicatorName, err.Error())
 	}
 
-	return keptnv2.SLIResult{
-		Metric:  securityProblemsIndicatorName,
-		Value:   float64(totalSecurityProblemCount),
-		Success: true,
-	}
+	return result.NewSuccessfulSLIResult(securityProblemsIndicatorName, float64(totalSecurityProblemCount))
 }

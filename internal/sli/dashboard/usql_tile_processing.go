@@ -7,6 +7,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
@@ -154,11 +155,7 @@ func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, di
 	}
 
 	return TileResult{
-		sliResult: &keptnv2.SLIResult{
-			Metric:  indicatorName,
-			Value:   dimensionValue,
-			Success: true,
-		},
+		sliResult: result.NewSuccessfulSLIResult(indicatorName, dimensionValue),
 		objective: &keptncommon.SLO{
 			SLI:     indicatorName,
 			Weight:  sloDefinition.Weight,

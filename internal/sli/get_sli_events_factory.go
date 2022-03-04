@@ -5,6 +5,7 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -37,11 +38,11 @@ func (f *GetSliStartedEventFactory) CreateCloudEvent() (*cloudevents.Event, erro
 type GetSliFinishedEventFactory struct {
 	event           GetSLITriggeredAdapterInterface
 	status          keptnv2.StatusType
-	indicatorValues []*keptnv2.SLIResult
+	indicatorValues []result.SLIResult
 	err             error
 }
 
-func NewSucceededGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) *GetSliFinishedEventFactory {
+func NewSucceededGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []result.SLIResult, err error) *GetSliFinishedEventFactory {
 	return &GetSliFinishedEventFactory{
 		event:           event,
 		status:          keptnv2.StatusSucceeded,
@@ -50,7 +51,7 @@ func NewSucceededGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterfac
 	}
 }
 
-func NewErroredGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) *GetSliFinishedEventFactory {
+func NewErroredGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []result.SLIResult, err error) *GetSliFinishedEventFactory {
 	return &GetSliFinishedEventFactory{
 		event:           event,
 		status:          keptnv2.StatusErrored,
@@ -89,7 +90,7 @@ func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 			Message: message,
 		},
 		GetSLI: keptnv2.GetSLIFinished{
-			IndicatorValues: f.indicatorValues,
+			IndicatorValues: getKeptnIndicatorValues(f.indicatorValues),
 			Start:           f.event.GetSLIStart(),
 			End:             f.event.GetSLIEnd(),
 		},
@@ -98,13 +99,22 @@ func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 	return adapter.NewCloudEventFactory(f.event, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), getSLIFinishedEvent).CreateCloudEvent()
 }
 
-func getErrorMessagesFromSLIResults(indicatorValues []*keptnv2.SLIResult) []string {
+func getErrorMessagesFromSLIResults(indicatorValues []result.SLIResult) []string {
 	var errorMessages []string
 	for _, indicator := range indicatorValues {
-		if indicator.Success == false {
-			errorMessages = append(errorMessages, indicator.Message)
+		if indicator.Success() == false {
+			errorMessages = append(errorMessages, indicator.Message())
 		}
 	}
-
 	return errorMessages
+}
+
+// getKeptnIndicatorValues unwraps the indicator values to Keptn SLIResults.
+func getKeptnIndicatorValues(indicatorValues []result.SLIResult) []*keptnv2.SLIResult {
+	var keptnIndicatorValues []*keptnv2.SLIResult
+	for _, indicator := range indicatorValues {
+		keptnSLIResult := indicator.KeptnSLIResult()
+		keptnIndicatorValues = append(keptnIndicatorValues, &keptnSLIResult)
+	}
+	return keptnIndicatorValues
 }

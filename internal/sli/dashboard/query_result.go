@@ -2,9 +2,9 @@ package dashboard
 
 import (
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 )
 
 // QueryResult is the object returned by querying a Dynatrace dashboard for SLIs
@@ -13,7 +13,7 @@ type QueryResult struct {
 	dashboard     *dynatrace.Dashboard
 	sli           *dynatrace.SLI
 	slo           *keptnapi.ServiceLevelObjectives
-	sliResults    []*keptnv2.SLIResult
+	sliResults    []result.SLIResult
 }
 
 // NewQueryResultFrom creates a new QueryResult object just from a DashboardLink
@@ -49,7 +49,7 @@ func (r *QueryResult) HasSLOs() bool {
 	return r.slo != nil && len(r.slo.Objectives) > 0
 }
 
-func (r *QueryResult) SLIResults() []*keptnv2.SLIResult {
+func (r *QueryResult) SLIResults() []result.SLIResult {
 	return r.sliResults
 }
 

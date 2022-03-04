@@ -11,6 +11,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -110,13 +111,13 @@ func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 
 			sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-			assert.EqualValues(t, tt.expectedValue, sliResult.Value)
+			assert.EqualValues(t, tt.expectedValue, sliResult.Value())
 			if tt.shouldFail {
-				if assert.False(t, sliResult.Success) {
-					assert.Contains(t, sliResult.Message, tt.expectedErrorSubString)
+				if assert.False(t, sliResult.Success()) {
+					assert.Contains(t, sliResult.Message(), tt.expectedErrorSubString)
 				}
 			} else {
-				assert.True(t, sliResult.Success)
+				assert.True(t, sliResult.Success())
 			}
 		})
 	}
@@ -151,8 +152,8 @@ func TestGetSLIValue(t *testing.T) {
 
 	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-	assert.True(t, sliResult.Success)
-	assert.InDelta(t, 8.43340, sliResult.Value, 0.001)
+	assert.True(t, sliResult.Success())
+	assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
 }
 
 // tests the GETSliValue function to return the proper datapoint with the old custom query format
@@ -202,8 +203,8 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		p := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 		sliResult := p.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
 
-		assert.True(t, sliResult.Success)
-		assert.InDelta(t, 8.43340, sliResult.Value, 0.001)
+		assert.True(t, sliResult.Success())
+		assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
 	}
 }
 
@@ -227,14 +228,14 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 
 	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-	assert.False(t, sliResult.Success)
-	assert.EqualValues(t, 0.0, sliResult.Value)
+	assert.False(t, sliResult.Success())
+	assert.EqualValues(t, 0.0, sliResult.Value())
 }
 
 /*
  * Helper function to test GetSLIValue
  */
-func runGetSLIResultFromIndicatorTest(t *testing.T, handler http.Handler) keptnv2.SLIResult {
+func runGetSLIResultFromIndicatorTest(t *testing.T, handler http.Handler) result.SLIResult {
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
 
@@ -288,8 +289,8 @@ func TestGetSLISleep(t *testing.T) {
 	sliResult := dh.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
-	assert.True(t, sliResult.Success)
-	assert.InDelta(t, 8.43340, sliResult.Value, 0.001)
+	assert.True(t, sliResult.Success())
+	assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
 
 	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
 }
@@ -309,8 +310,8 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	sliResult := dh.GetSLIResultFromIndicator(keptn.Throughput)
 
-	assert.False(t, sliResult.Success)
-	assert.EqualValues(t, 0.0, sliResult.Value)
+	assert.False(t, sliResult.Success())
+	assert.EqualValues(t, 0.0, sliResult.Value())
 }
 
 func TestGetSLIValueForIndicator(t *testing.T) {
@@ -351,7 +352,7 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 
 		sliResult := ret.GetSLIResultFromIndicator(testConfig.indicator)
 
-		assert.True(t, sliResult.Success)
+		assert.True(t, sliResult.Success())
 	}
 }
 
@@ -376,8 +377,8 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 	sliResult := ret.GetSLIResultFromIndicator(indicator)
 
-	assert.True(t, sliResult.Success)
-	assert.EqualValues(t, 0.29, sliResult.Value)
+	assert.True(t, sliResult.Success())
+	assert.EqualValues(t, 0.29, sliResult.Value())
 
 	os.Unsetenv("MY_ENV_TAG")
 }
@@ -457,8 +458,8 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 
 		sliResult := ret.GetSLIResultFromIndicator(testConfig.indicator)
 
-		assert.True(t, sliResult.Success)
-		assert.EqualValues(t, testConfig.expectedSLIValue, sliResult.Value)
+		assert.True(t, sliResult.Success())
+		assert.EqualValues(t, testConfig.expectedSLIValue, sliResult.Value())
 	}
 }
 

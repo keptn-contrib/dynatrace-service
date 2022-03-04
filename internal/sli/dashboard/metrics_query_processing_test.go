@@ -5,9 +5,9 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
-	"github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,11 +50,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 			expectedResults: []*TileResult{
 				{
-					sliResult: &v0_2_0.SLIResult{
-						Metric:  "csrt",
-						Value:   15.868648438045174,
-						Success: true,
-					},
+					sliResult: result.NewSuccessfulSLIResult("csrt", 15.868648438045174),
 					objective: &keptncommon.SLO{
 						SLI:    "csrt",
 						Weight: 1,
@@ -82,11 +78,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 			expectedResults: []*TileResult{
 				{
-					sliResult: &v0_2_0.SLIResult{
-						Metric:  "cmu",
-						Value:   48975.83345935025,
-						Success: true,
-					},
+					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
 					objective: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
@@ -114,11 +106,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 			expectedResults: []*TileResult{
 				{
-					sliResult: &v0_2_0.SLIResult{
-						Metric:  "hdqc",
-						Value:   96.94525462962963,
-						Success: true,
-					},
+					sliResult: result.NewSuccessfulSLIResult("hdqc", 96.94525462962963),
 					objective: &keptncommon.SLO{
 						SLI:    "hdqc",
 						Weight: 1,
@@ -148,11 +136,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 			expectedResults: []*TileResult{
 				{
-					sliResult: &v0_2_0.SLIResult{
-						Metric:  "cmu",
-						Value:   48975.83345935025,
-						Success: true,
-					},
+					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
 					objective: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
@@ -181,11 +165,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 			expectedResults: []*TileResult{
 				{
-					sliResult: &v0_2_0.SLIResult{
-						Metric:  "cmu",
-						Value:   48975.83345935025,
-						Success: true,
-					},
+					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
 					objective: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
@@ -213,11 +193,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 			expectedResults: []*TileResult{
 				{
-					sliResult: &v0_2_0.SLIResult{
-						Metric:  "cmu",
-						Value:   48975.83345935025,
-						Success: true,
-					},
+					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
 					objective: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
@@ -245,11 +221,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 			expectedResults: []*TileResult{
 				{
-					sliResult: &v0_2_0.SLIResult{
-						Metric:  "cmu",
-						Value:   48975.83345935025,
-						Success: true,
-					},
+					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
 					objective: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,

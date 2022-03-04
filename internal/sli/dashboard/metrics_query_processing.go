@@ -6,11 +6,11 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
 	v1mv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/mv2"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -137,11 +137,7 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 		tileResults = append(
 			tileResults,
 			&TileResult{
-				sliResult: &keptnv2.SLIResult{
-					Metric:  indicatorName,
-					Value:   value,
-					Success: true,
-				},
+				sliResult: result.NewSuccessfulSLIResult(indicatorName, value),
 				objective: &keptncommon.SLO{
 					SLI:     indicatorName,
 					Weight:  sloDefinition.Weight,

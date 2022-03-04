@@ -1,13 +1,13 @@
 package dashboard
 
 import (
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 // TileResult stores the result of processing a dashboard tile and retrieving the SLIResult.
 type TileResult struct {
-	sliResult *keptnv2.SLIResult
+	sliResult result.SLIResult
 	objective *keptnapi.SLO
 	sliName   string
 	sliQuery  string
@@ -15,23 +15,14 @@ type TileResult struct {
 
 func newUnsuccessfulTileResult(indicatorName string, message string) TileResult {
 	return TileResult{
-		sliResult: &keptnv2.SLIResult{
-			Metric:  indicatorName,
-			Success: false,
-			Message: message,
-		},
-		sliName: indicatorName,
+		sliResult: result.NewFailedSLIResult(indicatorName, message),
+		sliName:   indicatorName,
 	}
 }
 
 func newUnsuccessfulTileResultFromSLODefinition(sloDefinition *keptnapi.SLO, message string) TileResult {
 	return TileResult{
-		sliResult: &keptnv2.SLIResult{
-			Metric:  sloDefinition.SLI,
-			Value:   0,
-			Success: false,
-			Message: message,
-		},
+		sliResult: result.NewFailedSLIResult(sloDefinition.SLI, message),
 		objective: sloDefinition,
 		sliName:   sloDefinition.SLI,
 	}
@@ -39,12 +30,7 @@ func newUnsuccessfulTileResultFromSLODefinition(sloDefinition *keptnapi.SLO, mes
 
 func newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition *keptnapi.SLO, sliQuery string, message string) TileResult {
 	return TileResult{
-		sliResult: &keptnv2.SLIResult{
-			Metric:  sloDefinition.SLI,
-			Value:   0,
-			Success: false,
-			Message: message,
-		},
+		sliResult: result.NewFailedSLIResult(sloDefinition.SLI, message),
 		objective: sloDefinition,
 		sliName:   sloDefinition.SLI,
 		sliQuery:  sliQuery,

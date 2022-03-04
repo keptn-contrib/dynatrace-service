@@ -4,9 +4,9 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -57,26 +57,18 @@ func (p *ProblemTileProcessing) processOpenProblemTile(query problems.Query) *Ti
 	}
 
 	return &TileResult{
-		sliResult: &sliResult,
+		sliResult: sliResult,
 		objective: sloDefinition,
 		sliName:   problemsIndicatorName,
 		sliQuery:  problemsv2.NewQueryProducer(query).Produce(),
 	}
 }
 
-func (p *ProblemTileProcessing) getProblemCountAsSLIResult(query problems.Query) keptnv2.SLIResult {
+func (p *ProblemTileProcessing) getProblemCountAsSLIResult(query problems.Query) result.SLIResult {
 	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(query, p.timeframe))
 	if err != nil {
-		return keptnv2.SLIResult{
-			Metric:  problemsIndicatorName,
-			Success: false,
-			Message: err.Error(),
-		}
+		return result.NewFailedSLIResult(problemsIndicatorName, err.Error())
 	}
 
-	return keptnv2.SLIResult{
-		Metric:  problemsIndicatorName,
-		Value:   float64(totalProblemCount),
-		Success: true,
-	}
+	return result.NewSuccessfulSLIResult(problemsIndicatorName, float64(totalProblemCount))
 }
