@@ -42,9 +42,33 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 	}
 }
 
-// GetSLIValue queries a single SLI value ultimately from the Dynatrace API.
+// GetSLIResultFromIndicator queries a single SLI value ultimately from the Dynatrace API and returns an SLIResult.
+func (p *Processing) GetSLIResultFromIndicator(indicator string) keptnv2.SLIResult {
+	log.WithField("indicator", indicator).Info("Fetching indicator")
+
+	sliValue, err := p.getSLIValue(indicator)
+	if err != nil {
+		// failed to fetch metric
+		log.WithError(err).Error("getSLIValue failed")
+		return keptnv2.SLIResult{
+			Metric:  indicator,
+			Value:   0,
+			Success: false, // mark as failure
+			Message: err.Error(),
+		}
+	}
+
+	// successfully fetched metric
+	return keptnv2.SLIResult{
+		Metric:  indicator,
+		Value:   sliValue,
+		Success: true, // mark as success
+	}
+}
+
+// getSLIValue queries a single SLI value ultimately from the Dynatrace API.
 // TODO: 2022-01-28: Refactoring needed: this is currently SLI v1 format processing, it should moved to the v1 package, separating it from the general logic.
-func (p *Processing) GetSLIValue(name string) (float64, error) {
+func (p *Processing) getSLIValue(name string) (float64, error) {
 	// first we get the query from the SLI configuration based on its logical name
 	// no default values here anymore if indicator could not be matched (e.g. due to a misspelling) and custom SLIs were defined
 	rawQuery, err := p.customQueries.GetQueryByNameOrDefaultIfEmpty(name)

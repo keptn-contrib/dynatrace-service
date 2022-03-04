@@ -108,15 +108,15 @@ func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddStartsWith(dynatrace.MetricsQueryPath, tt.metricsQueryResponseFilename)
 
-			value, err := runGetSLIValueTest(t, handler)
+			sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-			assert.EqualValues(t, tt.expectedValue, value)
+			assert.EqualValues(t, tt.expectedValue, sliResult.Value)
 			if tt.shouldFail {
-				if assert.Error(t, err) {
-					assert.Contains(t, err.Error(), tt.expectedErrorSubString)
+				if assert.False(t, sliResult.Success) {
+					assert.Contains(t, sliResult.Message, tt.expectedErrorSubString)
 				}
 			} else {
-				assert.NoError(t, err)
+				assert.True(t, sliResult.Success)
 			}
 		})
 	}
@@ -149,10 +149,10 @@ func TestGetSLIValue(t *testing.T) {
 	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
-	value, err := runGetSLIValueTest(t, handler)
+	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-	assert.NoError(t, err)
-	assert.InDelta(t, 8.43340, value, 0.001)
+	assert.True(t, sliResult.Success)
+	assert.InDelta(t, 8.43340, sliResult.Value, 0.001)
 }
 
 // tests the GETSliValue function to return the proper datapoint with the old custom query format
@@ -200,10 +200,10 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		customQueries[keptn.ResponseTimeP50] = testQuery
 
 		p := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
-		value, err := p.GetSLIValue(keptn.ResponseTimeP50)
+		sliResult := p.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
 
-		assert.EqualValues(t, nil, err)
-		assert.InDelta(t, 8.43340, value, 0.001)
+		assert.True(t, sliResult.Success)
+		assert.InDelta(t, 8.43340, sliResult.Value, 0.001)
 	}
 }
 
@@ -225,17 +225,16 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
-	value, err := runGetSLIValueTest(t, handler)
+	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-	assert.Error(t, err)
-
-	assert.EqualValues(t, 0.0, value)
+	assert.False(t, sliResult.Success)
+	assert.EqualValues(t, 0.0, sliResult.Value)
 }
 
 /*
  * Helper function to test GetSLIValue
  */
-func runGetSLIValueTest(t *testing.T, handler http.Handler) (float64, error) {
+func runGetSLIResultFromIndicatorTest(t *testing.T, handler http.Handler) keptnv2.SLIResult {
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
 
@@ -244,7 +243,7 @@ func runGetSLIValueTest(t *testing.T, handler http.Handler) (float64, error) {
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
-	return dh.GetSLIValue(keptn.ResponseTimeP50)
+	return dh.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
 }
 
 // Tests what happens when end time is too close to now. This test results in a short delay.
@@ -286,11 +285,11 @@ func TestGetSLISleep(t *testing.T) {
 
 	// time how long getting the SLI value takes
 	timeBeforeGetSLIValue := time.Now()
-	value, err := dh.GetSLIValue(keptn.ResponseTimeP50)
+	sliResult := dh.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
-	assert.NoError(t, err)
-	assert.InDelta(t, 8.43340, value, 0.001)
+	assert.True(t, sliResult.Success)
+	assert.InDelta(t, 8.43340, sliResult.Value, 0.001)
 
 	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
 }
@@ -308,10 +307,10 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
-	value, err := dh.GetSLIValue(keptn.Throughput)
+	sliResult := dh.GetSLIResultFromIndicator(keptn.Throughput)
 
-	assert.Error(t, err)
-	assert.EqualValues(t, 0.0, value)
+	assert.False(t, sliResult.Success)
+	assert.EqualValues(t, 0.0, sliResult.Value)
 }
 
 func TestGetSLIValueForIndicator(t *testing.T) {
@@ -350,10 +349,9 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 
 		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 
-		res, err := ret.GetSLIValue(testConfig.indicator)
+		sliResult := ret.GetSLIResultFromIndicator(testConfig.indicator)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, res)
+		assert.True(t, sliResult.Success)
 	}
 }
 
@@ -376,10 +374,10 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	customQueries[indicator] = "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time"
 
 	ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
-	sliValue, err := ret.GetSLIValue(indicator)
+	sliResult := ret.GetSLIResultFromIndicator(indicator)
 
-	assert.NoError(t, err)
-	assert.EqualValues(t, 0.29, sliValue)
+	assert.True(t, sliResult.Success)
+	assert.EqualValues(t, 0.29, sliResult.Value)
 
 	os.Unsetenv("MY_ENV_TAG")
 }
@@ -457,10 +455,10 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 
 		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 
-		sliValue, err := ret.GetSLIValue(testConfig.indicator)
+		sliResult := ret.GetSLIResultFromIndicator(testConfig.indicator)
 
-		assert.NoError(t, err)
-		assert.EqualValues(t, testConfig.expectedSLIValue, sliValue)
+		assert.True(t, sliResult.Success)
+		assert.EqualValues(t, testConfig.expectedSLIValue, sliResult.Value)
 	}
 }
 

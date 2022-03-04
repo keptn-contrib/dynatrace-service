@@ -167,33 +167,11 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(timeframe common.Ti
 			continue
 		}
 
-		sliResults = append(sliResults, getSLIResultFromIndicator(indicator, queryProcessing))
+		sliResult := queryProcessing.GetSLIResultFromIndicator(indicator)
+		sliResults = append(sliResults, &sliResult)
 	}
 
 	return sliResults, nil
-}
-
-func getSLIResultFromIndicator(indicator string, queryProcessing *query.Processing) *keptnv2.SLIResult {
-	log.WithField("indicator", indicator).Info("Fetching indicator")
-
-	sliValue, err := queryProcessing.GetSLIValue(indicator)
-	if err != nil {
-		// failed to fetch metric
-		log.WithError(err).Error("GetSLIValue failed")
-		return &keptnv2.SLIResult{
-			Metric:  indicator,
-			Value:   0,
-			Success: false, // mark as failure
-			Message: err.Error(),
-		}
-	}
-
-	// successfully fetched metric
-	return &keptnv2.SLIResult{
-		Metric:  indicator,
-		Value:   sliValue,
-		Success: true, // mark as success
-	}
 }
 
 //getDynatraceProblemContext will evaluate the event and - returns dynatrace problem ID if found, 0 otherwise
