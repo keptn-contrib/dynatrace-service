@@ -13,14 +13,14 @@ type TileResult struct {
 	sliQuery  string
 }
 
-func newUnsuccessfulTileResult(indicatorName string, message string) TileResult {
+func newFailedTileResult(indicatorName string, message string) TileResult {
 	return TileResult{
 		sliResult: result.NewFailedSLIResult(indicatorName, message),
 		sliName:   indicatorName,
 	}
 }
 
-func newUnsuccessfulTileResultFromSLODefinition(sloDefinition *keptnapi.SLO, message string) TileResult {
+func newFailedTileResultFromSLODefinition(sloDefinition *keptnapi.SLO, message string) TileResult {
 	return TileResult{
 		sliResult: result.NewFailedSLIResult(sloDefinition.SLI, message),
 		objective: sloDefinition,
@@ -28,7 +28,7 @@ func newUnsuccessfulTileResultFromSLODefinition(sloDefinition *keptnapi.SLO, mes
 	}
 }
 
-func newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition *keptnapi.SLO, sliQuery string, message string) TileResult {
+func newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition *keptnapi.SLO, sliQuery string, message string) TileResult {
 	return TileResult{
 		sliResult: result.NewFailedSLIResult(sloDefinition.SLI, message),
 		objective: sloDefinition,

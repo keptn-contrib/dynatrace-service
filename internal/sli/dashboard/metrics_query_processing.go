@@ -34,19 +34,19 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 	// ERROR-CASE: Metric API return no values or an error
 	// we could not query data - so - we return the error back as part of our SLIResults
 	if err != nil {
-		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Error querying Metrics API: "+err.Error())
-		return []*TileResult{&unsuccessfulTileResult}
+		failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Error querying Metrics API: "+err.Error())
+		return []*TileResult{&failedTileResult}
 	}
 
 	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
 	if len(queryResult.Result) == 0 {
-		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a single result but got no result for metric ID")
-		return []*TileResult{&unsuccessfulTileResult}
+		failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a single result but got no result for metric ID")
+		return []*TileResult{&failedTileResult}
 	}
 
 	if len(queryResult.Result) > 1 {
-		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a result only for a single metric ID but got multiple results")
-		return []*TileResult{&unsuccessfulTileResult}
+		failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a result only for a single metric ID but got multiple results")
+		return []*TileResult{&failedTileResult}
 	}
 
 	var tileResults []*TileResult
@@ -62,8 +62,8 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 	dataResultCount := len(singleResult.Data)
 	if dataResultCount == 0 {
-		unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics query result has no data")
-		return []*TileResult{&unsuccessfulTileResult}
+		failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics query result has no data")
+		return []*TileResult{&failedTileResult}
 	}
 
 	for _, singleDataEntry := range singleResult.Data {
@@ -108,8 +108,8 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 		metricQueryForSLI, err := metrics.NewQuery(metricSelectorForSLI, entitySelectorForSLI)
 		if err != nil {
-			unsuccessfulTileResult := newUnsuccessfulTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Could not create metrics query for SLI")
-			return []*TileResult{&unsuccessfulTileResult}
+			failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Could not create metrics query for SLI")
+			return []*TileResult{&failedTileResult}
 		}
 
 		// make sure we have a valid indicator name by getting rid of special characters
