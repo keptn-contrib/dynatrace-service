@@ -21,6 +21,20 @@ import (
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
+// TestGetSLIValueMetricsQueryErrorHandling_RequestFails tests handling of failed requests.
+func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddStartsWithError(dynatrace.MetricsQueryPath, 400, "./testdata/metrics_query_error_handling_test/metrics_query_constraints_violated.json")
+
+	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
+
+	assert.Zero(t, sliResult.Value())
+	if assert.False(t, sliResult.Success()) {
+		assert.Contains(t, sliResult.Message(), "Dynatrace Metrics API returned an error")
+	}
+}
+
+// TestGetSLIValueMetricsQueryErrorHandling tests processing of Metrics API v2 results.
 func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 
 	// TODO 2021-10-13: add rich error types as described in #358, including warnings
@@ -37,19 +51,12 @@ func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 			expectedValue:                287.10692602352884 / 1000,
 		},
 
-		{
-			name:                         "Request fails - want failure",
-			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_constraints_violated.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "Dynatrace Metrics API returned an error",
-		},
-
 		// this case may not occur in reality, but check it here for completeness
 		{
 			name:                         "Zero results 1 - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_0results_fake3.json",
 			shouldFail:                   true,
-			expectedErrorSubString:       "Dynatrace Metrics API returned an error",
+			expectedErrorSubString:       "Dynatrace Metrics API failed to return a result",
 		},
 
 		{

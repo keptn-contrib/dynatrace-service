@@ -3,7 +3,6 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -141,10 +140,6 @@ func (mc *MetricsClient) GetByQuery(parameters MetricsClientQueryParameters) (*M
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(result.Result) == 0 {
-		return nil, errors.New("Dynatrace Metrics API returned no datapoints")
 	}
 
 	return &result, nil
