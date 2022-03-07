@@ -96,7 +96,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "but got multiple")
+		assert.Contains(t, actual.Message, "more than one")
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
@@ -154,8 +154,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 				assert.EqualValues(t, indicator, sliResult.Metric)
 				assert.EqualValues(t, 0, sliResult.Value)
 				assert.EqualValues(t, false, sliResult.Success)
-				assert.Contains(t, sliResult.Message, "MV2;")
-				assert.Contains(t, sliResult.Message, "could not parse MV2 query")
+				assert.Contains(t, sliResult.Message, "error parsing MV2 query")
 			}
 
 			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
