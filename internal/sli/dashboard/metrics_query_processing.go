@@ -40,13 +40,13 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
 	if len(queryResult.Result) == 0 {
-		failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a single result but got no result for metric ID")
-		return []*TileResult{&failedTileResult}
+		warningTileResult := newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a single result but got no result for metric ID")
+		return []*TileResult{&warningTileResult}
 	}
 
 	if len(queryResult.Result) > 1 {
-		failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a result only for a single metric ID but got multiple results")
-		return []*TileResult{&failedTileResult}
+		warningTileResult := newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Expected a result only for a single metric ID but got multiple results")
+		return []*TileResult{&warningTileResult}
 	}
 
 	var tileResults []*TileResult
@@ -62,8 +62,8 @@ func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinitio
 
 	dataResultCount := len(singleResult.Data)
 	if dataResultCount == 0 {
-		failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics query result has no data")
-		return []*TileResult{&failedTileResult}
+		warningTileResult := newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics query result has no data")
+		return []*TileResult{&warningTileResult}
 	}
 
 	for _, singleDataEntry := range singleResult.Data {

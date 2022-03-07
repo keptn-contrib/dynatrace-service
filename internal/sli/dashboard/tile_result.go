@@ -36,3 +36,12 @@ func newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition *keptnapi.SLO
 		sliQuery:  sliQuery,
 	}
 }
+
+func newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition *keptnapi.SLO, sliQuery string, message string) TileResult {
+	return TileResult{
+		sliResult: result.NewWarningSLIResult(sloDefinition.SLI, message),
+		objective: sloDefinition,
+		sliName:   sloDefinition.SLI,
+		sliQuery:  sliQuery,
+	}
+}
