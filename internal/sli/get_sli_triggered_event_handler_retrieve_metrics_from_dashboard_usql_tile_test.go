@@ -223,6 +223,23 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType(t *t
 	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
+// TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues tests that extracting SLIs from a USQL tile with single value visualization type with no values produces a warning.
+func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_no_values/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+1&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createFailedSLIResultAssertionsFunc("usql_metric"),
+	}
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
 // TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns tests that extracting SLIs from a USQL tile with table visualization type with not enough columns produces a warning.
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns(t *testing.T) {
 
@@ -269,6 +286,23 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *tes
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
+		createFailedSLIResultAssertionsFunc("usql_metric"),
+	}
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues tests that extracting SLIs from a USQL tile with table visualization type with no values produces a warning.
+func TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_no_values/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+totalErrorCount%2C+city+FROM+usersession+LIMIT+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 

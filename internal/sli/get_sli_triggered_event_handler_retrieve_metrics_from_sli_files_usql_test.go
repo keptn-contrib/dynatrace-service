@@ -213,10 +213,10 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "zero data points")
+		assert.Contains(t, actual.Message, "could not find dimension name")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.

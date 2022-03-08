@@ -69,6 +69,10 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 }
 
 func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition *keptncommon.SLO, baseQuery usql.Query) TileResult {
+	if len(usqlResult.Values) == 0 {
+		return newWarningTileResultFromSLODefinition(sloDefinition, "User sessions API returned zero values")
+	}
+
 	if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
 		return newWarningTileResultFromSLODefinition(sloDefinition, fmt.Sprintf("USQL visualization type %s should only return a single result", dynatrace.SingleValueVisualizationType))
 	}
@@ -81,6 +85,11 @@ func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefi
 }
 
 func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition *keptncommon.SLO, visualizationType string, baseQuery usql.Query) []*TileResult {
+	if len(usqlResult.Values) == 0 {
+		warningTileResult := newWarningTileResultFromSLODefinition(sloDefinition, "User sessions API returned zero values")
+		return []*TileResult{&warningTileResult}
+	}
+
 	if len(usqlResult.ColumnNames) < 2 {
 		warningTileResult := newWarningTileResultFromSLODefinition(sloDefinition, fmt.Sprintf("USQL result type %s should have at least two columns", visualizationType))
 		return []*TileResult{&warningTileResult}
