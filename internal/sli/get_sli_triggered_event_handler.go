@@ -130,7 +130,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(timeframe comm
 
 	// let's write the SLI to the config repo
 	if queryResult.HasSLIs() {
-		err = eh.resourceClient.UploadSLI(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLI())
+		err = eh.resourceClient.UploadSLI(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLIs())
 		if err != nil {
 			return nil, nil, dashboard.NewUploadFileError("SLI", err)
 		}
@@ -138,7 +138,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(timeframe comm
 
 	// let's write the SLO to the config repo
 	if queryResult.HasSLOs() {
-		err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLO())
+		err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLOs())
 		if err != nil {
 			return nil, nil, dashboard.NewUploadFileError("SLO", err)
 		}
@@ -266,7 +266,7 @@ func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 }
 
 func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
-	return eh.sendEvent(NewGetSliStartedEventFactory(eh.event))
+	return eh.sendEvent(NewGetSLIStartedEventFactory(eh.event))
 }
 
 // sendGetSLIFinishedEvent sends the SLI finished event. If err != nil it will send an error message

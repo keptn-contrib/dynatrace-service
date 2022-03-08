@@ -79,8 +79,8 @@ func (s SLIResultSummarizer) Result() keptnv2.ResultType {
 
 	if seenWarning {
 		return keptnv2.ResultWarning
-	} else {
-		// remaining case is pass, i.e. no failure or warning occurred
-		return keptnv2.ResultPass
 	}
+
+	// remaining case is pass, i.e. no failure or warning occurred
+	return keptnv2.ResultPass
 }

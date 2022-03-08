@@ -31,7 +31,8 @@ func (r *QueryResult) Dashboard() *dynatrace.Dashboard {
 	return r.dashboard
 }
 
-func (r *QueryResult) SLI() *dynatrace.SLI {
+// SLIs gets the SLIs.
+func (r *QueryResult) SLIs() *dynatrace.SLI {
 	return r.sli
 }
 
@@ -40,7 +41,8 @@ func (r *QueryResult) HasSLIs() bool {
 	return r.sli != nil && len(r.sli.Indicators) > 0
 }
 
-func (r *QueryResult) SLO() *keptnapi.ServiceLevelObjectives {
+// SLOs gets the SLOs.
+func (r *QueryResult) SLOs() *keptnapi.ServiceLevelObjectives {
 	return r.slo
 }
 
@@ -49,6 +51,7 @@ func (r *QueryResult) HasSLOs() bool {
 	return r.slo != nil && len(r.slo.Objectives) > 0
 }
 
+// SLIResults gets the SLI results.
 func (r *QueryResult) SLIResults() []result.SLIResult {
 	return r.sliResults
 }
