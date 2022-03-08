@@ -79,7 +79,6 @@ func (p *Processing) GetSLIResultFromIndicator(name string) result.SLIResult {
 	}
 }
 
-// TODO: 2022-03-07: Examine if warnings should be produced instead of errors
 func (p *Processing) executeUSQLQuery(name string, usqlQuery string) result.SLIResult {
 
 	query, err := v1usql.NewQueryParser(usqlQuery).Parse()
@@ -94,18 +93,18 @@ func (p *Processing) executeUSQLQuery(name string, usqlQuery string) result.SLIR
 
 	if query.GetResultType() == v1usql.SingleValueResultType {
 		if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
-			return result.NewFailedSLIResult(name, fmt.Sprintf("USQL result type %s should only return a single result", v1usql.SingleValueResultType))
+			return result.NewWarningSLIResult(name, fmt.Sprintf("USQL result type %s should only return a single result", v1usql.SingleValueResultType))
 		}
 		value, err := tryCastDimensionValueToNumeric(usqlResult.Values[0][0])
 		if err != nil {
-			return result.NewFailedSLIResult(name, err.Error())
+			return result.NewWarningSLIResult(name, err.Error())
 		}
 		return result.NewSuccessfulSLIResult(name, value)
 	}
 
 	// all other types must at least have 2 columns to work properly
 	if len(usqlResult.ColumnNames) < 2 {
-		return result.NewFailedSLIResult(name, fmt.Sprintf("USQL result type %s should at least have two columns", query.GetResultType()))
+		return result.NewWarningSLIResult(name, fmt.Sprintf("USQL result type %s should at least have two columns", query.GetResultType()))
 	}
 
 	for _, rowValue := range usqlResult.Values {
@@ -120,24 +119,25 @@ func (p *Processing) executeUSQLQuery(name string, usqlQuery string) result.SLIR
 			dimensionName = rowValue[0]
 			dimensionValue = rowValue[len(rowValue)-1]
 		default:
+			// this is unlikely to be reached as it should be handled by the query parser, but a failed result is generated because it is unsupported
 			return result.NewFailedSLIResult(name, fmt.Sprintf("unknown USQL result type: %s", query.GetResultType()))
 		}
 
 		dimensionNameString, err := tryCastDimensionNameToString(dimensionName)
 		if err != nil {
-			return result.NewFailedSLIResult(name, err.Error())
+			return result.NewWarningSLIResult(name, err.Error())
 		}
 
 		if dimensionNameString == query.GetDimension() {
 			value, err := tryCastDimensionValueToNumeric(dimensionValue)
 			if err != nil {
-				return result.NewFailedSLIResult(name, err.Error())
+				return result.NewWarningSLIResult(name, err.Error())
 			}
 			return result.NewSuccessfulSLIResult(name, value)
 		}
 	}
 
-	return result.NewFailedSLIResult(name, fmt.Sprintf("could not find dimension name '%s' in result", query.GetDimension()))
+	return result.NewWarningSLIResult(name, fmt.Sprintf("could not find dimension name '%s' in result", query.GetDimension()))
 }
 
 func tryCastDimensionValueToNumeric(dimensionValue interface{}) (float64, error) {
