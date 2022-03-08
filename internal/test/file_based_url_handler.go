@@ -117,7 +117,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		if strings.Index(requestedURL, url) == 0 {
 			log.Debug("Found Mock: " + url + " --> " + config.fileName)
 
-			writeFileToResponseWriter(w, http.StatusOK, config.fileName)
+			writeFileToResponseWriter(w, config.status, config.fileName)
 			return
 		}
 	}

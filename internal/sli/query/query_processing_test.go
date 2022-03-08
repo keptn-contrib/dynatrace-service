@@ -11,6 +11,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -20,86 +21,90 @@ import (
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
-func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
+// TestGetSLIValueMetricsQuery_Success tests processing of Metrics API v2 results success case.
+// One result, one data - want success
+func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddStartsWith(dynatrace.MetricsQueryPath, "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_1value.json")
+
+	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
+
+	assert.EqualValues(t, 287.10692602352884/1000, sliResult.Value())
+	assert.EqualValues(t, result.IndicatorResultSuccessful, sliResult.IndicatorResult())
+	assert.True(t, sliResult.Success())
+}
+
+// TestGetSLIValueMetricsQueryErrorHandling_RequestFails tests handling of failed requests.
+func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddStartsWithError(dynatrace.MetricsQueryPath, 400, "./testdata/metrics_query_error_handling_test/metrics_query_constraints_violated.json")
+
+	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
+
+	assert.Zero(t, sliResult.Value())
+	assert.EqualValues(t, result.IndicatorResultFailed, sliResult.IndicatorResult())
+	assert.Contains(t, sliResult.Message(), "error querying Metrics API v2")
+	assert.False(t, sliResult.Success())
+}
+
+// TestGetSLIValueMetricsQuery_Warnings tests processing of Metrics API v2 results for warnings.
+func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 
 	// TODO 2021-10-13: add rich error types as described in #358, including warnings
 	tests := []struct {
 		name                         string
 		metricsQueryResponseFilename string
-		expectedValue                float64
-		shouldFail                   bool
 		expectedErrorSubString       string
 	}{
-		{
-			name:                         "One result, one data - want success",
-			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_1value.json",
-			expectedValue:                287.10692602352884 / 1000,
-		},
-
-		{
-			name:                         "Request fails - want failure",
-			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_constraints_violated.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "Dynatrace Metrics API returned an error",
-		},
-
 		// this case may not occur in reality, but check it here for completeness
 		{
 			name:                         "Zero results 1 - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_0results_fake3.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "Dynatrace Metrics API returned an error",
+			expectedErrorSubString:       "Metrics API v2 returned zero results",
 		},
 
 		{
 			name:                         "One result, no data - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_0data.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "Dynatrace Metrics API returned zero data points",
+			expectedErrorSubString:       "Metrics API v2 returned zero data points",
 		},
 
 		// this case may not occur in reality, but check it here for completeness
 		{
 			name:                         "One result, one data, no values - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_0values_fake1.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "Dynatrace Metrics API returned zero data point values",
+			expectedErrorSubString:       "Metrics API v2 returned zero data point values",
 		},
 
 		// this case may not occur in reality, but check it here for completeness
 		{
 			name:                         "One result, one data, no values - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_0values_fake2.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "Dynatrace Metrics API returned zero data point values",
+			expectedErrorSubString:       "Metrics API v2 returned zero data point values",
 		},
 
 		{
 			name:                         "One result, one data, two values - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_2values.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "expected only a single data point value from Dynatrace Metrics API",
+			expectedErrorSubString:       "Metrics API v2 returned more than one data point value",
 		},
 
 		{
 			name:                         "One result, two data - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_2data.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "expected only a single data point from Dynatrace Metrics API",
+			expectedErrorSubString:       "Metrics API v2 returned more than one data point",
 		},
 
 		{
 			name:                         "Two results, one data - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_2results_1data.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "expected only a single result from Dynatrace Metrics API",
+			expectedErrorSubString:       "Metrics API v2 returned more than one result",
 		},
 
 		{
 			name:                         "Two results, two data - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_2results_2data.json",
-			shouldFail:                   true,
-			expectedErrorSubString:       "expected only a single result from Dynatrace Metrics API",
+			expectedErrorSubString:       "Metrics API v2 returned more than one result",
 		},
 	}
 
@@ -108,16 +113,12 @@ func TestGetSLIValueMetricsQueryErrorHandling(t *testing.T) {
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddStartsWith(dynatrace.MetricsQueryPath, tt.metricsQueryResponseFilename)
 
-			value, err := runGetSLIValueTest(t, handler)
+			sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-			assert.EqualValues(t, tt.expectedValue, value)
-			if tt.shouldFail {
-				if assert.Error(t, err) {
-					assert.Contains(t, err.Error(), tt.expectedErrorSubString)
-				}
-			} else {
-				assert.NoError(t, err)
-			}
+			assert.Zero(t, sliResult.Value())
+			assert.EqualValues(t, result.IndicatorResultWarning, sliResult.IndicatorResult())
+			assert.Contains(t, sliResult.Message(), tt.expectedErrorSubString)
+			assert.False(t, sliResult.Success())
 		})
 	}
 }
@@ -149,10 +150,10 @@ func TestGetSLIValue(t *testing.T) {
 	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
-	value, err := runGetSLIValueTest(t, handler)
+	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-	assert.NoError(t, err)
-	assert.InDelta(t, 8.43340, value, 0.001)
+	assert.True(t, sliResult.Success())
+	assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
 }
 
 // tests the GETSliValue function to return the proper datapoint with the old custom query format
@@ -200,10 +201,10 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		customQueries[keptn.ResponseTimeP50] = testQuery
 
 		p := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
-		value, err := p.GetSLIValue(keptn.ResponseTimeP50)
+		sliResult := p.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
 
-		assert.EqualValues(t, nil, err)
-		assert.InDelta(t, 8.43340, value, 0.001)
+		assert.True(t, sliResult.Success())
+		assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
 	}
 }
 
@@ -225,17 +226,16 @@ func TestGetSLIValueWithEmptyResult(t *testing.T) {
 	handler := test.NewPayloadBasedURLHandler(t)
 	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
 
-	value, err := runGetSLIValueTest(t, handler)
+	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-	assert.Error(t, err)
-
-	assert.EqualValues(t, 0.0, value)
+	assert.False(t, sliResult.Success())
+	assert.EqualValues(t, 0.0, sliResult.Value())
 }
 
 /*
  * Helper function to test GetSLIValue
  */
-func runGetSLIValueTest(t *testing.T, handler http.Handler) (float64, error) {
+func runGetSLIResultFromIndicatorTest(t *testing.T, handler http.Handler) result.SLIResult {
 	httpClient, teardown := test.CreateHTTPClient(handler)
 	defer teardown()
 
@@ -244,7 +244,7 @@ func runGetSLIValueTest(t *testing.T, handler http.Handler) (float64, error) {
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
-	return dh.GetSLIValue(keptn.ResponseTimeP50)
+	return dh.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
 }
 
 // Tests what happens when end time is too close to now. This test results in a short delay.
@@ -286,11 +286,11 @@ func TestGetSLISleep(t *testing.T) {
 
 	// time how long getting the SLI value takes
 	timeBeforeGetSLIValue := time.Now()
-	value, err := dh.GetSLIValue(keptn.ResponseTimeP50)
+	sliResult := dh.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
-	assert.NoError(t, err)
-	assert.InDelta(t, 8.43340, value, 0.001)
+	assert.True(t, sliResult.Success())
+	assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
 
 	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
 }
@@ -308,10 +308,10 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
-	value, err := dh.GetSLIValue(keptn.Throughput)
+	sliResult := dh.GetSLIResultFromIndicator(keptn.Throughput)
 
-	assert.Error(t, err)
-	assert.EqualValues(t, 0.0, value)
+	assert.False(t, sliResult.Success())
+	assert.EqualValues(t, 0.0, sliResult.Value())
 }
 
 func TestGetSLIValueForIndicator(t *testing.T) {
@@ -350,10 +350,9 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 
 		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 
-		res, err := ret.GetSLIValue(testConfig.indicator)
+		sliResult := ret.GetSLIResultFromIndicator(testConfig.indicator)
 
-		assert.NoError(t, err)
-		assert.NotNil(t, res)
+		assert.True(t, sliResult.Success())
 	}
 }
 
@@ -376,10 +375,10 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	customQueries[indicator] = "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time"
 
 	ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
-	sliValue, err := ret.GetSLIValue(indicator)
+	sliResult := ret.GetSLIResultFromIndicator(indicator)
 
-	assert.NoError(t, err)
-	assert.EqualValues(t, 0.29, sliValue)
+	assert.True(t, sliResult.Success())
+	assert.EqualValues(t, 0.29, sliResult.Value())
 
 	os.Unsetenv("MY_ENV_TAG")
 }
@@ -457,10 +456,10 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 
 		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 
-		sliValue, err := ret.GetSLIValue(testConfig.indicator)
+		sliResult := ret.GetSLIResultFromIndicator(testConfig.indicator)
 
-		assert.NoError(t, err)
-		assert.EqualValues(t, testConfig.expectedSLIValue, sliValue)
+		assert.True(t, sliResult.Success())
+		assert.EqualValues(t, testConfig.expectedSLIValue, sliResult.Value())
 	}
 }
 

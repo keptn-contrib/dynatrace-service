@@ -1,0 +1,9 @@
+{
+  "extrapolationLevel": 1,
+  "columnNames": [
+    "totalErrorCount",
+    "totalLicenseCreditCount",
+    "userActionCount"
+  ],
+  "values": []
+}

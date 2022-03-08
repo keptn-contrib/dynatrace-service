@@ -35,7 +35,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		assert.Contains(t, actual.Message, "response_time_p95")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -58,10 +58,10 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "could not parse metrics query")
+		assert.Contains(t, actual.Message, "error parsing Metrics v2 query")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -85,23 +85,13 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		assert.Contains(t, actual.Message, errorMessage)
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, shouldFail bool, sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
+func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
 	// we use the special mock for the resource client
 	// we do not want to query a dashboard, so we leave it empty
 	runTestAndAssertNoError(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, kClient, &resourceClientMock{t: t}, "")
-
-	getSLIFinishedEventAssertionsFunc := func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
-		if shouldFail {
-			assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
-			assert.NotEmpty(t, data.Message)
-		} else {
-			assert.EqualValues(t, keptnv2.ResultPass, data.Result)
-			assert.Empty(t, data.Message)
-		}
-	}
 
 	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }

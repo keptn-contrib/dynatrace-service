@@ -5,9 +5,9 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,8 +28,8 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Tim
 // Process processes the specified SLO dashboard tile.
 func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	if len(tile.AssignedEntities) == 0 {
-		unsuccessfulTileResult := newUnsuccessfulTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")
-		return []*TileResult{&unsuccessfulTileResult}
+		failedTileResult := newFailedTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")
+		return []*TileResult{&failedTileResult}
 	}
 
 	var results []*TileResult
@@ -46,25 +46,18 @@ func (p *SLOTileProcessing) processSLO(sloID string) *TileResult {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
 		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
-		unsuccessfulTileResult := newUnsuccessfulTileResult("slo_without_id", err.Error())
-		return &unsuccessfulTileResult
+		failedTileResult := newFailedTileResult("slo_without_id", err.Error())
+		return &failedTileResult
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
 	if err != nil {
-		unsuccessfulTileResult := newUnsuccessfulTileResult(common.CleanIndicatorName("slo_"+sloID), err.Error())
-		return &unsuccessfulTileResult
+		failedTileResult := newFailedTileResult(common.CleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
+		return &failedTileResult
 	}
 
-	// Step 2: Transform the SLO result into an SLI result and SLO definition
-	// IndicatorName is based on the SLO Name
 	indicatorName := common.CleanIndicatorName(sloResult.Name)
-	sliResult := &keptnv2.SLIResult{
-		Metric:  indicatorName,
-		Value:   sloResult.EvaluatedPercentage,
-		Success: true,
-	}
 
 	log.WithFields(
 		log.Fields{
@@ -86,7 +79,7 @@ func (p *SLOTileProcessing) processSLO(sloID string) *TileResult {
 	}
 
 	return &TileResult{
-		sliResult: sliResult,
+		sliResult: result.NewSuccessfulSLIResult(indicatorName, sloResult.EvaluatedPercentage),
 		objective: sloDefinition,
 		sliName:   indicatorName,
 		sliQuery:  slo.NewQueryProducer(*query).Produce(),

@@ -1,24 +1,26 @@
 package sli
 
 import (
-	"strings"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-type GetSliStartedEventFactory struct {
+// GetSLIStartedEventFactory is a factory for get-sli.started cloud events.
+type GetSLIStartedEventFactory struct {
 	event GetSLITriggeredAdapterInterface
 }
 
-func NewGetSliStartedEventFactory(event GetSLITriggeredAdapterInterface) *GetSliStartedEventFactory {
-	return &GetSliStartedEventFactory{
+// NewGetSLIStartedEventFactory creates a new GetSliStartedEventFactory.
+func NewGetSLIStartedEventFactory(event GetSLITriggeredAdapterInterface) *GetSLIStartedEventFactory {
+	return &GetSLIStartedEventFactory{
 		event: event,
 	}
 }
 
-func (f *GetSliStartedEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
+// CreateCloudEvent creates a cloud event based on the factory or returns an error if this can't be done.
+func (f *GetSLIStartedEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
 	getSLIStartedEvent := keptnv2.GetSLIStartedEventData{
 		EventData: keptnv2.EventData{
 			Project: f.event.GetProject(),
@@ -34,15 +36,17 @@ func (f *GetSliStartedEventFactory) CreateCloudEvent() (*cloudevents.Event, erro
 
 }
 
-type GetSliFinishedEventFactory struct {
+// GetSLIFinishedEventFactory is a factory for get-sli.finished cloud events.
+type GetSLIFinishedEventFactory struct {
 	event           GetSLITriggeredAdapterInterface
 	status          keptnv2.StatusType
-	indicatorValues []*keptnv2.SLIResult
+	indicatorValues []result.SLIResult
 	err             error
 }
 
-func NewSucceededGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) *GetSliFinishedEventFactory {
-	return &GetSliFinishedEventFactory{
+// NewSucceededGetSLIFinishedEventFactory creates a new GetSliFinishedEventFactory with status succeeded.
+func NewSucceededGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []result.SLIResult, err error) *GetSLIFinishedEventFactory {
+	return &GetSLIFinishedEventFactory{
 		event:           event,
 		status:          keptnv2.StatusSucceeded,
 		indicatorValues: indicatorValues,
@@ -50,8 +54,9 @@ func NewSucceededGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterfac
 	}
 }
 
-func NewErroredGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []*keptnv2.SLIResult, err error) *GetSliFinishedEventFactory {
-	return &GetSliFinishedEventFactory{
+// NewErroredGetSLIFinishedEventFactory creates a new GetSliFinishedEventFactory with status errored.
+func NewErroredGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []result.SLIResult, err error) *GetSLIFinishedEventFactory {
+	return &GetSLIFinishedEventFactory{
 		event:           event,
 		status:          keptnv2.StatusErrored,
 		indicatorValues: indicatorValues,
@@ -59,19 +64,15 @@ func NewErroredGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface,
 	}
 }
 
-func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
-	result := keptnv2.ResultPass
-	message := ""
+// CreateCloudEvent creates a cloud event based on the factory or returns an error if this can't be done.
+func (f *GetSLIFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
+	sliResultSummarizer := result.NewSLIResultSummarizer(f.indicatorValues)
+	result := sliResultSummarizer.Result()
+	message := sliResultSummarizer.SummaryMessage()
+
 	if f.err != nil {
 		result = keptnv2.ResultFailed
 		message = f.err.Error()
-	}
-
-	// get error messages if only some SLIs failed and there was no error
-	sliErrorMessages := getErrorMessagesFromSLIResults(f.indicatorValues)
-	if f.err == nil && len(sliErrorMessages) > 0 {
-		result = keptnv2.ResultFailed
-		message = strings.Join(sliErrorMessages, "; ")
 	}
 
 	if f.status == keptnv2.StatusErrored {
@@ -89,7 +90,7 @@ func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 			Message: message,
 		},
 		GetSLI: keptnv2.GetSLIFinished{
-			IndicatorValues: f.indicatorValues,
+			IndicatorValues: getKeptnIndicatorValues(f.indicatorValues),
 			Start:           f.event.GetSLIStart(),
 			End:             f.event.GetSLIEnd(),
 		},
@@ -98,13 +99,12 @@ func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 	return adapter.NewCloudEventFactory(f.event, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), getSLIFinishedEvent).CreateCloudEvent()
 }
 
-func getErrorMessagesFromSLIResults(indicatorValues []*keptnv2.SLIResult) []string {
-	var errorMessages []string
+// getKeptnIndicatorValues unwraps the indicator values to Keptn SLIResults.
+func getKeptnIndicatorValues(indicatorValues []result.SLIResult) []*keptnv2.SLIResult {
+	var keptnIndicatorValues []*keptnv2.SLIResult
 	for _, indicator := range indicatorValues {
-		if indicator.Success == false {
-			errorMessages = append(errorMessages, indicator.Message)
-		}
+		keptnSLIResult := indicator.KeptnSLIResult()
+		keptnIndicatorValues = append(keptnIndicatorValues, &keptnSLIResult)
 	}
-
-	return errorMessages
+	return keptnIndicatorValues
 }

@@ -185,8 +185,8 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 	rClient := &uploadErrorResourceClientMock{t: t}
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "Metrics query result has no data")
+		assert.EqualValues(t, keptnv2.ResultWarning, actual.Result)
+		assert.Contains(t, actual.Message, "Metrics API v2 returned zero data points")
 	}
 
 	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))

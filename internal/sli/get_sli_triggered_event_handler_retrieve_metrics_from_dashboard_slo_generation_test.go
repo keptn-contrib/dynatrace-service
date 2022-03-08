@@ -121,5 +121,5 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }

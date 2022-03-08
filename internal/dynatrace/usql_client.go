@@ -3,7 +3,6 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -85,12 +84,6 @@ func (uc *USQLClient) GetByQuery(parameters USQLClientQueryParameters) (*DTUSQLR
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
-	}
-
-	// if no data comes back
-	if len(result.Values) == 0 {
-		// there are no data points - try again?
-		return nil, errors.New("Dynatrace USQL API returned zero data points")
 	}
 
 	return &result, nil

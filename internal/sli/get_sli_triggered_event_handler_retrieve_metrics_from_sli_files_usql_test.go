@@ -55,7 +55,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 				assert.Contains(t, sliResult.Message, "incorrect prefix")
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
@@ -69,24 +69,28 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 
 	testConfigs := []struct {
-		name                 string
-		usqlPrefix           string
-		expectedErrorMessage string
+		name                              string
+		usqlPrefix                        string
+		expectedErrorMessage              string
+		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData)
 	}{
 		{
-			name:                 "unknown type fails",
-			usqlPrefix:           "USQL;COLUMN_CHARTS;iOS 11.4.1;",
-			expectedErrorMessage: "unknown result type: COLUMN_CHARTS",
+			name:                              "unknown type fails",
+			usqlPrefix:                        "USQL;COLUMN_CHARTS;iOS 11.4.1;",
+			expectedErrorMessage:              "unknown result type: COLUMN_CHARTS",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 		{
-			name:                 "unknown dimension name fails",
-			usqlPrefix:           "USQL;COLUMN_CHART;iOS 17.2.3;",
-			expectedErrorMessage: "could not find dimension name 'iOS 17.2.3'",
+			name:                              "unknown dimension name fails",
+			usqlPrefix:                        "USQL;COLUMN_CHART;iOS 17.2.3;",
+			expectedErrorMessage:              "could not find dimension name 'iOS 17.2.3'",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "missing fields fails",
-			usqlPrefix:           "USQL;;;",
-			expectedErrorMessage: "result type should not be empty",
+			name:                              "missing fields fails",
+			usqlPrefix:                        "USQL;;;",
+			expectedErrorMessage:              "result type should not be empty",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 	}
 	for _, testConfig := range testConfigs {
@@ -113,7 +117,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 				assert.Contains(t, actual.Message, tc.expectedErrorMessage)
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, tc.getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
@@ -165,7 +169,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 				},
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSuccessfulSLIResultAssertionsFunc(indicator, tc.expectedValue))
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, tc.expectedValue))
 		})
 	}
 }
@@ -186,7 +190,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		},
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSuccessfulSLIResultAssertionsFunc(indicator, 62737.44360695537))
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 62737.44360695537))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -209,10 +213,10 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "zero data points")
+		assert.Contains(t, actual.Message, "could not find dimension name")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -223,106 +227,123 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 
 	testConfigs := []struct {
-		name                 string
-		usqlQuery            string
-		dataReturned         string
-		expectedErrorMessage string
+		name                              string
+		usqlQuery                         string
+		dataReturned                      string
+		expectedErrorMessage              string
+		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData)
 	}{
 		{
-			name:                 "dimension name is not allowed for single value result type",
-			usqlQuery:            "USQL;SINGLE_VALUE;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage: "dimension should be empty",
+			name:                              "dimension name is not allowed for single value result type",
+			usqlQuery:                         "USQL;SINGLE_VALUE;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results.json",
+			expectedErrorMessage:              "dimension should be empty",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 		{
-			name:                 "dimension name should not be empty for COLUMN_CHART result types",
-			usqlQuery:            "USQL;COLUMN_CHART;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage: "dimension should not be empty",
+			name:                              "dimension name should not be empty for COLUMN_CHART result types",
+			usqlQuery:                         "USQL;COLUMN_CHART;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results.json",
+			expectedErrorMessage:              "dimension should not be empty",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 		{
-			name:                 "dimension name should not be empty for PIE_CHART result types",
-			usqlQuery:            "USQL;PIE_CHART;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage: "dimension should not be empty",
+			name:                              "dimension name should not be empty for PIE_CHART result types",
+			usqlQuery:                         "USQL;PIE_CHART;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results.json",
+			expectedErrorMessage:              "dimension should not be empty",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 		{
-			name:                 "dimension name should not be empty for TABLE result types",
-			usqlQuery:            "USQL;TABLE;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage: "dimension should not be empty",
+			name:                              "dimension name should not be empty for TABLE result types",
+			usqlQuery:                         "USQL;TABLE;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results.json",
+			expectedErrorMessage:              "dimension should not be empty",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 		{
-			name:                 "dimension name should not be empty for COLUMN_CHART result types even if result only has single value",
-			usqlQuery:            "USQL;COLUMN_CHART;;SELECT AVG(duration) FROM usersession",
-			dataReturned:         "./testdata/usql_200_single_result.json",
-			expectedErrorMessage: "dimension should not be empty",
+			name:                              "dimension name should not be empty for COLUMN_CHART result types even if result only has single value",
+			usqlQuery:                         "USQL;COLUMN_CHART;;SELECT AVG(duration) FROM usersession",
+			dataReturned:                      "./testdata/usql_200_single_result.json",
+			expectedErrorMessage:              "dimension should not be empty",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 		{
-			name:                 "dimension name should not be empty for PIE_CHART result types even if result only has single value",
-			usqlQuery:            "USQL;PIE_CHART;;SELECT AVG(duration) FROM usersession",
-			dataReturned:         "./testdata/usql_200_single_result.json",
-			expectedErrorMessage: "dimension should not be empty",
+			name:                              "dimension name should not be empty for PIE_CHART result types even if result only has single value",
+			usqlQuery:                         "USQL;PIE_CHART;;SELECT AVG(duration) FROM usersession",
+			dataReturned:                      "./testdata/usql_200_single_result.json",
+			expectedErrorMessage:              "dimension should not be empty",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 		{
-			name:                 "dimension name should not be empty for TABLE result types even if result only has single value",
-			usqlQuery:            "USQL;TABLE;;SELECT AVG(duration) FROM usersession",
-			dataReturned:         "./testdata/usql_200_single_result.json",
-			expectedErrorMessage: "dimension should not be empty",
+			name:                              "dimension name should not be empty for TABLE result types even if result only has single value",
+			usqlQuery:                         "USQL;TABLE;;SELECT AVG(duration) FROM usersession",
+			dataReturned:                      "./testdata/usql_200_single_result.json",
+			expectedErrorMessage:              "dimension should not be empty",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 		},
 		{
-			name:                 "COLUMN_CHART should have at least two columns",
-			usqlQuery:            "USQL;COLUMN_CHART;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
-			dataReturned:         "./testdata/usql_200_single_result.json",
-			expectedErrorMessage: "should at least have two columns",
+			name:                              "COLUMN_CHART should have at least two columns",
+			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
+			dataReturned:                      "./testdata/usql_200_single_result.json",
+			expectedErrorMessage:              "should at least have two columns",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "PIE_CHART should have at least two columns",
-			usqlQuery:            "USQL;PIE_CHART;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
-			dataReturned:         "./testdata/usql_200_single_result.json",
-			expectedErrorMessage: "should at least have two columns",
+			name:                              "PIE_CHART should have at least two columns",
+			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
+			dataReturned:                      "./testdata/usql_200_single_result.json",
+			expectedErrorMessage:              "should at least have two columns",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "TABLE should have at least two columns",
-			usqlQuery:            "USQL;TABLE;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
-			dataReturned:         "./testdata/usql_200_single_result.json",
-			expectedErrorMessage: "should at least have two columns",
+			name:                              "TABLE should have at least two columns",
+			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
+			dataReturned:                      "./testdata/usql_200_single_result.json",
+			expectedErrorMessage:              "should at least have two columns",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "result has more than one column, but first column is not a string value for COLUMN_CHART",
-			usqlQuery:            "USQL;COLUMN_CHART;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
-			expectedErrorMessage: "dimension name should be a string",
+			name:                              "result has more than one column, but first column is not a string value for COLUMN_CHART",
+			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
+			expectedErrorMessage:              "dimension name should be a string",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "result has more than one column, but first column is not a string value for PIE_CHART",
-			usqlQuery:            "USQL;PIE_CHART;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
-			expectedErrorMessage: "dimension name should be a string",
+			name:                              "result has more than one column, but first column is not a string value for PIE_CHART",
+			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
+			expectedErrorMessage:              "dimension name should be a string",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "result has more than one column, but first column is not a string value for TABLE",
-			usqlQuery:            "USQL;TABLE;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
-			expectedErrorMessage: "dimension name should be a string",
+			name:                              "result has more than one column, but first column is not a string value for TABLE",
+			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
+			expectedErrorMessage:              "dimension name should be a string",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "result has more than one column, but second column is not a numeric value for COLUMN_CHART",
-			usqlQuery:            "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results_wrong_second_column_type.json",
-			expectedErrorMessage: "dimension value should be a number",
+			name:                              "result has more than one column, but second column is not a numeric value for COLUMN_CHART",
+			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_second_column_type.json",
+			expectedErrorMessage:              "dimension value should be a number",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "result has more than one column, but second column is not a numeric value for PIE_CHART",
-			usqlQuery:            "USQL;PIE_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results_wrong_second_column_type.json",
-			expectedErrorMessage: "dimension value should be a number",
+			name:                              "result has more than one column, but second column is not a numeric value for PIE_CHART",
+			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_second_column_type.json",
+			expectedErrorMessage:              "dimension value should be a number",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 		{
-			name:                 "result has more than one column, but last column is not a numeric value for TABLE",
-			usqlQuery:            "USQL;TABLE;iOS 11.4.1;SELECT osVersion,AVG(duration),osVersion FROM usersession GROUP BY osVersion",
-			dataReturned:         "./testdata/usql_200_multiple_results_wrong_last_column_type.json",
-			expectedErrorMessage: "dimension value should be a number",
+			name:                              "result has more than one column, but last column is not a numeric value for TABLE",
+			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT osVersion,AVG(duration),osVersion FROM usersession GROUP BY osVersion",
+			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_last_column_type.json",
+			expectedErrorMessage:              "dimension value should be a number",
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 		},
 	}
 	for _, testConfig := range testConfigs {
@@ -348,7 +369,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				assert.Contains(t, actual.Message, tc.expectedErrorMessage)
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, tc.getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
