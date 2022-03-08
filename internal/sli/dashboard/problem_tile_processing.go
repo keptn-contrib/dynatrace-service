@@ -67,7 +67,7 @@ func (p *ProblemTileProcessing) processOpenProblemTile(query problems.Query) *Ti
 func (p *ProblemTileProcessing) getProblemCountAsSLIResult(query problems.Query) result.SLIResult {
 	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(query, p.timeframe))
 	if err != nil {
-		return result.NewFailedSLIResult(problemsIndicatorName, err.Error())
+		return result.NewFailedSLIResult(problemsIndicatorName, "error querying Problems API v2:"+err.Error())
 	}
 
 	return result.NewSuccessfulSLIResult(problemsIndicatorName, float64(totalProblemCount))

@@ -66,7 +66,7 @@ func (p *SecurityProblemTileProcessing) processSecurityProblemSelector(query sec
 func (p *SecurityProblemTileProcessing) getSecurityProblemCountAsSLIResult(query secpv2.Query) result.SLIResult {
 	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(query, p.timeframe))
 	if err != nil {
-		return result.NewFailedSLIResult(securityProblemsIndicatorName, err.Error())
+		return result.NewFailedSLIResult(securityProblemsIndicatorName, "error querying Security problems API: "+err.Error())
 	}
 
 	return result.NewSuccessfulSLIResult(securityProblemsIndicatorName, float64(totalSecurityProblemCount))

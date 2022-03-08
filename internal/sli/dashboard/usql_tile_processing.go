@@ -45,13 +45,13 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 
 	query, err := usql.NewQuery(tile.Query)
 	if err != nil {
-		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "could not create USQL query: "+err.Error())
+		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "error creating USQL query: "+err.Error())
 		return []*TileResult{&failedTileResult}
 	}
 
 	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, p.timeframe))
 	if err != nil {
-		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "error executing USQL query: "+err.Error())
+		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "error querying User sessions API: "+err.Error())
 		return []*TileResult{&failedTileResult}
 	}
 
