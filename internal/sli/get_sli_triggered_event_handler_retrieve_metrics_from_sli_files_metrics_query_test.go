@@ -38,7 +38,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		assert.Contains(t, actual.Message, "Warning")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -69,7 +69,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -100,7 +100,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -157,7 +157,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 				assert.Contains(t, sliResult.Message, "error parsing MV2 query")
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
@@ -180,7 +180,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
 	kClient := &keptnClientMock{}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443))
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -199,5 +199,5 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		},
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443))
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443))
 }

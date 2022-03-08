@@ -1,8 +1,6 @@
 package sli
 
 import (
-	"strings"
-
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
@@ -61,18 +59,13 @@ func NewErroredGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface,
 }
 
 func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
-	result := keptnv2.ResultPass
-	message := ""
+	sliResultSummarizer := result.NewSLIResultSummarizer(f.indicatorValues)
+	result := sliResultSummarizer.Result()
+	message := sliResultSummarizer.SummaryMessage()
+
 	if f.err != nil {
 		result = keptnv2.ResultFailed
 		message = f.err.Error()
-	}
-
-	// get error messages if only some SLIs failed and there was no error
-	sliErrorMessages := getErrorMessagesFromSLIResults(f.indicatorValues)
-	if f.err == nil && len(sliErrorMessages) > 0 {
-		result = keptnv2.ResultFailed
-		message = strings.Join(sliErrorMessages, "; ")
 	}
 
 	if f.status == keptnv2.StatusErrored {
@@ -97,16 +90,6 @@ func (f *GetSliFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 	}
 
 	return adapter.NewCloudEventFactory(f.event, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), getSLIFinishedEvent).CreateCloudEvent()
-}
-
-func getErrorMessagesFromSLIResults(indicatorValues []result.SLIResult) []string {
-	var errorMessages []string
-	for _, indicator := range indicatorValues {
-		if indicator.Success() == false {
-			errorMessages = append(errorMessages, indicator.Message())
-		}
-	}
-	return errorMessages
 }
 
 // getKeptnIndicatorValues unwraps the indicator values to Keptn SLIResults.

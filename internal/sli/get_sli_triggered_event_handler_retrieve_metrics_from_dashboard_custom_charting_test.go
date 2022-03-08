@@ -16,6 +16,11 @@ var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *keptnv2.
 	assert.Empty(t, data.Message)
 }
 
+var getSLIFinishedEventWarningAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
+	assert.EqualValues(t, keptnv2.ResultWarning, data.Result)
+	assert.NotEmpty(t, data.Message)
+}
+
 var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
 	assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
 	assert.NotEmpty(t, data.Message)

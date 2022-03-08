@@ -55,7 +55,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 				assert.Contains(t, sliResult.Message, "incorrect prefix")
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
@@ -113,7 +113,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 				assert.Contains(t, actual.Message, tc.expectedErrorMessage)
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
@@ -165,7 +165,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 				},
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSuccessfulSLIResultAssertionsFunc(indicator, tc.expectedValue))
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, tc.expectedValue))
 		})
 	}
 }
@@ -186,7 +186,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		},
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, false, createSuccessfulSLIResultAssertionsFunc(indicator, 62737.44360695537))
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 62737.44360695537))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -212,7 +212,7 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		assert.Contains(t, actual.Message, "zero data points")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -348,7 +348,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				assert.Contains(t, actual.Message, tc.expectedErrorMessage)
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, true, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
