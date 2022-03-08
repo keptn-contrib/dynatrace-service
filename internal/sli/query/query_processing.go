@@ -180,7 +180,7 @@ func (p *Processing) executeProblemQuery(name string, problemsQuery string) resu
 
 	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(*query, p.timeframe))
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying Problems API v2:"+err.Error())
+		return result.NewFailedSLIResult(name, "error querying Problems API v2: "+err.Error())
 	}
 
 	return result.NewSuccessfulSLIResult(name, float64(totalProblemCount))
