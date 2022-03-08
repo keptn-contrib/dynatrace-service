@@ -24,6 +24,21 @@ const testDashboardID = "12345678-1111-4444-8888-123456789012"
 
 var testGetSLIEventDataWithDefaultStartAndEnd = createTestGetSLIEventDataWithStartAndEnd("", "")
 
+var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
+	assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+	assert.Empty(t, data.Message)
+}
+
+var getSLIFinishedEventWarningAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
+	assert.EqualValues(t, keptnv2.ResultWarning, data.Result)
+	assert.NotEmpty(t, data.Message)
+}
+
+var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
+	assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
+	assert.NotEmpty(t, data.Message)
+}
+
 func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *getSLIEventData {
 	return &getSLIEventData{
 		project:    "sockshop",

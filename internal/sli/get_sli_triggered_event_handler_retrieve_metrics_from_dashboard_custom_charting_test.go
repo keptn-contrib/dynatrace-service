@@ -11,21 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
-	assert.EqualValues(t, keptnv2.ResultPass, data.Result)
-	assert.Empty(t, data.Message)
-}
-
-var getSLIFinishedEventWarningAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
-	assert.EqualValues(t, keptnv2.ResultWarning, data.Result)
-	assert.NotEmpty(t, data.Message)
-}
-
-var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
-	assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
-	assert.NotEmpty(t, data.Message)
-}
-
 var testCustomChartingGetSLIEventData = createTestGetSLIEventDataWithStartAndEnd("2021-09-17T07:00:00.000Z", "2021-09-17T08:00:00.000Z")
 
 // TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByAutoTag tests splitting by key service request and filtering by tag.
