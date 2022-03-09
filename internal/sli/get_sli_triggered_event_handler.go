@@ -229,7 +229,6 @@ func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 	// first - lets load the SLO.yaml from the config repo
 	dashboardSLO, err := eh.resourceClient.GetSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
-		errors.a
 		var rnfErr *keptn.ResourceNotFoundError
 		if !errors.As(err, &rnfErr) {
 			return err
