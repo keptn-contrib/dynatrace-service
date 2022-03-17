@@ -4,15 +4,12 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-type dashboardTestConfig struct {
-	testDescription     string
-	dashboardList       DashboardList
-	expectedDashboardID string
-}
-
 func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
+
 	const project = "sockshop"
 	const service = "carts"
 	const stage = "staging"
@@ -22,14 +19,18 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 	exactNameMatchForEvent := createDashboardNameFor(project, service, stage)
 	matchingDashboard := createDashboardStub(desiredDashboardID, exactNameMatchForEvent)
 
-	configs := []dashboardTestConfig{
+	tests := []struct {
+		name                string
+		dashboardList       DashboardList
+		expectedDashboardID string
+	}{
 		{
-			testDescription:     "full match, single dashboard",
+			name:                "full match, single dashboard",
 			dashboardList:       createDashboardList(matchingDashboard),
 			expectedDashboardID: desiredDashboardID,
 		},
 		{
-			testDescription: "full match, multiple dashboards for same project and service",
+			name: "full match, multiple dashboards for same project and service",
 			dashboardList: createDashboardList(
 				createDashboardStubWith("dashboard-1", project, service, "dev"),
 				matchingDashboard,
@@ -37,7 +38,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 			expectedDashboardID: desiredDashboardID,
 		},
 		{
-			testDescription: "full match, multiple dashboards for same project and stage",
+			name: "full match, multiple dashboards for same project and stage",
 			dashboardList: createDashboardList(
 				createDashboardStubWith("dashboard-1", project, "carts-v1", stage),
 				createDashboardStubWith("dashboard-2", project, "carts-v2", stage),
@@ -45,7 +46,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 			expectedDashboardID: desiredDashboardID,
 		},
 		{
-			testDescription: "full match, multiple dashboards for same service and stage",
+			name: "full match, multiple dashboards for same service and stage",
 			dashboardList: createDashboardList(
 				matchingDashboard,
 				createDashboardStubWith("dashboard-2", "sockshop-v2", service, stage),
@@ -53,7 +54,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 			expectedDashboardID: desiredDashboardID,
 		},
 		{
-			testDescription: "no match, but multiple dashboards for same subsets of project, service and stage",
+			name: "no match, but multiple dashboards for same subsets of project, service and stage",
 			dashboardList: createDashboardList(
 				createDashboardStubWith("dashboard-1", project, service, "production"),
 				createDashboardStubWith("dashboard-2", "sockshop-v2", service, stage),
@@ -61,7 +62,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 			expectedDashboardID: "",
 		},
 		{
-			testDescription: "no match, because only a subset of project, service and/or stage are given and would match",
+			name: "no match, because only a subset of project, service and/or stage are given and would match",
 			dashboardList: createDashboardList(
 				createDashboardStubWith("dashboard-1", project, service, ""),
 				createDashboardStubWith("dashboard-2", "", service, stage),
@@ -73,7 +74,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 			expectedDashboardID: "",
 		},
 		{
-			testDescription: "no match, and multiple dashboards without matching subsets of project, service and stage",
+			name: "no match, and multiple dashboards without matching subsets of project, service and stage",
 			dashboardList: createDashboardList(
 				createDashboardStubWith("dashboard-1", "sockshop-v2", "carts-v2", "production"),
 				createDashboardStubWith("dashboard-2", "sockshop-v2", "carts-v1", "dev"),
@@ -81,34 +82,28 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 			expectedDashboardID: "",
 		},
 		{
-			testDescription: "no match, single dashboards with nearly matching name",
+			name: "no match, single dashboards with nearly matching name",
 			dashboardList: createDashboardList(
 				createDashboardStub("dashboard-1", strings.TrimPrefix(exactNameMatchForEvent, "KQG;"))),
 			expectedDashboardID: "",
 		},
 		{
-			testDescription: "no match, multiple dashboards with standard names",
+			name: "no match, multiple dashboards with standard names",
 			dashboardList: createDashboardList(
 				createDashboardStub("dashboard-1", "Dashboard 1"),
 				createDashboardStub("dashboard-2", "Dashboard 2")),
 			expectedDashboardID: "",
 		},
 		{
-			testDescription:     "no match, because there are no dashboards",
+			name:                "no match, because there are no dashboards",
 			dashboardList:       createDashboardList(),
 			expectedDashboardID: "",
 		},
 	}
-
-	for _, config := range configs {
-		actualDashboardID := config.dashboardList.SearchForDashboardMatching(project, stage, service)
-		if actualDashboardID != config.expectedDashboardID {
-			t.Errorf(
-				"Test: %s - expected: %s, but got: %s",
-				config.testDescription,
-				config.expectedDashboardID,
-				actualDashboardID)
-		}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.EqualValues(t, tt.expectedDashboardID, tt.dashboardList.SearchForDashboardMatching(project, stage, service))
+		})
 	}
 }
 
