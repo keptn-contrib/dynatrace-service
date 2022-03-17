@@ -23,6 +23,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 		name                string
 		dashboardList       DashboardList
 		expectedDashboardID string
+		expectError         bool
 	}{
 		{
 			name:                "full match, single dashboard",
@@ -59,7 +60,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 				createDashboardStubWith("dashboard-1", project, service, "production"),
 				createDashboardStubWith("dashboard-2", "sockshop-v2", service, stage),
 				createDashboardStubWith("dashboard-3", project, "carts-v2", stage)),
-			expectedDashboardID: "",
+			expectError: true,
 		},
 		{
 			name: "no match, because only a subset of project, service and/or stage are given and would match",
@@ -71,7 +72,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 				createDashboardStubWith("dashboard-5", "", service, ""),
 				createDashboardStubWith("dashboard-6", "", "", stage),
 				createDashboardStubWith("dashboard-7", "", "", "")),
-			expectedDashboardID: "",
+			expectError: true,
 		},
 		{
 			name: "no match, and multiple dashboards without matching subsets of project, service and stage",
@@ -79,30 +80,37 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 				createDashboardStubWith("dashboard-1", "sockshop-v2", "carts-v2", "production"),
 				createDashboardStubWith("dashboard-2", "sockshop-v2", "carts-v1", "dev"),
 				createDashboardStubWith("dashboard-3", "sockshop-v2", "carts-v3", "hardening")),
-			expectedDashboardID: "",
+			expectError: true,
 		},
 		{
 			name: "no match, single dashboards with nearly matching name",
 			dashboardList: createDashboardList(
 				createDashboardStub("dashboard-1", strings.TrimPrefix(exactNameMatchForEvent, "KQG;"))),
-			expectedDashboardID: "",
+			expectError: true,
 		},
 		{
 			name: "no match, multiple dashboards with standard names",
 			dashboardList: createDashboardList(
 				createDashboardStub("dashboard-1", "Dashboard 1"),
 				createDashboardStub("dashboard-2", "Dashboard 2")),
-			expectedDashboardID: "",
+			expectError: true,
 		},
 		{
-			name:                "no match, because there are no dashboards",
-			dashboardList:       createDashboardList(),
-			expectedDashboardID: "",
+			name:          "no match, because there are no dashboards",
+			dashboardList: createDashboardList(),
+			expectError:   true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.EqualValues(t, tt.expectedDashboardID, tt.dashboardList.SearchForDashboardMatching(project, stage, service))
+			dashboardID, err := tt.dashboardList.SearchForDashboardMatching(project, stage, service)
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Empty(t, dashboardID)
+			} else {
+				assert.NoError(t, err)
+				assert.EqualValues(t, tt.expectedDashboardID, dashboardID)
+			}
 		})
 	}
 }

@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"errors"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -20,8 +21,8 @@ type DashboardStub struct {
 
 // SearchForDashboardMatching searches for a dashboard that exactly matches project, service and stage
 // 	KQG;project=%project%;service=%service%;stage=%stage%;xxx
-// It returns the id of the dashboard on success or an empty string otherwise
-func (dashboards *DashboardList) SearchForDashboardMatching(project string, stage string, service string) string {
+// It returns the ID of the dashboard on success or an error otherwise
+func (dashboards *DashboardList) SearchForDashboardMatching(project string, stage string, service string) (string, error) {
 	keyValuePairs := []string{
 		strings.ToLower("project=" + project),
 		strings.ToLower("stage=" + stage),
@@ -49,7 +50,7 @@ func (dashboards *DashboardList) SearchForDashboardMatching(project string, stag
 			}
 
 			if dashboardMatch {
-				return dashboard.ID
+				return dashboard.ID, nil
 			}
 		}
 	}
@@ -62,5 +63,5 @@ func (dashboards *DashboardList) SearchForDashboardMatching(project string, stag
 			"dashboardCount": len(dashboards.Dashboards),
 		}).Warn("Found dashboards but none matched the name specification")
 
-	return ""
+	return "", errors.New("No dashboard name matches the name specification, e.g. KQG;project=<project>;service=<service>;stage=<stage>")
 }
