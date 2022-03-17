@@ -1,17 +1,18 @@
 package dynatrace
 
 import (
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
-// Dashboards is the data structure for /dashboards endpoint
-type Dashboards struct {
-	Dashboards []DashboardEntry `json:"dashboards"`
+// DashboardList is a list of short representations of dashboards returned by the /dashboards endpoint
+type DashboardList struct {
+	Dashboards []DashboardStub `json:"dashboards"`
 }
 
-// DashboardEntry is the data structure for /dashboards endpoint
-type DashboardEntry struct {
+// DashboardStub is a short representation of a dashboard
+type DashboardStub struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
 	Owner string `json:"owner"`
@@ -20,7 +21,7 @@ type DashboardEntry struct {
 // SearchForDashboardMatching searches for a dashboard that exactly matches project, service and stage
 // 	KQG;project=%project%;service=%service%;stage=%stage%;xxx
 // It returns the id of the dashboard on success or an empty string otherwise
-func (dashboards *Dashboards) SearchForDashboardMatching(project string, stage string, service string) string {
+func (dashboards *DashboardList) SearchForDashboardMatching(project string, stage string, service string) string {
 	keyValuePairs := []string{
 		strings.ToLower("project=" + project),
 		strings.ToLower("stage=" + stage),

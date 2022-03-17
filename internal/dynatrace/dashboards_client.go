@@ -19,13 +19,13 @@ func NewDashboardsClient(client ClientInterface) *DashboardsClient {
 	}
 }
 
-func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
+func (dc *DashboardsClient) GetAll() (*DashboardList, error) {
 	res, err := dc.client.Get(DashboardsPath)
 	if err != nil {
 		return nil, err
 	}
 
-	dashboards := &Dashboards{}
+	dashboards := &DashboardList{}
 	err = json.Unmarshal(res, dashboards)
 	if err != nil {
 		err = CheckForUnexpectedHTMLResponseError(err)
