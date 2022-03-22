@@ -9,23 +9,26 @@ import (
 // DashboardsPath is the base endpoint for dashboards Config API
 const DashboardsPath = "/api/config/v1/dashboards"
 
+// DashboardsClient is a client for interacting with the dashboards configuration endpoint.
 type DashboardsClient struct {
 	client ClientInterface
 }
 
+// NewDashboardsClient creates a new DashboardsClient.
 func NewDashboardsClient(client ClientInterface) *DashboardsClient {
 	return &DashboardsClient{
 		client: client,
 	}
 }
 
-func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
+// GetAll gets a list of DashboardStubs detailling all accessible dashboards or returns an error.
+func (dc *DashboardsClient) GetAll() (*DashboardList, error) {
 	res, err := dc.client.Get(DashboardsPath)
 	if err != nil {
 		return nil, err
 	}
 
-	dashboards := &Dashboards{}
+	dashboards := &DashboardList{}
 	err = json.Unmarshal(res, dashboards)
 	if err != nil {
 		err = CheckForUnexpectedHTMLResponseError(err)
@@ -35,6 +38,7 @@ func (dc *DashboardsClient) GetAll() (*Dashboards, error) {
 	return dashboards, nil
 }
 
+// GetByID gets a dashboard by ID or returns an error.
 func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
 	body, err := dc.client.Get(DashboardsPath + "/" + dashboardID)
 	if err != nil {
@@ -51,6 +55,7 @@ func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
 	return dynatraceDashboard, nil
 }
 
+// Create creates the specified dashboard or returns an error.
 func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
@@ -65,6 +70,7 @@ func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
 	return nil
 }
 
+// Delete deletes the dashboard referenced by the specified ID or returns an error.
 func (dc *DashboardsClient) Delete(dashboardID string) error {
 	_, err := dc.client.Delete(DashboardsPath + "/" + dashboardID)
 	if err != nil {

@@ -1,7 +1,6 @@
 package dashboard
 
 import (
-	"errors"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -67,17 +66,10 @@ func (r *Retrieval) Retrieve(dashboard string) (*dynatrace.Dashboard, string, er
 }
 
 func (r *Retrieval) findDynatraceDashboard() (string, error) {
-	// Lets query the list of all Dashboards and find the one that matches project, stage, service based on the title (in the future - we can do it via tags)
-	// create dashboard query URL and set additional headers
-	dashboards, err := dynatrace.NewDashboardsClient(r.client).GetAll()
+	dashboardList, err := dynatrace.NewDashboardsClient(r.client).GetAll()
 	if err != nil {
 		return "", err
 	}
 
-	dashboard := dashboards.SearchForDashboardMatching(r.eventData.GetProject(), r.eventData.GetStage(), r.eventData.GetService())
-	if dashboard != "" {
-		return dashboard, nil
-	}
-
-	return "", errors.New("could not find a matching dashboard name - e.g. KQG;project=<project>;service=<service>;stage=<stage>")
+	return dashboardList.SearchForDashboardMatching(r.eventData.GetProject(), r.eventData.GetStage(), r.eventData.GetService())
 }
