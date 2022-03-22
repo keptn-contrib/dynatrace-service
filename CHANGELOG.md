@@ -2,37 +2,6 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [0.22.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.21.0...0.22.0) (2022-03-22)
-
-### Release validated with
- | Dynatrace-service: `0.22.0` | Keptn: `0.12.6` | Dynatrace: `1.235` |
- |---|---|---|
-
-
-### Features
-
-* Improve handling of SLI queries that don't produce a single value ([#733](https://github.com/keptn-contrib/dynatrace-service/issues/733)) ([0c4208c](https://github.com/keptn-contrib/dynatrace-service/commit/0c4208c15b6acf2fa076ae5f477527b8af1cdee1))
-
-
-### Bug Fixes
-
-* Delay calls to Dynatrace APIs such that required data is available ([#723](https://github.com/keptn-contrib/dynatrace-service/issues/723)) ([05467e8](https://github.com/keptn-contrib/dynatrace-service/commit/05467e80b0eb87a7f0e621580cfa3236663819bd))
-* Remove helm chart option for optional dynatrace-service container deployment ([#720](https://github.com/keptn-contrib/dynatrace-service/issues/720)) ([4096213](https://github.com/keptn-contrib/dynatrace-service/commit/409621374c9232c6699bce52dae3718621090d09))
-* Return an error if multiple dashboards match query ([#743](https://github.com/keptn-contrib/dynatrace-service/issues/743)) ([d390219](https://github.com/keptn-contrib/dynatrace-service/commit/d3902198c4552a0e6c4713d79ce727416e81296a))
-
-
-### Other
-
-* Update CI badge ([dfc3a89](https://github.com/keptn-contrib/dynatrace-service/commit/dfc3a899c2ff67a9336e7aa44dfed580bd9d0327))
-* Update CODEOWNERS ([b6d06ff](https://github.com/keptn-contrib/dynatrace-service/commit/b6d06ff72e8396c626dfef5913355a2f600b9740))
-
-
-### Docs
-
-* Add cross-links to `dashboard` entry in `dynatrace/dynatrace.conf.yaml` ([#727](https://github.com/keptn-contrib/dynatrace-service/issues/727)) ([c68e604](https://github.com/keptn-contrib/dynatrace-service/commit/c68e6049ec225f1f6631f75183b57a31351f00bf))
-* Add initial troubleshooting guide to documentation ([#726](https://github.com/keptn-contrib/dynatrace-service/issues/726)) ([dd34da4](https://github.com/keptn-contrib/dynatrace-service/commit/dd34da41c5211d361d36279d59b7a2b5892b2300))
-* Improve troubleshooting content for evaluation failed ([#734](https://github.com/keptn-contrib/dynatrace-service/issues/734)) ([4fbd86a](https://github.com/keptn-contrib/dynatrace-service/commit/4fbd86a28d861ddb01e986ea6d063680d6dbd271))
-
 ## [0.21.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.20.0...0.21.0) (2022-02-21)
 
 ### Release validated with
