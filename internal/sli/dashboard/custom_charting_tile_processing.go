@@ -35,29 +35,26 @@ func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData
 
 // Process processes the specified Custom Charting dashboard tile.
 func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
-	tileTitle := tile.Title()
+	if tile.FilterConfig == nil {
+		log.Debug("Skipping custom charting tile as it is missing a filterConfig element")
+		return nil
+	}
 
-	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tileTitle)
+	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.FilterConfig.CustomName)
 	if sloDefinition.SLI == "" {
-		log.WithField("tileTitle", tileTitle).Debug("Tile not included as name doesnt include sli=SLINAME")
+		log.WithField("tile.FilterConfig.CustomName", tile.FilterConfig.CustomName).Debug("Tile not included as name doesnt include sli=SLINAME")
 		return nil
 	}
 
 	log.WithFields(
 		log.Fields{
-			"tileTitle":         tileTitle,
-			"baseIndicatorName": sloDefinition.SLI,
+			"tile.FilterConfig.CustomName": tile.FilterConfig.CustomName,
+			"baseIndicatorName":            sloDefinition.SLI,
 		}).Debug("Processing custom chart")
 
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
-
-	if tile.FilterConfig == nil {
-		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile is missing a filterConfig element")
-		return []*TileResult{&failedTileResult}
-	}
 
 	if len(tile.FilterConfig.ChartConfig.Series) != 1 {
 		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile must have exactly one series")

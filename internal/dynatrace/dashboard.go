@@ -208,19 +208,6 @@ type Dimensions struct {
 	EntityDimension bool     `json:"entityDimension"`
 }
 
-// Title custom chart and usql have different ways to define their tile names - so - lets figure it out by looking at the potential values
-func (tile Tile) Title() string {
-	if tile.FilterConfig != nil && tile.FilterConfig.CustomName != "" {
-		return tile.FilterConfig.CustomName
-	}
-
-	if tile.CustomName != "" {
-		return tile.CustomName
-	}
-
-	return tile.Name
-}
-
 // GetFilter returns the DashboardFilter
 func (dashboard *Dashboard) GetFilter() *DashboardFilter {
 	return dashboard.DashboardMetadata.DashboardFilter
