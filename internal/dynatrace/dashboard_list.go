@@ -1,10 +1,8 @@
 package dynatrace
 
 import (
-	"errors"
+	"fmt"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // DashboardList is a list of short representations of dashboards returned by the /dashboards endpoint
@@ -19,49 +17,53 @@ type DashboardStub struct {
 	Owner string `json:"owner"`
 }
 
-// SearchForDashboardMatching searches for a dashboard that exactly matches project, service and stage
-// 	KQG;project=%project%;service=%service%;stage=%stage%;xxx
-// It returns the ID of the dashboard on success or an error otherwise
+// SearchForDashboardMatching searches for a dashboard that has the prefix "KQG;" and criteria "project=PROJECT", "service=SERVICE" and "stage=STAGE"
+// It returns the ID of the dashboard if exactly one dashboard matches or an error otherwise
 func (dashboards *DashboardList) SearchForDashboardMatching(project string, stage string, service string) (string, error) {
-	keyValuePairs := []string{
-		strings.ToLower("project=" + project),
-		strings.ToLower("stage=" + stage),
-		strings.ToLower("service=" + service),
+	namePrefix := "kqg;"
+	projectKeyValuePair := strings.ToLower("project=" + project)
+	stageKeyValuePair := strings.ToLower("stage=" + stage)
+	serviceKeyValuePair := strings.ToLower("service=" + service)
+
+	var matchingDashboardIds []string
+	for _, dashboardStub := range dashboards.Dashboards {
+		dashboardNameLowerCase := strings.ToLower(dashboardStub.Name)
+
+		if !strings.HasPrefix(dashboardNameLowerCase, namePrefix) {
+			continue
+		}
+
+		nameSplits := strings.Split(dashboardNameLowerCase, ";")
+
+		if !sliceContainsString(nameSplits, projectKeyValuePair) {
+			continue
+		}
+		if !sliceContainsString(nameSplits, stageKeyValuePair) {
+			continue
+		}
+		if !sliceContainsString(nameSplits, serviceKeyValuePair) {
+			continue
+		}
+
+		matchingDashboardIds = append(matchingDashboardIds, dashboardStub.ID)
 	}
 
-	for _, dashboard := range dashboards.Dashboards {
-		// lets see if the dashboard matches our name
-		if strings.HasPrefix(strings.ToLower(dashboard.Name), "kqg;") {
-			nameSplits := strings.Split(dashboard.Name, ";")
+	switch len(matchingDashboardIds) {
+	case 0:
+		return "", fmt.Errorf("No dashboard name matches the name specification with prefix '%s' and criteria '%s', '%s', '%s'", namePrefix, projectKeyValuePair, stageKeyValuePair, serviceKeyValuePair)
+	case 1:
+		return matchingDashboardIds[0], nil
+	default:
+		return "", fmt.Errorf("%d dashboards match the name specification with prefix '%s' and criteria '%s', '%s', '%s'", len(matchingDashboardIds), namePrefix, projectKeyValuePair, stageKeyValuePair, serviceKeyValuePair)
+	}
 
-			// now lets see if we can find all our name/value pairs for project, service & stage
-			dashboardMatch := true
-			for _, findValue := range keyValuePairs {
-				foundValue := false
-				for _, nameSplitValue := range nameSplits {
-					if strings.Compare(findValue, strings.ToLower(nameSplitValue)) == 0 {
-						foundValue = true
-					}
-				}
-				if foundValue == false {
-					dashboardMatch = false
-					continue
-				}
-			}
+}
 
-			if dashboardMatch {
-				return dashboard.ID, nil
-			}
+func sliceContainsString(slice []string, wantedValue string) bool {
+	for _, value := range slice {
+		if value == wantedValue {
+			return true
 		}
 	}
-
-	log.WithFields(
-		log.Fields{
-			"project":        project,
-			"stage":          stage,
-			"service":        service,
-			"dashboardCount": len(dashboards.Dashboards),
-		}).Warn("Found dashboards but none matched the name specification")
-
-	return "", errors.New("No dashboard name matches the name specification, e.g. KQG;project=<project>;service=<service>;stage=<stage>")
+	return false
 }
