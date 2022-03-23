@@ -325,14 +325,7 @@ jobs:
 
       - name: Create GitHub Release
         env:
-          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
         run: |
-          gh release create "$RELEASE_TAG" --notes-file "${{ env.RELEASE_NOTES_FILE }}" --title "$RELEASE_TAG"
-
-      - name: Upload Release Assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
-          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
-        run: |
-          gh release upload "$RELEASE_TAG" ./dist/installer/*.tgz
+          gh release create "${{ env.RELEASE_TAG }}" --notes-file "${{ env.RELEASE_NOTES_FILE }}" --title "${{ env.RELEASE_TAG }}" ./dist/installer/*.tgz
