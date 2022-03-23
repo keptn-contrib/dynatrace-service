@@ -291,7 +291,7 @@ jobs:
           git commit --amend --signoff --no-edit
 
       - name: Create Release Pull Request
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
         with:
           token: ${{ secrets.KEPTN_BOT_TOKEN }}
           commit-message: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
