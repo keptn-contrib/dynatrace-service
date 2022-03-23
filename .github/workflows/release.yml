@@ -282,41 +282,42 @@ jobs:
               --skip.changelog
           fi
 
-          echo "::set-output name=tag-name::$(git describe --tags --abbrev=0)"
-
-          echo "Fetching previously deleted old tags..."
-          git fetch origin --tags -f
+          TAG="$(git describe --tags --abbrev=0)"
+          echo "::set-output name=tag-name::$TAG"
 
           echo "Sign off commit"
           git commit --amend --signoff --no-edit
 
-      - name: Create Release Pull Request
-        uses: peter-evans/create-pull-request@v3
-        with:
-          token: ${{ secrets.KEPTN_BOT_TOKEN }}
-          commit-message: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
-          committer: ${{ env.KEPTN_BOT_NAME }} <${{ env.KEPTN_BOT_EMAIL }}>
-          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          signoff: true
-          branch: release/${{ steps.create-release-package.outputs.tag-name }}
-          delete-branch: true
-          title: "build: release ${{ steps.create-release-package.outputs.tag-name }}"
-          body: |
-            Updates to CHANGELOG.md, VERSION.txt, README.md and compatibility.md
-          labels: |
-            release
-          assignees: ${{ github.actor }}
-          team-reviewers: |
-            owners
-            maintainers
-          draft: false
+          echo "Tag again due to amending last commit"
+          git tag -f -a -m "release $TAG" "$TAG"
 
-      - name: Push Tags
+      - name: Push changes to repo
+        id: push-changes
         env:
-          GITHUB_TOKEN: ${{ secrets.KEPTN_BOT_TOKEN }}
           RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push --follow-tags origin "release/$RELEASE_TAG"
+          echo "Fetching previously deleted old tags..."
+          git fetch origin --tags -f
+
+          TARGET_BRANCH=release/$RELEASE_TAG
+
+          # delete existing branch just in case
+          git branch -D $TARGET_BRANCH &>/dev/null || true
+
+          # create new branch
+          git checkout -b $TARGET_BRANCH
+
+          # push changes
+          echo "⚡️ Pushing changes to remote repository..."
+          git push -f --follow-tags --set-upstream origin $TARGET_BRANCH
+
+      - name: Create GitHub Pull Request
+        env:
+          RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create --title "build: release $RELEASE_TAG" --body "Updates to CHANGELOG.md, VERSION.txt, README.md and compatibility.md" --base "${GITHUB_REF_NAME}"
 
       - name: Download Release Artifacts
         uses: actions/download-artifact@v2
