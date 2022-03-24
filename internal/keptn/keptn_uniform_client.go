@@ -1,62 +1,49 @@
 package keptn
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/rest"
+	api "github.com/keptn/go-utils/pkg/api/utils"
 )
 
-type registrationResponse struct {
-	ID string `json:"id"`
-}
-
-const UniformPath = "/v1/uniform/registration"
-
+// UniformClientInterface provides access to Keptn Uniform.
 type UniformClientInterface interface {
-	GetServiceNames(project string, stage string) ([]string, error)
-	CreateServiceInProject(project string, service string) error
+	GetIntegrationIDByName(integrationName string) (string, error)
 }
 
+// UniformClient is a client for interacting with Keptn Uniform.
 type UniformClient struct {
-	client APIClientInterface
+	client api.UniformV1Interface
 }
 
-func NewDefaultUniformClient() *UniformClient {
-	return NewUniformClient(
-		&http.Client{})
-}
-
-func NewUniformClient(httpClient *http.Client) *UniformClient {
+// NewUniformClient creates a new UniformClient using the specified UniformV1Interface.
+func NewUniformClient(client api.UniformV1Interface) *UniformClient {
 	return &UniformClient{
-		client: NewAPIClient(
-			rest.NewDefaultClient(
-				httpClient,
-				common.GetShipyardControllerURL())),
+		client: client,
 	}
 }
 
-func (c *UniformClient) GetIntegrationIDFor(integrationName string) (string, error) {
-	body, err := c.client.Get(UniformPath + "?name=" + integrationName)
+// GetIntegrationIDByName gets the ID of the integration with specified name or returns an error if none or more than one exist with that name.
+func (c *UniformClient) GetIntegrationIDByName(integrationName string) (string, error) {
+	integrations, err := c.client.GetRegistrations()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not get Keptn Uniform registrations: %w", err)
 	}
 
-	var responses []registrationResponse
-	err = json.Unmarshal(body, &responses)
-	if err != nil {
-		return "", fmt.Errorf("could not parse Keptn Uniform API response: %w", err)
+	var integrationIDs []string
+	for _, integration := range integrations {
+		if integration.Name == integrationName {
+			integrationIDs = append(integrationIDs, integration.ID)
+		}
 	}
 
-	if len(responses) == 0 {
+	if len(integrationIDs) == 0 {
 		return "", fmt.Errorf("could not retrieve integration ID for %s", integrationName)
 	}
 
-	if len(responses) > 1 {
+	if len(integrationIDs) > 1 {
 		return "", fmt.Errorf("there are more than one integrations with name %s - this is not supported", integrationName)
 	}
 
-	return responses[0].ID, nil
+	return integrationIDs[0], nil
 }

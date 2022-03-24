@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	api "github.com/keptn/go-utils/pkg/api/utils"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/deployment"
@@ -24,18 +26,23 @@ type DynatraceEventHandler interface {
 	HandleEvent() error
 }
 
-func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
-	eventHandler, err := getEventHandler(event)
+func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
+	keptnAPISet, err := api.New(common.GetShipyardControllerURL())
+	if err != nil {
+		return nil, fmt.Errorf("could not create Keptn API set: %w", err)
+	}
+
+	eventHandler, err := getEventHandler(event, *keptnAPISet)
 	if err != nil {
 		err = fmt.Errorf("cannot handle event: %w", err)
 		log.Error(err.Error())
-		return NewErrorHandler(err, event)
+		return NewErrorHandler(err, event, keptn.NewUniformClient(keptnAPISet.UniformV1())), nil
 	}
 
-	return eventHandler
+	return eventHandler, nil
 }
 
-func getEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
+func getEventHandler(event cloudevents.Event, keptnAPISet api.APISet) (DynatraceEventHandler, error) {
 	log.WithField("eventType", event.Type()).Debug("Received event")
 
 	keptnEvent, err := getEventAdapter(event)
@@ -99,7 +106,7 @@ func getEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	case *deployment.ReleaseTriggeredAdapter:
 		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	default:
-		return NewErrorHandler(fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType), event), nil
+		return NewErrorHandler(fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType), event, keptn.NewUniformClient(keptnAPISet.UniformV1())), nil
 	}
 }
 
