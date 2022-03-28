@@ -116,16 +116,18 @@ func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) {
 }
 
 func (s *serviceSynchronizer) initializeSynchronizationTimer() {
+	go s.run()
+}
+
+func (s *serviceSynchronizer) run() {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
-	go func() {
-		for {
-			s.synchronizeServices()
-			<-s.syncTimer.C
-			log.WithField("delaySeconds", syncInterval).Info("Synchronizing services")
-		}
-	}()
+	for {
+		s.synchronizeServices()
+		<-s.syncTimer.C
+		log.WithField("delaySeconds", syncInterval).Info("Synchronizing services")
+	}
 }
 
 func (s *serviceSynchronizer) synchronizeServices() {
