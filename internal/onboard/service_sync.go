@@ -82,11 +82,16 @@ const shipyardController = "SHIPYARD_CONTROLLER"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 
 // ActivateServiceSynchronizer godoc
-func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) {
+func ActivateServiceSynchronizer() {
 	if serviceSynchronizerInstance == nil {
 
+		credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
+		if err != nil {
+			log.WithError(err).Fatal("Failed to initialize CredentialsProvider")
+		}
+
 		serviceSynchronizerInstance = &serviceSynchronizer{
-			credentialsProvider: c,
+			credentialsProvider: credentialsProvider,
 		}
 
 		resourceClient := keptn.NewDefaultResourceClient()
