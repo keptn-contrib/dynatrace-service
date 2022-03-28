@@ -64,7 +64,7 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 	return nil
 }
 
-type serviceSynchronizer struct {
+type ServiceSynchronizer struct {
 	projectClient       keptn.ProjectClientInterface
 	servicesClient      keptn.ServiceClientInterface
 	resourcesClient     keptn.SLIAndSLOResourceWriterInterface
@@ -76,7 +76,7 @@ type serviceSynchronizer struct {
 	configProvider      config.DynatraceConfigProvider
 }
 
-var serviceSynchronizerInstance *serviceSynchronizer
+var serviceSynchronizerInstance *ServiceSynchronizer
 
 const shipyardController = "SHIPYARD_CONTROLLER"
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
@@ -90,7 +90,7 @@ func ActivateServiceSynchronizer() {
 			log.WithError(err).Fatal("Failed to initialize CredentialsProvider")
 		}
 
-		serviceSynchronizerInstance = &serviceSynchronizer{
+		serviceSynchronizerInstance = &ServiceSynchronizer{
 			credentialsProvider: credentialsProvider,
 		}
 
@@ -119,7 +119,7 @@ func ActivateServiceSynchronizer() {
 	}
 }
 
-func (s *serviceSynchronizer) run() {
+func (s *ServiceSynchronizer) run() {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	for {
@@ -129,7 +129,7 @@ func (s *serviceSynchronizer) run() {
 	}
 }
 
-func (s *serviceSynchronizer) synchronizeServices() {
+func (s *ServiceSynchronizer) synchronizeServices() {
 	creds, err := s.establishDTAPIConnection()
 	if err != nil {
 		log.WithError(err).Error("Could not establish Dynatrace API connection")
@@ -157,7 +157,7 @@ func (s *serviceSynchronizer) synchronizeServices() {
 
 }
 
-func (s *serviceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
+func (s *ServiceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
 	log.WithField("entityId", entity.EntityID).Debug("Synchronizing entity")
 
 	serviceName, err := getKeptnServiceName(entity)
@@ -181,7 +181,7 @@ func (s *serviceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
 	}
 }
 
-func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.DynatraceCredentials, error) {
+func (s *ServiceSynchronizer) establishDTAPIConnection() (*credentials.DynatraceCredentials, error) {
 	dynatraceConfig, err := s.configProvider.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
@@ -195,7 +195,7 @@ func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.Dynatrace
 	return creds, nil
 }
 
-func (s *serviceSynchronizer) fetchExistingServices() error {
+func (s *ServiceSynchronizer) fetchExistingServices() error {
 	err := s.projectClient.AssertProjectExists(defaultDTProjectName)
 	if err != nil {
 		return err
@@ -238,7 +238,7 @@ func doesServiceExist(services []string, serviceName string) bool {
 	return false
 }
 
-func (s *serviceSynchronizer) addServiceToKeptn(serviceName string) error {
+func (s *ServiceSynchronizer) addServiceToKeptn(serviceName string) error {
 	err := s.servicesClient.CreateServiceInProject(defaultDTProjectName, serviceName)
 	if err != nil {
 		return fmt.Errorf("could not create service %s: %s", serviceName, err)
@@ -262,7 +262,7 @@ func (s *serviceSynchronizer) addServiceToKeptn(serviceName string) error {
 	return nil
 }
 
-func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
+func (s *ServiceSynchronizer) createSLOResource(serviceName string) error {
 	defaultSLOs := &keptnlib.ServiceLevelObjectives{
 		SpecVersion: "1.0",
 		Filter:      nil,
@@ -304,7 +304,7 @@ func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
 	return nil
 }
 
-func (s *serviceSynchronizer) createSLIResource(serviceName string) error {
+func (s *ServiceSynchronizer) createSLIResource(serviceName string) error {
 	indicators := make(map[string]string)
 	indicators["throughput"] = fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
 	indicators["error_rate"] = fmt.Sprintf("metricSelector=builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)

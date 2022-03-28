@@ -245,7 +245,7 @@ func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Serv
 	return k
 }
 
-func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
+func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 
 	firstDTResponse := dynatrace.EntitiesResponse{
 		TotalCount:  3,
@@ -393,7 +393,7 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 	assert.NoError(t, err)
 
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
-	s := &serviceSynchronizer{
+	s := &ServiceSynchronizer{
 		projectClient:   keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
 		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
 		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
@@ -550,7 +550,7 @@ func Test_getKeptnServiceName(t *testing.T) {
 	}
 }
 
-func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
+func Test_ServiceSynchronizer_addServiceToKeptn(t *testing.T) {
 
 	servicesMockAPI := getTestServicesAPI()
 	defer servicesMockAPI.Close()
@@ -606,7 +606,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := &serviceSynchronizer{
+			s := &ServiceSynchronizer{
 				projectClient:       tt.fields.projectsAPI,
 				servicesClient:      tt.fields.servicesAPI,
 				resourcesClient:     tt.fields.resourcesAPI,
@@ -618,7 +618,7 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 				configProvider:      tt.fields.configProvider,
 			}
 			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {
-				t.Errorf("serviceSynchronizer.addServiceToKeptn() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ServiceSynchronizer.addServiceToKeptn() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			select {
