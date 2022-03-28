@@ -401,7 +401,6 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 			return dynatrace.NewEntitiesClient(
 				dynatrace.NewClient(mockCredentials))
 		},
-		syncTimer:       nil,
 		keptnHandler:    k,
 		servicesInKeptn: []string{},
 		credentialsProvider: &credentials_mock.DynatraceCredentialsProviderMock{
@@ -573,7 +572,6 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		credentialsProvider credentials.DynatraceCredentialsProvider
 		apiMutex            sync.Mutex
 		EntitiesClient      func(*credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-		syncTimer           *time.Ticker
 		keptnHandler        *keptnv2.Keptn
 		servicesInKeptn     []string
 		configProvider      config.DynatraceConfigProvider
@@ -590,13 +588,13 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 		{
 			name: "create service",
 			fields: fields{
-				logger:          keptncommon.NewLogger("", "", ""),
-				projectsAPI:     nil,
-				servicesAPI:     keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
-				resourcesAPI:    keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
-				apiMutex:        sync.Mutex{},
-				EntitiesClient:  nil,
-				syncTimer:       nil,
+				logger:         keptncommon.NewLogger("", "", ""),
+				projectsAPI:    nil,
+				servicesAPI:    keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
+				resourcesAPI:   keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
+				apiMutex:       sync.Mutex{},
+				EntitiesClient: nil,
+
 				keptnHandler:    k,
 				servicesInKeptn: []string{},
 			},
@@ -615,7 +613,6 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 				apiHandler:          tt.fields.apiHandler,
 				credentialsProvider: tt.fields.credentialsProvider,
 				EntitiesClientFunc:  tt.fields.EntitiesClient,
-				syncTimer:           tt.fields.syncTimer,
 				keptnHandler:        tt.fields.keptnHandler,
 				servicesInKeptn:     tt.fields.servicesInKeptn,
 				configProvider:      tt.fields.configProvider,

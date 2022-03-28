@@ -71,7 +71,6 @@ type serviceSynchronizer struct {
 	apiHandler          *keptnapi.APIHandler
 	credentialsProvider credentials.DynatraceCredentialsProvider
 	EntitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-	syncTimer           *time.Ticker
 	keptnHandler        *keptnv2.Keptn
 	servicesInKeptn     []string
 	configProvider      config.DynatraceConfigProvider
@@ -111,21 +110,16 @@ func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) {
 		serviceSynchronizerInstance.servicesClient = keptn.NewDefaultServiceClient()
 		serviceSynchronizerInstance.resourcesClient = resourceClient
 
-		serviceSynchronizerInstance.initializeSynchronizationTimer()
+		go serviceSynchronizerInstance.run()
 	}
-}
-
-func (s *serviceSynchronizer) initializeSynchronizationTimer() {
-	go s.run()
 }
 
 func (s *serviceSynchronizer) run() {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
-	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
 	for {
 		s.synchronizeServices()
-		<-s.syncTimer.C
+		<-time.After(time.Duration(syncInterval) * time.Second)
 		log.WithField("delaySeconds", syncInterval).Info("Synchronizing services")
 	}
 }
