@@ -75,20 +75,6 @@ type ServiceSynchronizer struct {
 	configProvider      config.DynatraceConfigProvider
 }
 
-var serviceSynchronizerInstance *ServiceSynchronizer
-
-// ActivateServiceSynchronizer godoc
-func ActivateServiceSynchronizer() {
-	if serviceSynchronizerInstance == nil {
-		serviceSynchronizerInstance, err := NewDefaultServiceSynchronizer()
-		if err != nil {
-			log.WithError(err).Fatal("Could now create ServiceSynchronizer")
-		}
-
-		go serviceSynchronizerInstance.run()
-	}
-}
-
 // NewDefaultServiceSynchronizer creates are new default ServiceSynchronizer or returns an error.
 func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
 	credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
@@ -113,7 +99,8 @@ func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
 	return &serviceSynchronizer, nil
 }
 
-func (s *ServiceSynchronizer) run() {
+// Runs runs the service synchronizer and does not return.
+func (s *ServiceSynchronizer) Run() {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	for {

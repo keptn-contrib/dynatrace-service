@@ -35,7 +35,13 @@ func main() {
 func _main(args []string, envCfg envConfig) int {
 
 	if env.IsServiceSyncEnabled() {
-		onboard.ActivateServiceSynchronizer()
+		go func() {
+			serviceSynchronizerInstance, err := onboard.NewDefaultServiceSynchronizer()
+			if err != nil {
+				log.WithError(err).Fatal("Could now create ServiceSynchronizer")
+			}
+			serviceSynchronizerInstance.Run()
+		}()
 	}
 
 	ctx := context.Background()
