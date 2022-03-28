@@ -80,31 +80,37 @@ var serviceSynchronizerInstance *ServiceSynchronizer
 // ActivateServiceSynchronizer godoc
 func ActivateServiceSynchronizer() {
 	if serviceSynchronizerInstance == nil {
-
-		credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
+		serviceSynchronizerInstance, err := NewDefaultServiceSynchronizer()
 		if err != nil {
-			log.WithError(err).Fatal("Failed to initialize CredentialsProvider")
+			log.WithError(err).Fatal("Could now create ServiceSynchronizer")
 		}
-
-		serviceSynchronizerInstance = &ServiceSynchronizer{
-			credentialsProvider: credentialsProvider,
-		}
-
-		resourceClient := keptn.NewDefaultResourceClient()
-
-		serviceSynchronizerInstance.configProvider = config.NewDynatraceConfigGetter(resourceClient)
-		serviceSynchronizerInstance.EntitiesClientFunc =
-			func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
-				dtClient := dynatrace.NewClient(credentials)
-				return dynatrace.NewEntitiesClient(dtClient)
-			}
-
-		serviceSynchronizerInstance.projectClient = keptn.NewDefaultProjectClient()
-		serviceSynchronizerInstance.servicesClient = keptn.NewDefaultServiceClient()
-		serviceSynchronizerInstance.resourcesClient = resourceClient
 
 		go serviceSynchronizerInstance.run()
 	}
+}
+
+// NewDefaultServiceSynchronizer creates are new default ServiceSynchronizer or returns an error.
+func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
+	credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
+	if err != nil {
+		return nil, err
+	}
+
+	resourceClient := keptn.NewDefaultResourceClient()
+
+	serviceSynchronizer := ServiceSynchronizer{
+		credentialsProvider: credentialsProvider,
+		configProvider:      config.NewDynatraceConfigGetter(resourceClient),
+		EntitiesClientFunc: func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
+			dtClient := dynatrace.NewClient(credentials)
+			return dynatrace.NewEntitiesClient(dtClient)
+		},
+		projectClient:   keptn.NewDefaultProjectClient(),
+		servicesClient:  keptn.NewDefaultServiceClient(),
+		resourcesClient: resourceClient,
+	}
+
+	return &serviceSynchronizer, nil
 }
 
 func (s *ServiceSynchronizer) run() {
