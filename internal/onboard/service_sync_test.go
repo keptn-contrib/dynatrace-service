@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/config/mock"
 	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -387,7 +388,7 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
 
-	os.Setenv(shipyardController, mockCS.URL)
+	os.Setenv(common.ShipyardControllerURLEnvironmentVariableName, mockCS.URL)
 
 	mockCredentials, err := credentials.NewDynatraceCredentials(dtMockServer.URL, testDynatraceAPIToken)
 	assert.NoError(t, err)
@@ -560,7 +561,7 @@ func Test_ServiceSynchronizer_addServiceToKeptn(t *testing.T) {
 
 	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
-	os.Setenv(shipyardController, mockCS.URL)
+	os.Setenv(common.ShipyardControllerURLEnvironmentVariableName, mockCS.URL)
 	k := getTestKeptnHandler(mockCS, mockEventBroker)
 
 	type fields struct {

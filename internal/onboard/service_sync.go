@@ -10,7 +10,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
@@ -78,9 +77,6 @@ type ServiceSynchronizer struct {
 
 var serviceSynchronizerInstance *ServiceSynchronizer
 
-const shipyardController = "SHIPYARD_CONTROLLER"
-const defaultShipyardControllerURL = "http://shipyard-controller:8080"
-
 // ActivateServiceSynchronizer godoc
 func ActivateServiceSynchronizer() {
 	if serviceSynchronizerInstance == nil {
@@ -102,14 +98,6 @@ func ActivateServiceSynchronizer() {
 				dtClient := dynatrace.NewClient(credentials)
 				return dynatrace.NewEntitiesClient(dtClient)
 			}
-
-		configServiceBaseURL := common.GetConfigurationServiceURL()
-		shipyardControllerBaseURL := common.GetShipyardControllerURL()
-		log.WithFields(
-			log.Fields{
-				"configServiceBaseURL":      configServiceBaseURL,
-				"shipyardControllerBaseURL": shipyardControllerBaseURL,
-			}).Debug("Initializing Service Synchronizer")
 
 		serviceSynchronizerInstance.projectClient = keptn.NewDefaultProjectClient()
 		serviceSynchronizerInstance.servicesClient = keptn.NewDefaultServiceClient()
