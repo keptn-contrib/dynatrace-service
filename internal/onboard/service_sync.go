@@ -12,8 +12,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -67,10 +65,8 @@ type ServiceSynchronizer struct {
 	projectClient       keptn.ProjectClientInterface
 	servicesClient      keptn.ServiceClientInterface
 	resourcesClient     keptn.SLIAndSLOResourceWriterInterface
-	apiHandler          *keptnapi.APIHandler
 	credentialsProvider credentials.DynatraceCredentialsProvider
 	EntitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-	keptnHandler        *keptnv2.Keptn
 	servicesInKeptn     []string
 	configProvider      config.DynatraceConfigProvider
 }
