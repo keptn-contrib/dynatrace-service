@@ -401,7 +401,6 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 			return dynatrace.NewEntitiesClient(
 				dynatrace.NewClient(mockCredentials))
 		},
-		servicesInKeptn: []string{},
 		credentialsProvider: &credentials_mock.DynatraceCredentialsProviderMock{
 			GetDynatraceCredentialsFunc: func(secretName string) (*credentials.DynatraceCredentials, error) {
 				return mockCredentials, nil
@@ -537,7 +536,7 @@ func Test_getKeptnServiceName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getKeptnServiceName(tt.args.entity)
+			got, err := getServiceFromEntity(tt.args.entity)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -584,13 +583,12 @@ func Test_ServiceSynchronizer_addServiceToKeptn(t *testing.T) {
 		{
 			name: "create service",
 			fields: fields{
-				logger:          keptncommon.NewLogger("", "", ""),
-				projectsAPI:     nil,
-				servicesAPI:     keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
-				resourcesAPI:    keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
-				apiMutex:        sync.Mutex{},
-				EntitiesClient:  nil,
-				servicesInKeptn: []string{},
+				logger:         keptncommon.NewLogger("", "", ""),
+				projectsAPI:    nil,
+				servicesAPI:    keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
+				resourcesAPI:   keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
+				apiMutex:       sync.Mutex{},
+				EntitiesClient: nil,
 			},
 			args: args{
 				serviceName: "my-service",
@@ -606,7 +604,6 @@ func Test_ServiceSynchronizer_addServiceToKeptn(t *testing.T) {
 				resourcesClient:     tt.fields.resourcesAPI,
 				credentialsProvider: tt.fields.credentialsProvider,
 				EntitiesClientFunc:  tt.fields.EntitiesClient,
-				servicesInKeptn:     tt.fields.servicesInKeptn,
 				configProvider:      tt.fields.configProvider,
 			}
 			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {

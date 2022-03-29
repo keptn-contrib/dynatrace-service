@@ -67,7 +67,6 @@ type ServiceSynchronizer struct {
 	resourcesClient     keptn.SLIAndSLOResourceWriterInterface
 	credentialsProvider credentials.DynatraceCredentialsProvider
 	EntitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-	servicesInKeptn     []string
 	configProvider      config.DynatraceConfigProvider
 }
 
@@ -106,90 +105,73 @@ func (s *ServiceSynchronizer) Run() {
 	}
 }
 
+// synchronizeServices performs a single synchronization run
 func (s *ServiceSynchronizer) synchronizeServices() {
-	creds, err := s.establishDTAPIConnection()
+	existingServices, err := s.getExistingServicesFromKeptn()
 	if err != nil {
-		log.WithError(err).Error("Could not establish Dynatrace API connection")
+		log.WithError(err).Error("Could not get existing services from Keptn")
 		return
 	}
 
-	log.WithField("project", defaultDTProjectName).Info("Fetching existing services in project")
-	if err := s.fetchExistingServices(); err != nil {
-		log.WithError(err).Error("Could not fetch existing services")
-		return
-	}
-
-	log.Info("Fetching service entities with tags 'keptn_managed' and 'keptn_service'")
-
-	entitiesClient := s.EntitiesClientFunc(creds)
-	entities, err := entitiesClient.GetKeptnManagedServices()
+	entities, err := s.getKeptnManagedServicesFromDynatrace()
 	if err != nil {
-		log.WithError(err).Error("Error fetching keptn managed services from dynatrace")
+		log.WithError(err).Error("Could not get Keptn-managed services from Dynatrace")
 		return
 	}
 
 	for _, entity := range entities {
-		s.synchronizeEntity(entity)
-	}
 
-}
+		service, err := getServiceFromEntity(entity)
+		if err != nil {
+			log.WithField("entityId", entity.EntityID).Debug("Skipping entity due to no valid service name")
+			continue
+		}
 
-func (s *ServiceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
-	log.WithField("entityId", entity.EntityID).Debug("Synchronizing entity")
+		if doesServiceExist(existingServices, service) {
+			log.WithFields(log.Fields{
+				"service":  service,
+				"entityId": entity.EntityID,
+			}).Debug("Service already exists in project, skipping")
+			continue
+		}
 
-	serviceName, err := getKeptnServiceName(entity)
-	if err != nil {
-		log.WithField("entityId", entity.EntityID).Debug("Skipping entity due to no valid service name")
-		return
-	}
-	log.WithFields(
-		log.Fields{
-			"serviceName": serviceName,
-			"entityId":    entity.EntityID,
-		}).Debug("Got service name for entity")
+		if err := s.addServiceToKeptn(service); err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"service":  service,
+				"entityId": entity.EntityID,
+			}).Error("Could not add service")
+			continue
+		}
 
-	if doesServiceExist(s.servicesInKeptn, serviceName) {
-		log.WithField("service", serviceName).Debug("Service already exists in project, skipping")
-		return
-	}
-
-	if err := s.addServiceToKeptn(serviceName); err != nil {
-		log.WithError(err).WithField("entityId", entity.EntityID).Error("Could not synchronize DT entity")
+		existingServices = append(existingServices, service)
 	}
 }
 
-func (s *ServiceSynchronizer) establishDTAPIConnection() (*credentials.DynatraceCredentials, error) {
+func (s *ServiceSynchronizer) getExistingServicesFromKeptn() ([]string, error) {
+	return s.servicesClient.GetServiceNames(defaultDTProjectName, defaultDTProjectStage)
+}
+
+func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrace.Entity, error) {
 	dynatraceConfig, err := s.configProvider.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
+		return nil, fmt.Errorf("failed to load Dynatrace config: %w", err)
 	}
 
 	creds, err := s.credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
+		return nil, fmt.Errorf("failed to load Dynatrace credentials: %w", err)
 	}
 
-	return creds, nil
+	entitiesClient := s.EntitiesClientFunc(creds)
+	entities, err := entitiesClient.GetKeptnManagedServices()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch Keptn managed services from Dynatrace: %w", err)
+	}
+
+	return entities, nil
 }
 
-func (s *ServiceSynchronizer) fetchExistingServices() error {
-	err := s.projectClient.AssertProjectExists(defaultDTProjectName)
-	if err != nil {
-		return err
-	}
-
-	// get all services currently in the project
-	s.servicesInKeptn = []string{}
-	serviceNames, err := s.servicesClient.GetServiceNames(defaultDTProjectName, defaultDTProjectStage)
-	if err != nil {
-		return err
-	}
-	s.servicesInKeptn = serviceNames
-
-	return nil
-}
-
-func getKeptnServiceName(entity dynatrace.Entity) (string, error) {
+func getServiceFromEntity(entity dynatrace.Entity) (string, error) {
 	serviceTags := make([]string, 0)
 	for _, tag := range entity.Tags {
 		if tag.Key == "keptn_service" && tag.Value != "" {
@@ -235,7 +217,6 @@ func (s *ServiceSynchronizer) addServiceToKeptn(serviceName string) error {
 		log.WithField("service", serviceName).Info("Could not create SLI resource for service")
 	}
 
-	s.servicesInKeptn = append(s.servicesInKeptn, serviceName)
 	return nil
 }
 
