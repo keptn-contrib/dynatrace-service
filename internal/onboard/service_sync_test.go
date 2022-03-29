@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -560,82 +559,34 @@ func Test_ServiceSynchronizer_addServiceToKeptn(t *testing.T) {
 	defer mockCS.Close()
 	os.Setenv(common.ShipyardControllerURLEnvironmentVariableName, mockCS.URL)
 
-	type fields struct {
-		logger              keptncommon.LoggerInterface
-		projectsAPI         keptn.ProjectClientInterface
-		servicesAPI         keptn.ServiceClientInterface
-		resourcesAPI        keptn.SLIAndSLOResourceWriterInterface
-		credentialsProvider credentials.DynatraceCredentialsProvider
-		apiMutex            sync.Mutex
-		EntitiesClient      func(*credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-		servicesInKeptn     []string
-		configProvider      config.DynatraceConfigProvider
-	}
-	type args struct {
-		serviceName string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "create service",
-			fields: fields{
-				logger:         keptncommon.NewLogger("", "", ""),
-				projectsAPI:    nil,
-				servicesAPI:    keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
-				resourcesAPI:   keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
-				apiMutex:       sync.Mutex{},
-				EntitiesClient: nil,
-			},
-			args: args{
-				serviceName: "my-service",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &ServiceSynchronizer{
-				projectClient:       tt.fields.projectsAPI,
-				servicesClient:      tt.fields.servicesAPI,
-				resourcesClient:     tt.fields.resourcesAPI,
-				credentialsProvider: tt.fields.credentialsProvider,
-				entitiesClientFunc:  tt.fields.EntitiesClient,
-				configProvider:      tt.fields.configProvider,
-			}
-			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {
-				t.Errorf("ServiceSynchronizer.addServiceToKeptn() error = %v, wantErr %v", err, tt.wantErr)
-			}
+	serviceName := "my-service"
 
-			select {
-			case rec := <-receivedServiceCreate:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			}
+	s := &ServiceSynchronizer{
+		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
+		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
+	}
 
-			select {
-			case rec := <-receivedSLO:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLO file")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			}
+	err := s.addServiceToKeptn(serviceName)
+	assert.NoError(t, err)
 
-			select {
-			case rec := <-receivedSLI:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLI file")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			}
-		})
+	select {
+	case rec := <-receivedServiceCreate:
+		assert.EqualValues(t, serviceName, rec, "did not receive expected event")
+	case <-time.After(5 * time.Second):
+		t.Error("did not receive expected event")
+	}
+
+	select {
+	case rec := <-receivedSLO:
+		assert.EqualValues(t, serviceName, rec, "did not receive SLO file")
+	case <-time.After(5 * time.Second):
+		t.Error("did not receive expected event")
+	}
+
+	select {
+	case rec := <-receivedSLI:
+		assert.EqualValues(t, serviceName, rec, "did not receive SLI file")
+	case <-time.After(5 * time.Second):
+		t.Error("did not receive expected event")
 	}
 }
