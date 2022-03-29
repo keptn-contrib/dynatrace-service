@@ -452,7 +452,7 @@ func checkReceivedEntities(t *testing.T, channel chan string, expected []string)
 	}
 }
 
-func Test_getKeptnServiceName(t *testing.T) {
+func Test_getServiceFromEntity(t *testing.T) {
 	type args struct {
 		entity dynatrace.Entity
 	}
