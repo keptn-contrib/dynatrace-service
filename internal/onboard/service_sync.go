@@ -61,6 +61,7 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 	return nil
 }
 
+// ServiceSynchronizer encapsulates the service onboarder component.
 type ServiceSynchronizer struct {
 	projectClient       keptn.ProjectClientInterface
 	servicesClient      keptn.ServiceClientInterface
@@ -94,7 +95,7 @@ func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
 	return &serviceSynchronizer, nil
 }
 
-// Runs runs the service synchronizer and does not return.
+// Run runs the service synchronizer and does not return.
 func (s *ServiceSynchronizer) Run() {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
