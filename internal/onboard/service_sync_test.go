@@ -397,7 +397,7 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 		projectClient:   keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
 		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
 		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
-		EntitiesClientFunc: func(creds *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
+		entitiesClientFunc: func(creds *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
 			return dynatrace.NewEntitiesClient(
 				dynatrace.NewClient(mockCredentials))
 		},
@@ -603,7 +603,7 @@ func Test_ServiceSynchronizer_addServiceToKeptn(t *testing.T) {
 				servicesClient:      tt.fields.servicesAPI,
 				resourcesClient:     tt.fields.resourcesAPI,
 				credentialsProvider: tt.fields.credentialsProvider,
-				EntitiesClientFunc:  tt.fields.EntitiesClient,
+				entitiesClientFunc:  tt.fields.EntitiesClient,
 				configProvider:      tt.fields.configProvider,
 			}
 			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {

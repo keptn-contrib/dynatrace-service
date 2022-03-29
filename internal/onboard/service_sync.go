@@ -66,7 +66,7 @@ type ServiceSynchronizer struct {
 	servicesClient      keptn.ServiceClientInterface
 	resourcesClient     keptn.SLIAndSLOResourceWriterInterface
 	credentialsProvider credentials.DynatraceCredentialsProvider
-	EntitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
+	entitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
 	configProvider      config.DynatraceConfigProvider
 }
 
@@ -82,7 +82,7 @@ func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
 	serviceSynchronizer := ServiceSynchronizer{
 		credentialsProvider: credentialsProvider,
 		configProvider:      config.NewDynatraceConfigGetter(resourceClient),
-		EntitiesClientFunc: func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
+		entitiesClientFunc: func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
 			dtClient := dynatrace.NewClient(credentials)
 			return dynatrace.NewEntitiesClient(dtClient)
 		},
@@ -162,7 +162,7 @@ func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrac
 		return nil, fmt.Errorf("failed to load Dynatrace credentials: %w", err)
 	}
 
-	entitiesClient := s.EntitiesClientFunc(creds)
+	entitiesClient := s.entitiesClientFunc(creds)
 	entities, err := entitiesClient.GetKeptnManagedServices()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch Keptn managed services from Dynatrace: %w", err)
