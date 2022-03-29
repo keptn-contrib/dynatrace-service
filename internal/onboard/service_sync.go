@@ -10,16 +10,13 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultDTProjectName = "dynatrace"
-const defaultDTProjectStage = "quality-gate"
+const synchronizedProject = "dynatrace"
+const synchronizedStage = "quality-gate"
 
 type initSyncEventAdapter struct {
 }
@@ -37,11 +34,11 @@ func (initSyncEventAdapter) GetSource() string {
 }
 
 func (initSyncEventAdapter) GetProject() string {
-	return defaultDTProjectName
+	return synchronizedProject
 }
 
 func (initSyncEventAdapter) GetStage() string {
-	return defaultDTProjectStage
+	return synchronizedStage
 }
 
 func (initSyncEventAdapter) GetService() string {
@@ -64,154 +61,116 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 	return nil
 }
 
-type serviceSynchronizer struct {
-	projectClient       keptn.ProjectClientInterface
+// ServiceSynchronizer encapsulates the service onboarder component.
+type ServiceSynchronizer struct {
 	servicesClient      keptn.ServiceClientInterface
 	resourcesClient     keptn.SLIAndSLOResourceWriterInterface
-	apiHandler          *keptnapi.APIHandler
 	credentialsProvider credentials.DynatraceCredentialsProvider
-	EntitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-	syncTimer           *time.Ticker
-	keptnHandler        *keptnv2.Keptn
-	servicesInKeptn     []string
+	entitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
 	configProvider      config.DynatraceConfigProvider
 }
 
-var serviceSynchronizerInstance *serviceSynchronizer
-
-const shipyardController = "SHIPYARD_CONTROLLER"
-const defaultShipyardControllerURL = "http://shipyard-controller:8080"
-
-// ActivateServiceSynchronizer godoc
-func ActivateServiceSynchronizer(c credentials.DynatraceCredentialsProvider) {
-	if serviceSynchronizerInstance == nil {
-
-		serviceSynchronizerInstance = &serviceSynchronizer{
-			credentialsProvider: c,
-		}
-
-		resourceClient := keptn.NewDefaultResourceClient()
-
-		serviceSynchronizerInstance.configProvider = config.NewDynatraceConfigGetter(resourceClient)
-		serviceSynchronizerInstance.EntitiesClientFunc =
-			func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
-				dtClient := dynatrace.NewClient(credentials)
-				return dynatrace.NewEntitiesClient(dtClient)
-			}
-
-		configServiceBaseURL := common.GetConfigurationServiceURL()
-		shipyardControllerBaseURL := common.GetShipyardControllerURL()
-		log.WithFields(
-			log.Fields{
-				"configServiceBaseURL":      configServiceBaseURL,
-				"shipyardControllerBaseURL": shipyardControllerBaseURL,
-			}).Debug("Initializing Service Synchronizer")
-
-		serviceSynchronizerInstance.projectClient = keptn.NewDefaultProjectClient()
-		serviceSynchronizerInstance.servicesClient = keptn.NewDefaultServiceClient()
-		serviceSynchronizerInstance.resourcesClient = resourceClient
-
-		serviceSynchronizerInstance.initializeSynchronizationTimer()
+// NewDefaultServiceSynchronizer creates are new default ServiceSynchronizer or returns an error.
+func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
+	credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
+	if err != nil {
+		return nil, err
 	}
+
+	resourceClient := keptn.NewDefaultResourceClient()
+
+	serviceSynchronizer := ServiceSynchronizer{
+		credentialsProvider: credentialsProvider,
+		configProvider:      config.NewDynatraceConfigGetter(resourceClient),
+		entitiesClientFunc: func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
+			dtClient := dynatrace.NewClient(credentials)
+			return dynatrace.NewEntitiesClient(dtClient)
+		},
+		servicesClient:  keptn.NewDefaultServiceClient(),
+		resourcesClient: resourceClient,
+	}
+
+	return &serviceSynchronizer, nil
 }
 
-func (s *serviceSynchronizer) initializeSynchronizationTimer() {
+// Run runs the service synchronizer and does not return.
+func (s *ServiceSynchronizer) Run() {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
-	s.syncTimer = time.NewTicker(time.Duration(syncInterval) * time.Second)
-	go func() {
-		for {
-			s.synchronizeServices()
-			<-s.syncTimer.C
-			log.WithField("delaySeconds", syncInterval).Info("Synchronizing services")
-		}
-	}()
+	for {
+		s.synchronizeServices()
+		<-time.After(time.Duration(syncInterval) * time.Second)
+		log.WithField("delaySeconds", syncInterval).Info("Synchronizing services")
+	}
 }
 
-func (s *serviceSynchronizer) synchronizeServices() {
-	creds, err := s.establishDTAPIConnection()
+// synchronizeServices performs a single synchronization run
+func (s *ServiceSynchronizer) synchronizeServices() {
+	existingServices, err := s.getExistingServicesFromKeptn()
 	if err != nil {
-		log.WithError(err).Error("Could not establish Dynatrace API connection")
+		log.WithError(err).Error("Could not get existing services from Keptn")
 		return
 	}
 
-	log.WithField("project", defaultDTProjectName).Info("Fetching existing services in project")
-	if err := s.fetchExistingServices(); err != nil {
-		log.WithError(err).Error("Could not fetch existing services")
-		return
-	}
-
-	log.Info("Fetching service entities with tags 'keptn_managed' and 'keptn_service'")
-
-	entitiesClient := s.EntitiesClientFunc(creds)
-	entities, err := entitiesClient.GetKeptnManagedServices()
+	entities, err := s.getKeptnManagedServicesFromDynatrace()
 	if err != nil {
-		log.WithError(err).Error("Error fetching keptn managed services from dynatrace")
+		log.WithError(err).Error("Could not get Keptn-managed services from Dynatrace")
 		return
 	}
 
 	for _, entity := range entities {
-		s.synchronizeEntity(entity)
-	}
 
-}
+		service, err := getServiceFromEntity(entity)
+		if err != nil {
+			log.WithError(err).WithField("entityId", entity.EntityID).Debug("Skipping entity due to no valid service name")
+			continue
+		}
 
-func (s *serviceSynchronizer) synchronizeEntity(entity dynatrace.Entity) {
-	log.WithField("entityId", entity.EntityID).Debug("Synchronizing entity")
+		if doesServiceExist(existingServices, service) {
+			log.WithFields(log.Fields{
+				"service":  service,
+				"entityId": entity.EntityID,
+			}).Debug("Service already exists in project, skipping")
+			continue
+		}
 
-	serviceName, err := getKeptnServiceName(entity)
-	if err != nil {
-		log.WithField("entityId", entity.EntityID).Debug("Skipping entity due to no valid service name")
-		return
-	}
-	log.WithFields(
-		log.Fields{
-			"serviceName": serviceName,
-			"entityId":    entity.EntityID,
-		}).Debug("Got service name for entity")
+		if err := s.addServiceToKeptn(service); err != nil {
+			log.WithError(err).WithFields(log.Fields{
+				"service":  service,
+				"entityId": entity.EntityID,
+			}).Error("Could not add service")
+			continue
+		}
 
-	if doesServiceExist(s.servicesInKeptn, serviceName) {
-		log.WithField("service", serviceName).Debug("Service already exists in project, skipping")
-		return
-	}
-
-	if err := s.addServiceToKeptn(serviceName); err != nil {
-		log.WithError(err).WithField("entityId", entity.EntityID).Error("Could not synchronize DT entity")
+		existingServices = append(existingServices, service)
 	}
 }
 
-func (s *serviceSynchronizer) establishDTAPIConnection() (*credentials.DynatraceCredentials, error) {
+func (s *ServiceSynchronizer) getExistingServicesFromKeptn() ([]string, error) {
+	return s.servicesClient.GetServiceNames(synchronizedProject, synchronizedStage)
+}
+
+func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrace.Entity, error) {
 	dynatraceConfig, err := s.configProvider.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to load Dynatrace config: %s", err.Error())
+		return nil, fmt.Errorf("failed to load Dynatrace config: %w", err)
 	}
 
 	creds, err := s.credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load Dynatrace credentials: %s", err.Error())
+		return nil, fmt.Errorf("failed to load Dynatrace credentials: %w", err)
 	}
 
-	return creds, nil
+	entitiesClient := s.entitiesClientFunc(creds)
+	entities, err := entitiesClient.GetKeptnManagedServices()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch Keptn managed services from Dynatrace: %w", err)
+	}
+
+	return entities, nil
 }
 
-func (s *serviceSynchronizer) fetchExistingServices() error {
-	err := s.projectClient.AssertProjectExists(defaultDTProjectName)
-	if err != nil {
-		return err
-	}
-
-	// get all services currently in the project
-	s.servicesInKeptn = []string{}
-	serviceNames, err := s.servicesClient.GetServiceNames(defaultDTProjectName, defaultDTProjectStage)
-	if err != nil {
-		return err
-	}
-	s.servicesInKeptn = serviceNames
-
-	return nil
-}
-
-func getKeptnServiceName(entity dynatrace.Entity) (string, error) {
+func getServiceFromEntity(entity dynatrace.Entity) (string, error) {
 	serviceTags := make([]string, 0)
 	for _, tag := range entity.Tags {
 		if tag.Key == "keptn_service" && tag.Value != "" {
@@ -237,31 +196,28 @@ func doesServiceExist(services []string, serviceName string) bool {
 	return false
 }
 
-func (s *serviceSynchronizer) addServiceToKeptn(serviceName string) error {
-	err := s.servicesClient.CreateServiceInProject(defaultDTProjectName, serviceName)
+func (s *ServiceSynchronizer) addServiceToKeptn(serviceName string) error {
+	err := s.servicesClient.CreateServiceInProject(synchronizedProject, serviceName)
 	if err != nil {
 		return fmt.Errorf("could not create service %s: %s", serviceName, err)
 	}
 
-	log.WithField("service", serviceName).Debug("Service is available. Proceeding with SLO upload.")
-
 	if err := s.createSLOResource(serviceName); err == nil {
-		log.WithField("service", serviceName).Info(fmt.Sprintf("Uploaded slo.yaml for service %s", serviceName))
+		log.WithField("service", serviceName).Info("Uploaded slo.yaml for service")
 	} else {
-		log.WithField("service", serviceName).Info("Could not create SLO resource for service")
+		log.WithError(err).WithField("service", serviceName).Info("Could not create SLO resource for service")
 	}
 
 	if err := s.createSLIResource(serviceName); err == nil {
 		log.WithField("service", serviceName).Info("Uploaded sli.yaml for service")
 	} else {
-		log.WithField("service", serviceName).Info("Could not create SLI resource for service")
+		log.WithError(err).WithField("service", serviceName).Info("Could not create SLI resource for service")
 	}
 
-	s.servicesInKeptn = append(s.servicesInKeptn, serviceName)
 	return nil
 }
 
-func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
+func (s *ServiceSynchronizer) createSLOResource(serviceName string) error {
 	defaultSLOs := &keptnlib.ServiceLevelObjectives{
 		SpecVersion: "1.0",
 		Filter:      nil,
@@ -295,7 +251,7 @@ func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
 		},
 	}
 
-	err := s.resourcesClient.UploadSLOs(defaultDTProjectName, defaultDTProjectStage, serviceName, defaultSLOs)
+	err := s.resourcesClient.UploadSLOs(synchronizedProject, synchronizedStage, serviceName, defaultSLOs)
 	if err != nil {
 		return err
 	}
@@ -303,7 +259,7 @@ func (s *serviceSynchronizer) createSLOResource(serviceName string) error {
 	return nil
 }
 
-func (s *serviceSynchronizer) createSLIResource(serviceName string) error {
+func (s *ServiceSynchronizer) createSLIResource(serviceName string) error {
 	indicators := make(map[string]string)
 	indicators["throughput"] = fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
 	indicators["error_rate"] = fmt.Sprintf("metricSelector=builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
@@ -316,7 +272,7 @@ func (s *serviceSynchronizer) createSLIResource(serviceName string) error {
 		Indicators:  indicators,
 	}
 
-	err := s.resourcesClient.UploadSLI(defaultDTProjectName, defaultDTProjectStage, serviceName, defaultSLIs)
+	err := s.resourcesClient.UploadSLI(synchronizedProject, synchronizedStage, serviceName, defaultSLIs)
 	if err != nil {
 		return err
 	}

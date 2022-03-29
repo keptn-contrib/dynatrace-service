@@ -8,11 +8,11 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/config/mock"
 	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -106,19 +106,6 @@ func getTestServicesAPI() *httptest.Server {
 	return servicesMockAPI
 }
 
-func getTestProjectsAPI() *httptest.Server {
-	projectsMockAPI := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		svc := &models.Project{
-			ProjectName: "dynatrace",
-		}
-		marshal, _ := json.Marshal(svc)
-
-		writer.WriteHeader(http.StatusOK)
-		writer.Write(marshal)
-	}))
-	return projectsMockAPI
-}
-
 func getTestMockEventBroker() (chan string, *httptest.Server) {
 	receivedEvent := make(chan string)
 	mockEventBroker := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -142,7 +129,7 @@ func getTestMockEventBroker() (chan string, *httptest.Server) {
 			if err != nil {
 				return
 			}
-			if serviceCreateData.Project == defaultDTProjectName {
+			if serviceCreateData.Project == synchronizedProject {
 				go func() {
 					receivedEvent <- serviceCreateData.Service
 				}()
@@ -227,7 +214,7 @@ func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Serv
 	keptnContext := uuid.New().String()
 	createServiceData := keptnv2.ServiceCreateFinishedEventData{
 		EventData: keptnv2.EventData{
-			Project: defaultDTProjectName,
+			Project: synchronizedProject,
 			Service: "my-service",
 		},
 	}
@@ -245,7 +232,7 @@ func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Serv
 	return k
 }
 
-func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
+func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 
 	firstDTResponse := dynatrace.EntitiesResponse{
 		TotalCount:  3,
@@ -351,9 +338,6 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 	}))
 	defer dtMockServer.Close()
 
-	projectsMockAPI := getTestProjectsAPI()
-	defer projectsMockAPI.Close()
-
 	firstRequest := true
 	servicesMockAPI := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		// for the first request, return a list of the services already available in Keptn
@@ -387,23 +371,18 @@ func Test_serviceSynchronizer_synchronizeServices(t *testing.T) {
 	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
 
-	os.Setenv(shipyardController, mockCS.URL)
+	os.Setenv(common.ShipyardControllerURLEnvironmentVariableName, mockCS.URL)
 
 	mockCredentials, err := credentials.NewDynatraceCredentials(dtMockServer.URL, testDynatraceAPIToken)
 	assert.NoError(t, err)
 
-	k := getTestKeptnHandler(mockCS, mockEventBroker)
-	s := &serviceSynchronizer{
-		projectClient:   keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
+	s := &ServiceSynchronizer{
 		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
 		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
-		EntitiesClientFunc: func(creds *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
+		entitiesClientFunc: func(creds *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
 			return dynatrace.NewEntitiesClient(
 				dynatrace.NewClient(mockCredentials))
 		},
-		syncTimer:       nil,
-		keptnHandler:    k,
-		servicesInKeptn: []string{},
 		credentialsProvider: &credentials_mock.DynatraceCredentialsProviderMock{
 			GetDynatraceCredentialsFunc: func(secretName string) (*credentials.DynatraceCredentials, error) {
 				return mockCredentials, nil
@@ -455,7 +434,7 @@ func checkReceivedEntities(t *testing.T, channel chan string, expected []string)
 	}
 }
 
-func Test_getKeptnServiceName(t *testing.T) {
+func Test_getServiceFromEntity(t *testing.T) {
 	type args struct {
 		entity dynatrace.Entity
 	}
@@ -539,7 +518,7 @@ func Test_getKeptnServiceName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getKeptnServiceName(tt.args.entity)
+			got, err := getServiceFromEntity(tt.args.entity)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -551,7 +530,7 @@ func Test_getKeptnServiceName(t *testing.T) {
 	}
 }
 
-func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
+func Test_ServiceSynchronizer_addServiceToKeptn(t *testing.T) {
 
 	servicesMockAPI := getTestServicesAPI()
 	defer servicesMockAPI.Close()
@@ -561,95 +540,36 @@ func Test_serviceSynchronizer_addServiceToKeptn(t *testing.T) {
 
 	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
-	os.Setenv(shipyardController, mockCS.URL)
-	k := getTestKeptnHandler(mockCS, mockEventBroker)
+	os.Setenv(common.ShipyardControllerURLEnvironmentVariableName, mockCS.URL)
 
-	type fields struct {
-		logger              keptncommon.LoggerInterface
-		projectsAPI         keptn.ProjectClientInterface
-		servicesAPI         keptn.ServiceClientInterface
-		resourcesAPI        keptn.SLIAndSLOResourceWriterInterface
-		apiHandler          *keptnapi.APIHandler
-		credentialsProvider credentials.DynatraceCredentialsProvider
-		apiMutex            sync.Mutex
-		EntitiesClient      func(*credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-		syncTimer           *time.Ticker
-		keptnHandler        *keptnv2.Keptn
-		servicesInKeptn     []string
-		configProvider      config.DynatraceConfigProvider
+	serviceName := "my-service"
+
+	s := &ServiceSynchronizer{
+		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
+		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
 	}
-	type args struct {
-		serviceName string
+
+	err := s.addServiceToKeptn(serviceName)
+	assert.NoError(t, err)
+
+	select {
+	case rec := <-receivedServiceCreate:
+		assert.EqualValues(t, serviceName, rec, "did not receive expected event")
+	case <-time.After(5 * time.Second):
+		t.Error("did not receive expected event")
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		{
-			name: "create service",
-			fields: fields{
-				logger:          keptncommon.NewLogger("", "", ""),
-				projectsAPI:     nil,
-				servicesAPI:     keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
-				resourcesAPI:    keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
-				apiMutex:        sync.Mutex{},
-				EntitiesClient:  nil,
-				syncTimer:       nil,
-				keptnHandler:    k,
-				servicesInKeptn: []string{},
-			},
-			args: args{
-				serviceName: "my-service",
-			},
-			wantErr: false,
-		},
+
+	select {
+	case rec := <-receivedSLO:
+		assert.EqualValues(t, serviceName, rec, "did not receive SLO file")
+	case <-time.After(5 * time.Second):
+		t.Error("did not receive expected event")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := &serviceSynchronizer{
-				projectClient:       tt.fields.projectsAPI,
-				servicesClient:      tt.fields.servicesAPI,
-				resourcesClient:     tt.fields.resourcesAPI,
-				apiHandler:          tt.fields.apiHandler,
-				credentialsProvider: tt.fields.credentialsProvider,
-				EntitiesClientFunc:  tt.fields.EntitiesClient,
-				syncTimer:           tt.fields.syncTimer,
-				keptnHandler:        tt.fields.keptnHandler,
-				servicesInKeptn:     tt.fields.servicesInKeptn,
-				configProvider:      tt.fields.configProvider,
-			}
-			if err := s.addServiceToKeptn(tt.args.serviceName); (err != nil) != tt.wantErr {
-				t.Errorf("serviceSynchronizer.addServiceToKeptn() error = %v, wantErr %v", err, tt.wantErr)
-			}
 
-			select {
-			case rec := <-receivedServiceCreate:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			}
-
-			select {
-			case rec := <-receivedSLO:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLO file")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			}
-
-			select {
-			case rec := <-receivedSLI:
-				if rec != tt.args.serviceName {
-					t.Error("synchronizeDTEntityWithKeptn(): did not receive SLI file")
-				}
-			case <-time.After(5 * time.Second):
-				t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			}
-		})
+	select {
+	case rec := <-receivedSLI:
+		assert.EqualValues(t, serviceName, rec, "did not receive SLI file")
+	case <-time.After(5 * time.Second):
+		t.Error("did not receive expected event")
 	}
 }

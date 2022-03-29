@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/event_handler"
 	"github.com/keptn-contrib/dynatrace-service/internal/health"
@@ -36,11 +35,13 @@ func main() {
 func _main(args []string, envCfg envConfig) int {
 
 	if env.IsServiceSyncEnabled() {
-		credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
-		if err != nil {
-			log.WithError(err).Fatal("Failed to initialize CredentialsProvider")
-		}
-		onboard.ActivateServiceSynchronizer(credentialsProvider)
+		go func() {
+			serviceSynchronizerInstance, err := onboard.NewDefaultServiceSynchronizer()
+			if err != nil {
+				log.WithError(err).Fatal("Could now create ServiceSynchronizer")
+			}
+			serviceSynchronizerInstance.Run()
+		}()
 	}
 
 	ctx := context.Background()

@@ -18,7 +18,9 @@ import (
 
 const KEPTNSBRIDGE_LABEL = "Keptns Bridge"
 
-const shipyardController = "SHIPYARD_CONTROLLER"
+// ShipyardControllerURLEnvironmentVariableName is the name of the environment variable for specifying the shipyard controller URL.
+const ShipyardControllerURLEnvironmentVariableName = "SHIPYARD_CONTROLLER"
+
 const configurationService = "CONFIGURATION_SERVICE"
 const datastore = "DATASTORE"
 
@@ -36,7 +38,7 @@ func GetDatastoreURL() string {
 
 // GetShipyardControllerURL Returns the endpoint to the shipyard-controller
 func GetShipyardControllerURL() string {
-	return getKeptnServiceURL(shipyardController, defaultShipyardControllerURL)
+	return getKeptnServiceURL(ShipyardControllerURLEnvironmentVariableName, defaultShipyardControllerURL)
 }
 
 func getKeptnServiceURL(serviceName, defaultURL string) string {
