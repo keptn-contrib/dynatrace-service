@@ -44,6 +44,10 @@ If you are planning to upgrade to dynatrace-service version `0.18.0` or newer fr
   - [Forwarding problem notifications from Dynatrace to Keptn](documentation/problem-forwarding-to-keptn.md)
   - [Automatic onboarding of monitored service entities](documentation/auto-service-onboarding.md)
 - [Troubleshooting common problems](documentation/troubleshooting.md)
+  - [No SLI provider configured](documentation/troubleshooting_no-sli-provider.md)
+  - [Configure monitoring fails](documentation/troubleshooting_configure-monitoring-fails.md)
+  - [Evaluation fails](documentation/troubleshooting_evaluation-fails.md)
+  - [Restore Keptn wildcard subscriptions `sh.keptn.*`](documentation/troubleshooting_restore-keptn-wildcard-subscriptions.md)
 - Other topics
   - [Additional installation options](documentation/additional-installation-options.md)
   - [Dynatrace API token scopes](documentation/dynatrace-api-token-scopes.md)
