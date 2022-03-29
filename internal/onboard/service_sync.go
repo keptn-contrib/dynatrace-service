@@ -203,18 +203,16 @@ func (s *ServiceSynchronizer) addServiceToKeptn(serviceName string) error {
 		return fmt.Errorf("could not create service %s: %s", serviceName, err)
 	}
 
-	log.WithField("service", serviceName).Debug("Service is available. Proceeding with SLO upload.")
-
 	if err := s.createSLOResource(serviceName); err == nil {
-		log.WithField("service", serviceName).Info(fmt.Sprintf("Uploaded slo.yaml for service %s", serviceName))
+		log.WithField("service", serviceName).Info("Uploaded slo.yaml for service")
 	} else {
-		log.WithField("service", serviceName).Info("Could not create SLO resource for service")
+		log.WithError(err).WithField("service", serviceName).Info("Could not create SLO resource for service")
 	}
 
 	if err := s.createSLIResource(serviceName); err == nil {
 		log.WithField("service", serviceName).Info("Uploaded sli.yaml for service")
 	} else {
-		log.WithField("service", serviceName).Info("Could not create SLI resource for service")
+		log.WithError(err).WithField("service", serviceName).Info("Could not create SLI resource for service")
 	}
 
 	return nil
