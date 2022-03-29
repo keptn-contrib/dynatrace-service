@@ -63,7 +63,6 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 
 // ServiceSynchronizer encapsulates the service onboarder component.
 type ServiceSynchronizer struct {
-	projectClient       keptn.ProjectClientInterface
 	servicesClient      keptn.ServiceClientInterface
 	resourcesClient     keptn.SLIAndSLOResourceWriterInterface
 	credentialsProvider credentials.DynatraceCredentialsProvider
@@ -87,7 +86,6 @@ func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
 			dtClient := dynatrace.NewClient(credentials)
 			return dynatrace.NewEntitiesClient(dtClient)
 		},
-		projectClient:   keptn.NewDefaultProjectClient(),
 		servicesClient:  keptn.NewDefaultServiceClient(),
 		resourcesClient: resourceClient,
 	}

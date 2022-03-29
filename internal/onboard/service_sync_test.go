@@ -106,19 +106,6 @@ func getTestServicesAPI() *httptest.Server {
 	return servicesMockAPI
 }
 
-func getTestProjectsAPI() *httptest.Server {
-	projectsMockAPI := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		svc := &models.Project{
-			ProjectName: "dynatrace",
-		}
-		marshal, _ := json.Marshal(svc)
-
-		writer.WriteHeader(http.StatusOK)
-		writer.Write(marshal)
-	}))
-	return projectsMockAPI
-}
-
 func getTestMockEventBroker() (chan string, *httptest.Server) {
 	receivedEvent := make(chan string)
 	mockEventBroker := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -351,9 +338,6 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 	}))
 	defer dtMockServer.Close()
 
-	projectsMockAPI := getTestProjectsAPI()
-	defer projectsMockAPI.Close()
-
 	firstRequest := true
 	servicesMockAPI := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		// for the first request, return a list of the services already available in Keptn
@@ -393,7 +377,6 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 	assert.NoError(t, err)
 
 	s := &ServiceSynchronizer{
-		projectClient:   keptn.NewProjectClient(keptnapi.NewProjectHandler(projectsMockAPI.URL)),
 		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
 		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
 		entitiesClientFunc: func(creds *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
