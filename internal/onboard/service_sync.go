@@ -122,7 +122,7 @@ func (s *ServiceSynchronizer) synchronizeServices() {
 
 		service, err := getServiceFromEntity(entity)
 		if err != nil {
-			log.WithField("entityId", entity.EntityID).Debug("Skipping entity due to no valid service name")
+			log.WithError(err).WithField("entityId", entity.EntityID).Debug("Skipping entity due to no valid service name")
 			continue
 		}
 
