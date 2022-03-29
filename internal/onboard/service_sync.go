@@ -15,8 +15,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultDTProjectName = "dynatrace"
-const defaultDTProjectStage = "quality-gate"
+const synchronizedProject = "dynatrace"
+const synchronizedStage = "quality-gate"
 
 type initSyncEventAdapter struct {
 }
@@ -34,11 +34,11 @@ func (initSyncEventAdapter) GetSource() string {
 }
 
 func (initSyncEventAdapter) GetProject() string {
-	return defaultDTProjectName
+	return synchronizedProject
 }
 
 func (initSyncEventAdapter) GetStage() string {
-	return defaultDTProjectStage
+	return synchronizedStage
 }
 
 func (initSyncEventAdapter) GetService() string {
@@ -148,7 +148,7 @@ func (s *ServiceSynchronizer) synchronizeServices() {
 }
 
 func (s *ServiceSynchronizer) getExistingServicesFromKeptn() ([]string, error) {
-	return s.servicesClient.GetServiceNames(defaultDTProjectName, defaultDTProjectStage)
+	return s.servicesClient.GetServiceNames(synchronizedProject, synchronizedStage)
 }
 
 func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrace.Entity, error) {
@@ -198,7 +198,7 @@ func doesServiceExist(services []string, serviceName string) bool {
 }
 
 func (s *ServiceSynchronizer) addServiceToKeptn(serviceName string) error {
-	err := s.servicesClient.CreateServiceInProject(defaultDTProjectName, serviceName)
+	err := s.servicesClient.CreateServiceInProject(synchronizedProject, serviceName)
 	if err != nil {
 		return fmt.Errorf("could not create service %s: %s", serviceName, err)
 	}
@@ -254,7 +254,7 @@ func (s *ServiceSynchronizer) createSLOResource(serviceName string) error {
 		},
 	}
 
-	err := s.resourcesClient.UploadSLOs(defaultDTProjectName, defaultDTProjectStage, serviceName, defaultSLOs)
+	err := s.resourcesClient.UploadSLOs(synchronizedProject, synchronizedStage, serviceName, defaultSLOs)
 	if err != nil {
 		return err
 	}
@@ -275,7 +275,7 @@ func (s *ServiceSynchronizer) createSLIResource(serviceName string) error {
 		Indicators:  indicators,
 	}
 
-	err := s.resourcesClient.UploadSLI(defaultDTProjectName, defaultDTProjectStage, serviceName, defaultSLIs)
+	err := s.resourcesClient.UploadSLI(synchronizedProject, synchronizedStage, serviceName, defaultSLIs)
 	if err != nil {
 		return err
 	}

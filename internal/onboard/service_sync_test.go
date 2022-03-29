@@ -143,7 +143,7 @@ func getTestMockEventBroker() (chan string, *httptest.Server) {
 			if err != nil {
 				return
 			}
-			if serviceCreateData.Project == defaultDTProjectName {
+			if serviceCreateData.Project == synchronizedProject {
 				go func() {
 					receivedEvent <- serviceCreateData.Service
 				}()
@@ -228,7 +228,7 @@ func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Serv
 	keptnContext := uuid.New().String()
 	createServiceData := keptnv2.ServiceCreateFinishedEventData{
 		EventData: keptnv2.EventData{
-			Project: defaultDTProjectName,
+			Project: synchronizedProject,
 			Service: "my-service",
 		},
 	}
