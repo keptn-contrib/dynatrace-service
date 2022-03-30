@@ -1,18 +1,14 @@
 # Restore Keptn wildcard subscriptions
 
-By default, dynatrace-service subscribes to `sh.keptn.*` - so basically all `sh.keptn` events.
+By default, the dynatrace-service subscribes to all `sh.keptn` events using the wildcard subscription `sh.keptn.*`. This allows the service to react to events as detailed in [Feature overview](feature-overview.md#keptn-events).
 
 ![default dynatrace-service subscription](images/subscriptions.png)
 
-If you have changed this via Keptn Uniform and want to go back to the default of `sh.keptn.*` then you can do the following to achieve this.
+If you have changed this via Keptn Uniform and want to restore the default of `sh.keptn.*`, this can be achieved using the [Keptn API](https://keptn.sh/docs/0.13.x/reference/api/). In the future Keptn might introduce a way to restore the default via the Keptn Uniform UI.
 
-In the future Keptn might introduce a way to restore the default via Keptn Uniform UI.
+## Get all subscriptions for the dynatrace-service
 
-## Using Keptn API
-
-### Get all subscriptions from Keptn for dynatrace-service
-
-Go to Keptn API / controlPlane and query `GET /uniform/registration`  endpoint with parameter `name=dynatrace-service`. This should return a payload like the one below:
+Go to Keptn API / controlPlane and query the `GET /uniform/registration` endpoint with the parameter `name=dynatrace-service`. This should return a payload like the one below:
 
 ```json
 [
@@ -45,15 +41,15 @@ Go to Keptn API / controlPlane and query `GET /uniform/registration`  endpoint w
 ]
 ```
 
-Find the service with the correct version (if there are more than one) and copy the **integrationID** - in this case it would be `4b4d28a8f3bf811aa735f9531bae6bebf0df0f78` for version `0.20.0`
+Find the service with the correct version (if there is more than one) and copy the **integrationID** - in this case it would be `4b4d28a8f3bf811aa735f9531bae6bebf0df0f78` for version `0.20.0`.
 
-Here we clearly see that there are no subscriptions available (`subscriptions: null`), because they were deleted before.
+Here, no subscriptions are available (`subscriptions: null`) because they were deleted previously.
 
-### Optional: Query the available subscriptions for that integration
+### Optional: Query available subscriptions for an integration
 
-In case you see at least one subscription, then you can query them via `GET /uniform/registration/{integrationID}/subscription` with the correct **integrationID**  from last step.
+In case you see at least one subscription, these can be queried via `GET /uniform/registration/{integrationID}/subscription` with the correct **integrationID** from the last step.
 
-This should then return the subscription(s) you might have set up via Keptn Uniform like:
+This will return any subscriptions set up via Keptn Uniform, such as:
 
 ```json
 [
@@ -69,15 +65,13 @@ This should then return the subscription(s) you might have set up via Keptn Unif
 ]
 ```
 
+### Optional: Delete a subscription for an integration
 
-### Optional: Delete the current resp. invalid subscription
+If you have an invalid subscription, then delete it via `DELETE /uniform/registration/{integrationID}/subscription/{subscriptionID}` using the correct **integrationID** from above, as well as the correct **subscriptionID** from the last step.
 
-If you do have an invalid subscription, then delete it by `DELETE /uniform/registration/{integrationID}/subscription/{subscriptionID}` and use the correct **integrationID**  from above, as well as the correct **subscriptionID** from the last step
+## Add a new default subscription
 
-
-### Add a new default subscription
-
-If you want to reset the dynatrace-service to use its default subscription then you need to `POST /uniform/registration/{integrationID}/subscription` using the correct **integrationID** from above and payload below:
+If you want to restore the default subscription for the dynatrace-service, use `POST /uniform/registration/{integrationID}/subscription` together with the correct **integrationID** from above and payload below:
 
 ```json
 {
