@@ -106,41 +106,6 @@ func getTestServicesAPI() *httptest.Server {
 	return servicesMockAPI
 }
 
-func getTestMockEventBroker() (chan string, *httptest.Server) {
-	receivedEvent := make(chan string)
-	mockEventBroker := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-		bytes, err := ioutil.ReadAll(request.Body)
-		if err != nil {
-			return
-		}
-		event := &models.KeptnContextExtendedCE{}
-		err = json.Unmarshal(bytes, event)
-		if err != nil {
-			return
-		}
-		if *event.Type == keptnv2.GetFinishedEventType(keptnv2.ServiceCreateTaskName) {
-			bytes, err = json.Marshal(event.Data)
-			if err != nil {
-				return
-			}
-			serviceCreateData := &keptnv2.ServiceCreateFinishedEventData{}
-			err = json.Unmarshal(bytes, serviceCreateData)
-			if err != nil {
-				return
-			}
-			if serviceCreateData.Project == synchronizedProject {
-				go func() {
-					receivedEvent <- serviceCreateData.Service
-				}()
-				return
-			}
-		}
-
-	}))
-	return receivedEvent, mockEventBroker
-}
-
 type createServiceParams struct {
 	ServiceName string `json:"serviceName"`
 }
@@ -365,9 +330,6 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 	}))
 	defer servicesMockAPI.Close()
 
-	_, mockEventBroker := getTestMockEventBroker()
-	defer mockEventBroker.Close()
-
 	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
 
@@ -534,9 +496,6 @@ func Test_ServiceSynchronizer_addServiceToKeptn(t *testing.T) {
 
 	servicesMockAPI := getTestServicesAPI()
 	defer servicesMockAPI.Close()
-
-	_, mockEventBroker := getTestMockEventBroker()
-	defer mockEventBroker.Close()
 
 	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
 	defer mockCS.Close()
