@@ -23,7 +23,6 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
 	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
-	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
 
 	querying, _, teardown := createQueryingWithHandler(t, keptnEvent, handler)
 	defer teardown()
@@ -40,7 +39,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	assert.NotNil(t, result.slo, "No SLO returned")
 	assert.NotNil(t, result.sliResults, "No SLI Results returned")
 
-	const expectedSLOs = 3
+	const expectedSLOs = 2
 	assert.Equal(t, expectedSLOs, len(result.sli.Indicators))
 	assert.Equal(t, expectedSLOs, len(result.slo.Objectives))
 	assert.EqualValues(t, &keptnapi.SLOScore{Pass: "90%", Warning: "70%"}, result.slo.TotalScore)

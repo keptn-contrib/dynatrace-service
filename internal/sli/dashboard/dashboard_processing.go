@@ -85,10 +85,6 @@ func (p *Processing) Process(dashboard *dynatrace.Dashboard) *QueryResult {
 		case dynatrace.OpenProblemsTileType:
 			tileResult := NewProblemTileProcessing(p.client, p.timeframe).Process(&tile, dashboard.GetFilter())
 			result.addTileResult(tileResult)
-
-			// current logic also does security tile processing for open problem tiles
-			tileResult = NewSecurityProblemTileProcessing(p.client, p.timeframe).Process(&tile, dashboard.GetFilter())
-			result.addTileResult(tileResult)
 		case dynatrace.DataExplorerTileType:
 			tileResults := NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(&tile, dashboard.GetFilter())
 			result.addTileResults(tileResults)
