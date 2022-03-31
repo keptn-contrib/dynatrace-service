@@ -7,7 +7,6 @@ import (
 const dynatraceTenantKey = "DT_TENANT"
 const dynatraceAPITokenKey = "DT_API_TOKEN"
 
-//go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/dynatrace_credentials_provider_mock.go . DynatraceCredentialsProvider
 type DynatraceCredentialsProvider interface {
 	GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error)
 }

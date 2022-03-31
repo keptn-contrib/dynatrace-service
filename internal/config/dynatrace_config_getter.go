@@ -11,7 +11,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//go:generate moq --skip-ensure -pkg adapter_mock -out ./mock/dynatrace_config_mock.go . DynatraceConfigProvider
 type DynatraceConfigProvider interface {
 	GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfig, error)
 }

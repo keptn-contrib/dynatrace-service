@@ -14,7 +14,6 @@ const keptnAPIURLKey = "KEPTN_API_URL"
 const keptnAPITokenKey = "KEPTN_API_TOKEN"
 const keptnBridgeURLKey = "KEPTN_BRIDGE_URL"
 
-//go:generate moq --skip-ensure -pkg credentials_mock -out ./mock/keptn_credentials_provider_mock.go . KeptnCredentialsProvider
 type KeptnCredentialsProvider interface {
 	GetKeptnCredentials() (*KeptnCredentials, error)
 }
