@@ -31,30 +31,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-const testDTEntityQueryResponse = `{
-    "totalCount": 1,
-    "pageSize": 50,
-    "entities": [
-        {
-            "entityId": "SERVICE-B0254D5C9720662A",
-            "displayName": "bridge",
-            "tags": [
-                {
-                    "context": "CONTEXTLESS",
-                    "key": "keptn_managed",
-                    "stringRepresentation": "keptn_managed"
-                },
-                {
-                    "context": "CONTEXTLESS",
-                    "key": "keptn_service",
-                    "value": "bridge",
-                    "stringRepresentation": "keptn_service:bridge"
-                }
-            ]
-        }
-    ]
-}`
-
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
 func Test_doesServiceExist(t *testing.T) {
