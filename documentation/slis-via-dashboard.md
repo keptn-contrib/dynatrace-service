@@ -25,6 +25,9 @@ Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo
 
 ## Supported tile types
 
+**Note**:
+As dashboards currently do not offer a tile for *security problems*, the only way to create SLIs based thereon is by using [file-based SLIs](slis-via-files.md#open-security-problems-prefix-secpv2).
+
 The following dashboard tile types are supported:
 
 
@@ -41,8 +44,6 @@ Each custom chart tile may only contain a single series. Furthermore, the series
 ### Problems tiles
 
 A problems tile on the dashboard is mapped to an SLI `problems` with the total count of open problems. A corresponding SLO specifies that `problems` is a key SLI with a pass criterion of `<=0`.
-
-As dashboards currently do not offer a tile for security problems, an additional SLI `security_problems` is also added with the total count of open security problems. A corresponding SLO specifies that `security_problems` is a key SLI with a pass criterion of `<=0`.
 
 
 ### SLO tiles
