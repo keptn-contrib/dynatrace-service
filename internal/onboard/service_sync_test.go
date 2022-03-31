@@ -163,22 +163,25 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 	}
 	s.synchronizeServices()
 
+	onboardedService1 := "my-service"
+	onboardedService2 := "my-service-2"
+
 	// validate if all service creation requests have been sent
 	if assert.EqualValues(t, 2, len(mockServicesClient.servicesCreated)) {
-		assert.EqualValues(t, "my-service", mockServicesClient.servicesCreated[0])
-		assert.EqualValues(t, "my-service-2", mockServicesClient.servicesCreated[1])
+		assert.EqualValues(t, onboardedService1, mockServicesClient.servicesCreated[0])
+		assert.EqualValues(t, onboardedService2, mockServicesClient.servicesCreated[1])
 	}
 
 	// validate if all SLO uploads have been received
 	if assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLOs)) {
-		assert.EqualValues(t, "my-service", mockSLIAndSLOResourceWriter.uploadedSLOs[0].service)
-		assert.EqualValues(t, "my-service-2", mockSLIAndSLOResourceWriter.uploadedSLOs[1].service)
+		assert.EqualValues(t, onboardedService1, mockSLIAndSLOResourceWriter.uploadedSLOs[0].service)
+		assert.EqualValues(t, onboardedService2, mockSLIAndSLOResourceWriter.uploadedSLOs[1].service)
 	}
 
 	// validate if all SLI uploads have been received
 	if assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLIs)) {
-		assert.EqualValues(t, "my-service", mockSLIAndSLOResourceWriter.uploadedSLIs[0].service)
-		assert.EqualValues(t, "my-service-2", mockSLIAndSLOResourceWriter.uploadedSLIs[1].service)
+		assert.EqualValues(t, onboardedService1, mockSLIAndSLOResourceWriter.uploadedSLIs[0].service)
+		assert.EqualValues(t, onboardedService2, mockSLIAndSLOResourceWriter.uploadedSLIs[1].service)
 	}
 
 	// perform a second synchronization run
