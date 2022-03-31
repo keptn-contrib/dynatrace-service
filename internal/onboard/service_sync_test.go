@@ -180,6 +180,14 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 		assert.EqualValues(t, "my-service", mockSLIAndSLOResourceWriter.uploadedSLIs[0].service)
 		assert.EqualValues(t, "my-service-2", mockSLIAndSLOResourceWriter.uploadedSLIs[1].service)
 	}
+
+	// perform a second synchronization run
+	s.synchronizeServices()
+
+	// nothing extra should have been created or uploaded
+	assert.EqualValues(t, 2, len(mockServicesClient.servicesCreated))
+	assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLOs))
+	assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLIs))
 }
 
 func Test_getServiceFromEntity(t *testing.T) {
