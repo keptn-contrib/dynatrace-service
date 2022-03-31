@@ -70,7 +70,7 @@ func (p *Processing) Process(dashboard *dynatrace.Dashboard) *QueryResult {
 
 	log.Debug("Dashboard has changed: reparsing it!")
 
-	// now lets iterate through the dashboard to find our SLIs
+	// now let's iterate through the dashboard to find our SLIs
 	for _, tile := range dashboard.Tiles {
 		switch tile.TileType {
 		case dynatrace.MarkdownTileType:
@@ -90,7 +90,6 @@ func (p *Processing) Process(dashboard *dynatrace.Dashboard) *QueryResult {
 			tileResult = NewSecurityProblemTileProcessing(p.client, p.timeframe).Process(&tile, dashboard.GetFilter())
 			result.addTileResult(tileResult)
 		case dynatrace.DataExplorerTileType:
-			// here we handle the new Metric Data Explorer Tile
 			tileResults := NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(&tile, dashboard.GetFilter())
 			result.addTileResults(tileResults)
 		case dynatrace.CustomChartingTileType:
