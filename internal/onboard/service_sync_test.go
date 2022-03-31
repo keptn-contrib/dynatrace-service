@@ -1,31 +1,17 @@
 package onboard
 
 import (
-	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"net/http"
-	"net/http/httptest"
-	"net/url"
-	"os"
-	"strings"
 	"testing"
-	"time"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/go-test/deep"
-	"github.com/google/uuid"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn/go-utils/pkg/api/models"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
-	keptncommon "github.com/keptn/go-utils/pkg/lib/keptn"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	keptnlib "github.com/keptn/go-utils/pkg/lib"
 )
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
@@ -66,108 +52,69 @@ func Test_doesServiceExist(t *testing.T) {
 	}
 }
 
-func getTestServicesAPI() *httptest.Server {
-	servicesMockAPI := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		svc := &models.Service{
-			ServiceName: "my-service",
-		}
-		marshal, _ := json.Marshal(svc)
-
-		writer.WriteHeader(http.StatusOK)
-		writer.Write(marshal)
-	}))
-	return servicesMockAPI
+type uploadedSLI struct {
+	project string
+	stage   string
+	service string
+	sli     *dynatrace.SLI
 }
 
-type createServiceParams struct {
-	ServiceName string `json:"serviceName"`
+type uploadedSLO struct {
+	project       string
+	stage         string
+	service       string
+	dashboardSLOs *keptnlib.ServiceLevelObjectives
 }
 
-func getTestConfigService() (chan string, chan string, chan string, *httptest.Server) {
-	receivedSLO := make(chan string)
-	receivedSLI := make(chan string)
-	receivedServiceCreate := make(chan string)
-	mockCS := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		bytes, err := ioutil.ReadAll(request.Body)
-
-		if strings.HasSuffix(request.URL.String(), "dynatrace/service") {
-			createSvcParam := &createServiceParams{}
-			err = json.Unmarshal(bytes, createSvcParam)
-			if err != nil {
-				writer.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			if createSvcParam.ServiceName != "" {
-				go func() {
-					receivedServiceCreate <- createSvcParam.ServiceName
-				}()
-			}
-			writer.WriteHeader(http.StatusOK)
-			return
-		}
-
-		var serviceName string
-		split := strings.Split(request.URL.String(), "/")
-		serviceNameIndex := 0
-		for i, s := range split {
-			if s == "service" {
-				serviceNameIndex = i + 1
-				break
-			}
-		}
-		if serviceNameIndex > 0 {
-			serviceName = split[serviceNameIndex]
-		} else {
-			writer.WriteHeader(http.StatusOK)
-			return
-		}
-
-		rec := &models.Resources{}
-
-		err = json.Unmarshal(bytes, rec)
-		if err != nil {
-			writer.WriteHeader(http.StatusOK)
-			return
-		}
-		if rec.Resources[0].ResourceURI != nil && *rec.Resources[0].ResourceURI == "slo.yaml" {
-			writer.WriteHeader(http.StatusOK)
-			writer.Write([]byte("{}"))
-			go func() {
-				receivedSLO <- serviceName
-			}()
-		} else if rec.Resources[0].ResourceURI != nil && *rec.Resources[0].ResourceURI == "dynatrace/sli.yaml" {
-			writer.WriteHeader(http.StatusOK)
-			writer.Write([]byte("{}"))
-			go func() {
-				receivedSLI <- serviceName
-			}()
-		}
-
-	}))
-	return receivedServiceCreate, receivedSLO, receivedSLI, mockCS
+type mockSLIAndSLOResourceWriter struct {
+	uploadedSLIs []uploadedSLI
+	uploadedSLOs []uploadedSLO
 }
 
-func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Server) *keptnv2.Keptn {
-	source, _ := url.Parse("dynatrace-service")
-	keptnContext := uuid.New().String()
-	createServiceData := keptnv2.ServiceCreateFinishedEventData{
-		EventData: keptnv2.EventData{
-			Project: synchronizedProject,
-			Service: "my-service",
-		},
+func (w *mockSLIAndSLOResourceWriter) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
+	w.uploadedSLIs = append(w.uploadedSLIs, uploadedSLI{project: project, stage: stage, service: service, sli: sli})
+	return nil
+}
+
+func (w *mockSLIAndSLOResourceWriter) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnlib.ServiceLevelObjectives) error {
+	w.uploadedSLOs = append(w.uploadedSLOs, uploadedSLO{project: project, stage: stage, service: service, dashboardSLOs: dashboardSLOs})
+	return nil
+}
+
+const mockSynchronizedProject = "dynatrace"
+const mockSynchronizedStage = "quality-gate"
+
+type mockServicesClient struct {
+	servicesInDynatraceProject []string
+	servicesCreated            []string
+}
+
+func (c *mockServicesClient) GetServiceNames(project string, stage string) ([]string, error) {
+	if project != mockSynchronizedProject {
+		return nil, fmt.Errorf("project %s does not exist", project)
 	}
-	ce := cloudevents.NewEvent()
-	ce.SetType(keptnv2.GetFinishedEventType(keptnv2.ServiceCreateTaskName))
-	ce.SetSource(source.String())
-	ce.SetExtension("shkeptncontext", keptnContext)
-	ce.SetDataContentType(cloudevents.ApplicationJSON)
-	ce.SetData(cloudevents.ApplicationJSON, createServiceData)
 
-	k, _ := keptnv2.NewKeptn(&ce, keptncommon.KeptnOpts{
-		ConfigurationServiceURL: mockCS.URL,
-		EventBrokerURL:          mockEventBroker.URL,
-	})
-	return k
+	if stage != mockSynchronizedStage {
+		return nil, fmt.Errorf("stage %s does not exist", stage)
+	}
+
+	return c.servicesInDynatraceProject, nil
+}
+
+func (c *mockServicesClient) CreateServiceInProject(project string, service string) error {
+	if project != mockSynchronizedProject {
+		return fmt.Errorf("project %s does not exist", project)
+	}
+
+	c.servicesInDynatraceProject = append(c.servicesInDynatraceProject, service)
+	c.servicesCreated = append(c.servicesCreated, service)
+	return nil
+}
+
+func newMockServicesClient() *mockServicesClient {
+	return &mockServicesClient{
+		servicesInDynatraceProject: []string{"my-already-synced-service"},
+	}
 }
 
 type mockEntitiesClientFactory struct {
@@ -199,37 +146,8 @@ func (f *mockEntitiesClientFactory) GetEntitiesClient() (*dynatrace.EntitiesClie
 
 func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 
-	firstRequest := true
-	servicesMockAPI := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		// for the first request, return a list of the services already available in Keptn
-		if firstRequest {
-			svcList := &models.Services{
-				Services: []*models.Service{
-					{
-						ServiceName: "my-already-synced-service",
-					},
-				},
-			}
-			marshal, _ := json.Marshal(svcList)
-
-			writer.WriteHeader(http.StatusOK)
-			writer.Write(marshal)
-			return
-		}
-		svc := &models.Service{
-			ServiceName: "my-service",
-		}
-		marshal, _ := json.Marshal(svc)
-
-		writer.WriteHeader(http.StatusOK)
-		writer.Write(marshal)
-	}))
-	defer servicesMockAPI.Close()
-
-	receivedServiceCreate, receivedSLO, receivedSLI, mockCS := getTestConfigService()
-	defer mockCS.Close()
-
-	os.Setenv(common.ShipyardControllerURLEnvironmentVariableName, mockCS.URL)
+	mockServicesClient := newMockServicesClient()
+	mockSLIAndSLOResourceWriter := &mockSLIAndSLOResourceWriter{}
 
 	mockEntitiesClientFactory, teardown := newMockEntitiesClientFactory(t)
 	defer teardown()
@@ -239,48 +157,28 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", testDataFolder+"entities_response2.json")
 
 	s := &ServiceSynchronizer{
-		servicesClient:        keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
-		resourcesClient:       keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
+		servicesClient:        mockServicesClient,
+		resourcesClient:       mockSLIAndSLOResourceWriter,
 		entitiesClientFactory: mockEntitiesClientFactory,
 	}
 	s.synchronizeServices()
 
 	// validate if all service creation requests have been sent
-	if done := checkReceivedEntities(t, receivedServiceCreate, []string{"my-service", "my-service-2"}); done {
-		t.Error("did not receive expected service creation requests")
+	if assert.EqualValues(t, 2, len(mockServicesClient.servicesCreated)) {
+		assert.EqualValues(t, "my-service", mockServicesClient.servicesCreated[0])
+		assert.EqualValues(t, "my-service-2", mockServicesClient.servicesCreated[1])
 	}
 
 	// validate if all SLO uploads have been received
-	if done := checkReceivedEntities(t, receivedSLO, []string{"my-service", "my-service-2"}); done {
-		t.Error("did not receive expected service creation requests")
+	if assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLOs)) {
+		assert.EqualValues(t, "my-service", mockSLIAndSLOResourceWriter.uploadedSLOs[0].service)
+		assert.EqualValues(t, "my-service-2", mockSLIAndSLOResourceWriter.uploadedSLOs[1].service)
 	}
 
 	// validate if all SLI uploads have been received
-	if done := checkReceivedEntities(t, receivedSLI, []string{"my-service", "my-service-2"}); done {
-		t.Error("did not receive expected service creation requests")
-	}
-}
-
-func checkReceivedEntities(t *testing.T, channel chan string, expected []string) bool {
-	received := []string{}
-	for {
-		select {
-		case rec := <-channel:
-			received = append(received, rec)
-			if len(received) == 2 {
-				if diff := deep.Equal(received, expected); len(diff) > 0 {
-					t.Error("expected did not match received:")
-					for _, d := range diff {
-						t.Log(d)
-					}
-					return true
-				}
-				return false
-			}
-		case <-time.After(5 * time.Second):
-			t.Error("synchronizeDTEntityWithKeptn(): did not receive expected event")
-			return true
-		}
+	if assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLIs)) {
+		assert.EqualValues(t, "my-service", mockSLIAndSLOResourceWriter.uploadedSLIs[0].service)
+		assert.EqualValues(t, "my-service-2", mockSLIAndSLOResourceWriter.uploadedSLIs[1].service)
 	}
 }
 
