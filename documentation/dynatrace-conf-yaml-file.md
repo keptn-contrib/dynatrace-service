@@ -9,10 +9,15 @@ The configuration file must be a well-formed [YAML file](https://yaml.org/). The
 
 | Key name| Description |
 |---|---|
-| `specVersion` |Specification version |
+| `spec_version` |Specification version |
 | `dtCreds` | Dynatrace API credentials secret name|
 | `dashboard` | Dashboard SLI-mode configuration|
 | `attachRules` | Attach rules for connecting Dynatrace entities with events |
+
+
+## Specification version (`spec_version`)
+
+Currently, `spec_version` is set to `0.1.0`.
 
 
 ## Dynatrace API credentials secret name (`dtCreds`)
