@@ -61,36 +61,59 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 	return nil
 }
 
-// ServiceSynchronizer encapsulates the service onboarder component.
-type ServiceSynchronizer struct {
-	servicesClient      keptn.ServiceClientInterface
-	resourcesClient     keptn.SLIAndSLOResourceWriterInterface
-	credentialsProvider credentials.DynatraceCredentialsProvider
-	entitiesClientFunc  func(dtCredentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient
-	configProvider      config.DynatraceConfigProvider
+// EntitiesClientFactory defines a factory that can get EntitiesClients.
+type EntitiesClientFactory interface {
+	GetEntitiesClient() (*dynatrace.EntitiesClient, error)
 }
 
-// NewDefaultServiceSynchronizer creates are new default ServiceSynchronizer or returns an error.
-func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
+type defaultEntitiesClientFactory struct {
+	configProvider config.DynatraceConfigProvider
+}
+
+func newDefaultEntitiesClientFactory(resourceClient keptn.DynatraceConfigResourceClientInterface) *defaultEntitiesClientFactory {
+	return &defaultEntitiesClientFactory{
+		configProvider: config.NewDynatraceConfigGetter(resourceClient),
+	}
+}
+
+func (f defaultEntitiesClientFactory) GetEntitiesClient() (*dynatrace.EntitiesClient, error) {
+	dynatraceConfig, err := f.configProvider.GetDynatraceConfig(initSyncEventAdapter{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Dynatrace config: %w", err)
+	}
+
 	credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
 	if err != nil {
 		return nil, err
 	}
 
+	credentials, err := credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Dynatrace credentials: %w", err)
+	}
+
+	dynatraceClient := dynatrace.NewClient(credentials)
+	return dynatrace.NewEntitiesClient(dynatraceClient), nil
+}
+
+// ServiceSynchronizer encapsulates the service onboarder component.
+type ServiceSynchronizer struct {
+	servicesClient        keptn.ServiceClientInterface
+	resourcesClient       keptn.SLIAndSLOResourceWriterInterface
+	entitiesClientFactory EntitiesClientFactory
+}
+
+// NewDefaultServiceSynchronizer creates are new default ServiceSynchronizer.
+func NewDefaultServiceSynchronizer() *ServiceSynchronizer {
 	resourceClient := keptn.NewDefaultResourceClient()
 
 	serviceSynchronizer := ServiceSynchronizer{
-		credentialsProvider: credentialsProvider,
-		configProvider:      config.NewDynatraceConfigGetter(resourceClient),
-		entitiesClientFunc: func(credentials *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
-			dtClient := dynatrace.NewClient(credentials)
-			return dynatrace.NewEntitiesClient(dtClient)
-		},
-		servicesClient:  keptn.NewDefaultServiceClient(),
-		resourcesClient: resourceClient,
+		servicesClient:        keptn.NewDefaultServiceClient(),
+		resourcesClient:       resourceClient,
+		entitiesClientFactory: newDefaultEntitiesClientFactory(resourceClient),
 	}
 
-	return &serviceSynchronizer, nil
+	return &serviceSynchronizer
 }
 
 // Run runs the service synchronizer and does not return.
@@ -151,17 +174,11 @@ func (s *ServiceSynchronizer) getExistingServicesFromKeptn() ([]string, error) {
 }
 
 func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrace.Entity, error) {
-	dynatraceConfig, err := s.configProvider.GetDynatraceConfig(initSyncEventAdapter{})
+	entitiesClient, err := s.entitiesClientFactory.GetEntitiesClient()
 	if err != nil {
-		return nil, fmt.Errorf("failed to load Dynatrace config: %w", err)
+		return nil, err
 	}
 
-	creds, err := s.credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load Dynatrace credentials: %w", err)
-	}
-
-	entitiesClient := s.entitiesClientFunc(creds)
 	entities, err := entitiesClient.GetKeptnManagedServices()
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch Keptn managed services from Dynatrace: %w", err)

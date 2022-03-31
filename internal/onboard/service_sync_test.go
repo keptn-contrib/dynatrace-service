@@ -11,11 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	adapter_mock "github.com/keptn-contrib/dynatrace-service/internal/config/mock"
-	credentials_mock "github.com/keptn-contrib/dynatrace-service/internal/credentials/mock"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -23,7 +21,6 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-test/deep"
 	"github.com/google/uuid"
-	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn/go-utils/pkg/api/models"
 	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
@@ -173,111 +170,34 @@ func getTestKeptnHandler(mockCS *httptest.Server, mockEventBroker *httptest.Serv
 	return k
 }
 
+type mockEntitiesClientFactory struct {
+	handler    *test.FileBasedURLHandler
+	httpClient *http.Client
+	url        string
+}
+
+func newMockEntitiesClientFactory(t *testing.T) (*mockEntitiesClientFactory, func()) {
+	handler := test.NewFileBasedURLHandler(t)
+	httpClient, url, teardown := test.CreateHTTPSClient(handler)
+
+	return &mockEntitiesClientFactory{
+			handler:    handler,
+			httpClient: httpClient,
+			url:        url},
+		teardown
+}
+
+func (f *mockEntitiesClientFactory) GetEntitiesClient() (*dynatrace.EntitiesClient, error) {
+	dynatraceCredentials, err := credentials.NewDynatraceCredentials(f.url, testDynatraceAPIToken)
+	if err != nil {
+		return nil, err
+	}
+
+	dynatraceClient := dynatrace.NewClientWithHTTP(dynatraceCredentials, f.httpClient)
+	return dynatrace.NewEntitiesClient(dynatraceClient), nil
+}
+
 func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
-
-	firstDTResponse := dynatrace.EntitiesResponse{
-		TotalCount:  3,
-		PageSize:    2,
-		NextPageKey: "next-page-key",
-		Entities: []dynatrace.Entity{
-			{
-				EntityID:    "1",
-				DisplayName: "name",
-				Tags: []dynatrace.Tag{
-					{
-						Context:              "CONTEXTLESS",
-						Key:                  "keptn_managed",
-						StringRepresentation: "keptn_managed",
-						Value:                "",
-					},
-					{
-						Context:              "CONTEXTLESS",
-						Key:                  "keptn_service",
-						StringRepresentation: "keptn_service:my-service",
-						Value:                "my-service",
-					},
-				},
-			},
-			{
-				EntityID:    "1-2",
-				DisplayName: "name",
-				Tags: []dynatrace.Tag{
-					{
-						Context:              "CONTEXTLESS",
-						Key:                  "keptn_managed",
-						StringRepresentation: "keptn_managed",
-						Value:                "",
-					},
-					{
-						Context:              "CONTEXTLESS",
-						Key:                  "keptn_service",
-						StringRepresentation: "keptn_service:my-already-synced-service",
-						Value:                "my-already-synced-service",
-					},
-				},
-			},
-		},
-	}
-
-	secondDTResponse := dynatrace.EntitiesResponse{
-		TotalCount:  2,
-		PageSize:    1,
-		NextPageKey: "",
-		Entities: []dynatrace.Entity{
-			{
-				EntityID:    "2",
-				DisplayName: "name",
-				Tags: []dynatrace.Tag{
-					{
-						Context:              "CONTEXTLESS",
-						Key:                  "keptn_managed",
-						StringRepresentation: "keptn_managed",
-						Value:                "",
-					},
-					{
-						Context:              "CONTEXTLESS",
-						Key:                  "keptn_service",
-						StringRepresentation: "keptn_service:my-service-2",
-						Value:                "my-service-2",
-					},
-				},
-			},
-		},
-	}
-	isFirstRequest := true
-	dtMockServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if isFirstRequest {
-			if request.FormValue("nextPageKey") != "" {
-				t.Errorf("call to Dynatrace API received unexpected nextPageKey parameter")
-				writer.WriteHeader(http.StatusBadRequest)
-				return
-			}
-			isFirstRequest = false
-			marshal, _ := json.Marshal(firstDTResponse)
-			writer.WriteHeader(http.StatusOK)
-			writer.Write(marshal)
-			return
-		}
-		if request.FormValue("nextPageKey") != firstDTResponse.NextPageKey {
-			t.Errorf("call to Dynatrace API received unexpected nextPageKey parameter %s. Expected %s", request.FormValue("nextPageKey"), firstDTResponse.NextPageKey)
-			writer.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if request.FormValue("entitySelector") != "" {
-			t.Errorf("entitySelector parameter must not be used in combination with nextPageKey")
-			writer.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if request.FormValue("fields") != "" {
-			t.Errorf("fields parameter must not be used in combination with nextPageKey")
-			writer.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		marshal, _ := json.Marshal(secondDTResponse)
-		writer.WriteHeader(http.StatusOK)
-		writer.Write(marshal)
-	}))
-	defer dtMockServer.Close()
 
 	firstRequest := true
 	servicesMockAPI := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -311,25 +231,17 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 
 	os.Setenv(common.ShipyardControllerURLEnvironmentVariableName, mockCS.URL)
 
-	mockCredentials, err := credentials.NewDynatraceCredentials(dtMockServer.URL, testDynatraceAPIToken)
-	assert.NoError(t, err)
+	mockEntitiesClientFactory, teardown := newMockEntitiesClientFactory(t)
+	defer teardown()
+
+	const testDataFolder = "./testdata/test_synchronize_services/"
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", testDataFolder+"entities_response1.json")
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", testDataFolder+"entities_response2.json")
 
 	s := &ServiceSynchronizer{
-		servicesClient:  keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
-		resourcesClient: keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
-		entitiesClientFunc: func(creds *credentials.DynatraceCredentials) *dynatrace.EntitiesClient {
-			return dynatrace.NewEntitiesClient(
-				dynatrace.NewClient(mockCredentials))
-		},
-		credentialsProvider: &credentials_mock.DynatraceCredentialsProviderMock{
-			GetDynatraceCredentialsFunc: func(secretName string) (*credentials.DynatraceCredentials, error) {
-				return mockCredentials, nil
-			},
-		},
-		configProvider: &adapter_mock.DynatraceConfigProviderMock{
-			GetDynatraceConfigFunc: func(event adapter.EventContentAdapter) (*config.DynatraceConfig, error) {
-				return config.NewDynatraceConfigWithDefaults(), nil
-			}},
+		servicesClient:        keptn.NewServiceClient(keptnapi.NewServiceHandler(servicesMockAPI.URL), mockCS.Client()),
+		resourcesClient:       keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnapi.NewResourceHandler(mockCS.URL))),
+		entitiesClientFactory: mockEntitiesClientFactory,
 	}
 	s.synchronizeServices()
 
