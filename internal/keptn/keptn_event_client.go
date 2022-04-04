@@ -3,6 +3,8 @@ package keptn
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn/go-utils/pkg/api/models"
@@ -10,8 +12,6 @@ import (
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"strings"
 )
 
 type EventClientBaseInterface interface {
@@ -19,12 +19,12 @@ type EventClientBaseInterface interface {
 }
 
 type EventClientBase struct {
-	client *keptnapi.EventHandler
+	client keptnapi.EventsV1Interface
 }
 
-func NewEventClientBase() *EventClientBase {
+func NewEventClientBase(client keptnapi.EventsV1Interface) *EventClientBase {
 	return &EventClientBase{
-		client: keptnapi.NewEventHandler(os.Getenv("DATASTORE")),
+		client: client,
 	}
 }
 
@@ -53,11 +53,6 @@ func NewEventClient(client EventClientBaseInterface) *EventClient {
 	return &EventClient{
 		client: client,
 	}
-}
-
-func NewDefaultEventClient() *EventClient {
-	return NewEventClient(
-		NewEventClientBase())
 }
 
 // IsPartOfRemediation checks whether the evaluation.finished event is part of a remediation task sequence
