@@ -112,7 +112,7 @@ func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
 		return nil, fmt.Errorf("could not create Keptn API set: %w", err)
 	}
 
-	resourceClient := keptn.NewDefaultResourceClient()
+	resourceClient := keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnAPISet.ResourcesV1()))
 
 	serviceSynchronizer := ServiceSynchronizer{
 		servicesClient:        keptn.NewServiceClient(keptnAPISet.ServicesV1(), keptnAPISet.APIV1()),

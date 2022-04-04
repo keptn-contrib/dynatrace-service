@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	keptnmodels "github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
 	log "github.com/sirupsen/logrus"
@@ -82,21 +81,15 @@ func getLocation(service string, stage string, project string) string {
 	return strings.TrimLeft(location, " ")
 }
 
-// ConfigResourceClient is the default implementation for the ConfigResourceClientInterface using a Keptn api.ResourceHandler
+// ConfigResourceClient is the default implementation for the ConfigResourceClientInterface using a Keptn api.ResourcesV1Interface
 type ConfigResourceClient struct {
-	handler *api.ResourceHandler
+	client api.ResourcesV1Interface
 }
 
-// NewDefaultConfigResourceClient creates a new ResourceClient with a default Keptn resource handler for the configuration service
-func NewDefaultConfigResourceClient() *ConfigResourceClient {
-	return NewConfigResourceClient(
-		api.NewResourceHandler(common.GetConfigurationServiceURL()))
-}
-
-// NewConfigResourceClient creates a new ResourceClient with a Keptn resource handler for the configuration service
-func NewConfigResourceClient(handler *api.ResourceHandler) *ConfigResourceClient {
+// NewConfigResourceClient creates a new ResourceClient with a Keptn resource client for the configuration service
+func NewConfigResourceClient(client api.ResourcesV1Interface) *ConfigResourceClient {
 	return &ConfigResourceClient{
-		handler: handler,
+		client: client,
 	}
 }
 
@@ -165,7 +158,7 @@ func (rc *ConfigResourceClient) GetResource(project string, stage string, servic
 func (rc *ConfigResourceClient) GetServiceResource(project string, stage string, service string, resourceURI string) (string, error) {
 	return getResourceByFunc(
 		func() (*keptnmodels.Resource, error) {
-			return rc.handler.GetServiceResource(project, stage, service, resourceURI)
+			return rc.client.GetServiceResource(project, stage, service, resourceURI)
 		},
 		func() *ResourceNotFoundError {
 			return &ResourceNotFoundError{uri: resourceURI, project: project, stage: stage, service: service}
@@ -181,7 +174,7 @@ func (rc *ConfigResourceClient) GetServiceResource(project string, stage string,
 // GetStageResource tries to retrieve a resourceURI on stage level
 func (rc *ConfigResourceClient) GetStageResource(project string, stage string, resourceURI string) (string, error) {
 	return getResourceByFunc(
-		func() (*keptnmodels.Resource, error) { return rc.handler.GetStageResource(project, stage, resourceURI) },
+		func() (*keptnmodels.Resource, error) { return rc.client.GetStageResource(project, stage, resourceURI) },
 		func() *ResourceNotFoundError {
 			return &ResourceNotFoundError{uri: resourceURI, project: project, stage: stage}
 		},
@@ -196,7 +189,7 @@ func (rc *ConfigResourceClient) GetStageResource(project string, stage string, r
 // GetProjectResource tries to retrieve a resourceURI on project level
 func (rc *ConfigResourceClient) GetProjectResource(project string, resourceURI string) (string, error) {
 	return getResourceByFunc(
-		func() (*keptnmodels.Resource, error) { return rc.handler.GetProjectResource(project, resourceURI) },
+		func() (*keptnmodels.Resource, error) { return rc.client.GetProjectResource(project, resourceURI) },
 		func() *ResourceNotFoundError { return &ResourceNotFoundError{uri: resourceURI, project: project} },
 		func(msg string) *ResourceRetrievalFailedError {
 			return &ResourceRetrievalFailedError{ResourceError{uri: resourceURI, project: project}, msg}
@@ -227,7 +220,7 @@ func getResourceByFunc(
 // UploadResource tries to upload a resourceURI on service level
 func (rc *ConfigResourceClient) UploadResource(contentToUpload []byte, remoteResourceURI string, project string, stage string, service string) error {
 	resources := []*keptnmodels.Resource{{ResourceContent: string(contentToUpload), ResourceURI: &remoteResourceURI}}
-	_, err := rc.handler.CreateResources(project, stage, service, resources)
+	_, err := rc.client.CreateResources(project, stage, service, resources)
 	if err != nil {
 		return &ResourceUploadFailedError{
 			ResourceError{

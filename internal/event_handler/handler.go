@@ -59,7 +59,7 @@ func getEventHandler(event cloudevents.Event, keptnAPISet api.APISet) (Dynatrace
 		return nil, errors.New("event has no project")
 	}
 
-	dynatraceConfigGetter := config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
+	dynatraceConfigGetter := config.NewDynatraceConfigGetter(keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnAPISet.ResourcesV1())))
 	dynatraceConfig, err := dynatraceConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		return nil, fmt.Errorf("could not get configuration: %w", err)
@@ -84,7 +84,7 @@ func getEventHandler(event cloudevents.Event, keptnAPISet api.APISet) (Dynatrace
 
 	switch aType := keptnEvent.(type) {
 	case *monitoring.ConfigureMonitoringAdapter:
-		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), keptn.NewServiceClient(keptnAPISet.ServicesV1(), keptnAPISet.APIV1())), nil
+		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnAPISet.ResourcesV1())), keptn.NewServiceClient(keptnAPISet.ServicesV1(), keptnAPISet.APIV1())), nil
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), kClient), nil
 	case *problem.ActionTriggeredAdapter:
@@ -94,7 +94,7 @@ func getEventHandler(event cloudevents.Event, keptnAPISet api.APISet) (Dynatrace
 	case *problem.ActionFinishedAdapter:
 		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
-		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard), nil
+		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, kClient, keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnAPISet.ResourcesV1())), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard), nil
 	case *deployment.DeploymentFinishedAdapter:
 		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
 	case *deployment.TestTriggeredAdapter:
