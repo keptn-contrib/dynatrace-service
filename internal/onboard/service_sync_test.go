@@ -106,6 +106,12 @@ func (c *mockServicesClient) CreateServiceInProject(project string, service stri
 		return fmt.Errorf("project %s does not exist", project)
 	}
 
+	for _, existingService := range c.servicesInDynatraceProject {
+		if service == existingService {
+			return fmt.Errorf("service %s already exists in project %s", service, project)
+		}
+	}
+
 	c.servicesInDynatraceProject = append(c.servicesInDynatraceProject, service)
 	c.servicesCreated = append(c.servicesCreated, service)
 	return nil
