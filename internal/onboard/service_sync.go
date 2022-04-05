@@ -63,7 +63,7 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 
 // EntitiesClientFactory defines a factory that can get EntitiesClients.
 type EntitiesClientFactory interface {
-	GetEntitiesClient() (*dynatrace.EntitiesClient, error)
+	CreateEntitiesClient() (*dynatrace.EntitiesClient, error)
 }
 
 type defaultEntitiesClientFactory struct {
@@ -76,7 +76,7 @@ func newDefaultEntitiesClientFactory(resourceClient keptn.DynatraceConfigResourc
 	}
 }
 
-func (f defaultEntitiesClientFactory) GetEntitiesClient() (*dynatrace.EntitiesClient, error) {
+func (f defaultEntitiesClientFactory) CreateEntitiesClient() (*dynatrace.EntitiesClient, error) {
 	dynatraceConfig, err := f.configProvider.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Dynatrace config: %w", err)
@@ -174,7 +174,7 @@ func (s *ServiceSynchronizer) getExistingServicesFromKeptn() ([]string, error) {
 }
 
 func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrace.Entity, error) {
-	entitiesClient, err := s.entitiesClientFactory.GetEntitiesClient()
+	entitiesClient, err := s.entitiesClientFactory.CreateEntitiesClient()
 	if err != nil {
 		return nil, err
 	}
