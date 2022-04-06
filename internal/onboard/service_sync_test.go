@@ -52,32 +52,32 @@ func Test_doesServiceExist(t *testing.T) {
 	}
 }
 
-type uploadedSLI struct {
+type uploadedSLIs struct {
 	project string
 	stage   string
 	service string
-	sli     *dynatrace.SLI
+	slis    *dynatrace.SLI
 }
 
-type uploadedSLO struct {
-	project       string
-	stage         string
-	service       string
-	dashboardSLOs *keptnlib.ServiceLevelObjectives
+type uploadedSLOs struct {
+	project string
+	stage   string
+	service string
+	slos    *keptnlib.ServiceLevelObjectives
 }
 
 type mockSLIAndSLOResourceWriter struct {
-	uploadedSLIs []uploadedSLI
-	uploadedSLOs []uploadedSLO
+	uploadedSLIs []uploadedSLIs
+	uploadedSLOs []uploadedSLOs
 }
 
-func (w *mockSLIAndSLOResourceWriter) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
-	w.uploadedSLIs = append(w.uploadedSLIs, uploadedSLI{project: project, stage: stage, service: service, sli: sli})
+func (w *mockSLIAndSLOResourceWriter) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
+	w.uploadedSLIs = append(w.uploadedSLIs, uploadedSLIs{project: project, stage: stage, service: service, slis: slis})
 	return nil
 }
 
-func (w *mockSLIAndSLOResourceWriter) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnlib.ServiceLevelObjectives) error {
-	w.uploadedSLOs = append(w.uploadedSLOs, uploadedSLO{project: project, stage: stage, service: service, dashboardSLOs: dashboardSLOs})
+func (w *mockSLIAndSLOResourceWriter) UploadSLOs(project string, stage string, service string, slos *keptnlib.ServiceLevelObjectives) error {
+	w.uploadedSLOs = append(w.uploadedSLOs, uploadedSLOs{project: project, stage: stage, service: service, slos: slos})
 	return nil
 }
 

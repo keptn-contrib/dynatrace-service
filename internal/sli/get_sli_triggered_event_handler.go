@@ -130,7 +130,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(timeframe comm
 
 	// let's write the SLI to the config repo
 	if queryResult.HasSLIs() {
-		err = eh.resourceClient.UploadSLI(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLIs())
+		err = eh.resourceClient.UploadSLIs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLIs())
 		if err != nil {
 			return nil, nil, dashboard.NewUploadFileError("SLI", err)
 		}

@@ -289,7 +289,7 @@ func (s *ServiceSynchronizer) createSLIResource(serviceName string) error {
 		Indicators:  indicators,
 	}
 
-	err := s.resourcesClient.UploadSLI(synchronizedProject, synchronizedStage, serviceName, defaultSLIs)
+	err := s.resourcesClient.UploadSLIs(synchronizedProject, synchronizedStage, serviceName, defaultSLIs)
 	if err != nil {
 		return err
 	}

@@ -14,8 +14,8 @@ type SLOResourceReaderInterface interface {
 	GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error)
 }
 type SLIAndSLOResourceWriterInterface interface {
-	UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error
-	UploadSLOs(project string, stage string, service string, dashboardSLOs *keptn.ServiceLevelObjectives) error
+	UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error
+	UploadSLOs(project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error
 }
 type ResourceClientInterface interface {
 	SLOResourceReaderInterface
@@ -63,9 +63,9 @@ func (rc *ResourceClient) GetSLOs(project string, stage string, service string) 
 	return slos, nil
 }
 
-func (rc *ResourceClient) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptn.ServiceLevelObjectives) error {
+func (rc *ResourceClient) UploadSLOs(project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error {
 	// and now we save it back to Keptn
-	yamlAsByteArray, err := yaml.Marshal(dashboardSLOs)
+	yamlAsByteArray, err := yaml.Marshal(slos)
 	if err != nil {
 		return fmt.Errorf("could not convert SLOs to YAML: %s", err)
 	}
@@ -73,10 +73,10 @@ func (rc *ResourceClient) UploadSLOs(project string, stage string, service strin
 	return rc.client.UploadResource(yamlAsByteArray, sloFilename, project, stage, service)
 }
 
-func (rc *ResourceClient) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
-	yamlAsByteArray, err := yaml.Marshal(sli)
+func (rc *ResourceClient) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
+	yamlAsByteArray, err := yaml.Marshal(slis)
 	if err != nil {
-		return fmt.Errorf("could not convert dashboardSLI to YAML: %s", err)
+		return fmt.Errorf("could not convert SLIs to YAML: %s", err)
 	}
 
 	return rc.client.UploadResource(yamlAsByteArray, sliFilename, project, stage, service)
