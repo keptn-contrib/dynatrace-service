@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file. See [standa
 ## [0.22.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.21.0...0.22.0) (2022-03-23)
 
 ### Release validated with
- | Dynatrace-service: `0.22.0` | Keptn: `0.12.6` | Dynatrace: `1.235` |
+ | Dynatrace-service: `0.22.0` | Keptn: `0.12.6`* | Dynatrace: `1.235` |
  |---|---|---|
 
+&ast; **Note**: to install dynatrace-service 0.22.0 for Keptn 0.14.1 or later, please override the bundled distributor version and target the appropriate Keptn version by setting the Helm chart variable `distributor.image.tag`, i.e. by appending `--set distributor.image.tag=...` during the Helm upgrade.
 
 ### Features
 
