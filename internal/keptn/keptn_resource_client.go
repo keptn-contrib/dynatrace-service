@@ -11,10 +11,14 @@ import (
 )
 
 type SLOResourceReaderInterface interface {
+	// GetSLOs gets the SLOs stored for exactly the specified project, stage and service.
 	GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error)
 }
 type SLIAndSLOResourceWriterInterface interface {
+	// UploadSLIs uploads the SLIs for the specified project, stage and service.
 	UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error
+
+	// UploadSLOs uploads the SLOs for the specified project, stage and service.
 	UploadSLOs(project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error
 }
 type ResourceClientInterface interface {
@@ -23,6 +27,7 @@ type ResourceClientInterface interface {
 }
 
 type DynatraceConfigResourceClientInterface interface {
+	// GetDynatraceConfig gets the Dynatrace config for the specified project, stage and service, checking first on the service, then stage and then project level.
 	GetDynatraceConfig(project string, stage string, service string) (string, error)
 }
 
