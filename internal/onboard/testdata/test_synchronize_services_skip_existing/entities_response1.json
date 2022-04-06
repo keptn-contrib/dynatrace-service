@@ -1,0 +1,43 @@
+{
+    "totalCount":  3,
+    "pageSize":    2,
+    "nextPageKey": "next-page-key",
+    "entities": [
+        {
+            "entityID":    "1",
+            "displayName": "name",
+            "tags": [
+                {
+                    "context":              "CONTEXTLESS",
+                    "key":                  "keptn_managed",
+                    "stringRepresentation": "keptn_managed",
+                    "value":                ""
+                },
+                {
+                    "context":              "CONTEXTLESS",
+                    "key":                  "keptn_service",
+                    "stringRepresentation": "keptn_service:my-service",
+                    "value":                "my-service"
+                }
+            ]            
+        },
+        {
+            "entityID":    "1-2",
+            "displayName": "name",
+            "tags": [
+                {
+                    "context":              "CONTEXTLESS",
+                    "key":                  "keptn_managed",
+                    "stringRepresentation": "keptn_managed",
+                    "value":                ""
+                },
+                {
+                    "context":              "CONTEXTLESS",
+                    "key":                  "keptn_service",
+                    "stringRepresentation": "keptn_service:my-already-synced-service",
+                    "value":                "my-already-synced-service"
+                }
+            ]
+        }
+    ]
+}

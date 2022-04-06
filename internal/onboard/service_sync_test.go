@@ -85,8 +85,8 @@ const mockSynchronizedProject = "dynatrace"
 const mockSynchronizedStage = "quality-gate"
 
 type mockServicesClient struct {
-	servicesInDynatraceProject []string
-	servicesCreated            []string
+	existingServices []string
+	createdServices  []string
 }
 
 func (c *mockServicesClient) GetServiceNames(project string, stage string) ([]string, error) {
@@ -98,7 +98,7 @@ func (c *mockServicesClient) GetServiceNames(project string, stage string) ([]st
 		return nil, fmt.Errorf("stage %s does not exist", stage)
 	}
 
-	return c.servicesInDynatraceProject, nil
+	return c.existingServices, nil
 }
 
 func (c *mockServicesClient) CreateServiceInProject(project string, service string) error {
@@ -106,20 +106,20 @@ func (c *mockServicesClient) CreateServiceInProject(project string, service stri
 		return fmt.Errorf("project %s does not exist", project)
 	}
 
-	for _, existingService := range c.servicesInDynatraceProject {
+	for _, existingService := range c.existingServices {
 		if service == existingService {
 			return fmt.Errorf("service %s already exists in project %s", service, project)
 		}
 	}
 
-	c.servicesInDynatraceProject = append(c.servicesInDynatraceProject, service)
-	c.servicesCreated = append(c.servicesCreated, service)
+	c.existingServices = append(c.existingServices, service)
+	c.createdServices = append(c.createdServices, service)
 	return nil
 }
 
-func newMockServicesClient() *mockServicesClient {
+func newMockServicesClient(existingServices []string) *mockServicesClient {
 	return &mockServicesClient{
-		servicesInDynatraceProject: []string{"my-already-synced-service"},
+		existingServices: existingServices,
 	}
 }
 
@@ -150,15 +150,15 @@ func (f *mockEntitiesClientFactory) CreateEntitiesClient() (*dynatrace.EntitiesC
 	return dynatrace.NewEntitiesClient(dynatraceClient), nil
 }
 
-func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
-
-	mockServicesClient := newMockServicesClient()
+// Test_ServiceSynchronizer_synchronizeServices_addNew tests that new services are added.
+func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
+	mockServicesClient := newMockServicesClient([]string{"my-already-synced-service"})
 	mockSLIAndSLOResourceWriter := &mockSLIAndSLOResourceWriter{}
 
 	mockEntitiesClientFactory, teardown := newMockEntitiesClientFactory(t)
 	defer teardown()
 
-	const testDataFolder = "./testdata/test_synchronize_services/"
+	const testDataFolder = "./testdata/test_synchronize_services_add_new/"
 	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", testDataFolder+"entities_response1.json")
 	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", testDataFolder+"entities_response2.json")
 
@@ -173,30 +173,153 @@ func Test_ServiceSynchronizer_synchronizeServices(t *testing.T) {
 	onboardedService2 := "my-service-2"
 
 	// validate if all service creation requests have been sent
-	if assert.EqualValues(t, 2, len(mockServicesClient.servicesCreated)) {
-		assert.EqualValues(t, onboardedService1, mockServicesClient.servicesCreated[0])
-		assert.EqualValues(t, onboardedService2, mockServicesClient.servicesCreated[1])
+	if assert.EqualValues(t, 2, len(mockServicesClient.createdServices)) {
+		assert.EqualValues(t, onboardedService1, mockServicesClient.createdServices[0])
+		assert.EqualValues(t, onboardedService2, mockServicesClient.createdServices[1])
 	}
 
 	// validate if all SLO uploads have been received
 	if assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLOs)) {
-		assert.EqualValues(t, onboardedService1, mockSLIAndSLOResourceWriter.uploadedSLOs[0].service)
-		assert.EqualValues(t, onboardedService2, mockSLIAndSLOResourceWriter.uploadedSLOs[1].service)
+		expectedUploadedSLOs := []uploadedSLOs{
+			{
+				project: mockSynchronizedProject,
+				stage:   mockSynchronizedStage,
+				service: onboardedService1,
+				slos: &keptnlib.ServiceLevelObjectives{
+					SpecVersion: "1.0",
+					Filter:      nil,
+					Comparison: &keptnlib.SLOComparison{
+						AggregateFunction:         "avg",
+						CompareWith:               "single_result",
+						IncludeResultWithScore:    "pass",
+						NumberOfComparisonResults: 1,
+					},
+					Objectives: []*keptnlib.SLO{
+						{
+							SLI:     "response_time_p95",
+							KeySLI:  false,
+							Pass:    []*keptnlib.SLOCriteria{{Criteria: []string{"<600"}}},
+							Warning: []*keptnlib.SLOCriteria{{Criteria: []string{"<=800"}}},
+							Weight:  1,
+						},
+						{
+							SLI:    "error_rate",
+							KeySLI: false,
+							Pass:   []*keptnlib.SLOCriteria{{Criteria: []string{"<5"}}},
+							Weight: 1,
+						},
+						{
+							SLI: "throughput",
+						},
+					},
+					TotalScore: &keptnlib.SLOScore{
+						Pass:    "90%",
+						Warning: "75%",
+					},
+				},
+			},
+			{
+				project: mockSynchronizedProject,
+				stage:   mockSynchronizedStage,
+				service: onboardedService2,
+				slos: &keptnlib.ServiceLevelObjectives{
+					SpecVersion: "1.0",
+					Filter:      nil,
+					Comparison: &keptnlib.SLOComparison{
+						AggregateFunction:         "avg",
+						CompareWith:               "single_result",
+						IncludeResultWithScore:    "pass",
+						NumberOfComparisonResults: 1,
+					},
+					Objectives: []*keptnlib.SLO{
+						{
+							SLI:     "response_time_p95",
+							KeySLI:  false,
+							Pass:    []*keptnlib.SLOCriteria{{Criteria: []string{"<600"}}},
+							Warning: []*keptnlib.SLOCriteria{{Criteria: []string{"<=800"}}},
+							Weight:  1,
+						},
+						{
+							SLI:    "error_rate",
+							KeySLI: false,
+							Pass:   []*keptnlib.SLOCriteria{{Criteria: []string{"<5"}}},
+							Weight: 1,
+						},
+						{
+							SLI: "throughput",
+						},
+					},
+					TotalScore: &keptnlib.SLOScore{
+						Pass:    "90%",
+						Warning: "75%",
+					},
+				},
+			},
+		}
+		assert.EqualValues(t, expectedUploadedSLOs, mockSLIAndSLOResourceWriter.uploadedSLOs)
 	}
 
 	// validate if all SLI uploads have been received
 	if assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLIs)) {
-		assert.EqualValues(t, onboardedService1, mockSLIAndSLOResourceWriter.uploadedSLIs[0].service)
-		assert.EqualValues(t, onboardedService2, mockSLIAndSLOResourceWriter.uploadedSLIs[1].service)
+		expectedUploadedSLIs := []uploadedSLIs{
+			{
+				project: mockSynchronizedProject,
+				stage:   mockSynchronizedStage,
+				service: onboardedService1,
+				slis: &dynatrace.SLI{
+					SpecVersion: "1.0",
+					Indicators: map[string]string{
+						"throughput":        fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService1),
+						"error_rate":        fmt.Sprintf("metricSelector=builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService1),
+						"response_time_p50": fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService1),
+						"response_time_p90": fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService1),
+						"response_time_p95": fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService1),
+					},
+				},
+			},
+			{
+				project: mockSynchronizedProject,
+				stage:   mockSynchronizedStage,
+				service: onboardedService2,
+				slis: &dynatrace.SLI{
+					SpecVersion: "1.0",
+					Indicators: map[string]string{
+						"throughput":        fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService2),
+						"error_rate":        fmt.Sprintf("metricSelector=builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService2),
+						"response_time_p50": fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService2),
+						"response_time_p90": fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService2),
+						"response_time_p95": fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService2),
+					},
+				},
+			},
+		}
+		assert.EqualValues(t, expectedUploadedSLIs, mockSLIAndSLOResourceWriter.uploadedSLIs)
 	}
+}
 
-	// perform a second synchronization run
+// Test_ServiceSynchronizer_synchronizeServices_skipExisting tests that services that have already been added are not added twice.
+func Test_ServiceSynchronizer_synchronizeServices_skipExisting(t *testing.T) {
+	mockServicesClient := newMockServicesClient([]string{"my-already-synced-service", "my-service", "my-service-2"})
+	mockSLIAndSLOResourceWriter := &mockSLIAndSLOResourceWriter{}
+
+	mockEntitiesClientFactory, teardown := newMockEntitiesClientFactory(t)
+	defer teardown()
+
+	const testDataFolder = "./testdata/test_synchronize_services_add_new/"
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", testDataFolder+"entities_response1.json")
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", testDataFolder+"entities_response2.json")
+
+	s := &ServiceSynchronizer{
+		servicesClient:        mockServicesClient,
+		resourcesClient:       mockSLIAndSLOResourceWriter,
+		entitiesClientFactory: mockEntitiesClientFactory,
+	}
 	s.synchronizeServices()
 
-	// nothing extra should have been created or uploaded
-	assert.EqualValues(t, 2, len(mockServicesClient.servicesCreated))
-	assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLOs))
-	assert.EqualValues(t, 2, len(mockSLIAndSLOResourceWriter.uploadedSLIs))
+	// no services should have been created
+	assert.EqualValues(t, 0, len(mockServicesClient.createdServices))
+	assert.EqualValues(t, 0, len(mockSLIAndSLOResourceWriter.uploadedSLOs))
+	assert.EqualValues(t, 0, len(mockSLIAndSLOResourceWriter.uploadedSLIs))
 }
 
 func Test_getServiceFromEntity(t *testing.T) {
