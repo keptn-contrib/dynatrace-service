@@ -236,12 +236,12 @@ func (m *resourceClientMock) GetSLOs(project string, stage string, service strin
 	return nil, nil
 }
 
-func (m *resourceClientMock) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
-	m.t.Fatalf("UploadSLI() should not be needed in this mock!")
+func (m *resourceClientMock) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
+	m.t.Fatalf("UploadSLIs() should not be needed in this mock!")
 	return nil
 }
 
-func (m *resourceClientMock) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnapi.ServiceLevelObjectives) error {
+func (m *resourceClientMock) UploadSLOs(project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
 	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
 	return nil
 }

@@ -17,9 +17,9 @@ import (
 type uploadErrorResourceClientMock struct {
 	t              *testing.T
 	uploadSLOError error
-	sloUploaded    bool
+	slosUploaded   bool
 	uploadSLIError error
-	sliUploaded    bool
+	slisUploaded   bool
 	uploadedSLIs   *dynatrace.SLI
 	uploadedSLOs   *keptnapi.ServiceLevelObjectives
 }
@@ -30,23 +30,23 @@ func (m *uploadErrorResourceClientMock) GetSLOs(project string, stage string, se
 	return nil, nil
 }
 
-func (m *uploadErrorResourceClientMock) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
+func (m *uploadErrorResourceClientMock) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
 	if m.uploadSLIError != nil {
 		return m.uploadSLIError
 	}
 
-	m.uploadedSLIs = sli
-	m.sliUploaded = true
+	m.uploadedSLIs = slis
+	m.slisUploaded = true
 	return nil
 }
 
-func (m *uploadErrorResourceClientMock) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnapi.ServiceLevelObjectives) error {
+func (m *uploadErrorResourceClientMock) UploadSLOs(project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
 	if m.uploadSLOError != nil {
 		return m.uploadSLOError
 	}
 
-	m.uploadedSLOs = dashboardSLOs
-	m.sloUploaded = true
+	m.uploadedSLOs = slos
+	m.slosUploaded = true
 	return nil
 }
 
@@ -142,8 +142,8 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 
 	// value is divided by 1000 from dynatrace API result!
 	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443))
-	assert.True(t, rClient.sliUploaded)
-	assert.True(t, rClient.sloUploaded)
+	assert.True(t, rClient.slisUploaded)
+	assert.True(t, rClient.slosUploaded)
 }
 
 type uploadWillFailResourceClientMock struct {
@@ -156,14 +156,14 @@ func (m *uploadWillFailResourceClientMock) GetSLOs(project string, stage string,
 	return nil, nil
 }
 
-func (m *uploadWillFailResourceClientMock) UploadSLI(project string, stage string, service string, sli *dynatrace.SLI) error {
-	m.t.Fatalf("UploadSLI() should not be needed in this mock!")
+func (m *uploadWillFailResourceClientMock) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
+	m.t.Fatalf("UploadSLIs() should not be needed in this mock!")
 
 	return nil
 }
 
-func (m *uploadWillFailResourceClientMock) UploadSLOs(project string, stage string, service string, dashboardSLOs *keptnapi.ServiceLevelObjectives) error {
-	m.t.Fatalf("UploadSLO() should not be needed in this mock!")
+func (m *uploadWillFailResourceClientMock) UploadSLOs(project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
+	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
 
 	return nil
 }
