@@ -39,6 +39,6 @@ helm upgrade --install dynatrace-service -n keptn \
     --set dynatraceService.config.keptnBridgeUrl=$KEPTN_BRIDGE_URL
 ```
 
-**Note:** 
+**Notes:**
 - You can select additional installation options by appending key-value pairs with the syntax `--set key=value`. Further details are provided in [Additional installation options](additional-installation-options.md).
-
+- To target a different distributor version, set the Helm chart variable `distributor.image.tag`, i.e. by appending `--set distributor.image.tag=...`. 
