@@ -8,27 +8,32 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn/go-utils/pkg/api/models"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
+	api "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
 
+// EventClientBaseInterface provides access to Keptn events.
 type EventClientBaseInterface interface {
-	GetEvents(filter *keptnapi.EventFilter) ([]*models.KeptnContextExtendedCE, error)
+	// GetEvents gets all events matching the specified filter or returns an error.
+	GetEvents(filter *api.EventFilter) ([]*models.KeptnContextExtendedCE, error)
 }
 
+// EventClientBase is an implementation of EventClientBaseInterface using api.EventsV1Interface.
 type EventClientBase struct {
-	client keptnapi.EventsV1Interface
+	client api.EventsV1Interface
 }
 
-func NewEventClientBase(client keptnapi.EventsV1Interface) *EventClientBase {
+// NewEventClientBase creates a new EventClientBase using the specified api.EventsV1Interface.
+func NewEventClientBase(client api.EventsV1Interface) *EventClientBase {
 	return &EventClientBase{
 		client: client,
 	}
 }
 
-func (c *EventClientBase) GetEvents(filter *keptnapi.EventFilter) ([]*models.KeptnContextExtendedCE, error) {
+// GetEvents gets all events matching the specified filter or returns an error.
+func (c *EventClientBase) GetEvents(filter *api.EventFilter) ([]*models.KeptnContextExtendedCE, error) {
 	events, err := c.client.GetEvents(filter)
 	if err != nil {
 		return nil, fmt.Errorf("could not get events: %s", err.GetMessage())
@@ -39,26 +44,34 @@ func (c *EventClientBase) GetEvents(filter *keptnapi.EventFilter) ([]*models.Kep
 
 const problemURLLabel = "Problem URL"
 
+// EventClientInterface encapsulates functionality built on top of Keptn events.
 type EventClientInterface interface {
+	// IsPartOfRemediation checks whether the sequence includes a remediation triggered event or returns an error.
 	IsPartOfRemediation(event adapter.EventContentAdapter) (bool, error)
+
+	// FindProblemID finds the Problem ID that is associated with the specified Keptn event or returns an error.
 	FindProblemID(keptnEvent adapter.EventContentAdapter) (string, error)
+
+	// GetImageAndTag extracts the image and tag associated with a deployment triggered as part of the sequence.
 	GetImageAndTag(keptnEvent adapter.EventContentAdapter) common.ImageAndTag
 }
 
+// EventClient implements offers EventClientInterface using a EventClientBaseInterface.
 type EventClient struct {
 	client EventClientBaseInterface
 }
 
+// NewEventClient creates a new EventClient using the specified EventClientBaseInterface.
 func NewEventClient(client EventClientBaseInterface) *EventClient {
 	return &EventClient{
 		client: client,
 	}
 }
 
-// IsPartOfRemediation checks whether the evaluation.finished event is part of a remediation task sequence
+// IsPartOfRemediation checks whether the sequence includes a remediation triggered event or returns an error.
 func (c *EventClient) IsPartOfRemediation(event adapter.EventContentAdapter) (bool, error) {
 	events, err := c.client.GetEvents(
-		&keptnapi.EventFilter{
+		&api.EventFilter{
 			Project:      event.GetProject(),
 			Stage:        event.GetStage(),
 			Service:      event.GetService(),
@@ -77,8 +90,8 @@ func (c *EventClient) IsPartOfRemediation(event adapter.EventContentAdapter) (bo
 	return true, nil
 }
 
-// FindProblemID finds the Problem ID that is associated with this Keptn Workflow
-// It first parses it from Problem URL label - if it cant be found there it will look for the Initial Problem Open Event and gets the ID from there!
+// FindProblemID finds the Problem ID that is associated with the specified Keptn event or returns an error.
+// It first parses it from Problem URL label and if it cant be found there it will look for the Initial Problem Open Event and gets the ID from there.
 func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (string, error) {
 
 	// Step 1 - see if we have a Problem Url in the labels
@@ -97,7 +110,7 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 
 	// Step 2 - lets see if we have a ProblemOpenEvent for this KeptnContext - if so - we try to extract the Problem ID
 	events, err := c.client.GetEvents(
-		&keptnapi.EventFilter{
+		&api.EventFilter{
 			Project:      keptnEvent.GetProject(),
 			EventType:    keptncommon.ProblemOpenEventType,
 			KeptnContext: keptnEvent.GetShKeptnContext(),
@@ -124,10 +137,11 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 	return problemOpenEvent.PID, nil
 }
 
+// GetImageAndTag extracts the image and tag associated with a deployment triggered as part of the sequence.
 func (c *EventClient) GetImageAndTag(event adapter.EventContentAdapter) common.ImageAndTag {
 
 	events, err := c.client.GetEvents(
-		&keptnapi.EventFilter{
+		&api.EventFilter{
 			Project:      event.GetProject(),
 			Stage:        event.GetStage(),
 			Service:      event.GetService(),

@@ -22,10 +22,12 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli"
 )
 
+// DynatraceEventHandler is the common interface for all event handlers.
 type DynatraceEventHandler interface {
 	HandleEvent() error
 }
 
+// NewEventHandler creates a new DynatraceEventHandler for the specified event or returns an error.
 func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 	keptnAPISet, err := api.New(common.GetShipyardControllerURL())
 	if err != nil {

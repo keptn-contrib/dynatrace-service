@@ -10,16 +10,25 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// ConfigResourceClientInterface defines the methods for interacting with resources of Keptn's configuration service
+// ConfigResourceClientInterface defines the methods for interacting with resources of Keptn's configuration service.
 type ConfigResourceClientInterface interface {
+	// GetResource tries to find the first instance of a given resource on service, stage or project level.
 	GetResource(project string, stage string, service string, resourceURI string) (string, error)
+
+	// GetProjectResource tries to retrieve a resource on project level.
 	GetProjectResource(project string, resourceURI string) (string, error)
+
+	// GetStageResource tries to retrieve a resource on stage level.
 	GetStageResource(project string, stage string, resourceURI string) (string, error)
+
+	// GetServiceResource tries to retrieve a resource on service level.
 	GetServiceResource(project string, stage string, service string, resourceURI string) (string, error)
+
+	// UploadResource tries to upload a resource.
 	UploadResource(contentToUpload []byte, remoteResourceURI string, project string, stage string, service string) error
 }
 
-// ResourceError represents an error for a resource that was not found
+// ResourceError represents an error for a resource that was not found.
 type ResourceError struct {
 	uri     string
 	project string
@@ -27,7 +36,7 @@ type ResourceError struct {
 	service string
 }
 
-// ResourceNotFoundError represents an error for a resource that was not found
+// ResourceNotFoundError represents an error for a resource that was not found.
 type ResourceNotFoundError ResourceError
 
 // Error returns a string representation of this error
@@ -35,7 +44,7 @@ func (e *ResourceNotFoundError) Error() string {
 	return fmt.Sprintf("could not find resource: '%s' %s", e.uri, getLocation(e.service, e.stage, e.project))
 }
 
-// ResourceEmptyError represents an error for a resource that was found, but is empty
+// ResourceEmptyError represents an error for a resource that was found, but is empty.
 type ResourceEmptyError ResourceError
 
 // Error returns a string representation of this error
@@ -43,24 +52,24 @@ func (e *ResourceEmptyError) Error() string {
 	return fmt.Sprintf("found resource: '%s' %s, but it is empty", e.uri, getLocation(e.service, e.stage, e.project))
 }
 
-// ResourceUploadFailedError represents an error for a resource that could not be uploaded
+// ResourceUploadFailedError represents an error for a resource that could not be uploaded.
 type ResourceUploadFailedError struct {
 	ResourceError
 	message string
 }
 
-// Error returns a string representation of this error
+// Error returns a string representation of this error.
 func (e *ResourceUploadFailedError) Error() string {
 	return fmt.Sprintf("could not upload resource: '%s' %s: %s", e.uri, getLocation(e.service, e.stage, e.project), e.message)
 }
 
-// ResourceRetrievalFailedError represents an error for a resource that could not be retrieved because of an error
+// ResourceRetrievalFailedError represents an error for a resource that could not be retrieved because of an error.
 type ResourceRetrievalFailedError struct {
 	ResourceError
 	message string
 }
 
-// Error returns a string representation of this error
+// Error returns a string representation of this error.
 func (e *ResourceRetrievalFailedError) Error() string {
 	return fmt.Sprintf("could not retrieve resource: '%s' %s: %s", e.uri, getLocation(e.service, e.stage, e.project), e.message)
 }
@@ -81,19 +90,19 @@ func getLocation(service string, stage string, project string) string {
 	return strings.TrimLeft(location, " ")
 }
 
-// ConfigResourceClient is the default implementation for the ConfigResourceClientInterface using a Keptn api.ResourcesV1Interface
+// ConfigResourceClient is the default implementation for the ConfigResourceClientInterface using a Keptn api.ResourcesV1Interface.
 type ConfigResourceClient struct {
 	client api.ResourcesV1Interface
 }
 
-// NewConfigResourceClient creates a new ResourceClient with a Keptn resource client for the configuration service
+// NewConfigResourceClient creates a new ResourceClient with a Keptn resource client for the configuration service.
 func NewConfigResourceClient(client api.ResourcesV1Interface) *ConfigResourceClient {
 	return &ConfigResourceClient{
 		client: client,
 	}
 }
 
-// GetResource tries to find the first instance of a given resource on service, stage or project level
+// GetResource tries to find the first instance of a given resource on service, stage or project level.
 func (rc *ConfigResourceClient) GetResource(project string, stage string, service string, resourceURI string) (string, error) {
 	var rnfErrorType *ResourceNotFoundError
 	if project != "" && stage != "" && service != "" {
@@ -154,7 +163,7 @@ func (rc *ConfigResourceClient) GetResource(project string, stage string, servic
 	return "", &ResourceNotFoundError{uri: resourceURI, project: project, stage: stage, service: service}
 }
 
-// GetServiceResource tries to retrieve a resourceURI on service level
+// GetServiceResource tries to retrieve a resource on service level.
 func (rc *ConfigResourceClient) GetServiceResource(project string, stage string, service string, resourceURI string) (string, error) {
 	return getResourceByFunc(
 		func() (*keptnmodels.Resource, error) {
@@ -171,7 +180,7 @@ func (rc *ConfigResourceClient) GetServiceResource(project string, stage string,
 		})
 }
 
-// GetStageResource tries to retrieve a resourceURI on stage level
+// GetStageResource tries to retrieve a resource on stage level.
 func (rc *ConfigResourceClient) GetStageResource(project string, stage string, resourceURI string) (string, error) {
 	return getResourceByFunc(
 		func() (*keptnmodels.Resource, error) { return rc.client.GetStageResource(project, stage, resourceURI) },
@@ -186,7 +195,7 @@ func (rc *ConfigResourceClient) GetStageResource(project string, stage string, r
 		})
 }
 
-// GetProjectResource tries to retrieve a resourceURI on project level
+// GetProjectResource tries to retrieve a resource on project level.
 func (rc *ConfigResourceClient) GetProjectResource(project string, resourceURI string) (string, error) {
 	return getResourceByFunc(
 		func() (*keptnmodels.Resource, error) { return rc.client.GetProjectResource(project, resourceURI) },
@@ -217,7 +226,7 @@ func getResourceByFunc(
 	return resource.ResourceContent, nil
 }
 
-// UploadResource tries to upload a resourceURI on service level
+// UploadResource tries to upload a resource.
 func (rc *ConfigResourceClient) UploadResource(contentToUpload []byte, remoteResourceURI string, project string, stage string, service string) error {
 	resources := []*keptnmodels.Resource{{ResourceContent: string(contentToUpload), ResourceURI: &remoteResourceURI}}
 	_, err := rc.client.CreateResources(project, stage, service, resources)

@@ -8,15 +8,16 @@ import (
 
 // UniformClientInterface provides access to Keptn Uniform.
 type UniformClientInterface interface {
+	// GetIntegrationIDByName gets the ID of the integration with specified name or returns an error if none or more than one exist with that name.
 	GetIntegrationIDByName(integrationName string) (string, error)
 }
 
-// UniformClient is a client for interacting with Keptn Uniform.
+// UniformClient is an implementation of UniformClientInterface using api.UniformV1Interface.
 type UniformClient struct {
 	client api.UniformV1Interface
 }
 
-// NewUniformClient creates a new UniformClient using the specified UniformV1Interface.
+// NewUniformClient creates a new UniformClient using the specified api.UniformV1Interface.
 func NewUniformClient(client api.UniformV1Interface) *UniformClient {
 	return &UniformClient{
 		client: client,

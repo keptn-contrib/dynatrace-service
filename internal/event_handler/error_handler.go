@@ -12,12 +12,14 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli"
 )
 
+// ErrorHandler handles errors by trying to send them to Keptn Uniform.
 type ErrorHandler struct {
 	err           error
 	evt           cloudevents.Event
 	uniformClient keptn.UniformClientInterface
 }
 
+// NewErrorHandler creates a new ErrorHandler for the specified error, event and UniformClientInterface.
 func NewErrorHandler(err error, event cloudevents.Event, uniformClient keptn.UniformClientInterface) *ErrorHandler {
 	return &ErrorHandler{
 		err:           err,

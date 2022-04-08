@@ -4,27 +4,34 @@ import (
 	"errors"
 	"fmt"
 
-	apimodels "github.com/keptn/go-utils/pkg/api/models"
-	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
+	"github.com/keptn/go-utils/pkg/api/models"
+	api "github.com/keptn/go-utils/pkg/api/utils"
 )
 
+// ServiceClientInterface provides access to Keptn services.
 type ServiceClientInterface interface {
+	// GetServiceNames gets the names of the services in the specified project and stage or returns an error.
 	GetServiceNames(project string, stage string) ([]string, error)
+
+	// CreateServiceInProject creates a service in all stages of the specified project or returns an error.
 	CreateServiceInProject(project string, service string) error
 }
 
+// ServiceClient is an implementation of ServiceClientInterface using api.ServicesV1Interface and api.APIV1Interface.
 type ServiceClient struct {
-	servicesClient keptnapi.ServicesV1Interface
-	apiClient      keptnapi.APIV1Interface
+	servicesClient api.ServicesV1Interface
+	apiClient      api.APIV1Interface
 }
 
-func NewServiceClient(client keptnapi.ServicesV1Interface, apiClient keptnapi.APIV1Interface) *ServiceClient {
+// NewServiceClient creates a new ServiceClient using the specified clients.
+func NewServiceClient(servicesClient api.ServicesV1Interface, apiClient api.APIV1Interface) *ServiceClient {
 	return &ServiceClient{
-		servicesClient: client,
+		servicesClient: servicesClient,
 		apiClient:      apiClient,
 	}
 }
 
+// GetServiceNames gets the names of the services in the specified project and stage or returns an error.
 func (c *ServiceClient) GetServiceNames(project string, stage string) ([]string, error) {
 	services, err := c.servicesClient.GetAllServices(project, stage)
 	if err != nil {
@@ -43,8 +50,9 @@ func (c *ServiceClient) GetServiceNames(project string, stage string) ([]string,
 	return serviceNames, nil
 }
 
+// CreateServiceInProject creates a service in all stages of the specified project or returns an error.
 func (c *ServiceClient) CreateServiceInProject(project string, service string) error {
-	_, keptnAPIErr := c.apiClient.CreateService(project, apimodels.CreateService{
+	_, keptnAPIErr := c.apiClient.CreateService(project, models.CreateService{
 		ServiceName: &service,
 	})
 
