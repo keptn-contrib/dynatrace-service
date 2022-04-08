@@ -13,7 +13,7 @@ Before continuing, please ensure a Keptn project is available with a valid Git u
 
 To function correctly, the dynatrace-service requires a Kubernetes secret containing the credentials for accessing the API of a Dynatrace tenant. The secret must have two components with the key names `DT_TENANT` and `DT_API_TOKEN`:
 
-* The `DT_TENANT` has to be set according to the appropriate [pattern](https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id) shown below. While the following mentions the use of `https`, is supported to use `http` even though this is not recommended:
+* The `DT_TENANT` has to be set according to the appropriate [pattern](https://www.dynatrace.com/support/help/get-started/monitoring-environment/environment-id) shown below. While the following mentions the use of `https`, `http` is supported although this is not recommended:
     - Dynatrace SaaS: `https://{your-environment-id}.live.dynatrace.com`
     - Dynatrace Managed: `https://{your-domain}/e/{your-environment-id}`
 
