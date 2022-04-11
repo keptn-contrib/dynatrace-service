@@ -98,7 +98,7 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 	problemOpenEvent := &keptncommon.ProblemEventData{}
 	err := keptnv2.Decode(events[0].Data, problemOpenEvent)
 	if err != nil {
-		return "", fmt.Errorf("could not decode problem.open event: %s", err.Error())
+		return "", fmt.Errorf("could not decode problem.open event: %w", err)
 	}
 
 	if problemOpenEvent.PID == "" {
