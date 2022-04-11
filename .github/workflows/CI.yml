@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload Helm Chart as an artifact
         id: upload_helm_chart
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: installer
           path: installer/*.tgz
@@ -145,7 +145,7 @@ jobs:
 
       - name: Upload build config as artifact
         id: upload_build_config
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-config
           path: build-config.env
