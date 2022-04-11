@@ -3,6 +3,7 @@ package keptn
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -70,11 +71,19 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 	for labelName, labelValue := range keptnEvent.GetLabels() {
 		if labelName == problemURLLabel {
 			// the value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
-			// so - lets get the last part after pid=
+			u, err := url.Parse(labelValue)
+			if err != nil {
+				break
+			}
 
-			ix := strings.LastIndex(labelValue, ";pid=")
-			if ix > 0 {
-				return labelValue[ix+5:], nil
+			params, err := url.ParseQuery(u.RawQuery)
+			if err != nil {
+				break
+			}
+
+			v, ok := params["pid"]
+			if ok {
+				return v[0], nil
 			}
 		}
 	}
