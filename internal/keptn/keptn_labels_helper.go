@@ -33,22 +33,18 @@ func AddOptionalKeptnBridgeUrlToLabels(labels map[string]string, shKeptnContext 
 // The value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
 func TryGetProblemIDFromLabels(keptnEvent adapter.EventContentAdapter) string {
 	for labelName, labelValue := range keptnEvent.GetLabels() {
-
 		if strings.EqualFold(labelName, common.ProblemURLLabel) {
 			u, err := url.Parse(labelValue)
 			if err != nil {
 				return ""
 			}
 
-			params, err := url.ParseQuery(u.RawQuery)
-			if err != nil {
+			ix := strings.LastIndex(u.Fragment, ";pid=")
+			if ix == -1 {
 				return ""
 			}
 
-			v, ok := params["pid"]
-			if ok {
-				return v[0]
-			}
+			return u.Fragment[ix+5:]
 		}
 	}
 
