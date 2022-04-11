@@ -54,7 +54,7 @@ func (c *EventClient) IsPartOfRemediation(event adapter.EventContentAdapter) (bo
 		return false, errors.New(err.GetMessage())
 	}
 
-	if events == nil || len(events) == 0 {
+	if len(events) == 0 {
 		return false, nil
 	}
 
