@@ -50,7 +50,7 @@ func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *g
 	}
 }
 
-func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, kClient *keptnClientMock, rClient keptn.ResourceClientInterface, dashboard string) {
+func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, kClient *keptnClientMock, rClient keptn.SLOAndSLIClientInterface, dashboard string) {
 	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, kClient, rClient, dashboard)
 	defer teardown()
 
@@ -108,7 +108,7 @@ func createFailedSLIResultAssertionsFunc(expectedMetric string) func(*testing.T,
 	}
 }
 
-func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.ResourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
+func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.SLOAndSLIClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)

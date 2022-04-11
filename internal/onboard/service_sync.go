@@ -72,7 +72,7 @@ type defaultEntitiesClientFactory struct {
 	configProvider config.DynatraceConfigProvider
 }
 
-func newDefaultEntitiesClientFactory(resourceClient keptn.DynatraceConfigResourceClientInterface) *defaultEntitiesClientFactory {
+func newDefaultEntitiesClientFactory(resourceClient keptn.DynatraceConfigReaderInterface) *defaultEntitiesClientFactory {
 	return &defaultEntitiesClientFactory{
 		configProvider: config.NewDynatraceConfigGetter(resourceClient),
 	}
@@ -101,7 +101,7 @@ func (f defaultEntitiesClientFactory) CreateEntitiesClient() (*dynatrace.Entitie
 // ServiceSynchronizer encapsulates the service onboarder component.
 type ServiceSynchronizer struct {
 	servicesClient        keptn.ServiceClientInterface
-	resourcesClient       keptn.SLIAndSLOResourceWriterInterface
+	resourcesClient       keptn.SLIAndSLOWriterInterface
 	entitiesClientFactory EntitiesClientFactory
 }
 
@@ -112,7 +112,7 @@ func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
 		return nil, fmt.Errorf("could not create Keptn API set: %w", err)
 	}
 
-	resourceClient := keptn.NewResourceClient(keptn.NewConfigResourceClient(keptnAPISet.ResourcesV1()))
+	resourceClient := keptn.NewConfigClient(keptn.NewResourceClient(keptnAPISet.ResourcesV1()))
 
 	serviceSynchronizer := ServiceSynchronizer{
 		servicesClient:        keptn.NewServiceClient(keptnAPISet.ServicesV1(), keptnAPISet.APIV1()),

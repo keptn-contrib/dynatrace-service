@@ -25,13 +25,13 @@ type GetSLIEventHandler struct {
 	event          GetSLITriggeredAdapterInterface
 	dtClient       dynatrace.ClientInterface
 	kClient        keptn.ClientInterface
-	resourceClient keptn.ResourceClientInterface
+	resourceClient keptn.SLOAndSLIClientInterface
 
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, resourceClient keptn.ResourceClientInterface, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, resourceClient keptn.SLOAndSLIClientInterface, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:          event,
 		dtClient:       dtClient,

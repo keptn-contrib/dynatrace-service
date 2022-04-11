@@ -16,10 +16,10 @@ type DynatraceConfigProvider interface {
 }
 
 type DynatraceConfigGetter struct {
-	resourceClient keptn.DynatraceConfigResourceClientInterface
+	resourceClient keptn.DynatraceConfigReaderInterface
 }
 
-func NewDynatraceConfigGetter(client keptn.DynatraceConfigResourceClientInterface) *DynatraceConfigGetter {
+func NewDynatraceConfigGetter(client keptn.DynatraceConfigReaderInterface) *DynatraceConfigGetter {
 	return &DynatraceConfigGetter{
 		resourceClient: client,
 	}
