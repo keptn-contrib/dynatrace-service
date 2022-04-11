@@ -46,14 +46,8 @@ func TestUniformClient_GetIntegrationIDByName(t *testing.T) {
 			name: "one integration with name - should work",
 			uniformClient: &mockUniformClient{
 				registrations: []*models.Integration{
-					{
-						ID:   "5d64eb87c4ce3e23935758c418df9d980c16a3b1",
-						Name: "webhook-service",
-					},
-					{
-						ID:   "e8039ff0b65c7e4d326a0473a18f04cabfefe747",
-						Name: "dynatrace-service",
-					},
+					createIntegration("5d64eb87c4ce3e23935758c418df9d980c16a3b1", "webhook-service"),
+					createIntegration("e8039ff0b65c7e4d326a0473a18f04cabfefe747", "dynatrace-service"),
 				},
 			},
 			integrationName:       "dynatrace-service",
@@ -63,18 +57,9 @@ func TestUniformClient_GetIntegrationIDByName(t *testing.T) {
 			name: "two integrations with name - should fail",
 			uniformClient: &mockUniformClient{
 				registrations: []*models.Integration{
-					{
-						ID:   "5d64eb87c4ce3e23935758c418df9d980c16a3b1",
-						Name: "webhook-service",
-					},
-					{
-						ID:   "e8039ff0b65c7e4d326a0473a18f04cabfefe747",
-						Name: "dynatrace-service",
-					},
-					{
-						ID:   "d73082b9c42aa147935fe2592a91eb5d2b224038",
-						Name: "dynatrace-service",
-					},
+					createIntegration("5d64eb87c4ce3e23935758c418df9d980c16a3b1", "webhook-service"),
+					createIntegration("e8039ff0b65c7e4d326a0473a18f04cabfefe747", "dynatrace-service"),
+					createIntegration("d73082b9c42aa147935fe2592a91eb5d2b224038", "dynatrace-service"),
 				},
 			},
 			integrationName:        "dynatrace-service",
@@ -85,10 +70,7 @@ func TestUniformClient_GetIntegrationIDByName(t *testing.T) {
 			name: "no integration with name - should fail",
 			uniformClient: &mockUniformClient{
 				registrations: []*models.Integration{
-					{
-						ID:   "5d64eb87c4ce3e23935758c418df9d980c16a3b1",
-						Name: "webhook-service",
-					},
+					createIntegration("5d64eb87c4ce3e23935758c418df9d980c16a3b1", "webhook-service"),
 				},
 			},
 			integrationName:        "dynatrace-service",
@@ -119,5 +101,12 @@ func TestUniformClient_GetIntegrationIDByName(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+	}
+}
+
+func createIntegration(id string, name string) *models.Integration {
+	return &models.Integration{
+		ID:   id,
+		Name: name,
 	}
 }
