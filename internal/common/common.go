@@ -17,6 +17,7 @@ import (
 )
 
 const BridgeLabel = "Keptns Bridge"
+const ProblemURLLabel = "Problem URL"
 
 // ShipyardControllerURLEnvironmentVariableName is the name of the environment variable for specifying the shipyard controller URL.
 const ShipyardControllerURLEnvironmentVariableName = "SHIPYARD_CONTROLLER"

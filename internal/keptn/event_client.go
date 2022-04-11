@@ -3,7 +3,6 @@ package keptn
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -13,8 +12,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
-
-const problemURLLabel = "Problem URL"
 
 // EventClientInterface encapsulates functionality built on top of Keptn events.
 type EventClientInterface interface {
@@ -65,27 +62,10 @@ func (c *EventClient) IsPartOfRemediation(event adapter.EventContentAdapter) (bo
 // FindProblemID finds the Problem ID that is associated with the specified Keptn event or returns an error.
 // It first parses it from Problem URL label and if it cant be found there it will look for the Initial Problem Open Event and gets the ID from there.
 func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (string, error) {
-
 	// Step 1 - see if we have a Problem Url in the labels
-	// iterate through the labels and find Problem URL
-	for labelName, labelValue := range keptnEvent.GetLabels() {
-		if labelName == problemURLLabel {
-			// the value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
-			u, err := url.Parse(labelValue)
-			if err != nil {
-				break
-			}
-
-			params, err := url.ParseQuery(u.RawQuery)
-			if err != nil {
-				break
-			}
-
-			v, ok := params["pid"]
-			if ok {
-				return v[0], nil
-			}
-		}
+	problemID := TryGetProblemIDFromLabels(keptnEvent)
+	if problemID != "" {
+		return problemID, nil
 	}
 
 	// Step 2 - lets see if we have a ProblemOpenEvent for this KeptnContext - if so - we try to extract the Problem ID

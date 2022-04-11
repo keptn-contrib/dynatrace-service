@@ -86,7 +86,7 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]result.SLIResult, error) {
 
 	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
 	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
-	problemID := getDynatraceProblemContext(eh.event)
+	problemID := keptn.TryGetProblemIDFromLabels(eh.event)
 	if problemID != "" {
 		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(problemID))
 	}
@@ -170,29 +170,6 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(timeframe common.Ti
 	}
 
 	return sliResults, nil
-}
-
-//getDynatraceProblemContext will evaluate the event and - returns dynatrace problem ID if found, 0 otherwise
-func getDynatraceProblemContext(eventData GetSLITriggeredAdapterInterface) string {
-
-	// iterate through the labels and find Problem URL
-	if eventData.GetLabels() == nil || len(eventData.GetLabels()) == 0 {
-		return ""
-	}
-
-	for labelName, labelValue := range eventData.GetLabels() {
-		if strings.ToLower(labelName) == "problem url" {
-			// the value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
-			// so - lets get the last part after pid=
-
-			ix := strings.LastIndex(labelValue, ";pid=")
-			if ix > 0 {
-				return labelValue[ix+5:]
-			}
-		}
-	}
-
-	return ""
 }
 
 func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) result.SLIResult {
