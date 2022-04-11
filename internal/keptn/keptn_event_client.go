@@ -7,40 +7,11 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 )
-
-// EventClientBaseInterface provides access to Keptn events.
-type EventClientBaseInterface interface {
-	// GetEvents gets all events matching the specified filter or returns an error.
-	GetEvents(filter *api.EventFilter) ([]*models.KeptnContextExtendedCE, error)
-}
-
-// EventClientBase is an implementation of EventClientBaseInterface using api.EventsV1Interface.
-type EventClientBase struct {
-	client api.EventsV1Interface
-}
-
-// NewEventClientBase creates a new EventClientBase using the specified api.EventsV1Interface.
-func NewEventClientBase(client api.EventsV1Interface) *EventClientBase {
-	return &EventClientBase{
-		client: client,
-	}
-}
-
-// GetEvents gets all events matching the specified filter or returns an error.
-func (c *EventClientBase) GetEvents(filter *api.EventFilter) ([]*models.KeptnContextExtendedCE, error) {
-	events, err := c.client.GetEvents(filter)
-	if err != nil {
-		return nil, fmt.Errorf("could not get events: %s", err.GetMessage())
-	}
-
-	return events, nil
-}
 
 const problemURLLabel = "Problem URL"
 
@@ -56,13 +27,13 @@ type EventClientInterface interface {
 	GetImageAndTag(keptnEvent adapter.EventContentAdapter) common.ImageAndTag
 }
 
-// EventClient implements offers EventClientInterface using a EventClientBaseInterface.
+// EventClient implements offers EventClientInterface using api.EventsV1Interface.
 type EventClient struct {
-	client EventClientBaseInterface
+	client api.EventsV1Interface
 }
 
-// NewEventClient creates a new EventClient using the specified EventClientBaseInterface.
-func NewEventClient(client EventClientBaseInterface) *EventClient {
+// NewEventClient creates a new EventClient using the specified api.EventsV1Interface.
+func NewEventClient(client api.EventsV1Interface) *EventClient {
 	return &EventClient{
 		client: client,
 	}
@@ -80,7 +51,7 @@ func (c *EventClient) IsPartOfRemediation(event adapter.EventContentAdapter) (bo
 		})
 
 	if err != nil {
-		return false, err
+		return false, errors.New(err.GetMessage())
 	}
 
 	if events == nil || len(events) == 0 {
@@ -109,15 +80,15 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 	}
 
 	// Step 2 - lets see if we have a ProblemOpenEvent for this KeptnContext - if so - we try to extract the Problem ID
-	events, err := c.client.GetEvents(
+	events, mErr := c.client.GetEvents(
 		&api.EventFilter{
 			Project:      keptnEvent.GetProject(),
 			EventType:    keptncommon.ProblemOpenEventType,
 			KeptnContext: keptnEvent.GetShKeptnContext(),
 		})
 
-	if err != nil {
-		return "", fmt.Errorf("cannot send DT problem comment: Could not retrieve problem.open event for incoming event: %s", err.Error())
+	if mErr != nil {
+		return "", fmt.Errorf("cannot send DT problem comment: Could not retrieve problem.open event for incoming event: %s", mErr.GetMessage())
 	}
 
 	if len(events) == 0 {
@@ -125,7 +96,7 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 	}
 
 	problemOpenEvent := &keptncommon.ProblemEventData{}
-	err = keptnv2.Decode(events[0].Data, problemOpenEvent)
+	err := keptnv2.Decode(events[0].Data, problemOpenEvent)
 	if err != nil {
 		return "", fmt.Errorf("could not decode problem.open event: %s", err.Error())
 	}
@@ -140,7 +111,7 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 // GetImageAndTag extracts the image and tag associated with a deployment triggered as part of the sequence.
 func (c *EventClient) GetImageAndTag(event adapter.EventContentAdapter) common.ImageAndTag {
 
-	events, err := c.client.GetEvents(
+	events, mErr := c.client.GetEvents(
 		&api.EventFilter{
 			Project:      event.GetProject(),
 			Stage:        event.GetStage(),
@@ -149,8 +120,8 @@ func (c *EventClient) GetImageAndTag(event adapter.EventContentAdapter) common.I
 			KeptnContext: event.GetShKeptnContext(),
 		})
 
-	if err != nil {
-		log.WithError(err).Error("Could not retrieve image and tag for event")
+	if mErr != nil {
+		log.WithError(errors.New(mErr.GetMessage())).Error("Could not retrieve image and tag for event")
 		return common.NewNotAvailableImageAndTag()
 	}
 
@@ -159,7 +130,7 @@ func (c *EventClient) GetImageAndTag(event adapter.EventContentAdapter) common.I
 	}
 
 	triggeredData := &keptnv2.DeploymentTriggeredEventData{}
-	err = keptnv2.Decode(events[0].Data, triggeredData)
+	err := keptnv2.Decode(events[0].Data, triggeredData)
 	if err != nil {
 		log.WithError(err).Error("Could not decode event data")
 		return common.NewNotAvailableImageAndTag()
