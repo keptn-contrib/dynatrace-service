@@ -149,7 +149,7 @@ func (rc *ResourceClient) GetResource(project string, stage string, service stri
 
 	if project != "" {
 		keptnResourceContent, err := rc.GetProjectResource(project, resourceURI)
-		if err == api.ResourceNotFoundError {
+		if errors.As(err, &rnfErrorType) {
 			log.WithField("project", project).Debugf("%s not available for project", resourceURI)
 		} else if err != nil {
 			return "", err
