@@ -320,7 +320,7 @@ jobs:
           gh pr create --title "build: release $RELEASE_TAG" --body "Updates to CHANGELOG.md, VERSION.txt, README.md and compatibility.md" --base "${GITHUB_REF_NAME}"
 
       - name: Download Release Artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ./dist
 
