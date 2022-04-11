@@ -88,11 +88,11 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 		})
 
 	if mErr != nil {
-		return "", fmt.Errorf("cannot send DT problem comment: Could not retrieve problem.open event for incoming event: %s", mErr.GetMessage())
+		return "", fmt.Errorf("could not retrieve problem.open event for incoming event: %s", mErr.GetMessage())
 	}
 
 	if len(events) == 0 {
-		return "", errors.New("cannot send DT problem comment: Could not retrieve problem.open event for incoming event: no events returned")
+		return "", errors.New("could not retrieve problem.open event for incoming event: no events returned")
 	}
 
 	problemOpenEvent := &keptncommon.ProblemEventData{}
@@ -102,7 +102,7 @@ func (c *EventClient) FindProblemID(keptnEvent adapter.EventContentAdapter) (str
 	}
 
 	if problemOpenEvent.PID == "" {
-		return "", errors.New("cannot send DT problem comment: No problem ID is included in the event")
+		return "", errors.New("no problem ID is included in problem.open event")
 	}
 
 	return problemOpenEvent.PID, nil
