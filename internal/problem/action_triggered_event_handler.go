@@ -3,6 +3,7 @@ package problem
 import (
 	"errors"
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -55,7 +56,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent() error {
 	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(dtInfoEvent)
 
 	// this is posting the Event on the problem as a comment
-	comment = fmt.Sprintf("[Keptn triggered action](%s) %s", eh.event.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.event.GetAction())
+	comment = fmt.Sprintf("[Keptn triggered action](%s) %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetAction())
 	if eh.event.GetActionDescription() != "" {
 		comment = comment + ": " + eh.event.GetActionDescription()
 	}

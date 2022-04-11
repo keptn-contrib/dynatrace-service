@@ -21,6 +21,6 @@ func AddOptionalKeptnBridgeUrlToLabels(labels map[string]string, shKeptnContext 
 		return labels
 	}
 
-	labels[common.KEPTNSBRIDGE_LABEL] = keptnBridgeURL + "/trace/" + shKeptnContext
+	labels[common.BridgeLabel] = keptnBridgeURL + "/trace/" + shKeptnContext
 	return labels
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/keptn/go-utils/pkg/lib/keptn"
 )
 
-const KEPTNSBRIDGE_LABEL = "Keptns Bridge"
+const BridgeLabel = "Keptns Bridge"
 
 // ShipyardControllerURLEnvironmentVariableName is the name of the environment variable for specifying the shipyard controller URL.
 const ShipyardControllerURLEnvironmentVariableName = "SHIPYARD_CONTROLLER"
