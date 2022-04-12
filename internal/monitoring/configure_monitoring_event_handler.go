@@ -22,12 +22,12 @@ type ConfigureMonitoringEventHandler struct {
 	event         ConfigureMonitoringAdapterInterface
 	dtClient      dynatrace.ClientInterface
 	kClient       keptn.ClientInterface
-	sloReader     keptn.SLOResourceReaderInterface
+	sloReader     keptn.SLOReaderInterface
 	serviceClient keptn.ServiceClientInterface
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, sloReader keptn.SLOResourceReaderInterface, serviceClient keptn.ServiceClientInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
 		event:         event,
 		dtClient:      dtClient,

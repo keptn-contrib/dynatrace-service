@@ -28,10 +28,10 @@ type CriteriaObject struct {
 type MetricEventCreation struct {
 	dtClient  dynatrace.ClientInterface
 	kClient   keptn.ClientInterface
-	sloReader keptn.SLOResourceReaderInterface
+	sloReader keptn.SLOReaderInterface
 }
 
-func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOResourceReaderInterface) MetricEventCreation {
+func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface) MetricEventCreation {
 	return MetricEventCreation{
 		dtClient:  dynatraceClient,
 		kClient:   keptnClient,

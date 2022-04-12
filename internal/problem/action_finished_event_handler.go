@@ -2,6 +2,7 @@ package problem
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -37,7 +38,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent() error {
 
 	// Comment text we want to push over
 	comment := fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
-		eh.event.GetLabels()[common.KEPTNSBRIDGE_LABEL],
+		eh.event.GetLabels()[common.BridgeLabel],
 		eh.event.GetSource(),
 		eh.event.GetResult(),
 		eh.event.GetStatus())

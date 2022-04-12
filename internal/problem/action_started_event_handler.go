@@ -2,6 +2,7 @@ package problem
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -32,7 +33,7 @@ func (eh *ActionStartedEventHandler) HandleEvent() error {
 	}
 
 	// Comment we push over
-	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", eh.event.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.event.GetSource())
+	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetSource())
 
 	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(pid, comment)
 

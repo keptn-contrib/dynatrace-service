@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	api "github.com/keptn/go-utils/pkg/api/utils"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -70,7 +72,7 @@ type defaultEntitiesClientFactory struct {
 	configProvider config.DynatraceConfigProvider
 }
 
-func newDefaultEntitiesClientFactory(resourceClient keptn.DynatraceConfigResourceClientInterface) *defaultEntitiesClientFactory {
+func newDefaultEntitiesClientFactory(resourceClient keptn.DynatraceConfigReaderInterface) *defaultEntitiesClientFactory {
 	return &defaultEntitiesClientFactory{
 		configProvider: config.NewDynatraceConfigGetter(resourceClient),
 	}
@@ -99,21 +101,26 @@ func (f defaultEntitiesClientFactory) CreateEntitiesClient() (*dynatrace.Entitie
 // ServiceSynchronizer encapsulates the service onboarder component.
 type ServiceSynchronizer struct {
 	servicesClient        keptn.ServiceClientInterface
-	resourcesClient       keptn.SLIAndSLOResourceWriterInterface
+	resourcesClient       keptn.SLIAndSLOWriterInterface
 	entitiesClientFactory EntitiesClientFactory
 }
 
 // NewDefaultServiceSynchronizer creates are new default ServiceSynchronizer.
-func NewDefaultServiceSynchronizer() *ServiceSynchronizer {
-	resourceClient := keptn.NewDefaultResourceClient()
+func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
+	keptnAPISet, err := api.New(common.GetShipyardControllerURL())
+	if err != nil {
+		return nil, fmt.Errorf("could not create Keptn API set: %w", err)
+	}
+
+	resourceClient := keptn.NewConfigClient(keptn.NewResourceClient(keptnAPISet.ResourcesV1()))
 
 	serviceSynchronizer := ServiceSynchronizer{
-		servicesClient:        keptn.NewDefaultServiceClient(),
+		servicesClient:        keptn.NewServiceClient(keptnAPISet.ServicesV1(), keptnAPISet.APIV1()),
 		resourcesClient:       resourceClient,
 		entitiesClientFactory: newDefaultEntitiesClientFactory(resourceClient),
 	}
 
-	return &serviceSynchronizer
+	return &serviceSynchronizer, nil
 }
 
 // Run runs the service synchronizer and does not return.

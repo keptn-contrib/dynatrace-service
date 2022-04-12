@@ -12,15 +12,19 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli"
 )
 
+// ErrorHandler handles errors by trying to send them to Keptn Uniform.
 type ErrorHandler struct {
-	err error
-	evt cloudevents.Event
+	err           error
+	evt           cloudevents.Event
+	uniformClient keptn.UniformClientInterface
 }
 
-func NewErrorHandler(err error, event cloudevents.Event) *ErrorHandler {
+// NewErrorHandler creates a new ErrorHandler for the specified error, event and UniformClientInterface.
+func NewErrorHandler(err error, event cloudevents.Event, uniformClient keptn.UniformClientInterface) *ErrorHandler {
 	return &ErrorHandler{
-		err: err,
-		evt: event,
+		err:           err,
+		evt:           event,
+		uniformClient: uniformClient,
 	}
 }
 
@@ -59,8 +63,7 @@ func (eh ErrorHandler) sendErroredGetSLIFinishedEvent(keptnClient *keptn.Client)
 }
 
 func (eh ErrorHandler) sendErrorEvent(keptnClient *keptn.Client) error {
-	uniformClient := keptn.NewDefaultUniformClient()
-	integrationID, err := uniformClient.GetIntegrationIDFor(event.GetEventSource())
+	integrationID, err := eh.uniformClient.GetIntegrationIDByName(event.GetEventSource())
 	if err != nil {
 		log.WithError(err).Error("Could not retrieve integration ID from Keptn Uniform")
 		// no need to continue here, message will not show up in Uniform

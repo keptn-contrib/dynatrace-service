@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	api "github.com/keptn/go-utils/pkg/api/utils"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/deployment"
@@ -20,22 +22,29 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli"
 )
 
+// DynatraceEventHandler is the common interface for all event handlers.
 type DynatraceEventHandler interface {
 	HandleEvent() error
 }
 
-func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
-	eventHandler, err := getEventHandler(event)
+// NewEventHandler creates a new DynatraceEventHandler for the specified event or returns an error.
+func NewEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
+	keptnAPISet, err := api.New(common.GetShipyardControllerURL())
+	if err != nil {
+		return nil, fmt.Errorf("could not create Keptn API set: %w", err)
+	}
+
+	eventHandler, err := getEventHandler(event, *keptnAPISet)
 	if err != nil {
 		err = fmt.Errorf("cannot handle event: %w", err)
 		log.Error(err.Error())
-		return NewErrorHandler(err, event)
+		return NewErrorHandler(err, event, keptn.NewUniformClient(keptnAPISet.UniformV1())), nil
 	}
 
-	return eventHandler
+	return eventHandler, nil
 }
 
-func getEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
+func getEventHandler(event cloudevents.Event, keptnAPISet api.APISet) (DynatraceEventHandler, error) {
 	log.WithField("eventType", event.Type()).Debug("Received event")
 
 	keptnEvent, err := getEventAdapter(event)
@@ -52,7 +61,7 @@ func getEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 		return nil, errors.New("event has no project")
 	}
 
-	dynatraceConfigGetter := config.NewDynatraceConfigGetter(keptn.NewDefaultResourceClient())
+	dynatraceConfigGetter := config.NewDynatraceConfigGetter(keptn.NewConfigClient(keptn.NewResourceClient(keptnAPISet.ResourcesV1())))
 	dynatraceConfig, err := dynatraceConfigGetter.GetDynatraceConfig(keptnEvent)
 	if err != nil {
 		return nil, fmt.Errorf("could not get configuration: %w", err)
@@ -77,29 +86,29 @@ func getEventHandler(event cloudevents.Event) (DynatraceEventHandler, error) {
 
 	switch aType := keptnEvent.(type) {
 	case *monitoring.ConfigureMonitoringAdapter:
-		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), keptn.NewDefaultServiceClient()), nil
+		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewConfigClient(keptn.NewResourceClient(keptnAPISet.ResourcesV1())), keptn.NewServiceClient(keptnAPISet.ServicesV1(), keptnAPISet.APIV1())), nil
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), kClient), nil
 	case *problem.ActionTriggeredAdapter:
-		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
+		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, keptn.NewEventClient(keptnAPISet.EventsV1()), dynatraceConfig.AttachRules), nil
 	case *problem.ActionStartedAdapter:
-		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), dtClient, keptn.NewDefaultEventClient()), nil
+		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), dtClient, keptn.NewEventClient(keptnAPISet.EventsV1())), nil
 	case *problem.ActionFinishedAdapter:
-		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
+		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, keptn.NewEventClient(keptnAPISet.EventsV1()), dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
-		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, kClient, keptn.NewDefaultResourceClient(), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard), nil
+		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, kClient, keptn.NewConfigClient(keptn.NewResourceClient(keptnAPISet.ResourcesV1())), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard), nil
 	case *deployment.DeploymentFinishedAdapter:
-		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
+		return deployment.NewDeploymentFinishedEventHandler(keptnEvent.(*deployment.DeploymentFinishedAdapter), dtClient, keptn.NewEventClient(keptnAPISet.EventsV1()), dynatraceConfig.AttachRules), nil
 	case *deployment.TestTriggeredAdapter:
-		return deployment.NewTestTriggeredEventHandler(keptnEvent.(*deployment.TestTriggeredAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
+		return deployment.NewTestTriggeredEventHandler(keptnEvent.(*deployment.TestTriggeredAdapter), dtClient, keptn.NewEventClient(keptnAPISet.EventsV1()), dynatraceConfig.AttachRules), nil
 	case *deployment.TestFinishedAdapter:
-		return deployment.NewTestFinishedEventHandler(keptnEvent.(*deployment.TestFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
+		return deployment.NewTestFinishedEventHandler(keptnEvent.(*deployment.TestFinishedAdapter), dtClient, keptn.NewEventClient(keptnAPISet.EventsV1()), dynatraceConfig.AttachRules), nil
 	case *deployment.EvaluationFinishedAdapter:
-		return deployment.NewEvaluationFinishedEventHandler(keptnEvent.(*deployment.EvaluationFinishedAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
+		return deployment.NewEvaluationFinishedEventHandler(keptnEvent.(*deployment.EvaluationFinishedAdapter), dtClient, keptn.NewEventClient(keptnAPISet.EventsV1()), dynatraceConfig.AttachRules), nil
 	case *deployment.ReleaseTriggeredAdapter:
-		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, keptn.NewDefaultEventClient(), dynatraceConfig.AttachRules), nil
+		return deployment.NewReleaseTriggeredEventHandler(keptnEvent.(*deployment.ReleaseTriggeredAdapter), dtClient, keptn.NewEventClient(keptnAPISet.EventsV1()), dynatraceConfig.AttachRules), nil
 	default:
-		return NewErrorHandler(fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType), event), nil
+		return NewErrorHandler(fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType), event, keptn.NewUniformClient(keptnAPISet.UniformV1())), nil
 	}
 }
 

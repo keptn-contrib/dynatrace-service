@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -50,7 +51,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent() error {
 		pid, err := eh.eClient.FindProblemID(eh.event)
 		if err == nil && pid != "" {
 			// Comment we push over
-			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", eh.event.GetLabels()[common.KEPTNSBRIDGE_LABEL], eh.event.GetResult(), eh.event.GetEvaluationScore())
+			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetResult(), eh.event.GetEvaluationScore())
 
 			// this is posting the Event on the problem as a comment
 			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(pid, comment)

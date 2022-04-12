@@ -26,11 +26,11 @@ type ConfigResult struct {
 type Configuration struct {
 	dtClient      dynatrace.ClientInterface
 	kClient       keptn.ClientInterface
-	sloReader     keptn.SLOResourceReaderInterface
+	sloReader     keptn.SLOReaderInterface
 	serviceClient keptn.ServiceClientInterface
 }
 
-func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOResourceReaderInterface, serviceClient keptn.ServiceClientInterface) *Configuration {
+func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface) *Configuration {
 	return &Configuration{
 		dtClient:      dynatraceClient,
 		kClient:       keptnClient,
