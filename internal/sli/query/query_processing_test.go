@@ -1,6 +1,7 @@
 package query
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"testing"
@@ -201,7 +202,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		customQueries[keptn.ResponseTimeP50] = testQuery
 
 		p := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
-		sliResult := p.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
+		sliResult := p.GetSLIResultFromIndicator(context.TODO(), keptn.ResponseTimeP50)
 
 		assert.True(t, sliResult.Success())
 		assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
@@ -244,7 +245,7 @@ func runGetSLIResultFromIndicatorTest(t *testing.T, handler http.Handler) result
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
-	return dh.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
+	return dh.GetSLIResultFromIndicator(context.TODO(), keptn.ResponseTimeP50)
 }
 
 // Tests what happens when end time is too close to now. This test results in a short delay.
@@ -286,7 +287,7 @@ func TestGetSLISleep(t *testing.T) {
 
 	// time how long getting the SLI value takes
 	timeBeforeGetSLIValue := time.Now()
-	sliResult := dh.GetSLIResultFromIndicator(keptn.ResponseTimeP50)
+	sliResult := dh.GetSLIResultFromIndicator(context.TODO(), keptn.ResponseTimeP50)
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
 	assert.True(t, sliResult.Success())
@@ -308,7 +309,7 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
-	sliResult := dh.GetSLIResultFromIndicator(keptn.Throughput)
+	sliResult := dh.GetSLIResultFromIndicator(context.TODO(), keptn.Throughput)
 
 	assert.False(t, sliResult.Success())
 	assert.EqualValues(t, 0.0, sliResult.Value())
@@ -350,7 +351,7 @@ func TestGetSLIValueForIndicator(t *testing.T) {
 
 		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 
-		sliResult := ret.GetSLIResultFromIndicator(testConfig.indicator)
+		sliResult := ret.GetSLIResultFromIndicator(context.TODO(), testConfig.indicator)
 
 		assert.True(t, sliResult.Success())
 	}
@@ -375,7 +376,7 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	customQueries[indicator] = "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time"
 
 	ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
-	sliResult := ret.GetSLIResultFromIndicator(indicator)
+	sliResult := ret.GetSLIResultFromIndicator(context.TODO(), indicator)
 
 	assert.True(t, sliResult.Success())
 	assert.EqualValues(t, 0.29, sliResult.Value())
@@ -456,7 +457,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 
 		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, keptn.NewCustomQueries(customQueries), timeframe)
 
-		sliResult := ret.GetSLIResultFromIndicator(testConfig.indicator)
+		sliResult := ret.GetSLIResultFromIndicator(context.TODO(), testConfig.indicator)
 
 		assert.True(t, sliResult.Success())
 		assert.EqualValues(t, testConfig.expectedSLIValue, sliResult.Value())

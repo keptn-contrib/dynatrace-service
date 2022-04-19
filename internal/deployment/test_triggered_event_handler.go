@@ -38,7 +38,7 @@ func (eh *TestTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		ie.AnnotationDescription = "Start running tests: " + eh.event.GetTestStrategy() + " against " + eh.event.GetService()
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ie)
+	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ctx, ie)
 
 	return nil
 }

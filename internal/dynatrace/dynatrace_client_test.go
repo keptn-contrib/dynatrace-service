@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"strconv"
@@ -20,7 +21,7 @@ func TestDynatraceHelper_createClient_with_proxy(t *testing.T) {
 	os.Setenv("NO_PROXY", "localhost")
 
 	dt := NewClient(createDynatraceCredentials(t, mockTenant))
-	_, _, url, err := dt.restClient.Get("/api/v1/config/clusterversion")
+	_, _, url, err := dt.restClient.Get(context.TODO(), "/api/v1/config/clusterversion")
 
 	if assert.Error(t, err) {
 		assert.Contains(t, err.Error(), "proxy-abcdefgh123")
@@ -40,7 +41,7 @@ func TestExecuteDynatraceREST(t *testing.T) {
 	client, teardown := testingDynatraceClient(t, h)
 	defer teardown()
 
-	actual, err := client.Get("/invalid-url")
+	actual, err := client.Get(context.TODO(), "/invalid-url")
 
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), string(expected))
@@ -55,7 +56,7 @@ func TestExecuteDynatraceRESTBadRequest(t *testing.T) {
 	client, teardown := testingDynatraceClient(t, h)
 	defer teardown()
 
-	actual, err := client.Get("/valid-url")
+	actual, err := client.Get(context.TODO(), "/valid-url")
 
 	assert.Nil(t, err)
 	assert.EqualValues(t, expected, actual)
@@ -76,70 +77,70 @@ func TestDynatraceClient(t *testing.T) {
 			name:               "GET, 200",
 			expectedResponse:   response,
 			expectedStatusCode: http.StatusOK,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Get("/valid-url") },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Get(context.TODO(), "/valid-url") },
 		},
 		{
 			name:               "GET, 404",
 			expectedResponse:   response,
 			expectedStatusCode: http.StatusNotFound,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Get("/not-found-url") },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Get(context.TODO(), "/not-found-url") },
 			shouldBeAPIError:   true,
 		},
 		{
 			name:               "POST, 200",
 			expectedResponse:   response,
 			expectedStatusCode: http.StatusOK,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Post("/valid-url", payload) },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Post(context.TODO(), "/valid-url", payload) },
 		},
 		{
 			name:               "POST, 204",
 			expectedResponse:   []byte{},
 			expectedStatusCode: http.StatusNoContent,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Post("/valid-url", payload) },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Post(context.TODO(), "/valid-url", payload) },
 		},
 		{
 			name:               "POST, 404",
 			expectedResponse:   response,
 			expectedStatusCode: http.StatusNotFound,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Post("/not-found-url", payload) },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Post(context.TODO(), "/not-found-url", payload) },
 			shouldBeAPIError:   true,
 		},
 		{
 			name:               "PUT, 200",
 			expectedResponse:   response,
 			expectedStatusCode: http.StatusOK,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Put("/valid-url", payload) },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Put(context.TODO(), "/valid-url", payload) },
 		},
 		{
 			name:               "PUT, 204",
 			expectedResponse:   []byte{},
 			expectedStatusCode: http.StatusNoContent,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Put("/valid-url", payload) },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Put(context.TODO(), "/valid-url", payload) },
 		},
 		{
 			name:               "PUT, 404",
 			expectedResponse:   response,
 			expectedStatusCode: http.StatusNotFound,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Put("/not-found-url", payload) },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Put(context.TODO(), "/not-found-url", payload) },
 			shouldBeAPIError:   true,
 		},
 		{
 			name:               "DELETE, 200",
 			expectedResponse:   response,
 			expectedStatusCode: http.StatusOK,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Delete("/valid-url") },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Delete(context.TODO(), "/valid-url") },
 		},
 		{
 			name:               "DELETE, 204",
 			expectedResponse:   []byte{},
 			expectedStatusCode: http.StatusNoContent,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Delete("/valid-url") },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Delete(context.TODO(), "/valid-url") },
 		},
 		{
 			name:               "DELETE, 404",
 			expectedResponse:   response,
 			expectedStatusCode: http.StatusNotFound,
-			responseFunc:       func(client *Client) ([]byte, error) { return client.Delete("/not-found-url") },
+			responseFunc:       func(client *Client) ([]byte, error) { return client.Delete(context.TODO(), "/not-found-url") },
 			shouldBeAPIError:   true,
 		},
 	}

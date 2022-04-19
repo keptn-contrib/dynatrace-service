@@ -109,8 +109,8 @@ func NewMetricsClient(client ClientInterface) *MetricsClient {
 }
 
 // GetByID calls the Dynatrace API to retrieve MetricDefinition details.
-func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
-	body, err := mc.client.Get(MetricsPath + "/" + metricID)
+func (mc *MetricsClient) GetByID(ctx context.Context, metricID string) (*MetricDefinition, error) {
+	body, err := mc.client.Get(ctx, MetricsPath+"/"+metricID)
 	if err != nil {
 		return nil, err
 	}
@@ -124,14 +124,14 @@ func (mc *MetricsClient) GetByID(metricID string) (*MetricDefinition, error) {
 	return &result, nil
 }
 
-// GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set
-func (mc *MetricsClient) GetByQuery(parameters MetricsClientQueryParameters) (*MetricsQueryResult, error) {
-	err := NewTimeframeDelay(parameters.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(context.TODO())
+// GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set.
+func (mc *MetricsClient) GetByQuery(ctx context.Context, parameters MetricsClientQueryParameters) (*MetricsQueryResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := mc.client.Get(MetricsQueryPath + "?" + parameters.encode())
+	body, err := mc.client.Get(ctx, MetricsQueryPath+"?"+parameters.encode())
 	if err != nil {
 		return nil, err
 	}

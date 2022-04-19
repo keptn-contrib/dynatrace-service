@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -22,8 +23,8 @@ func NewDashboardsClient(client ClientInterface) *DashboardsClient {
 }
 
 // GetAll gets a list of DashboardStubs detailling all accessible dashboards or returns an error.
-func (dc *DashboardsClient) GetAll() (*DashboardList, error) {
-	res, err := dc.client.Get(DashboardsPath)
+func (dc *DashboardsClient) GetAll(ctx context.Context) (*DashboardList, error) {
+	res, err := dc.client.Get(ctx, DashboardsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +40,8 @@ func (dc *DashboardsClient) GetAll() (*DashboardList, error) {
 }
 
 // GetByID gets a dashboard by ID or returns an error.
-func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
-	body, err := dc.client.Get(DashboardsPath + "/" + dashboardID)
+func (dc *DashboardsClient) GetByID(ctx context.Context, dashboardID string) (*Dashboard, error) {
+	body, err := dc.client.Get(ctx, DashboardsPath+"/"+dashboardID)
 	if err != nil {
 		return nil, err
 	}
@@ -56,13 +57,13 @@ func (dc *DashboardsClient) GetByID(dashboardID string) (*Dashboard, error) {
 }
 
 // Create creates the specified dashboard or returns an error.
-func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
+func (dc *DashboardsClient) Create(ctx context.Context, dashboard *Dashboard) error {
 	dashboardPayload, err := json.Marshal(dashboard)
 	if err != nil {
 		return common.NewMarshalJSONError("Dynatrace dashboard", err)
 	}
 
-	_, err = dc.client.Post(DashboardsPath, dashboardPayload)
+	_, err = dc.client.Post(ctx, DashboardsPath, dashboardPayload)
 	if err != nil {
 		return err
 	}
@@ -71,8 +72,8 @@ func (dc *DashboardsClient) Create(dashboard *Dashboard) error {
 }
 
 // Delete deletes the dashboard referenced by the specified ID or returns an error.
-func (dc *DashboardsClient) Delete(dashboardID string) error {
-	_, err := dc.client.Delete(DashboardsPath + "/" + dashboardID)
+func (dc *DashboardsClient) Delete(ctx context.Context, dashboardID string) error {
+	_, err := dc.client.Delete(ctx, DashboardsPath+"/"+dashboardID)
 	if err != nil {
 		return err
 	}

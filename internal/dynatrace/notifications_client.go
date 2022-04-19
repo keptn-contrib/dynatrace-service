@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -56,8 +57,8 @@ func NewNotificationsClient(client ClientInterface) *NotificationsClient {
 	}
 }
 
-func (nc *NotificationsClient) getAll() (*listResponse, error) {
-	response, err := nc.client.Get(notificationsPath)
+func (nc *NotificationsClient) getAll(ctx context.Context) (*listResponse, error) {
+	response, err := nc.client.Get(ctx, notificationsPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve notifications: %v", err)
 	}
@@ -71,8 +72,9 @@ func (nc *NotificationsClient) getAll() (*listResponse, error) {
 	return existingNotifications, nil
 }
 
-func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications() error {
-	existingNotifications, err := nc.getAll()
+// DeleteExistingKeptnProblemNotifications deletes all existing Keptn problem notifications.
+func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications(ctx context.Context) error {
+	existingNotifications, err := nc.getAll(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to retrieve notifications: %v", err)
 	}
@@ -80,7 +82,7 @@ func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications() error {
 	notificationError := &NotificationsError{}
 	for _, notification := range existingNotifications.Values {
 		if notification.Name == keptnProblemNotificationName {
-			err := nc.deleteBy(notification.ID)
+			err := nc.deleteBy(ctx, notification.ID)
 			if err != nil {
 				// Error occurred but continue
 				notificationError.errors = append(
@@ -97,8 +99,8 @@ func (nc *NotificationsClient) DeleteExistingKeptnProblemNotifications() error {
 	return nil
 }
 
-// Create creates a new default notification for the given KeptnAPICredentials and the alertingProfileID
-func (nc *NotificationsClient) Create(credentials *credentials.KeptnCredentials, alertingProfileID string, project string) error {
+// Create creates a new default notification for the given KeptnAPICredentials and the alertingProfileID.
+func (nc *NotificationsClient) Create(ctx context.Context, credentials *credentials.KeptnCredentials, alertingProfileID string, project string) error {
 	notification := problemNotificationPayload
 	notification = strings.ReplaceAll(notification, "$KEPTN_DNS", credentials.GetAPIURL())
 	notification = strings.ReplaceAll(notification, "$KEPTN_TOKEN", credentials.GetAPIToken())
@@ -106,7 +108,7 @@ func (nc *NotificationsClient) Create(credentials *credentials.KeptnCredentials,
 	notification = strings.ReplaceAll(notification, "$KEPTN_PROBLEM_NOTIFICATION_NAME", keptnProblemNotificationName)
 	notification = strings.ReplaceAll(notification, "$KEPTN_PROJECT", project)
 
-	_, err := nc.client.Post(notificationsPath, []byte(notification))
+	_, err := nc.client.Post(ctx, notificationsPath, []byte(notification))
 	if err != nil {
 		return err
 	}
@@ -114,8 +116,8 @@ func (nc *NotificationsClient) Create(credentials *credentials.KeptnCredentials,
 	return nil
 }
 
-func (nc *NotificationsClient) deleteBy(id string) error {
-	_, err := nc.client.Delete(notificationsPath + "/" + id)
+func (nc *NotificationsClient) deleteBy(ctx context.Context, id string) error {
+	_, err := nc.client.Delete(ctx, notificationsPath+"/"+id)
 	if err != nil {
 		return nil
 	}

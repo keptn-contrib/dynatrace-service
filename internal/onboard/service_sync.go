@@ -1,6 +1,7 @@
 package onboard
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -180,7 +181,7 @@ func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrac
 		return nil, err
 	}
 
-	entities, err := entitiesClient.GetKeptnManagedServices()
+	entities, err := entitiesClient.GetKeptnManagedServices(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch Keptn managed services from Dynatrace: %w", err)
 	}

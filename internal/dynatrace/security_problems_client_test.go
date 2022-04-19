@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -21,7 +22,7 @@ func TestSecurityProblemsClient_GetTotalCountByQuery_None(t *testing.T) {
 
 	securityProblemQuery := secpv2.NewQuery("status(OPEN)")
 
-	totalSecurityProblemCount, err := NewSecurityProblemsClient(dtClient).GetTotalCountByQuery(NewSecurityProblemsV2ClientQueryParameters(securityProblemQuery, *timeframe))
+	totalSecurityProblemCount, err := NewSecurityProblemsClient(dtClient).GetTotalCountByQuery(context.TODO(), NewSecurityProblemsV2ClientQueryParameters(securityProblemQuery, *timeframe))
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, totalSecurityProblemCount)
@@ -39,7 +40,7 @@ func TestSecurityProblemsClient_GetTotalCountByQuery_Some(t *testing.T) {
 
 	securityProblemQuery := secpv2.NewQuery("status(OPEN)")
 
-	totalSecurityProblemCount, err := NewSecurityProblemsClient(dtClient).GetTotalCountByQuery(NewSecurityProblemsV2ClientQueryParameters(securityProblemQuery, *timeframe))
+	totalSecurityProblemCount, err := NewSecurityProblemsClient(dtClient).GetTotalCountByQuery(context.TODO(), NewSecurityProblemsV2ClientQueryParameters(securityProblemQuery, *timeframe))
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, 177, totalSecurityProblemCount)

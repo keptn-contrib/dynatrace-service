@@ -64,14 +64,14 @@ func NewSecurityProblemsClient(client ClientInterface) *SecurityProblemsClient {
 	}
 }
 
-// GetTotalCountByQuery calls the Dynatrace API to retrieve the total count of security problems for the given query and timeframe
-func (sc *SecurityProblemsClient) GetTotalCountByQuery(parameters SecurityProblemsV2ClientQueryParameters) (int, error) {
-	err := NewTimeframeDelay(parameters.timeframe, SecurityProblemsV2RequiredDelay, SecurityProblemsV2MaximumWait).Wait(context.TODO())
+// GetTotalCountByQuery calls the Dynatrace API to retrieve the total count of security problems for the given query and timeframe.
+func (sc *SecurityProblemsClient) GetTotalCountByQuery(ctx context.Context, parameters SecurityProblemsV2ClientQueryParameters) (int, error) {
+	err := NewTimeframeDelay(parameters.timeframe, SecurityProblemsV2RequiredDelay, SecurityProblemsV2MaximumWait).Wait(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	body, err := sc.client.Get(SecurityProblemsPath + "?" + parameters.encode())
+	body, err := sc.client.Get(ctx, SecurityProblemsPath+"?"+parameters.encode())
 	if err != nil {
 		return 0, err
 	}

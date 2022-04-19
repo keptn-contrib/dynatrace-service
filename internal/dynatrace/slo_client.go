@@ -64,15 +64,15 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 	}
 }
 
-// Get calls Dynatrace API to retrieve the values of the Dynatrace SLO for that timeframe
-// It returns a SLOResult object on success, an error otherwise
-func (c *SLOClient) Get(parameters SLOClientGetParameters) (*SLOResult, error) {
-	err := NewTimeframeDelay(parameters.timeframe, SLORequiredDelay, SLOMaximumWait).Wait(context.TODO())
+// Get calls Dynatrace API to retrieve the values of the Dynatrace SLO for that timeframe.
+// It returns a SLOResult object on success, an error otherwise.
+func (c *SLOClient) Get(ctx context.Context, parameters SLOClientGetParameters) (*SLOResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, SLORequiredDelay, SLOMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := c.client.Get(SLOPath + "/" + parameters.encode())
+	body, err := c.client.Get(ctx, SLOPath+"/"+parameters.encode())
 	if err != nil {
 		return nil, err
 	}

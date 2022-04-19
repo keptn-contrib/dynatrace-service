@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
@@ -61,8 +62,9 @@ func NewManagementZonesClient(client ClientInterface) *ManagementZonesClient {
 	}
 }
 
-func (mzc *ManagementZonesClient) GetAll() (*ManagementZones, error) {
-	response, err := mzc.client.Get(managementZonesPath)
+// GetAll gets all management zones.
+func (mzc *ManagementZonesClient) GetAll(ctx context.Context) (*ManagementZones, error) {
+	response, err := mzc.client.Get(ctx, managementZonesPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve management zones: %v", err)
 	}
@@ -87,13 +89,14 @@ func transformToManagementZones(response *listResponse) *ManagementZones {
 	return managementZones
 }
 
-func (mzc *ManagementZonesClient) Create(managementZone *ManagementZone) error {
+// Create creates a management zone.
+func (mzc *ManagementZonesClient) Create(ctx context.Context, managementZone *ManagementZone) error {
 	mzPayload, err := json.Marshal(managementZone)
 	if err != nil {
 		return fmt.Errorf("failed to marshal management zone for project: %v", err)
 	}
 
-	_, err = mzc.client.Post(managementZonesPath, mzPayload)
+	_, err = mzc.client.Post(ctx, managementZonesPath, mzPayload)
 	if err != nil {
 		return fmt.Errorf("failed to create management zone: %v", err)
 	}

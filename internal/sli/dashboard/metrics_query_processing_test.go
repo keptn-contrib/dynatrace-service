@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -242,7 +243,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			defer teardown()
 
 			processing := NewMetricsQueryProcessing(dtClient)
-			tileResults := processing.Process(tt.args.noOfDimensionsInChart, tt.args.sloDefinition, tt.args.metricQueryComponents)
+			tileResults := processing.Process(context.TODO(), tt.args.noOfDimensionsInChart, tt.args.sloDefinition, tt.args.metricQueryComponents)
 
 			assert.EqualValues(t, tt.expectedResults, tileResults)
 		})

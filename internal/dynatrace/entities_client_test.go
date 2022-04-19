@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -99,7 +100,7 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 				Client: tt.fields.client,
 			}
 			returnedEntitiesResponse = tt.returnedEntitiesListResponse
-			got, err := ec.GetKeptnManagedServices()
+			got, err := ec.GetKeptnManagedServices(context.TODO())
 			if (err != nil) != tt.wantErr {
 				t.Errorf("fetchKeptnManagedServicesFromDynatrace() error = %v, wantErr %v", err, tt.wantErr)
 				return

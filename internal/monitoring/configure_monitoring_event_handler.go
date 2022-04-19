@@ -40,14 +40,14 @@ func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterfac
 
 // HandleEvent handles a configure monitoring event.
 func (eh ConfigureMonitoringEventHandler) HandleEvent(ctx context.Context) error {
-	err := eh.configureMonitoring()
+	err := eh.configureMonitoring(ctx)
 	if err != nil {
 		log.WithError(err).Error("Configure monitoring failed")
 	}
 	return nil
 }
 
-func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
+func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Context) error {
 	log.Info("Configuring Dynatrace monitoring")
 	if eh.event.IsNotForDynatrace() {
 		return nil
@@ -82,7 +82,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sloReader, eh.serviceClient)
 
-	configuredEntities, err := cfg.ConfigureMonitoring(eh.event.GetProject(), *shipyard)
+	configuredEntities, err := cfg.ConfigureMonitoring(ctx, eh.event.GetProject(), *shipyard)
 	if err != nil {
 		return eh.handleError(err)
 	}

@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
@@ -21,7 +22,7 @@ func TestFindDynatraceDashboardSuccess(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
-	dashboardID, err := dh.findDynatraceDashboard()
+	dashboardID, err := dh.findDynatraceDashboard(context.TODO())
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, dashboardID, QUALITYGATE_DASHBOARD_ID)
@@ -36,7 +37,7 @@ func TestFindDynatraceDashboardNoneExistingDashboard(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
-	dashboardID, err := dh.findDynatraceDashboard()
+	dashboardID, err := dh.findDynatraceDashboard(context.TODO())
 
 	assert.Error(t, err)
 	assert.Empty(t, dashboardID)
@@ -52,7 +53,7 @@ func TestLoadDynatraceDashboardWithQUERY(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
-	dashboard, dashboardID, err := dh.Retrieve(common.DynatraceConfigDashboardQUERY)
+	dashboard, dashboardID, err := dh.Retrieve(context.TODO(), common.DynatraceConfigDashboardQUERY)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, dashboard)
@@ -68,7 +69,7 @@ func TestLoadDynatraceDashboardWithID(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
-	dashboard, dashboardID, err := dh.Retrieve(QUALITYGATE_DASHBOARD_ID)
+	dashboard, dashboardID, err := dh.Retrieve(context.TODO(), QUALITYGATE_DASHBOARD_ID)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, dashboard)
@@ -83,7 +84,7 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
-	dashboardJSON, dashboard, err := dh.Retrieve("")
+	dashboardJSON, dashboard, err := dh.Retrieve(context.TODO(), "")
 
 	if assert.Error(t, err) {
 		assert.Contains(t, err.Error(), "invalid 'dashboard'")

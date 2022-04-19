@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sort"
@@ -34,7 +35,7 @@ func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData
 }
 
 // Process processes the specified Custom Charting dashboard tile.
-func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
+func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
 	if tile.FilterConfig == nil {
 		log.Debug("Skipping custom charting tile as it is missing a filterConfig element")
 		return nil
@@ -61,12 +62,12 @@ func (p *CustomChartingTileProcessing) Process(tile *dynatrace.Tile, dashboardFi
 		return []*TileResult{&failedTileResult}
 	}
 
-	return p.processSeries(sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
+	return p.processSeries(ctx, sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
 }
 
-func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []*TileResult {
+func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition *keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []*TileResult {
 
-	metricQuery, err := p.generateMetricQueryFromChart(series, tileManagementZoneFilter, filtersPerEntityType)
+	metricQuery, err := p.generateMetricQueryFromChartSeries(ctx, series, tileManagementZoneFilter, filtersPerEntityType)
 
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
@@ -74,22 +75,13 @@ func (p *CustomChartingTileProcessing) processSeries(sloDefinition *keptnapi.SLO
 		return []*TileResult{&failedTileResult}
 	}
 
-	return NewMetricsQueryProcessing(p.client).Process(len(series.Dimensions), sloDefinition, metricQuery)
+	return NewMetricsQueryProcessing(p.client).Process(ctx, len(series.Dimensions), sloDefinition, metricQuery)
 }
 
-// Looks at the ChartSeries configuration of a regular chart and generates the Metrics Query
-//
-// Returns a queryComponents object
-//   - metricId, e.g: built-in:mymetric
-//   - metricUnit, e.g: MilliSeconds
-//   - metricQuery, e.g: metricSelector=metric&filter...
-//   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
-//   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
-//   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (p *CustomChartingTileProcessing) generateMetricQueryFromChart(series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) (*queryComponents, error) {
+func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx context.Context, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) (*queryComponents, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
-	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(series.Metric)
+	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(ctx, series.Metric)
 	if err != nil {
 		log.WithError(err).WithField("metric", series.Metric).Debug("Error retrieving metric description")
 		return nil, err

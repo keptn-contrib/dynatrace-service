@@ -61,7 +61,7 @@ func (eh GetSLIEventHandler) HandleEvent(ctx context.Context) error {
 			"service": eh.event.GetService(),
 		}).Info("Processing sh.keptn.event.get-sli.triggered")
 
-	sliResults, err := eh.retrieveSLIResults()
+	sliResults, err := eh.retrieveSLIResults(ctx)
 	if err != nil {
 		log.WithError(err).Error("error retrieving SLIs")
 		return eh.sendGetSLIFinishedEvent(nil, err)
@@ -71,8 +71,8 @@ func (eh GetSLIEventHandler) HandleEvent(ctx context.Context) error {
 	return eh.sendGetSLIFinishedEvent(sliResults, err)
 }
 
-// retrieveSLIResults will retrieve metrics either from a dashboard or from an SLI file
-func (eh *GetSLIEventHandler) retrieveSLIResults() ([]result.SLIResult, error) {
+// retrieveSLIResults will retrieve metrics either from a dashboard or from an SLI file.
+func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.SLIResult, error) {
 	// Adding DtCreds as a label so users know which DtCreds was used
 	eh.event.AddLabel("DtCreds", eh.secretName)
 
@@ -81,7 +81,7 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]result.SLIResult, error) {
 		return nil, err
 	}
 
-	sliResults, err := eh.getSLIResults(*timeframe)
+	sliResults, err := eh.getSLIResults(ctx, *timeframe)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]result.SLIResult, error) {
 	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
 	problemID := keptn.TryGetProblemIDFromLabels(eh.event)
 	if problemID != "" {
-		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(problemID))
+		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(ctx, problemID))
 	}
 
 	// if no result values have been captured, return an error
@@ -101,15 +101,15 @@ func (eh *GetSLIEventHandler) retrieveSLIResults() ([]result.SLIResult, error) {
 	return sliResults, nil
 }
 
-func (eh *GetSLIEventHandler) getSLIResults(timeframe common.Timeframe) ([]result.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
 	// If no dashboard specified, query the SLIs based on the SLI.yaml definition
 	if eh.dashboard == "" {
-		return eh.getSLIResultsFromCustomQueries(timeframe)
+		return eh.getSLIResultsFromCustomQueries(ctx, timeframe)
 	}
 
 	// See if we can get the data from a Dynatrace Dashboard
 	var dashboardLinkAsLabel *dashboard.DashboardLink
-	dashboardLinkAsLabel, sliResults, err := eh.getSLIResultsFromDynatraceDashboard(timeframe)
+	dashboardLinkAsLabel, sliResults, err := eh.getSLIResultsFromDynatraceDashboard(ctx, timeframe)
 	if err != nil {
 		return nil, err
 	}
@@ -122,10 +122,10 @@ func (eh *GetSLIEventHandler) getSLIResults(timeframe common.Timeframe) ([]resul
 }
 
 // getSLIResultsFromDynatraceDashboard will process dynatrace dashboard (if found) and return SLIResults
-func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(timeframe common.Timeframe) (*dashboard.DashboardLink, []result.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Context, timeframe common.Timeframe) (*dashboard.DashboardLink, []result.SLIResult, error) {
 
 	sliQuerying := dashboard.NewQuerying(eh.event, eh.event.GetCustomSLIFilters(), eh.dtClient)
-	queryResult, err := sliQuerying.GetSLIValues(eh.dashboard, timeframe)
+	queryResult, err := sliQuerying.GetSLIValues(ctx, eh.dashboard, timeframe)
 	if err != nil {
 		return nil, nil, dashboard.NewQueryError(err)
 	}
@@ -149,7 +149,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(timeframe comm
 	return queryResult.DashboardLink(), queryResult.SLIResults(), nil
 }
 
-func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(timeframe common.Timeframe) ([]result.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
 	// get custom metrics for project if they exist
 	projectCustomQueries, err := eh.kClient.GetCustomQueries(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
@@ -168,13 +168,13 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(timeframe common.Ti
 			continue
 		}
 
-		sliResults = append(sliResults, queryProcessing.GetSLIResultFromIndicator(indicator))
+		sliResults = append(sliResults, queryProcessing.GetSLIResultFromIndicator(ctx, indicator))
 	}
 
 	return sliResults, nil
 }
 
-func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) result.SLIResult {
+func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Context, problemID string) result.SLIResult {
 	// let's add this to the SLO in case this indicator is not yet in SLO.yaml.
 	// Because if it does not get added the lighthouse will not evaluate the SLI values
 	// we default it to open_problems<=0
@@ -187,7 +187,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(problemID string) 
 		log.WithError(errAddSlo).Error("problem while adding SLOs")
 	}
 
-	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(problemID)
+	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(ctx, problemID)
 	if err != nil {
 		return result.NewFailedSLIResult(ProblemOpenSLI, err.Error())
 	}

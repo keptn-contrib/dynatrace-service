@@ -55,12 +55,12 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error
 			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetResult(), eh.event.GetEvaluationScore())
 
 			// this is posting the Event on the problem as a comment
-			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(pid, comment)
+			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 		}
 	}
 	ie.Description = qualityGateDescription
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ie)
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, ie)
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
@@ -19,12 +20,11 @@ func NewProblemNotificationCreation(client dynatrace.ClientInterface) *ProblemNo
 	}
 }
 
-// Create sets up/updates the DT problem notification and returns it
-func (pn *ProblemNotificationCreation) Create(project string) *ConfigResult {
+// Create sets up/updates the DT problem notification and returns it.
+func (pn *ProblemNotificationCreation) Create(ctx context.Context, project string) *ConfigResult {
 	log.Info("Setting up problem notifications in Dynatrace Tenant")
 
-	alertingProfileId, err := getOrCreateKeptnAlertingProfile(
-		dynatrace.NewAlertingProfilesClient(pn.client))
+	alertingProfileId, err := getOrCreateKeptnAlertingProfile(ctx, dynatrace.NewAlertingProfilesClient(pn.client))
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
 		return &ConfigResult{
@@ -34,7 +34,7 @@ func (pn *ProblemNotificationCreation) Create(project string) *ConfigResult {
 	}
 
 	notificationsClient := dynatrace.NewNotificationsClient(pn.client)
-	err = notificationsClient.DeleteExistingKeptnProblemNotifications()
+	err = notificationsClient.DeleteExistingKeptnProblemNotifications(ctx)
 	if err != nil {
 		log.WithError(err).Error("failed to delete existing notifications")
 	}
@@ -48,7 +48,7 @@ func (pn *ProblemNotificationCreation) Create(project string) *ConfigResult {
 		}
 	}
 
-	err = notificationsClient.Create(keptnCredentials, alertingProfileId, project)
+	err = notificationsClient.Create(ctx, keptnCredentials, alertingProfileId, project)
 	if err != nil {
 		log.WithError(err).Error("Failed to create problem notification")
 		return &ConfigResult{
@@ -63,9 +63,9 @@ func (pn *ProblemNotificationCreation) Create(project string) *ConfigResult {
 	}
 }
 
-func getOrCreateKeptnAlertingProfile(alertingProfilesClient *dynatrace.AlertingProfilesClient) (string, error) {
+func getOrCreateKeptnAlertingProfile(ctx context.Context, alertingProfilesClient *dynatrace.AlertingProfilesClient) (string, error) {
 	log.Info("Checking Keptn alerting profile availability")
-	alertingProfileID, err := alertingProfilesClient.GetProfileID("Keptn")
+	alertingProfileID, err := alertingProfilesClient.GetProfileID(ctx, "Keptn")
 	if err != nil {
 		log.WithError(err).Error("Could not get alerting profiles")
 	}
@@ -76,7 +76,7 @@ func getOrCreateKeptnAlertingProfile(alertingProfilesClient *dynatrace.AlertingP
 
 	log.Info("Creating Keptn alerting profile.")
 	alertingProfile := createKeptnAlertingProfile()
-	profileID, err := alertingProfilesClient.Create(alertingProfile)
+	profileID, err := alertingProfilesClient.Create(ctx, alertingProfile)
 	if err != nil {
 		return "", fmt.Errorf("failed to create Keptn alerting profile: %v", err)
 	}

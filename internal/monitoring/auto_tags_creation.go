@@ -1,6 +1,8 @@
 package monitoring
 
 import (
+	"context"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	log "github.com/sirupsen/logrus"
@@ -16,12 +18,12 @@ func NewAutoTagCreation(client dynatrace.ClientInterface) *AutoTagCreation {
 	}
 }
 
-// Create creates auto-tags in Dynatrace and returns the tagging rules
-func (at *AutoTagCreation) Create() []ConfigResult {
+// Create creates auto-tags in Dynatrace and returns the tagging rules.
+func (at *AutoTagCreation) Create(ctx context.Context) []ConfigResult {
 	log.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
 	autoTagsClient := dynatrace.NewAutoTagClient(at.client)
-	existingDTRuleNames, err := autoTagsClient.GetAllTagNames()
+	existingDTRuleNames, err := autoTagsClient.GetAllTagNames(ctx)
 	if err != nil {
 		// Error occurred but continue
 		// TODO 2021-08-18: should this error just be ignored?
@@ -32,16 +34,16 @@ func (at *AutoTagCreation) Create() []ConfigResult {
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
 		taggingRulesResults = append(
 			taggingRulesResults,
-			createAutoTaggingRuleForRuleName(autoTagsClient, existingDTRuleNames, ruleName))
+			createAutoTaggingRuleForRuleName(ctx, autoTagsClient, existingDTRuleNames, ruleName))
 	}
 	return taggingRulesResults
 }
 
-func createAutoTaggingRuleForRuleName(client *dynatrace.AutoTagsClient, existingTagNames *dynatrace.TagNames, ruleName string) ConfigResult {
+func createAutoTaggingRuleForRuleName(ctx context.Context, client *dynatrace.AutoTagsClient, existingTagNames *dynatrace.TagNames, ruleName string) ConfigResult {
 	if !existingTagNames.Contains(ruleName) {
 		rule := createAutoTaggingRuleDTO(ruleName)
 
-		err := client.Create(rule)
+		err := client.Create(ctx, rule)
 		if err != nil {
 			// Error occurred but continue
 			log.WithError(err).Error("Could not create auto tagging rule")

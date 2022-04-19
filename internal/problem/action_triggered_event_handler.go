@@ -54,7 +54,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 	dtInfoEvent.Title = "Keptn Remediation Action Triggered"
 	dtInfoEvent.Description = eh.event.GetAction()
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(dtInfoEvent)
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, dtInfoEvent)
 
 	// this is posting the Event on the problem as a comment
 	comment = fmt.Sprintf("[Keptn triggered action](%s) %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetAction())
@@ -62,7 +62,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		comment = comment + ": " + eh.event.GetActionDescription()
 	}
 
-	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(pid, comment)
+	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 
 	return nil
 }

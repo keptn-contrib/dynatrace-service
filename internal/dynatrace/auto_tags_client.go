@@ -1,7 +1,9 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -53,19 +55,21 @@ func NewAutoTagClient(client ClientInterface) *AutoTagsClient {
 	}
 }
 
-func (atc *AutoTagsClient) Create(rule *DTTaggingRule) error {
+// Create creates an auto-tagging rule.
+func (atc *AutoTagsClient) Create(ctx context.Context, rule *DTTaggingRule) error {
 	log.WithField("name", rule.Name).Info("Creating DT tagging rule")
 	payload, err := json.Marshal(rule)
 	if err != nil {
 		return err
 	}
 
-	_, err = atc.client.Post(autoTagsPath, payload)
+	_, err = atc.client.Post(ctx, autoTagsPath, payload)
 	return err
 }
 
-func (atc *AutoTagsClient) GetAllTagNames() (*TagNames, error) {
-	response, err := atc.client.Get(autoTagsPath)
+// GetAllTagNames gets names of all tag rules.
+func (atc *AutoTagsClient) GetAllTagNames(ctx context.Context) (*TagNames, error) {
+	response, err := atc.client.Get(ctx, autoTagsPath)
 	if err != nil {
 		log.WithError(err).Error("Could not get existing tagging rules")
 		return nil, err

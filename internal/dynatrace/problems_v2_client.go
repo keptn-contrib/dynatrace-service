@@ -78,14 +78,14 @@ func NewProblemsV2Client(client ClientInterface) *ProblemsV2Client {
 	}
 }
 
-// GetTotalCountByQuery calls the Dynatrace V2 API to retrieve the total count of problems for a given query and timeframe
-func (pc *ProblemsV2Client) GetTotalCountByQuery(parameters ProblemsV2ClientQueryParameters) (int, error) {
-	err := NewTimeframeDelay(parameters.timeframe, ProblemsV2RequiredDelay, ProblemsV2MaximumWait).Wait(context.TODO())
+// GetTotalCountByQuery calls the Dynatrace V2 API to retrieve the total count of problems for a given query and timeframe.
+func (pc *ProblemsV2Client) GetTotalCountByQuery(ctx context.Context, parameters ProblemsV2ClientQueryParameters) (int, error) {
+	err := NewTimeframeDelay(parameters.timeframe, ProblemsV2RequiredDelay, ProblemsV2MaximumWait).Wait(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	body, err := pc.client.Get(ProblemsV2Path + "?" + parameters.encode())
+	body, err := pc.client.Get(ctx, ProblemsV2Path+"?"+parameters.encode())
 	if err != nil {
 		return 0, err
 	}
@@ -99,9 +99,9 @@ func (pc *ProblemsV2Client) GetTotalCountByQuery(parameters ProblemsV2ClientQuer
 	return result.TotalCount, nil
 }
 
-// GetStatusByID calls the Dynatrace API to retrieve the status of a given problemID
-func (pc *ProblemsV2Client) GetStatusByID(problemID string) (string, error) {
-	body, err := pc.client.Get(ProblemsV2Path + "/" + problemID)
+// GetStatusByID calls the Dynatrace API to retrieve the status of a given problemID.
+func (pc *ProblemsV2Client) GetStatusByID(ctx context.Context, problemID string) (string, error) {
+	body, err := pc.client.Get(ctx, ProblemsV2Path+"/"+problemID)
 	if err != nil {
 		return "", err
 	}

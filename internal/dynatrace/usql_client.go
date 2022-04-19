@@ -67,14 +67,14 @@ func NewUSQLClient(client ClientInterface) *USQLClient {
 	}
 }
 
-// GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set
-func (uc *USQLClient) GetByQuery(parameters USQLClientQueryParameters) (*DTUSQLResult, error) {
-	err := NewTimeframeDelay(parameters.timeframe, USQLRequiredDelay, USQLMaximumWait).Wait(context.TODO())
+// GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set.
+func (uc *USQLClient) GetByQuery(ctx context.Context, parameters USQLClientQueryParameters) (*DTUSQLResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, USQLRequiredDelay, USQLMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := uc.client.Get(USQLPath + "?" + parameters.encode())
+	body, err := uc.client.Get(ctx, USQLPath+"?"+parameters.encode())
 	if err != nil {
 		return nil, err
 	}

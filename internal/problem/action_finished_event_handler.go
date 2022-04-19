@@ -54,16 +54,16 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 		dtConfigEvent.Description = "Keptn Remediation Action Finished"
 		dtConfigEvent.Configuration = "successful"
 
-		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(dtConfigEvent)
+		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(ctx, dtConfigEvent)
 	} else {
 		dtInfoEvent := dynatrace.CreateInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
 		dtInfoEvent.Title = "Keptn Remediation Action Finished"
 		dtInfoEvent.Description = "error during execution"
 
-		dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(dtInfoEvent)
+		dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, dtInfoEvent)
 	}
 
-	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(pid, comment)
+	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 
 	return nil
 }

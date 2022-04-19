@@ -1,6 +1,8 @@
 package monitoring
 
 import (
+	"context"
+
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -40,30 +42,30 @@ func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient kep
 }
 
 // ConfigureMonitoring configures Dynatrace for a Keptn project
-func (mc *Configuration) ConfigureMonitoring(project string, shipyard keptnv2.Shipyard) (*ConfiguredEntities, error) {
+func (mc *Configuration) ConfigureMonitoring(ctx context.Context, project string, shipyard keptnv2.Shipyard) (*ConfiguredEntities, error) {
 
 	configuredEntities := &ConfiguredEntities{}
 
 	if env.IsTaggingRulesGenerationEnabled() {
-		configuredEntities.TaggingRules = NewAutoTagCreation(mc.dtClient).Create()
+		configuredEntities.TaggingRules = NewAutoTagCreation(mc.dtClient).Create(ctx)
 	}
 
 	if env.IsProblemNotificationsGenerationEnabled() {
-		configuredEntities.ProblemNotifications = NewProblemNotificationCreation(mc.dtClient).Create(project)
+		configuredEntities.ProblemNotifications = NewProblemNotificationCreation(mc.dtClient).Create(ctx, project)
 	}
 
 	if env.IsManagementZonesGenerationEnabled() {
-		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(project, shipyard)
+		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(ctx, project, shipyard)
 	}
 
 	if env.IsDashboardsGenerationEnabled() {
-		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(project, shipyard)
+		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(ctx, project, shipyard)
 	}
 
 	if env.IsMetricEventsGenerationEnabled() {
 		var metricEvents []ConfigResult
 		for _, stage := range shipyard.Spec.Stages {
-			metricEvents = append(metricEvents, mc.createMetricEventsForStage(project, stage)...)
+			metricEvents = append(metricEvents, mc.createMetricEventsForStage(ctx, project, stage)...)
 		}
 		configuredEntities.MetricEvents = metricEvents
 	}
@@ -71,7 +73,7 @@ func (mc *Configuration) ConfigureMonitoring(project string, shipyard keptnv2.Sh
 	return configuredEntities, nil
 }
 
-func (mc *Configuration) createMetricEventsForStage(project string, stage keptnv2.Stage) []ConfigResult {
+func (mc *Configuration) createMetricEventsForStage(ctx context.Context, project string, stage keptnv2.Stage) []ConfigResult {
 	if isStageMissingRemediationSequence(stage) {
 		return nil
 	}
@@ -88,7 +90,7 @@ func (mc *Configuration) createMetricEventsForStage(project string, stage keptnv
 	for _, serviceName := range serviceNames {
 		metricEvents = append(
 			metricEvents,
-			NewMetricEventCreation(mc.dtClient, mc.kClient, mc.sloReader).Create(project, stage.Name, serviceName)...)
+			NewMetricEventCreation(mc.dtClient, mc.kClient, mc.sloReader).Create(ctx, project, stage.Name, serviceName)...)
 	}
 	return metricEvents
 }

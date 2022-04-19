@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -35,7 +36,7 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 
 // Process processes the specified USQL dashboard tile.
 // TODO: 2022-03-07: Investigate if all error and warning cases are covered. E.g. what happens if a query returns no results?
-func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
+func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []*TileResult {
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.CustomName)
 	if sloDefinition.SLI == "" {
 		log.WithField("tile.CustomName", tile.CustomName).Debug("Tile not included as name doesnt include sli=SLINAME")
@@ -48,7 +49,7 @@ func (p *USQLTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 		return []*TileResult{&failedTileResult}
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(*query, p.timeframe))
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, dynatrace.NewUSQLClientQueryParameters(*query, p.timeframe))
 	if err != nil {
 		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "error querying User sessions API: "+err.Error())
 		return []*TileResult{&failedTileResult}

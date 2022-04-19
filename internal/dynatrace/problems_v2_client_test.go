@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -20,7 +21,7 @@ func TestProblemsV2Client_GetTotalCountByQuery(t *testing.T) {
 	assert.NoError(t, err)
 
 	problemQuery := problems.NewQuery("status(\"open\")", "")
-	totalProblemCount, err := NewProblemsV2Client(dtClient).GetTotalCountByQuery(NewProblemsV2ClientQueryParameters(problemQuery, *timeframe))
+	totalProblemCount, err := NewProblemsV2Client(dtClient).GetTotalCountByQuery(context.TODO(), NewProblemsV2ClientQueryParameters(problemQuery, *timeframe))
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, totalProblemCount)
@@ -33,7 +34,7 @@ func TestProblemsV2Client_GetStatusById(t *testing.T) {
 	dtClient, _, teardown := createDynatraceClient(t, handler)
 	defer teardown()
 
-	status, err := NewProblemsV2Client(dtClient).GetStatusByID("-6004362228644432354_1638271020000V2")
+	status, err := NewProblemsV2Client(dtClient).GetStatusByID(context.TODO(), "-6004362228644432354_1638271020000V2")
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, ProblemStatusOpen, status)

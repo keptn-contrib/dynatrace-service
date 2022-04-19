@@ -55,7 +55,7 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		}
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ie)
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, ie)
 
 	return nil
 }

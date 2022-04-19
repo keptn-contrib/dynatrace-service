@@ -37,7 +37,7 @@ func (eh *TestFinishedEventHandler) HandleEvent(ctx context.Context) error {
 		ae.AnnotationDescription = "Stop running tests: against " + eh.event.GetService()
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ae)
+	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ctx, ae)
 
 	return nil
 }
