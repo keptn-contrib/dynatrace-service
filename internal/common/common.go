@@ -97,7 +97,7 @@ func ParsePassAndWarningFromString(customName string, defaultPass []string, defa
 
 	nameValueSplits := strings.Split(customName, ";")
 
-	// lets iterate through all name-value pairs which are separated through ";" to extract keys such as warning, pass, weight, key, sli
+	// let's iterate through all name-value pairs which are separated through ";" to extract keys such as warning, pass, weight, key, sli
 	for i := 0; i < len(nameValueSplits); i++ {
 
 		nameValueDividerIndex := strings.Index(nameValueSplits[i], "=")
@@ -110,7 +110,7 @@ func ParsePassAndWarningFromString(customName string, defaultPass []string, defa
 		nameString := strings.ToLower(nameValueSplits[i][:nameValueDividerIndex])
 		valueString := nameValueSplits[i][nameValueDividerIndex+1:]
 		var err error
-		switch nameString /*nameValueSplit[0]*/ {
+		switch nameString {
 		case "sli":
 			result.SLI = valueString
 		case "pass":
