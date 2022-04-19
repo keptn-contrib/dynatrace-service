@@ -1,6 +1,8 @@
 package event_handler
 
 import (
+	"context"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -28,7 +30,8 @@ func NewErrorHandler(err error, event cloudevents.Event, uniformClient keptn.Uni
 	}
 }
 
-func (eh ErrorHandler) HandleEvent() error {
+// HandleEvent handles errors by sending an error event.
+func (eh ErrorHandler) HandleEvent(ctx context.Context) error {
 	keptnClient, err := keptn.NewDefaultClient(eh.evt)
 	if err != nil {
 		log.WithError(err).Error("Could not instantiate Keptn client")

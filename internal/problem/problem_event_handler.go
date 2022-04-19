@@ -1,6 +1,8 @@
 package problem
 
 import (
+	"context"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -37,7 +39,8 @@ type RemediationTriggeredEventData struct {
 	Problem RawProblem `json:"problem"`
 }
 
-func (eh ProblemEventHandler) HandleEvent() error {
+// HandleEvent handles a problem event.
+func (eh ProblemEventHandler) HandleEvent(ctx context.Context) error {
 	if eh.event.IsNotFromDynatrace() {
 		log.WithField("eventSource", eh.event.GetSource()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
 		return nil

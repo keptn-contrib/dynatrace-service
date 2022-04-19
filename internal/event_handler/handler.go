@@ -1,6 +1,7 @@
 package event_handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -22,14 +23,15 @@ import (
 
 // DynatraceEventHandler is the common interface for all event handlers.
 type DynatraceEventHandler interface {
-	HandleEvent() error
+	// HandleEvent handles an event.
+	HandleEvent(ctx context.Context) error
 }
 
 // NewEventHandler creates a new DynatraceEventHandler for the specified event.
-func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
+func NewEventHandler(ctx context.Context, event cloudevents.Event) DynatraceEventHandler {
 	clientFactory := keptn.NewClientFactory()
 
-	eventHandler, err := getEventHandler(event, clientFactory)
+	eventHandler, err := getEventHandler(ctx, event, clientFactory)
 	if err != nil {
 		err = fmt.Errorf("cannot handle event: %w", err)
 		log.Error(err.Error())
@@ -39,7 +41,7 @@ func NewEventHandler(event cloudevents.Event) DynatraceEventHandler {
 	return eventHandler
 }
 
-func getEventHandler(event cloudevents.Event, clientFactory keptn.ClientFactoryInterface) (DynatraceEventHandler, error) {
+func getEventHandler(ctx context.Context, event cloudevents.Event, clientFactory keptn.ClientFactoryInterface) (DynatraceEventHandler, error) {
 	log.WithField("eventType", event.Type()).Debug("Received event")
 
 	keptnEvent, err := getEventAdapter(event)

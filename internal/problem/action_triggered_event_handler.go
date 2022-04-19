@@ -1,6 +1,7 @@
 package problem
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -27,8 +28,8 @@ func NewActionTriggeredEventHandler(event ActionTriggeredAdapterInterface, dtCli
 	}
 }
 
-// HandleEvent handles an action triggered event
-func (eh *ActionTriggeredEventHandler) HandleEvent() error {
+// HandleEvent handles an action triggered event.
+func (eh *ActionTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 	pid, err := eh.eClient.FindProblemID(eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")

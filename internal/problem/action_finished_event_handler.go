@@ -1,6 +1,7 @@
 package problem
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -27,8 +28,8 @@ func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, dtClien
 	}
 }
 
-// HandleEvent handles an action finished event
-func (eh *ActionFinishedEventHandler) HandleEvent() error {
+// HandleEvent handles an action finished event.
+func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 	// lets find our dynatrace problem details for this remediation workflow
 	pid, err := eh.eClient.FindProblemID(eh.event)
 	if err != nil {

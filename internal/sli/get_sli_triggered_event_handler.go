@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -42,7 +43,8 @@ func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient d
 	}
 }
 
-func (eh GetSLIEventHandler) HandleEvent() error {
+// HandleEvent handles a get-SLI triggered event.
+func (eh GetSLIEventHandler) HandleEvent(ctx context.Context) error {
 	// do not continue if SLIProvider is not dynatrace
 	if eh.event.IsNotForDynatrace() {
 		return nil

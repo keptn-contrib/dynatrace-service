@@ -1,6 +1,7 @@
 package deployment
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -27,8 +28,8 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 	}
 }
 
-// HandleEvent handles an action finished event
-func (eh *EvaluationFinishedEventHandler) HandleEvent() error {
+// HandleEvent handles an action finished event.
+func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error {
 
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
 

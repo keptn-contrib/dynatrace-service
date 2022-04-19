@@ -1,8 +1,11 @@
 package event_handler
 
+import "context"
+
 type NoOpHandler struct {
 }
 
-func (eh NoOpHandler) HandleEvent() error {
+// HandleEvent handles an event by doing nothing.
+func (eh NoOpHandler) HandleEvent(ctx context.Context) error {
 	return nil
 }

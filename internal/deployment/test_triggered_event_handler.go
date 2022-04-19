@@ -1,6 +1,8 @@
 package deployment
 
 import (
+	"context"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
@@ -22,8 +24,8 @@ func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient 
 	}
 }
 
-// HandleEvent handles an action finished event
-func (eh *TestTriggeredEventHandler) HandleEvent() error {
+// HandleEvent handles an action finished event.
+func (eh *TestTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
 

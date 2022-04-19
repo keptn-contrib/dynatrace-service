@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -37,7 +38,8 @@ func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterfac
 	}
 }
 
-func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
+// HandleEvent handles a configure monitoring event.
+func (eh ConfigureMonitoringEventHandler) HandleEvent(ctx context.Context) error {
 	err := eh.configureMonitoring()
 	if err != nil {
 		log.WithError(err).Error("Configure monitoring failed")
