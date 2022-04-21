@@ -86,8 +86,8 @@ func NewClient(client *keptnv2.Keptn) *Client {
 
 func NewDefaultClient(event event.Event) (*Client, error) {
 	keptnOpts := keptnapi.KeptnOpts{
-		ConfigurationServiceURL: GetConfigurationServiceURL(),
-		DatastoreURL:            GetDatastoreURL(),
+		ConfigurationServiceURL: getConfigurationServiceURL(),
+		DatastoreURL:            getDatastoreURL(),
 	}
 	kClient, err := keptnv2.NewKeptn(&event, keptnOpts)
 	if err != nil {

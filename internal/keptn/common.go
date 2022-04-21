@@ -8,18 +8,18 @@ const datastoreEnvironmentVariableName = "DATASTORE"
 
 const defaultShipyardControllerURL = "http://shipyard-controller:8080"
 
-// GetConfigurationServiceURL Returns the endpoint to the configuration-service
-func GetConfigurationServiceURL() string {
+// getConfigurationServiceURL Returns the endpoint to the configuration-service.
+func getConfigurationServiceURL() string {
 	return getKeptnServiceURL(configurationServiceEnvironmentVariableName, keptn.ConfigurationServiceURL)
 }
 
-// GetDatastoreURL Returns the endpoint to the datastore
-func GetDatastoreURL() string {
+// getDatastoreURL Returns the endpoint to the datastore.
+func getDatastoreURL() string {
 	return getKeptnServiceURL(datastoreEnvironmentVariableName, keptn.DatastoreURL)
 }
 
-// GetShipyardControllerURL Returns the endpoint to the shipyard-controller
-func GetShipyardControllerURL() string {
+// getShipyardControllerURL Returns the endpoint to the shipyard-controller.
+func getShipyardControllerURL() string {
 	return getKeptnServiceURL(shipyardControllerURLEnvironmentVariableName, defaultShipyardControllerURL)
 }
 

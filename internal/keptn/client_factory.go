@@ -25,22 +25,22 @@ func NewClientFactory() *ClientFactory {
 
 // CreateEventClient creates an EventClientInterface.
 func (c *ClientFactory) CreateEventClient() EventClientInterface {
-	return NewEventClient(api.NewEventHandler(GetDatastoreURL()))
+	return NewEventClient(api.NewEventHandler(getDatastoreURL()))
 }
 
 // CreateResourceClient creates a ResourceClientInterface.
 func (c *ClientFactory) CreateResourceClient() ResourceClientInterface {
-	return NewResourceClient(api.NewResourceHandler(GetConfigurationServiceURL()))
+	return NewResourceClient(api.NewResourceHandler(getConfigurationServiceURL()))
 }
 
 // CreateServiceClient creates a ServiceClientInterface.
 func (c *ClientFactory) CreateServiceClient() ServiceClientInterface {
 	return NewServiceClient(
-		api.NewServiceHandler(GetShipyardControllerURL()),
-		api.NewAuthenticatedAPIHandler(GetShipyardControllerURL(), "", "", &http.Client{}, "http"))
+		api.NewServiceHandler(getShipyardControllerURL()),
+		api.NewAuthenticatedAPIHandler(getShipyardControllerURL(), "", "", &http.Client{}, "http"))
 }
 
 // CreateUniformClient creates a UniformClientInterface.
 func (c *ClientFactory) CreateUniformClient() UniformClientInterface {
-	return NewUniformClient(api.NewUniformHandler(GetShipyardControllerURL()))
+	return NewUniformClient(api.NewUniformHandler(getShipyardControllerURL()))
 }
