@@ -37,7 +37,7 @@ func (c *ClientFactory) CreateResourceClient() ResourceClientInterface {
 func (c *ClientFactory) CreateServiceClient() ServiceClientInterface {
 	return NewServiceClient(
 		api.NewServiceHandler(getShipyardControllerURL()),
-		api.NewAuthenticatedAPIHandler(getShipyardControllerURL(), "", "", &http.Client{}, "http"))
+		&http.Client{})
 }
 
 // CreateUniformClient creates a UniformClientInterface.
