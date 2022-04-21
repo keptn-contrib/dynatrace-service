@@ -179,7 +179,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Contex
 	// Because if it does not get added the lighthouse will not evaluate the SLI values
 	// we default it to open_problems<=0
 	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", ProblemOpenSLI)
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
+	sloDefinition := common.ParseSLOFromString(sloString)
 
 	errAddSlo := eh.addSLO(sloDefinition)
 	if errAddSlo != nil {

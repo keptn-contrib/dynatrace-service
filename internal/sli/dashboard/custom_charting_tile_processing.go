@@ -7,13 +7,14 @@ import (
 	"sort"
 	"strings"
 
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	log "github.com/sirupsen/logrus"
 )
 
 // CustomChartingTileProcessing represents the processing of a Custom Charting dashboard tile.
@@ -41,7 +42,7 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 		return nil
 	}
 
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.FilterConfig.CustomName)
+	sloDefinition := common.ParseSLOFromString(tile.FilterConfig.CustomName)
 	if sloDefinition.SLI == "" {
 		log.WithField("tile.FilterConfig.CustomName", tile.FilterConfig.CustomName).Debug("Tile not included as name doesnt include sli=SLINAME")
 		return nil

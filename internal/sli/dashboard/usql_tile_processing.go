@@ -5,15 +5,16 @@ import (
 	"errors"
 	"fmt"
 
+	keptncommon "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
-	keptncommon "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	log "github.com/sirupsen/logrus"
 )
 
 // USQLTileProcessing represents the processing of a USQL dashboard tile.
@@ -37,7 +38,7 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 // Process processes the specified USQL dashboard tile.
 // TODO: 2022-03-07: Investigate if all error and warning cases are covered. E.g. what happens if a query returns no results?
 func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []*TileResult {
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.CustomName)
+	sloDefinition := common.ParseSLOFromString(tile.CustomName)
 	if sloDefinition.SLI == "" {
 		log.WithField("tile.CustomName", tile.CustomName).Debug("Tile not included as name doesnt include sli=SLINAME")
 		return nil

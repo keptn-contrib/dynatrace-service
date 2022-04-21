@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"strings"
 
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	log "github.com/sirupsen/logrus"
 )
 
 // DataExplorerTileProcessing represents the processing of a Data Explorer dashboard tile.
@@ -35,7 +36,7 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 // Process processes the specified Data Explorer dashboard tile.
 func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
+	sloDefinition := common.ParseSLOFromString(tile.Name)
 	if sloDefinition.SLI == "" {
 		log.WithField("tileName", tile.Name).Debug("Data explorer tile not included as name doesnt include sli=SLINAME")
 		return nil

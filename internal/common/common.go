@@ -76,18 +76,14 @@ func TimestampToUnixMillisecondsString(time time.Time) string {
 	return strconv.FormatInt(time.Unix()*1000, 10)
 }
 
-func ParsePassAndWarningWithoutDefaultsFrom(customName string) *keptncommon.SLO {
-	return ParsePassAndWarningFromString(customName, []string{}, []string{})
-}
-
-// ParsePassAndWarningFromString takes a value such as
+// ParseSLOFromString takes a value such as
 //   Example 1: Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true
 //   Example 2: Response time (P95);sli=svc_rt_p95;pass=<+10%,<600
 //   Example 3: Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false
 // can also take a value like
 // 	 "KQG;project=myproject;pass=90%;warning=75%;"
 // This will return a SLO object
-func ParsePassAndWarningFromString(customName string, defaultPass []string, defaultWarning []string) *keptncommon.SLO {
+func ParseSLOFromString(customName string) *keptncommon.SLO {
 	result := &keptncommon.SLO{
 		Weight:  1,
 		KeySLI:  false,
@@ -132,15 +128,6 @@ func ParsePassAndWarningFromString(customName string, defaultPass []string, defa
 				log.WithError(err).Warn("Error parsing weight")
 			}
 		}
-	}
-
-	// use the defaults if nothing was specified
-	if (len(result.Pass) == 0) && (len(defaultPass) > 0) {
-		result.Pass = append(result.Pass, &keptncommon.SLOCriteria{Criteria: defaultPass})
-	}
-
-	if (len(result.Warning) == 0) && (len(defaultWarning) > 0) {
-		result.Warning = append(result.Warning, &keptncommon.SLOCriteria{Criteria: defaultWarning})
 	}
 
 	// if we have no criteria for warn or pass we just return nil
