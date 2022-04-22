@@ -1,9 +1,7 @@
 package credentials
 
 import (
-	"crypto/tls"
 	"fmt"
-	"net/http"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 )
@@ -79,30 +77,4 @@ func GetKeptnCredentials() (*KeptnCredentials, error) {
 		return nil, err
 	}
 	return cr.GetKeptnCredentials()
-}
-
-// CheckKeptnConnection verifies wether a connection to the Keptn API can be established
-func CheckKeptnConnection(keptnCredentials *KeptnCredentials) error {
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
-	keptnAuthURL := keptnCredentials.GetAPIURL() + "/v1/auth"
-	req, err := http.NewRequest(http.MethodGet, keptnAuthURL, nil)
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("x-token", keptnCredentials.GetAPIToken())
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("could not authenticate at Keptn API: %w", err)
-	}
-
-	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("invalid Keptn API Token: received 401 - Unauthorized from %s", keptnAuthURL)
-	} else if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("received unexpected response from %s: %d", keptnAuthURL, resp.StatusCode)
-	}
-	return nil
 }

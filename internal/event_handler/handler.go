@@ -64,12 +64,12 @@ func getEventHandler(ctx context.Context, event cloudevents.Event, clientFactory
 		return nil, fmt.Errorf("could not get configuration: %w", err)
 	}
 
-	credentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
+	dynatraceCredentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
 	if err != nil {
 		return nil, fmt.Errorf("could not create Kubernetes secret reader: %w", err)
 	}
 
-	dynatraceCredentials, err := credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
+	dynatraceCredentials, err := dynatraceCredentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Dynatrace credentials: %w", err)
 	}
@@ -83,7 +83,7 @@ func getEventHandler(ctx context.Context, event cloudevents.Event, clientFactory
 
 	switch aType := keptnEvent.(type) {
 	case *monitoring.ConfigureMonitoringAdapter:
-		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), clientFactory.CreateServiceClient()), nil
+		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), clientFactory.CreateServiceClient(), keptn.NewDefaultCredentialsChecker()), nil
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), kClient), nil
 	case *problem.ActionTriggeredAdapter:
