@@ -6,10 +6,12 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
+const eventSource = "Keptn dynatrace-service"
+
 func createAnnotationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.AnnotationEvent {
 	return dynatrace.AnnotationEvent{
-		EventType:             "CUSTOM_ANNOTATION",
-		Source:                "Keptn dynatrace-service",
+		EventType:             dynatrace.AnnotationEventType,
+		Source:                eventSource,
 		AnnotationType:        a.GetLabels()["type"],
 		AnnotationDescription: a.GetLabels()["description"],
 		AttachRules:           *attachRules,
@@ -19,8 +21,8 @@ func createAnnotationEventDTO(a adapter.EventContentAdapter, imageAndTag common.
 
 func createConfigurationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.ConfigurationEvent {
 	return dynatrace.ConfigurationEvent{
-		EventType:        "CUSTOM_CONFIGURATION",
-		Source:           "Keptn dynatrace-service",
+		EventType:        dynatrace.ConfigurationEventType,
+		Source:           eventSource,
 		AttachRules:      *attachRules,
 		CustomProperties: createCustomProperties(a, imageAndTag),
 	}
@@ -28,8 +30,8 @@ func createConfigurationEventDTO(a adapter.EventContentAdapter, imageAndTag comm
 
 func createDeploymentEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.DeploymentEvent {
 	return dynatrace.DeploymentEvent{
-		EventType:         "CUSTOM_DEPLOYMENT",
-		Source:            "Keptn dynatrace-service",
+		EventType:         dynatrace.DeploymentEventType,
+		Source:            eventSource,
 		DeploymentName:    getValueFromLabels(a, "deploymentName", "Deploy "+a.GetService()+" "+imageAndTag.Tag()+" with strategy "+a.GetDeploymentStrategy()),
 		DeploymentProject: getValueFromLabels(a, "deploymentProject", a.GetProject()),
 		DeploymentVersion: getValueFromLabels(a, "deploymentVersion", imageAndTag.Tag()),
@@ -42,8 +44,8 @@ func createDeploymentEventDTO(a adapter.EventContentAdapter, imageAndTag common.
 
 func createInfoEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.InfoEvent {
 	return dynatrace.InfoEvent{
-		EventType:        "CUSTOM_INFO",
-		Source:           "Keptn dynatrace-service",
+		EventType:        dynatrace.InfoEventType,
+		Source:           eventSource,
 		Title:            a.GetLabels()["title"],
 		Description:      a.GetLabels()["description"],
 		AttachRules:      *attachRules,

@@ -10,6 +10,11 @@ import (
 
 const eventsPath = "/api/v1/events"
 
+const AnnotationEventType = "CUSTOM_ANNOTATION"
+const ConfigurationEventType = "CUSTOM_CONFIGURATION"
+const DeploymentEventType = "CUSTOM_DEPLOYMENT"
+const InfoEventType = "CUSTOM_INFO"
+
 // AnnotationEvent defines a Dynatrace custom annotation event.
 type AnnotationEvent struct {
 	EventType             string            `json:"eventType"`
