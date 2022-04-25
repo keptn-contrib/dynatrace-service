@@ -38,7 +38,7 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
 
-	ie := dynatrace.CreateInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
+	ie := createInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
 	if strategy == keptnevents.Direct && eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
 		title := fmt.Sprintf("PROMOTING from %s to next stage", eh.event.GetStage())
 		ie.Title = title

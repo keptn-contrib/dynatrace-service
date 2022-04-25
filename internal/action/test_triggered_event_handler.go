@@ -30,7 +30,7 @@ func (eh *TestTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
 
 	// Send Annotation Event
-	ie := dynatrace.CreateAnnotationEventDTO(eh.event, imageAndTag, eh.attachRules)
+	ie := createAnnotationEventDTO(eh.event, imageAndTag, eh.attachRules)
 	if ie.AnnotationType == "" {
 		ie.AnnotationType = "Start Tests: " + eh.event.GetTestStrategy()
 	}

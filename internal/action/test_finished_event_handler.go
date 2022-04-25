@@ -29,7 +29,7 @@ func (eh *TestFinishedEventHandler) HandleEvent(ctx context.Context) error {
 
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
 
-	ae := dynatrace.CreateAnnotationEventDTO(eh.event, imageAndTag, eh.attachRules)
+	ae := createAnnotationEventDTO(eh.event, imageAndTag, eh.attachRules)
 	if ae.AnnotationType == "" {
 		ae.AnnotationType = "Stop Tests"
 	}

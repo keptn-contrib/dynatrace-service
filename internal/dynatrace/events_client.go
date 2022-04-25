@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -72,122 +70,6 @@ type TagRule struct {
 // AttachRules defines a Dynatrace configuration structure
 type AttachRules struct {
 	TagRule []TagRule `json:"tagRule" yaml:"tagRule"`
-}
-
-/**
- * Change with #115_116: parse labels and move them into custom properties
- */
-func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag) map[string]string {
-	// TODO: AG - parse labels and push them through
-
-	// var customProperties dtCustomProperties
-	// customProperties.Project = Project
-	// customProperties.Stage = Stage
-	// customProperties.Service = Service
-	// customProperties.TestStrategy = TestStrategy
-	// customProperties.Image = Image
-	// customProperties.Tag = Tag
-	// customProperties.KeptnContext = keptnContext
-	var customProperties map[string]string
-	customProperties = make(map[string]string)
-	customProperties["Project"] = a.GetProject()
-	customProperties["Stage"] = a.GetStage()
-	customProperties["Service"] = a.GetService()
-	customProperties["TestStrategy"] = a.GetTestStrategy()
-	customProperties["Image"] = imageAndTag.Image()
-	customProperties["Tag"] = imageAndTag.Tag()
-	customProperties["KeptnContext"] = a.GetShKeptnContext()
-	customProperties["Keptn Service"] = a.GetSource()
-
-	// now add the rest of the Labels
-	for key, value := range a.GetLabels() {
-		customProperties[key] = value
-	}
-
-	return customProperties
-}
-
-// CreateInfoEventDTO creates a new Dynatrace CUSTOM_INFO event
-func CreateInfoEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *AttachRules) InfoEvent {
-
-	// we fill the Dynatrace Info Event with values from the labels or use our defaults
-	var ie InfoEvent
-	ie.EventType = "CUSTOM_INFO"
-	ie.Source = "Keptn dynatrace-service"
-	ie.Title = a.GetLabels()["title"]
-	ie.Description = a.GetLabels()["description"]
-	ie.AttachRules = *attachRules
-
-	// and add the rest of the labels and info as custom properties
-	customProperties := createCustomProperties(a, imageAndTag)
-	ie.CustomProperties = customProperties
-
-	return ie
-}
-
-// CreateAnnotationEventDTO creates a Dynatrace CUSTOM_ANNOTATION event
-func CreateAnnotationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *AttachRules) AnnotationEvent {
-
-	// we fill the Dynatrace Info Event with values from the labels or use our defaults
-	var ie AnnotationEvent
-	ie.EventType = "CUSTOM_ANNOTATION"
-	ie.Source = "Keptn dynatrace-service"
-	ie.AnnotationType = a.GetLabels()["type"]
-	ie.AnnotationDescription = a.GetLabels()["description"]
-	ie.AttachRules = *attachRules
-
-	// and add the rest of the labels and info as custom properties
-	customProperties := createCustomProperties(a, imageAndTag)
-	ie.CustomProperties = customProperties
-
-	return ie
-}
-
-func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue string) string {
-	v := a.GetLabels()[key]
-	if len(v) > 0 {
-		return v
-	}
-	return defaultValue
-}
-
-// CreateDeploymentEventDTO creates a Dynatrace CUSTOM_DEPLOYMENT event
-func CreateDeploymentEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *AttachRules) DeploymentEvent {
-
-	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
-	var de DeploymentEvent
-	de.EventType = "CUSTOM_DEPLOYMENT"
-	de.Source = "Keptn dynatrace-service"
-	de.DeploymentName = getValueFromLabels(a, "deploymentName", "Deploy "+a.GetService()+" "+imageAndTag.Tag()+" with strategy "+a.GetDeploymentStrategy())
-	de.DeploymentProject = getValueFromLabels(a, "deploymentProject", a.GetProject())
-	de.DeploymentVersion = getValueFromLabels(a, "deploymentVersion", imageAndTag.Tag())
-	de.CiBackLink = getValueFromLabels(a, "ciBackLink", "")
-	de.RemediationAction = getValueFromLabels(a, "remediationAction", "")
-	de.AttachRules = *attachRules
-
-	// and add the rest of the labels and info as custom properties
-	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext
-	customProperties := createCustomProperties(a, imageAndTag)
-	de.CustomProperties = customProperties
-
-	return de
-}
-
-// CreateConfigurationEventDTO creates a Dynatrace CUSTOM_CONFIGURATION event
-func CreateConfigurationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *AttachRules) ConfigurationEvent {
-
-	// we fill the Dynatrace Deployment Event with values from the labels or use our defaults
-	var de ConfigurationEvent
-	de.EventType = "CUSTOM_CONFIGURATION"
-	de.Source = "Keptn dynatrace-service"
-	de.AttachRules = *attachRules
-
-	// and add the rest of the labels and info as custom properties
-	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext
-	customProperties := createCustomProperties(a, imageAndTag)
-	de.CustomProperties = customProperties
-
-	return de
 }
 
 type EventsClient struct {

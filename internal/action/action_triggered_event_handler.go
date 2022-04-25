@@ -50,7 +50,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// In addition to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-	dtInfoEvent := dynatrace.CreateInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
+	dtInfoEvent := createInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
 	dtInfoEvent.Title = "Keptn Remediation Action Triggered"
 	dtInfoEvent.Description = eh.event.GetAction()
 
