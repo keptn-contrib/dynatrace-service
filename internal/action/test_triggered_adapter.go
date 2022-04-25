@@ -1,4 +1,4 @@
-package deployment
+package action
 
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -7,78 +7,78 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-type TestFinishedAdapterInterface interface {
+type TestTriggeredAdapterInterface interface {
 	adapter.EventContentAdapter
 }
 
-// TestFinishedAdapter is a content adaptor for events of type sh.keptn.event.test.finished
-type TestFinishedAdapter struct {
-	event      keptnv2.TestFinishedEventData
+// TestTriggeredAdapter is a content adaptor for events of type sh.keptn.event.test.triggered
+type TestTriggeredAdapter struct {
+	event      keptnv2.TestTriggeredEventData
 	cloudEvent adapter.CloudEventAdapter
 }
 
-// NewTestFinishedAdapterFromEvent creates a new TestFinishedAdapter from a cloudevents Event
-func NewTestFinishedAdapterFromEvent(e cloudevents.Event) (*TestFinishedAdapter, error) {
+// NewTestTriggeredAdapterFromEvent creates a new TestTriggeredAdapter from a cloudevents Event
+func NewTestTriggeredAdapterFromEvent(e cloudevents.Event) (*TestTriggeredAdapter, error) {
 	ceAdapter := adapter.NewCloudEventAdapter(e)
 
-	tfData := &keptnv2.TestFinishedEventData{}
-	err := ceAdapter.PayloadAs(tfData)
+	ttData := &keptnv2.TestTriggeredEventData{}
+	err := ceAdapter.PayloadAs(ttData)
 	if err != nil {
 		return nil, err
 	}
 
-	return &TestFinishedAdapter{
-		event:      *tfData,
+	return &TestTriggeredAdapter{
+		event:      *ttData,
 		cloudEvent: ceAdapter,
 	}, nil
 }
 
 // GetShKeptnContext returns the shkeptncontext
-func (a TestFinishedAdapter) GetShKeptnContext() string {
+func (a TestTriggeredAdapter) GetShKeptnContext() string {
 	return a.cloudEvent.GetShKeptnContext()
 }
 
 // GetSource returns the source specified in the CloudEvent context
-func (a TestFinishedAdapter) GetSource() string {
+func (a TestTriggeredAdapter) GetSource() string {
 	return a.cloudEvent.GetSource()
 }
 
 // GetEvent returns the event type
-func (a TestFinishedAdapter) GetEvent() string {
+func (a TestTriggeredAdapter) GetEvent() string {
 	return keptnv2.GetFinishedEventType(keptnv2.TestTaskName)
 }
 
 // GetProject returns the project
-func (a TestFinishedAdapter) GetProject() string {
+func (a TestTriggeredAdapter) GetProject() string {
 	return a.event.Project
 }
 
 // GetStage returns the stage
-func (a TestFinishedAdapter) GetStage() string {
+func (a TestTriggeredAdapter) GetStage() string {
 	return a.event.Stage
 }
 
 // GetService returns the service
-func (a TestFinishedAdapter) GetService() string {
+func (a TestTriggeredAdapter) GetService() string {
 	return a.event.Service
 }
 
 // GetDeployment returns the name of the deployment
-func (a TestFinishedAdapter) GetDeployment() string {
+func (a TestTriggeredAdapter) GetDeployment() string {
 	return ""
 }
 
 // GetTestStrategy returns the used test strategy
-func (a TestFinishedAdapter) GetTestStrategy() string {
-	return ""
+func (a TestTriggeredAdapter) GetTestStrategy() string {
+	return a.event.Test.TestStrategy
 }
 
 // GetDeploymentStrategy returns the used deployment strategy
-func (a TestFinishedAdapter) GetDeploymentStrategy() string {
+func (a TestTriggeredAdapter) GetDeploymentStrategy() string {
 	return ""
 }
 
 // GetLabels returns a map of labels
-func (a TestFinishedAdapter) GetLabels() map[string]string {
+func (a TestTriggeredAdapter) GetLabels() map[string]string {
 	return keptn.AddOptionalKeptnBridgeUrlToLabels(a.event.Labels, a.GetShKeptnContext())
 }

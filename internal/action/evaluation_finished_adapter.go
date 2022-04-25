@@ -1,4 +1,4 @@
-package deployment
+package action
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-package deployment
+package action
 
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
