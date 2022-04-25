@@ -86,12 +86,12 @@ func getEventHandler(ctx context.Context, event cloudevents.Event, clientFactory
 		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, kClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), clientFactory.CreateServiceClient(), keptn.NewDefaultCredentialsChecker()), nil
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), kClient), nil
-	case *problem.ActionTriggeredAdapter:
-		return problem.NewActionTriggeredEventHandler(keptnEvent.(*problem.ActionTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
-	case *problem.ActionStartedAdapter:
-		return problem.NewActionStartedEventHandler(keptnEvent.(*problem.ActionStartedAdapter), dtClient, clientFactory.CreateEventClient()), nil
-	case *problem.ActionFinishedAdapter:
-		return problem.NewActionFinishedEventHandler(keptnEvent.(*problem.ActionFinishedAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+	case *deployment.ActionTriggeredAdapter:
+		return deployment.NewActionTriggeredEventHandler(keptnEvent.(*deployment.ActionTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+	case *deployment.ActionStartedAdapter:
+		return deployment.NewActionStartedEventHandler(keptnEvent.(*deployment.ActionStartedAdapter), dtClient, clientFactory.CreateEventClient()), nil
+	case *deployment.ActionFinishedAdapter:
+		return deployment.NewActionFinishedEventHandler(keptnEvent.(*deployment.ActionFinishedAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
 		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, kClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard), nil
 	case *deployment.DeploymentFinishedAdapter:
@@ -116,11 +116,11 @@ func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 	case keptnevents.ProblemEventType:
 		return problem.NewProblemAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.ActionTaskName):
-		return problem.NewActionTriggeredAdapterFromEvent(e)
+		return deployment.NewActionTriggeredAdapterFromEvent(e)
 	case keptnv2.GetStartedEventType(keptnv2.ActionTaskName):
-		return problem.NewActionStartedAdapterFromEvent(e)
+		return deployment.NewActionStartedAdapterFromEvent(e)
 	case keptnv2.GetFinishedEventType(keptnv2.ActionTaskName):
-		return problem.NewActionFinishedAdapterFromEvent(e)
+		return deployment.NewActionFinishedAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.GetSLITaskName):
 		return sli.NewGetSLITriggeredAdapterFromEvent(e)
 	case keptnv2.GetFinishedEventType(keptnv2.DeploymentTaskName):
