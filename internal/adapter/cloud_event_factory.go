@@ -2,8 +2,9 @@ package adapter
 
 import (
 	"fmt"
+	"net/url"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
 )
 
 type CloudEventFactoryInterface interface {
@@ -53,7 +54,7 @@ func NewCloudEventFactoryBase(event CloudEventContentAdapter, eventType string, 
 
 func (f *CloudEventFactoryBase) CreateCloudEvent() (*cloudevents.Event, error) {
 	ev := cloudevents.NewEvent()
-	ev.SetSource(event.GetEventSource())
+	ev.SetSource(GetEventSource())
 	ev.SetDataContentType(cloudevents.ApplicationJSON)
 	ev.SetType(f.eventType)
 	ev.SetExtension("shkeptncontext", f.event.GetShKeptnContext())
@@ -64,4 +65,10 @@ func (f *CloudEventFactoryBase) CreateCloudEvent() (*cloudevents.Event, error) {
 	}
 
 	return &ev, nil
+}
+
+// GetEventSource gets the source to be used for CloudEvents originating from the dynatrace-service.
+func GetEventSource() string {
+	source, _ := url.Parse("dynatrace-service")
+	return source.String()
 }

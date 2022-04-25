@@ -8,7 +8,7 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/event"
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/monitoring"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli"
@@ -66,7 +66,7 @@ func (eh ErrorHandler) sendErroredGetSLIFinishedEvent(keptnClient *keptn.Client)
 }
 
 func (eh ErrorHandler) sendErrorEvent(keptnClient *keptn.Client) error {
-	integrationID, err := eh.uniformClient.GetIntegrationIDByName(event.GetEventSource())
+	integrationID, err := eh.uniformClient.GetIntegrationIDByName(adapter.GetEventSource())
 	if err != nil {
 		log.WithError(err).Error("Could not retrieve integration ID from Keptn Uniform")
 		// no need to continue here, message will not show up in Uniform
