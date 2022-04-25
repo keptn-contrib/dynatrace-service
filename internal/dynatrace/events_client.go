@@ -75,42 +75,6 @@ type AttachRules struct {
 }
 
 /**
- * Changes in #115_116: Parse Tags from dynatrace.conf.yaml and only fall back to default behavior if it doesnt exist
- */
-func createAttachRules(a adapter.EventContentAdapter, attachRules *AttachRules) AttachRules {
-	if attachRules != nil {
-		return *attachRules
-	}
-
-	ar := AttachRules{
-		TagRule: []TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_project",
-						Value:   a.GetProject(),
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_stage",
-						Value:   a.GetStage(),
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_service",
-						Value:   a.GetService(),
-					},
-				},
-			},
-		},
-	}
-
-	return ar
-}
-
-/**
  * Change with #115_116: parse labels and move them into custom properties
  */
 func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag) map[string]string {
@@ -152,10 +116,7 @@ func CreateInfoEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageA
 	ie.Source = "Keptn dynatrace-service"
 	ie.Title = a.GetLabels()["title"]
 	ie.Description = a.GetLabels()["description"]
-
-	// now we create our attach rules
-	ar := createAttachRules(a, attachRules)
-	ie.AttachRules = ar
+	ie.AttachRules = *attachRules
 
 	// and add the rest of the labels and info as custom properties
 	customProperties := createCustomProperties(a, imageAndTag)
@@ -173,10 +134,7 @@ func CreateAnnotationEventDTO(a adapter.EventContentAdapter, imageAndTag common.
 	ie.Source = "Keptn dynatrace-service"
 	ie.AnnotationType = a.GetLabels()["type"]
 	ie.AnnotationDescription = a.GetLabels()["description"]
-
-	// now we create our attach rules
-	ar := createAttachRules(a, attachRules)
-	ie.AttachRules = ar
+	ie.AttachRules = *attachRules
 
 	// and add the rest of the labels and info as custom properties
 	customProperties := createCustomProperties(a, imageAndTag)
@@ -205,10 +163,7 @@ func CreateDeploymentEventDTO(a adapter.EventContentAdapter, imageAndTag common.
 	de.DeploymentVersion = getValueFromLabels(a, "deploymentVersion", imageAndTag.Tag())
 	de.CiBackLink = getValueFromLabels(a, "ciBackLink", "")
 	de.RemediationAction = getValueFromLabels(a, "remediationAction", "")
-
-	// now we create our attach rules
-	ar := createAttachRules(a, attachRules)
-	de.AttachRules = ar
+	de.AttachRules = *attachRules
 
 	// and add the rest of the labels and info as custom properties
 	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext
@@ -225,10 +180,7 @@ func CreateConfigurationEventDTO(a adapter.EventContentAdapter, imageAndTag comm
 	var de ConfigurationEvent
 	de.EventType = "CUSTOM_CONFIGURATION"
 	de.Source = "Keptn dynatrace-service"
-
-	// now we create our attach rules
-	ar := createAttachRules(a, attachRules)
-	de.AttachRules = ar
+	de.AttachRules = *attachRules
 
 	// and add the rest of the labels and info as custom properties
 	// TODO: event.Project, event.Stage, event.Service, event.TestStrategy, event.Image, event.Tag, event.Labels, keptnContext

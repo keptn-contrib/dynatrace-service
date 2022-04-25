@@ -103,6 +103,33 @@ func TestDynatraceConfigGetter_GetDynatraceConfig(t *testing.T) {
 			"value":     "special_value"},
 	}
 
+	expectedDefaultAttachRules := dynatrace.AttachRules{
+		TagRule: []dynatrace.TagRule{
+			{
+				MeTypes: []string{
+					"SERVICE",
+				},
+				Tags: []dynatrace.TagEntry{
+					{
+						Context: "CONTEXTLESS",
+						Key:     "keptn_project",
+						Value:   "myproject",
+					},
+					{
+						Context: "CONTEXTLESS",
+						Key:     "keptn_stage",
+						Value:   "mystage",
+					},
+					{
+						Context: "CONTEXTLESS",
+						Key:     "keptn_service",
+						Value:   "myservice",
+					},
+				},
+			},
+		},
+	}
+
 	tests := []struct {
 		name         string
 		configString string
@@ -202,6 +229,7 @@ dashboard: $LABEL.dashboard`,
 				SpecVersion: "0.1.0",
 				DtCreds:     "dynatrace-myproject",
 				Dashboard:   "12345678-1111-4444-8888-123456789012",
+				AttachRules: &expectedDefaultAttachRules,
 			},
 		},
 		{
@@ -213,6 +241,7 @@ dashboard: $LABEL.my_dashboard`,
 				SpecVersion: "0.1.0",
 				DtCreds:     "dynatrace-myproject",
 				Dashboard:   "$LABEL.my_dashboard",
+				AttachRules: &expectedDefaultAttachRules,
 			},
 		},
 		{
@@ -224,6 +253,7 @@ dashboard: $LABEL.dashboard_name`,
 				SpecVersion: "0.1.0",
 				DtCreds:     "dynatrace-myproject",
 				Dashboard:   "12345678-1111-4444-8888-123456789012_name",
+				AttachRules: &expectedDefaultAttachRules,
 			},
 		},
 	}
