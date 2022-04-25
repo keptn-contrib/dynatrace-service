@@ -28,8 +28,8 @@ func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dyna
 func (eh *TestFinishedEventHandler) HandleEvent(ctx context.Context) error {
 
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-
-	ae := createAnnotationEventDTO(eh.event, imageAndTag, eh.attachRules)
+	customProperties := createCustomProperties(eh.event, imageAndTag)
+	ae := createAnnotationEventDTO(eh.event, customProperties, eh.attachRules)
 	if ae.AnnotationType == "" {
 		ae.AnnotationType = "Stop Tests"
 	}

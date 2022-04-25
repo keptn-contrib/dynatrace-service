@@ -8,27 +8,27 @@ import (
 
 const eventSource = "Keptn dynatrace-service"
 
-func createAnnotationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.AnnotationEvent {
+func createAnnotationEventDTO(a adapter.EventContentAdapter, customProperties map[string]string, attachRules *dynatrace.AttachRules) dynatrace.AnnotationEvent {
 	return dynatrace.AnnotationEvent{
 		EventType:             dynatrace.AnnotationEventType,
 		Source:                eventSource,
 		AnnotationType:        a.GetLabels()["type"],
 		AnnotationDescription: a.GetLabels()["description"],
+		CustomProperties:      customProperties,
 		AttachRules:           *attachRules,
-		CustomProperties:      createCustomProperties(a, imageAndTag),
 	}
 }
 
-func createConfigurationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.ConfigurationEvent {
+func createConfigurationEventDTO(a adapter.EventContentAdapter, customProperties map[string]string, attachRules *dynatrace.AttachRules) dynatrace.ConfigurationEvent {
 	return dynatrace.ConfigurationEvent{
 		EventType:        dynatrace.ConfigurationEventType,
 		Source:           eventSource,
+		CustomProperties: customProperties,
 		AttachRules:      *attachRules,
-		CustomProperties: createCustomProperties(a, imageAndTag),
 	}
 }
 
-func createDeploymentEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.DeploymentEvent {
+func createDeploymentEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, customProperties map[string]string, attachRules *dynatrace.AttachRules) dynatrace.DeploymentEvent {
 	return dynatrace.DeploymentEvent{
 		EventType:         dynatrace.DeploymentEventType,
 		Source:            eventSource,
@@ -37,19 +37,19 @@ func createDeploymentEventDTO(a adapter.EventContentAdapter, imageAndTag common.
 		DeploymentVersion: getValueFromLabels(a, "deploymentVersion", imageAndTag.Tag()),
 		CiBackLink:        getValueFromLabels(a, "ciBackLink", ""),
 		RemediationAction: getValueFromLabels(a, "remediationAction", ""),
+		CustomProperties:  customProperties,
 		AttachRules:       *attachRules,
-		CustomProperties:  createCustomProperties(a, imageAndTag),
 	}
 }
 
-func createInfoEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.InfoEvent {
+func createInfoEventDTO(a adapter.EventContentAdapter, customProperties map[string]string, attachRules *dynatrace.AttachRules) dynatrace.InfoEvent {
 	return dynatrace.InfoEvent{
 		EventType:        dynatrace.InfoEventType,
 		Source:           eventSource,
 		Title:            a.GetLabels()["title"],
 		Description:      a.GetLabels()["description"],
+		CustomProperties: customProperties,
 		AttachRules:      *attachRules,
-		CustomProperties: createCustomProperties(a, imageAndTag),
 	}
 }
 

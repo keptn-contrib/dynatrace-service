@@ -32,8 +32,8 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error {
 
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-
-	ie := createInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
+	customProperties := createCustomProperties(eh.event, imageAndTag)
+	ie := createInfoEventDTO(eh.event, customProperties, eh.attachRules)
 	qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore())
 	ie.Title = fmt.Sprintf("Evaluation result: %s", eh.event.GetResult())
 

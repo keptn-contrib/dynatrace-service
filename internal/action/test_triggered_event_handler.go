@@ -28,9 +28,10 @@ func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient 
 func (eh *TestTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+	customProperties := createCustomProperties(eh.event, imageAndTag)
 
 	// Send Annotation Event
-	ie := createAnnotationEventDTO(eh.event, imageAndTag, eh.attachRules)
+	ie := createAnnotationEventDTO(eh.event, customProperties, eh.attachRules)
 	if ie.AnnotationType == "" {
 		ie.AnnotationType = "Start Tests: " + eh.event.GetTestStrategy()
 	}

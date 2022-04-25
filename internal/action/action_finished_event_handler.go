@@ -45,18 +45,19 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 		eh.event.GetStatus())
 
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+	customProperties := createCustomProperties(eh.event, imageAndTag)
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// Additionally to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 	if eh.event.GetStatus() == keptnv2.StatusSucceeded {
 
-		dtConfigEvent := createConfigurationEventDTO(eh.event, imageAndTag, eh.attachRules)
+		dtConfigEvent := createConfigurationEventDTO(eh.event, customProperties, eh.attachRules)
 		dtConfigEvent.Description = "Keptn Remediation Action Finished"
 		dtConfigEvent.Configuration = "successful"
 
 		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(ctx, dtConfigEvent)
 	} else {
-		dtInfoEvent := createInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
+		dtInfoEvent := createInfoEventDTO(eh.event, customProperties, eh.attachRules)
 		dtInfoEvent.Title = "Keptn Remediation Action Finished"
 		dtInfoEvent.Description = "error during execution"
 
