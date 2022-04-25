@@ -31,36 +31,41 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 // HandleEvent handles an action finished event.
 func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error {
 
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-	customProperties := createCustomProperties(eh.event, imageAndTag)
-	ie := createInfoEventDTO(eh.event, customProperties, eh.attachRules)
-	qualityGateDescription := fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore())
-	ie.Title = fmt.Sprintf("Evaluation result: %s", eh.event.GetResult())
-
 	isPartOfRemediation, err := eh.eClient.IsPartOfRemediation(eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not check for remediation status of event")
 	}
 
 	if isPartOfRemediation {
-		if eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
-			ie.Title = "Remediation action successful"
-		} else {
-			ie.Title = "Remediation action not successful"
-		}
-		// If evaluation was done in context of a problem remediation workflow then post comments to the Dynatrace Problem
 		pid, err := eh.eClient.FindProblemID(eh.event)
 		if err == nil && pid != "" {
-			// Comment we push over
 			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetResult(), eh.event.GetEvaluationScore())
-
-			// this is posting the Event on the problem as a comment
 			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 		}
 	}
-	ie.Description = qualityGateDescription
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, ie)
+	infoEvent := dynatrace.InfoEvent{
+		EventType:        dynatrace.InfoEventType,
+		Source:           eventSource,
+		Title:            eh.getTitle(isPartOfRemediation),
+		Description:      fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore()),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event)),
+		AttachRules:      *eh.attachRules,
+	}
+
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, infoEvent)
 
 	return nil
+}
+
+func (eh *EvaluationFinishedEventHandler) getTitle(isPartOfRemediation bool) string {
+	if !isPartOfRemediation {
+		return fmt.Sprintf("Evaluation result: %s", eh.event.GetResult())
+	}
+
+	if eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
+		return "Remediation action successful"
+	}
+
+	return "Remediation action not successful"
 }

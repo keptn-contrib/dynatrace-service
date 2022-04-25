@@ -27,8 +27,19 @@ func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface,
 // HandleEvent handles an action finished event.
 func (eh *DeploymentFinishedEventHandler) HandleEvent(ctx context.Context) error {
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-	customProperties := createCustomProperties(eh.event, imageAndTag)
-	de := createDeploymentEventDTO(eh.event, imageAndTag, customProperties, eh.attachRules)
-	dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(ctx, de)
+
+	deploymentEvent := dynatrace.DeploymentEvent{
+		EventType:         dynatrace.DeploymentEventType,
+		Source:            eventSource,
+		DeploymentName:    getValueFromLabels(eh.event, "deploymentName", "Deploy "+eh.event.GetService()+" "+imageAndTag.Tag()+" with strategy "+eh.event.GetDeploymentStrategy()),
+		DeploymentProject: getValueFromLabels(eh.event, "deploymentProject", eh.event.GetProject()),
+		DeploymentVersion: getValueFromLabels(eh.event, "deploymentVersion", imageAndTag.Tag()),
+		CiBackLink:        getValueFromLabels(eh.event, "ciBackLink", ""),
+		RemediationAction: getValueFromLabels(eh.event, "remediationAction", ""),
+		CustomProperties:  createCustomProperties(eh.event, imageAndTag),
+		AttachRules:       *eh.attachRules,
+	}
+
+	dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(ctx, deploymentEvent)
 	return nil
 }

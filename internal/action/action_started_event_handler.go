@@ -33,9 +33,7 @@ func (eh *ActionStartedEventHandler) HandleEvent(ctx context.Context) error {
 		return err
 	}
 
-	// Comment we push over
 	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetSource())
-
 	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 
 	return nil

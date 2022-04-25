@@ -26,20 +26,15 @@ func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient 
 
 // HandleEvent handles an action finished event.
 func (eh *TestTriggeredEventHandler) HandleEvent(ctx context.Context) error {
-
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-	customProperties := createCustomProperties(eh.event, imageAndTag)
-
-	// Send Annotation Event
-	ie := createAnnotationEventDTO(eh.event, customProperties, eh.attachRules)
-	if ie.AnnotationType == "" {
-		ie.AnnotationType = "Start Tests: " + eh.event.GetTestStrategy()
-	}
-	if ie.AnnotationDescription == "" {
-		ie.AnnotationDescription = "Start running tests: " + eh.event.GetTestStrategy() + " against " + eh.event.GetService()
+	annotationEvent := dynatrace.AnnotationEvent{
+		EventType:             dynatrace.AnnotationEventType,
+		Source:                eventSource,
+		AnnotationType:        getValueFromLabels(eh.event, "type", "Start Tests: "+eh.event.GetTestStrategy()),
+		AnnotationDescription: getValueFromLabels(eh.event, "description", "Start running tests: "+eh.event.GetTestStrategy()+" against "+eh.event.GetService()),
+		CustomProperties:      createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event)),
+		AttachRules:           *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ctx, ie)
-
+	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ctx, annotationEvent)
 	return nil
 }

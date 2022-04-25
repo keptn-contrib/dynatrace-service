@@ -36,28 +36,31 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		return err
 	}
 
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-
-	customProperties := createCustomProperties(eh.event, imageAndTag)
-
-	ie := createInfoEventDTO(eh.event, customProperties, eh.attachRules)
-	if strategy == keptnevents.Direct && eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
-		title := fmt.Sprintf("PROMOTING from %s to next stage", eh.event.GetStage())
-		ie.Title = title
-		ie.Description = title
-	} else if eh.event.GetResult() == keptnv2.ResultFailed {
-		if strategy == keptnevents.Duplicate {
-			title := "Rollback Artifact (Switch Blue/Green) in " + eh.event.GetStage()
-			ie.Title = title
-			ie.Description = title
-		} else {
-			title := fmt.Sprintf("NOT PROMOTING from %s to next stage", eh.event.GetStage())
-			ie.Title = title
-			ie.Description = title
-		}
+	infoEvent := dynatrace.InfoEvent{
+		EventType:        dynatrace.InfoEventType,
+		Source:           eventSource,
+		Title:            eh.getTitle(strategy, eh.event.GetLabels()["title"]),
+		Description:      eh.getTitle(strategy, eh.event.GetLabels()["description"]),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event)),
+		AttachRules:      *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, ie)
-
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, infoEvent)
 	return nil
+}
+
+func (eh *ReleaseTriggeredEventHandler) getTitle(strategy keptnevents.DeploymentStrategy, defaultValue string) string {
+	if strategy == keptnevents.Direct && eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
+		return fmt.Sprintf("PROMOTING from %s to next stage", eh.event.GetStage())
+	}
+
+	if eh.event.GetResult() == keptnv2.ResultFailed {
+		if strategy == keptnevents.Duplicate {
+			return "Rollback Artifact (Switch Blue/Green) in " + eh.event.GetStage()
+		}
+
+		return fmt.Sprintf("NOT PROMOTING from %s to next stage", eh.event.GetStage())
+	}
+
+	return defaultValue
 }

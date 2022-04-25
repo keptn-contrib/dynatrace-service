@@ -38,32 +38,28 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 
 	if pid == "" {
 		log.Error("Cannot send DT problem comment: No problem ID is included in the event.")
-		return errors.New("cannot send DT problem comment: No problem ID is included in the event")
+		return errors.New("cannot send DT problem comment: no problem ID is included in the event")
 	}
 
-	comment := "Keptn triggered action " + eh.event.GetAction()
-	if eh.event.GetActionDescription() != "" {
-		comment = comment + ": " + eh.event.GetActionDescription()
-	}
-
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-	customProperties := createCustomProperties(eh.event, imageAndTag)
-
-	// https://github.com/keptn-contrib/dynatrace-service/issues/174
-	// In addition to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-	dtInfoEvent := createInfoEventDTO(eh.event, customProperties, eh.attachRules)
-	dtInfoEvent.Title = "Keptn Remediation Action Triggered"
-	dtInfoEvent.Description = eh.event.GetAction()
-
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, dtInfoEvent)
-
-	// this is posting the Event on the problem as a comment
-	comment = fmt.Sprintf("[Keptn triggered action](%s) %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetAction())
+	comment := fmt.Sprintf("[Keptn triggered action](%s) %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetAction())
 	if eh.event.GetActionDescription() != "" {
 		comment = comment + ": " + eh.event.GetActionDescription()
 	}
 
 	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
+
+	// https://github.com/keptn-contrib/dynatrace-service/issues/174
+	// In addition to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
+	infoEvent := dynatrace.InfoEvent{
+		EventType:        dynatrace.InfoEventType,
+		Source:           eventSource,
+		Title:            "Keptn Remediation Action Triggered",
+		Description:      eh.event.GetAction(),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event)),
+		AttachRules:      *eh.attachRules,
+	}
+
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, infoEvent)
 
 	return nil
 }

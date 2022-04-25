@@ -37,34 +37,39 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 		return err
 	}
 
-	// Comment text we want to push over
 	comment := fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
 		eh.event.GetLabels()[common.BridgeLabel],
 		eh.event.GetSource(),
 		eh.event.GetResult(),
 		eh.event.GetStatus())
-
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-	customProperties := createCustomProperties(eh.event, imageAndTag)
+	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
-	// Additionally to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
+	// Additionally to the problem comment, send Info or Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
+	customProperties := createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event))
 	if eh.event.GetStatus() == keptnv2.StatusSucceeded {
+		configurationEvent := dynatrace.ConfigurationEvent{
+			EventType:        dynatrace.ConfigurationEventType,
+			Description:      "Keptn Remediation Action Finished",
+			Source:           eventSource,
+			Configuration:    "successful",
+			CustomProperties: customProperties,
+			AttachRules:      *eh.attachRules,
+		}
 
-		dtConfigEvent := createConfigurationEventDTO(eh.event, customProperties, eh.attachRules)
-		dtConfigEvent.Description = "Keptn Remediation Action Finished"
-		dtConfigEvent.Configuration = "successful"
-
-		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(ctx, dtConfigEvent)
+		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(ctx, configurationEvent)
 	} else {
-		dtInfoEvent := createInfoEventDTO(eh.event, customProperties, eh.attachRules)
-		dtInfoEvent.Title = "Keptn Remediation Action Finished"
-		dtInfoEvent.Description = "error during execution"
+		infoEvent := dynatrace.InfoEvent{
+			EventType:        dynatrace.InfoEventType,
+			Source:           eventSource,
+			Title:            "Keptn Remediation Action Finished",
+			Description:      "error during execution",
+			CustomProperties: customProperties,
+			AttachRules:      *eh.attachRules,
+		}
 
-		dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, dtInfoEvent)
+		dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, infoEvent)
 	}
-
-	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 
 	return nil
 }
