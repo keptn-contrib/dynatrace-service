@@ -6,17 +6,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
-func createInfoEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.InfoEvent {
-	return dynatrace.InfoEvent{
-		EventType:        "CUSTOM_INFO",
-		Source:           "Keptn dynatrace-service",
-		Title:            a.GetLabels()["title"],
-		Description:      a.GetLabels()["description"],
-		AttachRules:      *attachRules,
-		CustomProperties: createCustomProperties(a, imageAndTag),
-	}
-}
-
 func createAnnotationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.AnnotationEvent {
 	return dynatrace.AnnotationEvent{
 		EventType:             "CUSTOM_ANNOTATION",
@@ -25,6 +14,15 @@ func createAnnotationEventDTO(a adapter.EventContentAdapter, imageAndTag common.
 		AnnotationDescription: a.GetLabels()["description"],
 		AttachRules:           *attachRules,
 		CustomProperties:      createCustomProperties(a, imageAndTag),
+	}
+}
+
+func createConfigurationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.ConfigurationEvent {
+	return dynatrace.ConfigurationEvent{
+		EventType:        "CUSTOM_CONFIGURATION",
+		Source:           "Keptn dynatrace-service",
+		AttachRules:      *attachRules,
+		CustomProperties: createCustomProperties(a, imageAndTag),
 	}
 }
 
@@ -42,10 +40,12 @@ func createDeploymentEventDTO(a adapter.EventContentAdapter, imageAndTag common.
 	}
 }
 
-func createConfigurationEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.ConfigurationEvent {
-	return dynatrace.ConfigurationEvent{
-		EventType:        "CUSTOM_CONFIGURATION",
+func createInfoEventDTO(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, attachRules *dynatrace.AttachRules) dynatrace.InfoEvent {
+	return dynatrace.InfoEvent{
+		EventType:        "CUSTOM_INFO",
 		Source:           "Keptn dynatrace-service",
+		Title:            a.GetLabels()["title"],
+		Description:      a.GetLabels()["description"],
 		AttachRules:      *attachRules,
 		CustomProperties: createCustomProperties(a, imageAndTag),
 	}

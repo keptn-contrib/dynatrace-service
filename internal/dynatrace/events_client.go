@@ -10,48 +10,48 @@ import (
 
 const eventsPath = "/api/v1/events"
 
-type ConfigurationEvent struct {
-	EventType   string      `json:"eventType"`
-	Source      string      `json:"source"`
-	AttachRules AttachRules `json:"attachRules"`
-	// CustomProperties  dtCustomProperties `json:"customProperties"`
-	CustomProperties map[string]string `json:"customProperties"`
-	Description      string            `json:"description"`
-	Configuration    string            `json:"configuration"`
-	Original         string            `json:"original,omitempty"`
+// AnnotationEvent defines a Dynatrace custom annotation event.
+type AnnotationEvent struct {
+	EventType             string            `json:"eventType"`
+	Source                string            `json:"source"`
+	AnnotationType        string            `json:"annotationType"`
+	AnnotationDescription string            `json:"annotationDescription"`
+	CustomProperties      map[string]string `json:"customProperties"`
+	AttachRules           AttachRules       `json:"attachRules"`
 }
 
+// ConfigurationEvent defines a Dynatrace custom configuration event.
+type ConfigurationEvent struct {
+	EventType        string            `json:"eventType"`
+	Description      string            `json:"description"`
+	Source           string            `json:"source"`
+	Configuration    string            `json:"configuration"`
+	Original         string            `json:"original,omitempty"`
+	CustomProperties map[string]string `json:"customProperties"`
+	AttachRules      AttachRules       `json:"attachRules"`
+}
+
+// DeploymentEvent defines a custom deployment event.
 type DeploymentEvent struct {
-	EventType   string      `json:"eventType"`
-	Source      string      `json:"source"`
-	AttachRules AttachRules `json:"attachRules"`
-	// CustomProperties  dtCustomProperties `json:"customProperties"`
-	CustomProperties  map[string]string `json:"customProperties"`
-	DeploymentVersion string            `json:"deploymentVersion"`
+	EventType         string            `json:"eventType"`
+	Source            string            `json:"source"`
 	DeploymentName    string            `json:"deploymentName"`
+	DeploymentVersion string            `json:"deploymentVersion"`
 	DeploymentProject string            `json:"deploymentProject"`
 	CiBackLink        string            `json:"ciBackLink,omitempty"`
 	RemediationAction string            `json:"remediationAction,omitempty"`
+	CustomProperties  map[string]string `json:"customProperties"`
+	AttachRules       AttachRules       `json:"attachRules"`
 }
 
+// InfoEvent defines a Dynatrace custom info event.
 type InfoEvent struct {
-	EventType   string      `json:"eventType"`
-	Source      string      `json:"source"`
-	AttachRules AttachRules `json:"attachRules"`
-	// CustomProperties  dtCustomProperties `json:"customProperties"`
-	CustomProperties map[string]string `json:"customProperties"`
+	EventType        string            `json:"eventType"`
 	Description      string            `json:"description"`
 	Title            string            `json:"title"`
-}
-
-type AnnotationEvent struct {
-	EventType   string      `json:"eventType"`
-	Source      string      `json:"source"`
-	AttachRules AttachRules `json:"attachRules"`
-	// CustomProperties  dtCustomProperties `json:"customProperties"`
-	CustomProperties      map[string]string `json:"customProperties"`
-	AnnotationDescription string            `json:"annotationDescription"`
-	AnnotationType        string            `json:"annotationType"`
+	Source           string            `json:"source"`
+	CustomProperties map[string]string `json:"customProperties"`
+	AttachRules      AttachRules       `json:"attachRules"`
 }
 
 // TagEntry defines a Dynatrace configuration structure
@@ -83,19 +83,24 @@ func NewEventsClient(client ClientInterface) *EventsClient {
 	}
 }
 
-// addEvent sends an event to the Dynatrace events API.
-func (ec *EventsClient) addEvent(ctx context.Context, dtEvent interface{}) (string, error) {
-	payload, err := json.Marshal(dtEvent)
-	if err != nil {
-		return "", fmt.Errorf("could not marshal event payload: %v", err)
-	}
+// AddAnnotationEvent sends an annotation event to the Dynatrace events API.
+func (ec *EventsClient) AddAnnotationEvent(ctx context.Context, ae AnnotationEvent) {
+	ec.addEventAndLog(ctx, ae)
+}
 
-	body, err := ec.client.Post(ctx, eventsPath, payload)
-	if err != nil {
-		return "", fmt.Errorf("could not create event: %v", err)
-	}
+// AddConfigurationEvent sends a configuration event to the Dynatrace events API.
+func (ec *EventsClient) AddConfigurationEvent(ctx context.Context, ce ConfigurationEvent) {
+	ec.addEventAndLog(ctx, ce)
+}
 
-	return string(body), nil
+// AddDeploymentEvent sends a deployment event to the Dynatrace events API.
+func (ec *EventsClient) AddDeploymentEvent(ctx context.Context, de DeploymentEvent) {
+	ec.addEventAndLog(ctx, de)
+}
+
+// AddInfoEvent sends an info event to the Dynatrace events API.
+func (ec *EventsClient) AddInfoEvent(ctx context.Context, ie InfoEvent) {
+	ec.addEventAndLog(ctx, ie)
 }
 
 // addEventAndLog sends an event to the Dynatrace events API and logs errors if necessary.
@@ -110,22 +115,17 @@ func (ec *EventsClient) addEventAndLog(ctx context.Context, dtEvent interface{})
 	log.WithField("body", body).Debug("Dynatrace API has accepted the event")
 }
 
-// AddDeploymentEvent sends a deployment event to the Dynatrace events API.
-func (ec *EventsClient) AddDeploymentEvent(ctx context.Context, de DeploymentEvent) {
-	ec.addEventAndLog(ctx, de)
-}
+// addEvent sends an event to the Dynatrace events API.
+func (ec *EventsClient) addEvent(ctx context.Context, dtEvent interface{}) (string, error) {
+	payload, err := json.Marshal(dtEvent)
+	if err != nil {
+		return "", fmt.Errorf("could not marshal event payload: %v", err)
+	}
 
-// AddInfoEvent sends an info event to the Dynatrace events API.
-func (ec *EventsClient) AddInfoEvent(ctx context.Context, ie InfoEvent) {
-	ec.addEventAndLog(ctx, ie)
-}
+	body, err := ec.client.Post(ctx, eventsPath, payload)
+	if err != nil {
+		return "", fmt.Errorf("could not create event: %v", err)
+	}
 
-// AddAnnotationEvent sends an annotation event to the Dynatrace events API.
-func (ec *EventsClient) AddAnnotationEvent(ctx context.Context, ae AnnotationEvent) {
-	ec.addEventAndLog(ctx, ae)
-}
-
-// AddConfigurationEvent sends a configuration event to the Dynatrace events API.
-func (ec *EventsClient) AddConfigurationEvent(ctx context.Context, ce ConfigurationEvent) {
-	ec.addEventAndLog(ctx, ce)
+	return string(body), nil
 }
