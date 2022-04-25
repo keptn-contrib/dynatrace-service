@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	api "github.com/keptn/go-utils/pkg/api/utils"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -105,22 +103,18 @@ type ServiceSynchronizer struct {
 	entitiesClientFactory EntitiesClientFactory
 }
 
-// NewDefaultServiceSynchronizer creates are new default ServiceSynchronizer.
-func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
-	keptnAPISet, err := api.New(common.GetShipyardControllerURL())
-	if err != nil {
-		return nil, fmt.Errorf("could not create Keptn API set: %w", err)
-	}
-
-	resourceClient := keptn.NewConfigClient(keptn.NewResourceClient(keptnAPISet.ResourcesV1()))
+// NewDefaultServiceSynchronizer creates a new default ServiceSynchronizer.
+func NewDefaultServiceSynchronizer() *ServiceSynchronizer {
+	clientSet := keptn.NewClientFactory()
+	resourceClient := keptn.NewConfigClient(clientSet.CreateResourceClient())
 
 	serviceSynchronizer := ServiceSynchronizer{
-		servicesClient:        keptn.NewServiceClient(keptnAPISet.ServicesV1(), keptnAPISet.APIV1()),
+		servicesClient:        clientSet.CreateServiceClient(),
 		resourcesClient:       resourceClient,
 		entitiesClientFactory: newDefaultEntitiesClientFactory(resourceClient),
 	}
 
-	return &serviceSynchronizer, nil
+	return &serviceSynchronizer
 }
 
 // Run runs the service synchronizer and does not return.

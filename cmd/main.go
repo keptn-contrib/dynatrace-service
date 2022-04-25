@@ -36,13 +36,7 @@ func _main(args []string, envCfg envConfig) int {
 
 	if env.IsServiceSyncEnabled() {
 		go func() {
-			serviceSynchronizer, err := onboard.NewDefaultServiceSynchronizer()
-			if err != nil {
-				log.WithError(err).Error("Could not create service synchronizer")
-				return
-			}
-
-			serviceSynchronizer.Run()
+			onboard.NewDefaultServiceSynchronizer().Run()
 		}()
 	}
 
@@ -64,13 +58,7 @@ func _main(args []string, envCfg envConfig) int {
 }
 
 func gotEvent(ctx context.Context, event cloudevents.Event) error {
-	handler, err := event_handler.NewEventHandler(event)
-	if err != nil {
-		log.WithError(err).Error("Could not create event handler")
-		return err
-	}
-
-	err = handler.HandleEvent()
+	err := event_handler.NewEventHandler(event).HandleEvent()
 	if err != nil {
 		log.WithError(err).Error("HandleEvent() returned an error")
 	}

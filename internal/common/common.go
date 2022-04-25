@@ -13,42 +13,10 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
-	"github.com/keptn/go-utils/pkg/lib/keptn"
 )
 
 const BridgeLabel = "Keptns Bridge"
 const ProblemURLLabel = "Problem URL"
-
-// ShipyardControllerURLEnvironmentVariableName is the name of the environment variable for specifying the shipyard controller URL.
-const ShipyardControllerURLEnvironmentVariableName = "SHIPYARD_CONTROLLER"
-
-const configurationService = "CONFIGURATION_SERVICE"
-const datastore = "DATASTORE"
-
-const defaultShipyardControllerURL = "http://shipyard-controller:8080"
-
-// GetConfigurationServiceURL Returns the endpoint to the configuration-service
-func GetConfigurationServiceURL() string {
-	return getKeptnServiceURL(configurationService, keptn.ConfigurationServiceURL)
-}
-
-// GetDatastoreURL Returns the endpoint to the datastore
-func GetDatastoreURL() string {
-	return getKeptnServiceURL(datastore, keptn.DatastoreURL)
-}
-
-// GetShipyardControllerURL Returns the endpoint to the shipyard-controller
-func GetShipyardControllerURL() string {
-	return getKeptnServiceURL(ShipyardControllerURLEnvironmentVariableName, defaultShipyardControllerURL)
-}
-
-func getKeptnServiceURL(serviceName, defaultURL string) string {
-	url, err := keptn.GetServiceEndpoint(serviceName)
-	if err != nil {
-		return defaultURL
-	}
-	return url.String()
-}
 
 // DynatraceConfigDashboardQUERY defines the Dynatrace Configuration File structure and supporting Constants
 const DynatraceConfigDashboardQUERY = "query"

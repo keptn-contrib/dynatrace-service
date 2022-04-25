@@ -1,10 +1,12 @@
 package keptn
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
-	"github.com/keptn/go-utils/pkg/api/models"
+	"github.com/keptn-contrib/dynatrace-service/internal/rest"
+	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
 )
 
@@ -17,17 +19,20 @@ type ServiceClientInterface interface {
 	CreateServiceInProject(project string, service string) error
 }
 
-// ServiceClient is an implementation of ServiceClientInterface using api.ServicesV1Interface and api.APIV1Interface.
+// ServiceClient is an implementation of ServiceClientInterface using api.ServicesV1Interface and APIClientInterface.
 type ServiceClient struct {
 	servicesClient api.ServicesV1Interface
-	apiClient      api.APIV1Interface
+	apiClient      APIClientInterface
 }
 
 // NewServiceClient creates a new ServiceClient using the specified clients.
-func NewServiceClient(servicesClient api.ServicesV1Interface, apiClient api.APIV1Interface) *ServiceClient {
+func NewServiceClient(servicesClient api.ServicesV1Interface, httpClient *http.Client) *ServiceClient {
 	return &ServiceClient{
 		servicesClient: servicesClient,
-		apiClient:      apiClient,
+		apiClient: NewAPIClient(
+			rest.NewDefaultClient(
+				httpClient,
+				getShipyardControllerURL())),
 	}
 }
 
@@ -52,9 +57,18 @@ func (c *ServiceClient) GetServiceNames(project string, stage string) ([]string,
 
 // CreateServiceInProject creates a service in all stages of the specified project or returns an error.
 func (c *ServiceClient) CreateServiceInProject(project string, service string) error {
-	_, keptnAPIErr := c.apiClient.CreateService(project, models.CreateService{
+	serviceModel := &apimodels.CreateService{
 		ServiceName: &service,
-	})
+	}
+	reqBody, err := json.Marshal(serviceModel)
+	if err != nil {
+		return fmt.Errorf("could not marshal service payload: %s", err.Error())
+	}
 
-	return errors.New(keptnAPIErr.GetMessage())
+	_, err = c.apiClient.Post(getServicePathFor(project), reqBody)
+	return err
+}
+
+func getServicePathFor(project string) string {
+	return "/v1/project/" + project + "/service"
 }
