@@ -141,7 +141,7 @@ func newMockEntitiesClientFactory(t *testing.T) (*mockEntitiesClientFactory, fun
 		teardown
 }
 
-func (f *mockEntitiesClientFactory) CreateEntitiesClient() (*dynatrace.EntitiesClient, error) {
+func (f *mockEntitiesClientFactory) CreateEntitiesClient(ctx context.Context) (*dynatrace.EntitiesClient, error) {
 	dynatraceCredentials, err := credentials.NewDynatraceCredentials(f.url, testDynatraceAPIToken)
 	if err != nil {
 		return nil, err
