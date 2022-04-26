@@ -6,6 +6,7 @@ import (
 )
 
 const eventSource = "Keptn dynatrace-service"
+const bridgeURLKey = "Keptns Bridge"
 
 func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, bridgeURL string) map[string]string {
 	customProperties := map[string]string{
@@ -25,7 +26,7 @@ func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.Im
 	}
 
 	if bridgeURL != "" {
-		customProperties[common.BridgeLabel] = bridgeURL
+		customProperties[bridgeURLKey] = bridgeURL
 	}
 
 	return customProperties
