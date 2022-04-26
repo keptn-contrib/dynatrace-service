@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -37,8 +36,10 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 		return err
 	}
 
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(eh.event)
+
 	comment := fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
-		eh.event.GetLabels()[common.BridgeLabel],
+		bridgeURL,
 		eh.event.GetSource(),
 		eh.event.GetResult(),
 		eh.event.GetStatus())
@@ -46,7 +47,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// Additionally to the problem comment, send Info or Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-	customProperties := createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event))
+	customProperties := createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL)
 	if eh.event.GetStatus() == keptnv2.StatusSucceeded {
 		configurationEvent := dynatrace.ConfigurationEvent{
 			EventType:        dynatrace.ConfigurationEventType,

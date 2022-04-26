@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	log "github.com/sirupsen/logrus"
@@ -41,7 +40,9 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		return errors.New("cannot send DT problem comment: no problem ID is included in the event")
 	}
 
-	comment := fmt.Sprintf("[Keptn triggered action](%s) %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetAction())
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(eh.event)
+
+	comment := fmt.Sprintf("[Keptn triggered action](%s) %s", bridgeURL, eh.event.GetAction())
 	if eh.event.GetActionDescription() != "" {
 		comment = comment + ": " + eh.event.GetActionDescription()
 	}
@@ -55,7 +56,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		Source:           eventSource,
 		Title:            "Keptn Remediation Action Triggered",
 		Description:      eh.event.GetAction(),
-		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event)),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL),
 		AttachRules:      *eh.attachRules,
 	}
 

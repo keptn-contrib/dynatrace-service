@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	log "github.com/sirupsen/logrus"
@@ -33,7 +32,7 @@ func (eh *ActionStartedEventHandler) HandleEvent(ctx context.Context) error {
 		return err
 	}
 
-	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetSource())
+	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptn.TryGetBridgeURLForKeptnContext(eh.event), eh.event.GetSource())
 	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 
 	return nil

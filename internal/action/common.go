@@ -7,7 +7,7 @@ import (
 
 const eventSource = "Keptn dynatrace-service"
 
-func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag) map[string]string {
+func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, bridgeURL string) map[string]string {
 	customProperties := map[string]string{
 		"Project":       a.GetProject(),
 		"Stage":         a.GetStage(),
@@ -22,6 +22,10 @@ func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.Im
 	// now add the rest of the labels into custom properties (changed with #115_116)
 	for key, value := range a.GetLabels() {
 		customProperties[key] = value
+	}
+
+	if bridgeURL != "" {
+		customProperties[common.BridgeLabel] = bridgeURL
 	}
 
 	return customProperties

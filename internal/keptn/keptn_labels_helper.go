@@ -9,24 +9,19 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
-// AddOptionalKeptnBridgeUrlToLabels adds a backlink to the Keptn bridge if the URL has been provided.
-// If the provided labels are nil, a new empty map is created.
-func AddOptionalKeptnBridgeUrlToLabels(labels map[string]string, shKeptnContext string) map[string]string {
-	if labels == nil {
-		labels = make(map[string]string)
-	}
+// TryGetBridgeURLForKeptnContext gets a backlink to the Keptn Bridge if available or returns "".
+func TryGetBridgeURLForKeptnContext(event adapter.EventContentAdapter) string {
 	credentials, err := credentials.GetKeptnCredentials()
 	if err != nil {
-		return labels
+		return ""
 	}
 
 	keptnBridgeURL := credentials.GetBridgeURL()
 	if keptnBridgeURL == "" {
-		return labels
+		return ""
 	}
 
-	labels[common.BridgeLabel] = keptnBridgeURL + "/trace/" + shKeptnContext
-	return labels
+	return keptnBridgeURL + "/trace/" + event.GetShKeptnContext()
 }
 
 // TryGetProblemIDFromLabels tries to extract the problem ID from a "Problem URL" label or returns "" if it cannot be done.

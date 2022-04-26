@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -36,10 +35,12 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error
 		log.WithError(err).Error("Could not check for remediation status of event")
 	}
 
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(eh.event)
+
 	if isPartOfRemediation {
 		pid, err := eh.eClient.FindProblemID(eh.event)
 		if err == nil && pid != "" {
-			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetResult(), eh.event.GetEvaluationScore())
+			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", bridgeURL, eh.event.GetResult(), eh.event.GetEvaluationScore())
 			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 		}
 	}
@@ -49,7 +50,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error
 		Source:           eventSource,
 		Title:            eh.getTitle(isPartOfRemediation),
 		Description:      fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore()),
-		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event)),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL),
 		AttachRules:      *eh.attachRules,
 	}
 

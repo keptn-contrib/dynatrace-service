@@ -41,7 +41,7 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		Source:           eventSource,
 		Title:            eh.getTitle(strategy, eh.event.GetLabels()["title"]),
 		Description:      eh.getTitle(strategy, eh.event.GetLabels()["description"]),
-		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event)),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(eh.event)),
 		AttachRules:      *eh.attachRules,
 	}
 
