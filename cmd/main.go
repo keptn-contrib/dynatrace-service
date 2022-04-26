@@ -39,7 +39,7 @@ func _main(args []string, envCfg envConfig) int {
 
 	if env.IsServiceSyncEnabled() {
 		go func() {
-			onboard.NewDefaultServiceSynchronizer().Run(ctx)
+			onboard.NewDefaultServiceSynchronizer().Run(ctx, ctx)
 		}()
 	}
 

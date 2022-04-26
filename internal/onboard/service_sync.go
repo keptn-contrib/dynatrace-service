@@ -120,13 +120,22 @@ func NewDefaultServiceSynchronizer() *ServiceSynchronizer {
 	return &serviceSynchronizer
 }
 
-// Run runs the service synchronizer and does not return.
-func (s *ServiceSynchronizer) Run(ctx context.Context) {
+// Run runs the service synchronizer which does not return unless cancelled.
+// Cancelling runCtx will stop any new synchronization runs, cancelling synchronizationCtx will stop an in progress synchronization.
+func (s *ServiceSynchronizer) Run(runCtx context.Context, synchronizationCtx context.Context) {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	for {
-		s.synchronizeServices(ctx)
-		<-time.After(time.Duration(syncInterval) * time.Second)
+		s.synchronizeServices(synchronizationCtx)
+
+		select {
+		case <-runCtx.Done():
+			log.Info("Service Synchronizer has terminated")
+			return
+
+		case <-time.After(time.Duration(syncInterval) * time.Second):
+		}
+
 		log.WithField("delaySeconds", syncInterval).Info("Synchronizing services")
 	}
 }
