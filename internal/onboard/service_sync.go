@@ -119,25 +119,25 @@ func NewDefaultServiceSynchronizer() *ServiceSynchronizer {
 }
 
 // Run runs the service synchronizer and does not return.
-func (s *ServiceSynchronizer) Run() {
+func (s *ServiceSynchronizer) Run(ctx context.Context) {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	for {
-		s.synchronizeServices()
+		s.synchronizeServices(ctx)
 		<-time.After(time.Duration(syncInterval) * time.Second)
 		log.WithField("delaySeconds", syncInterval).Info("Synchronizing services")
 	}
 }
 
 // synchronizeServices performs a single synchronization run
-func (s *ServiceSynchronizer) synchronizeServices() {
+func (s *ServiceSynchronizer) synchronizeServices(ctx context.Context) {
 	existingServices, err := s.getExistingServicesFromKeptn()
 	if err != nil {
 		log.WithError(err).Error("Could not get existing services from Keptn")
 		return
 	}
 
-	entities, err := s.getKeptnManagedServicesFromDynatrace()
+	entities, err := s.getKeptnManagedServicesFromDynatrace(ctx)
 	if err != nil {
 		log.WithError(err).Error("Could not get Keptn-managed services from Dynatrace")
 		return
@@ -175,13 +175,13 @@ func (s *ServiceSynchronizer) getExistingServicesFromKeptn() ([]string, error) {
 	return s.servicesClient.GetServiceNames(synchronizedProject, synchronizedStage)
 }
 
-func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrace.Entity, error) {
+func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace(ctx context.Context) ([]dynatrace.Entity, error) {
 	entitiesClient, err := s.entitiesClientFactory.CreateEntitiesClient()
 	if err != nil {
 		return nil, err
 	}
 
-	entities, err := entitiesClient.GetKeptnManagedServices(context.TODO())
+	entities, err := entitiesClient.GetKeptnManagedServices(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch Keptn managed services from Dynatrace: %w", err)
 	}

@@ -34,14 +34,14 @@ func main() {
 
 func _main(args []string, envCfg envConfig) int {
 
-	if env.IsServiceSyncEnabled() {
-		go func() {
-			onboard.NewDefaultServiceSynchronizer().Run()
-		}()
-	}
-
 	ctx := context.Background()
 	ctx = cloudevents.WithEncodingStructured(ctx)
+
+	if env.IsServiceSyncEnabled() {
+		go func() {
+			onboard.NewDefaultServiceSynchronizer().Run(ctx)
+		}()
+	}
 
 	log.WithFields(log.Fields{"port": envCfg.Port, "path": envCfg.Path}).Debug("Initializing cloudevents client")
 	p, err := cloudevents.NewHTTP(cloudevents.WithPath(envCfg.Path), cloudevents.WithPort(envCfg.Port), cloudevents.WithGetHandlerFunc(health.HTTPGetHandler))

@@ -1,6 +1,7 @@
 package onboard
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -167,7 +168,7 @@ func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
 		resourcesClient:       mockSLIAndSLOResourceWriter,
 		entitiesClientFactory: mockEntitiesClientFactory,
 	}
-	s.synchronizeServices()
+	s.synchronizeServices(context.Background())
 
 	onboardedService1 := "my-service"
 	onboardedService2 := "my-service-2"
@@ -314,7 +315,7 @@ func Test_ServiceSynchronizer_synchronizeServices_skipExisting(t *testing.T) {
 		resourcesClient:       mockSLIAndSLOResourceWriter,
 		entitiesClientFactory: mockEntitiesClientFactory,
 	}
-	s.synchronizeServices()
+	s.synchronizeServices(context.Background())
 
 	// no services should have been created
 	assert.EqualValues(t, 0, len(mockServicesClient.createdServices))
