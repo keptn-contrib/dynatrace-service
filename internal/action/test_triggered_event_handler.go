@@ -31,7 +31,7 @@ func (eh *TestTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		Source:                eventSource,
 		AnnotationType:        getValueFromLabels(eh.event, "type", "Start Tests: "+eh.event.GetTestStrategy()),
 		AnnotationDescription: getValueFromLabels(eh.event, "description", "Start running tests: "+eh.event.GetTestStrategy()+" against "+eh.event.GetService()),
-		CustomProperties:      createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(eh.event)),
+		CustomProperties:      createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)),
 		AttachRules:           *eh.attachRules,
 	}
 

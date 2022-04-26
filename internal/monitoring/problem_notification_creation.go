@@ -39,7 +39,7 @@ func (pn *ProblemNotificationCreation) Create(ctx context.Context, project strin
 		log.WithError(err).Error("failed to delete existing notifications")
 	}
 
-	keptnCredentials, err := credentials.GetKeptnCredentials()
+	keptnCredentials, err := credentials.GetKeptnCredentials(ctx)
 	if err != nil {
 		log.WithError(err).Error("Failed to retrieve Keptn API credentials")
 		return &ConfigResult{

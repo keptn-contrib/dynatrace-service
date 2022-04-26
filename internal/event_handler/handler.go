@@ -69,7 +69,7 @@ func getEventHandler(ctx context.Context, event cloudevents.Event, clientFactory
 		return nil, fmt.Errorf("could not create Kubernetes secret reader: %w", err)
 	}
 
-	dynatraceCredentials, err := dynatraceCredentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
+	dynatraceCredentials, err := dynatraceCredentialsProvider.GetDynatraceCredentials(ctx, dynatraceConfig.DtCreds)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Dynatrace credentials: %w", err)
 	}

@@ -1,6 +1,8 @@
 package keptn
 
 import (
+	"context"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn/go-utils/pkg/lib/keptn"
@@ -36,8 +38,8 @@ func getKeptnServiceURL(serviceName, defaultURL string) string {
 }
 
 // TryGetBridgeURLForKeptnContext gets a backlink to the Keptn Bridge if available or returns "".
-func TryGetBridgeURLForKeptnContext(event adapter.EventContentAdapter) string {
-	credentials, err := credentials.GetKeptnCredentials()
+func TryGetBridgeURLForKeptnContext(ctx context.Context, event adapter.EventContentAdapter) string {
+	credentials, err := credentials.GetKeptnCredentials(ctx)
 	if err != nil {
 		return ""
 	}

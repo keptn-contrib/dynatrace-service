@@ -90,7 +90,7 @@ func (f defaultEntitiesClientFactory) CreateEntitiesClient(ctx context.Context) 
 		return nil, err
 	}
 
-	credentials, err := credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
+	credentials, err := credentialsProvider.GetDynatraceCredentials(ctx, dynatraceConfig.DtCreds)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Dynatrace credentials: %w", err)
 	}

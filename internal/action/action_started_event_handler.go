@@ -32,7 +32,7 @@ func (eh *ActionStartedEventHandler) HandleEvent(ctx context.Context) error {
 		return err
 	}
 
-	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptn.TryGetBridgeURLForKeptnContext(eh.event), eh.event.GetSource())
+	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event), eh.event.GetSource())
 	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
 
 	return nil

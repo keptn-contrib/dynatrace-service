@@ -35,7 +35,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error
 		log.WithError(err).Error("Could not check for remediation status of event")
 	}
 
-	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(eh.event)
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)
 
 	if isPartOfRemediation {
 		pid, err := eh.eClient.FindProblemID(eh.event)

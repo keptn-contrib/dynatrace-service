@@ -1,6 +1,7 @@
 package credentials
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -157,7 +158,7 @@ func TestKeptnCredentialsReader_GetKeptnCredentials(t *testing.T) {
 
 			secretReader := NewK8sSecretReader(clientSet)
 			cm := NewKeptnCredentialsReader(secretReader)
-			got, err := cm.GetKeptnCredentials()
+			got, err := cm.GetKeptnCredentials(context.Background())
 
 			if tt.wantErr {
 				assert.Error(t, err)

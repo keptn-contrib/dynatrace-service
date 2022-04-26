@@ -1,6 +1,7 @@
 package credentials
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
@@ -37,18 +38,18 @@ func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
 	}, nil
 }
 
-func (cr *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, error) {
-	apiURL, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPIURLKey)
+func (cr *KeptnCredentialsReader) GetKeptnCredentials(ctx context.Context) (*KeptnCredentials, error) {
+	apiURL, err := cr.readSecretWithEnvironmentVariableFallback(ctx, keptnAPIURLKey)
 	if err != nil {
 		return nil, err
 	}
 
-	apiToken, err := cr.readSecretWithEnvironmentVariableFallback(keptnAPITokenKey)
+	apiToken, err := cr.readSecretWithEnvironmentVariableFallback(ctx, keptnAPITokenKey)
 	if err != nil {
 		return nil, err
 	}
 
-	bridgeURL, err := cr.secretReader.ReadSecret(dynatraceSecretName, keptnBridgeURLKey)
+	bridgeURL, err := cr.secretReader.ReadSecret(ctx, dynatraceSecretName, keptnBridgeURLKey)
 	if err != nil {
 		bridgeURL, _ = cr.environmentVariableReader.Read(keptnBridgeURLKey)
 	}
@@ -56,8 +57,8 @@ func (cr *KeptnCredentialsReader) GetKeptnCredentials() (*KeptnCredentials, erro
 	return NewKeptnCredentials(apiURL, apiToken, bridgeURL)
 }
 
-func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(key string) (string, error) {
-	val, err := cr.secretReader.ReadSecret(dynatraceSecretName, key)
+func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(ctx context.Context, key string) (string, error) {
+	val, err := cr.secretReader.ReadSecret(ctx, dynatraceSecretName, key)
 	if err == nil {
 		return val, nil
 	}
@@ -71,10 +72,10 @@ func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(key 
 }
 
 // GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
-func GetKeptnCredentials() (*KeptnCredentials, error) {
+func GetKeptnCredentials(ctx context.Context) (*KeptnCredentials, error) {
 	cr, err := NewDefaultKeptnCredentialsReader()
 	if err != nil {
 		return nil, err
 	}
-	return cr.GetKeptnCredentials()
+	return cr.GetKeptnCredentials(ctx)
 }

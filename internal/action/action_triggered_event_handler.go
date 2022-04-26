@@ -40,7 +40,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		return errors.New("cannot send DT problem comment: no problem ID is included in the event")
 	}
 
-	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(eh.event)
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)
 
 	comment := fmt.Sprintf("[Keptn triggered action](%s) %s", bridgeURL, eh.event.GetAction())
 	if eh.event.GetActionDescription() != "" {

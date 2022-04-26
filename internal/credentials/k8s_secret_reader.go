@@ -27,8 +27,8 @@ func NewDefaultK8sSecretReader() (*K8sSecretReader, error) {
 	return &K8sSecretReader{K8sClient: k8sClient}, nil
 }
 
-func (kcr *K8sSecretReader) ReadSecret(secretName string, secretKey string) (string, error) {
-	secret, err := kcr.K8sClient.CoreV1().Secrets(getPodNamespace()).Get(context.TODO(), secretName, metav1.GetOptions{})
+func (kcr *K8sSecretReader) ReadSecret(ctx context.Context, secretName string, secretKey string) (string, error) {
+	secret, err := kcr.K8sClient.CoreV1().Secrets(getPodNamespace()).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}

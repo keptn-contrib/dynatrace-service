@@ -54,7 +54,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 		return nil
 	}
 
-	keptnCredentialsCheckResult := eh.checkKeptnCredentials()
+	keptnCredentialsCheckResult := eh.checkKeptnCredentials(ctx)
 	log.WithField("result", keptnCredentialsCheckResult).Info("Checked Keptn credentials")
 
 	shipyard, err := eh.kClient.GetShipyard()
@@ -73,8 +73,8 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 	return eh.handleSuccess(getConfigureMonitoringResultMessage(keptnCredentialsCheckResult, configuredEntities))
 }
 
-func (eh *ConfigureMonitoringEventHandler) checkKeptnCredentials() keptnCredentialsCheckResult {
-	keptnCredentials, err := credentials.GetKeptnCredentials()
+func (eh *ConfigureMonitoringEventHandler) checkKeptnCredentials(ctx context.Context) keptnCredentialsCheckResult {
+	keptnCredentials, err := credentials.GetKeptnCredentials(ctx)
 	if err != nil {
 		return keptnCredentialsCheckResult{
 			success: false,

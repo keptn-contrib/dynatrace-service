@@ -1,6 +1,7 @@
 package credentials
 
 import (
+	"context"
 	"fmt"
 )
 
@@ -8,7 +9,7 @@ const dynatraceTenantKey = "DT_TENANT"
 const dynatraceAPITokenKey = "DT_API_TOKEN"
 
 type DynatraceCredentialsProvider interface {
-	GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error)
+	GetDynatraceCredentials(ctx context.Context, secretName string) (*DynatraceCredentials, error)
 }
 
 type DynatraceK8sSecretReader struct {
@@ -27,13 +28,13 @@ func NewDefaultDynatraceK8sSecretReader() (*DynatraceK8sSecretReader, error) {
 	return &DynatraceK8sSecretReader{secretReader: sr}, nil
 }
 
-func (cr *DynatraceK8sSecretReader) GetDynatraceCredentials(secretName string) (*DynatraceCredentials, error) {
-	tenant, err := cr.secretReader.ReadSecret(secretName, dynatraceTenantKey)
+func (cr *DynatraceK8sSecretReader) GetDynatraceCredentials(ctx context.Context, secretName string) (*DynatraceCredentials, error) {
+	tenant, err := cr.secretReader.ReadSecret(ctx, secretName, dynatraceTenantKey)
 	if err != nil {
 		return nil, err
 	}
 
-	apiToken, err := cr.secretReader.ReadSecret(secretName, dynatraceAPITokenKey)
+	apiToken, err := cr.secretReader.ReadSecret(ctx, secretName, dynatraceAPITokenKey)
 	if err != nil {
 		return nil, err
 	}

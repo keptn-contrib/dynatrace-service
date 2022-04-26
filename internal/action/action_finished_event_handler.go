@@ -36,7 +36,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 		return err
 	}
 
-	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(eh.event)
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)
 
 	comment := fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
 		bridgeURL,
