@@ -6,23 +6,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
-
-// TryGetBridgeURLForKeptnContext gets a backlink to the Keptn Bridge if available or returns "".
-func TryGetBridgeURLForKeptnContext(event adapter.EventContentAdapter) string {
-	credentials, err := credentials.GetKeptnCredentials()
-	if err != nil {
-		return ""
-	}
-
-	keptnBridgeURL := credentials.GetBridgeURL()
-	if keptnBridgeURL == "" {
-		return ""
-	}
-
-	return keptnBridgeURL + "/trace/" + event.GetShKeptnContext()
-}
 
 // TryGetProblemIDFromLabels tries to extract the problem ID from a "Problem URL" label or returns "" if it cannot be done.
 // The value should be of form https://dynatracetenant/#problems/problemdetails;pid=8485558334848276629_1604413609638V2
