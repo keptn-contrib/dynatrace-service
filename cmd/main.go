@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -21,8 +22,9 @@ import (
 
 type envConfig struct {
 	// Port on which to listen for cloudevents
-	Port int    `envconfig:"RCV_PORT" default:"8080"`
-	Path string `envconfig:"RCV_PATH" default:"/"`
+	Port       int    `envconfig:"RCV_PORT" default:"8080"`
+	Path       string `envconfig:"RCV_PATH" default:"/"`
+	HealthPort int    `envconfig:"HEALTH_PORT" default:"8070"`
 }
 
 func main() {
@@ -37,6 +39,9 @@ func main() {
 }
 
 func _main(envCfg envConfig) int {
+
+	healthEndpoint := health.NewHealthEndpoint(fmt.Sprintf(":%d", envCfg.HealthPort))
+	healthEndpoint.Start()
 
 	// root context
 	ctx := cloudevents.WithEncodingStructured(context.Background())
@@ -117,6 +122,8 @@ func _main(envCfg envConfig) int {
 	workerWaitGroup.Wait()
 	cancelGracePeriod()
 	helperWaitGroup.Wait()
+
+	healthEndpoint.Stop()
 
 	log.Info("Shutdown complete")
 	return 0
