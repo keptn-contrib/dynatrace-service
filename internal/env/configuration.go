@@ -9,6 +9,12 @@ import (
 
 const logLevelEnvironmentVariable = "LOG_LEVEL_DYNATRACE_SERVICE"
 
+// GetGracePeriodSeconds returns the expected grace period between SIGTERM and SIGKILL.
+// If not specified, 30 seconds is assumed.
+func GetGracePeriodSeconds() int {
+	return readEnvAsInt("GRACE_PERIOD_SECONDS", 30)
+}
+
 // GetLogLevel gets the log level specified by the LOG_LEVEL_DYNATRACE_SERVICE environment variable.
 // If none is specified, log.InfoLevel is assumed.
 func GetLogLevel() log.Level {
