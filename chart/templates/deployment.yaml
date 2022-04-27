@@ -84,6 +84,8 @@ spec:
                 secretKeyRef:
                   name: keptn-api-token
                   key: keptn-api-token
+            - name: GRACE_PERIOD_SECONDS:
+              value: '60'
           livenessProbe:
             httpGet:
               path: /health
@@ -176,6 +178,7 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
               {{- end }}
+      terminationGracePeriodSeconds: 60
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
