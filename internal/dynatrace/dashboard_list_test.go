@@ -62,7 +62,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 				createDashboardStubWith("dashboard-2", "sockshop-v2", service, stage),
 				createDashboardStubWith("dashboard-3", project, "carts-v2", stage)),
 			expectError:         true,
-			partialErrorMessage: "No dashboard name matches the name specification",
+			partialErrorMessage: "no dashboard name matches the name specification",
 		},
 		{
 			name: "no match, because only a subset of project, service and/or stage are given and would match",
@@ -75,7 +75,7 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 				createDashboardStubWith("dashboard-6", "", "", stage),
 				createDashboardStubWith("dashboard-7", "", "", "")),
 			expectError:         true,
-			partialErrorMessage: "No dashboard name matches the name specification",
+			partialErrorMessage: "no dashboard name matches the name specification",
 		},
 		{
 			name: "no match, and multiple dashboards without matching subsets of project, service and stage",
@@ -84,14 +84,14 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 				createDashboardStubWith("dashboard-2", "sockshop-v2", "carts-v1", "dev"),
 				createDashboardStubWith("dashboard-3", "sockshop-v2", "carts-v3", "hardening")),
 			expectError:         true,
-			partialErrorMessage: "No dashboard name matches the name specification",
+			partialErrorMessage: "no dashboard name matches the name specification",
 		},
 		{
 			name: "no match, single dashboards with nearly matching name",
 			dashboardList: createDashboardList(
 				createDashboardStub("dashboard-1", strings.TrimPrefix(exactNameMatchForEvent, "KQG;"))),
 			expectError:         true,
-			partialErrorMessage: "No dashboard name matches the name specification",
+			partialErrorMessage: "no dashboard name matches the name specification",
 		},
 		{
 			name: "no match, multiple dashboards with standard names",
@@ -99,13 +99,13 @@ func TestDashboardList_SearchForDashboardMatching(t *testing.T) {
 				createDashboardStub("dashboard-1", "Dashboard 1"),
 				createDashboardStub("dashboard-2", "Dashboard 2")),
 			expectError:         true,
-			partialErrorMessage: "No dashboard name matches the name specification",
+			partialErrorMessage: "no dashboard name matches the name specification",
 		},
 		{
 			name:                "no match, because there are no dashboards",
 			dashboardList:       createDashboardList(),
 			expectError:         true,
-			partialErrorMessage: "No dashboard name matches the name specification",
+			partialErrorMessage: "no dashboard name matches the name specification",
 		},
 		{
 			name: "multiple dashboards match",

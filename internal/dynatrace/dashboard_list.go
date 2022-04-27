@@ -50,7 +50,7 @@ func (dashboards *DashboardList) SearchForDashboardMatching(project string, stag
 
 	switch len(matchingDashboardIds) {
 	case 0:
-		return "", fmt.Errorf("No dashboard name matches the name specification with prefix '%s' and criteria '%s', '%s', '%s'", namePrefix, projectKeyValuePair, stageKeyValuePair, serviceKeyValuePair)
+		return "", fmt.Errorf("no dashboard name matches the name specification with prefix '%s' and criteria '%s', '%s', '%s'", namePrefix, projectKeyValuePair, stageKeyValuePair, serviceKeyValuePair)
 	case 1:
 		return matchingDashboardIds[0], nil
 	default:

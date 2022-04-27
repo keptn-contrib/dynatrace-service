@@ -34,7 +34,7 @@ func (d TimeframeDelay) Wait(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		return errors.New("Delay sleep interrupted")
+		return errors.New("delay sleep interrupted")
 
 	case <-time.After(waitDuration):
 		return nil
@@ -48,7 +48,7 @@ func (d TimeframeDelay) calculateWaitDuration() (time.Duration, error) {
 
 	// return error if the wait is too long, i.e. the timeframe end is too far in the future
 	if waitDuration > d.maximumWait {
-		return 0, fmt.Errorf("Required delay of %.2f seconds exceeds maximum of %.2f seconds", waitDuration.Seconds(), d.maximumWait.Seconds())
+		return 0, fmt.Errorf("required delay of %.2f seconds exceeds maximum of %.2f seconds", waitDuration.Seconds(), d.maximumWait.Seconds())
 	}
 
 	// if sufficient time has passed, don't wait at all

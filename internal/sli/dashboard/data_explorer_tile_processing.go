@@ -71,7 +71,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ct
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
 	if dataQuery.Metric == "" {
-		return nil, fmt.Errorf("Metric query generation requires that data explorer query has a metric")
+		return nil, fmt.Errorf("metric query generation requires that data explorer query has a metric")
 	}
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
