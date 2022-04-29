@@ -13,19 +13,24 @@ const keptnAPIURLKey = "KEPTN_API_URL"
 const keptnAPITokenKey = "KEPTN_API_TOKEN"
 const keptnBridgeURLKey = "KEPTN_BRIDGE_URL"
 
+// KeptnCredentialsProvider allows Keptn credentials to be read.
 type KeptnCredentialsProvider interface {
+	// GetKeptnCredentials gets Keptn credentials or returns an error.
 	GetKeptnCredentials() (*KeptnCredentials, error)
 }
 
+// KeptnCredentialsReader is an implementation of KeptnCredentialsProvider that reads from a K8s secret or environment variables.
 type KeptnCredentialsReader struct {
 	secretReader              *K8sSecretReader
 	environmentVariableReader *env.OSEnvironmentVariableReader
 }
 
+// NewKeptnCredentialsReader creates a new KeptnCredentialsReader.
 func NewKeptnCredentialsReader(sr *K8sSecretReader) *KeptnCredentialsReader {
 	return &KeptnCredentialsReader{secretReader: sr, environmentVariableReader: env.NewOSEnvironmentVariableReader()}
 }
 
+// NewDefaultKeptnCredentialsReader creates a new KeptnCredentialsReader using a default K8sSecretReader or returns an error.
 func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
 	sr, err := NewDefaultK8sSecretReader()
 	if err != nil {
@@ -38,6 +43,7 @@ func NewDefaultKeptnCredentialsReader() (*KeptnCredentialsReader, error) {
 	}, nil
 }
 
+// GetKeptnCredentials gets Keptn credentials or returns an error.
 func (cr *KeptnCredentialsReader) GetKeptnCredentials(ctx context.Context) (*KeptnCredentials, error) {
 	apiURL, err := cr.readSecretWithEnvironmentVariableFallback(ctx, keptnAPIURLKey)
 	if err != nil {
@@ -71,7 +77,7 @@ func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(ctx 
 	return "", fmt.Errorf("key \"%s\" was not found in secret \"%s\" or environment variables: %w", key, dynatraceSecretName, err)
 }
 
-// GetKeptnCredentials retrieves the Keptn Credentials from the "dynatrace" secret
+// GetKeptnCredentials gets Keptn credentials or returns an error.
 func GetKeptnCredentials(ctx context.Context) (*KeptnCredentials, error) {
 	cr, err := NewDefaultKeptnCredentialsReader()
 	if err != nil {

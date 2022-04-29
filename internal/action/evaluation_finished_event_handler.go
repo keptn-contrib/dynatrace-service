@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// EvaluationFinishedEventHandler handles an evaluation finished event.
 type EvaluationFinishedEventHandler struct {
 	event       EvaluationFinishedAdapterInterface
 	dtClient    dynatrace.ClientInterface
@@ -17,7 +18,7 @@ type EvaluationFinishedEventHandler struct {
 	attachRules *dynatrace.AttachRules
 }
 
-// NewEvaluationFinishedEventHandler creates a new EvaluationFinishedEventHandler
+// NewEvaluationFinishedEventHandler creates a new EvaluationFinishedEventHandler.
 func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface, client dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *EvaluationFinishedEventHandler {
 	return &EvaluationFinishedEventHandler{
 		event:       event,
@@ -27,7 +28,7 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 	}
 }
 
-// HandleEvent handles an action finished event.
+// HandleEvent handles an evaluation finished event.
 func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error {
 
 	isPartOfRemediation, err := eh.eClient.IsPartOfRemediation(eh.event)

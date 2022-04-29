@@ -24,7 +24,7 @@ func NewProblemNotificationCreation(client dynatrace.ClientInterface) *ProblemNo
 func (pn *ProblemNotificationCreation) Create(ctx context.Context, project string) *ConfigResult {
 	log.Info("Setting up problem notifications in Dynatrace Tenant")
 
-	alertingProfileId, err := getOrCreateKeptnAlertingProfile(ctx, dynatrace.NewAlertingProfilesClient(pn.client))
+	alertingProfileID, err := getOrCreateKeptnAlertingProfile(ctx, dynatrace.NewAlertingProfilesClient(pn.client))
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
 		return &ConfigResult{
@@ -48,7 +48,7 @@ func (pn *ProblemNotificationCreation) Create(ctx context.Context, project strin
 		}
 	}
 
-	err = notificationsClient.Create(ctx, keptnCredentials, alertingProfileId, project)
+	err = notificationsClient.Create(ctx, keptnCredentials, alertingProfileID, project)
 	if err != nil {
 		log.WithError(err).Error("Failed to create problem notification")
 		return &ConfigResult{

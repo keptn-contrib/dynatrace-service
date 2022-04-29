@@ -10,9 +10,16 @@ import (
 
 const eventsPath = "/api/v1/events"
 
+// AnnotationEventType is the type of a custom annotation event.
 const AnnotationEventType = "CUSTOM_ANNOTATION"
+
+// ConfigurationEventType is the type of a custom configuration event.
 const ConfigurationEventType = "CUSTOM_CONFIGURATION"
+
+// DeploymentEventType is the type of a custom deployment event.
 const DeploymentEventType = "CUSTOM_DEPLOYMENT"
+
+// InfoEventType is the type of a custom info event.
 const InfoEventType = "CUSTOM_INFO"
 
 // AnnotationEvent defines a Dynatrace custom annotation event.

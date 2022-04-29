@@ -9,6 +9,25 @@ import (
 
 const logLevelEnvironmentVariable = "LOG_LEVEL_DYNATRACE_SERVICE"
 
+// GetVersion gets the version environment variable.
+func GetVersion() string {
+	return os.Getenv("version")
+}
+
+// GetPodNamespace gets the POD_NAMESPACE environment variable with the default of "keptn".
+func GetPodNamespace() string {
+	ns := os.Getenv("POD_NAMESPACE")
+	if ns == "" {
+		return "keptn"
+	}
+	return ns
+}
+
+// GetKubernetesServiceHost gets the KUBERNETES_SERVICE_HOST environment variable
+func GetKubernetesServiceHost() string {
+	return os.Getenv("KUBERNETES_SERVICE_HOST")
+}
+
 // GetGracePeriodSeconds returns the expected grace period between SIGTERM and SIGKILL.
 // If not specified, 30 seconds is assumed.
 func GetGracePeriodSeconds() int {

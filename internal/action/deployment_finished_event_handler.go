@@ -7,6 +7,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
+// DeploymentFinishedEventHandler handles a deployment finished event.
 type DeploymentFinishedEventHandler struct {
 	event       DeploymentFinishedAdapterInterface
 	dtClient    dynatrace.ClientInterface
@@ -14,7 +15,7 @@ type DeploymentFinishedEventHandler struct {
 	attachRules *dynatrace.AttachRules
 }
 
-// NewDeploymentFinishedEventHandler creates a new DeploymentFinishedEventHandler
+// NewDeploymentFinishedEventHandler creates a new DeploymentFinishedEventHandler.
 func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *DeploymentFinishedEventHandler {
 	return &DeploymentFinishedEventHandler{
 		event:       event,
@@ -24,7 +25,7 @@ func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface,
 	}
 }
 
-// HandleEvent handles an action finished event.
+// HandleEvent handles a deployment finished event.
 func (eh *DeploymentFinishedEventHandler) HandleEvent(ctx context.Context) error {
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
 

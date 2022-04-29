@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -109,7 +109,7 @@ func (c *Client) createRequest(ctx context.Context, apiPath string, method strin
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+os.Getenv("version"))
+	req.Header.Set("User-Agent", "keptn-contrib/dynatrace-service:"+env.GetVersion())
 
 	for key, values := range c.additionalHeader {
 		for _, value := range values {

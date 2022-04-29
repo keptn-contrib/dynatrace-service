@@ -7,6 +7,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
+// TestTriggeredEventHandler handles a test triggered event.
 type TestTriggeredEventHandler struct {
 	event       TestTriggeredAdapterInterface
 	dtClient    dynatrace.ClientInterface
@@ -14,7 +15,7 @@ type TestTriggeredEventHandler struct {
 	attachRules *dynatrace.AttachRules
 }
 
-// NewTestTriggeredEventHandler creates a new TestTriggeredEventHandler
+// NewTestTriggeredEventHandler creates a new TestTriggeredEventHandler.
 func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *TestTriggeredEventHandler {
 	return &TestTriggeredEventHandler{
 		event:       event,
@@ -24,7 +25,7 @@ func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient 
 	}
 }
 
-// HandleEvent handles an action finished event.
+// HandleEvent handles a test triggered event.
 func (eh *TestTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 	annotationEvent := dynatrace.AnnotationEvent{
 		EventType:             dynatrace.AnnotationEventType,
