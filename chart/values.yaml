@@ -74,3 +74,5 @@ nodeSelector: {}                                # Node selector configuration
 tolerations: []                                 # Tolerations for the pods
 
 affinity: {}                                    # Affinity rules
+
+terminationGracePeriodSeconds: 30               # Pod termination grace period in seconds

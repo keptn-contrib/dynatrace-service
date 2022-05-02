@@ -24,6 +24,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: dynatrace-service
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -84,8 +85,8 @@ spec:
                 secretKeyRef:
                   name: keptn-api-token
                   key: keptn-api-token
-            - name: GRACE_PERIOD_SECONDS:
-              value: '60'
+            - name: GRACE_PERIOD_SECONDS
+              value: '{{ .Values.terminationGracePeriodSeconds }}'
           livenessProbe:
             httpGet:
               path: /health
@@ -178,7 +179,6 @@ spec:
                   apiVersion: v1
                   fieldPath: spec.nodeName
               {{- end }}
-      terminationGracePeriodSeconds: 60
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -59,3 +59,12 @@ The minimum log level of messages emitted by the service may be set via `dynatra
 | Value name | Description | Default |
 |---|---|---|
 | `dynatraceService.config.logLevel`| Minimum log level to log | `info` |
+
+
+## Setting the termination grace period
+
+The termination grace period of the pod may be set via `terminationGracePeriodSeconds`.
+
+| Value name | Description | Default |
+|---|---|---|
+| `terminationGracePeriodSeconds` | Termination grace period (in seconds) | `30` |
