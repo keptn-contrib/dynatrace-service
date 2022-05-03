@@ -62,7 +62,7 @@ func TestProblemEventHandler_HandleEvent(t *testing.T) {
 			kClient := &keptnClientMock{}
 			ph := NewProblemEventHandler(adapter, kClient)
 
-			err = ph.HandleEvent(context.TODO())
+			err = ph.HandleEvent(context.Background(), context.Background())
 
 			assert.NoError(t, err)
 			if tt.wantEmittedEvent {

@@ -40,7 +40,7 @@ type RemediationTriggeredEventData struct {
 }
 
 // HandleEvent handles a problem event.
-func (eh ProblemEventHandler) HandleEvent(ctx context.Context) error {
+func (eh ProblemEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	if eh.event.IsNotFromDynatrace() {
 		log.WithField("eventSource", eh.event.GetSource()).Debug("Will not handle problem event that did not come from a Dynatrace Problem Notification")
 		return nil

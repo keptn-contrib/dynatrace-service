@@ -28,7 +28,7 @@ func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, dtClien
 }
 
 // HandleEvent handles an action finished event.
-func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
+func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	// lets find our dynatrace problem details for this remediation workflow
 	pid, err := eh.eClient.FindProblemID(eh.event)
 	if err != nil {
@@ -36,14 +36,14 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 		return err
 	}
 
-	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
 
 	comment := fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
 		bridgeURL,
 		eh.event.GetSource(),
 		eh.event.GetResult(),
 		eh.event.GetStatus())
-	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
+	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(workCtx, pid, comment)
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// Additionally to the problem comment, send Info or Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
@@ -58,7 +58,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 			AttachRules:      *eh.attachRules,
 		}
 
-		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(ctx, configurationEvent)
+		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(workCtx, configurationEvent)
 	} else {
 		infoEvent := dynatrace.InfoEvent{
 			EventType:        dynatrace.InfoEventType,
@@ -69,7 +69,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent(ctx context.Context) error {
 			AttachRules:      *eh.attachRules,
 		}
 
-		dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, infoEvent)
+		dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 	}
 
 	return nil

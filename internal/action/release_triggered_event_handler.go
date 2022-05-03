@@ -29,7 +29,7 @@ func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, dtC
 }
 
 // HandleEvent handles an action finished event.
-func (eh *ReleaseTriggeredEventHandler) HandleEvent(ctx context.Context) error {
+func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	strategy, err := keptnevents.GetDeploymentStrategy(eh.event.GetDeploymentStrategy())
 	if err != nil {
 		log.WithError(err).Error("Could not determine deployment strategy")
@@ -41,11 +41,11 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(ctx context.Context) error {
 		Source:           eventSource,
 		Title:            eh.getTitle(strategy, eh.event.GetLabels()["title"]),
 		Description:      eh.getTitle(strategy, eh.event.GetLabels()["description"]),
-		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:      *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, infoEvent)
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 	return nil
 }
 

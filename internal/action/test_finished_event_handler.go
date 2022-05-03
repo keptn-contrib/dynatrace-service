@@ -25,16 +25,16 @@ func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dyna
 }
 
 // HandleEvent handles an action finished event.
-func (eh *TestFinishedEventHandler) HandleEvent(ctx context.Context) error {
+func (eh *TestFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	annotationEvent := dynatrace.AnnotationEvent{
 		EventType:             dynatrace.AnnotationEventType,
 		Source:                eventSource,
 		AnnotationType:        getValueFromLabels(eh.event, "type", "Stop Tests"),
 		AnnotationDescription: getValueFromLabels(eh.event, "description", "Stop running tests: against "+eh.event.GetService()),
-		CustomProperties:      createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)),
+		CustomProperties:      createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:           *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ctx, annotationEvent)
+	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(workCtx, annotationEvent)
 	return nil
 }

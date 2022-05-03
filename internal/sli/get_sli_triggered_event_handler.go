@@ -44,7 +44,7 @@ func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient d
 }
 
 // HandleEvent handles a get-SLI triggered event.
-func (eh GetSLIEventHandler) HandleEvent(ctx context.Context) error {
+func (eh GetSLIEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	// do not continue if SLIProvider is not dynatrace
 	if eh.event.IsNotForDynatrace() {
 		return nil
@@ -61,7 +61,7 @@ func (eh GetSLIEventHandler) HandleEvent(ctx context.Context) error {
 			"service": eh.event.GetService(),
 		}).Info("Processing sh.keptn.event.get-sli.triggered")
 
-	sliResults, err := eh.retrieveSLIResults(ctx)
+	sliResults, err := eh.retrieveSLIResults(workCtx)
 	if err != nil {
 		log.WithError(err).Error("error retrieving SLIs")
 		return eh.sendGetSLIFinishedEvent(nil, err)

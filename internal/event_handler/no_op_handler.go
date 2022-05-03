@@ -6,6 +6,6 @@ type NoOpHandler struct {
 }
 
 // HandleEvent handles an event by doing nothing.
-func (eh NoOpHandler) HandleEvent(ctx context.Context) error {
+func (eh NoOpHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	return nil
 }

@@ -26,16 +26,16 @@ func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient 
 }
 
 // HandleEvent handles a test triggered event.
-func (eh *TestTriggeredEventHandler) HandleEvent(ctx context.Context) error {
+func (eh *TestTriggeredEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	annotationEvent := dynatrace.AnnotationEvent{
 		EventType:             dynatrace.AnnotationEventType,
 		Source:                eventSource,
 		AnnotationType:        getValueFromLabels(eh.event, "type", "Start Tests: "+eh.event.GetTestStrategy()),
 		AnnotationDescription: getValueFromLabels(eh.event, "description", "Start running tests: "+eh.event.GetTestStrategy()+" against "+eh.event.GetService()),
-		CustomProperties:      createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)),
+		CustomProperties:      createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:           *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(ctx, annotationEvent)
+	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(workCtx, annotationEvent)
 	return nil
 }

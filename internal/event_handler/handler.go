@@ -24,7 +24,8 @@ import (
 // DynatraceEventHandler is the common interface for all event handlers.
 type DynatraceEventHandler interface {
 	// HandleEvent handles an event.
-	HandleEvent(ctx context.Context) error
+	// Two contexts are provided: workCtx should be used to do work, replyCtx should be used to reply to Keptn (even if workCtx is done).
+	HandleEvent(workCtx context.Context, replyCtx context.Context) error
 }
 
 // NewEventHandler creates a new DynatraceEventHandler for the specified event.

@@ -156,7 +156,7 @@ func _main(envCfg envConfig) int {
 }
 
 func gotEvent(workCtx context.Context, replyCtx context.Context, event cloudevents.Event) {
-	err := event_handler.NewEventHandler(workCtx, event).HandleEvent(workCtx)
+	err := event_handler.NewEventHandler(workCtx, event).HandleEvent(workCtx, replyCtx)
 	if err != nil {
 		log.WithError(err).Error("HandleEvent() returned an error")
 	}

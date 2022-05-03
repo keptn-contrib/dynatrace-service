@@ -31,7 +31,7 @@ func NewErrorHandler(err error, event cloudevents.Event, uniformClient keptn.Uni
 }
 
 // HandleEvent handles errors by sending an error event.
-func (eh ErrorHandler) HandleEvent(ctx context.Context) error {
+func (eh ErrorHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	keptnClient, err := keptn.NewDefaultClient(eh.evt)
 	if err != nil {
 		log.WithError(err).Error("Could not instantiate Keptn client")

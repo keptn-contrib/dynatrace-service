@@ -55,7 +55,7 @@ func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Han
 	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, kClient, rClient, dashboard)
 	defer teardown()
 
-	assert.NoError(t, eh.HandleEvent(context.TODO()))
+	assert.NoError(t, eh.HandleEvent(context.Background(), context.Background()))
 }
 
 func assertCorrectGetSLIEvents(t *testing.T, events []*cloudevents.Event, getSLIFinishedEventAssertionsFunc func(*testing.T, *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(*testing.T, *keptnv2.SLIResult)) {

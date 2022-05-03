@@ -29,20 +29,20 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 }
 
 // HandleEvent handles an evaluation finished event.
-func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error {
+func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 
 	isPartOfRemediation, err := eh.eClient.IsPartOfRemediation(eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not check for remediation status of event")
 	}
 
-	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
 
 	if isPartOfRemediation {
 		pid, err := eh.eClient.FindProblemID(eh.event)
 		if err == nil && pid != "" {
 			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", bridgeURL, eh.event.GetResult(), eh.event.GetEvaluationScore())
-			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(ctx, pid, comment)
+			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(workCtx, pid, comment)
 		}
 	}
 
@@ -55,7 +55,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(ctx context.Context) error
 		AttachRules:      *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ctx, infoEvent)
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 
 	return nil
 }

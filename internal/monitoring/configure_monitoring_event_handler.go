@@ -40,8 +40,8 @@ func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterfac
 }
 
 // HandleEvent handles a configure monitoring event.
-func (eh ConfigureMonitoringEventHandler) HandleEvent(ctx context.Context) error {
-	err := eh.configureMonitoring(ctx)
+func (eh ConfigureMonitoringEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+	err := eh.configureMonitoring(workCtx)
 	if err != nil {
 		log.WithError(err).Error("Configure monitoring failed")
 	}

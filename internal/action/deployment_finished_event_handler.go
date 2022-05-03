@@ -26,7 +26,7 @@ func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface,
 }
 
 // HandleEvent handles a deployment finished event.
-func (eh *DeploymentFinishedEventHandler) HandleEvent(ctx context.Context) error {
+func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
 
 	deploymentEvent := dynatrace.DeploymentEvent{
@@ -37,10 +37,10 @@ func (eh *DeploymentFinishedEventHandler) HandleEvent(ctx context.Context) error
 		DeploymentVersion: getValueFromLabels(eh.event, "deploymentVersion", imageAndTag.Tag()),
 		CiBackLink:        getValueFromLabels(eh.event, "ciBackLink", ""),
 		RemediationAction: getValueFromLabels(eh.event, "remediationAction", ""),
-		CustomProperties:  createCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(ctx, eh.event)),
+		CustomProperties:  createCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:       *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(ctx, deploymentEvent)
+	dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(workCtx, deploymentEvent)
 	return nil
 }
