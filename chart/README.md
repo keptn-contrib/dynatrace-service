@@ -49,7 +49,8 @@ The following table lists the configurable parameters of the *dynatrace-service*
 | `tolerations` | Tolerations for the pods | `[]` |
 | `affinity` | Affinity rules | `{}` |
 | `terminationGracePeriodSeconds` | Termination grace period (in seconds) | `30` |
-
+| `workGracePeriodSeconds` | Seconds allocated to completing work in the event of a graceful shutdown | `20` |
+| `replyGracePeriodSeconds` | Seconds allocated to replying in the event of a graceful shutdown | `5` |
 
 
 

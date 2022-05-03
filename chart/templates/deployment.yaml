@@ -85,8 +85,10 @@ spec:
                 secretKeyRef:
                   name: keptn-api-token
                   key: keptn-api-token
-            - name: GRACE_PERIOD_SECONDS
-              value: '{{ .Values.terminationGracePeriodSeconds }}'
+            - name: WORK_GRACE_PERIOD_SECONDS
+              value: '{{ .Values.workGracePeriodSeconds }}'
+            - name: REPLY_GRACE_PERIOD_SECONDS
+              value: '{{ .Values.replyGracePeriodSeconds }}'
           livenessProbe:
             httpGet:
               path: /health

@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
+	context2 "github.com/keptn-contrib/dynatrace-service/internal/context"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/event_handler"
 	"github.com/keptn-contrib/dynatrace-service/internal/health"
@@ -54,59 +54,12 @@ func _main(envCfg envConfig) int {
 	defer stopNotify()
 
 	// workCtx will be cancelled after the grace period after notifyCtx is done
-	workCtx, cancelWorkCtx := context.WithCancel(ctx)
+	workCtx, stopWorkPeriod := context2.NewTriggeredTimeoutContext(ctx, notifyCtx, env.GetWorkGracePeriod(), "workCtx")
+	defer stopWorkPeriod()
 
 	// replyCtx will be cancelled after a cleanup period after workCtx is done
-	replyCtx, cancelReplyCtx := context.WithCancel(ctx)
-
-	// start helper go routine to provide cancellation after grace period after signal
-	helperWaitGroup := &sync.WaitGroup{}
-	helperWaitGroup.Add(1)
-	go func() {
-		defer helperWaitGroup.Done()
-		defer cancelWorkCtx()
-		defer cancelReplyCtx()
-
-		// wait for notify signal
-		<-notifyCtx.Done()
-
-		// calculate effective grace period, allow 5 seconds of slack time
-		const slackSeconds = 5
-		const desiredCleanupPeriodSeconds = 5
-
-		actualCleanupPeriodSeconds := env.GetGracePeriodSeconds() - slackSeconds
-		if actualCleanupPeriodSeconds > desiredCleanupPeriodSeconds {
-			actualCleanupPeriodSeconds = desiredCleanupPeriodSeconds
-		} else if actualCleanupPeriodSeconds < 0 {
-			actualCleanupPeriodSeconds = 0
-		}
-
-		actualGracePeriodSeconds := env.GetGracePeriodSeconds() - actualCleanupPeriodSeconds - slackSeconds
-		if actualGracePeriodSeconds < 0 {
-			actualGracePeriodSeconds = 0
-		}
-
-		log.WithField("actualGracePeriodSeconds", actualGracePeriodSeconds).Info("Notified for shutdown, starting grace period")
-
-		// wait out the grace period but stop if already cancelled, i.e. if workers have already finished
-		select {
-		case <-replyCtx.Done():
-			return
-		case <-time.After(time.Duration(actualGracePeriodSeconds) * time.Second):
-		}
-
-		log.WithField("actualCleanupPeriodSeconds", actualCleanupPeriodSeconds).Info("Grace period has expired, cancelling all work and starting clean up period")
-		cancelWorkCtx()
-
-		// wait out the reply period but stop if already cancelled, i.e. if workers have already finished
-		select {
-		case <-replyCtx.Done():
-			return
-		case <-time.After(time.Duration(actualCleanupPeriodSeconds) * time.Second):
-		}
-
-		log.Info("Cleanup period has expired, cancelling all cleanup")
-	}()
+	replyCtx, stopReplyPeriod := context2.NewTriggeredTimeoutContext(ctx, workCtx, env.GetReplyGracePeriod(), "replyCtx")
+	defer stopReplyPeriod()
 
 	workerWaitGroup := &sync.WaitGroup{}
 	if env.IsServiceSyncEnabled() {
@@ -124,8 +77,7 @@ func _main(envCfg envConfig) int {
 	}
 
 	// start actually receiving cloud events
-	// the actual processing is done in a separate go routine which receives only the graceful context
-	// this allows the incoming cloud event to be acknowledged immediately to avoid hitting a timeout specified in the distributor
+	// the actual processing is done in a separate goroutine so that the incoming cloud event is acknowledged immediately
 	log.Info("Starting receiver")
 	err = c.StartReceiver(notifyCtx,
 		func(event cloudevents.Event) {
@@ -145,9 +97,8 @@ func _main(envCfg envConfig) int {
 	log.Info("Waiting for existing processing to finish")
 	stopNotify()
 	workerWaitGroup.Wait()
-	cancelWorkCtx()
-	cancelReplyCtx()
-	helperWaitGroup.Wait()
+	stopWorkPeriod()
+	stopReplyPeriod()
 
 	healthEndpoint.Stop()
 

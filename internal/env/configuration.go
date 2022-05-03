@@ -3,6 +3,7 @@ package env
 import (
 	"os"
 	"strconv"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -28,10 +29,18 @@ func GetKubernetesServiceHost() string {
 	return os.Getenv("KUBERNETES_SERVICE_HOST")
 }
 
-// GetGracePeriodSeconds returns the expected grace period between SIGTERM and SIGKILL.
-// If not specified, 30 seconds is assumed.
-func GetGracePeriodSeconds() int {
-	return readEnvAsInt("GRACE_PERIOD_SECONDS", 30)
+// GetWorkGracePeriod returns the expected work period in which an event should be processed.
+// This period is only enforced during a graceful shutdown.
+// If not set, 20 seconds is assumed.
+func GetWorkGracePeriod() time.Duration {
+	return time.Duration(readEnvAsInt("WORK_GRACE_PERIOD_SECONDS", 20)) * time.Second
+}
+
+// GetReplyGracePeriod returns the expected period in which an event should reply.
+// This period is only enforced during a graceful shutdown.
+// If not set, 5 seconds is assumed.
+func GetReplyGracePeriod() time.Duration {
+	return time.Duration(readEnvAsInt("REPLY_GRACE_PERIOD_SECONDS", 5)) * time.Second
 }
 
 // GetLogLevel gets the log level specified by the LOG_LEVEL_DYNATRACE_SERVICE environment variable.

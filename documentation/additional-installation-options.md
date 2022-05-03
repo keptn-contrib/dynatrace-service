@@ -61,10 +61,12 @@ The minimum log level of messages emitted by the service may be set via `dynatra
 | `dynatraceService.config.logLevel`| Minimum log level to log | `info` |
 
 
-## Setting the termination grace period
+## Configuring for a potential graceful shutdown
 
-The termination grace period of the pod may be set via `terminationGracePeriodSeconds`.
+In the event of a graceful shutdown the dynatrace-service should allow events to finish processing, replies to be sent and any cleanup to be performed. The termination grace period of the pod may be set via `terminationGracePeriodSeconds`. In addition the amount of time allocated to finishing processing events and sending any replies can be set via `workGracePeriodSeconds` and `replyGracePeriodSeconds`. Values should be chosen such that `workGracePeriodSeconds + replygracePeriodSeconds < terminationGracePeriodSeconds`.
 
 | Value name | Description | Default |
 |---|---|---|
 | `terminationGracePeriodSeconds` | Termination grace period (in seconds) | `30` |
+| `workGracePeriodSeconds` | Seconds allocated to completing work in the event of a graceful shutdown | `20` |
+| `replyGracePeriodSeconds` | Seconds allocated to replying in the event of a graceful shutdown | `5` |

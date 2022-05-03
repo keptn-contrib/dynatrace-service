@@ -76,3 +76,5 @@ tolerations: []                                 # Tolerations for the pods
 affinity: {}                                    # Affinity rules
 
 terminationGracePeriodSeconds: 30               # Pod termination grace period in seconds
+workGracePeriodSeconds: 20                      # Seconds allocated to completing work in the event of a graceful shutdown
+replyGracePeriodSeconds: 5                      # Seconds allocated to replying in the event of a graceful shutdown

@@ -148,6 +148,12 @@
     },
     "terminationGracePeriodSeconds": {
       "type": "integer"
+    },
+    "workGracePeriodSeconds": {
+      "type": "integer"
+    },
+    "replyGracePeriodSeconds": {
+      "type": "integer"
     }
   }
 }
