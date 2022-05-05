@@ -42,7 +42,12 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 		return nil
 	}
 
-	sloDefinition, _ := common.ParseSLOFromString(tile.FilterConfig.CustomName)
+	sloDefinition, err := common.ParseSLOFromString(tile.FilterConfig.CustomName)
+	if err != nil {
+		failedTileResult := newFailedTileResultFromError(sloDefinition.SLI, "Custom charting tile not included due to parsing errors", err)
+		return []*TileResult{&failedTileResult}
+	}
+
 	if sloDefinition.SLI == "" {
 		log.WithField("tile.FilterConfig.CustomName", tile.FilterConfig.CustomName).Debug("Tile not included as name doesnt include sli=SLINAME")
 		return nil
