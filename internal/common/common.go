@@ -1,7 +1,9 @@
 package common
 
 import (
+	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -9,8 +11,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-
-	log "github.com/sirupsen/logrus"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 )
@@ -76,24 +76,54 @@ func TimestampToUnixMillisecondsString(time time.Time) string {
 	return strconv.FormatInt(time.Unix()*1000, 10)
 }
 
+type sloDefinitionError struct {
+	errors []error
+}
+
+func (err *sloDefinitionError) Error() string {
+	var errStrings = make([]string, len(err.errors))
+	for i, e := range err.errors {
+		errStrings[i] = e.Error()
+	}
+	return strings.Join(errStrings, ";")
+}
+
+type duplicateKeyError struct {
+	key string
+}
+
+func (err *duplicateKeyError) Error() string {
+	return fmt.Sprintf("duplicate key '%s' in SLO definition", err.key)
+}
+
+const (
+	SloDefSli     = "sli"
+	SloDefPass    = "pass"
+	SloDefWarning = "warning"
+	SloDefKey     = "key"
+	SloDefWeight  = "weight"
+)
+
 // ParseSLOFromString takes a value such as
 //   Example 1: Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true
 //   Example 2: Response time (P95);sli=svc_rt_p95;pass=<+10%,<600
 //   Example 3: Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false
 // can also take a value like
 // 	 "KQG;project=myproject;pass=90%;warning=75%;"
-// This will return a SLO object
-func ParseSLOFromString(customName string) *keptncommon.SLO {
+// This will return a SLO object or an error if parsing was not possible
+func ParseSLOFromString(customName string) (*keptncommon.SLO, error) {
 	result := &keptncommon.SLO{
 		Weight:  1,
 		KeySLI:  false,
 		Pass:    []*keptncommon.SLOCriteria{},
 		Warning: []*keptncommon.SLOCriteria{},
 	}
+	var errs []error
 
 	nameValueSplits := strings.Split(customName, ";")
 
 	// let's iterate through all name-value pairs which are separated through ";" to extract keys such as warning, pass, weight, key, sli
+	keyFound := make(map[string]bool)
 	for i := 0; i < len(nameValueSplits); i++ {
 
 		nameValueDividerIndex := strings.Index(nameValueSplits[i], "=")
@@ -104,33 +134,58 @@ func ParseSLOFromString(customName string) *keptncommon.SLO {
 		// for each name=value pair we get the name as first part of the string until the first =
 		// the value is the after that =
 		nameString := strings.ToLower(nameValueSplits[i][:nameValueDividerIndex])
-		valueString := nameValueSplits[i][nameValueDividerIndex+1:]
+		valueString := strings.TrimSpace(nameValueSplits[i][nameValueDividerIndex+1:])
 		var err error
 		switch nameString {
-		case "sli":
+		case SloDefSli:
+			if keyFound[SloDefSli] {
+				errs = append(errs, &duplicateKeyError{key: SloDefSli})
+				break
+			}
 			result.SLI = valueString
-		case "pass":
-			result.Pass = append(
-				result.Pass,
-				&keptncommon.SLOCriteria{Criteria: strings.Split(valueString, ",")})
-		case "warning":
-			result.Warning = append(
-				result.Warning,
-				&keptncommon.SLOCriteria{Criteria: strings.Split(valueString, ",")})
-		case "key":
+			if valueString == "" {
+				errs = append(errs, fmt.Errorf("sli name is empty"))
+			}
+			keyFound[SloDefSli] = true
+		case SloDefPass:
+			passCriteria, err := parseSLOCriteriaString(valueString)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", SloDefPass, err))
+				break
+			}
+			result.Pass = append(result.Pass, passCriteria)
+		case SloDefWarning:
+			warningCriteria, err := parseSLOCriteriaString(valueString)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", SloDefWarning, err))
+				break
+			}
+			result.Warning = append(result.Warning, warningCriteria)
+		case SloDefKey:
+			if keyFound[SloDefKey] {
+				errs = append(errs, &duplicateKeyError{key: SloDefKey})
+				break
+			}
 			result.KeySLI, err = strconv.ParseBool(valueString)
 			if err != nil {
-				log.WithError(err).Warn("Error parsing bool")
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", SloDefKey, valueString))
 			}
-		case "weight":
+			keyFound[SloDefKey] = true
+		case SloDefWeight:
+			if keyFound[SloDefWeight] {
+				errs = append(errs, &duplicateKeyError{key: SloDefWeight})
+				break
+			}
 			result.Weight, err = strconv.Atoi(valueString)
 			if err != nil {
-				log.WithError(err).Warn("Error parsing weight")
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': not an integer value: %v", SloDefWeight, valueString))
 			}
+			keyFound[SloDefWeight] = true
 		}
 	}
 
 	// if we have no criteria for warn or pass we just return nil
+	// not having a value for 'pass' means: this SLI is for informational purposes only and will not be evaluated.
 	if len(result.Pass) == 0 {
 		result.Pass = nil
 	}
@@ -138,7 +193,33 @@ func ParseSLOFromString(customName string) *keptncommon.SLO {
 		result.Warning = nil
 	}
 
-	return result
+	if len(errs) > 0 {
+		return nil, &sloDefinitionError{errors: errs}
+	}
+
+	return result, nil
+}
+
+func parseSLOCriteriaString(criteria string) (*keptncommon.SLOCriteria, error) {
+	criteriaChunks := strings.Split(criteria, ",")
+	var invalidCriteria []string
+	for _, criterion := range criteriaChunks {
+		if criterionIsNotValid(criterion) {
+			invalidCriteria = append(invalidCriteria, criterion)
+		}
+	}
+
+	if len(invalidCriteria) > 0 {
+		return nil, fmt.Errorf("invalid criteria value(s): %s", strings.Join(invalidCriteria, ","))
+	}
+
+	return &keptncommon.SLOCriteria{Criteria: criteriaChunks}, nil
+}
+
+func criterionIsNotValid(criterion string) bool {
+	pattern := regexp.MustCompile("^(<|<=|=|>|>=)([+-]?\\d+|[+-]?\\d+\\.\\d+)([%]?)$")
+
+	return !pattern.MatchString(criterion)
 }
 
 // CleanIndicatorName makes sure we have a valid indicator name by getting rid of special characters
