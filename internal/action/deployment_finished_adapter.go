@@ -80,6 +80,9 @@ func (a DeploymentFinishedAdapter) GetDeploymentStrategy() string {
 // GetLabels returns a map of labels
 func (a DeploymentFinishedAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	if len(a.event.Deployment.DeploymentURIsLocal) > 0 {
 		labels["deploymentURILocal"] = a.event.Deployment.DeploymentURIsLocal[0]
 	}

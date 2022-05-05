@@ -85,6 +85,9 @@ func (a EvaluationFinishedAdapter) GetDeploymentStrategy() string {
 // GetLabels returns a map of labels
 func (a EvaluationFinishedAdapter) GetLabels() map[string]string {
 	labels := a.event.Labels
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	labels["Quality Gate Score"] = fmt.Sprintf("%.2f", a.event.Evaluation.Score)
 	labels["No of evaluated SLIs"] = fmt.Sprintf("%d", len(a.event.Evaluation.IndicatorResults))
 	labels["Evaluation Start"] = a.event.Evaluation.TimeStart
