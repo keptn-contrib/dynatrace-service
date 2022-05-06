@@ -107,11 +107,11 @@ func (err *duplicateKeyError) Error() string {
 }
 
 const (
-	SloDefSli     = "sli"
-	SloDefPass    = "pass"
-	SloDefWarning = "warning"
-	SloDefKey     = "key"
-	SloDefWeight  = "weight"
+	sloDefSli     = "sli"
+	sloDefPass    = "pass"
+	sloDefWarning = "warning"
+	sloDefKey     = "key"
+	sloDefWeight  = "weight"
 )
 
 // ParseSLOFromString takes a value such as
@@ -147,50 +147,50 @@ func ParseSLOFromString(customName string) (*keptncommon.SLO, error) {
 		valueString := strings.TrimSpace(nameValueSplits[i][nameValueDividerIndex+1:])
 		var err error
 		switch nameString {
-		case SloDefSli:
-			if keyFound[SloDefSli] {
-				errs = append(errs, &duplicateKeyError{key: SloDefSli})
+		case sloDefSli:
+			if keyFound[sloDefSli] {
+				errs = append(errs, &duplicateKeyError{key: sloDefSli})
 				break
 			}
 			result.SLI = valueString
 			if valueString == "" {
 				errs = append(errs, fmt.Errorf("sli name is empty"))
 			}
-			keyFound[SloDefSli] = true
-		case SloDefPass:
+			keyFound[sloDefSli] = true
+		case sloDefPass:
 			passCriteria, err := parseSLOCriteriaString(valueString)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", SloDefPass, err))
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", sloDefPass, err))
 				break
 			}
 			result.Pass = append(result.Pass, passCriteria)
-		case SloDefWarning:
+		case sloDefWarning:
 			warningCriteria, err := parseSLOCriteriaString(valueString)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", SloDefWarning, err))
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", sloDefWarning, err))
 				break
 			}
 			result.Warning = append(result.Warning, warningCriteria)
-		case SloDefKey:
-			if keyFound[SloDefKey] {
-				errs = append(errs, &duplicateKeyError{key: SloDefKey})
+		case sloDefKey:
+			if keyFound[sloDefKey] {
+				errs = append(errs, &duplicateKeyError{key: sloDefKey})
 				break
 			}
 			result.KeySLI, err = strconv.ParseBool(valueString)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", SloDefKey, valueString))
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", sloDefKey, valueString))
 			}
-			keyFound[SloDefKey] = true
-		case SloDefWeight:
-			if keyFound[SloDefWeight] {
-				errs = append(errs, &duplicateKeyError{key: SloDefWeight})
+			keyFound[sloDefKey] = true
+		case sloDefWeight:
+			if keyFound[sloDefWeight] {
+				errs = append(errs, &duplicateKeyError{key: sloDefWeight})
 				break
 			}
 			result.Weight, err = strconv.Atoi(valueString)
 			if err != nil {
-				errs = append(errs, fmt.Errorf("invalid definition for '%s': not an integer value: %v", SloDefWeight, valueString))
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': not an integer value: %v", sloDefWeight, valueString))
 			}
-			keyFound[SloDefWeight] = true
+			keyFound[sloDefWeight] = true
 		}
 	}
 
