@@ -44,6 +44,11 @@ func TestParseSLOFromString_SuccessCases(t *testing.T) {
 			want:      createSLO("teststep_rt", [][]string{{">=500", ">-10%"}, {">=400", ">=-15%"}}, [][]string{{"<1000", "<+20%"}, {"<900", "<+25%"}}, 1, true),
 		},
 		{
+			name:      "multiple pass and warning criteria - AND/OR with decimals",
+			sloString: "Some description;sli=teststep_rt;pass=>=500.74,>-10.3%;pass=>=400.89,>=-15.7%;warning=<1000.12,<+20.50%;warning=<900.34,<+25.29%;weight=1;key=true",
+			want:      createSLO("teststep_rt", [][]string{{">=500.74", ">-10.3%"}, {">=400.89", ">=-15.7%"}}, [][]string{{"<1000.12", "<+20.50%"}, {"<900.34", "<+25.29%"}}, 1, true),
+		},
+		{
 			name:      "test with = in pass/warn expression",
 			sloString: "Host Disk Queue Length (max);sli=host_disk_queue;pass==0;warning=<=1;key=false",
 			want:      createSLO("host_disk_queue", [][]string{{"=0"}}, [][]string{{"<=1"}}, 1, false),
@@ -104,6 +109,36 @@ func TestParseSLOFromString_ErrorCases(t *testing.T) {
 			name:        "invalid pass criterion - wrong decimal notation with percent",
 			sloString:   "sli=some_sli_name;pass=<500.%",
 			errMessages: []string{"pass", "<500.%"},
+		},
+		{
+			name:        "invalid warning criterion - wrong decimal notation with percent and wrong type",
+			sloString:   "sli=some_sli_name;warning=<500.%,yes",
+			errMessages: []string{"warning", "<500.%", "yes"},
+		},
+		{
+			name:        "invalid warning criterion - some string",
+			sloString:   "sli=some_sli_name;warning=yes!",
+			errMessages: []string{"warning", "yes!"},
+		},
+		{
+			name:        "invalid warning criterion - wrong operator",
+			sloString:   "sli=some_sli_name;warning=<<500",
+			errMessages: []string{"warning", "<<500"},
+		},
+		{
+			name:        "invalid warning criterion - wrong decimal notation",
+			sloString:   "sli=some_sli_name;warning=<500.",
+			errMessages: []string{"warning", "<500."},
+		},
+		{
+			name:        "invalid warning criterion - wrong decimal notation with percent",
+			sloString:   "sli=some_sli_name;warning=<500.%",
+			errMessages: []string{"warning", "<500.%"},
+		},
+		{
+			name:        "invalid warning criterion - wrong decimal notation with percent and wrong type",
+			sloString:   "sli=some_sli_name;warning=<500.%,yes",
+			errMessages: []string{"warning", "<500.%", "yes"},
 		},
 		{
 			name:        "invalid warning criterion - some string",
