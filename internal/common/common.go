@@ -76,16 +76,26 @@ func TimestampToUnixMillisecondsString(time time.Time) string {
 	return strconv.FormatInt(time.Unix()*1000, 10)
 }
 
-type sloDefinitionError struct {
-	errors []error
+type SLODefinitionError struct {
+	tileTitle string
+	sliName   string
+	errors    []error
 }
 
-func (err *sloDefinitionError) Error() string {
+func (err *SLODefinitionError) Error() string {
 	var errStrings = make([]string, len(err.errors))
 	for i, e := range err.errors {
 		errStrings[i] = e.Error()
 	}
 	return strings.Join(errStrings, ";")
+}
+
+func (err *SLODefinitionError) SLINameOrTileTitle() string {
+	if err.sliName != "" {
+		return err.sliName
+	}
+
+	return err.tileTitle
 }
 
 type duplicateKeyError struct {
@@ -194,7 +204,11 @@ func ParseSLOFromString(customName string) (*keptncommon.SLO, error) {
 	}
 
 	if len(errs) > 0 {
-		return nil, &sloDefinitionError{errors: errs}
+		return nil, &SLODefinitionError{
+			sliName:   result.SLI,
+			tileTitle: customName,
+			errors:    errs,
+		}
 	}
 
 	return result, nil
