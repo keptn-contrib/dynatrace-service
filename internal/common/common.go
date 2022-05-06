@@ -76,6 +76,7 @@ func TimestampToUnixMillisecondsString(time time.Time) string {
 	return strconv.FormatInt(time.Unix()*1000, 10)
 }
 
+// SLODefinitionError represents an error that occurred while parsing an SLO definition
 type SLODefinitionError struct {
 	tileTitle string
 	sliName   string
@@ -90,6 +91,7 @@ func (err *SLODefinitionError) Error() string {
 	return strings.Join(errStrings, ";")
 }
 
+// SLINameOrTileTitle returns the SLI name or the tile title, if the SLI name is empty
 func (err *SLODefinitionError) SLINameOrTileTitle() string {
 	if err.sliName != "" {
 		return err.sliName
