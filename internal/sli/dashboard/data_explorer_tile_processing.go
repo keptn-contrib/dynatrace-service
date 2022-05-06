@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -37,8 +38,9 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 	sloDefinition, err := common.ParseSLOFromString(tile.Name)
-	if err != nil {
-		failedTileResult := newFailedTileResultFromError(sloDefinition.SLI, "Data Explorer tile not included due to parsing errors", err)
+	var sloDefError *common.SLODefinitionError
+	if errors.As(err, &sloDefError) {
+		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "Data Explorer tile not included due to parsing errors", err)
 		return []*TileResult{&failedTileResult}
 	}
 
