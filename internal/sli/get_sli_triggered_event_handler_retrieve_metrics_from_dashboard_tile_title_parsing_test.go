@@ -9,14 +9,31 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_Errors test lots of data explorer tiles with errors in the SLO definition.
+// TestRetrieveMetricsFromDashboard_TileTitleParsingErrors test lots of data explorer, custom charting and user sessions query tiles with errors in the SLO definition.
 // This will result in a SLIResult with failures, as this is not allowed.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_Errors(t *testing.T) {
+func TestRetrieveMetricsFromDashboard_TileTitleParsingErrors(t *testing.T) {
 	type data struct {
 		TileTitle string // needs to match template file variable
 	}
 
-	const dashboardTemplateFile = "./testdata/dashboards/data_explorer/tile_title_errors/data-explorer-tile-title-parsing-errors-template.json"
+	templatesConfig := []struct {
+		name         string
+		templateFile string
+	}{
+		// TODO 2022-05-06: add SLO tile template below as soon as SLO titles are supported
+		{
+			name:         "data-explorer",
+			templateFile: "./testdata/dashboards/data_explorer/tile_title_errors/data-explorer-tile-title-parsing-errors-template.json",
+		},
+		{
+			name:         "custom-charting",
+			templateFile: "./testdata/dashboards/custom_charting/tile_title_errors/custom-charting-tile-title-parsing-errors-template.json",
+		},
+		{
+			name:         "user-sessions-query",
+			templateFile: "./testdata/dashboards/usql_tiles/tile_title_errors/usql-tile-title-parsing-errors-template.json",
+		},
+	}
 
 	tests := []struct {
 		tileTitle      string
@@ -121,18 +138,20 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_Errors(t *testing.T) {
 			assertionsFunc: createFailedSLIResultAssertionsFunc("invalid key value number", "not a boolean value: 3"),
 		},
 	}
-	for _, dataExplorerTest := range tests {
-		t.Run(dataExplorerTest.tileTitle, func(t *testing.T) {
-			handler := test.NewTemplatingPayloadBasedURLHandler(t, dashboardTemplateFile)
-			handler.AddExact(
-				dynatrace.DashboardsPath+"/"+testDashboardID,
-				&data{
-					TileTitle: dataExplorerTest.tileTitle,
-				},
-			)
+	for _, templateConfig := range templatesConfig {
+		for _, dataExplorerTest := range tests {
+			t.Run(templateConfig.name+"_"+dataExplorerTest.tileTitle, func(t *testing.T) {
+				handler := test.NewTemplatingPayloadBasedURLHandler(t, templateConfig.templateFile)
+				handler.AddExact(
+					dynatrace.DashboardsPath+"/"+testDashboardID,
+					&data{
+						TileTitle: dataExplorerTest.tileTitle,
+					},
+				)
 
-			rClient := &uploadErrorResourceClientMock{t: t}
-			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, dataExplorerTest.assertionsFunc)
-		})
+				rClient := &uploadErrorResourceClientMock{t: t}
+				runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, dataExplorerTest.assertionsFunc)
+			})
+		}
 	}
 }

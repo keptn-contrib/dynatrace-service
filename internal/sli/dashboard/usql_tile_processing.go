@@ -39,8 +39,9 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 // TODO: 2022-03-07: Investigate if all error and warning cases are covered. E.g. what happens if a query returns no results?
 func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []*TileResult {
 	sloDefinition, err := common.ParseSLOFromString(tile.CustomName)
-	if err != nil {
-		failedTileResult := newFailedTileResultFromError(sloDefinition.SLI, "User Sessions Query tile not included due to parsing errors", err)
+	var sloDefError *common.SLODefinitionError
+	if errors.As(err, &sloDefError) {
+		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "User Sessions Query tile not included due to parsing errors", err)
 		return []*TileResult{&failedTileResult}
 	}
 

@@ -1,0 +1,33 @@
+ {
+  "metadata": {
+    "configurationVersions": [
+      6
+    ],
+    "clusterVersion": "1.242.5.20220506-113653"
+  },
+  "id": "e03f4be0-4712-4f12-96ee-8c486d001e9b",
+  "dashboardMetadata": {
+    "name": "User Sessions Query",
+    "shared": false,
+    "owner": "somebody",
+    "popularity": 1
+  },
+  "tiles": [
+    {
+      "name": "User Sessions Query",
+      "tileType": "DTAQL",
+      "configured": true,
+      "bounds": {
+        "top": 190,
+        "left": 1026,
+        "width": 304,
+        "height": 304
+      },
+      "tileFilter": {},
+      "customName": "{{.TileTitle}}",
+      "query": "SELECT AVG(duration) FROM usersession",
+      "type": "SINGLE_VALUE",
+      "limit": 50
+    }
+  ]
+}
