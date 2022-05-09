@@ -125,10 +125,8 @@ const (
 // This will return a SLO object or an error if parsing was not possible
 func ParseSLOFromString(customName string) (*keptncommon.SLO, error) {
 	result := &keptncommon.SLO{
-		Weight:  1,
-		KeySLI:  false,
-		Pass:    []*keptncommon.SLOCriteria{},
-		Warning: []*keptncommon.SLOCriteria{},
+		Weight: 1,
+		KeySLI: false,
 	}
 	var errs []error
 
@@ -194,15 +192,6 @@ func ParseSLOFromString(customName string) (*keptncommon.SLO, error) {
 			}
 			keyFound[sloDefWeight] = true
 		}
-	}
-
-	// if we have no criteria for warn or pass we just return nil
-	// not having a value for 'pass' means: this SLI is for informational purposes only and will not be evaluated.
-	if len(result.Pass) == 0 {
-		result.Pass = nil
-	}
-	if len(result.Warning) == 0 {
-		result.Warning = nil
 	}
 
 	if len(errs) > 0 {
