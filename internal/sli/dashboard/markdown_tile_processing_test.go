@@ -15,6 +15,24 @@ func TestParseMarkdownConfigurationParams_SuccessCases(t *testing.T) {
 		expectedComparison keptnapi.SLOComparison
 	}{
 		{
+			name:               "single result, without percent sign",
+			input:              "KQG.Total.Pass=90;KQG.Total.Warning=70;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
+			expectedScore:      createSLOScore("90", "70"),
+			expectedComparison: createSLOComparison("single_result", "pass", 1, "avg"),
+		},
+		{
+			name:               "single result, without percent sign, with decimals",
+			input:              "KQG.Total.Pass=90.84;KQG.Total.Warning=70.22;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
+			expectedScore:      createSLOScore("90.84", "70.22"),
+			expectedComparison: createSLOComparison("single_result", "pass", 1, "avg"),
+		},
+		{
+			name:               "single result, with percent sign, with decimals",
+			input:              "KQG.Total.Pass=90.84%;KQG.Total.Warning=70.22%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
+			expectedScore:      createSLOScore("90.84%", "70.22%"),
+			expectedComparison: createSLOComparison("single_result", "pass", 1, "avg"),
+		},
+		{
 			name:               "single result",
 			input:              "KQG.Total.Pass=90%;KQG.Total.Warning=70%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
 			expectedScore:      createSLOScore("90%", "70%"),
@@ -112,6 +130,16 @@ func TestParseMarkdownConfigurationParams_ErrorCases(t *testing.T) {
 			name:             "duplicate total compare function",
 			input:            "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95;KQG.Compare.Function=p90",
 			expectedMessages: []string{"kqg.compare.function", "duplicate key"},
+		},
+		{
+			name:             "invalid value for total pass",
+			input:            "KQG.Total.Pass=96Pct",
+			expectedMessages: []string{"kqg.total.pass", "96Pct"},
+		},
+		{
+			name:             "invalid value for total warning",
+			input:            "KQG.Total.Warning=OneHundred",
+			expectedMessages: []string{"kqg.total.warning", "OneHundred"},
 		},
 	}
 	for _, config := range testConfigs {

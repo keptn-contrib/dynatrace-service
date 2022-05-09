@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -107,12 +108,18 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 				errs = append(errs, &duplicateKeyError{key: totalPass})
 				break
 			}
+			if isNotAPercentValue(value) {
+				errs = append(errs, &invalidValueError{key: totalPass, value: value})
+			}
 			result.totalScore.Pass = value
 			keyFound[totalPass] = true
 		case totalWarning:
 			if keyFound[totalWarning] {
 				errs = append(errs, &duplicateKeyError{key: totalWarning})
 				break
+			}
+			if isNotAPercentValue(value) {
+				errs = append(errs, &invalidValueError{key: totalWarning, value: value})
 			}
 			result.totalScore.Warning = value
 			keyFound[totalWarning] = true
@@ -164,6 +171,12 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 	}
 
 	return result, nil
+}
+
+func isNotAPercentValue(value string) bool {
+	pattern := regexp.MustCompile("^(\\d+|\\d+\\.\\d+)([%]?)$")
+
+	return !pattern.MatchString(value)
 }
 
 func parseCompareWithScore(value string) (string, error) {
