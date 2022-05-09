@@ -1,6 +1,7 @@
 package query
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -45,7 +46,7 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 
 // GetSLIResultFromIndicator queries a single SLI value ultimately from the Dynatrace API and returns an SLIResult.
 // TODO: 2022-01-28: Refactoring needed: this is currently SLI v1 format processing, it should moved to the v1 package, separating it from the general logic.
-func (p *Processing) GetSLIResultFromIndicator(name string) result.SLIResult {
+func (p *Processing) GetSLIResultFromIndicator(ctx context.Context, name string) result.SLIResult {
 
 	// first we get the query from the SLI configuration based on its logical name
 	// no default values here anymore if indicator could not be matched (e.g. due to a misspelling) and custom SLIs were defined
@@ -65,28 +66,28 @@ func (p *Processing) GetSLIResultFromIndicator(name string) result.SLIResult {
 
 	switch {
 	case strings.HasPrefix(sliQuery, v1usql.USQLPrefix):
-		return p.executeUSQLQuery(name, sliQuery)
+		return p.executeUSQLQuery(ctx, name, sliQuery)
 	case strings.HasPrefix(sliQuery, v1slo.SLOPrefix):
-		return p.executeSLOQuery(name, sliQuery)
+		return p.executeSLOQuery(ctx, name, sliQuery)
 	case strings.HasPrefix(sliQuery, v1problems.ProblemsV2Prefix):
-		return p.executeProblemQuery(name, sliQuery)
+		return p.executeProblemQuery(ctx, name, sliQuery)
 	case strings.HasPrefix(sliQuery, v1secpv2.SecurityProblemsV2Prefix):
-		return p.executeSecurityProblemQuery(name, sliQuery)
+		return p.executeSecurityProblemQuery(ctx, name, sliQuery)
 	case strings.HasPrefix(sliQuery, v1mv2.MV2Prefix):
-		return p.executeMetricsV2Query(name, sliQuery)
+		return p.executeMetricsV2Query(ctx, name, sliQuery)
 	default:
-		return p.executeMetricsQuery(name, sliQuery)
+		return p.executeMetricsQuery(ctx, name, sliQuery)
 	}
 }
 
-func (p *Processing) executeUSQLQuery(name string, usqlQuery string) result.SLIResult {
+func (p *Processing) executeUSQLQuery(ctx context.Context, name string, usqlQuery string) result.SLIResult {
 
 	query, err := v1usql.NewQueryParser(usqlQuery).Parse()
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error parsing USQL query: "+err.Error())
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(dynatrace.NewUSQLClientQueryParameters(query.GetQuery(), p.timeframe))
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, dynatrace.NewUSQLClientQueryParameters(query.GetQuery(), p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying User sessions API: "+err.Error())
 	}
@@ -158,13 +159,13 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 	return "", errors.New("dimension name should be a string")
 }
 
-func (p *Processing) executeSLOQuery(name string, sloQuery string) result.SLIResult {
+func (p *Processing) executeSLOQuery(ctx context.Context, name string, sloQuery string) result.SLIResult {
 	query, err := v1slo.NewQueryParser(sloQuery).Parse()
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error parsing SLO query: "+err.Error())
 	}
 
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying Service level objectives API: "+err.Error())
 	}
@@ -172,13 +173,13 @@ func (p *Processing) executeSLOQuery(name string, sloQuery string) result.SLIRes
 	return result.NewSuccessfulSLIResult(name, sloResult.EvaluatedPercentage)
 }
 
-func (p *Processing) executeProblemQuery(name string, problemsQuery string) result.SLIResult {
+func (p *Processing) executeProblemQuery(ctx context.Context, name string, problemsQuery string) result.SLIResult {
 	query, err := v1problems.NewQueryParser(problemsQuery).Parse()
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error parsing Problems v2 query: "+err.Error())
 	}
 
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(dynatrace.NewProblemsV2ClientQueryParameters(*query, p.timeframe))
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, dynatrace.NewProblemsV2ClientQueryParameters(*query, p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying Problems API v2: "+err.Error())
 	}
@@ -186,13 +187,13 @@ func (p *Processing) executeProblemQuery(name string, problemsQuery string) resu
 	return result.NewSuccessfulSLIResult(name, float64(totalProblemCount))
 }
 
-func (p *Processing) executeSecurityProblemQuery(name string, queryString string) result.SLIResult {
+func (p *Processing) executeSecurityProblemQuery(ctx context.Context, name string, queryString string) result.SLIResult {
 	query, err := v1secpv2.NewQueryParser(queryString).Parse()
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error parsing Security Problems v2 query: "+err.Error())
 	}
 
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(dynatrace.NewSecurityProblemsV2ClientQueryParameters(*query, p.timeframe))
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(ctx, dynatrace.NewSecurityProblemsV2ClientQueryParameters(*query, p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying Security problems API: "+err.Error())
 	}
@@ -200,30 +201,30 @@ func (p *Processing) executeSecurityProblemQuery(name string, queryString string
 	return result.NewSuccessfulSLIResult(name, float64(totalSecurityProblemCount))
 }
 
-func (p *Processing) executeMetricsV2Query(name string, queryString string) result.SLIResult {
+func (p *Processing) executeMetricsV2Query(ctx context.Context, name string, queryString string) result.SLIResult {
 	query, err := v1mv2.NewQueryParser(queryString).Parse()
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error parsing MV2 query: "+err.Error())
 	}
 
-	return p.processMetricsQuery(name, query.GetQuery(), query.GetUnit())
+	return p.processMetricsQuery(ctx, name, query.GetQuery(), query.GetUnit())
 }
 
-func (p *Processing) executeMetricsQuery(name string, queryString string) result.SLIResult {
+func (p *Processing) executeMetricsQuery(ctx context.Context, name string, queryString string) result.SLIResult {
 	query, err := v1metrics.NewQueryParser(queryString).Parse()
 	if err == nil {
-		return p.processMetricsQuery(name, *query, "")
+		return p.processMetricsQuery(ctx, name, *query, "")
 	}
 
 	query, legacyErr := v1metrics.NewLegacyQueryParser(queryString).Parse()
 	if legacyErr != nil {
 		return result.NewFailedSLIResult(name, "error parsing Metrics v2 query: "+err.Error())
 	}
-	return p.processMetricsQuery(name, *query, "")
+	return p.processMetricsQuery(ctx, name, *query, "")
 }
 
-func (p *Processing) processMetricsQuery(name string, query metrics.Query, metricUnit string) result.SLIResult {
-	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(query, p.timeframe))
+func (p *Processing) processMetricsQuery(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
+	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryParameters(query, p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying Metrics API v2: "+err.Error())
 	}

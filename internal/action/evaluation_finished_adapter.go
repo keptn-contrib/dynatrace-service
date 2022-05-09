@@ -1,11 +1,10 @@
-package deployment
+package action
 
 import (
 	"fmt"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -85,7 +84,10 @@ func (a EvaluationFinishedAdapter) GetDeploymentStrategy() string {
 
 // GetLabels returns a map of labels
 func (a EvaluationFinishedAdapter) GetLabels() map[string]string {
-	labels := keptn.AddOptionalKeptnBridgeUrlToLabels(a.event.Labels, a.GetShKeptnContext())
+	labels := a.event.Labels
+	if labels == nil {
+		labels = make(map[string]string)
+	}
 	labels["Quality Gate Score"] = fmt.Sprintf("%.2f", a.event.Evaluation.Score)
 	labels["No of evaluated SLIs"] = fmt.Sprintf("%d", len(a.event.Evaluation.IndicatorResults))
 	labels["Evaluation Start"] = a.event.Evaluation.TimeStart

@@ -1,10 +1,10 @@
-package problem
+package action
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	log "github.com/sirupsen/logrus"
@@ -27,8 +27,8 @@ func NewActionTriggeredEventHandler(event ActionTriggeredAdapterInterface, dtCli
 	}
 }
 
-// HandleEvent handles an action triggered event
-func (eh *ActionTriggeredEventHandler) HandleEvent() error {
+// HandleEvent handles an action triggered event.
+func (eh *ActionTriggeredEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	pid, err := eh.eClient.FindProblemID(eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")
@@ -37,31 +37,30 @@ func (eh *ActionTriggeredEventHandler) HandleEvent() error {
 
 	if pid == "" {
 		log.Error("Cannot send DT problem comment: No problem ID is included in the event.")
-		return errors.New("cannot send DT problem comment: No problem ID is included in the event")
+		return errors.New("cannot send DT problem comment: no problem ID is included in the event")
 	}
 
-	comment := "Keptn triggered action " + eh.event.GetAction()
+	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
+
+	comment := fmt.Sprintf("[Keptn triggered action](%s) %s", bridgeURL, eh.event.GetAction())
 	if eh.event.GetActionDescription() != "" {
 		comment = comment + ": " + eh.event.GetActionDescription()
 	}
 
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(workCtx, pid, comment)
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// In addition to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-	dtInfoEvent := dynatrace.CreateInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
-	dtInfoEvent.Title = "Keptn Remediation Action Triggered"
-	dtInfoEvent.Description = eh.event.GetAction()
-
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(dtInfoEvent)
-
-	// this is posting the Event on the problem as a comment
-	comment = fmt.Sprintf("[Keptn triggered action](%s) %s", eh.event.GetLabels()[common.BridgeLabel], eh.event.GetAction())
-	if eh.event.GetActionDescription() != "" {
-		comment = comment + ": " + eh.event.GetActionDescription()
+	infoEvent := dynatrace.InfoEvent{
+		EventType:        dynatrace.InfoEventType,
+		Source:           eventSource,
+		Title:            "Keptn Remediation Action Triggered",
+		Description:      eh.event.GetAction(),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL),
+		AttachRules:      *eh.attachRules,
 	}
 
-	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(pid, comment)
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 
 	return nil
 }

@@ -3,11 +3,45 @@ package env
 import (
 	"os"
 	"strconv"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
 
 const logLevelEnvironmentVariable = "LOG_LEVEL_DYNATRACE_SERVICE"
+
+// GetVersion gets the version environment variable.
+func GetVersion() string {
+	return os.Getenv("version")
+}
+
+// GetPodNamespace gets the POD_NAMESPACE environment variable with the default of "keptn".
+func GetPodNamespace() string {
+	ns := os.Getenv("POD_NAMESPACE")
+	if ns == "" {
+		return "keptn"
+	}
+	return ns
+}
+
+// GetKubernetesServiceHost gets the KUBERNETES_SERVICE_HOST environment variable
+func GetKubernetesServiceHost() string {
+	return os.Getenv("KUBERNETES_SERVICE_HOST")
+}
+
+// GetWorkGracePeriod returns the expected work period in which an event should be processed.
+// This period is only enforced during a graceful shutdown.
+// If not set, 20 seconds is assumed.
+func GetWorkGracePeriod() time.Duration {
+	return time.Duration(readEnvAsInt("WORK_GRACE_PERIOD_SECONDS", 20)) * time.Second
+}
+
+// GetReplyGracePeriod returns the expected period in which an event should reply.
+// This period is only enforced during a graceful shutdown.
+// If not set, 5 seconds is assumed.
+func GetReplyGracePeriod() time.Duration {
+	return time.Duration(readEnvAsInt("REPLY_GRACE_PERIOD_SECONDS", 5)) * time.Second
+}
 
 // GetLogLevel gets the log level specified by the LOG_LEVEL_DYNATRACE_SERVICE environment variable.
 // If none is specified, log.InfoLevel is assumed.

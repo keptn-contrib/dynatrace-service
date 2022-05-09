@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"fmt"
 
 	log "github.com/sirupsen/logrus"
@@ -26,7 +27,7 @@ func NewRetrieval(client dynatrace.ClientInterface, eventData adapter.EventConte
 //   - query:        queries all dashboards on the Dynatrace Tenant and returns the one that matches project/service/stage, or
 //   - dashboard-ID: if this is a valid dashboard ID it will query the dashboard with this ID, e.g: ddb6a571-4bda-4e8b-a9c0-4a3e02c2e14a, or
 // It returns a parsed Dynatrace Dashboard and the actual dashboard ID in case we queried a dashboard.
-func (r *Retrieval) Retrieve(dashboard string) (*dynatrace.Dashboard, string, error) {
+func (r *Retrieval) Retrieve(ctx context.Context, dashboard string) (*dynatrace.Dashboard, string, error) {
 	// dashboard property is invalid
 	if dashboard == "" {
 		return nil, "", fmt.Errorf("invalid 'dashboard' property - either specify a dashboard ID or use 'query'")
@@ -35,7 +36,7 @@ func (r *Retrieval) Retrieve(dashboard string) (*dynatrace.Dashboard, string, er
 	// Option 1: Query dashboards
 	if dashboard == common.DynatraceConfigDashboardQUERY {
 		var err error
-		dashboard, err = r.findDynatraceDashboard()
+		dashboard, err = r.findDynatraceDashboard(ctx)
 		if err != nil {
 			log.WithError(err).WithFields(
 				log.Fields{
@@ -57,7 +58,7 @@ func (r *Retrieval) Retrieve(dashboard string) (*dynatrace.Dashboard, string, er
 
 	// Option 2: We (now) have a Dashboard UUID - so let's query it!
 	log.WithField("dashboard", dashboard).Debug("Query dashboard")
-	dynatraceDashboard, err := dynatrace.NewDashboardsClient(r.client).GetByID(dashboard)
+	dynatraceDashboard, err := dynatrace.NewDashboardsClient(r.client).GetByID(ctx, dashboard)
 	if err != nil {
 		return nil, dashboard, err
 	}
@@ -65,8 +66,8 @@ func (r *Retrieval) Retrieve(dashboard string) (*dynatrace.Dashboard, string, er
 	return dynatraceDashboard, dashboard, nil
 }
 
-func (r *Retrieval) findDynatraceDashboard() (string, error) {
-	dashboardList, err := dynatrace.NewDashboardsClient(r.client).GetAll()
+func (r *Retrieval) findDynatraceDashboard(ctx context.Context) (string, error) {
+	dashboardList, err := dynatrace.NewDashboardsClient(r.client).GetAll(ctx)
 	if err != nil {
 		return "", err
 	}

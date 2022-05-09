@@ -1,6 +1,7 @@
 package onboard
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -63,7 +64,8 @@ func (initSyncEventAdapter) GetLabels() map[string]string {
 
 // EntitiesClientFactory defines a factory that can get EntitiesClients.
 type EntitiesClientFactory interface {
-	CreateEntitiesClient() (*dynatrace.EntitiesClient, error)
+	// CreateEntitiesClient creates a dynatrace.EntitiesClient or returns an error.
+	CreateEntitiesClient(ctx context.Context) (*dynatrace.EntitiesClient, error)
 }
 
 type defaultEntitiesClientFactory struct {
@@ -76,7 +78,8 @@ func newDefaultEntitiesClientFactory(resourceClient keptn.DynatraceConfigReaderI
 	}
 }
 
-func (f defaultEntitiesClientFactory) CreateEntitiesClient() (*dynatrace.EntitiesClient, error) {
+// CreateEntitiesClient creates a dynatrace.EntitiesClient or returns an error.
+func (f defaultEntitiesClientFactory) CreateEntitiesClient(ctx context.Context) (*dynatrace.EntitiesClient, error) {
 	dynatraceConfig, err := f.configProvider.GetDynatraceConfig(initSyncEventAdapter{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Dynatrace config: %w", err)
@@ -87,7 +90,7 @@ func (f defaultEntitiesClientFactory) CreateEntitiesClient() (*dynatrace.Entitie
 		return nil, err
 	}
 
-	credentials, err := credentialsProvider.GetDynatraceCredentials(dynatraceConfig.DtCreds)
+	credentials, err := credentialsProvider.GetDynatraceCredentials(ctx, dynatraceConfig.DtCreds)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load Dynatrace credentials: %w", err)
 	}
@@ -117,26 +120,35 @@ func NewDefaultServiceSynchronizer() *ServiceSynchronizer {
 	return &serviceSynchronizer
 }
 
-// Run runs the service synchronizer and does not return.
-func (s *ServiceSynchronizer) Run() {
+// Run runs the service synchronizer which does not return unless cancelled.
+// Cancelling runCtx will stop any new synchronization runs, cancelling synchronizationCtx will stop an in progress synchronization.
+func (s *ServiceSynchronizer) Run(runCtx context.Context, synchronizationCtx context.Context) {
 	syncInterval := env.GetServiceSyncInterval()
 	log.WithField("syncInterval", syncInterval).Info("Service Synchronizer will sync periodically")
 	for {
-		s.synchronizeServices()
-		<-time.After(time.Duration(syncInterval) * time.Second)
+		s.synchronizeServices(synchronizationCtx)
+
+		select {
+		case <-runCtx.Done():
+			log.Info("Service Synchronizer has terminated")
+			return
+
+		case <-time.After(time.Duration(syncInterval) * time.Second):
+		}
+
 		log.WithField("delaySeconds", syncInterval).Info("Synchronizing services")
 	}
 }
 
 // synchronizeServices performs a single synchronization run
-func (s *ServiceSynchronizer) synchronizeServices() {
+func (s *ServiceSynchronizer) synchronizeServices(ctx context.Context) {
 	existingServices, err := s.getExistingServicesFromKeptn()
 	if err != nil {
 		log.WithError(err).Error("Could not get existing services from Keptn")
 		return
 	}
 
-	entities, err := s.getKeptnManagedServicesFromDynatrace()
+	entities, err := s.getKeptnManagedServicesFromDynatrace(ctx)
 	if err != nil {
 		log.WithError(err).Error("Could not get Keptn-managed services from Dynatrace")
 		return
@@ -174,13 +186,13 @@ func (s *ServiceSynchronizer) getExistingServicesFromKeptn() ([]string, error) {
 	return s.servicesClient.GetServiceNames(synchronizedProject, synchronizedStage)
 }
 
-func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace() ([]dynatrace.Entity, error) {
-	entitiesClient, err := s.entitiesClientFactory.CreateEntitiesClient()
+func (s *ServiceSynchronizer) getKeptnManagedServicesFromDynatrace(ctx context.Context) ([]dynatrace.Entity, error) {
+	entitiesClient, err := s.entitiesClientFactory.CreateEntitiesClient(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	entities, err := entitiesClient.GetKeptnManagedServices()
+	entities, err := entitiesClient.GetKeptnManagedServices(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch Keptn managed services from Dynatrace: %w", err)
 	}

@@ -64,15 +64,15 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 	}
 }
 
-// Get calls Dynatrace API to retrieve the values of the Dynatrace SLO for that timeframe
-// It returns a SLOResult object on success, an error otherwise
-func (c *SLOClient) Get(parameters SLOClientGetParameters) (*SLOResult, error) {
-	err := NewTimeframeDelay(parameters.timeframe, SLORequiredDelay, SLOMaximumWait).Wait(context.TODO())
+// Get calls Dynatrace API to retrieve the values of the Dynatrace SLO for that timeframe.
+// It returns a SLOResult object on success, an error otherwise.
+func (c *SLOClient) Get(ctx context.Context, parameters SLOClientGetParameters) (*SLOResult, error) {
+	err := NewTimeframeDelay(parameters.timeframe, SLORequiredDelay, SLOMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := c.client.Get(SLOPath + "/" + parameters.encode())
+	body, err := c.client.Get(ctx, SLOPath+"/"+parameters.encode())
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (c *SLOClient) Get(parameters SLOClientGetParameters) (*SLOResult, error) {
 	// for SLO - its also possible that there is an HTTP 200 but there is an error text in the error property!
 	// Since Sprint 206 the error property is always there - but - will have the value "NONE" in case there is no actual error retrieving the value
 	if result.Error != "NONE" {
-		return nil, fmt.Errorf("dynatrace API returned an error: %s", result.Error)
+		return nil, fmt.Errorf("Dynatrace API returned an error: %s", result.Error)
 	}
 
 	return &result, nil

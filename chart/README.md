@@ -34,7 +34,7 @@ The following table lists the configurable parameters of the *dynatrace-service*
 | `distributor.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
 | `distributor.image.tag` | Container tag | `""` |
 | `remoteControlPlane.enabled` | Enables remote execution plane mode | `false` |
-| `remoteControlPlane.api.protocol` | Used protocol (http, https | `"https"` |
+| `remoteControlPlane.api.protocol` | Used protocol (HTTP or HTTPS) | `"https"` |
 | `remoteControlPlane.api.hostname` | Hostname of the control plane cluster (and port) | `""` |
 | `remoteControlPlane.api.apiValidateTls` | Defines if the control plane certificate should be validated | `true` |
 | `remoteControlPlane.api.token` | Keptn api token | `""` |
@@ -48,7 +48,9 @@ The following table lists the configurable parameters of the *dynatrace-service*
 | `nodeSelector` | Node selector configuration | `{}` |
 | `tolerations` | Tolerations for the pods | `[]` |
 | `affinity` | Affinity rules | `{}` |
-
+| `terminationGracePeriodSeconds` | Termination grace period (in seconds) | `30` |
+| `workGracePeriodSeconds` | Seconds allocated to completing work in the event of a graceful shutdown | `20` |
+| `replyGracePeriodSeconds` | Seconds allocated to replying in the event of a graceful shutdown | `5` |
 
 
 

@@ -1,7 +1,9 @@
-package deployment
+package action
 
 import (
+	"context"
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
@@ -26,34 +28,39 @@ func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, dtC
 	}
 }
 
-// HandleEvent handles an action finished event
-func (eh *ReleaseTriggeredEventHandler) HandleEvent() error {
+// HandleEvent handles an action finished event.
+func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	strategy, err := keptnevents.GetDeploymentStrategy(eh.event.GetDeploymentStrategy())
 	if err != nil {
 		log.WithError(err).Error("Could not determine deployment strategy")
 		return err
 	}
 
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
-
-	ie := dynatrace.CreateInfoEventDTO(eh.event, imageAndTag, eh.attachRules)
-	if strategy == keptnevents.Direct && eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
-		title := fmt.Sprintf("PROMOTING from %s to next stage", eh.event.GetStage())
-		ie.Title = title
-		ie.Description = title
-	} else if eh.event.GetResult() == keptnv2.ResultFailed {
-		if strategy == keptnevents.Duplicate {
-			title := "Rollback Artifact (Switch Blue/Green) in " + eh.event.GetStage()
-			ie.Title = title
-			ie.Description = title
-		} else {
-			title := fmt.Sprintf("NOT PROMOTING from %s to next stage", eh.event.GetStage())
-			ie.Title = title
-			ie.Description = title
-		}
+	infoEvent := dynatrace.InfoEvent{
+		EventType:        dynatrace.InfoEventType,
+		Source:           eventSource,
+		Title:            eh.getTitle(strategy, eh.event.GetLabels()["title"]),
+		Description:      eh.getTitle(strategy, eh.event.GetLabels()["description"]),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		AttachRules:      *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(ie)
-
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 	return nil
+}
+
+func (eh *ReleaseTriggeredEventHandler) getTitle(strategy keptnevents.DeploymentStrategy, defaultValue string) string {
+	if strategy == keptnevents.Direct && eh.event.GetResult() == keptnv2.ResultPass || eh.event.GetResult() == keptnv2.ResultWarning {
+		return fmt.Sprintf("PROMOTING from %s to next stage", eh.event.GetStage())
+	}
+
+	if eh.event.GetResult() == keptnv2.ResultFailed {
+		if strategy == keptnevents.Duplicate {
+			return "Rollback Artifact (Switch Blue/Green) in " + eh.event.GetStage()
+		}
+
+		return fmt.Sprintf("NOT PROMOTING from %s to next stage", eh.event.GetStage())
+	}
+
+	return defaultValue
 }

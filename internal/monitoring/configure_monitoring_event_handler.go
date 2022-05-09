@@ -1,77 +1,61 @@
 package monitoring
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 )
 
-type KeptnAPIConnectionCheck struct {
-	APIURL               string
-	ConnectionSuccessful bool
-	Message              string
+type keptnCredentialsCheckResult struct {
+	apiURL  string
+	success bool
+	message string
 }
 
 type ConfigureMonitoringEventHandler struct {
-	event         ConfigureMonitoringAdapterInterface
-	dtClient      dynatrace.ClientInterface
-	kClient       keptn.ClientInterface
-	sloReader     keptn.SLOReaderInterface
-	serviceClient keptn.ServiceClientInterface
+	event              ConfigureMonitoringAdapterInterface
+	dtClient           dynatrace.ClientInterface
+	kClient            keptn.ClientInterface
+	sloReader          keptn.SLOReaderInterface
+	serviceClient      keptn.ServiceClientInterface
+	credentialsChecker keptn.CredentialsCheckerInterface
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
-		event:         event,
-		dtClient:      dtClient,
-		kClient:       kClient,
-		sloReader:     sloReader,
-		serviceClient: serviceClient,
+		event:              event,
+		dtClient:           dtClient,
+		kClient:            kClient,
+		sloReader:          sloReader,
+		serviceClient:      serviceClient,
+		credentialsChecker: credentialsChecker,
 	}
 }
 
-func (eh ConfigureMonitoringEventHandler) HandleEvent() error {
-	err := eh.configureMonitoring()
+// HandleEvent handles a configure monitoring event.
+func (eh ConfigureMonitoringEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+	err := eh.configureMonitoring(workCtx)
 	if err != nil {
 		log.WithError(err).Error("Configure monitoring failed")
 	}
 	return nil
 }
 
-func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
+func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Context) error {
 	log.Info("Configuring Dynatrace monitoring")
 	if eh.event.IsNotForDynatrace() {
 		return nil
 	}
 
-	keptnAPICheck := &KeptnAPIConnectionCheck{}
-	// check the connection to the Keptn API
-	keptnCredentials, err := credentials.GetKeptnCredentials()
-	if err != nil {
-		log.WithError(err).Error("Failed to get Keptn API credentials")
-		keptnAPICheck.Message = "Failed to get Keptn API Credentials"
-		keptnAPICheck.ConnectionSuccessful = false
-		keptnAPICheck.APIURL = "unknown"
-	} else {
-		keptnAPICheck.APIURL = keptnCredentials.GetAPIURL()
-		log.WithField("apiURL", keptnCredentials.GetAPIURL()).Print("Verifying access to Keptn API")
-
-		err = credentials.CheckKeptnConnection(keptnCredentials)
-		if err != nil {
-			keptnAPICheck.ConnectionSuccessful = false
-			keptnAPICheck.Message = "Warning: Keptn API connection cannot be verified. This might be due to a no-loopback policy of your LoadBalancer. The endpoint might still be reachable from outside the cluster."
-			log.WithError(err).Warn(keptnAPICheck.Message)
-		} else {
-			keptnAPICheck.ConnectionSuccessful = true
-		}
-	}
+	keptnCredentialsCheckResult := eh.checkKeptnCredentials(ctx)
+	log.WithField("result", keptnCredentialsCheckResult).Info("Checked Keptn credentials")
 
 	shipyard, err := eh.kClient.GetShipyard()
 	if err != nil {
@@ -80,16 +64,42 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring() error {
 
 	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sloReader, eh.serviceClient)
 
-	configuredEntities, err := cfg.ConfigureMonitoring(eh.event.GetProject(), *shipyard)
+	configuredEntities, err := cfg.ConfigureMonitoring(ctx, eh.event.GetProject(), *shipyard)
 	if err != nil {
 		return eh.handleError(err)
 	}
 
 	log.Info("Dynatrace Monitoring setup done")
-	return eh.handleSuccess(getConfigureMonitoringResultMessage(keptnAPICheck, configuredEntities))
+	return eh.handleSuccess(getConfigureMonitoringResultMessage(keptnCredentialsCheckResult, configuredEntities))
 }
 
-func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, entities *ConfiguredEntities) string {
+func (eh *ConfigureMonitoringEventHandler) checkKeptnCredentials(ctx context.Context) keptnCredentialsCheckResult {
+	keptnCredentials, err := credentials.GetKeptnCredentials(ctx)
+	if err != nil {
+		return keptnCredentialsCheckResult{
+			success: false,
+			message: fmt.Sprintf("Failed to get Keptn API credentials: %s", err.Error()),
+			apiURL:  "unknown",
+		}
+	}
+
+	err = eh.credentialsChecker.CheckCredentials(*keptnCredentials)
+	if err != nil {
+		return keptnCredentialsCheckResult{
+			success: false,
+			message: fmt.Sprintf("Failed to verify to Keptn API credentials: %s", err.Error()),
+			apiURL:  keptnCredentials.GetAPIURL(),
+		}
+	}
+
+	return keptnCredentialsCheckResult{
+		success: true,
+		apiURL:  keptnCredentials.GetAPIURL(),
+	}
+
+}
+
+func getConfigureMonitoringResultMessage(keptnCredentialsCheckResult keptnCredentialsCheckResult, entities *ConfiguredEntities) string {
 	if entities == nil {
 		return ""
 	}
@@ -143,12 +153,10 @@ func getConfigureMonitoringResultMessage(apiCheck *KeptnAPIConnectionCheck, enti
 		msg = msg + "\n\n"
 	}
 
-	if apiCheck != nil {
-		msg = msg + "---Keptn API Connection Check:--- \n"
-		msg = msg + "  - Keptn API URL: " + apiCheck.APIURL + "\n"
-		msg = msg + fmt.Sprintf("  - Connection Successful: %v. %s\n", apiCheck.ConnectionSuccessful, apiCheck.Message)
-		msg = msg + "\n"
-	}
+	msg = msg + "---Keptn API Connection Check:--- \n"
+	msg = msg + "  - Keptn API URL: " + keptnCredentialsCheckResult.apiURL + "\n"
+	msg = msg + fmt.Sprintf("  - Connection Successful: %v. %s\n", keptnCredentialsCheckResult.success, keptnCredentialsCheckResult.message)
+	msg = msg + "\n"
 
 	return msg
 }

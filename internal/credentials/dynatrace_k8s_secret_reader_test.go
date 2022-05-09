@@ -1,6 +1,7 @@
 package credentials
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -175,7 +176,7 @@ func TestDynatraceK8CredentialsReader_GetDynatraceCredentials(t *testing.T) {
 
 			secretReader := NewK8sSecretReader(fake.NewSimpleClientset(tt.secret))
 			credentialsProvider := NewDynatraceK8sSecretReader(secretReader)
-			got, err := credentialsProvider.GetDynatraceCredentials(tt.args.secretName)
+			got, err := credentialsProvider.GetDynatraceCredentials(context.Background(), tt.args.secretName)
 
 			if tt.wantErr {
 				assert.Error(t, err)

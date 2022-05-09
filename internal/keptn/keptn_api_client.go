@@ -1,6 +1,7 @@
 package keptn
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -27,7 +28,7 @@ func NewAPIClient(client rest.ClientInterface) *APIClient {
 
 // Post performs a post request and returns a validated response or an error.
 func (c *APIClient) Post(apiPath string, body []byte) ([]byte, error) {
-	body, status, url, err := c.restClient.Post(apiPath, body)
+	body, status, url, err := c.restClient.Post(context.TODO(), apiPath, body)
 	if err != nil {
 		return nil, err
 	}

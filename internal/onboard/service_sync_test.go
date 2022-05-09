@@ -1,6 +1,7 @@
 package onboard
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -140,7 +141,7 @@ func newMockEntitiesClientFactory(t *testing.T) (*mockEntitiesClientFactory, fun
 		teardown
 }
 
-func (f *mockEntitiesClientFactory) CreateEntitiesClient() (*dynatrace.EntitiesClient, error) {
+func (f *mockEntitiesClientFactory) CreateEntitiesClient(ctx context.Context) (*dynatrace.EntitiesClient, error) {
 	dynatraceCredentials, err := credentials.NewDynatraceCredentials(f.url, testDynatraceAPIToken)
 	if err != nil {
 		return nil, err
@@ -167,7 +168,7 @@ func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
 		resourcesClient:       mockSLIAndSLOResourceWriter,
 		entitiesClientFactory: mockEntitiesClientFactory,
 	}
-	s.synchronizeServices()
+	s.synchronizeServices(context.Background())
 
 	onboardedService1 := "my-service"
 	onboardedService2 := "my-service-2"
@@ -314,7 +315,7 @@ func Test_ServiceSynchronizer_synchronizeServices_skipExisting(t *testing.T) {
 		resourcesClient:       mockSLIAndSLOResourceWriter,
 		entitiesClientFactory: mockEntitiesClientFactory,
 	}
-	s.synchronizeServices()
+	s.synchronizeServices(context.Background())
 
 	// no services should have been created
 	assert.EqualValues(t, 0, len(mockServicesClient.createdServices))

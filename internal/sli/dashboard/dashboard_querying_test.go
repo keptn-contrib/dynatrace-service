@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"net/http"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 
 	timeframe, err := common.NewTimeframeParser("2019-10-21T09:11:24Z", "2019-10-21T09:11:25Z").Parse()
 	assert.NoError(t, err)
-	result, err := querying.GetSLIValues(common.DynatraceConfigDashboardQUERY, *timeframe)
+	result, err := querying.GetSLIValues(context.TODO(), common.DynatraceConfigDashboardQUERY, *timeframe)
 
 	assert.Nil(t, err)
 	assert.NotNil(t, result, "No result returned")
@@ -81,7 +82,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 
 	timeframe, err := common.NewTimeframe(time.Now(), time.Now())
 	assert.NoError(t, err)
-	actualResult, err := querying.GetSLIValues(dashboardID, *timeframe)
+	actualResult, err := querying.GetSLIValues(context.TODO(), dashboardID, *timeframe)
 
 	assert.Error(t, err)
 	assert.Nil(t, actualResult)
@@ -111,7 +112,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 
 	timeframe, err := common.NewTimeframe(time.Now(), time.Now())
 	assert.NoError(t, err)
-	actualResult, err := querying.GetSLIValues(dashboardID, *timeframe)
+	actualResult, err := querying.GetSLIValues(context.TODO(), dashboardID, *timeframe)
 
 	assert.Error(t, err)
 	assert.Nil(t, actualResult)

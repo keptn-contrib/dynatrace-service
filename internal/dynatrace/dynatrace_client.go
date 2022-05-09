@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -76,11 +77,19 @@ func createAdditionalHeaders(token string) rest.HTTPHeader {
 }
 
 type ClientInterface interface {
-	Get(apiPath string) ([]byte, error)
-	Post(apiPath string, body []byte) ([]byte, error)
-	Put(apiPath string, body []byte) ([]byte, error)
-	Delete(apiPath string) ([]byte, error)
+	// Get performs a get request.
+	Get(ctx context.Context, apiPath string) ([]byte, error)
 
+	// Post performs a post request.
+	Post(ctx context.Context, apiPath string, body []byte) ([]byte, error)
+
+	// Put performs a put request.
+	Put(ctx context.Context, apiPath string, body []byte) ([]byte, error)
+
+	// Delete performs a delete request.
+	Delete(ctx context.Context, apiPath string) ([]byte, error)
+
+	// Credentials returns the credentials associated with the client.
 	Credentials() *credentials.DynatraceCredentials
 }
 
@@ -113,8 +122,9 @@ func NewClientWithHTTP(dynatraceCredentials *credentials.DynatraceCredentials, h
 	}
 }
 
-func (dt *Client) Get(apiPath string) ([]byte, error) {
-	body, status, url, err := dt.restClient.Get(apiPath)
+// Get performs a get request.
+func (dt *Client) Get(ctx context.Context, apiPath string) ([]byte, error) {
+	body, status, url, err := dt.restClient.Get(ctx, apiPath)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +132,9 @@ func (dt *Client) Get(apiPath string) ([]byte, error) {
 	return validateResponse(body, status, url)
 }
 
-func (dt *Client) Post(apiPath string, body []byte) ([]byte, error) {
-	body, status, url, err := dt.restClient.Post(apiPath, body)
+// Post performs a post request.
+func (dt *Client) Post(ctx context.Context, apiPath string, body []byte) ([]byte, error) {
+	body, status, url, err := dt.restClient.Post(ctx, apiPath, body)
 	if err != nil {
 		return nil, err
 	}
@@ -131,8 +142,9 @@ func (dt *Client) Post(apiPath string, body []byte) ([]byte, error) {
 	return validateResponse(body, status, url)
 }
 
-func (dt *Client) Put(apiPath string, body []byte) ([]byte, error) {
-	body, status, url, err := dt.restClient.Put(apiPath, body)
+// Put performs a put request.
+func (dt *Client) Put(ctx context.Context, apiPath string, body []byte) ([]byte, error) {
+	body, status, url, err := dt.restClient.Put(ctx, apiPath, body)
 	if err != nil {
 		return nil, err
 	}
@@ -140,8 +152,9 @@ func (dt *Client) Put(apiPath string, body []byte) ([]byte, error) {
 	return validateResponse(body, status, url)
 }
 
-func (dt *Client) Delete(apiPath string) ([]byte, error) {
-	body, status, url, err := dt.restClient.Delete(apiPath)
+// Delete performs a delete request.
+func (dt *Client) Delete(ctx context.Context, apiPath string) ([]byte, error) {
+	body, status, url, err := dt.restClient.Delete(ctx, apiPath)
 	if err != nil {
 		return nil, err
 	}
@@ -174,6 +187,7 @@ func validateResponse(body []byte, status int, url string) ([]byte, error) {
 	return body, nil
 }
 
+// Credentials returns the credentials associated with the client.
 func (dt *Client) Credentials() *credentials.DynatraceCredentials {
 	return dt.credentials
 }

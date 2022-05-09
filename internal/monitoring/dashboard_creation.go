@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -25,11 +26,11 @@ func NewDashboardCreation(client dynatrace.ClientInterface) *DashboardCreation {
 	}
 }
 
-// Create creates a new dashboard for the provided project
-func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) *ConfigResult {
+// Create creates a new dashboard for the provided project.
+func (dc *DashboardCreation) Create(ctx context.Context, project string, shipyard keptnv2.Shipyard) *ConfigResult {
 	// first, check if dashboard for this project already exists and delete that
 	dashboardClient := dynatrace.NewDashboardsClient(dc.client)
-	err := deleteExistingDashboard(project, dashboardClient)
+	err := deleteExistingDashboard(ctx, project, dashboardClient)
 	if err != nil {
 		log.WithError(err).Error("Could not delete existing dashboard")
 		return &ConfigResult{
@@ -40,7 +41,7 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) *
 
 	log.WithField("project", project).Info("Creating Dashboard for project")
 	dashboard := createDynatraceDashboard(project, shipyard)
-	err = dashboardClient.Create(dashboard)
+	err = dashboardClient.Create(ctx, dashboard)
 	if err != nil {
 		log.WithError(err).Error("Failed to create Dynatrace dashboards")
 		return &ConfigResult{
@@ -56,15 +57,15 @@ func (dc *DashboardCreation) Create(project string, shipyard keptnv2.Shipyard) *
 }
 
 // deleteExistingDashboard deletes an existing dashboard for the provided project
-func deleteExistingDashboard(project string, dashboardClient *dynatrace.DashboardsClient) error {
-	response, err := dashboardClient.GetAll()
+func deleteExistingDashboard(ctx context.Context, project string, dashboardClient *dynatrace.DashboardsClient) error {
+	response, err := dashboardClient.GetAll(ctx)
 	if err != nil {
 		return err
 	}
 
 	for _, dashboardItem := range response.Dashboards {
 		if dashboardItem.Name == getDashboardName(project) {
-			err = dashboardClient.Delete(dashboardItem.ID)
+			err = dashboardClient.Delete(ctx, dashboardItem.ID)
 			if err != nil {
 				return fmt.Errorf("could not delete dashboard for project %s: %v", project, err)
 			}

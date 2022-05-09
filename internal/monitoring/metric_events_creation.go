@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"regexp"
@@ -39,8 +40,8 @@ func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClie
 	}
 }
 
-// Create creates new metric events if SLOs are specified
-func (mec MetricEventCreation) Create(project string, stage string, service string) []ConfigResult {
+// Create creates new metric events if SLOs are specified.
+func (mec MetricEventCreation) Create(ctx context.Context, project string, stage string, service string) []ConfigResult {
 	log.Info("Creating custom metric events for project SLIs")
 	slos, err := mec.sloReader.GetSLOs(project, stage, service)
 	if err != nil {
@@ -58,7 +59,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 		return nil
 	}
 
-	managementZones, err := dynatrace.NewManagementZonesClient(mec.dtClient).GetAll()
+	managementZones, err := dynatrace.NewManagementZonesClient(mec.dtClient).GetAll(ctx)
 	var mzId int64 = -1
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{"project": project, "stage": stage}).Error("Could not retrieve management zones")
@@ -94,7 +95,7 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 
 		metricsEventResults = append(
 			metricsEventResults,
-			setupAllMetricEvents(metricEventsClient, project, stage, service, objective, query, mzId)...)
+			setupAllMetricEvents(ctx, metricEventsClient, project, stage, service, objective, query, mzId)...)
 
 	}
 
@@ -106,12 +107,12 @@ func (mec MetricEventCreation) Create(project string, stage string, service stri
 	return metricsEventResults
 }
 
-func setupAllMetricEvents(client *dynatrace.MetricEventsClient, project string, stage string, service string, slo *keptnlib.SLO, query string, managementZoneID int64) []ConfigResult {
+func setupAllMetricEvents(ctx context.Context, client *dynatrace.MetricEventsClient, project string, stage string, service string, slo *keptnlib.SLO, query string, managementZoneID int64) []ConfigResult {
 	var metricEventsResults []ConfigResult
 	for _, criteria := range slo.Pass {
 		for _, crit := range criteria.Criteria {
 
-			metricEventsResult, err := setupSingleMetricEvent(client, project, stage, service, slo.SLI, query, crit, managementZoneID)
+			metricEventsResult, err := setupSingleMetricEvent(ctx, client, project, stage, service, slo.SLI, query, crit, managementZoneID)
 			if err != nil {
 				continue
 			}
@@ -123,7 +124,7 @@ func setupAllMetricEvents(client *dynatrace.MetricEventsClient, project string, 
 	return metricEventsResults
 }
 
-func setupSingleMetricEvent(client *dynatrace.MetricEventsClient, project string, stage string, service string, metric string, query string, crit string, managementZoneID int64) (*ConfigResult, error) {
+func setupSingleMetricEvent(ctx context.Context, client *dynatrace.MetricEventsClient, project string, stage string, service string, metric string, query string, crit string, managementZoneID int64) (*ConfigResult, error) {
 	// criteria.Criteria
 	criteriaObject, err := parseCriteriaString(crit)
 	if err != nil {
@@ -148,7 +149,7 @@ func setupSingleMetricEvent(client *dynatrace.MetricEventsClient, project string
 		return nil, fmt.Errorf("could not create metric event definition for criteria, sli: %s, criteria: %s", metric, crit)
 	}
 
-	err = createOrUpdateMetricEvent(client, newMetricEvent)
+	err = createOrUpdateMetricEvent(ctx, client, newMetricEvent)
 	if err != nil {
 		log.WithError(err).WithField("metricName", newMetricEvent.Name).Error("Could not create metric event")
 		return nil, fmt.Errorf("could not create metric event: %s", newMetricEvent.Name)
@@ -161,8 +162,8 @@ func setupSingleMetricEvent(client *dynatrace.MetricEventsClient, project string
 	}, nil
 }
 
-func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEvent *dynatrace.MetricEvent) error {
-	existingMetricEvent, err := client.GetMetricEventByName(newMetricEvent.Name)
+func createOrUpdateMetricEvent(ctx context.Context, client *dynatrace.MetricEventsClient, newMetricEvent *dynatrace.MetricEvent) error {
+	existingMetricEvent, err := client.GetMetricEventByName(ctx, newMetricEvent.Name)
 	if err != nil {
 		return err
 	}
@@ -172,7 +173,7 @@ func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEv
 		existingMetricEvent.Threshold = newMetricEvent.Threshold
 		existingMetricEvent.TagFilters = nil
 
-		err := client.Update(existingMetricEvent)
+		err := client.Update(ctx, existingMetricEvent)
 		if err != nil {
 			return err
 		}
@@ -180,7 +181,7 @@ func createOrUpdateMetricEvent(client *dynatrace.MetricEventsClient, newMetricEv
 		return nil
 	}
 
-	err = client.Create(newMetricEvent)
+	err = client.Create(ctx, newMetricEvent)
 	if err != nil {
 		return err
 	}

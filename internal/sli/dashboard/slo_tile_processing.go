@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -26,7 +27,7 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Tim
 }
 
 // Process processes the specified SLO dashboard tile.
-func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
+func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []*TileResult {
 	if len(tile.AssignedEntities) == 0 {
 		failedTileResult := newFailedTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")
 		return []*TileResult{&failedTileResult}
@@ -35,14 +36,14 @@ func (p *SLOTileProcessing) Process(tile *dynatrace.Tile) []*TileResult {
 	var results []*TileResult
 	for _, sloID := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
-		results = append(results, p.processSLO(sloID))
+		results = append(results, p.processSLO(ctx, sloID))
 	}
 	return results
 }
 
 // processSLO processes an SLO by querying the data from the Dynatrace API.
 // Returns a TileResult with sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SLOTileProcessing) processSLO(sloID string) *TileResult {
+func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileResult {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
 		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
@@ -51,7 +52,7 @@ func (p *SLOTileProcessing) processSLO(sloID string) *TileResult {
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
 	if err != nil {
 		failedTileResult := newFailedTileResult(common.CleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
 		return &failedTileResult

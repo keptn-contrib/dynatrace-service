@@ -1,6 +1,8 @@
 package monitoring
 
 import (
+	"context"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -17,11 +19,11 @@ func NewManagementZoneCreation(client dynatrace.ClientInterface) *ManagementZone
 	}
 }
 
-// Create creates a new management zone for the project
-func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipyard) []ConfigResult {
+// Create creates a new management zone for the project.
+func (mzc *ManagementZoneCreation) Create(ctx context.Context, project string, shipyard keptnv2.Shipyard) []ConfigResult {
 	// get existing management zones
 	managementZoneClient := dynatrace.NewManagementZonesClient(mzc.client)
-	managementZoneNames, err := managementZoneClient.GetAll()
+	managementZoneNames, err := managementZoneClient.GetAll(ctx)
 	if err != nil {
 		// continue
 		log.WithError(err).Error("Could not retrieve management zones")
@@ -29,6 +31,7 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 
 	var managementZonesResults []ConfigResult
 	managementZoneResult := getOrCreateManagementZone(
+		ctx,
 		managementZoneClient,
 		GetManagementZoneNameForProject(project),
 		func() *dynatrace.ManagementZone {
@@ -39,6 +42,7 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 
 	for _, stage := range shipyard.Spec.Stages {
 		managementZone := getOrCreateManagementZone(
+			ctx,
 			managementZoneClient,
 			GetManagementZoneNameForProjectAndStage(project, stage.Name),
 			func() *dynatrace.ManagementZone {
@@ -52,6 +56,7 @@ func (mzc *ManagementZoneCreation) Create(project string, shipyard keptnv2.Shipy
 }
 
 func getOrCreateManagementZone(
+	ctx context.Context,
 	managementZoneClient *dynatrace.ManagementZonesClient,
 	managementZoneName string,
 	managementZoneFunc func() *dynatrace.ManagementZone,
@@ -64,7 +69,7 @@ func getOrCreateManagementZone(
 		}
 	}
 
-	err := managementZoneClient.Create(managementZoneFunc())
+	err := managementZoneClient.Create(ctx, managementZoneFunc())
 	if err != nil {
 		log.WithError(err).Error("Failed to create management zone")
 		return ConfigResult{

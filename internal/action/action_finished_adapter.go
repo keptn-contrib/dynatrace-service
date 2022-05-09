@@ -1,9 +1,8 @@
-package problem
+package action
 
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -83,7 +82,7 @@ func (a ActionFinishedAdapter) GetDeploymentStrategy() string {
 
 // GetLabels returns a map of labels
 func (a ActionFinishedAdapter) GetLabels() map[string]string {
-	return keptn.AddOptionalKeptnBridgeUrlToLabels(a.event.Labels, a.GetShKeptnContext())
+	return a.event.Labels
 }
 
 func (a ActionFinishedAdapter) GetResult() keptnv2.ResultType {

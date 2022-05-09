@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -24,12 +25,11 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 	}
 }
 
-// Process Generates the relevant SLIs & SLO definitions based on the metric query
-// noOfDimensionsInChart: how many dimensions did we have in the chart definition
-func (r *MetricsQueryProcessing) Process(noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
+// Process generates SLI & SLO definitions based on the metric query and the number of dimensions in the chart definition.
+func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(dynatrace.NewMetricsClientQueryParameters(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe))
+	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryParameters(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe))
 
 	// ERROR-CASE: Metric API return no values or an error
 	// we could not query data - so - we return the error back as part of our SLIResults

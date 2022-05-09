@@ -1,8 +1,7 @@
 package credentials
 
 import (
-	"net/http"
-	"net/http/httptest"
+	"context"
 	"os"
 	"testing"
 
@@ -10,60 +9,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
-
-func TestCheckKeptnConnection(t *testing.T) {
-
-	var returnedResponse int
-	ts := httptest.NewServer(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("Content-Type", "application/json")
-			w.WriteHeader(returnedResponse)
-			w.Write([]byte(`{}`))
-		}),
-	)
-	defer ts.Close()
-
-	type args struct {
-		apiURL    string
-		apiToken  string
-		bridgeURL string
-	}
-	tests := []struct {
-		name             string
-		args             args
-		returnedResponse int
-		wantErr          bool
-	}{
-		{
-			name: "Successful connection",
-			args: args{
-				apiURL:   ts.URL,
-				apiToken: "my-test-token",
-			},
-			returnedResponse: 200,
-			wantErr:          false,
-		},
-		{
-			name: "unauthorized connection",
-			args: args{
-				apiURL:   ts.URL,
-				apiToken: "my-test-token",
-			},
-			returnedResponse: 401,
-			wantErr:          true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			returnedResponse = tt.returnedResponse
-			keptnCredentials, err := NewKeptnCredentials(tt.args.apiURL, tt.args.apiToken, tt.args.bridgeURL)
-			assert.NoError(t, err)
-			if err := CheckKeptnConnection(keptnCredentials); (err != nil) != tt.wantErr {
-				t.Errorf("CheckKeptnConnection() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
 
 // Test keptn api credential behavior: values in dynatrace secret should be used, if not available, fall back to environment variables
 // If neither is available, an error should be produced.
@@ -213,7 +158,7 @@ func TestKeptnCredentialsReader_GetKeptnCredentials(t *testing.T) {
 
 			secretReader := NewK8sSecretReader(clientSet)
 			cm := NewKeptnCredentialsReader(secretReader)
-			got, err := cm.GetKeptnCredentials()
+			got, err := cm.GetKeptnCredentials(context.Background())
 
 			if tt.wantErr {
 				assert.Error(t, err)

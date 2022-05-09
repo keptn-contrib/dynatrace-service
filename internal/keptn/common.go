@@ -1,6 +1,12 @@
 package keptn
 
-import "github.com/keptn/go-utils/pkg/lib/keptn"
+import (
+	"context"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
+	"github.com/keptn/go-utils/pkg/lib/keptn"
+)
 
 const shipyardControllerURLEnvironmentVariableName = "SHIPYARD_CONTROLLER"
 const configurationServiceEnvironmentVariableName = "CONFIGURATION_SERVICE"
@@ -29,4 +35,19 @@ func getKeptnServiceURL(serviceName, defaultURL string) string {
 		return defaultURL
 	}
 	return url.String()
+}
+
+// TryGetBridgeURLForKeptnContext gets a backlink to the Keptn Bridge if available or returns "".
+func TryGetBridgeURLForKeptnContext(ctx context.Context, event adapter.EventContentAdapter) string {
+	credentials, err := credentials.GetKeptnCredentials(ctx)
+	if err != nil {
+		return ""
+	}
+
+	keptnBridgeURL := credentials.GetBridgeURL()
+	if keptnBridgeURL == "" {
+		return ""
+	}
+
+	return keptnBridgeURL + "/trace/" + event.GetShKeptnContext()
 }

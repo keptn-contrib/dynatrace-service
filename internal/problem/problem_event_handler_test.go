@@ -1,6 +1,7 @@
 package problem
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -61,7 +62,7 @@ func TestProblemEventHandler_HandleEvent(t *testing.T) {
 			kClient := &keptnClientMock{}
 			ph := NewProblemEventHandler(adapter, kClient)
 
-			err = ph.HandleEvent()
+			err = ph.HandleEvent(context.Background(), context.Background())
 
 			assert.NoError(t, err)
 			if tt.wantEmittedEvent {

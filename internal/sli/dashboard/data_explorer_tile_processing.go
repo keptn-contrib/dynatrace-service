@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -32,7 +33,7 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 }
 
 // Process processes the specified Data Explorer dashboard tile.
-func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
+func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
 	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(tile.Name)
 	if sloDefinition.SLI == "" {
@@ -49,41 +50,32 @@ func (p *DataExplorerTileProcessing) Process(tile *dynatrace.Tile, dashboardFilt
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	managementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
-	return p.processQuery(sloDefinition, tile.Queries[0], managementZoneFilter)
+	return p.processQuery(ctx, sloDefinition, tile.Queries[0], managementZoneFilter)
 }
 
-func (p *DataExplorerTileProcessing) processQuery(sloDefinition *keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []*TileResult {
+func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefinition *keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []*TileResult {
 	log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
 
-	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(dataQuery, managementZoneFilter)
+	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(ctx, dataQuery, managementZoneFilter)
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
 		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())
 		return []*TileResult{&failedTileResult}
 	}
 
-	return NewMetricsQueryProcessing(p.client).Process(len(dataQuery.SplitBy), sloDefinition, metricQuery)
+	return NewMetricsQueryProcessing(p.client).Process(ctx, len(dataQuery.SplitBy), sloDefinition, metricQuery)
 }
 
-// Looks at the DataExplorerQuery configuration of a data explorer chart and generates the Metrics Query.
-//
-// Returns a queryComponents object
-//   - metricId, e.g: built-in:mymetric
-//   - metricUnit, e.g: MilliSeconds
-//   - metricQuery, e.g: metricSelector=metric&filter...
-//   - fullMetricQuery, e.g: metricQuery&from=123213&to=2323
-//   - entitySelectorSLIDefinition, e.g: ,entityid(FILTERDIMENSIONVALUE)
-//   - filterSLIDefinitionAggregator, e.g: , filter(eq(Test Step,FILTERDIMENSIONVALUE))
-func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) (*queryComponents, error) {
+func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ctx context.Context, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) (*queryComponents, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
 	if dataQuery.Metric == "" {
-		return nil, fmt.Errorf("Metric query generation requires that data explorer query has a metric")
+		return nil, fmt.Errorf("metric query generation requires that data explorer query has a metric")
 	}
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
-	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(dataQuery.Metric)
+	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(ctx, dataQuery.Metric)
 	if err != nil {
 		return nil, err
 	}

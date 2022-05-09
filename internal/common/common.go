@@ -15,7 +15,6 @@ import (
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 )
 
-const BridgeLabel = "Keptns Bridge"
 const ProblemURLLabel = "Problem URL"
 
 // DynatraceConfigDashboardQUERY defines the Dynatrace Configuration File structure and supporting Constants

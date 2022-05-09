@@ -1,6 +1,7 @@
 package dynatrace
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 )
@@ -53,8 +54,8 @@ func NewAlertingProfilesClient(client ClientInterface) *AlertingProfilesClient {
 	}
 }
 
-func (apc *AlertingProfilesClient) getAll() (*listResponse, error) {
-	response, err := apc.client.Get(alertingProfilesPath)
+func (apc *AlertingProfilesClient) getAll(ctx context.Context) (*listResponse, error) {
+	response, err := apc.client.Get(ctx, alertingProfilesPath)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve alerting profiles: %v", err)
 	}
@@ -68,9 +69,9 @@ func (apc *AlertingProfilesClient) getAll() (*listResponse, error) {
 	return alertingProfiles, nil
 }
 
-// GetProfileID returns the profile ID for the given profileName if found, an empty string otherwise
-func (apc *AlertingProfilesClient) GetProfileID(profileName string) (string, error) {
-	res, err := apc.getAll()
+// GetProfileID returns the profile ID for the given profileName if found, an empty string otherwise.
+func (apc *AlertingProfilesClient) GetProfileID(ctx context.Context, profileName string) (string, error) {
+	res, err := apc.getAll(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -84,13 +85,14 @@ func (apc *AlertingProfilesClient) GetProfileID(profileName string) (string, err
 	return "", nil
 }
 
-func (apc *AlertingProfilesClient) Create(alertingProfile *AlertingProfile) (string, error) {
+// Create creates and alerting profile.
+func (apc *AlertingProfilesClient) Create(ctx context.Context, alertingProfile *AlertingProfile) (string, error) {
 	alertingProfilePayload, err := json.Marshal(alertingProfile)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal alerting profile: %v", err)
 	}
 
-	response, err := apc.client.Post(alertingProfilesPath, alertingProfilePayload)
+	response, err := apc.client.Post(ctx, alertingProfilesPath, alertingProfilePayload)
 	if err != nil {
 		return "", fmt.Errorf("failed to setup alerting profile: %v", err)
 	}
