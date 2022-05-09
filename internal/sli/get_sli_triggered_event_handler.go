@@ -191,10 +191,10 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Contex
 	// let's add this to the SLO in case this indicator is not yet in SLO.yaml.
 	// Because if it does not get added the lighthouse will not evaluate the SLI values
 	// we default it to open_problems<=0
-	errAddSlo := eh.addSLO(createDefaultProblemSLO())
-	if errAddSlo != nil {
+	errAddSLO := eh.addSLO(createDefaultProblemSLO())
+	if errAddSLO != nil {
 		// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
-		log.WithError(errAddSlo).Error("problem while adding SLOs")
+		log.WithError(errAddSLO).Error("problem while adding SLOs")
 	}
 
 	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(ctx, problemID)
