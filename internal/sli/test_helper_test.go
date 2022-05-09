@@ -101,11 +101,15 @@ func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValu
 	}
 }
 
-func createFailedSLIResultAssertionsFunc(expectedMetric string) func(*testing.T, *keptnv2.SLIResult) {
+func createFailedSLIResultAssertionsFunc(expectedMetric string, expectedMessageSubstrings ...string) func(*testing.T, *keptnv2.SLIResult) {
 	return func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.False(t, actual.Success, "Indicator success should be false")
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.Zero(t, actual.Value, "Indicator value should be zero")
+
+		for _, expectedSubstring := range expectedMessageSubstrings {
+			assert.Contains(t, actual.Message, expectedSubstring, "all substrings should be contained in message")
+		}
 	}
 }
 

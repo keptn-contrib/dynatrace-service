@@ -174,17 +174,27 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context
 	return sliResults, nil
 }
 
+func createDefaultProblemSLO() *keptncommon.SLO {
+	return &keptncommon.SLO{
+		SLI: ProblemOpenSLI,
+		Pass: []*keptncommon.SLOCriteria{
+			{
+				Criteria: []string{"pass=<=0"},
+			},
+		},
+		Weight: 1,
+		KeySLI: true,
+	}
+}
+
 func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Context, problemID string) result.SLIResult {
 	// let's add this to the SLO in case this indicator is not yet in SLO.yaml.
 	// Because if it does not get added the lighthouse will not evaluate the SLI values
 	// we default it to open_problems<=0
-	sloString := fmt.Sprintf("sli=%s;pass=<=0;key=true", ProblemOpenSLI)
-	sloDefinition := common.ParsePassAndWarningWithoutDefaultsFrom(sloString)
-
-	errAddSlo := eh.addSLO(sloDefinition)
-	if errAddSlo != nil {
+	errAddSLO := eh.addSLO(createDefaultProblemSLO())
+	if errAddSLO != nil {
 		// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
-		log.WithError(errAddSlo).Error("problem while adding SLOs")
+		log.WithError(errAddSLO).Error("problem while adding SLOs")
 	}
 
 	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(ctx, problemID)

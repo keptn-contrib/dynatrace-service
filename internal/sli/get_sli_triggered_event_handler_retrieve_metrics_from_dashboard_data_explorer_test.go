@@ -3,10 +3,11 @@ package sli
 import (
 	"testing"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
 var testDataExplorerGetSLIEventData = createTestGetSLIEventDataWithStartAndEnd("2021-01-01T00:00:00.000Z", "2021-01-02T00:00:00.000Z")

@@ -22,6 +22,44 @@ The base name of the SLI as well as the properties of the SLO must be set by app
 
 Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo/#objectives) for more details on configuring objectives.
 
+**Note:**
+In case dynatrace-service could not parse the tile title correctly it will stop the processing of this tile and return an error for the concerned SLI.
+
+### Logical AND/OR operators for pass and warning criteria
+
+The Keptn SLO objective definition for `pass` and `warning` criteria allows logical **AND** as well as **OR** operators.
+
+In order to achieve a logical **AND** operator like this
+```{yaml}
+pass:
+  - criteria:
+    - "<=+10%"
+    - "<600"
+```
+you would need to separate the criteria values with a comma. E.g. `sli=some-name;pass=<+10%,<600`.
+
+For logical **OR** operators like
+```{yaml}
+ pass:
+  - criteria:
+    - "<=+10%"
+  - criteria:
+    - "<600"
+```
+you need to include the `pass` (or `warning`) key multiple times in the title. E.g. `sli=some-name;pass=<+10%;pass=<600`.
+
+Of course, you can also have a combination of both
+
+```{yaml}
+pass:
+  - criteria:
+    - "<=+10%"
+    - "<600"
+  - criteria:
+    - "<500"
+```
+E.g. `sli=some-name;pass=<+10%,<600;pass=<500`
+
 
 ## Supported tile types
 

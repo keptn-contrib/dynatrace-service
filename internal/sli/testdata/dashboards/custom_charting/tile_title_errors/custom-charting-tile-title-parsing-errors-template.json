@@ -1,0 +1,52 @@
+ {
+  "metadata": {
+    "configurationVersions": [
+      6
+    ],
+    "clusterVersion": "1.242.5.20220506-113653"
+  },
+  "id": "e03f4be0-4712-4f12-96ee-8c486d001e9b",
+  "dashboardMetadata": {
+    "name": "Custom Charting",
+    "shared": false,
+    "owner": "somebody",
+    "popularity": 1
+  },
+  "tiles": [
+    {
+      "name": "",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 570,
+        "left": 1026,
+        "width": 304,
+        "height": 304
+      },
+      "tileFilter": {},
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "{{.TileTitle}}",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "TIMESERIES",
+          "series": [
+            {
+              "metric": "builtin:host.availability",
+              "aggregation": "AVG",
+              "type": "LINE",
+              "entityType": "HOST",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    }
+  ]
+}
