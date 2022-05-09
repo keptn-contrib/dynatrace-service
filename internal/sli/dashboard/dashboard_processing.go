@@ -70,7 +70,7 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 		},
 	}
 
-	log.Debug("Dashboard has changed: reparsing it!")
+	log.Debug("Dashboard will be parsed!")
 
 	// now let's iterate through the dashboard to find our SLIs
 	for _, tile := range dashboard.Tiles {
