@@ -45,7 +45,7 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	sloDefinition, err := common.ParseSLOFromString(tile.FilterConfig.CustomName)
 	var sloDefError *common.SLODefinitionError
 	if errors.As(err, &sloDefError) {
-		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "Custom charting tile not included due to parsing errors", err)
+		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "Custom charting tile title parsing error", err)
 		return []*TileResult{&failedTileResult}
 	}
 

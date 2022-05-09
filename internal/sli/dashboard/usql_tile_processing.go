@@ -41,7 +41,7 @@ func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) 
 	sloDefinition, err := common.ParseSLOFromString(tile.CustomName)
 	var sloDefError *common.SLODefinitionError
 	if errors.As(err, &sloDefError) {
-		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "User Sessions Query tile not included due to parsing errors", err)
+		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "User Sessions Query tile title parsing error", err)
 		return []*TileResult{&failedTileResult}
 	}
 

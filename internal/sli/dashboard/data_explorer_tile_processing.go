@@ -40,7 +40,7 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 	sloDefinition, err := common.ParseSLOFromString(tile.Name)
 	var sloDefError *common.SLODefinitionError
 	if errors.As(err, &sloDefError) {
-		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "Data Explorer tile not included due to parsing errors", err)
+		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "Data Explorer tile title parsing error", err)
 		return []*TileResult{&failedTileResult}
 	}
 
