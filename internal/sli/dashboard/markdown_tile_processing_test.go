@@ -88,6 +88,31 @@ func TestParseMarkdownConfigurationParams_ErrorCases(t *testing.T) {
 			input:            "KQG.Total.Pass=97%;KQG.Total.Warning=77%;KQG.Compare.WithScore=pass;KQG.Compare.Results=0;KQG.Compare.Function=p95",
 			expectedMessages: []string{"kqg.compare.results", "0"},
 		},
+		{
+			name:             "duplicate total pass",
+			input:            "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Total.Pass=96%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95",
+			expectedMessages: []string{"kqg.total.pass", "duplicate key"},
+		},
+		{
+			name:             "duplicate total warning",
+			input:            "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Total.Warning=96%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95",
+			expectedMessages: []string{"kqg.total.warning", "duplicate key"},
+		},
+		{
+			name:             "duplicate total compare with score",
+			input:            "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95;KQG.Compare.WithScore=all",
+			expectedMessages: []string{"kqg.compare.withscore", "duplicate key"},
+		},
+		{
+			name:             "duplicate compare results",
+			input:            "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95;KQG.Compare.Results=1",
+			expectedMessages: []string{"kqg.compare.results", "duplicate key"},
+		},
+		{
+			name:             "duplicate total compare function",
+			input:            "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95;KQG.Compare.Function=p90",
+			expectedMessages: []string{"kqg.compare.function", "duplicate key"},
+		},
 	}
 	for _, config := range testConfigs {
 		t.Run(config.name, func(t *testing.T) {

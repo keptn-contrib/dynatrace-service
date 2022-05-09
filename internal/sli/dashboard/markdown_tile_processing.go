@@ -31,6 +31,14 @@ func (err *invalidValueError) Error() string {
 	return fmt.Sprintf("invalid value for '%s': %s", err.key, err.value)
 }
 
+type duplicateKeyError struct {
+	key string
+}
+
+func (err *duplicateKeyError) Error() string {
+	return fmt.Sprintf("duplicate key '%s' in markdown definition", err.key)
+}
+
 type markdownParsingResult struct {
 	totalScore keptncommon.SLOScore
 	comparison keptncommon.SLOComparison
@@ -80,6 +88,7 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 	}
 
 	var errs []error
+	keyFound := make(map[string]bool)
 
 	markdownSplits := strings.Split(markdown, ";")
 	for _, markdownSplitValue := range markdownSplits {
@@ -94,27 +103,52 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 
 		switch key {
 		case totalPass:
+			if keyFound[totalPass] {
+				errs = append(errs, &duplicateKeyError{key: totalPass})
+				break
+			}
 			result.totalScore.Pass = value
+			keyFound[totalPass] = true
 		case totalWarning:
+			if keyFound[totalWarning] {
+				errs = append(errs, &duplicateKeyError{key: totalWarning})
+				break
+			}
 			result.totalScore.Warning = value
+			keyFound[totalWarning] = true
 		case compareWithScore:
+			if keyFound[compareWithScore] {
+				errs = append(errs, &duplicateKeyError{key: compareWithScore})
+				break
+			}
 			score, err := parseCompareWithScore(value)
 			if err != nil {
 				errs = append(errs, err)
 			}
 			result.comparison.IncludeResultWithScore = score
+			keyFound[compareWithScore] = true
 		case compareResults:
+			if keyFound[compareResults] {
+				errs = append(errs, &duplicateKeyError{key: compareResults})
+				break
+			}
 			numberOfResults, err := parseCompareNumberOfResults(value)
 			if err != nil {
 				errs = append(errs, err)
 			}
 			result.comparison.NumberOfComparisonResults = numberOfResults
+			keyFound[compareResults] = true
 		case compareFunction:
+			if keyFound[compareFunction] {
+				errs = append(errs, &duplicateKeyError{key: compareFunction})
+				break
+			}
 			aggregateFunc, err := parseAggregateFunction(value)
 			if err != nil {
 				errs = append(errs, err)
 			}
 			result.comparison.AggregateFunction = aggregateFunc
+			keyFound[compareFunction] = true
 		}
 	}
 
