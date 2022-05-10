@@ -1,0 +1,61 @@
+{
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+      "name": "test",
+      "shared": false,
+      "owner": "",
+      "dashboardFilter": {
+        "managementZone": {          
+          "id": "-1234567890123456789",
+          "name": "mz-1"
+        }
+      }
+    },
+    "tiles": [
+      {
+        "name": "HIGH Vulnerabilities;sli=vulnerabilities_high;pass=<=+0,<1;weight=5;key=true",
+        "tileType": "DATA_EXPLORER",
+        "configured": true,
+        "bounds": {
+          "top": 38,
+          "left": 608,
+          "width": 304,
+          "height": 304
+        },
+        "tileFilter": {},
+        "customName": "Data explorer results",
+        "queries": [
+          {
+            "id": "A",
+            "metric": "builtin:security.securityProblem.open.managementZone",
+            "spaceAggregation": "SUM",
+            "timeAggregation": "DEFAULT",
+            "splitBy": [
+              "Risk Level"
+            ],
+            "sortBy": "DESC",
+            "filterBy": {
+              "filterOperator": "AND",
+              "nestedFilters": [
+                {
+                  "filter": "Risk Level",
+                  "filterType": "DIMENSION",
+                  "filterOperator": "OR",
+                  "nestedFilters": [],
+                  "criteria": [
+                    {
+                      "value": "HIGH",
+                      "evaluator": "EQ"
+                    }
+                  ]
+                }
+              ],
+              "criteria": []
+            },
+            "limit": 100,
+            "enabled": true
+          }
+        ]
+      }
+    ]
+  }
