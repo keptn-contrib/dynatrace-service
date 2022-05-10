@@ -38,35 +38,30 @@ func TestParseMarkdownConfigurationParams_SuccessCases(t *testing.T) {
 			expectedScore:      createSLOScore("90%", "70%"),
 			expectedComparison: createSLOComparison("single_result", "pass", 1, "avg"),
 		},
-		//
 		{
 			name:               "several results p50",
 			input:              "KQG.Total.Pass=91%;KQG.Total.Warning=71%;KQG.Compare.WithScore=pass;KQG.Compare.Results=2;KQG.Compare.Function=p50",
 			expectedScore:      createSLOScore("91%", "71%"),
 			expectedComparison: createSLOComparison("several_results", "pass", 2, "p50"),
 		},
-		//
 		{
 			name:               "several results p90",
 			input:              "KQG.Total.Pass=92%;KQG.Total.Warning=72%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p90",
 			expectedScore:      createSLOScore("92%", "72%"),
 			expectedComparison: createSLOComparison("several_results", "pass", 3, "p90"),
 		},
-		//
 		{
 			name:               "several results p95",
 			input:              "KQG.Total.Pass=93%;KQG.Total.Warning=73%;KQG.Compare.WithScore=pass;KQG.Compare.Results=4;KQG.Compare.Function=p95",
 			expectedScore:      createSLOScore("93%", "73%"),
 			expectedComparison: createSLOComparison("several_results", "pass", 4, "p95"),
 		},
-		//
 		{
 			name:               "several results p95 all",
 			input:              "KQG.Total.Pass=94%;KQG.Total.Warning=74%;KQG.Compare.WithScore=all;KQG.Compare.Results=5;KQG.Compare.Function=p95",
 			expectedScore:      createSLOScore("94%", "74%"),
 			expectedComparison: createSLOComparison("several_results", "all", 5, "p95"),
 		},
-		//
 		{
 			name:               "several results p95 pass_or_warn",
 			input:              "KQG.Total.Pass=95%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass_or_warn;KQG.Compare.Results=6;KQG.Compare.Function=p95",
@@ -107,6 +102,16 @@ func TestParseMarkdownConfigurationParams_ErrorCases(t *testing.T) {
 			expectedMessages: []string{"kqg.compare.results", "0"},
 		},
 		{
+			name:             "wrong number of results, decimal",
+			input:            "KQG.Total.Pass=97%;KQG.Total.Warning=77%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7.5;KQG.Compare.Function=p95",
+			expectedMessages: []string{"kqg.compare.results", "7.5"},
+		},
+		{
+			name:             "wrong number of results, string",
+			input:            "KQG.Total.Pass=97%;KQG.Total.Warning=77%;KQG.Compare.WithScore=pass;KQG.Compare.Results=three;KQG.Compare.Function=p95",
+			expectedMessages: []string{"kqg.compare.results", "three"},
+		},
+		{
 			name:             "duplicate total pass",
 			input:            "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Total.Pass=96%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95",
 			expectedMessages: []string{"kqg.total.pass", "duplicate key"},
@@ -140,6 +145,17 @@ func TestParseMarkdownConfigurationParams_ErrorCases(t *testing.T) {
 			name:             "invalid value for total warning",
 			input:            "KQG.Total.Warning=OneHundred",
 			expectedMessages: []string{"kqg.total.warning", "OneHundred"},
+		},
+		{
+			name:  "multiple problems - one for each",
+			input: "KQG.Total.Pass=96Pct;KQG.Total.Warning=OneHundred;KQG.Compare.WithScore=passing;KQG.Compare.Results=7.5;KQG.Compare.Function=p97;",
+			expectedMessages: []string{
+				"kqg.total.pass", "96Pct",
+				"kqg.total.warning", "OneHundred",
+				"kqg.compare.withscore", "passing",
+				"kqg.compare.function", "p97",
+				"kqg.compare.results", "7.5",
+			},
 		},
 	}
 	for _, config := range testConfigs {
