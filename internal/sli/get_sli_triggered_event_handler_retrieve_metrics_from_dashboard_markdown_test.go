@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/dashboard"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -19,10 +20,12 @@ type data struct {
 // there is one SLO tile as well to have a fully working example where SLOs would be stored as well
 func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-single-sli-template.json"
-	assertionFunc := createSuccessfulSLIResultAssertionsFunc("Static_SLO_-_Pass", 95)
+	const sliName = "Static_SLO_-_Pass"
+
+	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95)
 
 	expectedSLO := &keptnapi.SLO{
-		SLI:     "Static_SLO_-_Pass",
+		SLI:     sliName,
 		Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
 		Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
 		Weight:  1,
@@ -37,77 +40,77 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 		{
 			name:        "only defaults",
 			markdown:    "just some information here, that does not add any configuration",
-			expectedSLO: createSLO("90%", "75%", "single_result", "pass", 1, "avg", expectedSLO),
+			expectedSLO: createSLO("90%", "75%", dashboard.CompareResultsSingle, dashboard.CompareWithScorePass, 1, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "total pass, rest is defaults",
 			markdown:    "KQG.Total.Pass=91%;",
-			expectedSLO: createSLO("91%", "75%", "single_result", "pass", 1, "avg", expectedSLO),
+			expectedSLO: createSLO("91%", "75%", dashboard.CompareResultsSingle, dashboard.CompareWithScorePass, 1, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "total warning, rest is defaults",
 			markdown:    "KQG.Total.Warning=76%;",
-			expectedSLO: createSLO("90%", "76%", "single_result", "pass", 1, "avg", expectedSLO),
+			expectedSLO: createSLO("90%", "76%", dashboard.CompareResultsSingle, dashboard.CompareWithScorePass, 1, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "include with, rest is defaults",
 			markdown:    "KQG.Compare.WithScore=all;",
-			expectedSLO: createSLO("90%", "75%", "single_result", "all", 1, "avg", expectedSLO),
+			expectedSLO: createSLO("90%", "75%", dashboard.CompareResultsSingle, dashboard.CompareWithScoreAll, 1, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "number of results, rest is defaults",
 			markdown:    "KQG.Compare.Results=2;",
-			expectedSLO: createSLO("90%", "75%", "several_results", "pass", 2, "avg", expectedSLO),
+			expectedSLO: createSLO("90%", "75%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 2, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "aggregate func, rest is defaults",
 			markdown:    "KQG.Compare.Function=p95;",
-			expectedSLO: createSLO("90%", "75%", "single_result", "pass", 1, "p95", expectedSLO),
+			expectedSLO: createSLO("90%", "75%", dashboard.CompareResultsSingle, dashboard.CompareWithScorePass, 1, dashboard.CompareFunctionP95, expectedSLO),
 		},
 		{
 			name:        "single result, without percent sign",
 			markdown:    "KQG.Total.Pass=90;KQG.Total.Warning=70;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
-			expectedSLO: createSLO("90", "70", "single_result", "pass", 1, "avg", expectedSLO),
+			expectedSLO: createSLO("90", "70", dashboard.CompareResultsSingle, dashboard.CompareWithScorePass, 1, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "single result, without percent sign, with decimals",
 			markdown:    "KQG.Total.Pass=90.84;KQG.Total.Warning=70.22;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
-			expectedSLO: createSLO("90.84", "70.22", "single_result", "pass", 1, "avg", expectedSLO),
+			expectedSLO: createSLO("90.84", "70.22", dashboard.CompareResultsSingle, dashboard.CompareWithScorePass, 1, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "single result, with percent sign, with decimals",
 			markdown:    "KQG.Total.Pass=90.84%;KQG.Total.Warning=70.22%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
-			expectedSLO: createSLO("90.84%", "70.22%", "single_result", "pass", 1, "avg", expectedSLO),
+			expectedSLO: createSLO("90.84%", "70.22%", dashboard.CompareResultsSingle, dashboard.CompareWithScorePass, 1, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "single result",
 			markdown:    "KQG.Total.Pass=90%;KQG.Total.Warning=70%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
-			expectedSLO: createSLO("90%", "70%", "single_result", "pass", 1, "avg", expectedSLO),
+			expectedSLO: createSLO("90%", "70%", dashboard.CompareResultsSingle, dashboard.CompareWithScorePass, 1, dashboard.CompareFunctionAvg, expectedSLO),
 		},
 		{
 			name:        "several results p50",
 			markdown:    "KQG.Total.Pass=91%;KQG.Total.Warning=71%;KQG.Compare.WithScore=pass;KQG.Compare.Results=2;KQG.Compare.Function=p50",
-			expectedSLO: createSLO("91%", "71%", "several_results", "pass", 2, "p50", expectedSLO),
+			expectedSLO: createSLO("91%", "71%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 2, dashboard.CompareFunctionP50, expectedSLO),
 		},
 		{
 			name:        "several results p90",
 			markdown:    "KQG.Total.Pass=92%;KQG.Total.Warning=72%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=p90",
-			expectedSLO: createSLO("92%", "72%", "several_results", "pass", 3, "p90", expectedSLO),
+			expectedSLO: createSLO("92%", "72%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 3, dashboard.CompareFunctionP90, expectedSLO),
 		},
 		{
 			name:        "several results p95",
 			markdown:    "KQG.Total.Pass=93%;KQG.Total.Warning=73%;KQG.Compare.WithScore=pass;KQG.Compare.Results=4;KQG.Compare.Function=p95",
-			expectedSLO: createSLO("93%", "73%", "several_results", "pass", 4, "p95", expectedSLO),
+			expectedSLO: createSLO("93%", "73%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 4, dashboard.CompareFunctionP95, expectedSLO),
 		},
 		{
 			name:        "several results p95 all",
 			markdown:    "KQG.Total.Pass=94%;KQG.Total.Warning=74%;KQG.Compare.WithScore=all;KQG.Compare.Results=5;KQG.Compare.Function=p95",
-			expectedSLO: createSLO("94%", "74%", "several_results", "all", 5, "p95", expectedSLO),
+			expectedSLO: createSLO("94%", "74%", dashboard.CompareResultsMultiple, dashboard.CompareWithScoreAll, 5, dashboard.CompareFunctionP95, expectedSLO),
 		},
 		{
 			name:        "several results p95 pass_or_warn",
 			markdown:    "KQG.Total.Pass=95%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass_or_warn;KQG.Compare.Results=6;KQG.Compare.Function=p95",
-			expectedSLO: createSLO("95%", "75%", "several_results", "pass_or_warn", 6, "p95", expectedSLO),
+			expectedSLO: createSLO("95%", "75%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePassOrWarn, 6, dashboard.CompareFunctionP95, expectedSLO),
 		},
 	}
 	for _, markdownTest := range tests {
@@ -150,6 +153,9 @@ func createSLO(totalPass string, totalWarning string, compareWith string, includ
 func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-errors-template.json"
 
+	const indicator = "no metric"
+	const duplicationError = "duplicate key"
+
 	tests := []struct {
 		name           string
 		markdown       string
@@ -158,72 +164,72 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 		{
 			name:           "unknown compare with score function",
 			markdown:       "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=warn;KQG.Compare.Results=7;KQG.Compare.Function=p95",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.compare.withscore", "warn"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.CompareWithScore, "warn"),
 		},
 		{
 			name:           "unknown compare function, p97",
 			markdown:       "KQG.Total.Pass=97%;KQG.Total.Warning=77%;KQG.Compare.WithScore=pass;KQG.Compare.Results=8;KQG.Compare.Function=p97",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.compare.function", "p97"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.CompareFunction, "p97"),
 		},
 		{
 			name:           "wrong number of results, 0",
 			markdown:       "KQG.Total.Pass=97%;KQG.Total.Warning=77%;KQG.Compare.WithScore=pass;KQG.Compare.Results=0;KQG.Compare.Function=p95",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.compare.results", "0"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.CompareResults, "0"),
 		},
 		{
 			name:           "wrong number of results, decimal",
 			markdown:       "KQG.Total.Pass=97%;KQG.Total.Warning=77%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7.5;KQG.Compare.Function=p95",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.compare.results", "7.5"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.CompareResults, "7.5"),
 		},
 		{
 			name:           "wrong number of results, string",
 			markdown:       "KQG.Total.Pass=97%;KQG.Total.Warning=77%;KQG.Compare.WithScore=pass;KQG.Compare.Results=three;KQG.Compare.Function=p95",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.compare.results", "three"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.CompareResults, "three"),
 		},
 		{
 			name:           "duplicate total pass",
 			markdown:       "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Total.Pass=96%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.total.pass", "duplicate key"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.TotalPass, duplicationError),
 		},
 		{
 			name:           "duplicate total warning",
 			markdown:       "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Total.Warning=96%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.total.warning", "duplicate key"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.TotalWarning, duplicationError),
 		},
 		{
 			name:           "duplicate total compare with score",
 			markdown:       "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95;KQG.Compare.WithScore=all",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.compare.withscore", "duplicate key"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.CompareWithScore, duplicationError),
 		},
 		{
 			name:           "duplicate compare results",
 			markdown:       "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95;KQG.Compare.Results=1",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.compare.results", "duplicate key"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.CompareResults, duplicationError),
 		},
 		{
 			name:           "duplicate total compare function",
 			markdown:       "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95;KQG.Compare.Function=p90",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.compare.function", "duplicate key"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.CompareFunction, duplicationError),
 		},
 		{
 			name:           "invalid value for total pass",
 			markdown:       "KQG.Total.Pass=96Pct",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.total.pass", "96Pct"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.TotalPass, "96Pct"),
 		},
 		{
 			name:           "invalid value for total warning",
 			markdown:       "KQG.Total.Warning=OneHundred",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric", "kqg.total.warning", "OneHundred"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, dashboard.TotalWarning, "OneHundred"),
 		},
 		{
 			name:     "multiple problems - one for each",
 			markdown: "KQG.Total.Pass=96Pct;KQG.Total.Warning=OneHundred;KQG.Compare.WithScore=passing;KQG.Compare.Results=7.5;KQG.Compare.Function=p97;",
-			assertionsFunc: createFailedSLIResultAssertionsFunc("no metric",
-				"kqg.total.pass", "96Pct",
-				"kqg.total.warning", "OneHundred",
-				"kqg.compare.withscore", "passing",
-				"kqg.compare.function", "p97",
-				"kqg.compare.results", "7.5"),
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator,
+				dashboard.TotalPass, "96Pct",
+				dashboard.TotalWarning, "OneHundred",
+				dashboard.CompareWithScore, "passing",
+				dashboard.CompareFunction, "p97",
+				dashboard.CompareResults, "7.5"),
 		},
 	}
 	for _, markdownTest := range tests {

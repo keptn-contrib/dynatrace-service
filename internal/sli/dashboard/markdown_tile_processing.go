@@ -61,20 +61,20 @@ func (p *MarkdownTileProcessing) Process(tile *dynatrace.Tile, defaultScore kept
 }
 
 const (
-	totalPass                  = "kqg.total.pass"
-	totalWarning               = "kqg.total.warning"
-	compareWithScore           = "kqg.compare.withscore"
-	compareWithScoreAll        = "all"
-	compareWithScorePass       = "pass"
-	compareWithScorePassOrWarn = "pass_or_warn"
-	compareResults             = "kqg.compare.results" // this is an int! You cannot specify 'single_result' or 'several results' at all -> it is derived from the number of results
-	compareResultsSingle       = "single_result"
-	compareResultsMultiple     = "several_results"
-	compareFunction            = "kqg.compare.function"
-	compareFunctionAvg         = "avg"
-	compareFunctionP50         = "p50"
-	compareFunctionP90         = "p90"
-	compareFunctionP95         = "p95"
+	TotalPass                  = "kqg.total.pass"
+	TotalWarning               = "kqg.total.warning"
+	CompareWithScore           = "kqg.compare.withscore"
+	CompareWithScoreAll        = "all"
+	CompareWithScorePass       = "pass"
+	CompareWithScorePassOrWarn = "pass_or_warn"
+	CompareResults             = "kqg.compare.results"
+	CompareResultsSingle       = "single_result"
+	CompareResultsMultiple     = "several_results"
+	CompareFunction            = "kqg.compare.function"
+	CompareFunctionAvg         = "avg"
+	CompareFunctionP50         = "p50"
+	CompareFunctionP90         = "p90"
+	CompareFunctionP95         = "p95"
 )
 
 // parseMarkdownConfiguration parses a text that can be used in a Markdown tile to specify global SLO properties
@@ -103,29 +103,29 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 		value := configValueSplits[1]
 
 		switch key {
-		case totalPass:
-			if keyFound[totalPass] {
-				errs = append(errs, &duplicateKeyError{key: totalPass})
+		case TotalPass:
+			if keyFound[TotalPass] {
+				errs = append(errs, &duplicateKeyError{key: TotalPass})
 				break
 			}
 			if isNotAPercentValue(value) {
-				errs = append(errs, &invalidValueError{key: totalPass, value: value})
+				errs = append(errs, &invalidValueError{key: TotalPass, value: value})
 			}
 			result.totalScore.Pass = value
-			keyFound[totalPass] = true
-		case totalWarning:
-			if keyFound[totalWarning] {
-				errs = append(errs, &duplicateKeyError{key: totalWarning})
+			keyFound[TotalPass] = true
+		case TotalWarning:
+			if keyFound[TotalWarning] {
+				errs = append(errs, &duplicateKeyError{key: TotalWarning})
 				break
 			}
 			if isNotAPercentValue(value) {
-				errs = append(errs, &invalidValueError{key: totalWarning, value: value})
+				errs = append(errs, &invalidValueError{key: TotalWarning, value: value})
 			}
 			result.totalScore.Warning = value
-			keyFound[totalWarning] = true
-		case compareWithScore:
-			if keyFound[compareWithScore] {
-				errs = append(errs, &duplicateKeyError{key: compareWithScore})
+			keyFound[TotalWarning] = true
+		case CompareWithScore:
+			if keyFound[CompareWithScore] {
+				errs = append(errs, &duplicateKeyError{key: CompareWithScore})
 				break
 			}
 			score, err := parseCompareWithScore(value)
@@ -133,10 +133,10 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 				errs = append(errs, err)
 			}
 			result.comparison.IncludeResultWithScore = score
-			keyFound[compareWithScore] = true
-		case compareResults:
-			if keyFound[compareResults] {
-				errs = append(errs, &duplicateKeyError{key: compareResults})
+			keyFound[CompareWithScore] = true
+		case CompareResults:
+			if keyFound[CompareResults] {
+				errs = append(errs, &duplicateKeyError{key: CompareResults})
 				break
 			}
 			numberOfResults, err := parseCompareNumberOfResults(value)
@@ -144,10 +144,10 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 				errs = append(errs, err)
 			}
 			result.comparison.NumberOfComparisonResults = numberOfResults
-			keyFound[compareResults] = true
-		case compareFunction:
-			if keyFound[compareFunction] {
-				errs = append(errs, &duplicateKeyError{key: compareFunction})
+			keyFound[CompareResults] = true
+		case CompareFunction:
+			if keyFound[CompareFunction] {
+				errs = append(errs, &duplicateKeyError{key: CompareFunction})
 				break
 			}
 			aggregateFunc, err := parseAggregateFunction(value)
@@ -155,7 +155,7 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 				errs = append(errs, err)
 			}
 			result.comparison.AggregateFunction = aggregateFunc
-			keyFound[compareFunction] = true
+			keyFound[CompareFunction] = true
 		}
 	}
 
@@ -165,9 +165,9 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 		}
 	}
 
-	result.comparison.CompareWith = compareResultsSingle
+	result.comparison.CompareWith = CompareResultsSingle
 	if result.comparison.NumberOfComparisonResults > 1 {
-		result.comparison.CompareWith = compareResultsMultiple
+		result.comparison.CompareWith = CompareResultsMultiple
 	}
 
 	return result, nil
@@ -181,21 +181,21 @@ func isNotAPercentValue(value string) bool {
 
 func parseCompareWithScore(value string) (string, error) {
 	switch value {
-	case compareWithScorePass, compareWithScoreAll, compareWithScorePassOrWarn:
+	case CompareWithScorePass, CompareWithScoreAll, CompareWithScorePassOrWarn:
 		return value, nil
 	}
 
-	return "", &invalidValueError{key: compareWithScore, value: value}
+	return "", &invalidValueError{key: CompareWithScore, value: value}
 }
 
 func parseCompareNumberOfResults(value string) (int, error) {
 	numberOfResults, err := strconv.Atoi(value)
 	if err != nil {
-		return 0, &invalidValueError{key: compareResults, value: value}
+		return 0, &invalidValueError{key: CompareResults, value: value}
 	}
 
 	if numberOfResults < 1 {
-		return 0, &invalidValueError{key: compareResults, value: value}
+		return 0, &invalidValueError{key: CompareResults, value: value}
 	}
 
 	return numberOfResults, nil
@@ -203,9 +203,9 @@ func parseCompareNumberOfResults(value string) (int, error) {
 
 func parseAggregateFunction(value string) (string, error) {
 	switch value {
-	case compareFunctionAvg, compareFunctionP50, compareFunctionP90, compareFunctionP95:
+	case CompareFunctionAvg, CompareFunctionP50, CompareFunctionP90, CompareFunctionP95:
 		return value, nil
 	}
 
-	return "", &invalidValueError{key: compareFunction, value: value}
+	return "", &invalidValueError{key: CompareFunction, value: value}
 }
