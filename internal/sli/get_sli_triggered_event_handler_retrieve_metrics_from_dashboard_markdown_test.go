@@ -40,6 +40,31 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 			expectedSLO: createSLO("90%", "75%", "single_result", "pass", 1, "avg", expectedSLO),
 		},
 		{
+			name:        "total pass, rest is defaults",
+			markdown:    "KQG.Total.Pass=91%;",
+			expectedSLO: createSLO("91%", "75%", "single_result", "pass", 1, "avg", expectedSLO),
+		},
+		{
+			name:        "total warning, rest is defaults",
+			markdown:    "KQG.Total.Warning=76%;",
+			expectedSLO: createSLO("90%", "76%", "single_result", "pass", 1, "avg", expectedSLO),
+		},
+		{
+			name:        "include with, rest is defaults",
+			markdown:    "KQG.Compare.WithScore=all;",
+			expectedSLO: createSLO("90%", "75%", "single_result", "all", 1, "avg", expectedSLO),
+		},
+		{
+			name:        "number of results, rest is defaults",
+			markdown:    "KQG.Compare.Results=2;",
+			expectedSLO: createSLO("90%", "75%", "several_results", "pass", 2, "avg", expectedSLO),
+		},
+		{
+			name:        "aggregate func, rest is defaults",
+			markdown:    "KQG.Compare.Function=p95;",
+			expectedSLO: createSLO("90%", "75%", "single_result", "pass", 1, "p95", expectedSLO),
+		},
+		{
 			name:        "single result, without percent sign",
 			markdown:    "KQG.Total.Pass=90;KQG.Total.Warning=70;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg",
 			expectedSLO: createSLO("90", "70", "single_result", "pass", 1, "avg", expectedSLO),
