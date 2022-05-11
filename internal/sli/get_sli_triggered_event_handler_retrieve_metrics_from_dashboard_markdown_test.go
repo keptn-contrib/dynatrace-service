@@ -247,3 +247,52 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 		})
 	}
 }
+
+// TestRetrieveMetricsFromDashboard_MarkdownMultipleTilesErrors tests multiple markdown tiles per dashboard without errors in the SLO definition.
+// This will result in a failing SLIResult, as it is not allowed to have multiple markdown tiles for configuration.
+func TestRetrieveMetricsFromDashboard_MarkdownMultipleTilesErrors(t *testing.T) {
+	type data struct {
+		MarkdownTileOne string // needs to match template file variable
+		MarkdownTileTwo string // needs to match template file variable
+	}
+
+	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-errors-multiple-tiles-template.json"
+
+	const indicator = "no metric"
+	const multipleTilesErrorMsg = "only one markdown tile allowed"
+
+	tests := []struct {
+		name           string
+		firstMarkdown  string
+		secondMarkdown string
+		assertionsFunc func(*testing.T, *keptnv2.SLIResult)
+	}{
+		{
+			name:           "union does not overlap",
+			firstMarkdown:  "KQG.Total.Pass=90%",
+			secondMarkdown: "KQG.Total.Warning=70%",
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, multipleTilesErrorMsg),
+		},
+		{
+			name:           "two full configurations",
+			firstMarkdown:  "KQG.Total.Pass=96%;KQG.Total.Warning=76%;KQG.Compare.WithScore=pass;KQG.Compare.Results=7;KQG.Compare.Function=p95;",
+			secondMarkdown: "KQG.Total.Pass=94%;KQG.Total.Warning=74%;KQG.Compare.WithScore=all;KQG.Compare.Results=5;KQG.Compare.Function=p90;",
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, multipleTilesErrorMsg),
+		},
+	}
+	for _, markdownTest := range tests {
+		t.Run(markdownTest.name, func(t *testing.T) {
+			handler := test.NewTemplatingPayloadBasedURLHandler(t, templateFile)
+			handler.AddExact(
+				dynatrace.DashboardsPath+"/"+testDashboardID,
+				&data{
+					MarkdownTileOne: markdownTest.firstMarkdown,
+					MarkdownTileTwo: markdownTest.secondMarkdown,
+				},
+			)
+
+			rClient := &uploadErrorResourceClientMock{t: t}
+			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
+		})
+	}
+}
