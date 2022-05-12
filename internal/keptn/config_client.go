@@ -136,46 +136,25 @@ func (rc *ConfigClient) getShipyard(project string) (*keptnv2.Shipyard, error) {
 func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (map[string]string, error) {
 	slis := make(map[string]string)
 
-	// get SLI config from project
+	// try to get SLI config from project
 	if project != "" {
-		res, err := rc.client.GetProjectResource(project, sliFilename)
-		if err != nil {
-			var rnfErrorType *ResourceNotFoundError
-			if !errors.As(err, &rnfErrorType) {
-				return nil, err
-			}
-		}
-		slis, err = addResourceToSLIMap(slis, res)
+		err := getResourceAndAddSLIsToMap(func() (string, error) { return rc.client.GetProjectResource(project, sliFilename) }, slis)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// get SLI config from stage
+	// try to get SLI config from stage
 	if project != "" && stage != "" {
-		res, err := rc.client.GetStageResource(project, stage, sliFilename)
-		if err != nil {
-			var rnfErrorType *ResourceNotFoundError
-			if !errors.As(err, &rnfErrorType) {
-				return nil, err
-			}
-		}
-		slis, err = addResourceToSLIMap(slis, res)
+		err := getResourceAndAddSLIsToMap(func() (string, error) { return rc.client.GetStageResource(project, stage, sliFilename) }, slis)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// get SLI config from service
+	// try to get SLI config from service
 	if project != "" && stage != "" && service != "" {
-		res, err := rc.client.GetServiceResource(project, stage, service, sliFilename)
-		if err != nil {
-			var rnfErrorType *ResourceNotFoundError
-			if !errors.As(err, &rnfErrorType) {
-				return nil, err
-			}
-		}
-		slis, err = addResourceToSLIMap(slis, res)
+		err := getResourceAndAddSLIsToMap(func() (string, error) { return rc.client.GetServiceResource(project, stage, service, sliFilename) }, slis)
 		if err != nil {
 			return nil, err
 		}
@@ -184,20 +163,38 @@ func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (m
 	return slis, nil
 }
 
-func addResourceToSLIMap(slis map[string]string, resource string) (map[string]string, error) {
+// getResourceAndAddSLIsToMap uses the specified function to get a resource, unmarshals it as an SLIConfig, and adds the indicators to the specified map, overwriting and entries with the same key.
+// If is is not possible to get the resource for any other reason than it is not found, or it is not possible to unmarshal the file or it doesn't contain any indicators, an error is returned.
+func getResourceAndAddSLIsToMap(resourceGetter func() (resource string, resourceErr error), slis map[string]string) error {
+	resource, err := resourceGetter()
+	if err != nil {
+		var rnfErrorType *ResourceNotFoundError
+		if errors.As(err, &rnfErrorType) {
+			return nil
+		}
+
+		return err
+	}
+
+	return addSLIResourceToMap(resource, slis)
+}
+
+// addSLIResourceToMap unmarshals a resource as a SLIConfig and adds the indicators to the specified map, overwriting any entries with the same key.
+// If it is not possible to unmarshal the file or it doesn't contain any indicators, an error is returned.
+func addSLIResourceToMap(resource string, slis map[string]string) error {
 	sliConfig := keptnapi.SLIConfig{}
 	err := yaml.Unmarshal([]byte(resource), &sliConfig)
 	if err != nil {
-		return nil, err
+		return err
+	}
+
+	if len(sliConfig.Indicators) == 0 {
+		return errors.New("missing required field: indicators")
 	}
 
 	for key, value := range sliConfig.Indicators {
 		slis[key] = value
 	}
 
-	if len(slis) == 0 {
-		return nil, errors.New("missing required field: indicators")
-	}
-
-	return slis, nil
+	return nil
 }
