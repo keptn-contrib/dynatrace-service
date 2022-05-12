@@ -150,14 +150,13 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 }
 
 func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
-	// get custom metrics for project if they exist
-	projectCustomQueries, err := eh.kClient.GetCustomQueries(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+	slis, err := eh.kClient.GetSLIs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
-		log.WithError(err).Errorf("could not retrieve custom queries: %v", err)
+		log.WithError(err).Error("could not retrieve custom SLI definitions")
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
 	}
 
-	queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), projectCustomQueries, timeframe)
+	queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe)
 
 	var sliResults []result.SLIResult
 

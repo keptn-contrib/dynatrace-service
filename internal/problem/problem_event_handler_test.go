@@ -9,7 +9,6 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,8 +78,8 @@ type keptnClientMock struct {
 	eventSink []*cloudevents.Event
 }
 
-func (m *keptnClientMock) GetCustomQueries(project string, stage string, service string) (*keptn.CustomQueries, error) {
-	panic("GetCustomQueries() should not be needed in this mock!")
+func (m *keptnClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+	panic("GetSLIs() should not be needed in this mock!")
 }
 
 func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {

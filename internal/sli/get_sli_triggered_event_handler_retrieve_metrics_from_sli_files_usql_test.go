@@ -43,7 +43,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 
 			// error here: in value of tc.usqlPrefix
 			kClient := &keptnClientMock{
-				customQueries: map[string]string{
+				slis: map[string]string{
 					indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 				},
 			}
@@ -105,7 +105,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 
 			// errors here: in value of tc.usqlPrefix
 			kClient := &keptnClientMock{
-				customQueries: map[string]string{
+				slis: map[string]string{
 					indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 				},
 			}
@@ -164,7 +164,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			kClient := &keptnClientMock{
-				customQueries: map[string]string{
+				slis: map[string]string{
 					indicator: tc.query,
 				},
 			}
@@ -185,7 +185,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		"./testdata/usql_200_single_result.json")
 
 	kClient := &keptnClientMock{
-		customQueries: map[string]string{
+		slis: map[string]string{
 			indicator: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 		},
 	}
@@ -204,7 +204,7 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		"./testdata/usql_200_0_results.json")
 
 	kClient := &keptnClientMock{
-		customQueries: map[string]string{
+		slis: map[string]string{
 			indicator: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 		},
 	}
@@ -357,7 +357,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				tc.dataReturned)
 
 			kClient := &keptnClientMock{
-				customQueries: map[string]string{
+				slis: map[string]string{
 					indicator: tc.usqlQuery,
 				},
 			}

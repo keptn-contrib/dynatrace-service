@@ -10,6 +10,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/query"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
 
 	log "github.com/sirupsen/logrus"
@@ -51,13 +52,14 @@ func (mec MetricEventCreation) Create(ctx context.Context, project string, stage
 				"stage":   stage}).Info("No SLOs defined for service. Skipping creation of custom metric events.")
 		return nil
 	}
-	// get custom metrics for project
 
-	projectCustomQueries, err := mec.kClient.GetCustomQueries(project, stage, service)
+	// get custom metrics for project
+	slis, err := mec.kClient.GetSLIs(project, stage, service)
 	if err != nil {
-		log.WithError(err).WithField("project", project).Error("Failed to get custom queries for project")
+		log.WithError(err).WithField("project", project).Error("Failed to get SLIs for project")
 		return nil
 	}
+	projectCustomQueries := query.NewCustomQueries(slis)
 
 	managementZones, err := dynatrace.NewManagementZonesClient(mec.dtClient).GetAll(ctx)
 	var mzId int64 = -1

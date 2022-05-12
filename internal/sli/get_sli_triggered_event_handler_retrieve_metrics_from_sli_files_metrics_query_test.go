@@ -25,7 +25,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 
 	// error here as well: merge("dt.entity.services")
 	kClient := &keptnClientMock{
-		customQueries: map[string]string{
+		slis: map[string]string{
 			indicator: "metricSelector=builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 		},
 	}
@@ -56,7 +56,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 
 	// error here as well: tag(keptn_project:stagin)
 	kClient := &keptnClientMock{
-		customQueries: map[string]string{
+		slis: map[string]string{
 			indicator: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)",
 		},
 	}
@@ -87,7 +87,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 
 	// error here as well: missing merge("dt.entity.service) transformation
 	kClient := &keptnClientMock{
-		customQueries: map[string]string{
+		slis: map[string]string{
 			indicator: "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 		},
 	}
@@ -145,7 +145,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 
 			// error here: in value of tc.mv2Prefix
 			kClient := &keptnClientMock{
-				customQueries: map[string]string{
+				slis: map[string]string{
 					indicator: tc.mv2Prefix + "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 				},
 			}
@@ -194,7 +194,7 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		"./testdata/response_time_p95_200_1_result.json")
 
 	kClient := &keptnClientMock{
-		customQueries: map[string]string{
+		slis: map[string]string{
 			indicator: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 		},
 	}

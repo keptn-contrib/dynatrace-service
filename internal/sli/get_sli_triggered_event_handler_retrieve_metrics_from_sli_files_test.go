@@ -23,7 +23,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 
 	// error here in the misspelled indicator:
 	kClient := &keptnClientMock{
-		customQueries: map[string]string{
+		slis: map[string]string{
 			"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 		},
 	}
@@ -49,7 +49,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 
 	// error here as well: metric(s)Selector=
 	kClient := &keptnClientMock{
-		customQueries: map[string]string{
+		slis: map[string]string{
 			indicator: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 		},
 	}
@@ -75,7 +75,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 
 	const errorMessage = "invalid YAML file - some parsing issue"
 	kClient := &keptnClientMock{
-		customQueriesError: fmt.Errorf(errorMessage),
+		getSLIsError: fmt.Errorf(errorMessage),
 	}
 
 	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {

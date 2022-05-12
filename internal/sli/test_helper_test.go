@@ -257,21 +257,17 @@ func (m *resourceClientMock) GetDashboard(project string, stage string, service 
 }
 
 type keptnClientMock struct {
-	eventSink          []*cloudevents.Event
-	customQueries      map[string]string
-	customQueriesError error
+	eventSink    []*cloudevents.Event
+	slis         map[string]string
+	getSLIsError error
 }
 
-func (m *keptnClientMock) GetCustomQueries(project string, stage string, service string) (*keptn.CustomQueries, error) {
-	if m.customQueriesError != nil {
-		return nil, m.customQueriesError
+func (m *keptnClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+	if m.getSLIsError != nil {
+		return nil, m.getSLIsError
 	}
 
-	if m.customQueries == nil {
-		return keptn.NewEmptyCustomQueries(), nil
-	}
-
-	return keptn.NewCustomQueries(m.customQueries), nil
+	return m.slis, nil
 }
 
 func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
