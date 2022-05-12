@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"gopkg.in/yaml.v2"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -31,12 +32,19 @@ type SLOAndSLIClientInterface interface {
 	SLIAndSLOWriterInterface
 }
 
+// ShipyardReaderInterface provides functionality for getting a project's shipyard.
+type ShipyardReaderInterface interface {
+	// GetShipyard returns the shipyard definition of a project.
+	GetShipyard(project string) (*keptnv2.Shipyard, error)
+}
+
 // DynatraceConfigReaderInterface provides functionality for getting a Dynatrace config.
 type DynatraceConfigReaderInterface interface {
 	// GetDynatraceConfig gets the Dynatrace config for the specified project, stage and service, checking first on the service, then stage and then project level.
 	GetDynatraceConfig(project string, stage string, service string) (string, error)
 }
 
+const shipyardFilename = "shipyard.yaml"
 const sloFilename = "slo.yaml"
 const sliFilename = "dynatrace/sli.yaml"
 const configFilename = "dynatrace/dynatrace.conf.yaml"
@@ -92,4 +100,27 @@ func (rc *ConfigClient) UploadSLIs(project string, stage string, service string,
 // GetDynatraceConfig gets the Dynatrace config for the specified project, stage and service, checking first on the service, then stage and then project level.
 func (rc *ConfigClient) GetDynatraceConfig(project string, stage string, service string) (string, error) {
 	return rc.client.GetResource(project, stage, service, configFilename)
+}
+
+// GetShipyard returns the shipyard definition of a project.
+func (rc *ConfigClient) GetShipyard(project string) (*keptnv2.Shipyard, error) {
+	shipyard, err := rc.getShipyard(project)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve shipyard for project %s: %w", project, err)
+	}
+	return shipyard, nil
+}
+
+func (rc *ConfigClient) getShipyard(project string) (*keptnv2.Shipyard, error) {
+	shipyardResource, err := rc.client.GetProjectResource(project, shipyardFilename)
+	if err != nil {
+		return nil, err
+	}
+
+	shipyard := keptnv2.Shipyard{}
+	err = yaml.Unmarshal([]byte(shipyardResource), &shipyard)
+	if err != nil {
+		return nil, err
+	}
+	return &shipyard, nil
 }

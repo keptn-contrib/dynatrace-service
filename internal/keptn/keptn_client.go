@@ -70,7 +70,6 @@ func (cq *CustomQueries) GetQueryByNameOrDefaultIfEmpty(sliName string) (string,
 
 type ClientInterface interface {
 	GetCustomQueries(project string, stage string, service string) (*CustomQueries, error)
-	GetShipyard() (*keptnv2.Shipyard, error)
 	SendCloudEvent(factory adapter.CloudEventFactoryInterface) error
 }
 
@@ -107,15 +106,6 @@ func (c *Client) GetCustomQueries(project string, stage string, service string) 
 	}
 
 	return &CustomQueries{values: customQueries}, nil
-}
-
-func (c *Client) GetShipyard() (*keptnv2.Shipyard, error) {
-	shipyard, err := c.client.GetShipyard()
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve shipyard for project %s: %v", c.client.Event.GetProject(), err)
-	}
-
-	return shipyard, nil
 }
 
 func (c *Client) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {

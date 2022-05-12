@@ -274,10 +274,6 @@ func (m *keptnClientMock) GetCustomQueries(project string, stage string, service
 	return keptn.NewCustomQueries(m.customQueries), nil
 }
 
-func (m *keptnClientMock) GetShipyard() (*keptnv2.Shipyard, error) {
-	panic("GetShipyard() should not be needed in this mock!")
-}
-
 func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
 	// simulate errors while creating cloud event
 	if factory == nil {

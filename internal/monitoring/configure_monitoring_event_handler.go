@@ -22,17 +22,19 @@ type ConfigureMonitoringEventHandler struct {
 	event              ConfigureMonitoringAdapterInterface
 	dtClient           dynatrace.ClientInterface
 	kClient            keptn.ClientInterface
+	shipyardReader     keptn.ShipyardReaderInterface
 	sloReader          keptn.SLOReaderInterface
 	serviceClient      keptn.ServiceClientInterface
 	credentialsChecker keptn.CredentialsCheckerInterface
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, shipyardReader keptn.ShipyardReaderInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
 		event:              event,
 		dtClient:           dtClient,
 		kClient:            kClient,
+		shipyardReader:     shipyardReader,
 		sloReader:          sloReader,
 		serviceClient:      serviceClient,
 		credentialsChecker: credentialsChecker,
@@ -57,7 +59,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 	keptnCredentialsCheckResult := eh.checkKeptnCredentials(ctx)
 	log.WithField("result", keptnCredentialsCheckResult).Info("Checked Keptn credentials")
 
-	shipyard, err := eh.kClient.GetShipyard()
+	shipyard, err := eh.shipyardReader.GetShipyard(eh.event.GetProject())
 	if err != nil {
 		return eh.handleError(err)
 	}
