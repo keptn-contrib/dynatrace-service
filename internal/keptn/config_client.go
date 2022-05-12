@@ -5,14 +5,20 @@ import (
 	"fmt"
 
 	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"gopkg.in/yaml.v2"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
-// SLOReaderInterface provides functionality for getting SLOs.
-type SLOReaderInterface interface {
+// SLIAndSLOReaderInterface provides functionality for getting SLIs and SLOs.
+type SLIAndSLOReaderInterface interface {
+
+	// GetSLIs gets the SLIs stored for the specified project, stage and service.
+	// First, the configuration of project-level is retrieved, which is then overridden by configuration on stage level, and then overridden by configuration on service level.
+	GetSLIs(project string, stage string, service string) (map[string]string, error)
+
 	// GetSLOs gets the SLOs stored for exactly the specified project, stage and service.
 	GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error)
 }
@@ -26,9 +32,9 @@ type SLIAndSLOWriterInterface interface {
 	UploadSLOs(project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error
 }
 
-// SLOAndSLIClientInterface provides functionality for getting SLOs and uploading SLIs and SLOs.
+// SLOAndSLIClientInterface provides functionality for getting and uploading SLIs and SLOs.
 type SLOAndSLIClientInterface interface {
-	SLOReaderInterface
+	SLIAndSLOReaderInterface
 	SLIAndSLOWriterInterface
 }
 
@@ -123,4 +129,75 @@ func (rc *ConfigClient) getShipyard(project string) (*keptnv2.Shipyard, error) {
 		return nil, err
 	}
 	return &shipyard, nil
+}
+
+// GetSLIs gets the SLIs stored for the specified project, stage and service.
+// First, the configuration of project-level is retrieved, which is then overridden by configuration on stage level, and then overridden by configuration on service level.
+func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+	slis := make(map[string]string)
+
+	// get SLI config from project
+	if project != "" {
+		res, err := rc.client.GetProjectResource(project, sliFilename)
+		if err != nil {
+			var rnfErrorType *ResourceNotFoundError
+			if !errors.As(err, &rnfErrorType) {
+				return nil, err
+			}
+		}
+		slis, err = addResourceToSLIMap(slis, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// get SLI config from stage
+	if project != "" && stage != "" {
+		res, err := rc.client.GetStageResource(project, stage, sliFilename)
+		if err != nil {
+			var rnfErrorType *ResourceNotFoundError
+			if !errors.As(err, &rnfErrorType) {
+				return nil, err
+			}
+		}
+		slis, err = addResourceToSLIMap(slis, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// get SLI config from service
+	if project != "" && stage != "" && service != "" {
+		res, err := rc.client.GetServiceResource(project, stage, service, sliFilename)
+		if err != nil {
+			var rnfErrorType *ResourceNotFoundError
+			if !errors.As(err, &rnfErrorType) {
+				return nil, err
+			}
+		}
+		slis, err = addResourceToSLIMap(slis, res)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return slis, nil
+}
+
+func addResourceToSLIMap(slis map[string]string, resource string) (map[string]string, error) {
+	sliConfig := keptnapi.SLIConfig{}
+	err := yaml.Unmarshal([]byte(resource), &sliConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range sliConfig.Indicators {
+		slis[key] = value
+	}
+
+	if len(slis) == 0 {
+		return nil, errors.New("missing required field: indicators")
+	}
+
+	return slis, nil
 }

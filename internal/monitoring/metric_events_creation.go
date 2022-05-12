@@ -28,23 +28,23 @@ type CriteriaObject struct {
 }
 
 type MetricEventCreation struct {
-	dtClient  dynatrace.ClientInterface
-	kClient   keptn.ClientInterface
-	sloReader keptn.SLOReaderInterface
+	dtClient        dynatrace.ClientInterface
+	kClient         keptn.ClientInterface
+	sliAndSLOReader keptn.SLIAndSLOReaderInterface
 }
 
-func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface) MetricEventCreation {
+func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface) MetricEventCreation {
 	return MetricEventCreation{
-		dtClient:  dynatraceClient,
-		kClient:   keptnClient,
-		sloReader: sloReader,
+		dtClient:        dynatraceClient,
+		kClient:         keptnClient,
+		sliAndSLOReader: sliAndSLOReader,
 	}
 }
 
 // Create creates new metric events if SLOs are specified.
 func (mec MetricEventCreation) Create(ctx context.Context, project string, stage string, service string) []ConfigResult {
 	log.Info("Creating custom metric events for project SLIs")
-	slos, err := mec.sloReader.GetSLOs(project, stage, service)
+	slos, err := mec.sliAndSLOReader.GetSLOs(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithFields(
 			log.Fields{
@@ -54,7 +54,7 @@ func (mec MetricEventCreation) Create(ctx context.Context, project string, stage
 	}
 
 	// get custom metrics for project
-	slis, err := mec.kClient.GetSLIs(project, stage, service)
+	slis, err := mec.sliAndSLOReader.GetSLIs(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithField("project", project).Error("Failed to get SLIs for project")
 		return nil

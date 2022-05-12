@@ -1,7 +1,6 @@
 package keptn
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloudevents/sdk-go/v2/event"
@@ -13,7 +12,6 @@ import (
 const sliResourceURI = "dynatrace/sli.yaml"
 
 type ClientInterface interface {
-	GetSLIs(project string, stage string, service string) (map[string]string, error)
 	SendCloudEvent(factory adapter.CloudEventFactoryInterface) error
 }
 
@@ -37,19 +35,6 @@ func NewDefaultClient(event event.Event) (*Client, error) {
 		return nil, fmt.Errorf("could not create default Keptn client: %v", err)
 	}
 	return NewClient(kClient), nil
-}
-
-func (c *Client) GetSLIs(project string, stage string, service string) (map[string]string, error) {
-	if c.client == nil {
-		return nil, errors.New("could not retrieve SLI config: no Keptn client initialized")
-	}
-
-	slis, err := c.client.GetSLIConfiguration(project, stage, service, sliResourceURI)
-	if err != nil {
-		return nil, err
-	}
-
-	return slis, nil
 }
 
 func (c *Client) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {

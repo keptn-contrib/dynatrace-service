@@ -23,19 +23,19 @@ type ConfigureMonitoringEventHandler struct {
 	dtClient           dynatrace.ClientInterface
 	kClient            keptn.ClientInterface
 	shipyardReader     keptn.ShipyardReaderInterface
-	sloReader          keptn.SLOReaderInterface
+	sliAndSLOReader    keptn.SLIAndSLOReaderInterface
 	serviceClient      keptn.ServiceClientInterface
 	credentialsChecker keptn.CredentialsCheckerInterface
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, shipyardReader keptn.ShipyardReaderInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, shipyardReader keptn.ShipyardReaderInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
 		event:              event,
 		dtClient:           dtClient,
 		kClient:            kClient,
 		shipyardReader:     shipyardReader,
-		sloReader:          sloReader,
+		sliAndSLOReader:    sliAndSLOReader,
 		serviceClient:      serviceClient,
 		credentialsChecker: credentialsChecker,
 	}
@@ -64,7 +64,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 		return eh.handleError(err)
 	}
 
-	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sloReader, eh.serviceClient)
+	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sliAndSLOReader, eh.serviceClient)
 
 	configuredEntities, err := cfg.ConfigureMonitoring(ctx, eh.event.GetProject(), *shipyard)
 	if err != nil {

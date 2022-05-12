@@ -26,18 +26,18 @@ type ConfigResult struct {
 }
 
 type Configuration struct {
-	dtClient      dynatrace.ClientInterface
-	kClient       keptn.ClientInterface
-	sloReader     keptn.SLOReaderInterface
-	serviceClient keptn.ServiceClientInterface
+	dtClient        dynatrace.ClientInterface
+	kClient         keptn.ClientInterface
+	sliAndSLOReader keptn.SLIAndSLOReaderInterface
+	serviceClient   keptn.ServiceClientInterface
 }
 
-func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface) *Configuration {
+func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface) *Configuration {
 	return &Configuration{
-		dtClient:      dynatraceClient,
-		kClient:       keptnClient,
-		sloReader:     sloReader,
-		serviceClient: serviceClient,
+		dtClient:        dynatraceClient,
+		kClient:         keptnClient,
+		sliAndSLOReader: sliAndSLOReader,
+		serviceClient:   serviceClient,
 	}
 }
 
@@ -90,7 +90,7 @@ func (mc *Configuration) createMetricEventsForStage(ctx context.Context, project
 	for _, serviceName := range serviceNames {
 		metricEvents = append(
 			metricEvents,
-			NewMetricEventCreation(mc.dtClient, mc.kClient, mc.sloReader).Create(ctx, project, stage.Name, serviceName)...)
+			NewMetricEventCreation(mc.dtClient, mc.kClient, mc.sliAndSLOReader).Create(ctx, project, stage.Name, serviceName)...)
 	}
 	return metricEvents
 }

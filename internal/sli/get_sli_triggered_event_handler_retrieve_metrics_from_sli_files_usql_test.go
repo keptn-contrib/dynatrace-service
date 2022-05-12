@@ -41,12 +41,12 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 			// no handler needed
 			handler := test.NewFileBasedURLHandler(t)
 
+			kClient := &keptnClientMock{}
+
 			// error here: in value of tc.usqlPrefix
-			kClient := &keptnClientMock{
-				slis: map[string]string{
-					indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-				},
-			}
+			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+				indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			})
 
 			sliResultAssertionsFunc := func(t *testing.T, sliResult *keptnv2.SLIResult) {
 				assert.EqualValues(t, indicator, sliResult.Metric)
@@ -55,7 +55,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 				assert.Contains(t, sliResult.Message, "incorrect prefix")
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
@@ -103,12 +103,12 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 				dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
 				"./testdata/usql_200_multiple_results.json")
 
+			kClient := &keptnClientMock{}
+
 			// errors here: in value of tc.usqlPrefix
-			kClient := &keptnClientMock{
-				slis: map[string]string{
-					indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-				},
-			}
+			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+				indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			})
 
 			sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 				assert.EqualValues(t, indicator, actual.Metric)
@@ -117,7 +117,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 				assert.Contains(t, actual.Message, tc.expectedErrorMessage)
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, tc.getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, tc.getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
@@ -163,13 +163,12 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
 
-			kClient := &keptnClientMock{
-				slis: map[string]string{
-					indicator: tc.query,
-				},
-			}
+			kClient := &keptnClientMock{}
+			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+				indicator: tc.query,
+			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, tc.expectedValue))
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, tc.expectedValue))
 		})
 	}
 }
@@ -184,13 +183,13 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1632834999000",
 		"./testdata/usql_200_single_result.json")
 
-	kClient := &keptnClientMock{
-		slis: map[string]string{
-			indicator: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
-		},
-	}
+	kClient := &keptnClientMock{}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 62737.44360695537))
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		indicator: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
+	})
+
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 62737.44360695537))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -203,11 +202,11 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
 		"./testdata/usql_200_0_results.json")
 
-	kClient := &keptnClientMock{
-		slis: map[string]string{
-			indicator: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-		},
-	}
+	kClient := &keptnClientMock{}
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		indicator: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+	})
 
 	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
@@ -216,7 +215,7 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		assert.Contains(t, actual.Message, "could not find dimension name")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -356,11 +355,11 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=",
 				tc.dataReturned)
 
-			kClient := &keptnClientMock{
-				slis: map[string]string{
-					indicator: tc.usqlQuery,
-				},
-			}
+			kClient := &keptnClientMock{}
+
+			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+				indicator: tc.usqlQuery,
+			})
 
 			sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 				assert.EqualValues(t, indicator, actual.Metric)
@@ -369,7 +368,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				assert.Contains(t, actual.Message, tc.expectedErrorMessage)
 			}
 
-			assertThatCustomSLITestIsCorrect(t, handler, kClient, tc.getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, tc.getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 		})
 	}
 }
