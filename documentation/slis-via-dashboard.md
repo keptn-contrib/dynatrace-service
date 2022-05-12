@@ -108,6 +108,7 @@ By default, the dynatrace-service instructs Keptn to perform the evaluation of S
 ```yaml
 comparison:
   compare_with: "single_result"
+  number_of_comparison_results: 1
   include_result_with_score: "pass"
   aggregate_function: avg
 total_score:
@@ -119,13 +120,13 @@ Further details about SLO comparison and scoring are provided in [the Keptn docu
 
 To override these defaults, add a markdown tile to the dashboard with one or more of the following `;`-separated `<key>=<value>` pairs:
 
-| Key | Description |
-|---|---|
-|`KQG.Compare.Results` | Use `<value>` as the `comparison: compare_with` value |
-|`KQG.Compare.WithScore` | Use `<value>` as the `comparison: include_result_with_score` value |
-|`KQG.Compare.Function` | Use `<value>` as the `comparison: aggregate_function` value |
-|`KQG.Total.Pass` | Use `<value>` as the `total_score: pass` value |
-|`KQG.Total.Warning` | Use `<value>` as the `total_score: warning` value |
+| Key                     | Data type (restriction)                | Description                                                                                                                                          |
+|-------------------------|----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `KQG.Compare.Results`   | number (`> 0`)                         | Use `<value>` as the `comparison: number_of_comparison_results` value. `comparison: compare_with` will be set automatically according to this value. |
+| `KQG.Compare.WithScore` | string (`pass`, `all`, `pass_or_warn`) | Use `<value>` as the `comparison: include_result_with_score` value                                                                                   |
+| `KQG.Compare.Function`  | string (`avg`, `p50`, `p90`, `p95`)    | Use `<value>` as the `comparison: aggregate_function` value                                                                                          |
+| `KQG.Total.Pass`        | number (with optional `%`)             | Use `<value>` as the `total_score: pass` value                                                                                                       |
+| `KQG.Total.Warning`     | number (with optional `%`)             | Use `<value>` as the `total_score: warning` value                                                                                                    |
 
 For example, the defaults above could be specified using a markdown tile containing:
 

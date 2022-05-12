@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "configurationVersions": [
+      6
+    ],
+    "clusterVersion": "1.242.2.20220506-040755"
+  },
+  "id": "c809e28a-4b83-4d42-ba61-f9df2f0b9122",
+  "dashboardMetadata": {
+    "name": "data-explorer-tile-title-parsing-errors",
+    "shared": false,
+    "owner": "somebody",
+    "popularity": 8
+  },
+  "tiles": [
+    {
+      "name": "Markdown",
+      "tileType": "MARKDOWN",
+      "configured": true,
+      "bounds": {
+        "top": 0,
+        "left": 0,
+        "width": 1178,
+        "height": 38
+      },
+      "tileFilter": {},
+      "markdown": "{{.Markdown}}"
+    },
+    {
+      "name": "Service-level objective",
+      "tileType": "SLO",
+      "configured": true,
+      "bounds": {
+        "top": 38,
+        "left": 0,
+        "width": 304,
+        "height": 152
+      },
+      "tileFilter": {
+        "timeframe": "-72h to now"
+      },
+      "assignedEntities": [
+        "7d07efde-b714-3e6e-ad95-08490e2540c4"
+      ]
+    }
+  ]
+}

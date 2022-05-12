@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"fmt"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -47,7 +48,7 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 }
 
 // Process processes a dynatrace.Dashboard.
-func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard) *QueryResult {
+func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard) (*QueryResult, error) {
 
 	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
 	dashboardLinkAsLabel := NewLink(p.client.Credentials().GetTenant(), p.timeframe, dashboard.ID, dashboard.GetFilter())
@@ -70,16 +71,24 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 		},
 	}
 
-	log.Debug("Dashboard has changed: reparsing it!")
+	log.Debug("Dashboard will be parsed!")
 
 	// now let's iterate through the dashboard to find our SLIs
+	markdownAlreadyProcessed := false
 	for _, tile := range dashboard.Tiles {
 		switch tile.TileType {
 		case dynatrace.MarkdownTileType:
-			score, comparison := NewMarkdownTileProcessing().Process(&tile, createDefaultSLOScore(), createDefaultSLOComparison())
-			if score != nil && comparison != nil {
-				result.slo.TotalScore = score
-				result.slo.Comparison = comparison
+			res, err := NewMarkdownTileProcessing().Process(&tile, createDefaultSLOScore(), createDefaultSLOComparison())
+			if err != nil {
+				return nil, fmt.Errorf("markdown tile parsing error: %w", err)
+			}
+			if res != nil {
+				if markdownAlreadyProcessed {
+					return nil, fmt.Errorf("only one markdown tile allowed for KQG configuration")
+				}
+				result.slo.TotalScore = &res.totalScore
+				result.slo.Comparison = &res.comparison
+				markdownAlreadyProcessed = true
 			}
 		case dynatrace.SLOTileType:
 			tileResults := NewSLOTileProcessing(p.client, p.timeframe).Process(ctx, &tile)
@@ -102,5 +111,5 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 		}
 	}
 
-	return result
+	return result, nil
 }

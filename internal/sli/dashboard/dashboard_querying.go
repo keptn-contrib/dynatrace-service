@@ -38,5 +38,5 @@ func (q *Querying) GetSLIValues(ctx context.Context, dashboardID string, timefra
 		return nil, fmt.Errorf("error while processing dashboard config '%s' - %w", dashboardID, err)
 	}
 
-	return NewProcessing(q.dtClient, q.eventData, q.customSLIFilters, timeframe).Process(ctx, dashboard), nil
+	return NewProcessing(q.dtClient, q.eventData, q.customSLIFilters, timeframe).Process(ctx, dashboard)
 }

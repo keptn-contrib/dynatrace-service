@@ -1,11 +1,49 @@
 package dashboard
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	keptncommon "github.com/keptn/go-utils/pkg/lib"
+	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
+
+	keptncommon "github.com/keptn/go-utils/pkg/lib"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
+
+type markdownParsingErrors struct {
+	errors []error
+}
+
+func (err *markdownParsingErrors) Error() string {
+	var errStrings = make([]string, len(err.errors))
+	for i, e := range err.errors {
+		errStrings[i] = e.Error()
+	}
+	return strings.Join(errStrings, ";")
+}
+
+type invalidValueError struct {
+	key   string
+	value string
+}
+
+func (err *invalidValueError) Error() string {
+	return fmt.Sprintf("invalid value for '%s': %s", err.key, err.value)
+}
+
+type duplicateKeyError struct {
+	key string
+}
+
+func (err *duplicateKeyError) Error() string {
+	return fmt.Sprintf("duplicate key '%s' in markdown definition", err.key)
+}
+
+type markdownParsingResult struct {
+	totalScore keptncommon.SLOScore
+	comparison keptncommon.SLOComparison
+}
 
 type MarkdownTileProcessing struct {
 }
@@ -16,17 +54,42 @@ func NewMarkdownTileProcessing() *MarkdownTileProcessing {
 }
 
 // Process will overwrite the default values for SLOScore and SLOComparison with the contents found in the markdown
-func (p *MarkdownTileProcessing) Process(tile *dynatrace.Tile, defaultScore keptncommon.SLOScore, defaultComparison keptncommon.SLOComparison) (*keptncommon.SLOScore, *keptncommon.SLOComparison) {
+func (p *MarkdownTileProcessing) Process(tile *dynatrace.Tile, defaultScore keptncommon.SLOScore, defaultComparison keptncommon.SLOComparison) (*markdownParsingResult, error) {
 	// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
 	// if we find KQG. we process the markdown
 	return parseMarkdownConfiguration(tile.Markdown, defaultScore, defaultComparison)
 }
 
+const (
+	TotalPass                  = "kqg.total.pass"
+	TotalWarning               = "kqg.total.warning"
+	CompareWithScore           = "kqg.compare.withscore"
+	CompareWithScoreAll        = "all"
+	CompareWithScorePass       = "pass"
+	CompareWithScorePassOrWarn = "pass_or_warn"
+	CompareResults             = "kqg.compare.results"
+	CompareResultsSingle       = "single_result"
+	CompareResultsMultiple     = "several_results"
+	CompareFunction            = "kqg.compare.function"
+	CompareFunctionAvg         = "avg"
+	CompareFunctionP50         = "p50"
+	CompareFunctionP90         = "p90"
+	CompareFunctionP95         = "p95"
+)
+
 // parseMarkdownConfiguration parses a text that can be used in a Markdown tile to specify global SLO properties
-func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore, comparison keptncommon.SLOComparison) (*keptncommon.SLOScore, *keptncommon.SLOComparison) {
+func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore, comparison keptncommon.SLOComparison) (*markdownParsingResult, error) {
 	if !strings.Contains(markdown, "KQG.") {
 		return nil, nil
 	}
+
+	result := &markdownParsingResult{
+		totalScore: totalScore,
+		comparison: comparison,
+	}
+
+	var errs []error
+	keyFound := make(map[string]bool)
 
 	markdownSplits := strings.Split(markdown, ";")
 	for _, markdownSplitValue := range markdownSplits {
@@ -35,42 +98,114 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 			continue
 		}
 
-		// lets get configname and value
-		configName := strings.ToLower(configValueSplits[0])
-		configValue := configValueSplits[1]
+		// lets separate key and value
+		key := strings.ToLower(configValueSplits[0])
+		value := configValueSplits[1]
 
-		switch configName {
-		case "kqg.total.pass":
-			totalScore.Pass = configValue
-		case "kqg.total.warning":
-			totalScore.Warning = configValue
-		case "kqg.compare.withscore":
-			comparison.IncludeResultWithScore = configValue
-			if (configValue == "pass") || (configValue == "pass_or_warn") || (configValue == "all") {
-				comparison.IncludeResultWithScore = configValue
-			} else {
-				comparison.IncludeResultWithScore = "pass"
+		switch key {
+		case TotalPass:
+			if keyFound[TotalPass] {
+				errs = append(errs, &duplicateKeyError{key: TotalPass})
+				break
 			}
-		case "kqg.compare.results":
-			noresults, err := strconv.Atoi(configValue)
+			if isNotAPercentValue(value) {
+				errs = append(errs, &invalidValueError{key: TotalPass, value: value})
+			}
+			result.totalScore.Pass = value
+			keyFound[TotalPass] = true
+		case TotalWarning:
+			if keyFound[TotalWarning] {
+				errs = append(errs, &duplicateKeyError{key: TotalWarning})
+				break
+			}
+			if isNotAPercentValue(value) {
+				errs = append(errs, &invalidValueError{key: TotalWarning, value: value})
+			}
+			result.totalScore.Warning = value
+			keyFound[TotalWarning] = true
+		case CompareWithScore:
+			if keyFound[CompareWithScore] {
+				errs = append(errs, &duplicateKeyError{key: CompareWithScore})
+				break
+			}
+			score, err := parseCompareWithScore(value)
 			if err != nil {
-				comparison.NumberOfComparisonResults = 1
-			} else {
-				comparison.NumberOfComparisonResults = noresults
+				errs = append(errs, err)
 			}
-			if comparison.NumberOfComparisonResults > 1 {
-				comparison.CompareWith = "several_results"
-			} else {
-				comparison.CompareWith = "single_result"
+			result.comparison.IncludeResultWithScore = score
+			keyFound[CompareWithScore] = true
+		case CompareResults:
+			if keyFound[CompareResults] {
+				errs = append(errs, &duplicateKeyError{key: CompareResults})
+				break
 			}
-		case "kqg.compare.function":
-			if (configValue == "avg") || (configValue == "p50") || (configValue == "p90") || (configValue == "p95") {
-				comparison.AggregateFunction = configValue
-			} else {
-				comparison.AggregateFunction = "avg"
+			numberOfResults, err := parseCompareNumberOfResults(value)
+			if err != nil {
+				errs = append(errs, err)
 			}
+			result.comparison.NumberOfComparisonResults = numberOfResults
+			keyFound[CompareResults] = true
+		case CompareFunction:
+			if keyFound[CompareFunction] {
+				errs = append(errs, &duplicateKeyError{key: CompareFunction})
+				break
+			}
+			aggregateFunc, err := parseAggregateFunction(value)
+			if err != nil {
+				errs = append(errs, err)
+			}
+			result.comparison.AggregateFunction = aggregateFunc
+			keyFound[CompareFunction] = true
 		}
 	}
 
-	return &totalScore, &comparison
+	if len(errs) > 0 {
+		return nil, &markdownParsingErrors{
+			errors: errs,
+		}
+	}
+
+	result.comparison.CompareWith = CompareResultsSingle
+	if result.comparison.NumberOfComparisonResults > 1 {
+		result.comparison.CompareWith = CompareResultsMultiple
+	}
+
+	return result, nil
+}
+
+func isNotAPercentValue(value string) bool {
+	pattern := regexp.MustCompile("^(\\d+|\\d+\\.\\d+)([%]?)$")
+
+	return !pattern.MatchString(value)
+}
+
+func parseCompareWithScore(value string) (string, error) {
+	switch value {
+	case CompareWithScorePass, CompareWithScoreAll, CompareWithScorePassOrWarn:
+		return value, nil
+	}
+
+	return "", &invalidValueError{key: CompareWithScore, value: value}
+}
+
+func parseCompareNumberOfResults(value string) (int, error) {
+	numberOfResults, err := strconv.Atoi(value)
+	if err != nil {
+		return 0, &invalidValueError{key: CompareResults, value: value}
+	}
+
+	if numberOfResults < 1 {
+		return 0, &invalidValueError{key: CompareResults, value: value}
+	}
+
+	return numberOfResults, nil
+}
+
+func parseAggregateFunction(value string) (string, error) {
+	switch value {
+	case CompareFunctionAvg, CompareFunctionP50, CompareFunctionP90, CompareFunctionP95:
+		return value, nil
+	}
+
+	return "", &invalidValueError{key: CompareFunction, value: value}
 }
