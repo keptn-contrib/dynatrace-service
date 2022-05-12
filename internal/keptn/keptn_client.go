@@ -11,20 +11,18 @@ import (
 
 const sliResourceURI = "dynatrace/sli.yaml"
 
+// ClientInterface sends cloud events.
 type ClientInterface interface {
+	// SendCloudEvent sends a cloud event from specified factory or returns an error.
 	SendCloudEvent(factory adapter.CloudEventFactoryInterface) error
 }
 
+// Client is an implementation of ClientInterface.
 type Client struct {
 	client *keptnv2.Keptn
 }
 
-func NewClient(client *keptnv2.Keptn) *Client {
-	return &Client{
-		client: client,
-	}
-}
-
+// NewDefaultClient creates a new Client using the specified event or returns an error.
 func NewDefaultClient(event event.Event) (*Client, error) {
 	keptnOpts := keptnapi.KeptnOpts{
 		ConfigurationServiceURL: getConfigurationServiceURL(),
@@ -34,9 +32,12 @@ func NewDefaultClient(event event.Event) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not create default Keptn client: %v", err)
 	}
-	return NewClient(kClient), nil
+	return &Client{
+		client: kClient,
+	}, nil
 }
 
+// SendCloudEvent sends a cloud event from specified factory or returns an error.
 func (c *Client) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
 	ev, err := factory.CreateCloudEvent()
 	if err != nil {

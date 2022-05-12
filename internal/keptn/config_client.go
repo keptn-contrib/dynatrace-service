@@ -14,7 +14,6 @@ import (
 
 // SLIAndSLOReaderInterface provides functionality for getting SLIs and SLOs.
 type SLIAndSLOReaderInterface interface {
-
 	// GetSLIs gets the SLIs stored for the specified project, stage and service.
 	// First, the configuration of project-level is retrieved, which is then overridden by configuration on stage level, and then overridden by configuration on service level.
 	GetSLIs(project string, stage string, service string) (map[string]string, error)
