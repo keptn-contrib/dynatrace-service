@@ -139,6 +139,9 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ct
 	managementZoneFilterString := managementZoneFilter.ForEntitySelector()
 	if managementZoneFilterString != "" {
 		if processedFilter.entitySelectorFilter == "" {
+			if len(metricDefinition.EntityType) == 0 {
+				return nil, fmt.Errorf("metric %s has no entity type", metricDefinition.MetricID)
+			}
 			processedFilter.entitySelectorFilter = fmt.Sprintf("type(%s)", metricDefinition.EntityType[0])
 		}
 		processedFilter.entitySelectorFilter = processedFilter.entitySelectorFilter + managementZoneFilterString
