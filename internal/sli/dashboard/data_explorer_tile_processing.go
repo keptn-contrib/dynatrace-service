@@ -138,10 +138,11 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ct
 	// optionally add management zone filter to entity selector filter
 	managementZoneFilterString := managementZoneFilter.ForEntitySelector()
 	if managementZoneFilterString != "" {
-		if processedFilter.entitySelectorFilter == "" {
-			processedFilter.entitySelectorFilter = fmt.Sprintf("type(%s)", metricDefinition.EntityType[0])
+		entitySelectorFilter, err := ensureEntitySelectorFilter(processedFilter.entitySelectorFilter, metricDefinition)
+		if err != nil {
+			return nil, err
 		}
-		processedFilter.entitySelectorFilter = processedFilter.entitySelectorFilter + managementZoneFilterString
+		processedFilter.entitySelectorFilter = entitySelectorFilter + managementZoneFilterString
 	}
 
 	// NOTE: add :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
@@ -161,6 +162,18 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ct
 		metricSelectorTargetSnippet: processedFilter.metricSelectorTargetSnippet,
 	}, nil
 
+}
+
+func ensureEntitySelectorFilter(existingEntitySelectorFilter string, metricDefinition *dynatrace.MetricDefinition) (string, error) {
+	if existingEntitySelectorFilter != "" {
+		return existingEntitySelectorFilter, nil
+	}
+
+	if len(metricDefinition.EntityType) == 0 {
+		return "", fmt.Errorf("metric %s has no entity type", metricDefinition.MetricID)
+	}
+
+	return fmt.Sprintf("type(%s)", metricDefinition.EntityType[0]), nil
 }
 
 type processedFilterComponents struct {

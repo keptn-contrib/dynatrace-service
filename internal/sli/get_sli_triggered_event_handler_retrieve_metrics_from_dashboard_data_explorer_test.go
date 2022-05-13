@@ -528,3 +528,16 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCust
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType tests that an error is produced for data explorer tiles with a management zone and no obvious entity type.
+// This is will result in a SLIResult with failure, as this is not allowed.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/no_entity_type/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:security.securityProblem.open.managementZone", testDataFolder+"metrics_builtin_security_securityProblem_open_managementZone.json")
+
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("vulnerabilities_high", "has no entity type"))
+}
