@@ -137,63 +137,73 @@ func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (m
 
 	// try to get SLI config from project
 	if project != "" {
-		err := getResourceAndAddSLIsToMap(func() (string, error) { return rc.client.GetProjectResource(project, sliFilename) }, slis)
+		projectSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetProjectResource(project, sliFilename) })
 		if err != nil {
 			return nil, err
+		}
+
+		for key, value := range projectSLIs {
+			slis[key] = value
 		}
 	}
 
 	// try to get SLI config from stage
 	if project != "" && stage != "" {
-		err := getResourceAndAddSLIsToMap(func() (string, error) { return rc.client.GetStageResource(project, stage, sliFilename) }, slis)
+		stageSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetStageResource(project, stage, sliFilename) })
 		if err != nil {
 			return nil, err
+		}
+
+		for key, value := range stageSLIs {
+			slis[key] = value
 		}
 	}
 
 	// try to get SLI config from service
 	if project != "" && stage != "" && service != "" {
-		err := getResourceAndAddSLIsToMap(func() (string, error) { return rc.client.GetServiceResource(project, stage, service, sliFilename) }, slis)
+		serviceSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetServiceResource(project, stage, service, sliFilename) })
 		if err != nil {
 			return nil, err
+		}
+
+		for key, value := range serviceSLIs {
+			slis[key] = value
 		}
 	}
 
 	return slis, nil
 }
 
-// getResourceAndAddSLIsToMap uses the specified function to get a resource, unmarshals it as an SLIConfig, and adds the indicators to the specified map, overwriting and entries with the same key.
+type resourceGetterFunc func() (string, error)
+
+// getSLIsFromResource uses the specified function to get a resource and returns the SLIs as a map.
 // If is is not possible to get the resource for any other reason than it is not found, or it is not possible to unmarshal the file or it doesn't contain any indicators, an error is returned.
-func getResourceAndAddSLIsToMap(resourceGetter func() (resource string, resourceErr error), slis map[string]string) error {
+func getSLIsFromResource(resourceGetter resourceGetterFunc) (map[string]string, error) {
 	resource, err := resourceGetter()
 	if err != nil {
 		var rnfErrorType *ResourceNotFoundError
 		if errors.As(err, &rnfErrorType) {
-			return nil
+			return nil, nil
 		}
 
-		return err
+		return nil, err
 	}
 
-	return addSLIResourceToMap(resource, slis)
+	return readSLIsFromResource(resource)
 }
 
-// addSLIResourceToMap unmarshals a resource as a SLIConfig and adds the indicators to the specified map, overwriting any entries with the same key.
+// readSLIsFromResource unmarshals a resource as a SLIConfig and returns the SLIs as a map.
 // If it is not possible to unmarshal the file or it doesn't contain any indicators, an error is returned.
-func addSLIResourceToMap(resource string, slis map[string]string) error {
+func readSLIsFromResource(resource string) (map[string]string, error) {
 	sliConfig := keptnapi.SLIConfig{}
 	err := yaml.Unmarshal([]byte(resource), &sliConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if len(sliConfig.Indicators) == 0 {
-		return errors.New("missing required field: indicators")
+		return nil, errors.New("missing required field: indicators")
 	}
 
-	for key, value := range sliConfig.Indicators {
-		slis[key] = value
-	}
-
-	return nil
+	return sliConfig.Indicators, nil
 }
