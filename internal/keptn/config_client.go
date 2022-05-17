@@ -127,13 +127,22 @@ func (rc *ConfigClient) getShipyard(project string) (*keptnv2.Shipyard, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &shipyard, nil
+}
+
+type sliMap map[string]string
+
+func (m *sliMap) insertOrUpdateMany(x map[string]string) {
+	for key, value := range x {
+		map[string]string(*m)[key] = value
+	}
 }
 
 // GetSLIs gets the SLIs stored for the specified project, stage and service.
 // First, the configuration of project-level is retrieved, which is then overridden by configuration on stage level, and then overridden by configuration on service level.
 func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (map[string]string, error) {
-	slis := make(map[string]string)
+	slis := make(sliMap)
 
 	// try to get SLI config from project
 	if project != "" {
@@ -142,9 +151,7 @@ func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (m
 			return nil, err
 		}
 
-		for key, value := range projectSLIs {
-			slis[key] = value
-		}
+		slis.insertOrUpdateMany(projectSLIs)
 	}
 
 	// try to get SLI config from stage
@@ -154,9 +161,7 @@ func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (m
 			return nil, err
 		}
 
-		for key, value := range stageSLIs {
-			slis[key] = value
-		}
+		slis.insertOrUpdateMany(stageSLIs)
 	}
 
 	// try to get SLI config from service
@@ -166,9 +171,7 @@ func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (m
 			return nil, err
 		}
 
-		for key, value := range serviceSLIs {
-			slis[key] = value
-		}
+		slis.insertOrUpdateMany(serviceSLIs)
 	}
 
 	return slis, nil
