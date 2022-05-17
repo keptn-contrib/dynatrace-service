@@ -10,30 +10,30 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
-// ConfiguredEntities contains information about the entities configures in Dynatrace
-type ConfiguredEntities struct {
-	TaggingRules         []ConfigResult
-	ProblemNotifications *ConfigResult
-	ManagementZones      []ConfigResult
-	Dashboard            *ConfigResult
-	MetricEvents         []ConfigResult
+// configuredEntities contains information about the entities configures in Dynatrace
+type configuredEntities struct {
+	TaggingRules         []configResult
+	ProblemNotifications *configResult
+	ManagementZones      []configResult
+	Dashboard            *configResult
+	MetricEvents         []configResult
 }
 
-type ConfigResult struct {
+type configResult struct {
 	Name    string
 	Success bool
 	Message string
 }
 
-type Configuration struct {
+type configuration struct {
 	dtClient        dynatrace.ClientInterface
 	kClient         keptn.ClientInterface
 	sliAndSLOReader keptn.SLIAndSLOReaderInterface
 	serviceClient   keptn.ServiceClientInterface
 }
 
-func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface) *Configuration {
-	return &Configuration{
+func newConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface) *configuration {
+	return &configuration{
 		dtClient:        dynatraceClient,
 		kClient:         keptnClient,
 		sliAndSLOReader: sliAndSLOReader,
@@ -41,29 +41,29 @@ func NewConfiguration(dynatraceClient dynatrace.ClientInterface, keptnClient kep
 	}
 }
 
-// ConfigureMonitoring configures Dynatrace for a Keptn project
-func (mc *Configuration) ConfigureMonitoring(ctx context.Context, project string, shipyard keptnv2.Shipyard) (*ConfiguredEntities, error) {
+// configureMonitoring configures Dynatrace for a Keptn project
+func (mc *configuration) configureMonitoring(ctx context.Context, project string, shipyard keptnv2.Shipyard) (*configuredEntities, error) {
 
-	configuredEntities := &ConfiguredEntities{}
+	configuredEntities := &configuredEntities{}
 
 	if env.IsTaggingRulesGenerationEnabled() {
-		configuredEntities.TaggingRules = NewAutoTagCreation(mc.dtClient).Create(ctx)
+		configuredEntities.TaggingRules = newAutoTagCreation(mc.dtClient).create(ctx)
 	}
 
 	if env.IsProblemNotificationsGenerationEnabled() {
-		configuredEntities.ProblemNotifications = NewProblemNotificationCreation(mc.dtClient).Create(ctx, project)
+		configuredEntities.ProblemNotifications = newProblemNotificationCreation(mc.dtClient).create(ctx, project)
 	}
 
 	if env.IsManagementZonesGenerationEnabled() {
-		configuredEntities.ManagementZones = NewManagementZoneCreation(mc.dtClient).Create(ctx, project, shipyard)
+		configuredEntities.ManagementZones = newManagementZoneCreation(mc.dtClient).create(ctx, project, shipyard)
 	}
 
 	if env.IsDashboardsGenerationEnabled() {
-		configuredEntities.Dashboard = NewDashboardCreation(mc.dtClient).Create(ctx, project, shipyard)
+		configuredEntities.Dashboard = newDashboardCreation(mc.dtClient).create(ctx, project, shipyard)
 	}
 
 	if env.IsMetricEventsGenerationEnabled() {
-		var metricEvents []ConfigResult
+		var metricEvents []configResult
 		for _, stage := range shipyard.Spec.Stages {
 			metricEvents = append(metricEvents, mc.createMetricEventsForStage(ctx, project, stage)...)
 		}
@@ -73,24 +73,24 @@ func (mc *Configuration) ConfigureMonitoring(ctx context.Context, project string
 	return configuredEntities, nil
 }
 
-func (mc *Configuration) createMetricEventsForStage(ctx context.Context, project string, stage keptnv2.Stage) []ConfigResult {
+func (mc *configuration) createMetricEventsForStage(ctx context.Context, project string, stage keptnv2.Stage) []configResult {
 	if isStageMissingRemediationSequence(stage) {
 		return nil
 	}
 
 	serviceNames, err := mc.serviceClient.GetServiceNames(project, stage.Name)
 	if err != nil {
-		return []ConfigResult{{
+		return []configResult{{
 			Success: false,
 			Message: err.Error(),
 		}}
 	}
 
-	var metricEvents []ConfigResult
+	var metricEvents []configResult
 	for _, serviceName := range serviceNames {
 		metricEvents = append(
 			metricEvents,
-			NewMetricEventCreation(mc.dtClient, mc.kClient, mc.sliAndSLOReader).Create(ctx, project, stage.Name, serviceName)...)
+			newMetricEventCreation(mc.dtClient, mc.kClient, mc.sliAndSLOReader).create(ctx, project, stage.Name, serviceName)...)
 	}
 	return metricEvents
 }

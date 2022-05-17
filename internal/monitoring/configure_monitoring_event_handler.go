@@ -64,9 +64,9 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 		return eh.handleError(err)
 	}
 
-	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sliAndSLOReader, eh.serviceClient)
+	cfg := newConfiguration(eh.dtClient, eh.kClient, eh.sliAndSLOReader, eh.serviceClient)
 
-	configuredEntities, err := cfg.ConfigureMonitoring(ctx, eh.event.GetProject(), *shipyard)
+	configuredEntities, err := cfg.configureMonitoring(ctx, eh.event.GetProject(), *shipyard)
 	if err != nil {
 		return eh.handleError(err)
 	}
@@ -101,7 +101,7 @@ func (eh *ConfigureMonitoringEventHandler) checkKeptnCredentials(ctx context.Con
 
 }
 
-func getConfigureMonitoringResultMessage(keptnCredentialsCheckResult keptnCredentialsCheckResult, entities *ConfiguredEntities) string {
+func getConfigureMonitoringResultMessage(keptnCredentialsCheckResult keptnCredentialsCheckResult, entities *configuredEntities) string {
 	if entities == nil {
 		return ""
 	}

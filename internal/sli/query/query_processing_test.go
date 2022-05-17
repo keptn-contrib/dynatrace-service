@@ -198,10 +198,10 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 	for _, testQuery := range testQueries {
 
 		customQueries := make(map[string]string)
-		customQueries[ResponseTimeP50] = testQuery
+		customQueries[responseTimeP50] = testQuery
 
 		p := createCustomQueryProcessing(t, keptnEvent, httpClient, NewCustomQueries(customQueries), timeframe)
-		sliResult := p.GetSLIResultFromIndicator(context.TODO(), ResponseTimeP50)
+		sliResult := p.GetSLIResultFromIndicator(context.TODO(), responseTimeP50)
 
 		assert.True(t, sliResult.Success())
 		assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
@@ -244,7 +244,7 @@ func runGetSLIResultFromIndicatorTest(t *testing.T, handler http.Handler) result
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
-	return dh.GetSLIResultFromIndicator(context.TODO(), ResponseTimeP50)
+	return dh.GetSLIResultFromIndicator(context.TODO(), responseTimeP50)
 }
 
 // Tests what happens when end time is too close to now. This test results in a short delay.
@@ -286,7 +286,7 @@ func TestGetSLISleep(t *testing.T) {
 
 	// time how long getting the SLI value takes
 	timeBeforeGetSLIValue := time.Now()
-	sliResult := dh.GetSLIResultFromIndicator(context.TODO(), ResponseTimeP50)
+	sliResult := dh.GetSLIResultFromIndicator(context.TODO(), responseTimeP50)
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
 	assert.True(t, sliResult.Success())
@@ -308,7 +308,7 @@ func TestGetSLIValueWithErrorResponse(t *testing.T) {
 
 	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
 
-	sliResult := dh.GetSLIResultFromIndicator(context.TODO(), Throughput)
+	sliResult := dh.GetSLIResultFromIndicator(context.TODO(), throughput)
 
 	assert.False(t, sliResult.Success())
 	assert.EqualValues(t, 0.0, sliResult.Value())

@@ -9,18 +9,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type ManagementZoneCreation struct {
+type managementZoneCreation struct {
 	client dynatrace.ClientInterface
 }
 
-func NewManagementZoneCreation(client dynatrace.ClientInterface) *ManagementZoneCreation {
-	return &ManagementZoneCreation{
+func newManagementZoneCreation(client dynatrace.ClientInterface) *managementZoneCreation {
+	return &managementZoneCreation{
 		client: client,
 	}
 }
 
-// Create creates a new management zone for the project.
-func (mzc *ManagementZoneCreation) Create(ctx context.Context, project string, shipyard keptnv2.Shipyard) []ConfigResult {
+// create creates a new management zone for the project.
+func (mzc *managementZoneCreation) create(ctx context.Context, project string, shipyard keptnv2.Shipyard) []configResult {
 	// get existing management zones
 	managementZoneClient := dynatrace.NewManagementZonesClient(mzc.client)
 	managementZoneNames, err := managementZoneClient.GetAll(ctx)
@@ -29,7 +29,7 @@ func (mzc *ManagementZoneCreation) Create(ctx context.Context, project string, s
 		log.WithError(err).Error("Could not retrieve management zones")
 	}
 
-	var managementZonesResults []ConfigResult
+	var managementZonesResults []configResult
 	managementZoneResult := getOrCreateManagementZone(
 		ctx,
 		managementZoneClient,
@@ -60,9 +60,9 @@ func getOrCreateManagementZone(
 	managementZoneClient *dynatrace.ManagementZonesClient,
 	managementZoneName string,
 	managementZoneFunc func() *dynatrace.ManagementZone,
-	managementZoneNames *dynatrace.ManagementZones) ConfigResult {
+	managementZoneNames *dynatrace.ManagementZones) configResult {
 	if managementZoneNames != nil && managementZoneNames.Contains(managementZoneName) {
-		return ConfigResult{
+		return configResult{
 			Name:    managementZoneName,
 			Success: true,
 			Message: "Management Zone '" + managementZoneName + "' was already available in your Tenant",
@@ -72,14 +72,14 @@ func getOrCreateManagementZone(
 	err := managementZoneClient.Create(ctx, managementZoneFunc())
 	if err != nil {
 		log.WithError(err).Error("Failed to create management zone")
-		return ConfigResult{
+		return configResult{
 			Name:    managementZoneName,
 			Success: false,
 			Message: "failed to create management zone: " + err.Error(),
 		}
 	}
 
-	return ConfigResult{
+	return configResult{
 		Name:    managementZoneName,
 		Success: true,
 	}
