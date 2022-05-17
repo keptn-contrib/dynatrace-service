@@ -201,7 +201,7 @@ func readSLIsFromResource(resource string) (map[string]string, error) {
 	sliConfig := keptnapi.SLIConfig{}
 	err := yaml.Unmarshal([]byte(resource), &sliConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse SLI YAML: %w", err)
 	}
 
 	if len(sliConfig.Indicators) == 0 {
