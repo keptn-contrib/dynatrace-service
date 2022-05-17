@@ -1,7 +1,6 @@
 package keptn
 
 import (
-	"errors"
 	"io/ioutil"
 	"testing"
 
@@ -12,10 +11,7 @@ const testProject = "my-project"
 const testStage = "my-stage"
 const testService = "my-service"
 
-const testSLIName = "response_time"
-const testResponseTime90SLI = "metricSelector=builtin:service.response.time:splitBy():percentile(90)"
-const testResponseTime95SLI = "metricSelector=builtin:service.response.time:splitBy():percentile(95)"
-
+// TestConfigClient_GetSLIsNoneDefined tests that getting SLIs when none have been defined returns an empty map but no error.
 func TestConfigClient_GetSLIsNoneDefined(t *testing.T) {
 	rc := NewConfigClient(&mockResourceClient{t: t})
 	slis, err := rc.GetSLIs(testProject, testStage, testService)
@@ -23,84 +19,77 @@ func TestConfigClient_GetSLIsNoneDefined(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestConfigClient_GetSLIsServiceOverridesStage(t *testing.T) {
+// TestConfigClient_GetSLIsWithOverrides tests that service-level SLIs override stage or project-level SLIs and stage-level SLIs override project-level ones.
+// In addition any SLIs defined only at a project or stage level should also be returned.
+func TestConfigClient_GetSLIsWithOverrides(t *testing.T) {
 	rc := NewConfigClient(
 		&mockResourceClient{
 			t:               t,
-			stageResource:   getResponseTime90Resource(t),
-			serviceResource: getResponseTime95Resource(t)})
+			projectResource: getProjectResource(t),
+			stageResource:   getStageResource(t),
+			serviceResource: getServiceResource(t)})
 	slis, err := rc.GetSLIs(testProject, testStage, testService)
 	assert.NoError(t, err)
-	if !assert.Len(t, slis, 1) {
+
+	expectedSLIs := map[string]string{
+		"sli_a": "metricSelector=builtin:service.response.time:splitBy():percentile(95)&entitySelector=tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(kept_service:my-service)",
+		"sli_b": "metricSelector=builtin:service.response.time:splitBy():percentile(90)&entitySelector=tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(kept_service:my-service)",
+		"sli_c": "metricSelector=builtin:service.response.time:splitBy():percentile(80)&entitySelector=tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(kept_service:my-service)",
+		"sli_d": "metricSelector=builtin:service.response.time:splitBy():percentile(75)&entitySelector=tag(keptn_project:my-project),tag(keptn_stage:my-stage),tag(kept_service:my-service)",
+		"sli_e": "metricSelector=builtin:service.response.time:splitBy():percentile(70)&entitySelector=tag(keptn_project:my-project),tag(keptn_stage:my-stage)",
+		"sli_f": "metricSelector=builtin:service.response.time:splitBy():percentile(55)&entitySelector=tag(keptn_project:my-project)",
+	}
+
+	if !assert.EqualValues(t, len(expectedSLIs), len(slis)) {
 		return
 	}
 
-	if !assert.Contains(t, slis, testSLIName) {
-		return
+	for expectedKey, expectedValue := range expectedSLIs {
+		value, ok := slis[expectedKey]
+		assert.True(t, ok)
+		assert.EqualValues(t, expectedValue, value)
 	}
-
-	assert.EqualValues(t, testResponseTime95SLI, slis[testSLIName])
 }
 
-func TestConfigClient_GetSLIsStageOverridesProject(t *testing.T) {
-	rc := NewConfigClient(
-		&mockResourceClient{
-			t:               t,
-			projectResource: getResponseTime90Resource(t),
-			stageResource:   getResponseTime95Resource(t)})
-	slis, err := rc.GetSLIs(testProject, testStage, testService)
-	assert.NoError(t, err)
-	if !assert.Len(t, slis, 1) {
-		return
-	}
-
-	if !assert.Contains(t, slis, testSLIName) {
-		return
-	}
-
-	assert.EqualValues(t, testResponseTime95SLI, slis[testSLIName])
-}
-
-func TestConfigClient_GetSLIsServiceOverridesProject(t *testing.T) {
-	rc := NewConfigClient(
-		&mockResourceClient{
-			t:               t,
-			projectResource: getResponseTime90Resource(t),
-			serviceResource: getResponseTime95Resource(t)})
-	slis, err := rc.GetSLIs(testProject, testStage, testService)
-	assert.NoError(t, err)
-	if !assert.Len(t, slis, 1) {
-		return
-	}
-
-	if !assert.Contains(t, slis, testSLIName) {
-		return
-	}
-
-	assert.EqualValues(t, testResponseTime95SLI, slis[testSLIName])
-}
-
+// TestConfigClient_GetSLIsInvalidYAMLCausesError tests that an invalid SLI YAML resource produces an error.
 func TestConfigClient_GetSLIsInvalidYAMLCausesError(t *testing.T) {
 	rc := NewConfigClient(
 		&mockResourceClient{
 			t:               t,
-			projectResource: getInvalidYAMLResource(t),
-			serviceResource: getResponseTime95Resource(t)})
+			projectResource: getInvalidYAMLResource(t)})
 	slis, err := rc.GetSLIs(testProject, testStage, testService)
 	assert.Nil(t, slis)
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to parse SLI YAML")
 }
 
-func TestConfigClient_GetSLIsErrorCausesError(t *testing.T) {
+// TestConfigClient_GetSLIsRetrievalErrorCausesError tests that resource retrieval errors produce an error.
+func TestConfigClient_GetSLIsRetrievalErrorCausesError(t *testing.T) {
 	rc := NewConfigClient(
 		&mockResourceClient{
 			t:               t,
-			serviceResource: &mockResource{err: errors.New("Failed to connect")}})
+			serviceResource: &mockResource{err: &ResourceRetrievalFailedError{ResourceError{uri: testSLIResourceURI, project: testProject, stage: testStage, service: testService}, "Connection error"}}})
 	slis, err := rc.GetSLIs(testProject, testStage, testService)
 	assert.Nil(t, slis)
 	assert.Error(t, err)
+	var rrfErrorType *ResourceRetrievalFailedError
+	assert.ErrorAs(t, err, &rrfErrorType)
 }
 
+// TestConfigClient_GetSLIsEmptySLIFileCausesError tests that an empty SLI file produces an error.
+func TestConfigClient_GetSLIsEmptySLIFileCausesError(t *testing.T) {
+	rc := NewConfigClient(
+		&mockResourceClient{
+			t:               t,
+			serviceResource: &mockResource{err: &ResourceEmptyError{uri: testSLIResourceURI, project: testProject, stage: testStage, service: testService}}})
+	slis, err := rc.GetSLIs(testProject, testStage, testService)
+	assert.Nil(t, slis)
+	assert.Error(t, err)
+	var rrfErrorType *ResourceEmptyError
+	assert.ErrorAs(t, err, &rrfErrorType)
+}
+
+// TestConfigClient_GetSLIsNoIndicatorsCausesError tests that an SLI file containing no indicators produces an error.
 func TestConfigClient_GetSLIsNoIndicatorsCausesError(t *testing.T) {
 	rc := NewConfigClient(
 		&mockResourceClient{
@@ -122,16 +111,16 @@ func getInvalidYAMLResource(t *testing.T) *mockResource {
 	return &mockResource{resource: loadResource(t, testDataFolder+"/sli.invalid_yaml")}
 }
 
-func getResponseTime50Resource(t *testing.T) *mockResource {
-	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_response_time_50.yaml")}
+func getServiceResource(t *testing.T) *mockResource {
+	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_service.yaml")}
 }
 
-func getResponseTime90Resource(t *testing.T) *mockResource {
-	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_response_time_90.yaml")}
+func getStageResource(t *testing.T) *mockResource {
+	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_stage.yaml")}
 }
 
-func getResponseTime95Resource(t *testing.T) *mockResource {
-	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_response_time_95.yaml")}
+func getProjectResource(t *testing.T) *mockResource {
+	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_project.yaml")}
 }
 
 func loadResource(t *testing.T, filename string) string {

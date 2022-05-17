@@ -1,3 +1,0 @@
-spec_version: "1.0"
-indicators:
- response_time: metricSelector=builtin:service.response.time:splitBy():percentile(95)

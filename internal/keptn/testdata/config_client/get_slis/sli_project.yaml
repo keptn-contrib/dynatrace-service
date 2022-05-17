@@ -1,0 +1,5 @@
+spec_version: "1.0"
+indicators:
+  sli_c: "metricSelector=builtin:service.response.time:splitBy():percentile(80)&entitySelector=tag(keptn_project:my-project)"
+  sli_d: "metricSelector=builtin:service.response.time:splitBy():percentile(75)&entitySelector=tag(keptn_project:my-project)"
+  sli_f: "metricSelector=builtin:service.response.time:splitBy():percentile(55)&entitySelector=tag(keptn_project:my-project)"
