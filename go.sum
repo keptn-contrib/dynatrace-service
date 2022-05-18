@@ -492,6 +492,8 @@ github.com/kelseyhightower/envconfig v1.4.0/go.mod h1:cccZRl6mQpaq41TPp5QxidR+Sa
 github.com/keptn/go-utils v0.13.0/go.mod h1:yJM7pnCUj23VHKa2az9eWUTAmLDv94f6DVHON9qV1kU=
 github.com/keptn/go-utils v0.16.1-0.20220609074613-80183eecfc5a h1:VvdIdfumjHwIm6zpJrH+fk8VUVIbwlY1YE5L1l/Zz3k=
 github.com/keptn/go-utils v0.16.1-0.20220609074613-80183eecfc5a/go.mod h1:oxLLKz2u9KId2HgLH63+T0pUbcgiDd2GDkRrRKwxGUU=
+github.com/keptn/keptn/cp-common v0.0.0-20220609093122-5e01300c122b h1:maR8VtMbycIATNfSRD6YX2v9XkeLG6UifpX+ap/qRbU=
+github.com/keptn/keptn/cp-common v0.0.0-20220609093122-5e01300c122b/go.mod h1:3TgTvfnt5TTY8Hkckv52GQIYo6GGL7FwzDXakt0DlwY=
 github.com/keptn/kubernetes-utils v0.13.0 h1:tIdmdNobI+L4/b3nJPzMRJ1vRg4oqEEnDGPBHFO/hzs=
 github.com/keptn/kubernetes-utils v0.13.0/go.mod h1:WgPDwDt8QxEoaQXIBE7MmSp6TBDe09/AyAEk7T9r8Og=
 github.com/kisielk/errcheck v1.1.0/go.mod h1:EZBBE59ingxPouuu3KfxchcWSUPOHkagtvWXihfKN4Q=

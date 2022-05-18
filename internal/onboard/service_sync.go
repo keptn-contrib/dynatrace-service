@@ -107,17 +107,21 @@ type ServiceSynchronizer struct {
 }
 
 // NewDefaultServiceSynchronizer creates a new default ServiceSynchronizer.
-func NewDefaultServiceSynchronizer() *ServiceSynchronizer {
-	clientSet := keptn.NewClientFactory()
-	resourceClient := keptn.NewConfigClient(clientSet.CreateResourceClient())
+func NewDefaultServiceSynchronizer() (*ServiceSynchronizer, error) {
+	clientFactory, err := keptn.NewClientFactory()
+	if err != nil {
+		return nil, err
+	}
+
+	resourceClient := keptn.NewConfigClient(clientFactory.CreateResourceClient())
 
 	serviceSynchronizer := ServiceSynchronizer{
-		servicesClient:        clientSet.CreateServiceClient(),
+		servicesClient:        clientFactory.CreateServiceClient(),
 		resourcesClient:       resourceClient,
 		entitiesClientFactory: newDefaultEntitiesClientFactory(resourceClient),
 	}
 
-	return &serviceSynchronizer
+	return &serviceSynchronizer, nil
 }
 
 // Run runs the service synchronizer which does not return unless cancelled.
