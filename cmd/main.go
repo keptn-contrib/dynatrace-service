@@ -66,7 +66,13 @@ func _main(envCfg envConfig) int {
 		workerWaitGroup.Add(1)
 		go func() {
 			defer workerWaitGroup.Done()
-			onboard.NewDefaultServiceSynchronizer().Run(notifyCtx, workCtx)
+			serviceSynchronizer, err := onboard.NewDefaultServiceSynchronizer()
+			if err != nil {
+				log.WithError(err).Error("Could not create service synchronizer")
+				return
+			}
+
+			serviceSynchronizer.Run(notifyCtx, workCtx)
 		}()
 	}
 
@@ -107,7 +113,13 @@ func _main(envCfg envConfig) int {
 }
 
 func gotEvent(workCtx context.Context, replyCtx context.Context, event cloudevents.Event) {
-	err := event_handler.NewEventHandler(workCtx, event).HandleEvent(workCtx, replyCtx)
+	handler, err := event_handler.NewEventHandler(workCtx, event)
+	if err != nil {
+		log.WithError(err).Error("NewEventHandler() returned an error")
+		return
+	}
+
+	handler.HandleEvent(workCtx, replyCtx)
 	if err != nil {
 		log.WithError(err).Error("HandleEvent() returned an error")
 	}
