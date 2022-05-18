@@ -6,7 +6,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.10.0
 	github.com/go-test/deep v1.0.8
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/keptn/go-utils v0.13.0
+	github.com/keptn/go-utils v0.16.1-0.20220609074613-80183eecfc5a
 	github.com/keptn/kubernetes-utils v0.13.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.1
@@ -52,6 +52,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/keptn/keptn/cp-common v0.0.0-20220609093122-5e01300c122b // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mitchellh/copystructure v1.1.1 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
@@ -75,7 +76,7 @@ require (
 	go.uber.org/multierr v1.3.0 // indirect
 	go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee // indirect
 	go.uber.org/zap v1.13.0 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
