@@ -53,3 +53,8 @@ func NewMarshalJSONError(context string, cause error) *MarshalError {
 func (e *MarshalError) Error() string {
 	return fmt.Sprintf("could not %s %s %s: %v", e.marshalType, e.context, e.dataType, e.cause)
 }
+
+// Unwrap returns the cause of the MarshalError.
+func (e *MarshalError) Unwrap() error {
+	return e.cause
+}
