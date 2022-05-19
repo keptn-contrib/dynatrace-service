@@ -1,6 +1,7 @@
 package keptn
 
 import (
+	"errors"
 	"io/ioutil"
 	"testing"
 
@@ -69,7 +70,7 @@ func TestConfigClient_GetSLIsRetrievalErrorCausesError(t *testing.T) {
 	rc := NewConfigClient(
 		&mockResourceClient{
 			t:               t,
-			serviceResource: &mockResource{err: &ResourceRetrievalFailedError{ResourceError{uri: testSLIResourceURI, project: testProject, stage: testStage, service: testService}, "Connection error"}}})
+			serviceResource: &mockResource{err: &ResourceRetrievalFailedError{ResourceError{uri: testSLIResourceURI, project: testProject, stage: testStage, service: testService}, errors.New("Connection error")}}})
 	slis, err := rc.GetSLIs(testProject, testStage, testService)
 	assert.Nil(t, slis)
 	assert.Error(t, err)

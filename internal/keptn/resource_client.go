@@ -66,12 +66,17 @@ func (e *ResourceUploadFailedError) Error() string {
 // ResourceRetrievalFailedError represents an error for a resource that could not be retrieved because of an error.
 type ResourceRetrievalFailedError struct {
 	ResourceError
-	message string
+	cause error
 }
 
 // Error returns a string representation of this error.
 func (e *ResourceRetrievalFailedError) Error() string {
-	return fmt.Sprintf("could not retrieve resource: '%s' %s: %s", e.uri, getLocation(e.service, e.stage, e.project), e.message)
+	return fmt.Sprintf("could not retrieve resource: '%s' %s: %v", e.uri, getLocation(e.service, e.stage, e.project), e.cause)
+}
+
+// Unwrap returns the cause of the ResourceRetrievalFailedError.
+func (e *ResourceRetrievalFailedError) Unwrap() error {
+	return e.cause
 }
 
 func getLocation(service string, stage string, project string) string {
@@ -172,8 +177,8 @@ func (rc *ResourceClient) GetServiceResource(project string, stage string, servi
 		func() *ResourceNotFoundError {
 			return &ResourceNotFoundError{uri: resourceURI, project: project, stage: stage, service: service}
 		},
-		func(msg string) *ResourceRetrievalFailedError {
-			return &ResourceRetrievalFailedError{ResourceError{uri: resourceURI, project: project, stage: stage, service: service}, msg}
+		func(cause error) *ResourceRetrievalFailedError {
+			return &ResourceRetrievalFailedError{ResourceError{uri: resourceURI, project: project, stage: stage, service: service}, cause}
 		},
 		func() *ResourceEmptyError {
 			return &ResourceEmptyError{uri: resourceURI, project: project, stage: stage, service: service}
@@ -187,8 +192,8 @@ func (rc *ResourceClient) GetStageResource(project string, stage string, resourc
 		func() *ResourceNotFoundError {
 			return &ResourceNotFoundError{uri: resourceURI, project: project, stage: stage}
 		},
-		func(msg string) *ResourceRetrievalFailedError {
-			return &ResourceRetrievalFailedError{ResourceError{uri: resourceURI, project: project, stage: stage}, msg}
+		func(cause error) *ResourceRetrievalFailedError {
+			return &ResourceRetrievalFailedError{ResourceError{uri: resourceURI, project: project, stage: stage}, cause}
 		},
 		func() *ResourceEmptyError {
 			return &ResourceEmptyError{uri: resourceURI, project: project, stage: stage}
@@ -200,8 +205,8 @@ func (rc *ResourceClient) GetProjectResource(project string, resourceURI string)
 	return getResourceByFunc(
 		func() (*keptnmodels.Resource, error) { return rc.client.GetProjectResource(project, resourceURI) },
 		func() *ResourceNotFoundError { return &ResourceNotFoundError{uri: resourceURI, project: project} },
-		func(msg string) *ResourceRetrievalFailedError {
-			return &ResourceRetrievalFailedError{ResourceError{uri: resourceURI, project: project}, msg}
+		func(cause error) *ResourceRetrievalFailedError {
+			return &ResourceRetrievalFailedError{ResourceError{uri: resourceURI, project: project}, cause}
 		},
 		func() *ResourceEmptyError { return &ResourceEmptyError{uri: resourceURI, project: project} })
 }
@@ -209,7 +214,7 @@ func (rc *ResourceClient) GetProjectResource(project string, resourceURI string)
 func getResourceByFunc(
 	resFunc func() (*keptnmodels.Resource, error),
 	rnfErrFunc func() *ResourceNotFoundError,
-	rrfErrFunc func(msg string) *ResourceRetrievalFailedError,
+	rrfErrFunc func(cause error) *ResourceRetrievalFailedError,
 	reErrFunc func() *ResourceEmptyError) (string, error) {
 	resource, err := resFunc()
 	if err != nil {
@@ -217,7 +222,7 @@ func getResourceByFunc(
 			return "", rnfErrFunc()
 		}
 
-		return "", rrfErrFunc(err.Error())
+		return "", rrfErrFunc(err)
 	}
 	if resource.ResourceContent == "" {
 		return "", reErrFunc()
