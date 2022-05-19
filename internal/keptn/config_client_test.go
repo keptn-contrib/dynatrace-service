@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,8 +60,8 @@ func TestConfigClient_GetSLIsInvalidYAMLCausesError(t *testing.T) {
 			projectResource: getInvalidYAMLResource(t)})
 	slis, err := rc.GetSLIs(testProject, testStage, testService)
 	assert.Nil(t, slis)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "could not unmarshal SLIs YAML")
+	var marshalErr *common.MarshalError
+	assert.ErrorAs(t, err, &marshalErr)
 }
 
 // TestConfigClient_GetSLIsRetrievalErrorCausesError tests that resource retrieval errors produce an error.
