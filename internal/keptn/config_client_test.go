@@ -60,7 +60,7 @@ func TestConfigClient_GetSLIsInvalidYAMLCausesError(t *testing.T) {
 	slis, err := rc.GetSLIs(testProject, testStage, testService)
 	assert.Nil(t, slis)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "could not unmarshal SLIs to YAML")
+	assert.Contains(t, err.Error(), "could not unmarshal SLIs YAML")
 }
 
 // TestConfigClient_GetSLIsRetrievalErrorCausesError tests that resource retrieval errors produce an error.

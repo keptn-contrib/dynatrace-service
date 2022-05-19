@@ -51,5 +51,5 @@ func NewMarshalJSONError(context string, cause error) *MarshalError {
 }
 
 func (e *MarshalError) Error() string {
-	return fmt.Sprintf("could not %s %s to %s (%v)", e.marshalType, e.context, e.dataType, e.cause)
+	return fmt.Sprintf("could not %s %s %s: %v", e.marshalType, e.context, e.dataType, e.cause)
 }
