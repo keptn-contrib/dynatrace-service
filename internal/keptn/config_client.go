@@ -9,6 +9,7 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"gopkg.in/yaml.v2"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
@@ -109,14 +110,6 @@ func (rc *ConfigClient) GetDynatraceConfig(project string, stage string, service
 
 // GetShipyard returns the shipyard definition of a project.
 func (rc *ConfigClient) GetShipyard(project string) (*keptnv2.Shipyard, error) {
-	shipyard, err := rc.getShipyard(project)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve shipyard for project %s: %w", project, err)
-	}
-	return shipyard, nil
-}
-
-func (rc *ConfigClient) getShipyard(project string) (*keptnv2.Shipyard, error) {
 	shipyardResource, err := rc.client.GetProjectResource(project, shipyardFilename)
 	if err != nil {
 		return nil, err
@@ -125,7 +118,7 @@ func (rc *ConfigClient) getShipyard(project string) (*keptnv2.Shipyard, error) {
 	shipyard := keptnv2.Shipyard{}
 	err = yaml.Unmarshal([]byte(shipyardResource), &shipyard)
 	if err != nil {
-		return nil, err
+		return nil, common.NewUnmarshalYAMLError("shipyard", err)
 	}
 
 	return &shipyard, nil
@@ -201,7 +194,7 @@ func readSLIsFromResource(resource string) (map[string]string, error) {
 	sliConfig := keptnapi.SLIConfig{}
 	err := yaml.Unmarshal([]byte(resource), &sliConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse SLI YAML: %w", err)
+		return nil, common.NewUnmarshalYAMLError("SLIs", err)
 	}
 
 	if len(sliConfig.Indicators) == 0 {
