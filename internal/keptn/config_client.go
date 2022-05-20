@@ -128,7 +128,7 @@ type sliMap map[string]string
 
 func (m sliMap) insertOrUpdateMany(x map[string]string) {
 	for key, value := range x {
-		map[string]string(m)[key] = value
+		m[key] = value
 	}
 }
 
