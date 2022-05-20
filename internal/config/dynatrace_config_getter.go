@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -36,7 +34,7 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 	// unmarshal the file
 	dynatraceConfig, err := parseDynatraceConfigYAML(fileContent)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse dynatrace config file found for service %s in stage %s in project %s: %s", event.GetService(), event.GetStage(), event.GetProject(), err.Error())
+		return nil, err
 	}
 
 	dynatraceConfig = replacePlaceholdersInDynatraceConfig(dynatraceConfig, event)
@@ -101,7 +99,7 @@ func parseDynatraceConfigYAML(input string) (*DynatraceConfig, error) {
 	dynatraceConfig := NewDynatraceConfigWithDefaults()
 	err := yaml.Unmarshal([]byte(input), dynatraceConfig)
 	if err != nil {
-		return nil, err
+		return nil, common.NewUnmarshalYAMLError("Dynatrace config", err)
 	}
 
 	return dynatraceConfig, nil

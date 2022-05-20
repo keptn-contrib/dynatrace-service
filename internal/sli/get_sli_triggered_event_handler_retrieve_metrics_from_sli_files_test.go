@@ -21,12 +21,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 	// no need to have something here, because we should not send an API request
 	handler := test.NewFileBasedURLHandler(t)
 
+	kClient := &keptnClientMock{}
+
 	// error here in the misspelled indicator:
-	kClient := &keptnClientMock{
-		customQueries: map[string]string{
-			"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-		},
-	}
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+	})
 
 	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
@@ -35,7 +35,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		assert.Contains(t, actual.Message, "response_time_p95")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -47,12 +47,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 	// error here: metric(s)Selector=
 	handler := test.NewFileBasedURLHandler(t)
 
+	kClient := &keptnClientMock{}
+
 	// error here as well: metric(s)Selector=
-	kClient := &keptnClientMock{
-		customQueries: map[string]string{
-			indicator: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-		},
-	}
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		indicator: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+	})
 
 	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
@@ -61,7 +61,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		assert.Contains(t, actual.Message, "error parsing Metrics v2 query")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -73,10 +73,10 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 	// make sure we would not be able to query any metric due to a parsing error
 	handler := test.NewFileBasedURLHandler(t)
 
+	kClient := &keptnClientMock{}
+
 	const errorMessage = "invalid YAML file - some parsing issue"
-	kClient := &keptnClientMock{
-		customQueriesError: fmt.Errorf(errorMessage),
-	}
+	rClient := newResourceClientMockWithGetSLIsError(t, fmt.Errorf(errorMessage))
 
 	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
@@ -85,13 +85,13 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 		assert.Contains(t, actual.Message, errorMessage)
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, kClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, kClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
+func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, kClient *keptnClientMock, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
 	// we use the special mock for the resource client
 	// we do not want to query a dashboard, so we leave it empty
-	runTestAndAssertNoError(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, kClient, &resourceClientMock{t: t}, "")
+	runTestAndAssertNoError(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, kClient, rClient, "")
 
 	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }

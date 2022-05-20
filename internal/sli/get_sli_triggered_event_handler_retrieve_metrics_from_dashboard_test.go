@@ -24,9 +24,13 @@ type uploadErrorResourceClientMock struct {
 	uploadedSLOs   *keptnapi.ServiceLevelObjectives
 }
 
+func (m *uploadErrorResourceClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
+	return nil, nil
+}
+
 func (m *uploadErrorResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
-
 	return nil, nil
 }
 
@@ -150,21 +154,23 @@ type uploadWillFailResourceClientMock struct {
 	t *testing.T
 }
 
+func (m *uploadWillFailResourceClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
+	return nil, nil
+}
+
 func (m *uploadWillFailResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
-
 	return nil, nil
 }
 
 func (m *uploadWillFailResourceClientMock) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
 	m.t.Fatalf("UploadSLIs() should not be needed in this mock!")
-
 	return nil
 }
 
 func (m *uploadWillFailResourceClientMock) UploadSLOs(project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
 	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
-
 	return nil
 }
 
@@ -214,8 +220,6 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 }
 
 func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient keptn.SLOAndSLIClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-
-	// we do not need custom queries, as we are using the dashboard
 	kClient := &keptnClientMock{}
 
 	runTestAndAssertNoError(t, getSLIEventData, handler, kClient, rClient, testDashboardID)

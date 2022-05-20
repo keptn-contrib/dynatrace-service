@@ -233,7 +233,37 @@ func (e *getSLIEventData) AddLabel(name string, value string) {
 }
 
 type resourceClientMock struct {
-	t *testing.T
+	t            *testing.T
+	slis         map[string]string
+	getSLIsError error
+}
+
+func newResourceClientMock(t *testing.T) *resourceClientMock {
+	return &resourceClientMock{
+		t: t,
+	}
+}
+
+func newResourceClientMockWithSLIs(t *testing.T, slis map[string]string) *resourceClientMock {
+	return &resourceClientMock{
+		t:    t,
+		slis: slis,
+	}
+}
+
+func newResourceClientMockWithGetSLIsError(t *testing.T, getSLIsError error) *resourceClientMock {
+	return &resourceClientMock{
+		t:            t,
+		getSLIsError: getSLIsError,
+	}
+}
+
+func (m *resourceClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+	if m.getSLIsError != nil {
+		return nil, m.getSLIsError
+	}
+
+	return m.slis, nil
 }
 
 func (m *resourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
@@ -257,25 +287,7 @@ func (m *resourceClientMock) GetDashboard(project string, stage string, service 
 }
 
 type keptnClientMock struct {
-	eventSink          []*cloudevents.Event
-	customQueries      map[string]string
-	customQueriesError error
-}
-
-func (m *keptnClientMock) GetCustomQueries(project string, stage string, service string) (*keptn.CustomQueries, error) {
-	if m.customQueriesError != nil {
-		return nil, m.customQueriesError
-	}
-
-	if m.customQueries == nil {
-		return keptn.NewEmptyCustomQueries(), nil
-	}
-
-	return keptn.NewCustomQueries(m.customQueries), nil
-}
-
-func (m *keptnClientMock) GetShipyard() (*keptnv2.Shipyard, error) {
-	panic("GetShipyard() should not be needed in this mock!")
+	eventSink []*cloudevents.Event
 }
 
 func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {

@@ -12,7 +12,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
@@ -29,12 +28,12 @@ type Processing struct {
 	client        dynatrace.ClientInterface
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
-	customQueries *keptn.CustomQueries
+	customQueries *CustomQueries
 	timeframe     common.Timeframe
 }
 
 // NewProcessing creates a new Processing.
-func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, customQueries *keptn.CustomQueries, timeframe common.Timeframe) *Processing {
+func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, customQueries *CustomQueries, timeframe common.Timeframe) *Processing {
 	return &Processing{
 		client:        client,
 		eventData:     eventData,

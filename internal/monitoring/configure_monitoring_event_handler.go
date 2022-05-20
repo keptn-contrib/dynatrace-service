@@ -22,18 +22,20 @@ type ConfigureMonitoringEventHandler struct {
 	event              ConfigureMonitoringAdapterInterface
 	dtClient           dynatrace.ClientInterface
 	kClient            keptn.ClientInterface
-	sloReader          keptn.SLOReaderInterface
+	shipyardReader     keptn.ShipyardReaderInterface
+	sliAndSLOReader    keptn.SLIAndSLOReaderInterface
 	serviceClient      keptn.ServiceClientInterface
 	credentialsChecker keptn.CredentialsCheckerInterface
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, shipyardReader keptn.ShipyardReaderInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
 		event:              event,
 		dtClient:           dtClient,
 		kClient:            kClient,
-		sloReader:          sloReader,
+		shipyardReader:     shipyardReader,
+		sliAndSLOReader:    sliAndSLOReader,
 		serviceClient:      serviceClient,
 		credentialsChecker: credentialsChecker,
 	}
@@ -57,14 +59,14 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 	keptnCredentialsCheckResult := eh.checkKeptnCredentials(ctx)
 	log.WithField("result", keptnCredentialsCheckResult).Info("Checked Keptn credentials")
 
-	shipyard, err := eh.kClient.GetShipyard()
+	shipyard, err := eh.shipyardReader.GetShipyard(eh.event.GetProject())
 	if err != nil {
 		return eh.handleError(err)
 	}
 
-	cfg := NewConfiguration(eh.dtClient, eh.kClient, eh.sloReader, eh.serviceClient)
+	cfg := newConfiguration(eh.dtClient, eh.kClient, eh.sliAndSLOReader, eh.serviceClient)
 
-	configuredEntities, err := cfg.ConfigureMonitoring(ctx, eh.event.GetProject(), *shipyard)
+	configuredEntities, err := cfg.configureMonitoring(ctx, eh.event.GetProject(), *shipyard)
 	if err != nil {
 		return eh.handleError(err)
 	}
@@ -99,7 +101,7 @@ func (eh *ConfigureMonitoringEventHandler) checkKeptnCredentials(ctx context.Con
 
 }
 
-func getConfigureMonitoringResultMessage(keptnCredentialsCheckResult keptnCredentialsCheckResult, entities *ConfiguredEntities) string {
+func getConfigureMonitoringResultMessage(keptnCredentialsCheckResult keptnCredentialsCheckResult, entities *configuredEntities) string {
 	if entities == nil {
 		return ""
 	}

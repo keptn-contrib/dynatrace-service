@@ -10,24 +10,24 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type ProblemNotificationCreation struct {
+type problemNotificationCreation struct {
 	client dynatrace.ClientInterface
 }
 
-func NewProblemNotificationCreation(client dynatrace.ClientInterface) *ProblemNotificationCreation {
-	return &ProblemNotificationCreation{
+func newProblemNotificationCreation(client dynatrace.ClientInterface) *problemNotificationCreation {
+	return &problemNotificationCreation{
 		client: client,
 	}
 }
 
-// Create sets up/updates the DT problem notification and returns it.
-func (pn *ProblemNotificationCreation) Create(ctx context.Context, project string) *ConfigResult {
+// create sets up/updates the DT problem notification and returns it.
+func (pn *problemNotificationCreation) create(ctx context.Context, project string) *configResult {
 	log.Info("Setting up problem notifications in Dynatrace Tenant")
 
 	alertingProfileID, err := getOrCreateKeptnAlertingProfile(ctx, dynatrace.NewAlertingProfilesClient(pn.client))
 	if err != nil {
 		log.WithError(err).Error("Failed to set up problem notification")
-		return &ConfigResult{
+		return &configResult{
 			Success: false,
 			Message: "failed to set up problem notification: " + err.Error(),
 		}
@@ -42,7 +42,7 @@ func (pn *ProblemNotificationCreation) Create(ctx context.Context, project strin
 	keptnCredentials, err := credentials.GetKeptnCredentials(ctx)
 	if err != nil {
 		log.WithError(err).Error("Failed to retrieve Keptn API credentials")
-		return &ConfigResult{
+		return &configResult{
 			Success: false,
 			Message: "failed to retrieve Keptn API credentials: " + err.Error(),
 		}
@@ -51,13 +51,13 @@ func (pn *ProblemNotificationCreation) Create(ctx context.Context, project strin
 	err = notificationsClient.Create(ctx, keptnCredentials, alertingProfileID, project)
 	if err != nil {
 		log.WithError(err).Error("Failed to create problem notification")
-		return &ConfigResult{
+		return &configResult{
 			Success: false,
 			Message: "failed to set up problem notification: " + err.Error(),
 		}
 	}
 
-	return &ConfigResult{
+	return &configResult{
 		Success: true,
 		Message: "Successfully set up Keptn Alerting Profile and Problem Notifications",
 	}

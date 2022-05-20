@@ -16,24 +16,24 @@ const customChartName = "Custom Chart"
 const timeSeriesChartType = "TIMESERIES"
 const dashboardStageWidth int = 456
 
-type DashboardCreation struct {
+type dashboardCreation struct {
 	client dynatrace.ClientInterface
 }
 
-func NewDashboardCreation(client dynatrace.ClientInterface) *DashboardCreation {
-	return &DashboardCreation{
+func newDashboardCreation(client dynatrace.ClientInterface) *dashboardCreation {
+	return &dashboardCreation{
 		client: client,
 	}
 }
 
-// Create creates a new dashboard for the provided project.
-func (dc *DashboardCreation) Create(ctx context.Context, project string, shipyard keptnv2.Shipyard) *ConfigResult {
+// create creates a new dashboard for the provided project.
+func (dc *dashboardCreation) create(ctx context.Context, project string, shipyard keptnv2.Shipyard) *configResult {
 	// first, check if dashboard for this project already exists and delete that
 	dashboardClient := dynatrace.NewDashboardsClient(dc.client)
 	err := deleteExistingDashboard(ctx, project, dashboardClient)
 	if err != nil {
 		log.WithError(err).Error("Could not delete existing dashboard")
-		return &ConfigResult{
+		return &configResult{
 			Success: false,
 			Message: "Could not delete existing dashboard: " + err.Error(),
 		}
@@ -44,13 +44,13 @@ func (dc *DashboardCreation) Create(ctx context.Context, project string, shipyar
 	err = dashboardClient.Create(ctx, dashboard)
 	if err != nil {
 		log.WithError(err).Error("Failed to create Dynatrace dashboards")
-		return &ConfigResult{
+		return &configResult{
 			Success: false,
 			Message: err.Error(),
 		}
 	}
 	log.WithField("dashboardUrl", dc.client.Credentials().GetTenant()+"/#dashboards").Info("Dynatrace dashboard created successfully")
-	return &ConfigResult{
+	return &configResult{
 		Success: true, // I guess this should be true not false?
 		Message: "Dynatrace dashboard created successfully. You can view it here: " + dc.client.Credentials().GetTenant() + "/#dashboards",
 	}

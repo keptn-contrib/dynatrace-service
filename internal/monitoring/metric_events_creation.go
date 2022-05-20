@@ -10,6 +10,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/query"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
 
 	log "github.com/sirupsen/logrus"
@@ -18,7 +19,7 @@ import (
 const keptnService = "keptn_service"
 const keptnDeployment = "keptn_deployment"
 
-type CriteriaObject struct {
+type criteriaObject struct {
 	Operator        string
 	Value           float64
 	CheckPercentage bool
@@ -26,24 +27,24 @@ type CriteriaObject struct {
 	CheckIncrease   bool
 }
 
-type MetricEventCreation struct {
-	dtClient  dynatrace.ClientInterface
-	kClient   keptn.ClientInterface
-	sloReader keptn.SLOReaderInterface
+type metricEventCreation struct {
+	dtClient        dynatrace.ClientInterface
+	kClient         keptn.ClientInterface
+	sliAndSLOReader keptn.SLIAndSLOReaderInterface
 }
 
-func NewMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sloReader keptn.SLOReaderInterface) MetricEventCreation {
-	return MetricEventCreation{
-		dtClient:  dynatraceClient,
-		kClient:   keptnClient,
-		sloReader: sloReader,
+func newMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface) metricEventCreation {
+	return metricEventCreation{
+		dtClient:        dynatraceClient,
+		kClient:         keptnClient,
+		sliAndSLOReader: sliAndSLOReader,
 	}
 }
 
-// Create creates new metric events if SLOs are specified.
-func (mec MetricEventCreation) Create(ctx context.Context, project string, stage string, service string) []ConfigResult {
+// create creates new metric events if SLOs are specified.
+func (mec metricEventCreation) create(ctx context.Context, project string, stage string, service string) []configResult {
 	log.Info("Creating custom metric events for project SLIs")
-	slos, err := mec.sloReader.GetSLOs(project, stage, service)
+	slos, err := mec.sliAndSLOReader.GetSLOs(project, stage, service)
 	if err != nil {
 		log.WithError(err).WithFields(
 			log.Fields{
@@ -51,13 +52,14 @@ func (mec MetricEventCreation) Create(ctx context.Context, project string, stage
 				"stage":   stage}).Info("No SLOs defined for service. Skipping creation of custom metric events.")
 		return nil
 	}
-	// get custom metrics for project
 
-	projectCustomQueries, err := mec.kClient.GetCustomQueries(project, stage, service)
+	// get custom metrics for project
+	slis, err := mec.sliAndSLOReader.GetSLIs(project, stage, service)
 	if err != nil {
-		log.WithError(err).WithField("project", project).Error("Failed to get custom queries for project")
+		log.WithError(err).WithField("project", project).Error("Failed to get SLIs for project")
 		return nil
 	}
+	projectCustomQueries := query.NewCustomQueries(slis)
 
 	managementZones, err := dynatrace.NewManagementZonesClient(mec.dtClient).GetAll(ctx)
 	var mzId int64 = -1
@@ -78,7 +80,7 @@ func (mec MetricEventCreation) Create(ctx context.Context, project string, stage
 	}
 
 	metricEventsClient := dynatrace.NewMetricEventsClient(mec.dtClient)
-	var metricsEventResults []ConfigResult
+	var metricsEventResults []configResult
 	// try to create metric events using best effort.
 	for _, objective := range slos.Objectives {
 		query, err := projectCustomQueries.GetQueryByNameOrDefault(objective.SLI)
@@ -107,8 +109,8 @@ func (mec MetricEventCreation) Create(ctx context.Context, project string, stage
 	return metricsEventResults
 }
 
-func setupAllMetricEvents(ctx context.Context, client *dynatrace.MetricEventsClient, project string, stage string, service string, slo *keptnlib.SLO, query string, managementZoneID int64) []ConfigResult {
-	var metricEventsResults []ConfigResult
+func setupAllMetricEvents(ctx context.Context, client *dynatrace.MetricEventsClient, project string, stage string, service string, slo *keptnlib.SLO, query string, managementZoneID int64) []configResult {
+	var metricEventsResults []configResult
 	for _, criteria := range slo.Pass {
 		for _, crit := range criteria.Criteria {
 
@@ -124,7 +126,7 @@ func setupAllMetricEvents(ctx context.Context, client *dynatrace.MetricEventsCli
 	return metricEventsResults
 }
 
-func setupSingleMetricEvent(ctx context.Context, client *dynatrace.MetricEventsClient, project string, stage string, service string, metric string, query string, crit string, managementZoneID int64) (*ConfigResult, error) {
+func setupSingleMetricEvent(ctx context.Context, client *dynatrace.MetricEventsClient, project string, stage string, service string, metric string, query string, crit string, managementZoneID int64) (*configResult, error) {
 	// criteria.Criteria
 	criteriaObject, err := parseCriteriaString(crit)
 	if err != nil {
@@ -156,7 +158,7 @@ func setupSingleMetricEvent(ctx context.Context, client *dynatrace.MetricEventsC
 	}
 
 	log.WithFields(log.Fields{"name": newMetricEvent.Name, "criteria": crit}).Info("Created metric event")
-	return &ConfigResult{
+	return &configResult{
 		Name:    newMetricEvent.Name,
 		Success: true,
 	}, nil
@@ -189,7 +191,7 @@ func createOrUpdateMetricEvent(ctx context.Context, client *dynatrace.MetricEven
 	return nil
 }
 
-func parseCriteriaString(criteria string) (*CriteriaObject, error) {
+func parseCriteriaString(criteria string) (*criteriaObject, error) {
 	// example values: <+15%, <500, >-8%, =0
 	// possible operators: <, <=, =, >, >=
 	// regex: ^([<|<=|=|>|>=]{1,2})([+|-]{0,1}\\d*\.?\d*)([%]{0,1})
@@ -204,7 +206,7 @@ func parseCriteriaString(criteria string) (*CriteriaObject, error) {
 		return nil, errors.New("invalid criteria string")
 	}
 
-	c := &CriteriaObject{}
+	c := &criteriaObject{}
 
 	if strings.HasSuffix(criteria, "%") {
 		c.CheckPercentage = true

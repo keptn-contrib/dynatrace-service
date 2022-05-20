@@ -8,18 +8,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type AutoTagCreation struct {
+type autoTagCreation struct {
 	client dynatrace.ClientInterface
 }
 
-func NewAutoTagCreation(client dynatrace.ClientInterface) *AutoTagCreation {
-	return &AutoTagCreation{
+func newAutoTagCreation(client dynatrace.ClientInterface) *autoTagCreation {
+	return &autoTagCreation{
 		client: client,
 	}
 }
 
-// Create creates auto-tags in Dynatrace and returns the tagging rules.
-func (at *AutoTagCreation) Create(ctx context.Context) []ConfigResult {
+// create creates auto-tags in Dynatrace and returns the tagging rules.
+func (at *autoTagCreation) create(ctx context.Context) []configResult {
 	log.Info("Setting up auto-tagging rules in Dynatrace Tenant")
 
 	autoTagsClient := dynatrace.NewAutoTagClient(at.client)
@@ -30,7 +30,7 @@ func (at *AutoTagCreation) Create(ctx context.Context) []ConfigResult {
 		log.WithError(err).Error("Failed retrieving Dynatrace tagging rules")
 	}
 
-	var taggingRulesResults []ConfigResult
+	var taggingRulesResults []configResult
 	for _, ruleName := range []string{"keptn_service", "keptn_stage", "keptn_project", "keptn_deployment"} {
 		taggingRulesResults = append(
 			taggingRulesResults,
@@ -39,7 +39,7 @@ func (at *AutoTagCreation) Create(ctx context.Context) []ConfigResult {
 	return taggingRulesResults
 }
 
-func createAutoTaggingRuleForRuleName(ctx context.Context, client *dynatrace.AutoTagsClient, existingTagNames *dynatrace.TagNames, ruleName string) ConfigResult {
+func createAutoTaggingRuleForRuleName(ctx context.Context, client *dynatrace.AutoTagsClient, existingTagNames *dynatrace.TagNames, ruleName string) configResult {
 	if !existingTagNames.Contains(ruleName) {
 		rule := createAutoTaggingRuleDTO(ruleName)
 
@@ -47,21 +47,21 @@ func createAutoTaggingRuleForRuleName(ctx context.Context, client *dynatrace.Aut
 		if err != nil {
 			// Error occurred but continue
 			log.WithError(err).Error("Could not create auto tagging rule")
-			return ConfigResult{
+			return configResult{
 				Name:    ruleName,
 				Success: false,
 				Message: "Could not create auto tagging rule: " + err.Error(),
 			}
 		}
 
-		return ConfigResult{
+		return configResult{
 			Name:    ruleName,
 			Success: true,
 		}
 	}
 
 	log.WithField("ruleName", ruleName).Info("Tagging rule already exists")
-	return ConfigResult{
+	return configResult{
 		Name:    ruleName,
 		Message: "Tagging rule " + ruleName + " already exists",
 		Success: true,
