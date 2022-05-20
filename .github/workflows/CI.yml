@@ -2,17 +2,17 @@ name: CI
 on:
   # allow manual dispatch
   workflow_dispatch:
-  
+
   # always execute docker build when something is pushed to master or release-* branches
   push:
     branches:
-      - 'master'
-      - 'release-*'
+      - "master"
+      - "release-*"
   # in addition, execute for pull requests to those branches
   pull_request:
     branches:
-      - 'master'
-      - 'release-*'
+      - "master"
+      - "release-*"
 defaults:
   run:
     shell: bash
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
       - name: Unit tests
         uses: ./.github/actions/unit-tests
 
@@ -50,7 +50,7 @@ jobs:
       GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -90,7 +90,7 @@ jobs:
       GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -122,7 +122,6 @@ jobs:
           message: |
             The following Docker Images have been built:
             ${{ fromJSON(steps.docker_build.outputs.BUILD_METADATA)['image.name'] }}
-
 
   store-output-in-build-config:
     name: "Store output of last step in build-config.env"
