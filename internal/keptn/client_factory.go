@@ -22,7 +22,7 @@ type ClientFactory struct {
 
 // NewClientFactory creates a new ClientFactory.
 func NewClientFactory() (*ClientFactory, error) {
-	internalAPISet, err := api.NewInternal(&http.Client{})
+	internalAPISet, err := api.NewInternal(&http.Client{}, GetInClusterAPIMappings())
 	if err != nil {
 		return nil, fmt.Errorf("could not create internal Keptn API set: %w", err)
 	}
