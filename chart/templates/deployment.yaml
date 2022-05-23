@@ -41,11 +41,11 @@ spec:
             - containerPort: 80
           env:
             - name: DATASTORE
-              value: 'http://mongodb-datastore:8080'
+              value: ''
             - name: CONFIGURATION_SERVICE
-              value: 'http://configuration-service:8080'
+              value: ''
             - name: SHIPYARD_CONTROLLER
-              value: 'http://shipyard-controller:8080'
+              value: ''
             - name: PLATFORM
               value: kubernetes
             - name: POD_NAMESPACE

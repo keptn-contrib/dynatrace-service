@@ -44,7 +44,7 @@ func (c *ClientFactory) CreateResourceClient() ResourceClientInterface {
 func (c *ClientFactory) CreateServiceClient() ServiceClientInterface {
 	return NewServiceClient(
 		c.apiSet.ServicesV1(),
-		&http.Client{})
+		c.apiSet.APIV1())
 }
 
 // CreateUniformClient creates a UniformClientInterface.
