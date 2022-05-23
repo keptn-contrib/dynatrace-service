@@ -5,37 +5,9 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
-	"github.com/keptn/go-utils/pkg/lib/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/env"
+	"github.com/keptn/keptn/cp-common/api"
 )
-
-const shipyardControllerURLEnvironmentVariableName = "SHIPYARD_CONTROLLER"
-const configurationServiceEnvironmentVariableName = "CONFIGURATION_SERVICE"
-const datastoreEnvironmentVariableName = "DATASTORE"
-
-const defaultShipyardControllerURL = "http://shipyard-controller:8080"
-
-// getConfigurationServiceURL Returns the endpoint to the configuration-service.
-func getConfigurationServiceURL() string {
-	return getKeptnServiceURL(configurationServiceEnvironmentVariableName, keptn.ConfigurationServiceURL)
-}
-
-// getDatastoreURL Returns the endpoint to the datastore.
-func getDatastoreURL() string {
-	return getKeptnServiceURL(datastoreEnvironmentVariableName, keptn.DatastoreURL)
-}
-
-// getShipyardControllerURL Returns the endpoint to the shipyard-controller.
-func getShipyardControllerURL() string {
-	return getKeptnServiceURL(shipyardControllerURLEnvironmentVariableName, defaultShipyardControllerURL)
-}
-
-func getKeptnServiceURL(serviceName, defaultURL string) string {
-	url, err := keptn.GetServiceEndpoint(serviceName)
-	if err != nil {
-		return defaultURL
-	}
-	return url.String()
-}
 
 // TryGetBridgeURLForKeptnContext gets a backlink to the Keptn Bridge if available or returns "".
 func TryGetBridgeURLForKeptnContext(ctx context.Context, event adapter.EventContentAdapter) string {
@@ -50,4 +22,29 @@ func TryGetBridgeURLForKeptnContext(ctx context.Context, event adapter.EventCont
 	}
 
 	return keptnBridgeURL + "/trace/" + event.GetShKeptnContext()
+}
+
+// GetInClusterAPIMappings returns the InClusterAPIMappings.
+func GetInClusterAPIMappings() api.InClusterAPIMappings {
+	mappings := api.InClusterAPIMappings{}
+	for k, v := range api.DefaultInClusterAPIMappings {
+		mappings[k] = v
+	}
+
+	shipyardController := env.GetShipyardController()
+	if shipyardController != "" {
+		mappings[api.ShipyardController] = shipyardController
+	}
+
+	configurationService := env.GetConfigurationService()
+	if configurationService != "" {
+		mappings[api.ConfigurationService] = configurationService
+	}
+
+	datastore := env.GetDatastore()
+	if datastore != "" {
+		mappings[api.MongoDBDatastore] = datastore
+	}
+
+	return mappings
 }

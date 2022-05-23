@@ -8,6 +8,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/rest"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
+	cpapi "github.com/keptn/keptn/cp-common/api"
 )
 
 // ServiceClientInterface provides access to Keptn services.
@@ -32,7 +33,7 @@ func NewServiceClient(servicesClient api.ServicesV1Interface, httpClient *http.C
 		apiClient: NewAPIClient(
 			rest.NewDefaultClient(
 				httpClient,
-				getShipyardControllerURL())),
+				GetInClusterAPIMappings()[cpapi.ShipyardController])),
 	}
 }
 
