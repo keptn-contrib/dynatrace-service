@@ -1,14 +1,10 @@
 package keptn
 
 import (
-	"encoding/json"
 	"fmt"
-	"net/http"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/rest"
 	apimodels "github.com/keptn/go-utils/pkg/api/models"
 	api "github.com/keptn/go-utils/pkg/api/utils"
-	cpapi "github.com/keptn/keptn/cp-common/api"
 )
 
 // ServiceClientInterface provides access to Keptn services.
@@ -23,17 +19,14 @@ type ServiceClientInterface interface {
 // ServiceClient is an implementation of ServiceClientInterface using api.ServicesV1Interface and APIClientInterface.
 type ServiceClient struct {
 	servicesClient api.ServicesV1Interface
-	apiClient      APIClientInterface
+	apiClient      api.APIV1Interface
 }
 
 // NewServiceClient creates a new ServiceClient using the specified clients.
-func NewServiceClient(servicesClient api.ServicesV1Interface, httpClient *http.Client) *ServiceClient {
+func NewServiceClient(servicesClient api.ServicesV1Interface, apiClient api.APIV1Interface) *ServiceClient {
 	return &ServiceClient{
 		servicesClient: servicesClient,
-		apiClient: NewAPIClient(
-			rest.NewDefaultClient(
-				httpClient,
-				GetInClusterAPIMappings()[cpapi.ShipyardController])),
+		apiClient:      apiClient,
 	}
 }
 
@@ -58,18 +51,13 @@ func (c *ServiceClient) GetServiceNames(project string, stage string) ([]string,
 
 // CreateServiceInProject creates a service in all stages of the specified project or returns an error.
 func (c *ServiceClient) CreateServiceInProject(project string, service string) error {
-	serviceModel := &apimodels.CreateService{
+	serviceModel := apimodels.CreateService{
 		ServiceName: &service,
 	}
-	reqBody, err := json.Marshal(serviceModel)
+
+	_, err := c.apiClient.CreateService(project, serviceModel)
 	if err != nil {
-		return fmt.Errorf("could not marshal service payload: %s", err.Error())
+		return fmt.Errorf("could not create service: %w", err.ToError())
 	}
-
-	_, err = c.apiClient.Post(getServicePathFor(project), reqBody)
-	return err
-}
-
-func getServicePathFor(project string) string {
-	return "/v1/project/" + project + "/service"
+	return nil
 }

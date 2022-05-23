@@ -39,7 +39,14 @@ func NewEventHandler(ctx context.Context, event cloudevents.Event) (DynatraceEve
 	if err != nil {
 		err = fmt.Errorf("cannot handle event: %w", err)
 		log.Error(err.Error())
-		return NewErrorHandler(err, event, clientFactory.CreateUniformClient()), nil
+
+		keptnClient, err := keptn.NewDefaultClient(event)
+		if err != nil {
+			log.WithError(err).Error("Could not instantiate Keptn client")
+			return nil, err
+		}
+
+		return NewErrorHandler(err, event, keptnClient, clientFactory.CreateUniformClient()), nil
 	}
 
 	return eventHandler, nil
@@ -109,7 +116,7 @@ func getEventHandler(ctx context.Context, event cloudevents.Event, clientFactory
 	case *action.ReleaseTriggeredAdapter:
 		return action.NewReleaseTriggeredEventHandler(keptnEvent.(*action.ReleaseTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
 	default:
-		return NewErrorHandler(fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType), event, clientFactory.CreateUniformClient()), nil
+		return NewErrorHandler(fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType), event, kClient, clientFactory.CreateUniformClient()), nil
 	}
 }
 
