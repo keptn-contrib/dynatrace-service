@@ -3,15 +3,15 @@ on:
   workflow_dispatch:
     inputs:
       semver-type:
-        description: 'Can be one of [major,minor,patch]. CAUTION: This will enforce a new release with the specified semantic version type bumped.'
+        description: "Can be one of [major,minor,patch]. CAUTION: This will enforce a new release with the specified semantic version type bumped."
         required: false
         type: string
       keptn-version:
-        description: 'The version of Keptn this release has been tested with. This version also determines the value for the Distributor version in values.yml and will be included in all compatibility updates. E.g. `0.11.3`'
+        description: "The version of Keptn this release has been tested with. This version also determines the value for the Distributor version in values.yml and will be included in all compatibility updates. E.g. `0.11.3`"
         required: true
         type: string
       dynatrace-version:
-        description: 'The version of Dynatrace this release has been tested with. This version will be included in all compatibility updates. E.g. `1.233`'
+        description: "The version of Dynatrace this release has been tested with. This version will be included in all compatibility updates. E.g. `1.233`"
         required: true
         type: string
 
@@ -19,7 +19,7 @@ env:
   NODE_VERSION: 14
   KEPTN_BOT_NAME: "Keptn Contrib Bot"
   KEPTN_BOT_EMAIL: "keptn-contrib-bot@users.noreply.github.com"
-  RELEASE_NOTES_FILE: "RELEASE-BODY.md"  # If you change this, then also adapt .gitignore!
+  RELEASE_NOTES_FILE: "RELEASE-BODY.md" # If you change this, then also adapt .gitignore!
   COMPATIBILITY_MATRIX_FILE: "documentation/compatibility.md"
 
 defaults:
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
       - name: Unit tests
         uses: ./.github/actions/unit-tests
 
@@ -60,7 +60,7 @@ jobs:
           fi
 
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
         with:
           fetch-depth: 0
           token: ${{ secrets.KEPTN_BOT_TOKEN }}
@@ -114,7 +114,6 @@ jobs:
           branch=${GITHUB_REF#refs/heads/}
           echo "::set-output name=branch::${branch}"
 
-
   ############################################################################
   # Build Docker Image
   ############################################################################
@@ -126,7 +125,7 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.next-version }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
 
       # load DOCKER_ORGANIZATION & IMAGE variable from .ci_env
       - name: Load CI Environment from .ci_env
@@ -167,7 +166,7 @@ jobs:
     needs: [prepare, docker_build, build-helm-chart]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
         with:
           fetch-depth: 0
           token: ${{ secrets.KEPTN_BOT_TOKEN }}

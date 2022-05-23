@@ -2,14 +2,14 @@ name: Create Release Draft
 on:
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '0 3 * * 1-5' # run integration tests at 3 AM, monday to friday (1-5)
+    - cron: "0 3 * * 1-5" # run integration tests at 3 AM, monday to friday (1-5)
 
   workflow_dispatch: # run only when triggered manually
     inputs:
       branch:
-        description: 'Branch to create release draft from (e.g., master, release-x.y.z)'
+        description: "Branch to create release draft from (e.g., master, release-x.y.z)"
         required: true
-        default: 'master'
+        default: "master"
 defaults:
   run:
     shell: bash
@@ -21,7 +21,7 @@ jobs:
       BRANCH: ${{ steps.determine_branch.outputs.BRANCH }}
     steps:
       - name: Check out code.
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
 
       - name: Create downloads folder
         run: mkdir ~/downloads
@@ -71,7 +71,7 @@ jobs:
       REPO_SLUG: "keptn-contrib/dynatrace-service"
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
 
       - name: Debug - Output Branch
         run: echo $BRANCH
@@ -180,7 +180,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |            
+          script: |
             let tag = "${{ env.VERSION }}";
             console.log(`Trying to fetch DRAFT release by tag '${tag}'...`);
 
@@ -235,8 +235,8 @@ jobs:
         with:
           name: ${{ env.VERSION }}
           tag_name: ${{ env.VERSION }}
-          draft: true       # we only want to publish draft releases here - a human should review it and push the button eventually
-          prerelease: true  # mark as pre-release for now, a human can always change it to a non-prerelease afterwards
+          draft: true # we only want to publish draft releases here - a human should review it and push the button eventually
+          prerelease: true # mark as pre-release for now, a human can always change it to a non-prerelease afterwards
           body_path: release-notes.txt
           files: |
             dist/installer/*.tgz

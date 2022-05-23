@@ -3,10 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       semver-type:
-        description: 'Can be one of [major,minor,patch]. CAUTION: This will enforce a new pre-release with the specified semantic version type bumped.'
+        description: "Can be one of [major,minor,patch]. CAUTION: This will enforce a new pre-release with the specified semantic version type bumped."
         required: false
       keptn-version:
-        description: 'The current Keptn version that this release shall be used with. This version also determines the value for the Distributor version in values.yml'
+        description: "The current Keptn version that this release shall be used with. This version also determines the value for the Distributor version in values.yml"
         required: true
         type: string
 env:
@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
       - name: Unit tests
         uses: ./.github/actions/unit-tests
 
@@ -55,7 +55,7 @@ jobs:
           fi
 
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
         with:
           fetch-depth: 0
           token: ${{ secrets.KEPTN_BOT_TOKEN }}
@@ -106,7 +106,7 @@ jobs:
       VERSION: ${{ needs.prepare.outputs.next-version }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
 
       # load DOCKER_ORGANIZATION & IMAGE variable from .ci_env
       - name: Load CI Environment from .ci_env
@@ -147,7 +147,7 @@ jobs:
     needs: [prepare, docker_build, build-helm-chart]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
         with:
           fetch-depth: 0
           token: ${{ secrets.KEPTN_BOT_TOKEN }}

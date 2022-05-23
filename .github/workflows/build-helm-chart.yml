@@ -10,15 +10,15 @@ on:
         type: string
         required: true
       distributor-version:
-        description: 'The version of the distributor, that will be used in values.yml'
+        description: "The version of the distributor, that will be used in values.yml"
         type: string
         required: true
       datetime:
         type: string
         required: false
-        default: ''
+        default: ""
       release:
-        description: 'Set to true if the current build is for a release'
+        description: "Set to true if the current build is for a release"
         type: boolean
         required: false
         default: false
@@ -42,7 +42,7 @@ jobs:
       DISTRIBUTOR_VERSION: ${{ inputs.distributor-version  }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.0.2
 
       # load Image variable from .ci_env
       - name: Load CI Environment from .ci_env
