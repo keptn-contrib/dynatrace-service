@@ -27,17 +27,6 @@ The following table lists the configurable parameters of the *dynatrace-service*
 | `dynatraceService.config.httpsProxy` | Proxy for HTTPS requests | `""` |
 | `dynatraceService.config.noProxy` | Proxy exceptions for HTTP and HTTPS requests | `""` |
 | `dynatraceService.config.logLevel`| Minimum log level to log | `info` |
-| `distributor.stageFilter` | Sets the stage this *dynatrace-service* belongs to | `""` |
-| `distributor.serviceFilter` | Sets the service this *dynatrace-service* belongs to | `""` |
-| `distributor.projectFilter` | Sets the project this *dynatrace-service* belongs to | `""` |
-| `distributor.image.repository` | Container image name | `"docker.io/keptn/distributor"` |
-| `distributor.image.pullPolicy` | Kubernetes image pull policy | `"IfNotPresent"` |
-| `distributor.image.tag` | Container tag | `""` |
-| `remoteControlPlane.enabled` | Enables remote execution plane mode | `false` |
-| `remoteControlPlane.api.protocol` | Used protocol (HTTP or HTTPS) | `"https"` |
-| `remoteControlPlane.api.hostname` | Hostname of the control plane cluster (and port) | `""` |
-| `remoteControlPlane.api.apiValidateTls` | Defines if the control plane certificate should be validated | `true` |
-| `remoteControlPlane.api.token` | Keptn api token | `""` |
 | `imagePullSecrets` | Secrets to use for container registry credentials | `[]` |
 | `serviceAccount.create` | Enables the service account creation | `true` |
 | `serviceAccount.annotations` | Annotations to add to the service account | `{}` |
