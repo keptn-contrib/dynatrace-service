@@ -7,7 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/keptn/keptn/cp-common/api"
 )
 
 const sliResourceURI = "dynatrace/sli.yaml"
@@ -23,19 +22,13 @@ type Client struct {
 	client *keptnv2.Keptn
 }
 
-// NewDefaultClient creates a new Client using the specified event or returns an error.
-func NewDefaultClient(event event.Event) (*Client, error) {
-
-	mappings := GetInClusterAPIMappings()
-
-	keptnOpts := keptnapi.KeptnOpts{
-		ConfigurationServiceURL: mappings[api.ConfigurationService],
-		DatastoreURL:            mappings[api.MongoDBDatastore],
-	}
-	kClient, err := keptnv2.NewKeptn(&event, keptnOpts)
+// NewClient creates a new Client using the specified event sender and event or returns an error.
+func NewClient(eventSender keptnapi.EventSender, event event.Event) (*Client, error) {
+	kClient, err := keptnv2.NewKeptn(&event, keptnapi.KeptnOpts{EventSender: eventSender})
 	if err != nil {
-		return nil, fmt.Errorf("could not create default Keptn client: %v", err)
+		return nil, fmt.Errorf("could not create Keptn client: %v", err)
 	}
+
 	return &Client{
 		client: kClient,
 	}, nil
