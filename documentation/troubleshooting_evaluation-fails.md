@@ -81,3 +81,18 @@ The following subsections detail some common messages as well as likely causes a
 
 - If SLIs and SLOs should be sourced from a dashboard, create a dashboard named with the pattern `KQG;project=<project>;service=<service>;stage=<stage>` in the Dynatrace tenant, or
 - If SLIs and SLOs should be defined using YAML files, remove the [`dashboard: query` entry from `dynatrace/dynatrace.conf.yaml`](dynatrace-conf-yaml-file.md#dashboard-sli-mode-configuration-dashboard)
+
+### Message: `event does not contain evaluation timeframe`
+
+**Likely cause**
+
+- A version of keptn is used, which requires evaluation tasks to contain a timeframe.
+
+**Suggested solution**
+
+- Adding a property named timeframe with a valid timeframe value to the evaluation task(s) is required.
+```
+- name: "evaluation"
+  properties:
+    timeframe: 2m
+```
