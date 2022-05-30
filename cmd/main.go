@@ -198,5 +198,6 @@ func (e *cpEventSender) Send(ctx context.Context, event cloudevents.Event) error
 	if err != nil {
 		return err
 	}
+	// TODO: 2022-05-30: use controlplane.EventSender with context once available
 	return e.sender(keptnEvent)
 }
