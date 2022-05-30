@@ -117,7 +117,7 @@ func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContext
 	}
 
 	cloudEvent := v0_2_0.ToCloudEvent(event)
-	keptnClient, err := keptn.NewClient(&cpEventSender{sender: eventSender}, cloudEvent)
+	keptnClient, err := keptn.NewClient(eventSender)
 	if err != nil {
 		return err
 	}
@@ -181,23 +181,4 @@ func connectToControlPlane() (*controlplane.ControlPlane, error) {
 		subscriptionsource.New(apiSet.UniformV1()),
 		eventsource.New(natsConnector),
 		logforwarder.New(apiSet.LogsV1())), nil
-}
-
-type cpEventSender struct {
-	sender controlplane.EventSender
-}
-
-// SendEvent sends a cloud event.
-func (e *cpEventSender) SendEvent(event cloudevents.Event) error {
-	return e.Send(context.TODO(), event)
-}
-
-// Send sends a cloud event.
-func (e *cpEventSender) Send(ctx context.Context, event cloudevents.Event) error {
-	keptnEvent, err := v0_2_0.ToKeptnEvent(event)
-	if err != nil {
-		return err
-	}
-	// TODO: 2022-05-30: use controlplane.EventSender with context once available
-	return e.sender(keptnEvent)
 }
