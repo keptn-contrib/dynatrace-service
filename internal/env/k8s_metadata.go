@@ -3,6 +3,7 @@ package env
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 const (
@@ -56,34 +57,40 @@ func (m *K8sMetadata) NodeName() string {
 
 // GetK8sMetadata gets K8s metadata from environment variables or returns an error if it is incomplete.
 func GetK8sMetadata() (*K8sMetadata, error) {
+	var missingEnvironmentVariables []string
+
 	deploymentName, found := os.LookupEnv(deploymentNameEnvironmentVariable)
 	if !found {
-		return nil, fmt.Errorf("environment variable %s is not set", deploymentNameEnvironmentVariable)
+		missingEnvironmentVariables = append(missingEnvironmentVariables, deploymentNameEnvironmentVariable)
 	}
 
 	deploymentVersion, found := os.LookupEnv(deploymentVersionEnvironmentVariable)
 	if !found {
-		return nil, fmt.Errorf("environment variable %s is not set", deploymentVersionEnvironmentVariable)
+		missingEnvironmentVariables = append(missingEnvironmentVariables, deploymentVersionEnvironmentVariable)
 	}
 
 	deploymentComponent, found := os.LookupEnv(deploymentComponentEnvironmentVariable)
 	if !found {
-		return nil, fmt.Errorf("environment variable %s is not set", deploymentComponentEnvironmentVariable)
+		missingEnvironmentVariables = append(missingEnvironmentVariables, deploymentComponentEnvironmentVariable)
 	}
 
 	podName, found := os.LookupEnv(podNameEnvironmentVariable)
 	if !found {
-		return nil, fmt.Errorf("environment variable %s is not set", podNameEnvironmentVariable)
+		missingEnvironmentVariables = append(missingEnvironmentVariables, podNameEnvironmentVariable)
 	}
 
 	namespace, found := os.LookupEnv(namespaceEnvironmentVariable)
 	if !found {
-		return nil, fmt.Errorf("environment variable %s is not set", namespaceEnvironmentVariable)
+		missingEnvironmentVariables = append(missingEnvironmentVariables, namespaceEnvironmentVariable)
 	}
 
 	nodeName, found := os.LookupEnv(nodeNameEnvironmentVariable)
 	if !found {
-		return nil, fmt.Errorf("environment variable %s is not set", nodeNameEnvironmentVariable)
+		missingEnvironmentVariables = append(missingEnvironmentVariables, nodeNameEnvironmentVariable)
+	}
+
+	if len(missingEnvironmentVariables) > 0 {
+		return nil, fmt.Errorf("missing environment variables: %s", strings.Join(missingEnvironmentVariables, ","))
 	}
 
 	return &K8sMetadata{
