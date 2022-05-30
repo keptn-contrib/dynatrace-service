@@ -109,6 +109,7 @@ func _main() int {
 	return 0
 }
 
+// OnEvent is called when a new event was received.
 func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContextExtendedCE) error {
 	eventSender, ok := ctx.Value(types.EventSenderKey).(controlplane.EventSender)
 	if !ok {
@@ -116,7 +117,7 @@ func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContext
 	}
 
 	cloudEvent := v0_2_0.ToCloudEvent(event)
-	keptnClient, err := keptn.NewClient(&CPEventSender{Sender: eventSender}, cloudEvent)
+	keptnClient, err := keptn.NewClient(&cpEventSender{sender: eventSender}, cloudEvent)
 	if err != nil {
 		return err
 	}
@@ -124,6 +125,7 @@ func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContext
 	return d.onEvent(keptnClient, cloudEvent)
 }
 
+// RegistrationData is called to get the initial registration data.
 func (d dynatraceService) RegistrationData() controlplane.RegistrationData {
 	metadata, err := env.GetK8sMetadata()
 	if err != nil {
@@ -181,18 +183,20 @@ func connectToControlPlane() (*controlplane.ControlPlane, error) {
 		logforwarder.New(apiSet.LogsV1())), nil
 }
 
-type CPEventSender struct {
-	Sender controlplane.EventSender
+type cpEventSender struct {
+	sender controlplane.EventSender
 }
 
-func (e *CPEventSender) SendEvent(event cloudevents.Event) error {
+// SendEvent sends a cloud event.
+func (e *cpEventSender) SendEvent(event cloudevents.Event) error {
 	return e.Send(context.TODO(), event)
 }
 
-func (e *CPEventSender) Send(ctx context.Context, event cloudevents.Event) error {
+// Send sends a cloud event.
+func (e *cpEventSender) Send(ctx context.Context, event cloudevents.Event) error {
 	keptnEvent, err := v0_2_0.ToKeptnEvent(event)
 	if err != nil {
 		return err
 	}
-	return e.Sender(keptnEvent)
+	return e.sender(keptnEvent)
 }
