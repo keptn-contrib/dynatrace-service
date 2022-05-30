@@ -111,6 +111,7 @@ func _main() int {
 
 // OnEvent is called when a new event was received.
 func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContextExtendedCE) error {
+	// TODO: 2022-05-30: use a controlplane.EventSender with context once available
 	eventSender, ok := ctx.Value(types.EventSenderKey).(controlplane.EventSender)
 	if !ok {
 		return fmt.Errorf("could not get eventSender from context")
