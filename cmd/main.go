@@ -41,6 +41,11 @@ func main() {
 }
 
 func _main() int {
+	// start health endpoint
+	go func() {
+		keptnapi.RunHealthEndpoint("8070")
+	}()
+
 	// root context
 	ctx := context.Background()
 
@@ -79,9 +84,9 @@ func _main() int {
 		log.WithError(err).Fatal("Could not connect to control plane")
 	}
 
+	// start readiness endpoint
 	go func() {
-		// TODO: fix port?
-		keptnapi.RunHealthEndpoint("8080", keptnapi.WithReadinessConditionFunc(func() bool {
+		keptnapi.RunHealthEndpoint("8080", keptnapi.WithPath("/ready"), keptnapi.WithReadinessConditionFunc(func() bool {
 			return controlPlane.IsRegistered()
 		}))
 	}()
