@@ -26,7 +26,11 @@ func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient 
 }
 
 // HandleEvent handles a test triggered event.
-func (eh *TestTriggeredEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh *TestTriggeredEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
+	if eh.attachRules == nil {
+		eh.attachRules = createDefaultAttachRules(eh.event)
+	}
+
 	annotationEvent := dynatrace.AnnotationEvent{
 		EventType:             dynatrace.AnnotationEventType,
 		Source:                eventSource,

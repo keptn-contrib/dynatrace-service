@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
-	log "github.com/sirupsen/logrus"
 )
 
 type ActionTriggeredEventHandler struct {
@@ -28,7 +29,7 @@ func NewActionTriggeredEventHandler(event ActionTriggeredAdapterInterface, dtCli
 }
 
 // HandleEvent handles an action triggered event.
-func (eh *ActionTriggeredEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh *ActionTriggeredEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 	pid, err := eh.eClient.FindProblemID(eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")
@@ -48,6 +49,10 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(workCtx context.Context, repl
 	}
 
 	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(workCtx, pid, comment)
+
+	if eh.attachRules == nil {
+		eh.attachRules = createDefaultAttachRules(eh.event)
+	}
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// In addition to the problem comment, send Info and Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed

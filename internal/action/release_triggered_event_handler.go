@@ -37,6 +37,10 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, _ c
 		return err
 	}
 
+	if eh.attachRules == nil {
+		eh.attachRules = createDefaultAttachRules(eh.event)
+	}
+
 	infoEvent := dynatrace.InfoEvent{
 		EventType:        dynatrace.InfoEventType,
 		Source:           eventSource,

@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 // EvaluationFinishedEventHandler handles an evaluation finished event.
@@ -29,7 +30,7 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 }
 
 // HandleEvent handles an evaluation finished event.
-func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 
 	isPartOfRemediation, err := eh.eClient.IsPartOfRemediation(eh.event)
 	if err != nil {
@@ -44,6 +45,10 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, r
 			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", bridgeURL, eh.event.GetResult(), eh.event.GetEvaluationScore())
 			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(workCtx, pid, comment)
 		}
+	}
+
+	if eh.attachRules == nil {
+		eh.attachRules = createDefaultAttachRules(eh.event)
 	}
 
 	infoEvent := dynatrace.InfoEvent{

@@ -25,7 +25,11 @@ func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dyna
 }
 
 // HandleEvent handles an action finished event.
-func (eh *TestFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh *TestFinishedEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
+	if eh.attachRules == nil {
+		eh.attachRules = createDefaultAttachRules(eh.event)
+	}
+
 	annotationEvent := dynatrace.AnnotationEvent{
 		EventType:             dynatrace.AnnotationEventType,
 		Source:                eventSource,

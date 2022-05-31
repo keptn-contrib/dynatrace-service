@@ -3,9 +3,10 @@ package config
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_parseDynatraceConfigYAML(t *testing.T) {
@@ -101,33 +102,6 @@ func TestDynatraceConfigGetter_GetDynatraceConfig(t *testing.T) {
 			"context":   "CONTEXT1",
 			"key":       "special_tag",
 			"value":     "special_value"},
-	}
-
-	expectedDefaultAttachRules := dynatrace.AttachRules{
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{
-					"SERVICE",
-				},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_project",
-						Value:   "myproject",
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_stage",
-						Value:   "mystage",
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_service",
-						Value:   "myservice",
-					},
-				},
-			},
-		},
 	}
 
 	tests := []struct {
@@ -229,7 +203,7 @@ dashboard: $LABEL.dashboard`,
 				SpecVersion: "0.1.0",
 				DtCreds:     "dynatrace-myproject",
 				Dashboard:   "12345678-1111-4444-8888-123456789012",
-				AttachRules: &expectedDefaultAttachRules,
+				AttachRules: nil,
 			},
 		},
 		{
@@ -241,7 +215,7 @@ dashboard: $LABEL.my_dashboard`,
 				SpecVersion: "0.1.0",
 				DtCreds:     "dynatrace-myproject",
 				Dashboard:   "$LABEL.my_dashboard",
-				AttachRules: &expectedDefaultAttachRules,
+				AttachRules: nil,
 			},
 		},
 		{
@@ -253,7 +227,7 @@ dashboard: $LABEL.dashboard_name`,
 				SpecVersion: "0.1.0",
 				DtCreds:     "dynatrace-myproject",
 				Dashboard:   "12345678-1111-4444-8888-123456789012_name",
-				AttachRules: &expectedDefaultAttachRules,
+				AttachRules: nil,
 			},
 		},
 	}
@@ -278,6 +252,6 @@ type dynatraceConfigResourceClientMock struct {
 	configString string
 }
 
-func (c *dynatraceConfigResourceClientMock) GetDynatraceConfig(project string, stage string, service string) (string, error) {
+func (c *dynatraceConfigResourceClientMock) GetDynatraceConfig(_ string, _ string, _ string) (string, error) {
 	return c.configString, nil
 }

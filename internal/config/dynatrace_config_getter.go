@@ -31,19 +31,12 @@ func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAda
 		return nil, err
 	}
 
-	// unmarshal the file
 	dynatraceConfig, err := parseDynatraceConfigYAML(fileContent)
 	if err != nil {
 		return nil, err
 	}
 
-	dynatraceConfig = replacePlaceholdersInDynatraceConfig(dynatraceConfig, event)
-
-	if dynatraceConfig.AttachRules == nil {
-		dynatraceConfig.AttachRules = createDefaultAttachRules(event)
-	}
-
-	return dynatraceConfig, nil
+	return replacePlaceholdersInDynatraceConfig(dynatraceConfig, event), nil
 }
 
 func replacePlaceholdersInDynatraceConfig(dynatraceConfig *DynatraceConfig, event adapter.EventContentAdapter) *DynatraceConfig {
@@ -103,31 +96,4 @@ func parseDynatraceConfigYAML(input string) (*DynatraceConfig, error) {
 	}
 
 	return dynatraceConfig, nil
-}
-
-func createDefaultAttachRules(a adapter.EventContentAdapter) *dynatrace.AttachRules {
-	return &dynatrace.AttachRules{
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_project",
-						Value:   a.GetProject(),
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_stage",
-						Value:   a.GetStage(),
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_service",
-						Value:   a.GetService(),
-					},
-				},
-			},
-		},
-	}
 }

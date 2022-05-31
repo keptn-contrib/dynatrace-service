@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 type ActionFinishedEventHandler struct {
@@ -28,7 +29,7 @@ func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, dtClien
 }
 
 // HandleEvent handles an action finished event.
-func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 	// lets find our dynatrace problem details for this remediation workflow
 	pid, err := eh.eClient.FindProblemID(eh.event)
 	if err != nil {
@@ -45,6 +46,10 @@ func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, reply
 		eh.event.GetStatus())
 	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(workCtx, pid, comment)
 
+	if eh.attachRules == nil {
+		eh.attachRules = createDefaultAttachRules(eh.event)
+	}
+
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// Additionally to the problem comment, send Info or Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
 	customProperties := createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL)
@@ -59,18 +64,18 @@ func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, reply
 		}
 
 		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(workCtx, configurationEvent)
-	} else {
-		infoEvent := dynatrace.InfoEvent{
-			EventType:        dynatrace.InfoEventType,
-			Source:           eventSource,
-			Title:            "Keptn Remediation Action Finished",
-			Description:      "error during execution",
-			CustomProperties: customProperties,
-			AttachRules:      *eh.attachRules,
-		}
-
-		dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
+		return nil
 	}
 
+	infoEvent := dynatrace.InfoEvent{
+		EventType:        dynatrace.InfoEventType,
+		Source:           eventSource,
+		Title:            "Keptn Remediation Action Finished",
+		Description:      "error during execution",
+		CustomProperties: customProperties,
+		AttachRules:      *eh.attachRules,
+	}
+
+	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 	return nil
 }
