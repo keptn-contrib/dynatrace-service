@@ -10,6 +10,11 @@ import (
 
 const logLevelEnvironmentVariable = "LOG_LEVEL_DYNATRACE_SERVICE"
 
+// GetAPIService gets the API_SERVICE environment variable.
+func GetAPIService() string {
+	return os.Getenv("API_SERVICE")
+}
+
 // GetShipyardController gets the SHIPYARD_CONTROLLER environment variable.
 func GetShipyardController() string {
 	return os.Getenv("SHIPYARD_CONTROLLER")

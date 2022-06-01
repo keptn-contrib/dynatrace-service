@@ -46,5 +46,10 @@ func GetInClusterAPIMappings() api.InClusterAPIMappings {
 		mappings[api.MongoDBDatastore] = datastore
 	}
 
+	apiService := env.GetAPIService()
+	if apiService != "" {
+		mappings[api.ApiService] = apiService
+	}
+
 	return mappings
 }
