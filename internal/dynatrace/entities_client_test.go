@@ -121,12 +121,13 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 
 func TestEntitiesClient_GetAllPGIsForKeptnServices(t *testing.T) {
 	const testdataFolder = "./testdata/entities_client/"
-	const url = "a/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29&from=1654000200000&to=1654000320000"
+	const url = "/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%223.5.2%22%29&from=1654000200000&to=1654000320000"
 
 	cfg := PGIQueryConfig{
 		project: "pod-tato-head",
 		stage:   "hardening",
 		service: "helloservice",
+		version: "3.5.2",
 		from:    time.Date(2022, 5, 31, 12, 30, 0, 0, time.UTC),
 		to:      time.Date(2022, 5, 31, 12, 32, 0, 0, time.UTC),
 	}

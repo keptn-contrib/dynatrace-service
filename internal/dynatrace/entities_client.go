@@ -86,6 +86,7 @@ type PGIQueryConfig struct {
 	project string
 	stage   string
 	service string
+	version string
 	from    time.Time
 	to      time.Time
 }
@@ -94,7 +95,7 @@ type PGIQueryConfig struct {
 func (ec *EntitiesClient) GetAllPGIsForKeptnServices(ctx context.Context, cfg PGIQueryConfig) ([]string, error) {
 
 	query := newQueryParameters()
-	query.add("entitySelector", fmt.Sprintf("type(\"process_group_instance\"),toRelationship.runsOnProcessGroupInstance(type(SERVICE),tag(\"keptn_project:%s\"),tag(\"keptn_stage:%s\"),tag(\"keptn_service:%s\"))", cfg.project, cfg.stage, cfg.service))
+	query.add("entitySelector", fmt.Sprintf("type(\"process_group_instance\"),toRelationship.runsOnProcessGroupInstance(type(SERVICE),tag(\"keptn_project:%s\"),tag(\"keptn_stage:%s\"),tag(\"keptn_service:%s\")),releasesVersion(\"%s\")", cfg.project, cfg.stage, cfg.service, cfg.version))
 	query.add("from", common.TimestampToUnixMillisecondsString(cfg.from))
 	query.add("to", common.TimestampToUnixMillisecondsString(cfg.to))
 
