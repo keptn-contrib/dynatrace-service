@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
 const entitiesPath = "/api/v2/entities"
@@ -77,4 +80,39 @@ func (ec *EntitiesClient) GetKeptnManagedServices(ctx context.Context) ([]Entity
 		nextPageKey = entitiesResponse.NextPageKey
 	}
 	return entities, nil
+}
+
+type PGIQueryConfig struct {
+	project string
+	stage   string
+	service string
+	from    time.Time
+	to      time.Time
+}
+
+// GetAllPGIsForKeptnServices returns all PGIs that belong to a SERVICE entity with tags for `keptn_project`, `keptn_stage` and `keptn_service`
+func (ec *EntitiesClient) GetAllPGIsForKeptnServices(ctx context.Context, cfg PGIQueryConfig) ([]string, error) {
+
+	query := newQueryParameters()
+	query.add("entitySelector", fmt.Sprintf("type(\"process_group_instance\"),toRelationship.runsOnProcessGroupInstance(type(SERVICE),tag(\"keptn_project:%s\"),tag(\"keptn_stage:%s\"),tag(\"keptn_service:%s\"))", cfg.project, cfg.stage, cfg.service))
+	query.add("from", common.TimestampToUnixMillisecondsString(cfg.from))
+	query.add("to", common.TimestampToUnixMillisecondsString(cfg.to))
+
+	response, err := ec.Client.Get(ctx, entitiesPath+"?"+query.encode())
+	if err != nil {
+		return nil, err
+	}
+
+	entitiesResponse := &EntitiesResponse{}
+	err = json.Unmarshal(response, entitiesResponse)
+	if err != nil {
+		return nil, common.NewUnmarshalJSONError("monitored entities", err)
+	}
+
+	var pgis []string
+	for _, entity := range entitiesResponse.Entities {
+		pgis = append(pgis, entity.EntityID)
+	}
+
+	return pgis, nil
 }
