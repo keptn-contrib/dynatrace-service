@@ -83,21 +83,21 @@ func (ec *EntitiesClient) GetKeptnManagedServices(ctx context.Context) ([]Entity
 }
 
 type PGIQueryConfig struct {
-	project string
-	stage   string
-	service string
-	version string
-	from    time.Time
-	to      time.Time
+	Project string
+	Stage   string
+	Service string
+	Version string
+	From    time.Time
+	To      time.Time
 }
 
 // GetAllPGIsForKeptnServices returns all PGIs that belong to a SERVICE entity with tags for `keptn_project`, `keptn_stage` and `keptn_service`
 func (ec *EntitiesClient) GetAllPGIsForKeptnServices(ctx context.Context, cfg PGIQueryConfig) ([]string, error) {
 
 	query := newQueryParameters()
-	query.add("entitySelector", fmt.Sprintf("type(\"process_group_instance\"),toRelationship.runsOnProcessGroupInstance(type(SERVICE),tag(\"keptn_project:%s\"),tag(\"keptn_stage:%s\"),tag(\"keptn_service:%s\")),releasesVersion(\"%s\")", cfg.project, cfg.stage, cfg.service, cfg.version))
-	query.add("from", common.TimestampToUnixMillisecondsString(cfg.from))
-	query.add("to", common.TimestampToUnixMillisecondsString(cfg.to))
+	query.add("entitySelector", fmt.Sprintf("type(\"process_group_instance\"),toRelationship.runsOnProcessGroupInstance(type(SERVICE),tag(\"keptn_project:%s\"),tag(\"keptn_stage:%s\"),tag(\"keptn_service:%s\")),releasesVersion(\"%s\")", cfg.Project, cfg.Stage, cfg.Service, cfg.Version))
+	query.add("from", common.TimestampToUnixMillisecondsString(cfg.From))
+	query.add("to", common.TimestampToUnixMillisecondsString(cfg.To))
 
 	response, err := ec.Client.Get(ctx, entitiesPath+"?"+query.encode())
 	if err != nil {
