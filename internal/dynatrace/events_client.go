@@ -81,8 +81,8 @@ type TagRule struct {
 
 // AttachRules defines a Dynatrace configuration structure
 type AttachRules struct {
-	EntityIds []string  `json:"entityIds" yaml:"entityIds,omitempty"`
-	TagRule   []TagRule `json:"tagRule" yaml:"tagRule"`
+	EntityIds []string  `json:"entityIds,omitempty" yaml:"entityIds,omitempty"`
+	TagRule   []TagRule `json:"tagRule,omitempty" yaml:"tagRule,omitempty"`
 }
 
 type EventsClient struct {

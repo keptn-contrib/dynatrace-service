@@ -7,6 +7,7 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
@@ -47,8 +48,10 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		}
 	}
 
-	if eh.attachRules == nil {
-		eh.attachRules = createDefaultAttachRules(eh.event)
+	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+	attachRules, err := eh.createAttachRules(workCtx, imageAndTag)
+	if err != nil {
+		return fmt.Errorf("could not setup correct attach rules: %w", err)
 	}
 
 	infoEvent := dynatrace.InfoEvent{
@@ -56,8 +59,8 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		Source:           eventSource,
 		Title:            eh.getTitle(isPartOfRemediation),
 		Description:      fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore()),
-		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL),
-		AttachRules:      *eh.attachRules,
+		CustomProperties: createCustomProperties(eh.event, imageAndTag, bridgeURL),
+		AttachRules:      attachRules,
 	}
 
 	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
@@ -75,4 +78,17 @@ func (eh *EvaluationFinishedEventHandler) getTitle(isPartOfRemediation bool) str
 	}
 
 	return "Remediation action not successful"
+}
+
+func (eh *EvaluationFinishedEventHandler) createAttachRules(ctx context.Context, imageAndTag common.ImageAndTag) (dynatrace.AttachRules, error) {
+	timeframeFunc := func() (*common.Timeframe, error) {
+		timeframe, err := common.NewTimeframeParser(eh.event.GetStartTime(), eh.event.GetEndTime()).Parse()
+		if err != nil {
+			return nil, err
+		}
+
+		return timeframe, nil
+	}
+
+	return createOrUpdateAttachRules(ctx, eh.dtClient, eh.attachRules, imageAndTag, eh.event, timeframeFunc)
 }

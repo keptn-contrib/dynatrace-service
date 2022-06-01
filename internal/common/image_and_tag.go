@@ -11,6 +11,10 @@ func (iat ImageAndTag) Tag() string {
 	return iat.tag
 }
 
+func (iat ImageAndTag) DoesNotHaveTag() bool {
+	return iat.tag == "" || iat.tag == NotAvailable
+}
+
 func (iat ImageAndTag) Image() string {
 	return iat.image
 }
