@@ -3,6 +3,8 @@ package action
 import (
 	"context"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -83,9 +85,11 @@ type TimeframeFunc func() (*common.Timeframe, error)
 func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInterface, existingAttachRules *dynatrace.AttachRules, imageAndTag common.ImageAndTag, keptnContext KeptnContext, timeframeFunc TimeframeFunc) (dynatrace.AttachRules, error) {
 	if imageAndTag.DoesNotHaveTag() {
 		if existingAttachRules != nil {
+			log.WithField("customAttachRules", *existingAttachRules).Debug("no version information available - will use customer provided attach rules")
 			return *existingAttachRules, nil
 		}
 
+		log.Debug("no version information available - will use default attach rules")
 		return *createDefaultAttachRules(keptnContext), nil
 	}
 
@@ -109,17 +113,24 @@ func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInter
 
 	if existingAttachRules != nil {
 		if len(pgis) == 0 {
+			log.WithField("customAttachRules", *existingAttachRules).Debug("no PGIs found - will use customer provided attach rules only")
 			return *existingAttachRules, nil
 		}
 
+		log.WithFields(log.Fields{
+			"customAttachRules": *existingAttachRules,
+			"entityIds":         pgis,
+		}).Debug("PGIs found and custom attach rules - will combine them")
 		existingAttachRules.EntityIds = append(existingAttachRules.EntityIds, pgis...)
 		return *existingAttachRules, nil
 	}
 
 	if len(pgis) == 0 {
+		log.Debug("no PGIs found and no custom attach rules - will use default attach rules")
 		return *createDefaultAttachRules(keptnContext), nil
 	}
 
+	log.WithField("PGIs", pgis).Debug("PGIs found - will use them only")
 	return dynatrace.AttachRules{
 		EntityIds: pgis,
 	}, nil
