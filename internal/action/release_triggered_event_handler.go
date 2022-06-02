@@ -50,8 +50,7 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, _ c
 		AttachRules:      *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
-	return nil
+	return dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 }
 
 func (eh *ReleaseTriggeredEventHandler) getTitle(strategy keptnevents.DeploymentStrategy, defaultValue string) string {

@@ -45,6 +45,5 @@ func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		AttachRules:       *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(workCtx, deploymentEvent)
-	return nil
+	return dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(workCtx, deploymentEvent)
 }

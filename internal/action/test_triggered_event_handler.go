@@ -40,6 +40,5 @@ func (eh *TestTriggeredEventHandler) HandleEvent(workCtx context.Context, _ cont
 		AttachRules:           *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(workCtx, annotationEvent)
-	return nil
+	return dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(workCtx, annotationEvent)
 }

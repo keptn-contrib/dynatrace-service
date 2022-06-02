@@ -63,9 +63,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		AttachRules:      attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
-
-	return nil
+	return dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 }
 
 func (eh *EvaluationFinishedEventHandler) getTitle(isPartOfRemediation bool) string {

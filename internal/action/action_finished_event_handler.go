@@ -63,8 +63,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, _ con
 			AttachRules:      *eh.attachRules,
 		}
 
-		dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(workCtx, configurationEvent)
-		return nil
+		return dynatrace.NewEventsClient(eh.dtClient).AddConfigurationEvent(workCtx, configurationEvent)
 	}
 
 	infoEvent := dynatrace.InfoEvent{
@@ -76,6 +75,5 @@ func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, _ con
 		AttachRules:      *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
-	return nil
+	return dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 }
