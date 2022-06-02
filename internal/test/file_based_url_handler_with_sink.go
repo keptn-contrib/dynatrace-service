@@ -31,6 +31,7 @@ func (h *FileBasedURLHandlerWithSink) ServeHTTP(w http.ResponseWriter, r *http.R
 			h.t.Fatalf("could not read payload from POST|PUT request: %s", url)
 		}
 		h.sink[url] = payload
+		h.FileBasedURLHandler.ServeHTTP(w, r)
 	default:
 		h.t.Fatalf("unsupported HTTP method %s for URL: %s", r.Method, r.URL.String())
 	}

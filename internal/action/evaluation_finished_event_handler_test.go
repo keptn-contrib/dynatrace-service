@@ -23,6 +23,7 @@ func TestEvaluationFinishedEventHandler_HandleEvent_MultipleEntities(t *testing.
 	handler.AddExact(
 		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.3%22%29&from=1654000240000&to=1654000313000",
 		testdataFolder+"multiple_entities.json")
+	handler.AddExact("/api/v1/events", testdataFolder+"events_response_multiple_200.json")
 
 	expectedAttachRules := dynatrace.AttachRules{
 		EntityIds: []string{
@@ -47,6 +48,7 @@ func TestEvaluationFinishedEventHandler_HandleEvent_SingleEntityAndUserSpecified
 	handler.AddExact(
 		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.3%22%29&from=1654000240000&to=1654000313000",
 		testdataFolder+"single_entity.json")
+	handler.AddExact("/api/v1/events", testdataFolder+"events_response_multiple_200.json")
 
 	customAttachRules := &dynatrace.AttachRules{
 		EntityIds: []string{"PROCESS_GROUP-XXXXXXXXXXXXXXXXX"},
@@ -96,6 +98,7 @@ func TestEvaluationFinishedEventHandler_HandleEvent_NoEntitiesAndNoUserSpecified
 	handler.AddExact(
 		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.3%22%29&from=1654000240000&to=1654000313000",
 		testdataFolder+"no_entity.json")
+	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
 	expectedAttachRules := dynatrace.AttachRules{
 		TagRule: []dynatrace.TagRule{
@@ -136,6 +139,7 @@ func TestEvaluationFinishedEventHandler_HandleEvent_NoEntitiesAndUserSpecifiedAt
 	handler.AddExact(
 		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.3%22%29&from=1654000240000&to=1654000313000",
 		testdataFolder+"no_entity.json")
+	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
 	customAttachRules := &dynatrace.AttachRules{
 		EntityIds: []string{"PROCESS_GROUP-XXXXXXXXXXXXXXXXX"},
@@ -164,6 +168,7 @@ func TestEvaluationFinishedEventHandler_HandleEvent_NoEntitiesAndUserSpecifiedAt
 // no entities will be queried, because there is no version information. Default attach rules will be returned if there are no custom rules
 func TestEvaluationFinishedEventHandler_HandleEvent_NoVersionInformationAndNoUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
+	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
 	expectedAttachRules := dynatrace.AttachRules{
 		TagRule: []dynatrace.TagRule{
@@ -201,6 +206,7 @@ func TestEvaluationFinishedEventHandler_HandleEvent_NoVersionInformationAndNoUse
 // no entities will be queried, because there is no version information. Custom attach rules will be returned if they are present
 func TestEvaluationFinishedEventHandler_HandleEvent_NoVersionInformationAndUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
+	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
 	customAttachRules := &dynatrace.AttachRules{
 		EntityIds: []string{"PROCESS_GROUP-XXXXXXXXXXXXXXXXX"},
