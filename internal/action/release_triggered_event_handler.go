@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 type ReleaseTriggeredEventHandler struct {
@@ -29,7 +30,7 @@ func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, dtC
 }
 
 // HandleEvent handles an action finished event.
-func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 	strategy, err := keptnevents.GetDeploymentStrategy(eh.event.GetDeploymentStrategy())
 	if err != nil {
 		log.WithError(err).Error("Could not determine deployment strategy")
@@ -60,6 +61,10 @@ func (eh *ReleaseTriggeredEventHandler) getTitle(strategy keptnevents.Deployment
 		}
 
 		return fmt.Sprintf("NOT PROMOTING from %s to next stage", eh.event.GetStage())
+	}
+
+	if defaultValue == "" {
+		return fmt.Sprintf("Release triggered for %s, %s and %s", eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	}
 
 	return defaultValue
