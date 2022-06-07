@@ -82,15 +82,16 @@ func createDefaultAttachRules(keptnContext KeptnContext) *dynatrace.AttachRules 
 
 type TimeframeFunc func() (*common.Timeframe, error)
 
-func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInterface, existingAttachRules *dynatrace.AttachRules, imageAndTag common.ImageAndTag, keptnContext KeptnContext, timeframeFunc TimeframeFunc) (dynatrace.AttachRules, error) {
-	if imageAndTag.DoesNotHaveTag() {
+func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInterface, existingAttachRules *dynatrace.AttachRules, imageAndTag common.ImageAndTag, event adapter.EventContentAdapter, timeframeFunc TimeframeFunc) (dynatrace.AttachRules, error) {
+	version := determineVersionFromTagOrLabel(imageAndTag, event)
+	if version == "" {
 		if existingAttachRules != nil {
 			log.WithField("customAttachRules", *existingAttachRules).Debug("no version information available - will use customer provided attach rules")
 			return *existingAttachRules, nil
 		}
 
 		log.Debug("no version information available - will use default attach rules")
-		return *createDefaultAttachRules(keptnContext), nil
+		return *createDefaultAttachRules(event), nil
 	}
 
 	timeframe, err := timeframeFunc()
@@ -100,10 +101,10 @@ func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInter
 
 	entityClient := dynatrace.NewEntitiesClient(client)
 	pgis, err := entityClient.GetAllPGIsForKeptnServices(ctx, dynatrace.PGIQueryConfig{
-		Project: keptnContext.GetProject(),
-		Stage:   keptnContext.GetStage(),
-		Service: keptnContext.GetService(),
-		Version: imageAndTag.Tag(),
+		Project: event.GetProject(),
+		Stage:   event.GetStage(),
+		Service: event.GetService(),
+		Version: version,
 		From:    timeframe.Start(),
 		To:      timeframe.End(),
 	})
@@ -127,11 +128,20 @@ func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInter
 
 	if len(pgis) == 0 {
 		log.Debug("no PGIs found and no custom attach rules - will use default attach rules")
-		return *createDefaultAttachRules(keptnContext), nil
+		return *createDefaultAttachRules(event), nil
 	}
 
 	log.WithField("PGIs", pgis).Debug("PGIs found - will use them only")
 	return dynatrace.AttachRules{
 		EntityIds: pgis,
 	}, nil
+}
+
+func determineVersionFromTagOrLabel(imageAndTag common.ImageAndTag, event adapter.EventContentAdapter) string {
+
+	if imageAndTag.HasTag() {
+		return imageAndTag.Tag()
+	}
+
+	return event.GetLabels()["releasesVersion"]
 }
