@@ -9,7 +9,7 @@ require (
 	github.com/keptn/go-utils v0.13.0
 	github.com/keptn/kubernetes-utils v0.13.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.1
+	github.com/stretchr/testify v1.7.2
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.24.1
 	k8s.io/apimachinery v0.24.1
