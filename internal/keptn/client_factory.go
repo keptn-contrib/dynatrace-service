@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/keptn/keptn/cp-common/api"
+	v2 "github.com/keptn/keptn/cp-common/v2"
 )
 
 // ClientFactoryInterface provides a factories for clients.
@@ -17,12 +17,12 @@ type ClientFactoryInterface interface {
 
 // ClientFactory is an implementation of ClientFactoryInterface.
 type ClientFactory struct {
-	apiSet *api.InternalAPISet
+	apiSet *v2.InternalAPISet
 }
 
 // NewClientFactory creates a new ClientFactory.
 func NewClientFactory() (*ClientFactory, error) {
-	internalAPISet, err := api.NewInternal(&http.Client{}, GetInClusterAPIMappings())
+	internalAPISet, err := v2.NewInternal(&http.Client{}, GetV2InClusterAPIMappings())
 	if err != nil {
 		return nil, fmt.Errorf("could not create internal Keptn API set: %w", err)
 	}
@@ -32,22 +32,22 @@ func NewClientFactory() (*ClientFactory, error) {
 
 // CreateEventClient creates an EventClientInterface.
 func (c *ClientFactory) CreateEventClient() EventClientInterface {
-	return NewEventClient(c.apiSet.EventsV1())
+	return NewEventClient(c.apiSet.Events())
 }
 
 // CreateResourceClient creates a ResourceClientInterface.
 func (c *ClientFactory) CreateResourceClient() ResourceClientInterface {
-	return NewResourceClient(c.apiSet.ResourcesV1())
+	return NewResourceClient(c.apiSet.Resources())
 }
 
 // CreateServiceClient creates a ServiceClientInterface.
 func (c *ClientFactory) CreateServiceClient() ServiceClientInterface {
 	return NewServiceClient(
-		c.apiSet.ServicesV1(),
-		c.apiSet.APIV1())
+		c.apiSet.Services(),
+		c.apiSet.API())
 }
 
 // CreateUniformClient creates a UniformClientInterface.
 func (c *ClientFactory) CreateUniformClient() UniformClientInterface {
-	return NewUniformClient(c.apiSet.UniformV1())
+	return NewUniformClient(c.apiSet.Uniform())
 }

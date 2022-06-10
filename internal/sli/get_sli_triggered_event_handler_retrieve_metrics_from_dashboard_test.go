@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"testing"
@@ -24,17 +25,17 @@ type uploadErrorResourceClientMock struct {
 	uploadedSLOs   *keptnapi.ServiceLevelObjectives
 }
 
-func (m *uploadErrorResourceClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+func (m *uploadErrorResourceClientMock) GetSLIs(ctx context.Context, project string, stage string, service string) (map[string]string, error) {
 	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
 	return nil, nil
 }
 
-func (m *uploadErrorResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
+func (m *uploadErrorResourceClientMock) GetSLOs(ctx context.Context, project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 	return nil, nil
 }
 
-func (m *uploadErrorResourceClientMock) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
+func (m *uploadErrorResourceClientMock) UploadSLIs(ctx context.Context, project string, stage string, service string, slis *dynatrace.SLI) error {
 	if m.uploadSLIError != nil {
 		return m.uploadSLIError
 	}
@@ -44,7 +45,7 @@ func (m *uploadErrorResourceClientMock) UploadSLIs(project string, stage string,
 	return nil
 }
 
-func (m *uploadErrorResourceClientMock) UploadSLOs(project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
+func (m *uploadErrorResourceClientMock) UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
 	if m.uploadSLOError != nil {
 		return m.uploadSLOError
 	}
@@ -154,22 +155,22 @@ type uploadWillFailResourceClientMock struct {
 	t *testing.T
 }
 
-func (m *uploadWillFailResourceClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+func (m *uploadWillFailResourceClientMock) GetSLIs(ctx context.Context, project string, stage string, service string) (map[string]string, error) {
 	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
 	return nil, nil
 }
 
-func (m *uploadWillFailResourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
+func (m *uploadWillFailResourceClientMock) GetSLOs(ctx context.Context, project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 	return nil, nil
 }
 
-func (m *uploadWillFailResourceClientMock) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
+func (m *uploadWillFailResourceClientMock) UploadSLIs(ctx context.Context, project string, stage string, service string, slis *dynatrace.SLI) error {
 	m.t.Fatalf("UploadSLIs() should not be needed in this mock!")
 	return nil
 }
 
-func (m *uploadWillFailResourceClientMock) UploadSLOs(project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
+func (m *uploadWillFailResourceClientMock) UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
 	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
 	return nil
 }

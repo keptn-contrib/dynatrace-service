@@ -132,7 +132,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 
 	// let's write the SLI to the config repo
 	if queryResult.HasSLIs() {
-		err = eh.resourceClient.UploadSLIs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLIs())
+		err = eh.resourceClient.UploadSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLIs())
 		if err != nil {
 			return nil, nil, dashboard.NewUploadFileError("SLI", err)
 		}
@@ -140,7 +140,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 
 	// let's write the SLO to the config repo
 	if queryResult.HasSLOs() {
-		err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLOs())
+		err = eh.resourceClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLOs())
 		if err != nil {
 			return nil, nil, dashboard.NewUploadFileError("SLO", err)
 		}
@@ -150,7 +150,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 }
 
 func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
-	slis, err := eh.resourceClient.GetSLIs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+	slis, err := eh.resourceClient.GetSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
 		log.WithError(err).Error("could not retrieve custom SLI definitions")
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
@@ -190,7 +190,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Contex
 	// let's add this to the SLO in case this indicator is not yet in SLO.yaml.
 	// Because if it does not get added the lighthouse will not evaluate the SLI values
 	// we default it to open_problems<=0
-	errAddSLO := eh.addSLO(createDefaultProblemSLO())
+	errAddSLO := eh.addSLO(ctx, createDefaultProblemSLO())
 	if errAddSLO != nil {
 		// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
 		log.WithError(errAddSLO).Error("problem while adding SLOs")
@@ -212,10 +212,10 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Contex
 }
 
 // addSLO adds an SLO Entry to the SLO.yaml
-func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
+func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO) error {
 
 	// first - lets load the SLO.yaml from the config repo
-	dashboardSLO, err := eh.resourceClient.GetSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+	dashboardSLO, err := eh.resourceClient.GetSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
 		var rnfErr *keptn.ResourceNotFoundError
 		if !errors.As(err, &rnfErr) {
@@ -245,7 +245,7 @@ func (eh GetSLIEventHandler) addSLO(newSLO *keptncommon.SLO) error {
 
 	// now - lets add our newSLO to the list
 	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
-	err = eh.resourceClient.UploadSLOs(eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
+	err = eh.resourceClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
 	if err != nil {
 		return err
 	}

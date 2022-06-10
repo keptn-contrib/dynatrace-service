@@ -30,7 +30,7 @@ func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, dtClien
 // HandleEvent handles an action finished event.
 func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	// lets find our dynatrace problem details for this remediation workflow
-	pid, err := eh.eClient.FindProblemID(eh.event)
+	pid, err := eh.eClient.FindProblemID(workCtx, eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")
 		return err
@@ -47,7 +47,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, reply
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// Additionally to the problem comment, send Info or Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-	customProperties := createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL)
+	customProperties := createCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), bridgeURL)
 	if eh.event.GetStatus() == keptnv2.StatusSucceeded {
 		configurationEvent := dynatrace.ConfigurationEvent{
 			EventType:        dynatrace.ConfigurationEventType,

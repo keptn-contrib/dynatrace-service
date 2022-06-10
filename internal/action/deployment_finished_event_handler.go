@@ -27,7 +27,7 @@ func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface,
 
 // HandleEvent handles a deployment finished event.
 func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+	imageAndTag := eh.eClient.GetImageAndTag(workCtx, eh.event)
 
 	deploymentEvent := dynatrace.DeploymentEvent{
 		EventType:         dynatrace.DeploymentEventType,

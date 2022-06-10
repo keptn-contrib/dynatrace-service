@@ -1,6 +1,7 @@
 package keptn
 
 import (
+	"context"
 	"errors"
 	"io/ioutil"
 	"testing"
@@ -16,7 +17,7 @@ const testService = "my-service"
 // TestConfigClient_GetSLIsNoneDefined tests that getting SLIs when none have been defined returns an empty map but no error.
 func TestConfigClient_GetSLIsNoneDefined(t *testing.T) {
 	rc := NewConfigClient(&mockResourceClient{t: t})
-	slis, err := rc.GetSLIs(testProject, testStage, testService)
+	slis, err := rc.GetSLIs(context.Background(), testProject, testStage, testService)
 	assert.Empty(t, slis)
 	assert.NoError(t, err)
 }
@@ -30,7 +31,7 @@ func TestConfigClient_GetSLIsWithOverrides(t *testing.T) {
 			projectResource: getProjectResource(t),
 			stageResource:   getStageResource(t),
 			serviceResource: getServiceResource(t)})
-	slis, err := rc.GetSLIs(testProject, testStage, testService)
+	slis, err := rc.GetSLIs(context.Background(), testProject, testStage, testService)
 	assert.NoError(t, err)
 
 	expectedSLIs := map[string]string{
@@ -59,7 +60,7 @@ func TestConfigClient_GetSLIsInvalidYAMLCausesError(t *testing.T) {
 		&mockResourceClient{
 			t:               t,
 			projectResource: getInvalidYAMLResource(t)})
-	slis, err := rc.GetSLIs(testProject, testStage, testService)
+	slis, err := rc.GetSLIs(context.Background(), testProject, testStage, testService)
 	assert.Nil(t, slis)
 	var marshalErr *common.MarshalError
 	assert.ErrorAs(t, err, &marshalErr)
@@ -71,7 +72,7 @@ func TestConfigClient_GetSLIsRetrievalErrorCausesError(t *testing.T) {
 		&mockResourceClient{
 			t:               t,
 			serviceResource: &mockResource{err: &ResourceRetrievalFailedError{ResourceError{uri: testSLIResourceURI, project: testProject, stage: testStage, service: testService}, errors.New("Connection error")}}})
-	slis, err := rc.GetSLIs(testProject, testStage, testService)
+	slis, err := rc.GetSLIs(context.Background(), testProject, testStage, testService)
 	assert.Nil(t, slis)
 	assert.Error(t, err)
 	var rrfErrorType *ResourceRetrievalFailedError
@@ -84,7 +85,7 @@ func TestConfigClient_GetSLIsEmptySLIFileCausesError(t *testing.T) {
 		&mockResourceClient{
 			t:               t,
 			serviceResource: &mockResource{err: &ResourceEmptyError{uri: testSLIResourceURI, project: testProject, stage: testStage, service: testService}}})
-	slis, err := rc.GetSLIs(testProject, testStage, testService)
+	slis, err := rc.GetSLIs(context.Background(), testProject, testStage, testService)
 	assert.Nil(t, slis)
 	assert.Error(t, err)
 	var rrfErrorType *ResourceEmptyError
@@ -97,7 +98,7 @@ func TestConfigClient_GetSLIsNoIndicatorsCausesError(t *testing.T) {
 		&mockResourceClient{
 			t:               t,
 			serviceResource: getNoIndicatorsResource(t)})
-	slis, err := rc.GetSLIs(testProject, testStage, testService)
+	slis, err := rc.GetSLIs(context.Background(), testProject, testStage, testService)
 	assert.Nil(t, slis)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing required field")
@@ -145,12 +146,12 @@ type mockResourceClient struct {
 	serviceResource *mockResource
 }
 
-func (rc *mockResourceClient) GetResource(project string, stage string, service string, resourceURI string) (string, error) {
+func (rc *mockResourceClient) GetResource(ctx context.Context, project string, stage string, service string, resourceURI string) (string, error) {
 	rc.t.Fatalf("GetResource() should not be needed in this mock!")
 	return "", nil
 }
 
-func (rc *mockResourceClient) GetProjectResource(project string, resourceURI string) (string, error) {
+func (rc *mockResourceClient) GetProjectResource(ctx context.Context, project string, resourceURI string) (string, error) {
 	assert.EqualValues(rc.t, testProject, project)
 	assert.EqualValues(rc.t, testSLIResourceURI, resourceURI)
 
@@ -161,7 +162,7 @@ func (rc *mockResourceClient) GetProjectResource(project string, resourceURI str
 	return rc.projectResource.resource, rc.projectResource.err
 }
 
-func (rc *mockResourceClient) GetStageResource(project string, stage string, resourceURI string) (string, error) {
+func (rc *mockResourceClient) GetStageResource(ctx context.Context, project string, stage string, resourceURI string) (string, error) {
 	assert.EqualValues(rc.t, testProject, project)
 	assert.EqualValues(rc.t, testStage, stage)
 	assert.EqualValues(rc.t, testSLIResourceURI, resourceURI)
@@ -173,7 +174,7 @@ func (rc *mockResourceClient) GetStageResource(project string, stage string, res
 	return rc.stageResource.resource, rc.stageResource.err
 }
 
-func (rc *mockResourceClient) GetServiceResource(project string, stage string, service string, resourceURI string) (string, error) {
+func (rc *mockResourceClient) GetServiceResource(ctx context.Context, project string, stage string, service string, resourceURI string) (string, error) {
 	assert.EqualValues(rc.t, testProject, project)
 	assert.EqualValues(rc.t, testStage, stage)
 	assert.EqualValues(rc.t, testService, service)
@@ -186,7 +187,7 @@ func (rc *mockResourceClient) GetServiceResource(project string, stage string, s
 	return rc.serviceResource.resource, rc.serviceResource.err
 }
 
-func (rc *mockResourceClient) UploadResource(contentToUpload []byte, remoteResourceURI string, project string, stage string, service string) error {
+func (rc *mockResourceClient) UploadResource(ctx context.Context, contentToUpload []byte, remoteResourceURI string, project string, stage string, service string) error {
 	rc.t.Fatalf("UploadResource() should not be needed in this mock!")
 	return nil
 }

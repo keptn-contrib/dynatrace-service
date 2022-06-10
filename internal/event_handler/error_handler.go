@@ -36,32 +36,32 @@ func NewErrorHandler(err error, event cloudevents.Event, keptnClient keptn.Clien
 func (eh ErrorHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	switch eh.event.Type() {
 	case keptnevents.ConfigureMonitoringEventType:
-		return eh.sendErroredConfigureMonitoringFinishedEvent(eh.keptnClient)
+		return eh.sendErroredConfigureMonitoringFinishedEvent(replyCtx, eh.keptnClient)
 	case keptnv2.GetTriggeredEventType(keptnv2.GetSLITaskName):
-		return eh.sendErroredGetSLIFinishedEvent(eh.keptnClient)
+		return eh.sendErroredGetSLIFinishedEvent(replyCtx, eh.keptnClient)
 	default:
-		return eh.sendErrorEvent(eh.keptnClient)
+		return eh.sendErrorEvent(replyCtx, eh.keptnClient)
 	}
 }
 
-func (eh ErrorHandler) sendErroredConfigureMonitoringFinishedEvent(keptnClient keptn.ClientInterface) error {
+func (eh ErrorHandler) sendErroredConfigureMonitoringFinishedEvent(ctx context.Context, keptnClient keptn.ClientInterface) error {
 	adapter, err := monitoring.NewConfigureMonitoringAdapterFromEvent(eh.event)
 	if err != nil {
-		return eh.sendErrorEvent(keptnClient)
+		return eh.sendErrorEvent(ctx, keptnClient)
 	}
 	return keptnClient.SendCloudEvent(monitoring.NewErroredConfigureMonitoringFinishedEventFactory(adapter, eh.err))
 }
 
-func (eh ErrorHandler) sendErroredGetSLIFinishedEvent(keptnClient keptn.ClientInterface) error {
+func (eh ErrorHandler) sendErroredGetSLIFinishedEvent(ctx context.Context, keptnClient keptn.ClientInterface) error {
 	adapter, err := sli.NewGetSLITriggeredAdapterFromEvent(eh.event)
 	if err != nil {
-		return eh.sendErrorEvent(keptnClient)
+		return eh.sendErrorEvent(ctx, keptnClient)
 	}
 	return keptnClient.SendCloudEvent(sli.NewErroredGetSLIFinishedEventFactory(adapter, nil, eh.err))
 }
 
-func (eh ErrorHandler) sendErrorEvent(keptnClient keptn.ClientInterface) error {
-	integrationID, err := eh.uniformClient.GetIntegrationIDByName(adapter.GetEventSource())
+func (eh ErrorHandler) sendErrorEvent(ctx context.Context, keptnClient keptn.ClientInterface) error {
+	integrationID, err := eh.uniformClient.GetIntegrationIDByName(ctx, adapter.GetEventSource())
 	if err != nil {
 		log.WithError(err).Error("Could not retrieve integration ID from Keptn Uniform")
 		// no need to continue here, message will not show up in Uniform
