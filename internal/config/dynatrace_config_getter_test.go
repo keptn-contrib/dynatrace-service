@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -235,7 +236,7 @@ dashboard: $LABEL.dashboard_name`,
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			configGetter := NewDynatraceConfigGetter(&dynatraceConfigResourceClientMock{configString: tt.configString})
-			config, err := configGetter.GetDynatraceConfig(&mockEvent)
+			config, err := configGetter.GetDynatraceConfig(context.Background(), &mockEvent)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -252,6 +253,6 @@ type dynatraceConfigResourceClientMock struct {
 	configString string
 }
 
-func (c *dynatraceConfigResourceClientMock) GetDynatraceConfig(_ string, _ string, _ string) (string, error) {
+func (c *dynatraceConfigResourceClientMock) GetDynatraceConfig(_ context.Context, _ string, _ string, _ string) (string, error) {
 	return c.configString, nil
 }

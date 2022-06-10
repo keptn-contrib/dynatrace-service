@@ -33,7 +33,7 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 // HandleEvent handles an evaluation finished event.
 func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 
-	isPartOfRemediation, err := eh.eClient.IsPartOfRemediation(eh.event)
+	isPartOfRemediation, err := eh.eClient.IsPartOfRemediation(workCtx, eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not check for remediation status of event")
 	}
@@ -41,14 +41,14 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
 
 	if isPartOfRemediation {
-		pid, err := eh.eClient.FindProblemID(eh.event)
+		pid, err := eh.eClient.FindProblemID(workCtx, eh.event)
 		if err == nil && pid != "" {
 			comment := fmt.Sprintf("[Keptn remediation evaluation](%s) resulted in %s (%.2f/100)", bridgeURL, eh.event.GetResult(), eh.event.GetEvaluationScore())
 			dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(workCtx, pid, comment)
 		}
 	}
 
-	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+	imageAndTag := eh.eClient.GetImageAndTag(workCtx, eh.event)
 	attachRules, err := eh.createAttachRules(workCtx, imageAndTag)
 	if err != nil {
 		return fmt.Errorf("could not setup correct attach rules: %w", err)

@@ -26,7 +26,7 @@ func NewActionStartedEventHandler(event ActionStartedAdapterInterface, dtClient 
 
 // HandleEvent handles an action started event.
 func (eh *ActionStartedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
-	pid, err := eh.eClient.FindProblemID(eh.event)
+	pid, err := eh.eClient.FindProblemID(workCtx, eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")
 		return err

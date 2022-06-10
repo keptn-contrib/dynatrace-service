@@ -78,7 +78,7 @@ func (mc *configuration) createMetricEventsForStage(ctx context.Context, project
 		return nil
 	}
 
-	serviceNames, err := mc.serviceClient.GetServiceNames(project, stage.Name)
+	serviceNames, err := mc.serviceClient.GetServiceNames(ctx, project, stage.Name)
 	if err != nil {
 		return []configResult{{
 			Success: false,

@@ -1,6 +1,8 @@
 package config
 
 import (
+	"context"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -10,7 +12,7 @@ import (
 )
 
 type DynatraceConfigProvider interface {
-	GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfig, error)
+	GetDynatraceConfig(ctx context.Context, event adapter.EventContentAdapter) (*DynatraceConfig, error)
 }
 
 type DynatraceConfigGetter struct {
@@ -24,9 +26,9 @@ func NewDynatraceConfigGetter(client keptn.DynatraceConfigReaderInterface) *Dyna
 }
 
 // GetDynatraceConfig loads the dynatrace.conf.yaml from the GIT repo
-func (d *DynatraceConfigGetter) GetDynatraceConfig(event adapter.EventContentAdapter) (*DynatraceConfig, error) {
+func (d *DynatraceConfigGetter) GetDynatraceConfig(ctx context.Context, event adapter.EventContentAdapter) (*DynatraceConfig, error) {
 
-	fileContent, err := d.resourceClient.GetDynatraceConfig(event.GetProject(), event.GetStage(), event.GetService())
+	fileContent, err := d.resourceClient.GetDynatraceConfig(ctx, event.GetProject(), event.GetStage(), event.GetService())
 	if err != nil {
 		return nil, err
 	}

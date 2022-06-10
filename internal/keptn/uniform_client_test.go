@@ -1,10 +1,11 @@
 package keptn
 
 import (
+	"context"
 	"testing"
 
 	"github.com/keptn/go-utils/pkg/api/models"
-	api "github.com/keptn/go-utils/pkg/api/utils"
+	v2 "github.com/keptn/go-utils/pkg/api/utils/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,23 +13,23 @@ type mockUniformClient struct {
 	registrations []*models.Integration
 }
 
-func (c mockUniformClient) Ping(integrationID string) (*models.Integration, error) {
+func (c mockUniformClient) Ping(_ context.Context, _ string, _ v2.UniformPingOptions) (*models.Integration, error) {
 	panic("Ping should not be called on mockUniformClient")
 }
 
-func (c mockUniformClient) RegisterIntegration(integration models.Integration) (string, error) {
+func (c mockUniformClient) RegisterIntegration(_ context.Context, _ models.Integration, _ v2.UniformRegisterIntegrationOptions) (string, error) {
 	panic("RegisterIntegration should not be called on mockUniformClient")
 }
 
-func (c mockUniformClient) CreateSubscription(integrationID string, subscription models.EventSubscription) (string, error) {
+func (c mockUniformClient) CreateSubscription(_ context.Context, _ string, _ models.EventSubscription, _ v2.UniformCreateSubscriptionOptions) (string, error) {
 	panic("CreateSubscription should not be called on mockUniformClient")
 }
 
-func (c mockUniformClient) UnregisterIntegration(integrationID string) error {
+func (c mockUniformClient) UnregisterIntegration(_ context.Context, _ string, _ v2.UniformUnregisterIntegrationOptions) error {
 	panic("UnregisterIntegration should not be called on mockUniformClient")
 }
 
-func (c mockUniformClient) GetRegistrations() ([]*models.Integration, error) {
+func (c mockUniformClient) GetRegistrations(_ context.Context, _ v2.UniformGetRegistrationsOptions) ([]*models.Integration, error) {
 	return c.registrations, nil
 }
 
@@ -36,7 +37,7 @@ func TestUniformClient_GetIntegrationIDByName(t *testing.T) {
 
 	tests := []struct {
 		name                   string
-		uniformClient          api.UniformV1Interface
+		uniformClient          v2.UniformInterface
 		integrationName        string
 		expectedIntegrationID  string
 		expectError            bool
@@ -92,7 +93,7 @@ func TestUniformClient_GetIntegrationIDByName(t *testing.T) {
 			c := UniformClient{
 				client: tt.uniformClient,
 			}
-			integrationID, err := c.GetIntegrationIDByName(tt.integrationName)
+			integrationID, err := c.GetIntegrationIDByName(context.Background(), tt.integrationName)
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.expectedErrorSubstring)

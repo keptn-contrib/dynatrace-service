@@ -186,7 +186,7 @@ func gotEvent(workCtx context.Context, replyCtx context.Context, keptnClient *ke
 }
 
 func connectToControlPlane() (*controlplane.ControlPlane, error) {
-	apiSet, err := api.NewInternal(&http.Client{}, keptn.GetInClusterAPIMappings())
+	apiSet, err := api.NewInternal(&http.Client{}, keptn.GetV1InClusterAPIMappings())
 	if err != nil {
 		return nil, fmt.Errorf("could not create internal Keptn API set: %w", err)
 	}

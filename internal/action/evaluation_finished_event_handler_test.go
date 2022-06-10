@@ -391,15 +391,15 @@ type eventClientFake struct {
 	imageAndTag               common.ImageAndTag
 }
 
-func (e *eventClientFake) IsPartOfRemediation(_ adapter.EventContentAdapter) (bool, error) {
+func (e *eventClientFake) IsPartOfRemediation(_ context.Context, _ adapter.EventContentAdapter) (bool, error) {
 	return e.isPartOfRemediation, e.remediationDetectionError
 }
 
-func (e *eventClientFake) FindProblemID(_ adapter.EventContentAdapter) (string, error) {
+func (e *eventClientFake) FindProblemID(_ context.Context, _ adapter.EventContentAdapter) (string, error) {
 	return e.problemID, e.problemIDError
 }
 
-func (e *eventClientFake) GetImageAndTag(_ adapter.EventContentAdapter) common.ImageAndTag {
+func (e *eventClientFake) GetImageAndTag(_ context.Context, _ adapter.EventContentAdapter) common.ImageAndTag {
 	return e.imageAndTag
 }
 
