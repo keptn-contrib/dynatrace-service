@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 )
 
 type EvaluationFinishedAdapterInterface interface {
@@ -13,6 +14,8 @@ type EvaluationFinishedAdapterInterface interface {
 
 	GetEvaluationScore() float64
 	GetResult() keptnv2.ResultType
+	GetStartTime() string
+	GetEndTime() string
 }
 
 // EvaluationFinishedAdapter is a content adaptor for events of type sh.keptn.event.evaluation.finished
@@ -101,4 +104,11 @@ func (a EvaluationFinishedAdapter) GetEvaluationScore() float64 {
 
 func (a EvaluationFinishedAdapter) GetResult() keptnv2.ResultType {
 	return a.event.Result
+}
+
+func (a EvaluationFinishedAdapter) GetStartTime() string {
+	return a.event.Evaluation.TimeStart
+}
+func (a EvaluationFinishedAdapter) GetEndTime() string {
+	return a.event.Evaluation.TimeEnd
 }

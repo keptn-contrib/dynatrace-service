@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 // EvaluationFinishedEventHandler handles an evaluation finished event.
@@ -29,7 +31,7 @@ func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface,
 }
 
 // HandleEvent handles an evaluation finished event.
-func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 
 	isPartOfRemediation, err := eh.eClient.IsPartOfRemediation(eh.event)
 	if err != nil {
@@ -46,18 +48,22 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, r
 		}
 	}
 
+	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+	attachRules, err := eh.createAttachRules(workCtx, imageAndTag)
+	if err != nil {
+		return fmt.Errorf("could not setup correct attach rules: %w", err)
+	}
+
 	infoEvent := dynatrace.InfoEvent{
 		EventType:        dynatrace.InfoEventType,
 		Source:           eventSource,
 		Title:            eh.getTitle(isPartOfRemediation),
 		Description:      fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore()),
-		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL),
-		AttachRules:      *eh.attachRules,
+		CustomProperties: createCustomProperties(eh.event, imageAndTag, bridgeURL),
+		AttachRules:      attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
-
-	return nil
+	return dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)
 }
 
 func (eh *EvaluationFinishedEventHandler) getTitle(isPartOfRemediation bool) string {
@@ -70,4 +76,17 @@ func (eh *EvaluationFinishedEventHandler) getTitle(isPartOfRemediation bool) str
 	}
 
 	return "Remediation action not successful"
+}
+
+func (eh *EvaluationFinishedEventHandler) createAttachRules(ctx context.Context, imageAndTag common.ImageAndTag) (dynatrace.AttachRules, error) {
+	timeframeFunc := func() (*common.Timeframe, error) {
+		timeframe, err := common.NewTimeframeParser(eh.event.GetStartTime(), eh.event.GetEndTime()).Parse()
+		if err != nil {
+			return nil, err
+		}
+
+		return timeframe, nil
+	}
+
+	return createOrUpdateAttachRules(ctx, eh.dtClient, eh.attachRules, imageAndTag, eh.event, timeframeFunc)
 }

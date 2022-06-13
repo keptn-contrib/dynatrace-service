@@ -26,8 +26,12 @@ func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface,
 }
 
 // HandleEvent handles a deployment finished event.
-func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 	imageAndTag := eh.eClient.GetImageAndTag(eh.event)
+
+	if eh.attachRules == nil {
+		eh.attachRules = createDefaultAttachRules(eh.event)
+	}
 
 	deploymentEvent := dynatrace.DeploymentEvent{
 		EventType:         dynatrace.DeploymentEventType,
@@ -41,6 +45,5 @@ func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, r
 		AttachRules:       *eh.attachRules,
 	}
 
-	dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(workCtx, deploymentEvent)
-	return nil
+	return dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(workCtx, deploymentEvent)
 }

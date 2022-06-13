@@ -81,7 +81,8 @@ type TagRule struct {
 
 // AttachRules defines a Dynatrace configuration structure
 type AttachRules struct {
-	TagRule []TagRule `json:"tagRule" yaml:"tagRule"`
+	EntityIds []string  `json:"entityIds,omitempty" yaml:"entityIds,omitempty"`
+	TagRule   []TagRule `json:"tagRule,omitempty" yaml:"tagRule,omitempty"`
 }
 
 type EventsClient struct {
@@ -96,35 +97,57 @@ func NewEventsClient(client ClientInterface) *EventsClient {
 }
 
 // AddAnnotationEvent sends an annotation event to the Dynatrace events API.
-func (ec *EventsClient) AddAnnotationEvent(ctx context.Context, ae AnnotationEvent) {
-	ec.addEventAndLog(ctx, ae)
+func (ec *EventsClient) AddAnnotationEvent(ctx context.Context, ae AnnotationEvent) error {
+	log.WithFields(log.Fields{
+		"type":                  ae.EventType,
+		"annotationType":        ae.AnnotationType,
+		"annotationDescription": ae.AnnotationDescription,
+	}).Debug("Sending event to Dynatrace API")
+
+	return ec.addEventAndLog(ctx, ae)
 }
 
 // AddConfigurationEvent sends a configuration event to the Dynatrace events API.
-func (ec *EventsClient) AddConfigurationEvent(ctx context.Context, ce ConfigurationEvent) {
-	ec.addEventAndLog(ctx, ce)
+func (ec *EventsClient) AddConfigurationEvent(ctx context.Context, ce ConfigurationEvent) error {
+	log.WithFields(log.Fields{
+		"type":          ce.EventType,
+		"description":   ce.Description,
+		"configuration": ce.Configuration,
+	}).Debug("Sending event to Dynatrace API")
+
+	return ec.addEventAndLog(ctx, ce)
 }
 
 // AddDeploymentEvent sends a deployment event to the Dynatrace events API.
-func (ec *EventsClient) AddDeploymentEvent(ctx context.Context, de DeploymentEvent) {
-	ec.addEventAndLog(ctx, de)
+func (ec *EventsClient) AddDeploymentEvent(ctx context.Context, de DeploymentEvent) error {
+	log.WithFields(log.Fields{
+		"type":              de.EventType,
+		"deploymentName":    de.DeploymentName,
+		"deploymentVersion": de.DeploymentVersion,
+	}).Debug("Sending event to Dynatrace API")
+
+	return ec.addEventAndLog(ctx, de)
 }
 
 // AddInfoEvent sends an info event to the Dynatrace events API.
-func (ec *EventsClient) AddInfoEvent(ctx context.Context, ie InfoEvent) {
-	ec.addEventAndLog(ctx, ie)
+func (ec *EventsClient) AddInfoEvent(ctx context.Context, ie InfoEvent) error {
+	log.WithFields(log.Fields{
+		"type":        ie.EventType,
+		"description": ie.Description,
+	}).Debug("Sending event to Dynatrace API")
+
+	return ec.addEventAndLog(ctx, ie)
 }
 
 // addEventAndLog sends an event to the Dynatrace events API and logs errors if necessary.
-func (ec *EventsClient) addEventAndLog(ctx context.Context, dtEvent interface{}) {
-	log.Info("Sending event to Dynatrace API")
+func (ec *EventsClient) addEventAndLog(ctx context.Context, dtEvent interface{}) error {
 	body, err := ec.addEvent(ctx, dtEvent)
 	if err != nil {
-		log.WithError(err).Error("Failed sending Dynatrace events API request")
-		return
+		return err
 	}
 
 	log.WithField("body", body).Debug("Dynatrace API has accepted the event")
+	return nil
 }
 
 // addEvent sends an event to the Dynatrace events API.
@@ -136,7 +159,7 @@ func (ec *EventsClient) addEvent(ctx context.Context, dtEvent interface{}) (stri
 
 	body, err := ec.client.Post(ctx, eventsPath, payload)
 	if err != nil {
-		return "", fmt.Errorf("could not create event: %v", err)
+		return "", fmt.Errorf("could not create event: %w", err)
 	}
 
 	return string(body), nil

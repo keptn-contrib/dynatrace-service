@@ -6,8 +6,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
 func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
@@ -113,4 +117,71 @@ func TestEntitiesClient_GetKeptnManagedServices(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestEntitiesClient_GetAllPGIsForKeptnServices(t *testing.T) {
+	const testdataFolder = "./testdata/entities_client/"
+	const url = "/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%223.5.2%22%29&from=1654000200000&to=1654000320000"
+
+	cfg := PGIQueryConfig{
+		Project: "pod-tato-head",
+		Stage:   "hardening",
+		Service: "helloservice",
+		Version: "3.5.2",
+		From:    time.Date(2022, 5, 31, 12, 30, 0, 0, time.UTC),
+		To:      time.Date(2022, 5, 31, 12, 32, 0, 0, time.UTC),
+	}
+
+	tests := []struct {
+		name         string
+		fileName     string
+		expectedPGIs []string
+	}{
+		{
+			name:     "multiple entities returned",
+			fileName: "multiple_entities.json",
+			expectedPGIs: []string{
+				"PROCESS_GROUP_INSTANCE-95C5FBF859599282",
+				"PROCESS_GROUP_INSTANCE-D23E64F62FDC200A",
+				"PROCESS_GROUP_INSTANCE-DE323A8B8449D009",
+				"PROCESS_GROUP_INSTANCE-F59D42FEA235E5F9",
+			},
+		},
+		{
+			name:     "single entity returned",
+			fileName: "single_entity.json",
+			expectedPGIs: []string{
+				"PROCESS_GROUP_INSTANCE-D23E64F62FDC200A",
+			},
+		},
+		{
+			name:         "single entity returned",
+			fileName:     "no_entity.json",
+			expectedPGIs: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddExact(url, testdataFolder+tt.fileName)
+
+			client, teardown := createEventsClient(t, handler)
+			defer teardown()
+
+			actualPGIs, err := client.GetAllPGIsForKeptnServices(context.Background(), cfg)
+			if assert.NoError(t, err) {
+				assert.EqualValues(t, actualPGIs, tt.expectedPGIs)
+			}
+		})
+	}
+}
+
+func createEventsClient(t *testing.T, handler http.Handler) (*EntitiesClient, func()) {
+	dynatraceClient, _, teardown := createDynatraceClient(t, handler)
+
+	ec := NewEntitiesClient(dynatraceClient)
+
+	return ec, teardown
 }
