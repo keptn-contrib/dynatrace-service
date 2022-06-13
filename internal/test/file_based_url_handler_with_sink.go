@@ -7,11 +7,13 @@ import (
 	"testing"
 )
 
+// FileBasedURLHandlerWithSink encapsulates a FileBasedURLHandler and contains a sink for any data that would be sent to the server in the request body
 type FileBasedURLHandlerWithSink struct {
 	*FileBasedURLHandler
 	sink map[string][]byte
 }
 
+// NewFileBasedURLHandlerWithSink creates a new FileBasedURLHandlerWithSink instance
 func NewFileBasedURLHandlerWithSink(t *testing.T) *FileBasedURLHandlerWithSink {
 	return &FileBasedURLHandlerWithSink{
 		FileBasedURLHandler: NewFileBasedURLHandler(t),
@@ -37,6 +39,7 @@ func (h *FileBasedURLHandlerWithSink) ServeHTTP(w http.ResponseWriter, r *http.R
 	}
 }
 
+// GetStoredPayloadForURL unmarshals the payload found for the exact url into the container or fails if it could not find an exact url match.
 func (h *FileBasedURLHandlerWithSink) GetStoredPayloadForURL(url string, container interface{}) {
 	payload, found := h.sink[url]
 	if !found {

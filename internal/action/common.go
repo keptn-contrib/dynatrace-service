@@ -47,6 +47,7 @@ func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue 
 	return defaultValue
 }
 
+// KeptnContext is a minimal subset of data needed for creating default attach rules
 type KeptnContext interface {
 	GetProject() string
 	GetStage() string
@@ -80,6 +81,7 @@ func createDefaultAttachRules(keptnContext KeptnContext) *dynatrace.AttachRules 
 	}
 }
 
+// TimeframeFunc is the signature of a function returning a common.Timeframe or and error
 type TimeframeFunc func() (*common.Timeframe, error)
 
 func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInterface, existingAttachRules *dynatrace.AttachRules, imageAndTag common.ImageAndTag, event adapter.EventContentAdapter, timeframeFunc TimeframeFunc) (dynatrace.AttachRules, error) {
