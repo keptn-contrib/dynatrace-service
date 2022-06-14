@@ -167,7 +167,7 @@ func gotEvent(workCtx context.Context, replyCtx context.Context, keptnClient *ke
 		return
 	}
 
-	handler.HandleEvent(workCtx, replyCtx)
+	err = handler.HandleEvent(workCtx, replyCtx)
 	if err != nil {
 		log.WithError(err).Error("HandleEvent() returned an error")
 	}
