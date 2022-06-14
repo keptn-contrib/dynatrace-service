@@ -133,9 +133,6 @@ func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 		return action.NewEvaluationFinishedAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.ReleaseTaskName):
 		return action.NewReleaseTriggeredAdapterFromEvent(e)
-	case keptnv2.GetFinishedEventType(keptnv2.ReleaseTaskName):
-		//do nothing, ignore the type, don't even log
-		return nil, nil
 	default:
 		log.WithField("EventType", e.Type()).Debug("Ignoring event")
 		return nil, nil
