@@ -152,7 +152,8 @@ func (d dynatraceService) RegistrationData() controlplane.RegistrationData {
 				PodName:        metadata.PodName(),
 				DeploymentName: metadata.DeploymentName(),
 			},
-			DistributorVersion: "0.15.0",
+			// TODO: fixed to "0.16.0" until Keptn provides a default
+			DistributorVersion: "0.16.0",
 		},
 		Subscriptions: []models.EventSubscription{
 			{
