@@ -42,6 +42,7 @@ func main() {
 
 func _main() int {
 	// start health endpoint
+	// TODO: 2022-06-14: Check: is it possible to terminate liveness cleanly?
 	go func() {
 		keptnapi.RunHealthEndpoint("8070")
 	}()
@@ -85,6 +86,7 @@ func _main() int {
 	}
 
 	// start readiness endpoint
+	// TODO: 2022-06-14: Check: is it possible to terminate readiness cleanly?
 	go func() {
 		keptnapi.RunHealthEndpoint("8080", keptnapi.WithPath("/ready"), keptnapi.WithReadinessConditionFunc(func() bool {
 			return controlPlane.IsRegistered()
@@ -102,6 +104,8 @@ func _main() int {
 		}()
 	}})
 
+	// TODO: 2022-06-14: Check how Keptn events are flushed by cpConnector once no-longer registered. Ideally this should use a context.
+
 	// wait for all existing events (i.e. worker go routines to finish)
 	log.Info("Waiting for existing processing to finish")
 	stopNotify()
@@ -115,7 +119,6 @@ func _main() int {
 
 // OnEvent is called when a new event was received.
 func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContextExtendedCE) error {
-	// TODO: 2022-05-30: use a controlplane.EventSender with context once available
 	eventSender, ok := ctx.Value(types.EventSenderKey).(controlplane.EventSender)
 	if !ok {
 		return fmt.Errorf("could not get eventSender from context")
