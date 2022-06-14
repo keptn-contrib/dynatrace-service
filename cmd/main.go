@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync"
@@ -11,40 +12,43 @@ import (
 	context2 "github.com/keptn-contrib/dynatrace-service/internal/context"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/event_handler"
-	"github.com/keptn-contrib/dynatrace-service/internal/health"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/onboard"
+
+	"github.com/keptn/keptn/cp-common/api"
+	"github.com/keptn/keptn/cp-connector/pkg/controlplane"
+	"github.com/keptn/keptn/cp-connector/pkg/eventsource"
+	"github.com/keptn/keptn/cp-connector/pkg/logforwarder"
+	"github.com/keptn/keptn/cp-connector/pkg/nats"
+	"github.com/keptn/keptn/cp-connector/pkg/subscriptionsource"
+	"github.com/keptn/keptn/cp-connector/pkg/types"
 
 	log "github.com/sirupsen/logrus"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/keptn/go-utils/pkg/api/models"
+	keptnapi "github.com/keptn/go-utils/pkg/api/utils"
+	"github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-type envConfig struct {
-	// Port on which to listen for cloudevents
-	Port       int    `envconfig:"RCV_PORT" default:"8080"`
-	Path       string `envconfig:"RCV_PATH" default:"/"`
-	HealthPort int    `envconfig:"HEALTH_PORT" default:"8070"`
+type dynatraceService struct {
+	onEvent func(keptnClient *keptn.Client, event cloudevents.Event)
 }
 
 func main() {
 	log.SetLevel(env.GetLogLevel())
-
-	var env envConfig
-	if err := envconfig.Process("", &env); err != nil {
-		log.WithError(err).Fatal("Failed to process env var")
-	}
-
-	os.Exit(_main(env))
+	os.Exit(_main())
 }
 
-func _main(envCfg envConfig) int {
-
-	healthEndpoint := health.NewHealthEndpoint(fmt.Sprintf(":%d", envCfg.HealthPort))
-	healthEndpoint.Start()
+func _main() int {
+	// start health endpoint
+	// TODO: 2022-06-14: Check: is it possible to terminate liveness cleanly?
+	go func() {
+		keptnapi.RunHealthEndpoint("8070")
+	}()
 
 	// root context
-	ctx := cloudevents.WithEncodingStructured(context.Background())
+	ctx := context.Background()
 
 	// notifyCtx is done when a termination signal is received
 	notifyCtx, stopNotify := signal.NotifyContext(ctx,
@@ -66,32 +70,41 @@ func _main(envCfg envConfig) int {
 		workerWaitGroup.Add(1)
 		go func() {
 			defer workerWaitGroup.Done()
-			onboard.NewDefaultServiceSynchronizer().Run(notifyCtx, workCtx)
+			serviceSynchronizer, err := onboard.NewDefaultServiceSynchronizer()
+			if err != nil {
+				log.WithError(err).Error("Could not create service synchronizer")
+				return
+			}
+
+			serviceSynchronizer.Run(notifyCtx, workCtx)
 		}()
 	}
 
-	log.WithFields(log.Fields{"port": envCfg.Port, "path": envCfg.Path}).Debug("Initializing cloudevents client")
-	c, err := cloudevents.NewClientHTTP(cloudevents.WithPath(envCfg.Path), cloudevents.WithPort(envCfg.Port), cloudevents.WithGetHandlerFunc(health.HTTPGetHandler))
+	controlPlane, err := connectToControlPlane()
 	if err != nil {
-		log.WithError(err).Fatal("Failed to create client")
+		log.WithError(err).Fatal("Could not connect to control plane")
 	}
 
-	// start actually receiving cloud events
-	// the actual processing is done in a separate goroutine so that the incoming cloud event is acknowledged immediately
-	log.Info("Starting receiver")
-	err = c.StartReceiver(notifyCtx,
-		func(event cloudevents.Event) {
-			workerWaitGroup.Add(1)
-			go func() {
-				defer workerWaitGroup.Done()
-				gotEvent(workCtx, replyCtx, event)
-			}()
-		})
+	// start readiness endpoint
+	// TODO: 2022-06-14: Check: is it possible to terminate readiness cleanly?
+	go func() {
+		keptnapi.RunHealthEndpoint("8080", keptnapi.WithPath("/ready"), keptnapi.WithReadinessConditionFunc(func() bool {
+			return controlPlane.IsRegistered()
+		}))
+	}()
 
-	// at this point receiver has finished, i.e no new cloud events will be received
-	if err != nil {
-		log.WithError(err).Error("Receiver finished with error")
-	}
+	// register for events
+	// the actual processing is done in a separate goroutine so that it doesn't block other events
+	log.Info("Registering with control plane")
+	controlPlane.Register(notifyCtx, dynatraceService{onEvent: func(keptnClient *keptn.Client, event cloudevents.Event) {
+		workerWaitGroup.Add(1)
+		go func() {
+			defer workerWaitGroup.Done()
+			gotEvent(workCtx, replyCtx, keptnClient, event)
+		}()
+	}})
+
+	// TODO: 2022-06-14: Check how Keptn events are flushed by cpConnector once no-longer registered. Ideally this should use a context.
 
 	// wait for all existing events (i.e. worker go routines to finish)
 	log.Info("Waiting for existing processing to finish")
@@ -100,15 +113,83 @@ func _main(envCfg envConfig) int {
 	stopWorkPeriod()
 	stopReplyPeriod()
 
-	healthEndpoint.Stop()
-
 	log.Info("Shutdown complete")
 	return 0
 }
 
-func gotEvent(workCtx context.Context, replyCtx context.Context, event cloudevents.Event) {
-	err := event_handler.NewEventHandler(workCtx, event).HandleEvent(workCtx, replyCtx)
+// OnEvent is called when a new event was received.
+func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContextExtendedCE) error {
+	eventSender, ok := ctx.Value(types.EventSenderKey).(controlplane.EventSender)
+	if !ok {
+		return fmt.Errorf("could not get eventSender from context")
+	}
+
+	cloudEvent := v0_2_0.ToCloudEvent(event)
+	keptnClient, err := keptn.NewClient(eventSender)
+	if err != nil {
+		return err
+	}
+
+	d.onEvent(keptnClient, cloudEvent)
+	return nil
+}
+
+// RegistrationData is called to get the initial registration data.
+func (d dynatraceService) RegistrationData() controlplane.RegistrationData {
+	metadata, err := env.GetK8sMetadata()
+	if err != nil {
+		log.WithError(err).Fatal()
+	}
+
+	return controlplane.RegistrationData{
+		Name: metadata.DeploymentName(),
+		MetaData: models.MetaData{
+			Hostname:           metadata.NodeName(),
+			IntegrationVersion: metadata.DeploymentVersion(),
+			Location:           metadata.DeploymentComponent(),
+			KubernetesMetaData: models.KubernetesMetaData{
+				Namespace:      metadata.Namespace(),
+				PodName:        metadata.PodName(),
+				DeploymentName: metadata.DeploymentName(),
+			},
+			// TODO: fixed to "0.16.0" until Keptn provides a default
+			DistributorVersion: "0.16.0",
+		},
+		Subscriptions: []models.EventSubscription{
+			{
+				Event:  "sh.keptn.event.>",
+				Filter: models.EventSubscriptionFilter{},
+			},
+		},
+	}
+}
+
+func gotEvent(workCtx context.Context, replyCtx context.Context, keptnClient *keptn.Client, event cloudevents.Event) {
+	handler, err := event_handler.NewEventHandler(workCtx, keptnClient, event)
+	if err != nil {
+		log.WithError(err).Error("NewEventHandler() returned an error")
+		return
+	}
+
+	err = handler.HandleEvent(workCtx, replyCtx)
 	if err != nil {
 		log.WithError(err).Error("HandleEvent() returned an error")
 	}
+}
+
+func connectToControlPlane() (*controlplane.ControlPlane, error) {
+	apiSet, err := api.NewInternal(&http.Client{}, keptn.GetInClusterAPIMappings())
+	if err != nil {
+		return nil, fmt.Errorf("could not create internal Keptn API set: %w", err)
+	}
+
+	natsConnector, err := nats.ConnectFromEnv()
+	if err != nil {
+		return nil, fmt.Errorf("could not connect to NATS: %w", err)
+	}
+
+	return controlplane.New(
+		subscriptionsource.New(apiSet.UniformV1()),
+		eventsource.New(natsConnector),
+		logforwarder.New(apiSet.LogsV1())), nil
 }

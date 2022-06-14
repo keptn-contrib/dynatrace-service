@@ -5,8 +5,9 @@ go 1.17
 require (
 	github.com/cloudevents/sdk-go/v2 v2.10.0
 	github.com/go-test/deep v1.0.8
-	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/keptn/go-utils v0.13.0
+	github.com/keptn/go-utils v0.16.1-0.20220609074613-80183eecfc5a
+	github.com/keptn/keptn/cp-common v0.0.0-20220609093122-5e01300c122b
+	github.com/keptn/keptn/cp-connector v0.0.0-20220609102910-598c7e1506bc
 	github.com/keptn/kubernetes-utils v0.13.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.2
@@ -58,6 +59,9 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/nats-io/nats.go v1.15.0 // indirect
+	github.com/nats-io/nkeys v0.3.0 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
@@ -75,7 +79,7 @@ require (
 	go.uber.org/multierr v1.3.0 // indirect
 	go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee // indirect
 	go.uber.org/zap v1.13.0 // indirect
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
+	golang.org/x/crypto v0.0.0-20220315160706-3147a52a75dd // indirect
 	golang.org/x/lint v0.0.0-20201208152925-83fdc39ff7b5 // indirect
 	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
