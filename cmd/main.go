@@ -32,7 +32,7 @@ import (
 )
 
 type dynatraceService struct {
-	onEvent func(keptnClient *keptn.Client, event cloudevents.Event) error
+	onEvent func(keptnClient *keptn.Client, event cloudevents.Event)
 }
 
 func main() {
@@ -94,13 +94,12 @@ func _main() int {
 	// register for events
 	// the actual processing is done in a separate goroutine so that it doesn't block other events
 	log.Info("Registering with control plane")
-	controlPlane.Register(notifyCtx, dynatraceService{onEvent: func(keptnClient *keptn.Client, event cloudevents.Event) error {
+	controlPlane.Register(notifyCtx, dynatraceService{onEvent: func(keptnClient *keptn.Client, event cloudevents.Event) {
 		workerWaitGroup.Add(1)
 		go func() {
 			defer workerWaitGroup.Done()
 			gotEvent(workCtx, replyCtx, keptnClient, event)
 		}()
-		return nil
 	}})
 
 	// wait for all existing events (i.e. worker go routines to finish)
@@ -128,7 +127,8 @@ func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContext
 		return err
 	}
 
-	return d.onEvent(keptnClient, cloudEvent)
+	d.onEvent(keptnClient, cloudEvent)
+	return nil
 }
 
 // RegistrationData is called to get the initial registration data.
