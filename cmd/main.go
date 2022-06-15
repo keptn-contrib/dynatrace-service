@@ -156,10 +156,17 @@ func (d dynatraceService) RegistrationData() controlplane.RegistrationData {
 			DistributorVersion: "0.16.0",
 		},
 		Subscriptions: []models.EventSubscription{
-			{
-				Event:  "sh.keptn.event.>",
-				Filter: models.EventSubscriptionFilter{},
-			},
+			createEventSubscription("sh.keptn.event.monitoring.configure"),
+			createEventSubscription("sh.keptn.events.problem"),
+			createEventSubscription("sh.keptn.event.action.triggered"),
+			createEventSubscription("sh.keptn.event.action.started"),
+			createEventSubscription("sh.keptn.event.action.finished"),
+			createEventSubscription("sh.keptn.event.get-sli.triggered"),
+			createEventSubscription("sh.keptn.event.deployment.finished"),
+			createEventSubscription("sh.keptn.event.test.triggered"),
+			createEventSubscription("sh.keptn.event.test.finished"),
+			createEventSubscription("sh.keptn.event.evaluation.finished"),
+			createEventSubscription("sh.keptn.event.release.triggered"),
 		},
 	}
 }
@@ -192,4 +199,11 @@ func connectToControlPlane() (*controlplane.ControlPlane, error) {
 		subscriptionsource.New(apiSet.UniformV1()),
 		eventsource.New(natsConnector),
 		logforwarder.New(apiSet.LogsV1())), nil
+}
+
+func createEventSubscription(event string) models.EventSubscription {
+	return models.EventSubscription{
+		Event:  event,
+		Filter: models.EventSubscriptionFilter{},
+	}
 }
