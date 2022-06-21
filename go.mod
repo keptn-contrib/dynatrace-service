@@ -10,7 +10,7 @@ require (
 	github.com/keptn/keptn/cp-connector v0.0.0-20220609102910-598c7e1506bc
 	github.com/keptn/kubernetes-utils v0.14.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.7.4
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
