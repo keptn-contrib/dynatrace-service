@@ -1,12 +1,9 @@
 runner:
-  golint:
-    cmd: golint ./...
+  gofmt:
+    cmd: gofmt -l .
     errorformat:
       - "%f:%l:%c: %m"
-    level: warning
-  gofmt:
-    cmd: gofmt -l -s .|xargs -I{} echo {}:1 file {} is not gofmted
+  golangci-lint:
+    cmd: golangci-lint run -E bodyclose,exportloopref,funlen,gocyclo,gosec,nestif,unparam --out-format=line-number ./...
     errorformat:
-      - "%f:%l %m"
-  govet:
-    cmd: go vet -all ./...
+      - "%f:%l:%c: %m"
