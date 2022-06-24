@@ -19,6 +19,7 @@ jobs:
           reviewdog_version: latest
       - name: Run reviewdog
         env:
+          GO111MODULE: "off" # required for golangci-lint - see https://github.com/keptn/keptn/issues/4000 / https://github.com/golangci/golangci-lint/issues/1833
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           reviewdog -reporter=github-pr-review
