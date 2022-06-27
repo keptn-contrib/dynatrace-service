@@ -190,14 +190,9 @@ func connectToControlPlane() (*controlplane.ControlPlane, error) {
 		return nil, fmt.Errorf("could not create internal Keptn API set: %w", err)
 	}
 
-	natsConnector, err := nats.ConnectFromEnv()
-	if err != nil {
-		return nil, fmt.Errorf("could not connect to NATS: %w", err)
-	}
-
 	return controlplane.New(
 		subscriptionsource.New(apiSet.UniformV1()),
-		eventsource.New(natsConnector),
+		eventsource.New(nats.NewFromEnv()),
 		logforwarder.New(apiSet.LogsV1())), nil
 }
 
