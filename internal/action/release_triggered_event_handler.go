@@ -46,7 +46,7 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, _ c
 		Source:           eventSource,
 		Title:            eh.getTitle(strategy, eh.event.GetLabels()["title"]),
 		Description:      eh.getTitle(strategy, eh.event.GetLabels()["description"]),
-		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		CustomProperties: NewCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:      *eh.attachRules,
 	}
 

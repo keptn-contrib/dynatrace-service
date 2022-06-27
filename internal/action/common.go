@@ -15,8 +15,10 @@ const bridgeURLKey = "Keptns Bridge"
 
 const contextless = "CONTEXTLESS"
 
-func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, bridgeURL string) map[string]string {
-	customProperties := map[string]string{
+type CustomProperties map[string]string
+
+func NewCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, bridgeURL string) CustomProperties {
+	cp := CustomProperties{
 		"Project":       a.GetProject(),
 		"Stage":         a.GetStage(),
 		"Service":       a.GetService(),
@@ -27,16 +29,30 @@ func createCustomProperties(a adapter.EventContentAdapter, imageAndTag common.Im
 		"Keptn Service": a.GetSource(),
 	}
 
-	// now add the rest of the labels into custom properties (changed with #115_116)
 	for key, value := range a.GetLabels() {
-		customProperties[key] = value
+		cp.add(key, value)
 	}
 
-	if bridgeURL != "" {
-		customProperties[bridgeURLKey] = bridgeURL
+	cp.addIfNonEmpty(bridgeURLKey, bridgeURL)
+
+	return cp
+}
+
+func (cp CustomProperties) add(key string, value string) {
+	oldValue, isContained := cp[key]
+	if isContained {
+		log.Warnf("Overwriting current value '%s' of key '%s' with new value '%s in custom properties", oldValue, key, value)
 	}
 
-	return customProperties
+	cp[key] = value
+}
+
+func (cp CustomProperties) addIfNonEmpty(key string, value string) {
+	if key == "" || value == "" {
+		return
+	}
+
+	cp.add(key, value)
 }
 
 func getValueFromLabels(a adapter.EventContentAdapter, key string, defaultValue string) string {

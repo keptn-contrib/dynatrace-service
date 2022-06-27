@@ -52,7 +52,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, _ con
 
 	// https://github.com/keptn-contrib/dynatrace-service/issues/174
 	// Additionally to the problem comment, send Info or Configuration Change Event to the entities in Dynatrace to indicate that remediation actions have been executed
-	customProperties := createCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), bridgeURL)
+	customProperties := NewCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), bridgeURL)
 	if eh.event.GetStatus() == keptnv2.StatusSucceeded {
 		configurationEvent := dynatrace.ConfigurationEvent{
 			EventType:        dynatrace.ConfigurationEventType,
