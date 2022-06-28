@@ -5,9 +5,9 @@ go 1.18
 require (
 	github.com/cloudevents/sdk-go/v2 v2.10.1
 	github.com/go-test/deep v1.0.8
-	github.com/keptn/go-utils v0.16.1-0.20220609074613-80183eecfc5a
-	github.com/keptn/keptn/cp-common v0.0.0-20220609093122-5e01300c122b
-	github.com/keptn/keptn/cp-connector v0.0.0-20220609102910-598c7e1506bc
+	github.com/keptn/go-utils v0.16.1-0.20220624075633-4d49101f88b4
+	github.com/keptn/keptn/cp-common v0.0.0-20220624100411-1ff24aabc440
+	github.com/keptn/keptn/cp-connector v0.0.0-20220624123322-a205084e713e
 	github.com/keptn/kubernetes-utils v0.14.0
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.5
