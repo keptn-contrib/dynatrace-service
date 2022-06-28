@@ -6,7 +6,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	"github.com/keptn/keptn/cp-common/api"
+	api "github.com/keptn/go-utils/pkg/api/utils"
 )
 
 // TryGetBridgeURLForKeptnContext gets a backlink to the Keptn Bridge if available or returns "".

@@ -5,7 +5,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/keptn/keptn/cp-connector/pkg/controlplane"
+	"github.com/keptn/go-utils/pkg/sdk/connector/controlplane"
 )
 
 const sliResourceURI = "dynatrace/sli.yaml"

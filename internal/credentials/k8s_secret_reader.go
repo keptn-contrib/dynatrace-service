@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
-	keptnkubeutils "github.com/keptn/kubernetes-utils/pkg"
+	"github.com/keptn/go-utils/pkg/common/kubeutils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -23,7 +23,7 @@ func NewK8sSecretReader(k8sClient kubernetes.Interface) *K8sSecretReader {
 // NewDefaultK8sSecretReader creates a new K8sSecretReader using the default K8s client.
 func NewDefaultK8sSecretReader() (*K8sSecretReader, error) {
 	useInClusterConfig := env.GetKubernetesServiceHost() != ""
-	k8sClient, err := keptnkubeutils.GetClientset(useInClusterConfig)
+	k8sClient, err := kubeutils.GetClientSet(useInClusterConfig)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialize K8sSecretReader: %s", err.Error())
 	}
