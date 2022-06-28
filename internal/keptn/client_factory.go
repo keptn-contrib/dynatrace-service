@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/keptn/keptn/cp-common/api"
+	api "github.com/keptn/go-utils/pkg/api/utils"
 )
 
 // ClientFactoryInterface provides a factories for clients.

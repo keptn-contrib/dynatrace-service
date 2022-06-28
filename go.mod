@@ -6,8 +6,6 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.10.1
 	github.com/go-test/deep v1.0.8
 	github.com/keptn/go-utils v0.16.1-0.20220628071524-fc5b6f967e50
-	github.com/keptn/keptn/cp-common v0.0.0-20220624100411-1ff24aabc440
-	github.com/keptn/keptn/cp-connector v0.0.0-20220624123322-a205084e713e
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.5
 	gopkg.in/yaml.v3 v3.0.1
