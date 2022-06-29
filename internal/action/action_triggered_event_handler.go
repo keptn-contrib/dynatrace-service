@@ -30,7 +30,7 @@ func NewActionTriggeredEventHandler(event ActionTriggeredAdapterInterface, dtCli
 
 // HandleEvent handles an action triggered event.
 func (eh *ActionTriggeredEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
-	pid, err := eh.eClient.FindProblemID(eh.event)
+	pid, err := eh.eClient.FindProblemID(workCtx, eh.event)
 	if err != nil {
 		log.WithError(err).Error("Could not find problem ID for event")
 		return err
@@ -61,7 +61,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(workCtx context.Context, _ co
 		Source:           eventSource,
 		Title:            "Keptn Remediation Action Triggered",
 		Description:      eh.event.GetAction(),
-		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(eh.event), bridgeURL),
+		CustomProperties: createCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), bridgeURL),
 		AttachRules:      *eh.attachRules,
 	}
 

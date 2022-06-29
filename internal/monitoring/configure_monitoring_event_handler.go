@@ -59,7 +59,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 	keptnCredentialsCheckResult := eh.checkKeptnCredentials(ctx)
 	log.WithField("result", keptnCredentialsCheckResult).Info("Checked Keptn credentials")
 
-	shipyard, err := eh.shipyardReader.GetShipyard(eh.event.GetProject())
+	shipyard, err := eh.shipyardReader.GetShipyard(ctx, eh.event.GetProject())
 	if err != nil {
 		return eh.handleError(err)
 	}

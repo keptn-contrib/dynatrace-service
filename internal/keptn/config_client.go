@@ -1,6 +1,7 @@
 package keptn
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -17,19 +18,19 @@ import (
 type SLIAndSLOReaderInterface interface {
 	// GetSLIs gets the SLIs stored for the specified project, stage and service.
 	// First, the configuration of project-level is retrieved, which is then overridden by configuration on stage level, and then overridden by configuration on service level.
-	GetSLIs(project string, stage string, service string) (map[string]string, error)
+	GetSLIs(ctx context.Context, project string, stage string, service string) (map[string]string, error)
 
 	// GetSLOs gets the SLOs stored for exactly the specified project, stage and service.
-	GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error)
+	GetSLOs(ctx context.Context, project string, stage string, service string) (*keptn.ServiceLevelObjectives, error)
 }
 
 // SLIAndSLOWriterInterface provides functionality for uploading SLIs and SLOs.
 type SLIAndSLOWriterInterface interface {
 	// UploadSLIs uploads the SLIs for the specified project, stage and service.
-	UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error
+	UploadSLIs(ctx context.Context, project string, stage string, service string, slis *dynatrace.SLI) error
 
 	// UploadSLOs uploads the SLOs for the specified project, stage and service.
-	UploadSLOs(project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error
+	UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error
 }
 
 // SLOAndSLIClientInterface provides functionality for getting and uploading SLIs and SLOs.
@@ -41,13 +42,13 @@ type SLOAndSLIClientInterface interface {
 // ShipyardReaderInterface provides functionality for getting a project's shipyard.
 type ShipyardReaderInterface interface {
 	// GetShipyard returns the shipyard definition of a project.
-	GetShipyard(project string) (*keptnv2.Shipyard, error)
+	GetShipyard(ctx context.Context, project string) (*keptnv2.Shipyard, error)
 }
 
 // DynatraceConfigReaderInterface provides functionality for getting a Dynatrace config.
 type DynatraceConfigReaderInterface interface {
 	// GetDynatraceConfig gets the Dynatrace config for the specified project, stage and service, checking first on the service, then stage and then project level.
-	GetDynatraceConfig(project string, stage string, service string) (string, error)
+	GetDynatraceConfig(ctx context.Context, project string, stage string, service string) (string, error)
 }
 
 const shipyardFilename = "shipyard.yaml"
@@ -68,8 +69,8 @@ func NewConfigClient(client ResourceClientInterface) *ConfigClient {
 }
 
 // GetSLOs gets the SLOs stored for exactly the specified project, stage and service.
-func (rc *ConfigClient) GetSLOs(project string, stage string, service string) (*keptn.ServiceLevelObjectives, error) {
-	resource, err := rc.client.GetServiceResource(project, stage, service, sloFilename)
+func (rc *ConfigClient) GetSLOs(ctx context.Context, project string, stage string, service string) (*keptn.ServiceLevelObjectives, error) {
+	resource, err := rc.client.GetServiceResource(ctx, project, stage, service, sloFilename)
 	if err != nil {
 		return nil, err
 	}
@@ -84,33 +85,33 @@ func (rc *ConfigClient) GetSLOs(project string, stage string, service string) (*
 }
 
 // UploadSLOs uploads the SLOs for the specified project, stage and service.
-func (rc *ConfigClient) UploadSLOs(project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error {
+func (rc *ConfigClient) UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error {
 	yamlAsByteArray, err := yaml.Marshal(slos)
 	if err != nil {
 		return fmt.Errorf("could not convert SLOs to YAML: %s", err)
 	}
 
-	return rc.client.UploadResource(yamlAsByteArray, sloFilename, project, stage, service)
+	return rc.client.UploadResource(ctx, yamlAsByteArray, sloFilename, project, stage, service)
 }
 
 // UploadSLIs uploads the SLIs for the specified project, stage and service.
-func (rc *ConfigClient) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
+func (rc *ConfigClient) UploadSLIs(ctx context.Context, project string, stage string, service string, slis *dynatrace.SLI) error {
 	yamlAsByteArray, err := yaml.Marshal(slis)
 	if err != nil {
 		return fmt.Errorf("could not convert SLIs to YAML: %s", err)
 	}
 
-	return rc.client.UploadResource(yamlAsByteArray, sliFilename, project, stage, service)
+	return rc.client.UploadResource(ctx, yamlAsByteArray, sliFilename, project, stage, service)
 }
 
 // GetDynatraceConfig gets the Dynatrace config for the specified project, stage and service, checking first on the service, then stage and then project level.
-func (rc *ConfigClient) GetDynatraceConfig(project string, stage string, service string) (string, error) {
-	return rc.client.GetResource(project, stage, service, configFilename)
+func (rc *ConfigClient) GetDynatraceConfig(ctx context.Context, project string, stage string, service string) (string, error) {
+	return rc.client.GetResource(ctx, project, stage, service, configFilename)
 }
 
 // GetShipyard returns the shipyard definition of a project.
-func (rc *ConfigClient) GetShipyard(project string) (*keptnv2.Shipyard, error) {
-	shipyardResource, err := rc.client.GetProjectResource(project, shipyardFilename)
+func (rc *ConfigClient) GetShipyard(ctx context.Context, project string) (*keptnv2.Shipyard, error) {
+	shipyardResource, err := rc.client.GetProjectResource(ctx, project, shipyardFilename)
 	if err != nil {
 		return nil, err
 	}
@@ -134,12 +135,12 @@ func (m sliMap) insertOrUpdateMany(x map[string]string) {
 
 // GetSLIs gets the SLIs stored for the specified project, stage and service.
 // First, the configuration of project-level is retrieved, which is then overridden by configuration on stage level, and then overridden by configuration on service level.
-func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+func (rc *ConfigClient) GetSLIs(ctx context.Context, project string, stage string, service string) (map[string]string, error) {
 	slis := make(sliMap)
 
 	// try to get SLI config from project
 	if project != "" {
-		projectSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetProjectResource(project, sliFilename) })
+		projectSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetProjectResource(ctx, project, sliFilename) })
 		if err != nil {
 			return nil, err
 		}
@@ -149,7 +150,7 @@ func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (m
 
 	// try to get SLI config from stage
 	if project != "" && stage != "" {
-		stageSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetStageResource(project, stage, sliFilename) })
+		stageSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetStageResource(ctx, project, stage, sliFilename) })
 		if err != nil {
 			return nil, err
 		}
@@ -159,7 +160,7 @@ func (rc *ConfigClient) GetSLIs(project string, stage string, service string) (m
 
 	// try to get SLI config from service
 	if project != "" && stage != "" && service != "" {
-		serviceSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetServiceResource(project, stage, service, sliFilename) })
+		serviceSLIs, err := getSLIsFromResource(func() (string, error) { return rc.client.GetServiceResource(ctx, project, stage, service, sliFilename) })
 		if err != nil {
 			return nil, err
 		}

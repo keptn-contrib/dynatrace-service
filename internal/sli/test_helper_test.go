@@ -258,7 +258,7 @@ func newResourceClientMockWithGetSLIsError(t *testing.T, getSLIsError error) *re
 	}
 }
 
-func (m *resourceClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
+func (m *resourceClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
 	if m.getSLIsError != nil {
 		return nil, m.getSLIsError
 	}
@@ -266,24 +266,19 @@ func (m *resourceClientMock) GetSLIs(project string, stage string, service strin
 	return m.slis, nil
 }
 
-func (m *resourceClientMock) GetSLOs(project string, stage string, service string) (*keptnapi.ServiceLevelObjectives, error) {
+func (m *resourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 	return nil, nil
 }
 
-func (m *resourceClientMock) UploadSLIs(project string, stage string, service string, slis *dynatrace.SLI) error {
+func (m *resourceClientMock) UploadSLIs(_ context.Context, _ string, _ string, _ string, _ *dynatrace.SLI) error {
 	m.t.Fatalf("UploadSLIs() should not be needed in this mock!")
 	return nil
 }
 
-func (m *resourceClientMock) UploadSLOs(project string, stage string, service string, slos *keptnapi.ServiceLevelObjectives) error {
+func (m *resourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
 	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
 	return nil
-}
-
-func (m *resourceClientMock) GetDashboard(project string, stage string, service string) (string, error) {
-	// we do not want to have any dashboard stored, so return empty string
-	return "", nil
 }
 
 type keptnClientMock struct {
