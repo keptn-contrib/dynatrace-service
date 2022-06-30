@@ -63,8 +63,7 @@ Below you can see an exemplary payload of a `sh.keptn.event.deployment.triggered
   "data": {
     "configurationChange": {
       "values": {
-        "image": "registry/my-service:v0.1.1",
-        "version": "v0.1.1"
+        "image": "registry/my-service:v0.1.1"
       }
     },
     "deployment": {
