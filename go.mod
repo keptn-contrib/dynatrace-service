@@ -7,7 +7,7 @@ require (
 	github.com/go-test/deep v1.0.8
 	github.com/keptn/go-utils v0.16.1-0.20220628141633-eb5fb9ba43e0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.5
+	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.24.2
 	k8s.io/apimachinery v0.24.2
