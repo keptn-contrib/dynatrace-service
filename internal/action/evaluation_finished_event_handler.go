@@ -56,9 +56,8 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		return fmt.Errorf("could not setup correct attach rules: %w", err)
 	}
 
-	evaluationURL := keptn.TryGetBridgeURLForEvaluation(workCtx, eh.event)
 	customProperties := newCustomProperties(eh.event, imageAndTag, bridgeURL)
-	customProperties.addIfNonEmpty(evaluationURLKey, evaluationURL)
+	customProperties.addIfNonEmpty(evaluationURLKey, keptn.TryGetBridgeURLForEvaluation(workCtx, eh.event))
 
 	infoEvent := dynatrace.InfoEvent{
 		EventType:        dynatrace.InfoEventType,
