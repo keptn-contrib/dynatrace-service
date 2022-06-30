@@ -41,7 +41,7 @@ func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		DeploymentVersion: getValueFromLabels(eh.event, "deploymentVersion", imageAndTag.Tag()),
 		CiBackLink:        getValueFromLabels(eh.event, "ciBackLink", ""),
 		RemediationAction: getValueFromLabels(eh.event, "remediationAction", ""),
-		CustomProperties:  createCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		CustomProperties:  newCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:       *eh.attachRules,
 	}
 

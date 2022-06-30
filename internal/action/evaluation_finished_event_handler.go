@@ -12,6 +12,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
+const evaluationURLKey = "evaluationHeatmapURL"
+
 // EvaluationFinishedEventHandler handles an evaluation finished event.
 type EvaluationFinishedEventHandler struct {
 	event       EvaluationFinishedAdapterInterface
@@ -54,12 +56,15 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		return fmt.Errorf("could not setup correct attach rules: %w", err)
 	}
 
+	customProperties := newCustomProperties(eh.event, imageAndTag, bridgeURL)
+	customProperties.addIfNonEmpty(evaluationURLKey, keptn.TryGetBridgeURLForEvaluation(workCtx, eh.event))
+
 	infoEvent := dynatrace.InfoEvent{
 		EventType:        dynatrace.InfoEventType,
 		Source:           eventSource,
 		Title:            eh.getTitle(isPartOfRemediation),
 		Description:      fmt.Sprintf("Quality Gate Result in stage %s: %s (%.2f/100)", eh.event.GetStage(), eh.event.GetResult(), eh.event.GetEvaluationScore()),
-		CustomProperties: createCustomProperties(eh.event, imageAndTag, bridgeURL),
+		CustomProperties: customProperties,
 		AttachRules:      attachRules,
 	}
 
