@@ -61,7 +61,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(workCtx context.Context, _ co
 		Source:           eventSource,
 		Title:            "Keptn Remediation Action Triggered",
 		Description:      eh.event.GetAction(),
-		CustomProperties: NewCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), bridgeURL),
+		CustomProperties: newCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), bridgeURL),
 		AttachRules:      *eh.attachRules,
 	}
 

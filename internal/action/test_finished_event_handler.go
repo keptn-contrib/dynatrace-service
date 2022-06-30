@@ -35,7 +35,7 @@ func (eh *TestFinishedEventHandler) HandleEvent(workCtx context.Context, _ conte
 		Source:                eventSource,
 		AnnotationType:        getValueFromLabels(eh.event, "type", "Stop Tests"),
 		AnnotationDescription: getValueFromLabels(eh.event, "description", "Stop running tests: against "+eh.event.GetService()),
-		CustomProperties:      NewCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		CustomProperties:      newCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:           *eh.attachRules,
 	}
 

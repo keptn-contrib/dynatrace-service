@@ -15,10 +15,10 @@ const bridgeURLKey = "Keptns Bridge"
 
 const contextless = "CONTEXTLESS"
 
-type CustomProperties map[string]string
+type customProperties map[string]string
 
-func NewCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, bridgeURL string) CustomProperties {
-	cp := CustomProperties{
+func newCustomProperties(a adapter.EventContentAdapter, imageAndTag common.ImageAndTag, bridgeURL string) customProperties {
+	cp := customProperties{
 		"Project":       a.GetProject(),
 		"Stage":         a.GetStage(),
 		"Service":       a.GetService(),
@@ -38,7 +38,7 @@ func NewCustomProperties(a adapter.EventContentAdapter, imageAndTag common.Image
 	return cp
 }
 
-func (cp CustomProperties) add(key string, value string) {
+func (cp customProperties) add(key string, value string) {
 	oldValue, isContained := cp[key]
 	if isContained {
 		log.Warnf("Overwriting current value '%s' of key '%s' with new value '%s in custom properties", oldValue, key, value)
@@ -47,7 +47,7 @@ func (cp CustomProperties) add(key string, value string) {
 	cp[key] = value
 }
 
-func (cp CustomProperties) addIfNonEmpty(key string, value string) {
+func (cp customProperties) addIfNonEmpty(key string, value string) {
 	if key == "" || value == "" {
 		return
 	}

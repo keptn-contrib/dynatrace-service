@@ -11,36 +11,36 @@ func TestCustomProperties_Add(t *testing.T) {
 		name     string
 		key      string
 		value    string
-		expected CustomProperties
+		expected customProperties
 	}{
 		{
 			name:     "both empty",
 			key:      "",
 			value:    "",
-			expected: CustomProperties{"": ""},
+			expected: customProperties{"": ""},
 		},
 		{
 			name:     "key empty",
 			key:      "",
 			value:    "value",
-			expected: CustomProperties{"": "value"},
+			expected: customProperties{"": "value"},
 		},
 		{
 			name:     "value empty",
 			key:      "key",
 			value:    "",
-			expected: CustomProperties{"key": ""},
+			expected: customProperties{"key": ""},
 		},
 		{
 			name:     "value empty",
 			key:      "key",
 			value:    "value",
-			expected: CustomProperties{"key": "value"},
+			expected: customProperties{"key": "value"},
 		},
 	}
 	for _, testCfg := range testConfigs {
 		t.Run(testCfg.name, func(t *testing.T) {
-			cp := CustomProperties{}
+			cp := customProperties{}
 			cp.add(testCfg.key, testCfg.value)
 
 			assert.Equal(t, testCfg.expected, cp)
@@ -54,36 +54,36 @@ func TestCustomProperties_AddIfNonEmpty(t *testing.T) {
 		name     string
 		key      string
 		value    string
-		expected CustomProperties
+		expected customProperties
 	}{
 		{
 			name:     "both empty",
 			key:      "",
 			value:    "",
-			expected: CustomProperties{},
+			expected: customProperties{},
 		},
 		{
 			name:     "key empty",
 			key:      "",
 			value:    "value",
-			expected: CustomProperties{},
+			expected: customProperties{},
 		},
 		{
 			name:     "value empty",
 			key:      "key",
 			value:    "",
-			expected: CustomProperties{},
+			expected: customProperties{},
 		},
 		{
 			name:     "value empty",
 			key:      "key",
 			value:    "value",
-			expected: CustomProperties{"key": "value"},
+			expected: customProperties{"key": "value"},
 		},
 	}
 	for _, testCfg := range testConfigs {
 		t.Run(testCfg.name, func(t *testing.T) {
-			cp := CustomProperties{}
+			cp := customProperties{}
 			cp.addIfNonEmpty(testCfg.key, testCfg.value)
 
 			assert.Equal(t, testCfg.expected, cp)

@@ -57,7 +57,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 	}
 
 	evaluationURL := keptn.TryGetBridgeURLForEvaluation(workCtx, eh.event)
-	customProperties := NewCustomProperties(eh.event, imageAndTag, bridgeURL)
+	customProperties := newCustomProperties(eh.event, imageAndTag, bridgeURL)
 	customProperties.addIfNonEmpty(evaluationURLKey, evaluationURL)
 
 	infoEvent := dynatrace.InfoEvent{
