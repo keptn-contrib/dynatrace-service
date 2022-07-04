@@ -32,14 +32,6 @@ func (err *invalidValueError) Error() string {
 	return fmt.Sprintf("invalid value for '%s': %s", err.key, err.value)
 }
 
-type duplicateKeyError struct {
-	key string
-}
-
-func (err *duplicateKeyError) Error() string {
-	return fmt.Sprintf("duplicate key '%s' in markdown definition", err.key)
-}
-
 type markdownParsingResult struct {
 	totalScore keptncommon.SLOScore
 	comparison keptncommon.SLOComparison

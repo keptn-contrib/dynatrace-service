@@ -42,10 +42,10 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 		return nil
 	}
 
-	sloDefinition, err := common.ParseSLOFromString(tile.FilterConfig.CustomName)
-	var sloDefError *common.SLODefinitionError
+	sloDefinition, err := parseSLODefinition(tile.FilterConfig.CustomName)
+	var sloDefError *sloDefinitionError
 	if errors.As(err, &sloDefError) {
-		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "Custom charting tile title parsing error", err)
+		failedTileResult := newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Custom charting tile title parsing error", err)
 		return []*TileResult{&failedTileResult}
 	}
 
