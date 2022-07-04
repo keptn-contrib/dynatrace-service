@@ -37,10 +37,10 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 // Process processes the specified USQL dashboard tile.
 // TODO: 2022-03-07: Investigate if all error and warning cases are covered. E.g. what happens if a query returns no results?
 func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []*TileResult {
-	sloDefinition, err := common.ParseSLOFromString(tile.CustomName)
-	var sloDefError *common.SLODefinitionError
+	sloDefinition, err := parseSLODefinition(tile.CustomName)
+	var sloDefError *sloDefinitionError
 	if errors.As(err, &sloDefError) {
-		failedTileResult := newFailedTileResultFromError(sloDefError.SLINameOrTileTitle(), "User Sessions Query tile title parsing error", err)
+		failedTileResult := newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "User Sessions Query tile title parsing error", err)
 		return []*TileResult{&failedTileResult}
 	}
 
