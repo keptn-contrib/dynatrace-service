@@ -1,13 +1,18 @@
 package action
 
 import (
+	"time"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 )
 
 type DeploymentFinishedAdapterInterface interface {
 	adapter.EventContentAdapter
+
+	GetTime() time.Time
 }
 
 // DeploymentFinishedAdapter godoc
@@ -90,4 +95,9 @@ func (a DeploymentFinishedAdapter) GetLabels() map[string]string {
 		labels["deploymentURIPublic"] = a.event.Deployment.DeploymentURIsPublic[0]
 	}
 	return labels
+}
+
+// GetTime returns the time stamp of the event
+func (a DeploymentFinishedAdapter) GetTime() time.Time {
+	return a.cloudEvent.GetTime()
 }
