@@ -87,6 +87,7 @@ type Tile struct {
 	AssignedEntities          []string            `json:"assignedEntities,omitempty"`
 	ExcludeMaintenanceWindows bool                `json:"excludeMaintenanceWindows,omitempty"`
 	FilterConfig              *FilterConfig       `json:"filterConfig,omitempty"`
+	Metric                    string              `json:"metric,omitempty"`
 }
 
 type Bounds struct {

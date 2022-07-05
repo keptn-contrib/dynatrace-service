@@ -20,16 +20,19 @@ type data struct {
 // there is one SLO tile as well to have a fully working example where SLOs would be stored as well
 func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-single-sli-template.json"
+
+	const displayName = "Static SLO - Pass"
 	const sliName = "Static_SLO_-_Pass"
 
 	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95)
 
 	expectedSLO := &keptnapi.SLO{
-		SLI:     sliName,
-		Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
-		Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
-		Weight:  1,
-		KeySLI:  false,
+		SLI:         sliName,
+		DisplayName: displayName,
+		Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
+		Warning:     []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
+		Weight:      1,
+		KeySLI:      false,
 	}
 
 	tests := []struct {
@@ -127,7 +130,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 			rClient := &uploadErrorResourceClientMock{t: t}
 			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, assertionFunc)
 
-			assert.EqualValues(t, rClient.uploadedSLOs, markdownTest.expectedSLO)
+			assert.EqualValues(t, markdownTest.expectedSLO, rClient.uploadedSLOs)
 		})
 	}
 }

@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -38,12 +39,42 @@ func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) *
 		return &failedTileResult
 	}
 
-	return p.processSLO(ctx, tile.AssignedEntities[0])
+	title := extractCustomTitleFromMetric(tile.Metric)
+	sloDefinition, err := parseSLODefinition(title)
+	var sloDefError *sloDefinitionError
+	if errors.As(err, &sloDefError) {
+		failedTileResult := newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "SLO tile title parsing error", err)
+		return &failedTileResult
+	}
+
+	if len(sloDefinition.Pass) > 0 {
+		failedTileResult := newFailedTileResult(sloDefError.sliNameOrTileTitle(), "SLO tile title must not include pass criteria")
+		return &failedTileResult
+	}
+
+	if len(sloDefinition.Warning) > 0 {
+		failedTileResult := newFailedTileResult(sloDefError.sliNameOrTileTitle(), "SLO tile title must not include warning criteria")
+		return &failedTileResult
+	}
+
+	return p.processSLO(ctx, tile.AssignedEntities[0], sloDefinition)
+}
+
+const customTitleKey = "customTitle"
+
+func extractCustomTitleFromMetric(metric string) string {
+	for _, pair := range newKeyValueParsing(metric).parse() {
+		if pair.key == customTitleKey && pair.split {
+			return pair.value
+		}
+	}
+
+	return ""
 }
 
 // processSLO processes an SLO by querying the data from the Dynatrace API.
 // Returns a TileResult with sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileResult {
+func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string, sloDefinitionFromTitle *keptn.SLO) *TileResult {
 	log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
 
 	query, err := slo.NewQuery(sloID)
@@ -60,31 +91,37 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileR
 		return &failedTileResult
 	}
 
-	indicatorName := cleanIndicatorName(sloResult.Name)
-
-	log.WithFields(
-		log.Fields{
-			"indicatorName": indicatorName,
-			"value":         sloResult.EvaluatedPercentage,
-		}).Debug("Adding SLO to sloResult")
-	// TODO: 2021-12-20: check: maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
-
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/97#issuecomment-766110172 for explanation about mappings to pass and warning
 	passCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Warning)}}
 	warningCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Target)}}
 
 	sloDefinition := &keptn.SLO{
-		SLI:     indicatorName,
-		Pass:    []*keptn.SLOCriteria{&passCriterion},
-		Warning: []*keptn.SLOCriteria{&warningCriterion},
-		Weight:  1,
-		KeySLI:  false,
+		SLI:         sloDefinitionFromTitle.SLI,
+		DisplayName: sloDefinitionFromTitle.DisplayName,
+		Pass:        []*keptn.SLOCriteria{&passCriterion},
+		Warning:     []*keptn.SLOCriteria{&warningCriterion},
+		Weight:      sloDefinitionFromTitle.Weight,
+		KeySLI:      sloDefinitionFromTitle.KeySLI,
 	}
 
+	if sloDefinition.SLI == "" {
+		sloDefinition.SLI = cleanIndicatorName(sloResult.Name)
+	}
+
+	if sloDefinition.DisplayName == "" {
+		sloDefinition.DisplayName = sloResult.Name
+	}
+
+	log.WithFields(
+		log.Fields{
+			"indicatorName": sloDefinition.SLI,
+			"value":         sloResult.EvaluatedPercentage,
+		}).Debug("Adding SLO to sloResult")
+
 	return &TileResult{
-		sliResult: result.NewSuccessfulSLIResult(indicatorName, sloResult.EvaluatedPercentage),
+		sliResult: result.NewSuccessfulSLIResult(sloDefinition.SLI, sloResult.EvaluatedPercentage),
 		objective: sloDefinition,
-		sliName:   indicatorName,
+		sliName:   sloDefinition.SLI,
 		sliQuery:  slo.NewQueryProducer(*query).Produce(),
 	}
 }
