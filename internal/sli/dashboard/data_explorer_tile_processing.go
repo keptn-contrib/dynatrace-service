@@ -36,7 +36,6 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 
 // Process processes the specified Data Explorer dashboard tile.
 func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
-	// first - lets figure out if this tile should be included in SLI validation or not - we parse the title and look for "sli=sliname"
 	sloDefinition, err := parseSLODefinition(tile.Name)
 	var sloDefError *sloDefinitionError
 	if errors.As(err, &sloDefError) {
@@ -45,7 +44,7 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 	}
 
 	if sloDefinition.SLI == "" {
-		log.WithField("tileName", tile.Name).Debug("Data Explorer tile not included as name doesnt include sli=SLINAME")
+		log.WithField("tileName", tile.Name).Debug("Omitted Data Explorer tile as no SLI name could be derived")
 		return nil
 	}
 

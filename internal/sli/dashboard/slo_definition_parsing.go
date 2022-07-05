@@ -48,11 +48,18 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 				errs = append(errs, &duplicateKeyError{key: sloDefSli})
 				break
 			}
-			result.SLI = kv.value
+			keyFound[sloDefSli] = true
+
 			if kv.value == "" {
 				errs = append(errs, fmt.Errorf("sli name is empty"))
+				break
 			}
-			keyFound[sloDefSli] = true
+
+			if result.DisplayName == "" {
+				result.DisplayName = kv.value
+			}
+			result.SLI = cleanIndicatorName(kv.value)
+
 		case sloDefPass:
 			passCriteria, err := parseSLOCriteriaString(kv.value)
 			if err != nil {
@@ -60,6 +67,7 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 				break
 			}
 			result.Pass = append(result.Pass, passCriteria)
+
 		case sloDefWarning:
 			warningCriteria, err := parseSLOCriteriaString(kv.value)
 			if err != nil {
@@ -67,27 +75,36 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 				break
 			}
 			result.Warning = append(result.Warning, warningCriteria)
+
 		case sloDefKey:
 			if keyFound[sloDefKey] {
 				errs = append(errs, &duplicateKeyError{key: sloDefKey})
 				break
 			}
+			keyFound[sloDefKey] = true
+
 			result.KeySLI, err = strconv.ParseBool(kv.value)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", sloDefKey, kv.value))
 			}
-			keyFound[sloDefKey] = true
+
 		case sloDefWeight:
 			if keyFound[sloDefWeight] {
 				errs = append(errs, &duplicateKeyError{key: sloDefWeight})
 				break
 			}
+			keyFound[sloDefWeight] = true
+
 			result.Weight, err = strconv.Atoi(kv.value)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not an integer value: %v", sloDefWeight, kv.value))
 			}
-			keyFound[sloDefWeight] = true
+
 		}
+	}
+
+	if result.SLI == "" && result.DisplayName != "" {
+		result.SLI = cleanIndicatorName(result.DisplayName)
 	}
 
 	if len(errs) > 0 {
