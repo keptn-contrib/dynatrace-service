@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	v2 "github.com/keptn/go-utils/pkg/api/utils/v2"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
 // EventClientInterface encapsulates functionality built on top of Keptn events.
@@ -131,36 +132,9 @@ func (c *EventClient) GetImageAndTag(ctx context.Context, event adapter.EventCon
 
 	for key, value := range triggeredData.ConfigurationChange.Values {
 		if strings.HasSuffix(key, "image") {
-			imageAndTag := value.(string)
-			return common.NewImageAndTag(
-				getImage(imageAndTag),
-				getTag(imageAndTag))
+			return common.TryParse(value)
 		}
 	}
 
 	return common.NewNotAvailableImageAndTag()
-}
-
-// getImage returns the deployed image
-func getImage(imageAndTag string) string {
-	if imageAndTag == common.NotAvailable {
-		return common.NotAvailable
-	}
-
-	split := strings.Split(imageAndTag, ":")
-	return split[0]
-}
-
-// getTag returns the deployed tag
-func getTag(imageAndTag string) string {
-	if imageAndTag == common.NotAvailable {
-		return common.NotAvailable
-	}
-
-	split := strings.Split(imageAndTag, ":")
-	if len(split) == 1 {
-		return common.NotAvailable
-	}
-
-	return split[1]
 }
