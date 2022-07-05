@@ -2,6 +2,7 @@ package adapter
 
 import (
 	"fmt"
+	"time"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/cloudevents/sdk-go/v2/types"
@@ -54,6 +55,10 @@ func (a CloudEventAdapter) GetEventID() string {
 
 func (a CloudEventAdapter) GetType() string {
 	return a.ce.Type()
+}
+
+func (a CloudEventAdapter) GetTime() time.Time {
+	return a.ce.Time()
 }
 
 // PayloadAs attempts to populate the provided content object with the event payload. Will return an error otherwise.
