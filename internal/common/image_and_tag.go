@@ -44,7 +44,15 @@ func TryParseImageAndTag(imageAndTagValue interface{}) ImageAndTag {
 
 	split := strings.Split(imageAndTag, ":")
 	if len(split) == 1 {
+		if split[0] == "" {
+			return NewNotAvailableImageAndTag()
+		}
+
 		return NewImageAndTag(split[0], NotAvailable)
+	}
+
+	if split[0] == "" || split[1] == "" {
+		return NewNotAvailableImageAndTag()
 	}
 
 	return NewImageAndTag(split[0], split[1])
