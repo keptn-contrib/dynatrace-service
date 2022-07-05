@@ -1,13 +1,18 @@
 package action
 
 import (
+	"time"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 )
 
 type TestTriggeredAdapterInterface interface {
 	adapter.EventContentAdapter
+
+	GetTime() time.Time
 }
 
 // TestTriggeredAdapter is a content adaptor for events of type sh.keptn.event.test.triggered
@@ -80,4 +85,9 @@ func (a TestTriggeredAdapter) GetDeploymentStrategy() string {
 // GetLabels returns a map of labels
 func (a TestTriggeredAdapter) GetLabels() map[string]string {
 	return a.event.Labels
+}
+
+// GetTime returns the time stamp of the event
+func (a TestTriggeredAdapter) GetTime() time.Time {
+	return a.cloudEvent.GetTime()
 }

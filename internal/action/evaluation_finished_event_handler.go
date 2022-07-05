@@ -84,14 +84,10 @@ func (eh *EvaluationFinishedEventHandler) getTitle(isPartOfRemediation bool) str
 }
 
 func (eh *EvaluationFinishedEventHandler) createAttachRules(ctx context.Context, imageAndTag common.ImageAndTag) (dynatrace.AttachRules, error) {
-	timeframeFunc := func() (*common.Timeframe, error) {
-		timeframe, err := common.NewTimeframeParser(eh.event.GetStartTime(), eh.event.GetEndTime()).Parse()
-		if err != nil {
-			return nil, err
-		}
-
-		return timeframe, nil
+	timeframe, err := common.NewTimeframeParser(eh.event.GetStartTime(), eh.event.GetEndTime()).Parse()
+	if err != nil {
+		return dynatrace.AttachRules{}, err
 	}
 
-	return createOrUpdateAttachRules(ctx, eh.dtClient, eh.attachRules, imageAndTag, eh.event, timeframeFunc)
+	return createOrUpdateAttachRules(ctx, eh.dtClient, eh.attachRules, imageAndTag, eh.event, *timeframe)
 }

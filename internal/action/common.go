@@ -2,12 +2,15 @@ package action
 
 import (
 	"context"
+	"time"
 
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 const eventSource = "Keptn dynatrace-service"
@@ -100,7 +103,7 @@ func createDefaultAttachRules(keptnContext KeptnContext) *dynatrace.AttachRules 
 // TimeframeFunc is the signature of a function returning a common.Timeframe or and error
 type TimeframeFunc func() (*common.Timeframe, error)
 
-func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInterface, existingAttachRules *dynatrace.AttachRules, imageAndTag common.ImageAndTag, event adapter.EventContentAdapter, timeframeFunc TimeframeFunc) (dynatrace.AttachRules, error) {
+func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInterface, existingAttachRules *dynatrace.AttachRules, imageAndTag common.ImageAndTag, event adapter.EventContentAdapter, timeframe common.Timeframe) (dynatrace.AttachRules, error) {
 	version := determineVersionFromTagOrLabel(imageAndTag, event)
 	if version == "" {
 		if existingAttachRules != nil {
@@ -110,11 +113,6 @@ func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInter
 
 		log.Debug("no version information available - will use default attach rules")
 		return *createDefaultAttachRules(event), nil
-	}
-
-	timeframe, err := timeframeFunc()
-	if err != nil {
-		return dynatrace.AttachRules{}, err
 	}
 
 	entityClient := dynatrace.NewEntitiesClient(client)
@@ -162,4 +160,25 @@ func determineVersionFromTagOrLabel(imageAndTag common.ImageAndTag, event adapte
 	}
 
 	return event.GetLabels()["releasesVersion"]
+}
+
+type EventContentAdapterWithTime interface {
+	adapter.EventContentAdapter
+
+	GetTime() time.Time
+}
+
+func createAttachRules(ctx context.Context, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, event EventContentAdapterWithTime, imageAndTag common.ImageAndTag, customAttachRules *dynatrace.AttachRules) (dynatrace.AttachRules, error) {
+
+	deploymentTriggeredTime, err := eClient.GetEventTimeStampForType(ctx, event, keptnv2.GetTriggeredEventType(keptnv2.DeploymentTaskName))
+	if err != nil {
+		log.WithError(err).Warn("Could not find the corresponding deployment.triggered event")
+
+		// set the start time to 10 secs before event time - at least we can try to find sth.
+		deploymentTriggeredTime = event.GetTime().Add(-10 * time.Second)
+	}
+
+	timeframe, err := common.NewTimeframe(deploymentTriggeredTime, event.GetTime())
+
+	return createOrUpdateAttachRules(ctx, dtClient, customAttachRules, imageAndTag, event, *timeframe)
 }

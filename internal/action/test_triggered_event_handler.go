@@ -2,6 +2,7 @@ package action
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -27,8 +28,10 @@ func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient 
 
 // HandleEvent handles a test triggered event.
 func (eh *TestTriggeredEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
-	if eh.attachRules == nil {
-		eh.attachRules = createDefaultAttachRules(eh.event)
+	imageAndTag := eh.eClient.GetImageAndTag(workCtx, eh.event)
+	attachRules, err := createAttachRules(workCtx, eh.dtClient, eh.eClient, eh.event, imageAndTag, eh.attachRules)
+	if err != nil {
+		return fmt.Errorf("could not setup correct attach rules: %w", err)
 	}
 
 	annotationEvent := dynatrace.AnnotationEvent{
@@ -36,8 +39,8 @@ func (eh *TestTriggeredEventHandler) HandleEvent(workCtx context.Context, _ cont
 		Source:                eventSource,
 		AnnotationType:        getValueFromLabels(eh.event, "type", "Start Tests: "+eh.event.GetTestStrategy()),
 		AnnotationDescription: getValueFromLabels(eh.event, "description", "Start running tests: "+eh.event.GetTestStrategy()+" against "+eh.event.GetService()),
-		CustomProperties:      newCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
-		AttachRules:           *eh.attachRules,
+		CustomProperties:      newCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		AttachRules:           attachRules,
 	}
 
 	return dynatrace.NewEventsClient(eh.dtClient).AddAnnotationEvent(workCtx, annotationEvent)
