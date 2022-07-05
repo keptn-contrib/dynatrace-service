@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/keptn/go-utils/pkg/api/models"
 	v2 "github.com/keptn/go-utils/pkg/api/utils/v2"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -25,6 +27,9 @@ type EventClientInterface interface {
 
 	// GetImageAndTag extracts the image and tag associated with a deployment triggered as part of the sequence.
 	GetImageAndTag(ctx context.Context, keptnEvent adapter.EventContentAdapter) common.ImageAndTag
+
+	// GetEventTimeStampForType tries to get the time stamp of a certain event as part of the sequence.
+	GetEventTimeStampForType(ctx context.Context, keptnEvent adapter.EventContentAdapter, eventType string) (time.Time, error)
 }
 
 // EventClient implements offers EventClientInterface using api.EventsV1Interface.
@@ -104,27 +109,14 @@ func (c *EventClient) FindProblemID(ctx context.Context, keptnEvent adapter.Even
 // GetImageAndTag extracts the image and tag associated with a deployment triggered as part of the sequence.
 func (c *EventClient) GetImageAndTag(ctx context.Context, event adapter.EventContentAdapter) common.ImageAndTag {
 
-	events, mErr := c.client.GetEvents(ctx,
-		&v2.EventFilter{
-			Project:      event.GetProject(),
-			Stage:        event.GetStage(),
-			Service:      event.GetService(),
-			EventType:    keptnv2.GetTriggeredEventType(keptnv2.DeploymentTaskName),
-			KeptnContext: event.GetShKeptnContext(),
-		},
-		v2.EventsGetEventsOptions{})
-
-	if mErr != nil {
-		log.WithError(errors.New(mErr.GetMessage())).Error("Could not retrieve image and tag for event")
-		return common.NewNotAvailableImageAndTag()
-	}
-
-	if len(events) == 0 {
+	gotEvent, err := c.getEventDataForType(ctx, event, keptnv2.GetTriggeredEventType(keptnv2.DeploymentTaskName))
+	if err != nil {
+		log.WithError(err).Error("Could not retrieve image and tag for event")
 		return common.NewNotAvailableImageAndTag()
 	}
 
 	triggeredData := &keptnv2.DeploymentTriggeredEventData{}
-	err := keptnv2.Decode(events[0].Data, triggeredData)
+	err = keptnv2.Decode(gotEvent.Data, triggeredData)
 	if err != nil {
 		log.WithError(err).Error("Could not decode event data")
 		return common.NewNotAvailableImageAndTag()
@@ -137,4 +129,35 @@ func (c *EventClient) GetImageAndTag(ctx context.Context, event adapter.EventCon
 	}
 
 	return common.NewNotAvailableImageAndTag()
+}
+
+func (c *EventClient) getEventDataForType(ctx context.Context, event adapter.EventContentAdapter, eventType string) (*models.KeptnContextExtendedCE, error) {
+	events, mErr := c.client.GetEvents(ctx,
+		&v2.EventFilter{
+			Project:      event.GetProject(),
+			Stage:        event.GetStage(),
+			Service:      event.GetService(),
+			EventType:    eventType,
+			KeptnContext: event.GetShKeptnContext(),
+		},
+		v2.EventsGetEventsOptions{})
+
+	if mErr != nil {
+		return nil, errors.New(mErr.GetMessage())
+	}
+
+	if len(events) == 0 {
+		return nil, fmt.Errorf("could not find any event for type '%s' in project '%s', stage '%s' and service '%s' for shkeptncontext '%s'", eventType, event.GetProject(), event.GetStage(), event.GetService(), event.GetShKeptnContext())
+	}
+
+	return events[0], nil
+}
+
+func (c *EventClient) GetEventTimeStampForType(ctx context.Context, event adapter.EventContentAdapter, eventType string) (time.Time, error) {
+	gotEvent, err := c.getEventDataForType(ctx, event, eventType)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return gotEvent.Time, nil
 }

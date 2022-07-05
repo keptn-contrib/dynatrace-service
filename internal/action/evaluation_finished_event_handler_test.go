@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
@@ -401,6 +402,11 @@ func (e *eventClientFake) FindProblemID(_ context.Context, _ adapter.EventConten
 
 func (e *eventClientFake) GetImageAndTag(_ context.Context, _ adapter.EventContentAdapter) common.ImageAndTag {
 	return e.imageAndTag
+}
+
+func (e *eventClientFake) GetEventTimeStampForType(_ context.Context, _ adapter.EventContentAdapter, _ string) (time.Time, error) {
+	e.t.Fatal("should not be needed here")
+	return time.Time{}, nil
 }
 
 type evaluationFinishedEventData struct {
