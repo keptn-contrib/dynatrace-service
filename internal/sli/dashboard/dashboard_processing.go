@@ -91,8 +91,8 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 				markdownAlreadyProcessed = true
 			}
 		case dynatrace.SLOTileType:
-			tileResults := NewSLOTileProcessing(p.client, p.timeframe).Process(ctx, &tile)
-			result.addTileResults(tileResults)
+			tileResult := NewSLOTileProcessing(p.client, p.timeframe).Process(ctx, &tile)
+			result.addTileResult(tileResult)
 		case dynatrace.OpenProblemsTileType:
 			tileResult := NewProblemTileProcessing(p.client, p.timeframe).Process(ctx, &tile, dashboard.GetFilter())
 			result.addTileResult(tileResult)

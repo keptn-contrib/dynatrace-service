@@ -27,23 +27,25 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Tim
 }
 
 // Process processes the specified SLO dashboard tile.
-func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []*TileResult {
+func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) *TileResult {
 	if len(tile.AssignedEntities) == 0 {
 		failedTileResult := newFailedTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")
-		return []*TileResult{&failedTileResult}
+		return &failedTileResult
 	}
 
-	var results []*TileResult
-	for _, sloID := range tile.AssignedEntities {
-		log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
-		results = append(results, p.processSLO(ctx, sloID))
+	if len(tile.AssignedEntities) > 1 {
+		failedTileResult := newFailedTileResult("slo_tile_with_multiple_slos", "SLO tile contains multiple SLO IDs")
+		return &failedTileResult
 	}
-	return results
+
+	return p.processSLO(ctx, tile.AssignedEntities[0])
 }
 
 // processSLO processes an SLO by querying the data from the Dynatrace API.
 // Returns a TileResult with sliResult, sliIndicatorName, sliQuery & sloDefinition
 func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileResult {
+	log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
+
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
 		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
