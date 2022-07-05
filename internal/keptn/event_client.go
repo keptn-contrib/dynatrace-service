@@ -132,7 +132,7 @@ func (c *EventClient) GetImageAndTag(ctx context.Context, event adapter.EventCon
 
 	for key, value := range triggeredData.ConfigurationChange.Values {
 		if strings.HasSuffix(key, "image") {
-			return common.TryParse(value)
+			return common.TryParseImageAndTag(value)
 		}
 	}
 

@@ -29,8 +29,8 @@ func (iat ImageAndTag) Image() string {
 	return iat.image
 }
 
-// TryParse will try to parse imageAndTagValue into a string. It will return a ImageAndTag struct with the data it could extract from the given input data.
-func TryParse(imageAndTagValue interface{}) ImageAndTag {
+// TryParseImageAndTag will try to parse imageAndTagValue into a string. It will return a ImageAndTag struct with the data it could extract from the given input data.
+func TryParseImageAndTag(imageAndTagValue interface{}) ImageAndTag {
 
 	imageAndTag, ok := imageAndTagValue.(string)
 	if !ok {
