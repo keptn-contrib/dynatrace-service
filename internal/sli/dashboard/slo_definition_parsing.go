@@ -25,6 +25,10 @@ const (
 // 	 "KQG;project=myproject;pass=90%;warning=75%;"
 // This will return a SLO object or an error if parsing was not possible
 func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
+	if !strings.Contains(sloDefinition, ";") {
+		sloDefinition = strings.ReplaceAll(sloDefinition, "|", ";")
+	}
+
 	result := &keptncommon.SLO{
 		Weight: 1,
 		KeySLI: false,
