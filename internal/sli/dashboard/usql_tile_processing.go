@@ -158,7 +158,7 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition *keptncommon.SLO, visualizationType string, baseQuery usql.Query) TileResult {
 	indicatorName := sloDefinition.SLI
 	if dimensionName != "" {
-		indicatorName = common.CleanIndicatorName(indicatorName + "_" + dimensionName)
+		indicatorName = cleanIndicatorName(indicatorName + "_" + dimensionName)
 	}
 
 	v1USQLQuery, err := v1usql.NewQuery(visualizationType, dimensionName, baseQuery)
