@@ -16,12 +16,12 @@ func TestParseSLODefinition_SuccessCases(t *testing.T) {
 		{
 			name:      "just some SLI - so no error",
 			sloString: "Some SLI",
-			want:      createSLO("", "Some SLI", [][]string{}, [][]string{}, 1, false),
+			want:      createSLO("Some_SLI", "Some SLI", [][]string{}, [][]string{}, 1, false),
 		},
 		{
 			name:      "just some SLI, but with separator - so no error",
 			sloString: "Some SLI;with separator",
-			want:      createSLO("", "Some SLI", [][]string{}, [][]string{}, 1, false),
+			want:      createSLO("Some_SLI", "Some SLI", [][]string{}, [][]string{}, 1, false),
 		},
 		{
 			name:      "multiple pass and warning criteria - AND",
@@ -54,9 +54,14 @@ func TestParseSLODefinition_SuccessCases(t *testing.T) {
 			want:      createSLO("host_cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
 		},
 		{
-			name:      "informational SLI name with space - should be underscore",
+			name:      "informational SLI name with space - changed to underscore",
 			sloString: "Host CPU %;sli=host cpu;just for informational purposes",
-			want:      createSLO("host cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
+			want:      createSLO("host_cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
+		},
+		{
+			name:      "informational SLI name with space - no display name",
+			sloString: "sli=host cpu;just for informational purposes",
+			want:      createSLO("host_cpu", "host cpu", [][]string{}, [][]string{}, 1, false),
 		},
 	}
 	for _, tt := range tests {
