@@ -404,9 +404,9 @@ func (e *eventClientFake) GetImageAndTag(_ context.Context, _ adapter.EventConte
 	return e.imageAndTag
 }
 
-func (e *eventClientFake) GetEventTimeStampForType(_ context.Context, _ adapter.EventContentAdapter, _ string) (time.Time, error) {
+func (e *eventClientFake) GetEventTimeStampForType(_ context.Context, _ adapter.EventContentAdapter, _ string) (*time.Time, error) {
 	e.t.Fatal("should not be needed here")
-	return time.Time{}, nil
+	return nil, nil
 }
 
 type evaluationFinishedEventData struct {

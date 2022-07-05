@@ -29,7 +29,7 @@ type EventClientInterface interface {
 	GetImageAndTag(ctx context.Context, keptnEvent adapter.EventContentAdapter) common.ImageAndTag
 
 	// GetEventTimeStampForType tries to get the time stamp of a certain event as part of the sequence.
-	GetEventTimeStampForType(ctx context.Context, keptnEvent adapter.EventContentAdapter, eventType string) (time.Time, error)
+	GetEventTimeStampForType(ctx context.Context, keptnEvent adapter.EventContentAdapter, eventType string) (*time.Time, error)
 }
 
 // EventClient implements offers EventClientInterface using api.EventsV1Interface.
@@ -153,11 +153,11 @@ func (c *EventClient) getEventDataForType(ctx context.Context, event adapter.Eve
 	return events[0], nil
 }
 
-func (c *EventClient) GetEventTimeStampForType(ctx context.Context, event adapter.EventContentAdapter, eventType string) (time.Time, error) {
+func (c *EventClient) GetEventTimeStampForType(ctx context.Context, event adapter.EventContentAdapter, eventType string) (*time.Time, error) {
 	gotEvent, err := c.getEventDataForType(ctx, event, eventType)
 	if err != nil {
-		return time.Time{}, err
+		return nil, err
 	}
 
-	return gotEvent.Time, nil
+	return &gotEvent.Time, nil
 }

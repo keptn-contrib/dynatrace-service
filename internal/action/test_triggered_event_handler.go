@@ -2,7 +2,6 @@ package action
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -29,10 +28,7 @@ func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient 
 // HandleEvent handles a test triggered event.
 func (eh *TestTriggeredEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 	imageAndTag := eh.eClient.GetImageAndTag(workCtx, eh.event)
-	attachRules, err := createAttachRules(workCtx, eh.dtClient, eh.eClient, eh.event, imageAndTag, eh.attachRules)
-	if err != nil {
-		return fmt.Errorf("could not setup correct attach rules: %w", err)
-	}
+	attachRules := createAttachRulesForDeploymentTimeFrame(workCtx, eh.dtClient, eh.eClient, eh.event, imageAndTag, eh.attachRules)
 
 	annotationEvent := dynatrace.AnnotationEvent{
 		EventType:             dynatrace.AnnotationEventType,

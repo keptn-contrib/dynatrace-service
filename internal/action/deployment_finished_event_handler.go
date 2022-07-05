@@ -2,8 +2,12 @@ package action
 
 import (
 	"context"
-	"fmt"
+	"time"
 
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
@@ -29,10 +33,7 @@ func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface,
 // HandleEvent handles a deployment finished event.
 func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 	imageAndTag := eh.eClient.GetImageAndTag(workCtx, eh.event)
-	attachRules, err := createAttachRules(workCtx, eh.dtClient, eh.eClient, eh.event, imageAndTag, eh.attachRules)
-	if err != nil {
-		return fmt.Errorf("could not setup correct attach rules: %w", err)
-	}
+	attachRules := eh.createAttachRules(workCtx, imageAndTag)
 
 	deploymentEvent := dynatrace.DeploymentEvent{
 		EventType:         dynatrace.DeploymentEventType,
@@ -47,4 +48,19 @@ func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, _
 	}
 
 	return dynatrace.NewEventsClient(eh.dtClient).AddDeploymentEvent(workCtx, deploymentEvent)
+}
+
+func (eh *DeploymentFinishedEventHandler) createAttachRules(ctx context.Context, imageAndTag common.ImageAndTag) dynatrace.AttachRules {
+
+	deploymentTriggeredTime, err := eh.eClient.GetEventTimeStampForType(ctx, eh.event, keptnv2.GetTriggeredEventType(keptnv2.DeploymentTaskName))
+	if err != nil {
+		log.WithError(err).Warn("Could not find the corresponding deployment.triggered event")
+
+		// set the start time to 10 secs before event time - at least we can try to find sth.
+		*deploymentTriggeredTime = eh.event.GetTime().Add(-10 * time.Second)
+	}
+
+	// ignoring the error here, because it should not be possible to create an invalid timeframe here
+	timeframe, _ := common.NewTimeframe(*deploymentTriggeredTime, eh.event.GetTime())
+	return createOrUpdateAttachRules(ctx, eh.dtClient, eh.attachRules, imageAndTag, eh.event, timeframe)
 }

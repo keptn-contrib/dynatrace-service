@@ -2,7 +2,10 @@ package common
 
 import (
 	"errors"
+	"fmt"
 	"time"
+
+	"github.com/keptn/go-utils/pkg/common/timeutils"
 )
 
 // Timeframe represents a timeframe with a start and end time.
@@ -32,4 +35,8 @@ func (t Timeframe) Start() time.Time {
 // End gets the end of the timeframe.
 func (t Timeframe) End() time.Time {
 	return t.end
+}
+
+func (t Timeframe) String() string {
+	return fmt.Sprintf("start: %s, end: %s", timeutils.GetKeptnTimeStamp(t.start), timeutils.GetKeptnTimeStamp(t.end))
 }
