@@ -71,14 +71,3 @@ func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapt
 func TimestampToUnixMillisecondsString(time time.Time) string {
 	return strconv.FormatInt(time.Unix()*1000, 10)
 }
-
-// CleanIndicatorName makes sure we have a valid indicator name by getting rid of special characters.
-// All spaces, periods, forward-slashs, and percent and dollar signs are replaced with an underscore.
-func CleanIndicatorName(indicatorName string) string {
-	indicatorName = strings.ReplaceAll(indicatorName, " ", "_")
-	indicatorName = strings.ReplaceAll(indicatorName, "/", "_")
-	indicatorName = strings.ReplaceAll(indicatorName, "%", "_")
-	indicatorName = strings.ReplaceAll(indicatorName, "$", "_")
-	indicatorName = strings.ReplaceAll(indicatorName, ".", "_")
-	return indicatorName
-}

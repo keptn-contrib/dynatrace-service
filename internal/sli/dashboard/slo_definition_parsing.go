@@ -146,3 +146,14 @@ func (err *sloDefinitionError) sliNameOrTileTitle() string {
 
 	return err.tileTitle
 }
+
+// cleanIndicatorName makes sure we have a valid indicator name by getting rid of special characters.
+// All spaces, periods, forward-slashs, and percent and dollar signs are replaced with an underscore.
+func cleanIndicatorName(indicatorName string) string {
+	indicatorName = strings.ReplaceAll(indicatorName, " ", "_")
+	indicatorName = strings.ReplaceAll(indicatorName, "/", "_")
+	indicatorName = strings.ReplaceAll(indicatorName, "%", "_")
+	indicatorName = strings.ReplaceAll(indicatorName, "$", "_")
+	indicatorName = strings.ReplaceAll(indicatorName, ".", "_")
+	return indicatorName
+}

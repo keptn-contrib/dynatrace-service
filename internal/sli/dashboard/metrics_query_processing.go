@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
@@ -118,7 +117,7 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 		}
 
 		// make sure we have a valid indicator name by getting rid of special characters
-		indicatorName = common.CleanIndicatorName(indicatorName)
+		indicatorName = cleanIndicatorName(indicatorName)
 
 		// calculating the value
 		value := 0.0
