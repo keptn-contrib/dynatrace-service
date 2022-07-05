@@ -32,9 +32,12 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 	var errs []error
 
 	keyFound := make(map[string]bool)
-	for _, kv := range newKeyValueParsing(sloDefinition).parse() {
+	for i, kv := range newKeyValueParsing(sloDefinition).parse() {
 
 		if !kv.split {
+			if i == 0 {
+				result.DisplayName = kv.key
+			}
 			continue
 		}
 
