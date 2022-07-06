@@ -5,7 +5,10 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	"github.com/stretchr/testify/assert"
 )
 
 var testUSQLTileGetSLIEventData = createTestGetSLIEventDataWithStartAndEnd("2021-09-17T07:00:00.000Z", "2021-09-17T08:00:00.000Z")
@@ -308,4 +311,35 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues(t *testing.T) {
 
 	rClient := &uploadErrorResourceClientMock{t: t}
 	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO tests that extracting an SLI and SLO from a USQL tile works as expected.
+// This is will result in a SLIResult with success, as this is supported.
+// Here also the SLO is checked, including the display name, weight and key SLI.
+func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/usql_tiles/custom_slo/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("average_session_duration", 62731.12784806213),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "average_session_duration", "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession")
+	}
+
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:         "average_session_duration",
+			DisplayName: "Average user session duration",
+			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<=100"}}},
+			Weight:      2,
+			KeySLI:      true,
+		}, actual.Objectives[0])
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }

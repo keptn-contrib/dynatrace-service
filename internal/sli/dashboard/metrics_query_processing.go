@@ -143,11 +143,12 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 			&TileResult{
 				sliResult: result.NewSuccessfulSLIResult(indicatorName, value),
 				objective: &keptncommon.SLO{
-					SLI:     indicatorName,
-					Weight:  sloDefinition.Weight,
-					KeySLI:  sloDefinition.KeySLI,
-					Pass:    sloDefinition.Pass,
-					Warning: sloDefinition.Warning,
+					SLI:         indicatorName,
+					DisplayName: sloDefinition.DisplayName,
+					Weight:      sloDefinition.Weight,
+					KeySLI:      sloDefinition.KeySLI,
+					Pass:        sloDefinition.Pass,
+					Warning:     sloDefinition.Warning,
 				},
 				sliName:  indicatorName,
 				sliQuery: getMetricsQueryString(metricQueryComponents.metricUnit, *metricQueryForSLI),
