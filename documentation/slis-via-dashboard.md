@@ -10,15 +10,15 @@ In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-servic
 
 ## Defining SLIs and SLOs
 
-The base name of the SLI as well as the properties of the SLO must be set by appending `;`-separated `<key>=<value>` pairs to the tile's title. The following keys are supported:
+By default, the tile's title is taken as the display name of the SLO. A clean version of this name (with spaces, `/`,  `%`, `$` and `.` replaced with `_`) is used as the base-name of the associated SLI. The properties of the SLO can be further customized by appending `;`-separated `<key>=<value>` pairs to the tile's title. The following keys are supported:
 
-| Key | Description | Required | Example |
-|---|---|---|---|
-| `sli` | Use `<value>` as the base-name of the SLI | Yes | `sli=response_time` |
-| `pass` | Add `<value>` as a pass criterion to the SLO | No | `pass=<200` |
-| `warning` | Add `<value>` as a warning criterion to the SLO | No | `warning=<300` |
-| `key` | Mark SLI as a key SLI | No | `key=true` |
-| `weight` | Set the weight of the SLO to `<value>` | No | `weight=2` |
+| Key | Description | Example |
+|---|---|---|
+| `sli` | Use `<value>` as the base-name of the SLI | `sli=response_time` |
+| `pass` | Add `<value>` as a pass criterion to the SLO | `pass=<200` |
+| `warning` | Add `<value>` as a warning criterion to the SLO | `warning=<300` |
+| `key` | Mark SLI as a key SLI | `key=true` |
+| `weight` | Set the weight of the SLO to `<value>` | `weight=2` |
 
 Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo/#objectives) for more details on configuring objectives.
 
