@@ -1,19 +1,13 @@
 package action
 
 import (
-	"context"
 	"net/http"
 	"testing"
-	"time"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/stretchr/testify/assert"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 const testdataFolder = "./testdata/evaluation_finished/"
@@ -40,7 +34,16 @@ func TestEvaluationFinishedEventHandler_HandleEvent_MultipleEntities(t *testing.
 		imageAndTag: common.NewImageAndTag("registry/my-image", "1.2.3"),
 	}
 
-	assertThatCorrectEventWasSent(t, handler, eClient, nil, expectedAttachRules, nil)
+	setup := evaluationFinishedTestSetup{
+		t:                   t,
+		handler:             handler,
+		eClient:             eClient,
+		customAttachRules:   nil,
+		expectedAttachRules: expectedAttachRules,
+		labels:              nil,
+	}
+
+	assertThatCorrectEventWasSent[dynatrace.InfoEvent](t, handler, setup)
 }
 
 // multiple PGIs found will be returned, when no custom rules are defined and version information is based on event label
@@ -69,7 +72,16 @@ func TestEvaluationFinishedEventHandler_HandleEvent_MultipleEntitiesBasedOnLabel
 		imageAndTag: common.NewNotAvailableImageAndTag(),
 	}
 
-	assertThatCorrectEventWasSent(t, handler, eClient, nil, expectedAttachRules, labels)
+	setup := evaluationFinishedTestSetup{
+		t:                   t,
+		handler:             handler,
+		eClient:             eClient,
+		customAttachRules:   nil,
+		expectedAttachRules: expectedAttachRules,
+		labels:              labels,
+	}
+
+	assertThatCorrectEventWasSent[dynatrace.InfoEvent](t, handler, setup)
 }
 
 // single PGI found will be combined with the custom attach rules
@@ -120,7 +132,16 @@ func TestEvaluationFinishedEventHandler_HandleEvent_SingleEntityAndUserSpecified
 		imageAndTag: common.NewImageAndTag("registry/my-image", "1.2.3"),
 	}
 
-	assertThatCorrectEventWasSent(t, handler, eClient, customAttachRules, expectedAttachRules, nil)
+	setup := evaluationFinishedTestSetup{
+		t:                   t,
+		handler:             handler,
+		eClient:             eClient,
+		customAttachRules:   customAttachRules,
+		expectedAttachRules: expectedAttachRules,
+		labels:              nil,
+	}
+
+	assertThatCorrectEventWasSent[dynatrace.InfoEvent](t, handler, setup)
 }
 
 // single PGI found will be combined with the custom attach rules that include version information from event label
@@ -177,7 +198,16 @@ func TestEvaluationFinishedEventHandler_HandleEvent_SingleEntityAndUserSpecified
 		imageAndTag: common.NewNotAvailableImageAndTag(),
 	}
 
-	assertThatCorrectEventWasSent(t, handler, eClient, customAttachRules, expectedAttachRules, labels)
+	setup := evaluationFinishedTestSetup{
+		t:                   t,
+		handler:             handler,
+		eClient:             eClient,
+		customAttachRules:   customAttachRules,
+		expectedAttachRules: expectedAttachRules,
+		labels:              labels,
+	}
+
+	assertThatCorrectEventWasSent[dynatrace.InfoEvent](t, handler, setup)
 }
 
 // no PGIs found and no custom attach rules will result in default attach rules
@@ -218,7 +248,16 @@ func TestEvaluationFinishedEventHandler_HandleEvent_NoEntitiesAndNoUserSpecified
 		imageAndTag: common.NewImageAndTag("registry/my-image", "1.2.3"),
 	}
 
-	assertThatCorrectEventWasSent(t, handler, eClient, nil, expectedAttachRules, nil)
+	setup := evaluationFinishedTestSetup{
+		t:                   t,
+		handler:             handler,
+		eClient:             eClient,
+		customAttachRules:   nil,
+		expectedAttachRules: expectedAttachRules,
+		labels:              nil,
+	}
+
+	assertThatCorrectEventWasSent[dynatrace.InfoEvent](t, handler, setup)
 }
 
 // no PGIs found but custom attach rules will result custom attach rules only
@@ -250,7 +289,16 @@ func TestEvaluationFinishedEventHandler_HandleEvent_NoEntitiesAndUserSpecifiedAt
 		imageAndTag: common.NewImageAndTag("registry/my-image", "1.2.3"),
 	}
 
-	assertThatCorrectEventWasSent(t, handler, eClient, customAttachRules, *customAttachRules, nil)
+	setup := evaluationFinishedTestSetup{
+		t:                   t,
+		handler:             handler,
+		eClient:             eClient,
+		customAttachRules:   customAttachRules,
+		expectedAttachRules: *customAttachRules,
+		labels:              nil,
+	}
+
+	assertThatCorrectEventWasSent[dynatrace.InfoEvent](t, handler, setup)
 }
 
 // no entities will be queried, because there is no version information. Default attach rules will be returned if there are no custom rules
@@ -288,7 +336,16 @@ func TestEvaluationFinishedEventHandler_HandleEvent_NoVersionInformationAndNoUse
 		imageAndTag: common.NewNotAvailableImageAndTag(),
 	}
 
-	assertThatCorrectEventWasSent(t, handler, eClient, nil, expectedAttachRules, nil)
+	setup := evaluationFinishedTestSetup{
+		t:                   t,
+		handler:             handler,
+		eClient:             eClient,
+		customAttachRules:   nil,
+		expectedAttachRules: expectedAttachRules,
+		labels:              nil,
+	}
+
+	assertThatCorrectEventWasSent[dynatrace.InfoEvent](t, handler, setup)
 }
 
 // no entities will be queried, because there is no version information. Custom attach rules will be returned if they are present
@@ -317,23 +374,28 @@ func TestEvaluationFinishedEventHandler_HandleEvent_NoVersionInformationAndUserS
 		imageAndTag: common.NewNotAvailableImageAndTag(),
 	}
 
-	assertThatCorrectEventWasSent(t, handler, eClient, customAttachRules, *customAttachRules, nil)
+	setup := evaluationFinishedTestSetup{
+		t:                   t,
+		handler:             handler,
+		eClient:             eClient,
+		customAttachRules:   customAttachRules,
+		expectedAttachRules: *customAttachRules,
+		labels:              nil,
+	}
+
+	assertThatCorrectEventWasSent[dynatrace.InfoEvent](t, handler, setup)
 }
 
-func assertThatCorrectEventWasSent(t *testing.T, handler *test.FileBasedURLHandlerWithSink, eClient *eventClientFake, customAttachRules *dynatrace.AttachRules, expectedAttachRules dynatrace.AttachRules, labels map[string]string) {
-	eventHandler, teardown := createEvaluationFinishedEventHandler(t, handler, eClient, customAttachRules, labels)
-	defer teardown()
-
-	err := eventHandler.HandleEvent(context.Background(), context.Background())
-	assert.NoError(t, err)
-
-	infoEvent := dynatrace.InfoEvent{}
-	handler.GetStoredPayloadForURL("/api/v1/events", &infoEvent)
-
-	assert.EqualValues(t, createExpectedInfoEvent(t, expectedAttachRules, eClient.imageAndTag, labels), infoEvent)
+type evaluationFinishedTestSetup struct {
+	t                   *testing.T
+	handler             http.Handler
+	eClient             *eventClientFake
+	customAttachRules   *dynatrace.AttachRules
+	expectedAttachRules dynatrace.AttachRules
+	labels              map[string]string
 }
 
-func createEvaluationFinishedEventHandler(t *testing.T, handler http.Handler, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules, labels map[string]string) (*EvaluationFinishedEventHandler, func()) {
+func (s evaluationFinishedTestSetup) createHandlerAndTeardown() (eventHandler, func()) {
 	event := evaluationFinishedEventData{
 		context:   "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
 		source:    "lighthouse-service",
@@ -345,29 +407,29 @@ func createEvaluationFinishedEventHandler(t *testing.T, handler http.Handler, eC
 		result:    keptnv2.ResultPass,
 		startTime: "2022-05-31T12:30:40.739Z",
 		endTime:   "2022-05-31T12:31:53.278Z",
-		labels:    labels,
+		labels:    s.labels,
 	}
 
-	client, _, teardown := createDynatraceClient(t, handler)
+	client, _, teardown := createDynatraceClient(s.t, s.handler)
 
-	return NewEvaluationFinishedEventHandler(&event, client, eClient, attachRules), teardown
+	return NewEvaluationFinishedEventHandler(&event, client, s.eClient, s.customAttachRules), teardown
 }
 
-func createExpectedInfoEvent(t *testing.T, attachRules dynatrace.AttachRules, imageAndTag common.ImageAndTag, labels map[string]string) dynatrace.InfoEvent {
+func (s evaluationFinishedTestSetup) createExpectedDynatraceEvent() dynatrace.InfoEvent {
 	properties := map[string]string{
-		"Image":         imageAndTag.Image(),
+		"Image":         s.eClient.imageAndTag.Image(),
 		"Keptn Service": "lighthouse-service",
 		"KeptnContext":  "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
 		"Project":       "pod-tato-head",
 		"Service":       "helloservice",
 		"Stage":         "hardening",
-		"Tag":           imageAndTag.Tag(),
+		"Tag":           s.eClient.imageAndTag.Tag(),
 		"TestStrategy":  "",
 	}
 
-	for key, value := range labels {
+	for key, value := range s.labels {
 		if old, ok := properties[key]; ok {
-			t.Errorf("Overwriting old value '%s' for key '%s' in properties map with new value '%s'", old, key, value)
+			s.t.Errorf("Overwriting old value '%s' for key '%s' in properties map with new value '%s'", old, key, value)
 		}
 
 		properties[key] = value
@@ -379,105 +441,10 @@ func createExpectedInfoEvent(t *testing.T, attachRules dynatrace.AttachRules, im
 		Title:            "Evaluation result: pass",
 		Source:           "Keptn dynatrace-service",
 		CustomProperties: properties,
-		AttachRules:      attachRules,
+		AttachRules:      s.expectedAttachRules,
 	}
 }
 
-type eventClientFake struct {
-	t                         *testing.T
-	isPartOfRemediation       bool
-	remediationDetectionError error
-	problemID                 string
-	problemIDError            error
-	imageAndTag               common.ImageAndTag
-}
-
-func (e *eventClientFake) IsPartOfRemediation(_ context.Context, _ adapter.EventContentAdapter) (bool, error) {
-	return e.isPartOfRemediation, e.remediationDetectionError
-}
-
-func (e *eventClientFake) FindProblemID(_ context.Context, _ adapter.EventContentAdapter) (string, error) {
-	return e.problemID, e.problemIDError
-}
-
-func (e *eventClientFake) GetImageAndTag(_ context.Context, _ adapter.EventContentAdapter) common.ImageAndTag {
-	return e.imageAndTag
-}
-
-func (e *eventClientFake) GetEventTimeStampForType(_ context.Context, _ adapter.EventContentAdapter, _ string) (*time.Time, error) {
-	e.t.Fatal("should not be needed here")
-	return nil, nil
-}
-
-type evaluationFinishedEventData struct {
-	context string
-	source  string
-	event   string
-
-	project            string
-	stage              string
-	service            string
-	deployment         string
-	testStrategy       string
-	deploymentStrategy string
-
-	labels map[string]string
-
-	score     float64
-	result    keptnv2.ResultType
-	startTime string
-	endTime   string
-}
-
-func (e *evaluationFinishedEventData) GetShKeptnContext() string {
-	return e.context
-}
-
-func (e *evaluationFinishedEventData) GetEvent() string {
-	return e.event
-}
-
-func (e *evaluationFinishedEventData) GetSource() string {
-	return e.source
-}
-
-func (e *evaluationFinishedEventData) GetProject() string {
-	return e.project
-}
-
-func (e *evaluationFinishedEventData) GetStage() string {
-	return e.stage
-}
-
-func (e *evaluationFinishedEventData) GetService() string {
-	return e.service
-}
-
-func (e *evaluationFinishedEventData) GetDeployment() string {
-	return e.deployment
-}
-
-func (e *evaluationFinishedEventData) GetTestStrategy() string {
-	return e.testStrategy
-}
-
-func (e *evaluationFinishedEventData) GetDeploymentStrategy() string {
-	return e.deploymentStrategy
-}
-
-func (e *evaluationFinishedEventData) GetLabels() map[string]string {
-	return e.labels
-}
-
-func (e *evaluationFinishedEventData) GetEvaluationScore() float64 {
-	return e.score
-}
-func (e *evaluationFinishedEventData) GetResult() keptnv2.ResultType {
-	return e.result
-}
-func (e *evaluationFinishedEventData) GetStartTime() string {
-	return e.startTime
-}
-func (e *evaluationFinishedEventData) GetEndTime() string {
-	return e.endTime
+func (s evaluationFinishedTestSetup) createEventPayloadContainer() dynatrace.InfoEvent {
+	return dynatrace.InfoEvent{}
 }
