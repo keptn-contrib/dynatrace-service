@@ -169,11 +169,12 @@ func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, di
 	return TileResult{
 		sliResult: result.NewSuccessfulSLIResult(indicatorName, dimensionValue),
 		objective: &keptncommon.SLO{
-			SLI:     indicatorName,
-			Weight:  sloDefinition.Weight,
-			KeySLI:  sloDefinition.KeySLI,
-			Pass:    sloDefinition.Pass,
-			Warning: sloDefinition.Warning,
+			SLI:         indicatorName,
+			DisplayName: sloDefinition.DisplayName,
+			Weight:      sloDefinition.Weight,
+			KeySLI:      sloDefinition.KeySLI,
+			Pass:        sloDefinition.Pass,
+			Warning:     sloDefinition.Warning,
 		},
 		sliName:  indicatorName,
 		sliQuery: v1usql.NewQueryProducer(*v1USQLQuery).Produce(),

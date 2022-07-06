@@ -40,9 +40,10 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *t
 		}
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:    "srt",
-			Pass:   []*keptnapi.SLOCriteria{{Criteria: []string{"<28"}}},
-			Weight: 1,
+			SLI:         "srt",
+			DisplayName: "srt",
+			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<28"}}},
+			Weight:      1,
 		}, actual.Objectives[0])
 	}
 
