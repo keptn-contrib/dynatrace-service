@@ -135,7 +135,7 @@ jobs:
           env-file: .ci_env
 
       - name: Docker Build
-        uses: keptn/gh-automation/.github/actions/docker-build@v1.5.3
+        uses: keptn/gh-automation/.github/actions/docker-build@v1.6.0
         with:
           TAGS: |
             ${{ env.DOCKER_ORGANIZATION }}/${{ env.IMAGE }}:${{ env.VERSION }}
