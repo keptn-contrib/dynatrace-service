@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"fmt"
 	"testing"
 
 	keptn "github.com/keptn/go-utils/pkg/lib"
@@ -485,4 +486,167 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+type tileThresholdsTemplateData struct {
+	TileTitle      string
+	TileThresholds string
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_TileThreshold tests setting pass and warning criteria via thresholds on the tile.
+// This is will result in a SLIResult with success, as this is supported.
+// Here also the SLO is checked, including the display name, weight and key SLI.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_success/"
+
+	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+
+	successfulSLIResultAllectionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest)
+
+	tests := []struct {
+		name              string
+		dashboardFilename string
+
+		expectedSLO *keptnapi.SLO
+	}{
+
+		{
+			name:              "Valid pass-warn-fail thresholds and no pass or warning defined in title",
+			dashboardFilename: testDataFolder + "dashboard_just_thresholds_pass_warn_fail.json",
+			expectedSLO: &keptnapi.SLO{
+				SLI:         "srt",
+				DisplayName: "Service Response Time",
+				Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{fmt.Sprintf(">=%f", float64(0)), fmt.Sprintf("<%f", float64(68000))}}},
+				Warning:     []*keptnapi.SLOCriteria{{Criteria: []string{fmt.Sprintf("<%f", float64(69000))}}},
+				Weight:      1,
+				KeySLI:      false,
+			},
+		},
+		{
+			name:              "Valid fail-warn-pass thresholds and no pass or warning defined in title",
+			dashboardFilename: testDataFolder + "dashboard_just_thresholds_fail_warn_pass.json",
+			expectedSLO: &keptnapi.SLO{
+				SLI:         "srt",
+				DisplayName: "Service Response Time",
+				Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{fmt.Sprintf(">=%f", float64(69000))}}},
+				Warning:     []*keptnapi.SLOCriteria{{Criteria: []string{fmt.Sprintf(">=%f", float64(68000))}}},
+				Weight:      1,
+				KeySLI:      false,
+			},
+		},
+		{
+			name:              "Pass or warning defined in title take precedence over valid thresholds ",
+			dashboardFilename: testDataFolder + "dashboard_both_thresholds_and_pass_and_warning_in_title.json",
+			expectedSLO: &keptnapi.SLO{
+				SLI:         "srt",
+				DisplayName: "Service Response Time",
+				Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<70000"}}},
+				Warning:     []*keptnapi.SLOCriteria{{Criteria: []string{"<71000"}}},
+				Weight:      1,
+				KeySLI:      false,
+			},
+		},
+	}
+
+	for _, thresholdTest := range tests {
+		t.Run(thresholdTest.name, func(t *testing.T) {
+
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, thresholdTest.dashboardFilename)
+			handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+			uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+				if assert.Equal(t, 1, len(actual.Objectives)) {
+					assert.EqualValues(t, thresholdTest.expectedSLO, actual.Objectives[0])
+				}
+			}
+
+			runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, successfulSLIResultAllectionsFunc)
+		})
+	}
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_TileThreshold tests setting pass and warning criteria via thresholds on the tile.
+// This is will result in a SLIResult with success, as this is supported.
+// Here also the SLO is checked, including the display name, weight and key SLI.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsErrors(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_errors/"
+
+	tests := []struct {
+		name                    string
+		dashboardFilename       string
+		sliResultAssertionsFunc func(t *testing.T, actual sliResult)
+	}{
+		{
+			name:                    "Too few rules in thresholds",
+			dashboardFilename:       testDataFolder + "dashboard_too_few_rules.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "expected 3 threshold rules"),
+		},
+		{
+			name:                    "Too many rules in thresholds",
+			dashboardFilename:       testDataFolder + "dashboard_too_many_rules.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "expected 3 threshold rules"),
+		},
+		{
+			name:                    "Invalid color in thresholds 1",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_color_1.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold color"),
+		},
+		{
+			name:                    "Invalid color in thresholds 2",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_color_2.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold color"),
+		},
+		{
+			name:                    "Invalid color in thresholds 3",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_color_3.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold color"),
+		},
+		{
+			name:                    "Invalid ascending-descending sequence",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_ascending_descending.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
+		},
+		{
+			name:                    "Invalid descending-ascending sequence",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_descending_ascending.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
+		},
+		{
+			name:                    "Invalid sequence with no warn",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_no_warn.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
+		},
+		{
+			name:                    "Invalid sequence with no fail",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_no_fail.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
+		},
+		{
+			name:                    "Invalid sequence with two pass",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_two_pass.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
+		},
+		{
+			name:                    "Invalid sequence with two warn",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_two_warn.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
+		},
+		{
+			name:                    "Invalid sequence with two fail",
+			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_two_fail.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
+		},
+	}
+
+	for _, thresholdTest := range tests {
+		t.Run(thresholdTest.name, func(t *testing.T) {
+
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, thresholdTest.dashboardFilename)
+
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, thresholdTest.sliResultAssertionsFunc)
+		})
+	}
 }

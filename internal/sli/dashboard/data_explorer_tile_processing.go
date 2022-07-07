@@ -53,6 +53,18 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 		return nil
 	}
 
+	if (len(sloDefinition.Pass) == 0) && (len(sloDefinition.Warning) == 0) {
+		criteria, err := tryGetThresholdPassAndWarningCriteria(tile)
+		if err != nil {
+			return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, fmt.Sprintf("Invalid Data Explorer tile thresholds: %s", err.Error()))}
+		}
+
+		if criteria != nil {
+			sloDefinition.Pass = []*keptnapi.SLOCriteria{&criteria.pass}
+			sloDefinition.Warning = []*keptnapi.SLOCriteria{&criteria.warning}
+		}
+	}
+
 	if len(tile.Queries) != 1 {
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile must have exactly one query")}
 	}

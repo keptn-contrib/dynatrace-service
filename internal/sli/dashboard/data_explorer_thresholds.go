@@ -145,8 +145,12 @@ func parseThresholds(threshold *dynatrace.Threshold) (*passAndWarningCriteria, e
 	return nil, errors.New("invalid threshold sequence")
 }
 
-// tryParsePassWarningFailThresholdRules try to parse a pass-warn-fail dashboard threshold struct and returns pass and warning SLO criteria or nil.
+// tryParsePassWarnFailThresholdRules tries to parse a pass-warn-fail dashboard threshold struct and returns pass and warning SLO criteria or nil.
 func tryParsePassWarnFailThresholdRules(rules []dynatrace.Rule) *passAndWarningCriteria {
+	if len(rules) != 3 {
+		return nil
+	}
+
 	if !isPassRule(rules[0]) || !isWarnRule(rules[1]) || !isFailRule(rules[2]) {
 		return nil
 	}
@@ -178,7 +182,7 @@ func tryParsePassWarnFailThresholdRules(rules []dynatrace.Rule) *passAndWarningC
 	}
 }
 
-// tryParsePassWarningFailThresholdRules try to parse a fail-warn-pass dashboard threshold struct and returns pass and warning SLO criteria or nil.
+// tryParseFailWarnPassThresholdRules tries to parse a fail-warn-pass dashboard threshold struct and returns pass and warning SLO criteria or nil.
 func tryParseFailWarnPassThresholdRules(rules []dynatrace.Rule) *passAndWarningCriteria {
 	if len(rules) != 3 {
 		return nil
