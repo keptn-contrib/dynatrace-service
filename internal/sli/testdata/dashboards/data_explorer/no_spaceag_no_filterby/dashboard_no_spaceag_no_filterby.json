@@ -59,7 +59,6 @@
               "axisTarget": "LEFT",
               "rules": [
                 {
-                  "value": 1,
                   "color": "#7dc540"
                 },
                 {
