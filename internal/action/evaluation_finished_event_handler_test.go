@@ -416,7 +416,7 @@ func (s evaluationFinishedTestSetup) createHandlerAndTeardown() (eventHandler, f
 }
 
 func (s evaluationFinishedTestSetup) createExpectedDynatraceEvent() dynatrace.InfoEvent {
-	properties := map[string]string{
+	properties := customProperties{
 		"Image":         s.eClient.imageAndTag.Image(),
 		"Keptn Service": "lighthouse-service",
 		"KeptnContext":  "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
@@ -427,13 +427,7 @@ func (s evaluationFinishedTestSetup) createExpectedDynatraceEvent() dynatrace.In
 		"TestStrategy":  "",
 	}
 
-	for key, value := range s.labels {
-		if old, ok := properties[key]; ok {
-			s.t.Errorf("Overwriting old value '%s' for key '%s' in properties map with new value '%s'", old, key, value)
-		}
-
-		properties[key] = value
-	}
+	addLabelsToProperties(s.t, properties, s.labels)
 
 	return dynatrace.InfoEvent{
 		EventType:        "CUSTOM_INFO",

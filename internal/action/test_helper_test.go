@@ -60,6 +60,16 @@ func createDynatraceCredentials(t *testing.T, url string) *credentials.Dynatrace
 	return dynatraceCredentials
 }
 
+func addLabelsToProperties(t *testing.T, properties customProperties, labels map[string]string) {
+	for key, value := range labels {
+		if old, ok := properties[key]; ok {
+			t.Errorf("Overwriting old value '%s' for key '%s' in properties map with new value '%s'", old, key, value)
+		}
+
+		properties[key] = value
+	}
+}
+
 type eventClientFake struct {
 	t                         *testing.T
 	isPartOfRemediation       bool
