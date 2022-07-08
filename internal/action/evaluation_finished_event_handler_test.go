@@ -10,8 +10,6 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-const testdataFolder = "./testdata/evaluation_finished/"
-
 // multiple PGIs found will be returned, when no custom rules are defined
 func TestEvaluationFinishedEventHandler_HandleEvent_MultipleEntities(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)

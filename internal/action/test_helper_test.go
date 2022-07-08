@@ -17,6 +17,8 @@ import (
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
+const testdataFolder = "./testdata/attach_rules/"
+
 // mimic the event_handler.DynatraceEventHandler interface to avoid circular dependencies
 type eventHandler interface {
 	HandleEvent(workCtx context.Context, replyCtx context.Context) error
