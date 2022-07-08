@@ -14,19 +14,10 @@ import (
 // multiple PGIs found will be returned, when no custom rules are defined
 func TestTestTriggeredEventHandler_HandleEvent_MultipleEntities(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(
-		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.3%22%29&from=1654000240000&to=1654000313000",
-		testdataFolder+"multiple_entities.json")
+	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"multiple_entities.json")
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_multiple_200.json")
 
-	expectedAttachRules := dynatrace.AttachRules{
-		EntityIds: []string{
-			"PROCESS_GROUP_INSTANCE-95C5FBF859599282",
-			"PROCESS_GROUP_INSTANCE-D23E64F62FDC200A",
-			"PROCESS_GROUP_INSTANCE-DE323A8B8449D009",
-			"PROCESS_GROUP_INSTANCE-F59D42FEA235E5F9",
-		},
-	}
+	expectedAttachRules := getPGIOnlyAttachRules()
 
 	eClient := &eventClientFake{
 		t:               t,
@@ -49,23 +40,14 @@ func TestTestTriggeredEventHandler_HandleEvent_MultipleEntities(t *testing.T) {
 // multiple PGIs found will be returned, when no custom rules are defined and version information is based on event label
 func TestTestTriggeredEventHandler_HandleEvent_MultipleEntitiesBasedOnLabel(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(
-		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.4%22%29&from=1654000240000&to=1654000313000",
-		testdataFolder+"multiple_entities.json")
+	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"multiple_entities.json")
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_multiple_200.json")
 
 	labels := map[string]string{
-		"releasesVersion": "1.2.4",
+		"releasesVersion": "1.2.3",
 	}
 
-	expectedAttachRules := dynatrace.AttachRules{
-		EntityIds: []string{
-			"PROCESS_GROUP_INSTANCE-95C5FBF859599282",
-			"PROCESS_GROUP_INSTANCE-D23E64F62FDC200A",
-			"PROCESS_GROUP_INSTANCE-DE323A8B8449D009",
-			"PROCESS_GROUP_INSTANCE-F59D42FEA235E5F9",
-		},
-	}
+	expectedAttachRules := getPGIOnlyAttachRules()
 
 	eClient := &eventClientFake{
 		t:               t,
@@ -88,45 +70,12 @@ func TestTestTriggeredEventHandler_HandleEvent_MultipleEntitiesBasedOnLabel(t *t
 // single PGI found will be combined with the custom attach rules
 func TestTestTriggeredEventHandler_HandleEvent_SingleEntityAndUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(
-		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.3%22%29&from=1654000240000&to=1654000313000",
-		testdataFolder+"single_entity.json")
+	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"single_entity.json")
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_multiple_200.json")
 
-	customAttachRules := &dynatrace.AttachRules{
-		EntityIds: []string{"PROCESS_GROUP-XXXXXXXXXXXXXXXXX"},
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "my-tag",
-						Value:   "my-value",
-					},
-				},
-			},
-		},
-	}
+	customAttachRules := getCustomAttachRules()
 
-	expectedAttachRules := dynatrace.AttachRules{
-		EntityIds: []string{
-			"PROCESS_GROUP-XXXXXXXXXXXXXXXXX",
-			"PROCESS_GROUP_INSTANCE-D23E64F62FDC200A",
-		},
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "my-tag",
-						Value:   "my-value",
-					},
-				},
-			},
-		},
-	}
+	expectedAttachRules := getCustomAttachRulesWithEntityIds("PROCESS_GROUP_INSTANCE-D23E64F62FDC200A")
 
 	eClient := &eventClientFake{
 		t:               t,
@@ -149,51 +98,16 @@ func TestTestTriggeredEventHandler_HandleEvent_SingleEntityAndUserSpecifiedAttac
 // single PGI found will be combined with the custom attach rules that include version information from event label
 func TestTestTriggeredEventHandler_HandleEvent_SingleEntityAndUserSpecifiedAttachRulesBasedOnLabel(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(
-		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.4%22%29&from=1654000240000&to=1654000313000",
-		testdataFolder+"single_entity.json")
+	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"single_entity.json")
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
 	labels := map[string]string{
-		"releasesVersion": "1.2.4",
+		"releasesVersion": "1.2.3",
 	}
 
-	customAttachRules := &dynatrace.AttachRules{
-		EntityIds: []string{
-			"PROCESS_GROUP-XXXXXXXXXXXXXXXXX",
-		},
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "my-tag",
-						Value:   "my-value",
-					},
-				},
-			},
-		},
-	}
+	customAttachRules := getCustomAttachRules()
 
-	expectedAttachRules := dynatrace.AttachRules{
-		EntityIds: []string{
-			"PROCESS_GROUP-XXXXXXXXXXXXXXXXX",
-			"PROCESS_GROUP_INSTANCE-D23E64F62FDC200A",
-		},
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "my-tag",
-						Value:   "my-value",
-					},
-				},
-			},
-		},
-	}
+	expectedAttachRules := getCustomAttachRulesWithEntityIds("PROCESS_GROUP_INSTANCE-D23E64F62FDC200A")
 
 	eClient := &eventClientFake{
 		t:               t,
@@ -216,35 +130,10 @@ func TestTestTriggeredEventHandler_HandleEvent_SingleEntityAndUserSpecifiedAttac
 // no PGIs found and no custom attach rules will result in default attach rules
 func TestTestTriggeredEventHandler_HandleEvent_NoEntitiesAndNoUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(
-		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.3%22%29&from=1654000240000&to=1654000313000",
-		testdataFolder+"no_entity.json")
+	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"no_entity.json")
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
-	expectedAttachRules := dynatrace.AttachRules{
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_project",
-						Value:   "pod-tato-head",
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_stage",
-						Value:   "hardening",
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_service",
-						Value:   "helloservice",
-					},
-				},
-			},
-		},
-	}
+	expectedAttachRules := getDefaultAttachRules()
 
 	eClient := &eventClientFake{
 		t:               t,
@@ -269,30 +158,7 @@ func TestTestTriggeredEventHandler_HandleEvent_NoEventsFoundAndNoCustomAttachRul
 	handler := test.NewFileBasedURLHandlerWithSink(t)
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
-	expectedAttachRules := dynatrace.AttachRules{
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_project",
-						Value:   "pod-tato-head",
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_stage",
-						Value:   "hardening",
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_service",
-						Value:   "helloservice",
-					},
-				},
-			},
-		},
-	}
+	expectedAttachRules := getDefaultAttachRules()
 
 	testConfigs := []struct {
 		name    string
@@ -371,26 +237,10 @@ func TestTestTriggeredEventHandler_HandleEvent_NoEventsFoundAndNoCustomAttachRul
 // no PGIs found but custom attach rules will result custom attach rules only
 func TestTestTriggeredEventHandler_HandleEvent_NoEntitiesAndUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(
-		"/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%221.2.3%22%29&from=1654000240000&to=1654000313000",
-		testdataFolder+"no_entity.json")
+	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"no_entity.json")
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
-	customAttachRules := &dynatrace.AttachRules{
-		EntityIds: []string{"PROCESS_GROUP-XXXXXXXXXXXXXXXXX"},
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "my-tag",
-						Value:   "my-value",
-					},
-				},
-			},
-		},
-	}
+	customAttachRules := getCustomAttachRules()
 
 	eClient := &eventClientFake{
 		t:               t,
@@ -415,30 +265,7 @@ func TestTestTriggeredEventHandler_HandleEvent_NoVersionInformationAndNoUserSpec
 	handler := test.NewFileBasedURLHandlerWithSink(t)
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
-	expectedAttachRules := dynatrace.AttachRules{
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_project",
-						Value:   "pod-tato-head",
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_stage",
-						Value:   "hardening",
-					},
-					{
-						Context: "CONTEXTLESS",
-						Key:     "keptn_service",
-						Value:   "helloservice",
-					},
-				},
-			},
-		},
-	}
+	expectedAttachRules := getDefaultAttachRules()
 
 	eClient := &eventClientFake{
 		t:               t,
@@ -463,21 +290,7 @@ func TestTestTriggeredEventHandler_HandleEvent_NoVersionInformationAndUserSpecif
 	handler := test.NewFileBasedURLHandlerWithSink(t)
 	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
 
-	customAttachRules := &dynatrace.AttachRules{
-		EntityIds: []string{"PROCESS_GROUP-XXXXXXXXXXXXXXXXX"},
-		TagRule: []dynatrace.TagRule{
-			{
-				MeTypes: []string{"SERVICE"},
-				Tags: []dynatrace.TagEntry{
-					{
-						Context: "CONTEXTLESS",
-						Key:     "my-tag",
-						Value:   "my-value",
-					},
-				},
-			},
-		},
-	}
+	customAttachRules := getCustomAttachRules()
 
 	eClient := &eventClientFake{
 		t:               t,

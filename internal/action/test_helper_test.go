@@ -19,6 +19,78 @@ const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX
 
 const testdataFolder = "./testdata/attach_rules/"
 
+func getPGIQuery(version string) string {
+	return "/api/v2/entities?entitySelector=type%28%22process_group_instance%22%29%2CtoRelationship.runsOnProcessGroupInstance%28type%28SERVICE%29%2Ctag%28%22keptn_project%3Apod-tato-head%22%29%2Ctag%28%22keptn_stage%3Ahardening%22%29%2Ctag%28%22keptn_service%3Ahelloservice%22%29%29%2CreleasesVersion%28%22" + version + "%22%29&from=1654000240000&to=1654000313000"
+}
+
+func getDefaultPGIQuery() string {
+	return getPGIQuery("1.2.3")
+}
+
+func getDefaultAttachRules() dynatrace.AttachRules {
+	return dynatrace.AttachRules{
+		TagRule: []dynatrace.TagRule{
+			{
+				MeTypes: []string{"SERVICE"},
+				Tags: []dynatrace.TagEntry{
+					{
+						Context: "CONTEXTLESS",
+						Key:     "keptn_project",
+						Value:   "pod-tato-head",
+					},
+					{
+						Context: "CONTEXTLESS",
+						Key:     "keptn_stage",
+						Value:   "hardening",
+					},
+					{
+						Context: "CONTEXTLESS",
+						Key:     "keptn_service",
+						Value:   "helloservice",
+					},
+				},
+			},
+		},
+	}
+}
+
+func getCustomAttachRules() *dynatrace.AttachRules {
+	return &dynatrace.AttachRules{
+		EntityIds: []string{
+			"PROCESS_GROUP-XXXXXXXXXXXXXXXXX",
+		},
+		TagRule: []dynatrace.TagRule{
+			{
+				MeTypes: []string{"SERVICE"},
+				Tags: []dynatrace.TagEntry{
+					{
+						Context: "CONTEXTLESS",
+						Key:     "my-tag",
+						Value:   "my-value",
+					},
+				},
+			},
+		},
+	}
+}
+
+func getCustomAttachRulesWithEntityIds(entityIds ...string) dynatrace.AttachRules {
+	attachRules := getCustomAttachRules()
+	attachRules.EntityIds = append(attachRules.EntityIds, entityIds...)
+	return *attachRules
+}
+
+func getPGIOnlyAttachRules() dynatrace.AttachRules {
+	return dynatrace.AttachRules{
+		EntityIds: []string{
+			"PROCESS_GROUP_INSTANCE-95C5FBF859599282",
+			"PROCESS_GROUP_INSTANCE-D23E64F62FDC200A",
+			"PROCESS_GROUP_INSTANCE-DE323A8B8449D009",
+			"PROCESS_GROUP_INSTANCE-F59D42FEA235E5F9",
+		},
+	}
+}
+
 // mimic the event_handler.DynatraceEventHandler interface to avoid circular dependencies
 type eventHandler interface {
 	HandleEvent(workCtx context.Context, replyCtx context.Context) error
