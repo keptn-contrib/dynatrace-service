@@ -397,17 +397,19 @@ type evaluationFinishedTestSetup struct {
 
 func (s evaluationFinishedTestSetup) createHandlerAndTeardown() (eventHandler, func()) {
 	event := evaluationFinishedEventData{
-		context:   "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
-		source:    "lighthouse-service",
-		event:     "sh.keptn.event.evaluation.finished",
-		project:   "pod-tato-head",
-		stage:     "hardening",
-		service:   "helloservice",
+		baseEventData: baseEventData{
+			context: "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
+			source:  "lighthouse-service",
+			event:   "sh.keptn.event.evaluation.finished",
+			project: "pod-tato-head",
+			stage:   "hardening",
+			service: "helloservice",
+			labels:  s.labels,
+		},
 		score:     100,
 		result:    keptnv2.ResultPass,
 		startTime: "2022-05-31T12:30:40.739Z",
 		endTime:   "2022-05-31T12:31:53.278Z",
-		labels:    s.labels,
 	}
 
 	client, _, teardown := createDynatraceClient(s.t, s.handler)
@@ -441,4 +443,26 @@ func (s evaluationFinishedTestSetup) createExpectedDynatraceEvent() dynatrace.In
 
 func (s evaluationFinishedTestSetup) createEventPayloadContainer() dynatrace.InfoEvent {
 	return dynatrace.InfoEvent{}
+}
+
+type evaluationFinishedEventData struct {
+	baseEventData
+
+	score     float64
+	result    keptnv2.ResultType
+	startTime string
+	endTime   string
+}
+
+func (e *evaluationFinishedEventData) GetEvaluationScore() float64 {
+	return e.score
+}
+func (e *evaluationFinishedEventData) GetResult() keptnv2.ResultType {
+	return e.result
+}
+func (e *evaluationFinishedEventData) GetStartTime() string {
+	return e.startTime
+}
+func (e *evaluationFinishedEventData) GetEndTime() string {
+	return e.endTime
 }

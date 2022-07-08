@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -77,8 +76,12 @@ type eventClientFake struct {
 	problemID                 string
 	problemIDError            error
 	imageAndTag               common.ImageAndTag
-	eventTimestamp            *time.Time
-	eventTimestampError       error
+	eventTimestamps           timestampsForType
+}
+
+type timestampsForType map[string]struct {
+	time time.Time
+	err  error
 }
 
 func (e *eventClientFake) IsPartOfRemediation(_ context.Context, _ adapter.EventContentAdapter) (bool, error) {
@@ -93,11 +96,19 @@ func (e *eventClientFake) GetImageAndTag(_ context.Context, _ adapter.EventConte
 	return e.imageAndTag
 }
 
-func (e *eventClientFake) GetEventTimeStampForType(_ context.Context, _ adapter.EventContentAdapter, _ string) (*time.Time, error) {
-	return e.eventTimestamp, e.eventTimestampError
+func (e *eventClientFake) GetEventTimeStampForType(_ context.Context, _ adapter.EventContentAdapter, eventType string) (*time.Time, error) {
+	result, found := e.eventTimestamps[eventType]
+	if !found {
+		e.t.Errorf("Could find entry for event type: %s - fix test setup!", eventType)
+	}
+
+	if result.err == nil {
+		return &result.time, nil
+	}
+	return nil, result.err
 }
 
-type evaluationFinishedEventData struct {
+type baseEventData struct {
 	context string
 	source  string
 	event   string
@@ -110,62 +121,44 @@ type evaluationFinishedEventData struct {
 	deploymentStrategy string
 
 	labels map[string]string
-
-	score     float64
-	result    keptnv2.ResultType
-	startTime string
-	endTime   string
 }
 
-func (e *evaluationFinishedEventData) GetShKeptnContext() string {
+func (e *baseEventData) GetShKeptnContext() string {
 	return e.context
 }
 
-func (e *evaluationFinishedEventData) GetEvent() string {
+func (e *baseEventData) GetEvent() string {
 	return e.event
 }
 
-func (e *evaluationFinishedEventData) GetSource() string {
+func (e *baseEventData) GetSource() string {
 	return e.source
 }
 
-func (e *evaluationFinishedEventData) GetProject() string {
+func (e *baseEventData) GetProject() string {
 	return e.project
 }
 
-func (e *evaluationFinishedEventData) GetStage() string {
+func (e *baseEventData) GetStage() string {
 	return e.stage
 }
 
-func (e *evaluationFinishedEventData) GetService() string {
+func (e *baseEventData) GetService() string {
 	return e.service
 }
 
-func (e *evaluationFinishedEventData) GetDeployment() string {
+func (e *baseEventData) GetDeployment() string {
 	return e.deployment
 }
 
-func (e *evaluationFinishedEventData) GetTestStrategy() string {
+func (e *baseEventData) GetTestStrategy() string {
 	return e.testStrategy
 }
 
-func (e *evaluationFinishedEventData) GetDeploymentStrategy() string {
+func (e *baseEventData) GetDeploymentStrategy() string {
 	return e.deploymentStrategy
 }
 
-func (e *evaluationFinishedEventData) GetLabels() map[string]string {
+func (e *baseEventData) GetLabels() map[string]string {
 	return e.labels
-}
-
-func (e *evaluationFinishedEventData) GetEvaluationScore() float64 {
-	return e.score
-}
-func (e *evaluationFinishedEventData) GetResult() keptnv2.ResultType {
-	return e.result
-}
-func (e *evaluationFinishedEventData) GetStartTime() string {
-	return e.startTime
-}
-func (e *evaluationFinishedEventData) GetEndTime() string {
-	return e.endTime
 }
