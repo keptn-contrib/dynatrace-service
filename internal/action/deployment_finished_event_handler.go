@@ -62,7 +62,8 @@ func (eh *DeploymentFinishedEventHandler) createAttachRules(ctx context.Context,
 		log.WithError(err).Warn("Could not find the corresponding deployment.triggered event")
 
 		// set the start time to 3 secs before event time - at least we can try to find sth.
-		*deploymentTriggeredTime = eventTime.Add(-3 * time.Second)
+		startTime := eventTime.Add(-3 * time.Second)
+		deploymentTriggeredTime = &startTime
 	}
 
 	// ignoring the error here, because it should not be possible to create an invalid timeframe here
