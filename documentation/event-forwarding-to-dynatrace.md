@@ -1,6 +1,6 @@
 # Forwarding events from Keptn to Dynatrace
 
-The dynatrace-service will forward `sh.keptn.event.deployment.finished`, `sh.keptn.event.test.triggered`, `sh.keptn.event.test.finished`, `sh.keptn.event.evaluation.finished`, `sh.keptn.event.release.triggered` and `sh.keptn.event.release.finished` events to Dynatrace by creating the appropriate events in the Dynatrace tenant. For `sh.keptn.event.action.triggered`, `sh.keptn.event.action.started` and `sh.keptn.event.action.finished` events raised as part of a remediation action, it will create information and configuration events if a Dynatrace problem is associated with the event.
+The dynatrace-service will forward `sh.keptn.event.deployment.finished`, `sh.keptn.event.test.triggered`, `sh.keptn.event.test.finished`, `sh.keptn.event.evaluation.finished` and `sh.keptn.event.release.triggered` events to Dynatrace by creating the appropriate events in the Dynatrace tenant. For `sh.keptn.event.action.triggered`, `sh.keptn.event.action.started` and `sh.keptn.event.action.finished` events raised as part of a remediation action, it will create information and configuration events if a Dynatrace problem is associated with the event.
 
 
 ## Targeting specific entities using attach rules
