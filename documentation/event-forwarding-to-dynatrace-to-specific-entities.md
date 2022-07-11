@@ -1,4 +1,4 @@
-# Targeting specific entities for deployment, test and evaluation information
+# Targeting specific entities for deployment, test, evaluation and release information
 
 As stated in the section [targeting specific entities using attach rules](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), the dynatrace-service will use the default attach rules in case users have not supplied their own via a `dynatrace/dynatrace.conf.yaml` file. While this is true for some event types, there is a special behavior for `sh.keptn.event.deployment.finished`, `sh.keptn.event.test.triggered`, `sh.keptn.event.test.finished`, `sh.keptn.event.evaluation.finished` and `sh.keptn.event.release.triggered` events. 
 
