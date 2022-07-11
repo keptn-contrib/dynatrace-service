@@ -51,10 +51,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 	}
 
 	imageAndTag := eh.eClient.GetImageAndTag(workCtx, eh.event)
-	attachRules, err := eh.createAttachRules(workCtx, imageAndTag)
-	if err != nil {
-		return fmt.Errorf("could not setup correct attach rules: %w", err)
-	}
+	attachRules := eh.createAttachRules(workCtx, imageAndTag)
 
 	customProperties := newCustomProperties(eh.event, imageAndTag, bridgeURL)
 	customProperties.addIfNonEmpty(evaluationURLKey, keptn.TryGetBridgeURLForEvaluation(workCtx, eh.event))
@@ -83,15 +80,14 @@ func (eh *EvaluationFinishedEventHandler) getTitle(isPartOfRemediation bool) str
 	return "Remediation action not successful"
 }
 
-func (eh *EvaluationFinishedEventHandler) createAttachRules(ctx context.Context, imageAndTag common.ImageAndTag) (dynatrace.AttachRules, error) {
-	timeframeFunc := func() (*common.Timeframe, error) {
-		timeframe, err := common.NewTimeframeParser(eh.event.GetStartTime(), eh.event.GetEndTime()).Parse()
-		if err != nil {
-			return nil, err
-		}
-
-		return timeframe, nil
+func (eh *EvaluationFinishedEventHandler) createAttachRules(ctx context.Context, imageAndTag common.ImageAndTag) dynatrace.AttachRules {
+	timeframe, err := common.NewTimeframeParser(eh.event.GetStartTime(), eh.event.GetEndTime()).Parse()
+	if err != nil {
+		log.WithFields(log.Fields{
+			"start": eh.event.GetStartTime(),
+			"end":   eh.event.GetEndTime(),
+		}).Error("Could not parse evaluation finished timeframe")
 	}
 
-	return createOrUpdateAttachRules(ctx, eh.dtClient, eh.attachRules, imageAndTag, eh.event, timeframeFunc)
+	return createOrUpdateAttachRules(ctx, eh.dtClient, eh.attachRules, imageAndTag, eh.event, timeframe)
 }

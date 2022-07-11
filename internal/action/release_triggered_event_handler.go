@@ -34,20 +34,18 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, _ c
 	strategy, err := keptnevents.GetDeploymentStrategy(eh.event.GetDeploymentStrategy())
 	if err != nil {
 		log.WithError(err).Error("Could not determine deployment strategy")
-		return err
 	}
 
-	if eh.attachRules == nil {
-		eh.attachRules = createDefaultAttachRules(eh.event)
-	}
+	imageAndTag := eh.eClient.GetImageAndTag(workCtx, eh.event)
+	attachRules := createAttachRulesForDeploymentTimeFrame(workCtx, eh.dtClient, eh.eClient, eh.event, imageAndTag, eh.attachRules)
 
 	infoEvent := dynatrace.InfoEvent{
 		EventType:        dynatrace.InfoEventType,
 		Source:           eventSource,
 		Title:            eh.getTitle(strategy, eh.event.GetLabels()["title"]),
 		Description:      eh.getTitle(strategy, eh.event.GetLabels()["description"]),
-		CustomProperties: newCustomProperties(eh.event, eh.eClient.GetImageAndTag(workCtx, eh.event), keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
-		AttachRules:      *eh.attachRules,
+		CustomProperties: newCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		AttachRules:      attachRules,
 	}
 
 	return dynatrace.NewEventsClient(eh.dtClient).AddInfoEvent(workCtx, infoEvent)

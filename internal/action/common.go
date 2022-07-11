@@ -3,11 +3,13 @@ package action
 import (
 	"context"
 
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 const eventSource = "Keptn dynatrace-service"
@@ -100,21 +102,23 @@ func createDefaultAttachRules(keptnContext KeptnContext) *dynatrace.AttachRules 
 // TimeframeFunc is the signature of a function returning a common.Timeframe or and error
 type TimeframeFunc func() (*common.Timeframe, error)
 
-func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInterface, existingAttachRules *dynatrace.AttachRules, imageAndTag common.ImageAndTag, event adapter.EventContentAdapter, timeframeFunc TimeframeFunc) (dynatrace.AttachRules, error) {
+func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInterface, existingAttachRules *dynatrace.AttachRules, imageAndTag common.ImageAndTag, event adapter.EventContentAdapter, timeframe *common.Timeframe) dynatrace.AttachRules {
 	version := determineVersionFromTagOrLabel(imageAndTag, event)
-	if version == "" {
+	if version == "" || timeframe == nil {
 		if existingAttachRules != nil {
-			log.WithField("customAttachRules", *existingAttachRules).Debug("no version information available - will use customer provided attach rules")
-			return *existingAttachRules, nil
+			log.WithFields(log.Fields{
+				"version":           version,
+				"timeframe":         timeframe,
+				"customAttachRules": *existingAttachRules,
+			}).Debug("no version information available - will use customer provided attach rules")
+			return *existingAttachRules
 		}
 
-		log.Debug("no version information available - will use default attach rules")
-		return *createDefaultAttachRules(event), nil
-	}
-
-	timeframe, err := timeframeFunc()
-	if err != nil {
-		return dynatrace.AttachRules{}, err
+		log.WithFields(log.Fields{
+			"version":   version,
+			"timeframe": timeframe,
+		}).Debug("no version information or time frame available - will use default attach rules")
+		return *createDefaultAttachRules(event)
 	}
 
 	entityClient := dynatrace.NewEntitiesClient(client)
@@ -127,13 +131,13 @@ func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInter
 		To:      timeframe.End(),
 	})
 	if err != nil {
-		return dynatrace.AttachRules{}, err
+		log.WithError(err).Errorf("could not find PGIs for version: %s", version)
 	}
 
 	if existingAttachRules != nil {
 		if len(pgis) == 0 {
 			log.WithField("customAttachRules", *existingAttachRules).Debug("no PGIs found - will use customer provided attach rules only")
-			return *existingAttachRules, nil
+			return *existingAttachRules
 		}
 
 		log.WithFields(log.Fields{
@@ -141,18 +145,18 @@ func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInter
 			"entityIds":         pgis,
 		}).Debug("PGIs found and custom attach rules - will combine them")
 		existingAttachRules.EntityIds = append(existingAttachRules.EntityIds, pgis...)
-		return *existingAttachRules, nil
+		return *existingAttachRules
 	}
 
 	if len(pgis) == 0 {
 		log.Debug("no PGIs found and no custom attach rules - will use default attach rules")
-		return *createDefaultAttachRules(event), nil
+		return *createDefaultAttachRules(event)
 	}
 
 	log.WithField("PGIs", pgis).Debug("PGIs found - will use them only")
 	return dynatrace.AttachRules{
 		EntityIds: pgis,
-	}, nil
+	}
 }
 
 func determineVersionFromTagOrLabel(imageAndTag common.ImageAndTag, event adapter.EventContentAdapter) string {
@@ -162,4 +166,25 @@ func determineVersionFromTagOrLabel(imageAndTag common.ImageAndTag, event adapte
 	}
 
 	return event.GetLabels()["releasesVersion"]
+}
+
+func createAttachRulesForDeploymentTimeFrame(ctx context.Context, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, event adapter.EventContentAdapter, imageAndTag common.ImageAndTag, customAttachRules *dynatrace.AttachRules) dynatrace.AttachRules {
+
+	deploymentTriggeredTime, err := eClient.GetEventTimeStampForType(ctx, event, keptnv2.GetStartedEventType(keptnv2.DeploymentTaskName))
+	if err != nil {
+		log.WithError(err).Warn("Could not find the corresponding deployment.triggered event")
+	}
+
+	deploymentFinishedTime, err := eClient.GetEventTimeStampForType(ctx, event, keptnv2.GetFinishedEventType(keptnv2.DeploymentTaskName))
+	if err != nil {
+		log.WithError(err).Warn("Could not find the corresponding deployment.finished event")
+	}
+
+	var timeframe *common.Timeframe
+	if deploymentTriggeredTime != nil && deploymentFinishedTime != nil {
+		// ignoring error here, as it should be fine anyway - otherwise attach rules will be set to default / custom
+		timeframe, _ = common.NewTimeframe(*deploymentTriggeredTime, *deploymentFinishedTime)
+	}
+
+	return createOrUpdateAttachRules(ctx, dtClient, customAttachRules, imageAndTag, event, timeframe)
 }

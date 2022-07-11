@@ -2,8 +2,9 @@ package action
 
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 )
 
 type TestTriggeredAdapterInterface interface {

@@ -1,5 +1,11 @@
 package common
 
+import (
+	"strings"
+
+	log "github.com/sirupsen/logrus"
+)
+
 const NotAvailable = "n/a"
 
 // ImageAndTag stores the image and a tag
@@ -21,6 +27,35 @@ func (iat ImageAndTag) HasTag() bool {
 // Image returns the image
 func (iat ImageAndTag) Image() string {
 	return iat.image
+}
+
+// TryParseImageAndTag will try to parse imageAndTagValue into a string. It will return a ImageAndTag struct with the data it could extract from the given input data.
+func TryParseImageAndTag(imageAndTagValue interface{}) ImageAndTag {
+
+	imageAndTag, ok := imageAndTagValue.(string)
+	if !ok {
+		log.WithField("imageAndTag", imageAndTagValue).Error("Could not convert imageAndTag to type string")
+		return NewNotAvailableImageAndTag()
+	}
+
+	if imageAndTag == NotAvailable || imageAndTag == "" {
+		return NewNotAvailableImageAndTag()
+	}
+
+	split := strings.Split(imageAndTag, ":")
+	if len(split) == 1 {
+		if split[0] == "" {
+			return NewNotAvailableImageAndTag()
+		}
+
+		return NewImageAndTag(split[0], NotAvailable)
+	}
+
+	if split[0] == "" || split[1] == "" {
+		return NewNotAvailableImageAndTag()
+	}
+
+	return NewImageAndTag(split[0], split[1])
 }
 
 // NewImageAndTag creates a new ImageAndTag instance
