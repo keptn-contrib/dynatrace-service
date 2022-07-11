@@ -1,14 +1,14 @@
-# Targeting specific entities for evaluation information
+# Targeting specific entities for deployment, test and evaluation information
 
-As stated [in this section](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), dynatrace-service will use the default attach rules in case users have not supplied their own via a `dynatrace/dynatrace.conf.yaml` file. While this is true for some event types, there is a special behaviour for `sh.keptn.event.deployment.finished`, `sh.keptn.event.test.triggered`, `sh.keptn.event.test.finished`, `sh.keptn.event.evaluation.finished` and `sh.keptn.event.release.triggered` events. 
+As stated in the section [targeting specific entities using attach rules](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), the dynatrace-service will use the default attach rules in case users have not supplied their own via a `dynatrace/dynatrace.conf.yaml` file. While this is true for some event types, there is a special behavior for `sh.keptn.event.deployment.finished`, `sh.keptn.event.test.triggered`, `sh.keptn.event.test.finished`, `sh.keptn.event.evaluation.finished` and `sh.keptn.event.release.triggered` events. 
 
-These events will not be attached to the *Service* level, but to a certain *Process Group Instance* (aka. *Process*) if possible. This is done because a *Service* entity in Dynatrace can have multiple instances of *Processes* from different versions. So dynatrace-service tries to push the information found in these events to the *Process* entity identified by **version information**, instead of the generic *Service* entity. If the desired *Process* version could be found, then the event will also be available on *Service* level in addition to the *Process* level as it is propagated automatically by Dynatrace.
+These events will not be attached to the *Service* level, but to a certain *Process Group Instance* (aka. *Process*) if possible. This is done because a *Service* entity in Dynatrace can consist of multiple *Processes* of different versions. So the dynatrace-service tries to push the information found in these events to the *Process* entity identified by **version information**, instead of the generic *Service* entity. If the desired *Process* version could be found, then the event will also be available on *Service* level in addition to the *Process* level as it is propagated automatically by Dynatrace.
 
-Currently, there are two ways of providing **version information** to dynatrace-service:
+Currently, there are two ways of providing **version information** to the dynatrace-service:
 
 ### Version information derived from a deployment task
 
-If you run an evaluation *task* after a deployment *task* in the course of the same Keptn *sequence*, then dynatrace-service will extract the version information (the image *tag*) from the field `data.configurationChange.values.image` of the `sh.keptn.event.deployment.triggered` event payload.
+If you run an evaluation *task* after a deployment *task* in the course of the same Keptn *sequence*, then the dynatrace-service will extract the version information (the image *tag*) from the field `data.configurationChange.values.image` of the `sh.keptn.event.deployment.triggered` event payload.
 
 Below you can see an exemplary payload of a `sh.keptn.event.deployment.triggered` event including the `configurationChange` data.
 ```json
@@ -40,15 +40,15 @@ Below you can see an exemplary payload of a `sh.keptn.event.deployment.triggered
 
 ### Version information derived from event labels
 
-While the above method would work well e.g. for *delivery* sequences, it does not work for a simple evaluation, that a user would want to do. For these scenarios, there is another way of supplying the version information by using event labels - i.e. providing a label called `releasesVersion` with the version number of your release.
+While the above method would work well for *delivery* sequences, if such version information is not available during e.g. a simple user-triggered evaluation, the version number of your release can be supplied by providing an event label called `releasesVersion`.
 
-A user you can trigger an evaluation e.g. with the Keptn CLI:
+As a user, you can trigger an evaluation e.g. with the Keptn CLI:
 
 ```shell
 keptn trigger evaluation --project="my-project" --stage="my-stage" --service="my-service" --start="2022-06-02T07:08:00" --end="2022-06-02T09:08:00"
 ```
 
-If a user adds a label called `releasesVersion` then this will be picked up and dynatrace-service can use this as version information.
+By simply adding a label called `releasesVersion`, the dynatrace-service can use this as version information.
 
 ```shell
 keptn trigger evaluation --project="my-project" --stage="my-stage" --service="my-service" --start="2022-06-02T07:08:00" --end="2022-06-02T09:08:00" --labels="releasesVersion=v0.1.1"
@@ -60,7 +60,7 @@ In order to correctly identify a *Process* by its version in Dynatrace, you need
 
 ### General approach
 
-If your releases are monitored by Dynatrace, dynatrace-service can make use of the **version information** provided (either by deployment events or event labels) to query Dynatrace APIs in order to receive the desired *Process Group Instance* ID(s) which will then be used in the attach rules.
+If your releases are monitored by Dynatrace, the dynatrace-service can make use of the **version information** provided (either by deployment events or event labels) to query Dynatrace APIs in order to receive the desired *Process Group Instance* ID(s) which will then be used in the attach rules.
 
 **Note**:
 
@@ -73,17 +73,17 @@ If your releases are monitored by Dynatrace, dynatrace-service can make use of t
 If **version information** would be provided in both ways, then the information found in `sh.keptn.event.deployment.triggered` events will have precedence over the one found in the event label `releasesVersion`.
 
 ### How attach rules are created
-
-* Version information is not provided for dynatrace-service
-    * either default attach rules are used, as described [here](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), or
-    * user provided attach rules are used if available
-* Version information is available
-    * if *Process Group Instance* IDs could be retrieved, then
+* If version information is available to the dynatrace-service:
+    * if *Process Group Instance* IDs can be retrieved, then
         * either only these are used, or
         * they are combined with user defined attach rules if available
     * if *Process Group Instance* IDs could not be retrieved, then
         * either default attach rules are used, or
         * user provided attach rules are used if available
+
+* If version information is not available:
+    * either default attach rules are used, as described in the section [targeting specific entities using attach rules](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), or
+    * user provided attach rules are used (if available)
 
 ## Enriching events sent to Dynatrace with more context
 
