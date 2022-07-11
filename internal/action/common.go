@@ -170,7 +170,7 @@ func determineVersionFromTagOrLabel(imageAndTag common.ImageAndTag, event adapte
 
 func createAttachRulesForDeploymentTimeFrame(ctx context.Context, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, event adapter.EventContentAdapter, imageAndTag common.ImageAndTag, customAttachRules *dynatrace.AttachRules) dynatrace.AttachRules {
 
-	deploymentTriggeredTime, err := eClient.GetEventTimeStampForType(ctx, event, keptnv2.GetTriggeredEventType(keptnv2.DeploymentTaskName))
+	deploymentTriggeredTime, err := eClient.GetEventTimeStampForType(ctx, event, keptnv2.GetStartedEventType(keptnv2.DeploymentTaskName))
 	if err != nil {
 		log.WithError(err).Warn("Could not find the corresponding deployment.triggered event")
 	}

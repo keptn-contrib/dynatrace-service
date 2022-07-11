@@ -57,16 +57,16 @@ func (eh *DeploymentFinishedEventHandler) createAttachRules(ctx context.Context,
 		eventTime = time.Now().UTC()
 	}
 
-	deploymentTriggeredTime, err := eh.eClient.GetEventTimeStampForType(ctx, eh.event, keptnv2.GetTriggeredEventType(keptnv2.DeploymentTaskName))
+	deploymentStartedTime, err := eh.eClient.GetEventTimeStampForType(ctx, eh.event, keptnv2.GetStartedEventType(keptnv2.DeploymentTaskName))
 	if err != nil {
-		log.WithError(err).Warn("Could not find the corresponding deployment.triggered event")
+		log.WithError(err).Warn("Could not find the corresponding deployment.started event")
 
 		// set the start time to 3 secs before event time - at least we can try to find sth.
 		startTime := eventTime.Add(-3 * time.Second)
-		deploymentTriggeredTime = &startTime
+		deploymentStartedTime = &startTime
 	}
 
 	// ignoring the error here, because it should not be possible to create an invalid timeframe here
-	timeframe, _ := common.NewTimeframe(*deploymentTriggeredTime, eventTime)
+	timeframe, _ := common.NewTimeframe(*deploymentStartedTime, eventTime)
 	return createOrUpdateAttachRules(ctx, eh.dtClient, eh.attachRules, imageAndTag, eh.event, timeframe)
 }

@@ -110,7 +110,7 @@ func TestEventHandlers_HandleEvent_NoEntitiesAndNoUserSpecifiedAttachRules(t *te
 	setups.assertAllEventsCorrectlySent(t, handler)
 }
 
-// no deployment.triggered resp. deployment.finished events found and no custom attach rules will result in default attach rules
+// no deployment.started resp. deployment.finished events found and no custom attach rules will result in default attach rules
 // does not apply to evaluation finished, because the timeframe is taken from the event payload
 // does only partially apply for deployment finished - there's a different logic that is tested separately
 func TestEventHandlers_HandleEvent_NoEventsFoundAndNoCustomAttachRules(t *testing.T) {
@@ -124,14 +124,14 @@ func TestEventHandlers_HandleEvent_NoEventsFoundAndNoCustomAttachRules(t *testin
 		eClient *eventClientFake
 	}{
 		{
-			name: "deployment.triggered event not found",
+			name: "deployment.started event not found",
 			eClient: &eventClientFake{
 				t:           t,
 				imageAndTag: common.NewImageAndTag("registry/my-image", "1.2.3"),
 				eventTimestamps: timestampsForType{
-					"sh.keptn.event.deployment.triggered": {
+					"sh.keptn.event.deployment.started": {
 						time: time.Time{},
-						err:  fmt.Errorf("could not find deployment.triggered event"),
+						err:  fmt.Errorf("could not find deployment.started event"),
 					},
 					"sh.keptn.event.deployment.finished": {
 						time: time.Unix(1654000313, 0),
@@ -146,7 +146,7 @@ func TestEventHandlers_HandleEvent_NoEventsFoundAndNoCustomAttachRules(t *testin
 				t:           t,
 				imageAndTag: common.NewImageAndTag("registry/my-image", "1.2.3"),
 				eventTimestamps: timestampsForType{
-					"sh.keptn.event.deployment.triggered": {
+					"sh.keptn.event.deployment.started": {
 						time: time.Unix(1654000240, 0),
 						err:  nil,
 					},
@@ -163,9 +163,9 @@ func TestEventHandlers_HandleEvent_NoEventsFoundAndNoCustomAttachRules(t *testin
 				t:           t,
 				imageAndTag: common.NewImageAndTag("registry/my-image", "1.2.3"),
 				eventTimestamps: timestampsForType{
-					"sh.keptn.event.deployment.triggered": {
+					"sh.keptn.event.deployment.started": {
 						time: time.Time{},
-						err:  fmt.Errorf("could not find deployment.triggered event"),
+						err:  fmt.Errorf("could not find deployment.started event"),
 					},
 					"sh.keptn.event.deployment.finished": {
 						time: time.Time{},
@@ -347,7 +347,7 @@ func createAllTestSetups(t *testing.T, handler *test.FileBasedURLHandlerWithSink
 
 func setupCorrectTimestampResultsForDeploymentTimeframe() timestampsForType {
 	return timestampsForType{
-		"sh.keptn.event.deployment.triggered": {
+		"sh.keptn.event.deployment.started": {
 			time: time.Unix(1654000240, 0),
 			err:  nil,
 		},

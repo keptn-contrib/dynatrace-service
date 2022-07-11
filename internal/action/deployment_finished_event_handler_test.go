@@ -20,7 +20,7 @@ type deploymentFinishedTestSetup struct {
 	labels              map[string]string
 }
 
-// no deployment.triggered event was found, so time is reset, but no PGIs found and no custom attach rules will result in default attach rules
+// no deployment.started event was found, so time is reset, but no PGIs found and no custom attach rules will result in default attach rules
 func TestDeploymentFinishedEventHandler_HandleEvent_NoEventFoundAndNoCustomAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
 	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"no_entity.json")
@@ -30,9 +30,9 @@ func TestDeploymentFinishedEventHandler_HandleEvent_NoEventFoundAndNoCustomAttac
 		t:           t,
 		imageAndTag: common.NewNotAvailableImageAndTag(),
 		eventTimestamps: timestampsForType{
-			"sh.keptn.event.deployment.triggered": {
+			"sh.keptn.event.deployment.started": {
 				time: time.Time{},
-				err:  fmt.Errorf("could not find deployment.triggered event"),
+				err:  fmt.Errorf("could not find deployment.started event"),
 			},
 		},
 	}
