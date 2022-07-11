@@ -60,7 +60,7 @@ In order to correctly identify a *Process* by its version in Dynatrace, you need
 
 ### General approach
 
-If your releases are monitored by Dynatrace, dynatrace-service can make use of the **version information** provided (either by deployment events or event labels) to query Dynatrace APIs in order to receive the desired *Process Group Instance* id(s) which will then be used in the attach rules.
+If your releases are monitored by Dynatrace, dynatrace-service can make use of the **version information** provided (either by deployment events or event labels) to query Dynatrace APIs in order to receive the desired *Process Group Instance* ID(s) which will then be used in the attach rules.
 
 **Note**:
 
@@ -78,10 +78,10 @@ If **version information** would be provided in both ways, then the information 
     * either default attach rules are used, as described [here](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), or
     * user provided attach rules are used if available
 * Version information is available
-    * if *Process Group Instance* ids could be retrieved, then
+    * if *Process Group Instance* IDs could be retrieved, then
         * either only these are used, or
         * they are combined with user defined attach rules if available
-    * if *Process Group Instance* ids could not be retrieved, then
+    * if *Process Group Instance* IDs could not be retrieved, then
         * either default attach rules are used, or
         * user provided attach rules are used if available
 
