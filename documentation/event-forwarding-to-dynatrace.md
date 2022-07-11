@@ -30,7 +30,7 @@ Most services that are deployed with Keptn's helm-service are automatically tagg
 
 **Note**
 
-For some events we will try to push the event payload to *PGI* level instead of *SERVICE* level. Please refer to [this documentation for more information](event-forwarding-to-dynatrace-to-specific-entities.md)
+For some events we will try to push the event payload to *PGI* level instead of *SERVICE* level. Please refer to the section [targeting specific entities for deployment, test and evaluation information](event-forwarding-to-dynatrace-to-specific-entities.md).
 
 
 If your services are however not tagged with these but other tags or if you want the dynatrace-service to send the events not to a service but rather an application, process group or host, overwrite the default [attach rules in a `dynatrace/dynatrace.conf.yaml` file](dynatrace-conf-yaml-file.md#attach-rules-for-connecting-dynatrace-entities-with-events-attachrules).

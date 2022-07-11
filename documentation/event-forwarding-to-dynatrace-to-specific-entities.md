@@ -1,6 +1,6 @@
 # Targeting specific entities for deployment, test and evaluation information
 
-As stated [in this section](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), dynatrace-service will use the default attach rules in case users have not supplied their own via a `dynatrace/dynatrace.conf.yaml` file. While this is true for some event types, there is a special behavior for `sh.keptn.event.deployment.finished`, `sh.keptn.event.test.triggered`, `sh.keptn.event.test.finished`, `sh.keptn.event.evaluation.finished` and `sh.keptn.event.release.triggered` events. 
+As stated in the section [targeting specific entities using attach rules](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), dynatrace-service will use the default attach rules in case users have not supplied their own via a `dynatrace/dynatrace.conf.yaml` file. While this is true for some event types, there is a special behavior for `sh.keptn.event.deployment.finished`, `sh.keptn.event.test.triggered`, `sh.keptn.event.test.finished`, `sh.keptn.event.evaluation.finished` and `sh.keptn.event.release.triggered` events. 
 
 These events will not be attached to the *Service* level, but to a certain *Process Group Instance* (aka. *Process*) if possible. This is done because a *Service* entity in Dynatrace can have multiple instances of *Processes* from different versions. So dynatrace-service tries to push the information found in these events to the *Process* entity identified by **version information**, instead of the generic *Service* entity. If the desired *Process* version could be found, then the event will also be available on *Service* level in addition to the *Process* level as it is propagated automatically by Dynatrace.
 
@@ -75,7 +75,7 @@ If **version information** would be provided in both ways, then the information 
 ### How attach rules are created
 
 * Version information is not provided for dynatrace-service
-    * either default attach rules are used, as described [here](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), or
+    * either default attach rules are used, as described in the section [targeting specific entities using attach rules](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), or
     * user provided attach rules are used if available
 * Version information is available
     * if *Process Group Instance* IDs could be retrieved, then
