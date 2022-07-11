@@ -25,6 +25,64 @@ Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo
 **Note:**
 In case dynatrace-service could not parse the tile title correctly it will stop the processing of this tile and return an error for the concerned SLI.
 
+### Examples
+* **Informational SLO**
+  
+  To simply retrieve the value of an SLI purely for informational purpose, giving the tile a title is sufficient. As it does not include a pass criterion it will not be included in an evaluation. For example, the title `Av Response Time (Info)`: 
+
+  ![Example of an informational SLO](images/tile-example-infomational.png "Example of an informational SLO")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: Av_Response_Time_(Info)
+    displayName: Av Response Time (Info)
+    pass: []
+    warning: []
+    weight: 1
+    key_sli: false
+  ```
+
+* **Custom SLI name with pass and warning criteria**
+
+  The SLI name as well as the properties of the SLO may be customized. For example, the title `Av Svc Resp. Time; sli=srt_av; pass=<=70000; warning=<=80000; key=true; weight=2`:
+
+  ![Example of a customized SLO](images/tile-example-customized.png "Example of a customized SLO")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: srt_av
+    displayName: Av Svc Resp. Time
+    pass:
+      - criteria:
+          - <=70000
+    warning:
+      - criteria:
+          - <=80000
+    weight: 2
+    key_sli: true
+  ```
+
+* **Display name and pass criterion**
+  
+  Alternatively, create an SLO simply by appending a pass criterion. For example, the title `sli=service_rt_av; pass=<=75000`:
+
+  ![Example of an SLO with display name](images/tile-example-display-name-pass.png "Example of an SLO with display name")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: service_rt_av
+    displayName: service_rt_av
+    pass:
+      - criteria:
+          - <=75000
+    warning: []
+    weight: 1
+    key_sli: false
+  ```
+
 ### Logical AND/OR operators for pass and warning criteria
 
 The Keptn SLO objective definition for `pass` and `warning` criteria allows logical **AND** as well as **OR** operators.
