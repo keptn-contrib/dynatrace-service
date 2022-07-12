@@ -16,11 +16,11 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/onboard"
 
 	api "github.com/keptn/go-utils/pkg/api/utils"
+	eventsource "github.com/keptn/go-utils/pkg/sdk/connector/eventsource/nats"
+	nats "github.com/keptn/go-utils/pkg/sdk/connector/nats"
 
 	"github.com/keptn/go-utils/pkg/sdk/connector/controlplane"
-	eventsource "github.com/keptn/go-utils/pkg/sdk/connector/eventsource/nats"
 	"github.com/keptn/go-utils/pkg/sdk/connector/logforwarder"
-	"github.com/keptn/go-utils/pkg/sdk/connector/nats"
 	"github.com/keptn/go-utils/pkg/sdk/connector/subscriptionsource"
 	"github.com/keptn/go-utils/pkg/sdk/connector/types"
 
@@ -81,7 +81,8 @@ func _main() int {
 		}()
 	}
 
-	controlPlane, err := connectToControlPlane()
+	natsConnector := nats.NewFromEnv()
+	controlPlane, err := connectToControlPlane(natsConnector)
 	if err != nil {
 		log.WithError(err).Fatal("Could not connect to control plane")
 	}
@@ -97,20 +98,28 @@ func _main() int {
 	// register for events
 	// the actual processing is done in a separate goroutine so that it doesn't block other events
 	log.Info("Registering with control plane")
-	controlPlane.Register(notifyCtx, dynatraceService{onEvent: func(keptnClient *keptn.Client, event cloudevents.Event) {
+	err = controlPlane.Register(notifyCtx, dynatraceService{onEvent: func(keptnClient *keptn.Client, event cloudevents.Event) {
 		workerWaitGroup.Add(1)
 		go func() {
 			defer workerWaitGroup.Done()
 			gotEvent(workCtx, replyCtx, keptnClient, event)
 		}()
 	}})
-
-	// TODO: 2022-06-14: Check how Keptn events are flushed by cpConnector once no-longer registered. Ideally this should use a context.
+	if err != nil {
+		log.WithError(err).Error("Could not register control plane")
+	}
 
 	// wait for all existing events (i.e. worker go routines to finish)
 	log.Info("Waiting for existing processing to finish")
 	stopNotify()
 	workerWaitGroup.Wait()
+
+	// TODO: 2022-07-12: Once available, this should be updated to use a context when flushing the connection.
+	err = natsConnector.Disconnect()
+	if err != nil {
+		log.WithError(err).Error("Could not disconnect NATS connector")
+	}
+
 	stopWorkPeriod()
 	stopReplyPeriod()
 
@@ -185,7 +194,7 @@ func gotEvent(workCtx context.Context, replyCtx context.Context, keptnClient *ke
 	}
 }
 
-func connectToControlPlane() (*controlplane.ControlPlane, error) {
+func connectToControlPlane(natsConnector *nats.NatsConnector) (*controlplane.ControlPlane, error) {
 	apiSet, err := api.NewInternal(&http.Client{}, keptn.GetV1InClusterAPIMappings())
 	if err != nil {
 		return nil, fmt.Errorf("could not create internal Keptn API set: %w", err)
@@ -193,7 +202,7 @@ func connectToControlPlane() (*controlplane.ControlPlane, error) {
 
 	return controlplane.New(
 		subscriptionsource.New(apiSet.UniformV1()),
-		eventsource.New(nats.NewFromEnv()),
+		eventsource.New(natsConnector),
 		logforwarder.New(apiSet.LogsV1())), nil
 }
 
