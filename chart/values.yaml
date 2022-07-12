@@ -41,6 +41,11 @@ securityContext:                             # Set the security context (e.g. ru
   seccompProfile:
       type: RuntimeDefault
 
+distributor:
+  metadata:
+    hostname: ""                             # Sets the hostname sent by the distributor to the control-plane
+    namespace: ""                            # Sets the namespace sent by the distributor to the control-plane
+
 resources:                                  # Set resources limits and requests
   limits:
     cpu: 128m
