@@ -5,10 +5,7 @@ on:
       semver-type:
         description: "Can be one of [major,minor,patch]. CAUTION: This will enforce a new pre-release with the specified semantic version type bumped."
         required: false
-      keptn-version:
-        description: "The current Keptn version that this release shall be used with. This version also determines the value for the Distributor version in values.yml"
-        required: true
-        type: string
+
 env:
   NODE_VERSION: 14
   KEPTN_BOT_NAME: "Keptn Contrib Bot"
@@ -131,11 +128,10 @@ jobs:
   build-helm-chart:
     needs: prepare
     name: Build Helm Charts
-    uses: keptn-contrib/dynatrace-service/.github/workflows/build-helm-chart.yml@master
+    uses: ./.github/workflows/build-helm-chart.yml
     with:
       branch: ${{ needs.prepare.outputs.branch }}
       version: ${{ needs.prepare.outputs.next-version }}
-      distributor-version: ${{ github.event.inputs.keptn-version }}
       release: true
 
   ############################################################################
