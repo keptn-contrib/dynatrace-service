@@ -4,10 +4,9 @@
 VERSION=$1
 IMAGE_TAG=$2
 IMAGE=$3
-DISTRIBUTOR_VERSION=$4
 
-if [ $# -ne 4 ]; then
-  echo "Usage: $0 VERSION IMAGE_TAG IMAGE DISTRIBUTOR_VERSION"
+if [ $# -ne 3 ]; then
+  echo "Usage: $0 VERSION IMAGE_TAG IMAGE"
   exit
 fi
 
@@ -21,18 +20,11 @@ if [ -z "$IMAGE_TAG" ]; then
   IMAGE_TAG=$VERSION
 fi
 
-if [ -z "$DISTRIBUTOR_VERSION" ]; then
-  echo "No Distributor version set, exiting..."
-  exit 1
-fi
-
 
 # replace "appVersion: latest" with "appVersion: $VERSION" in all Chart.yaml files
 IT="$IMAGE_TAG" yq e -i '.appVersion = strenv(IT)' ./chart/Chart.yaml
 V="$VERSION" yq e -i '.version = strenv(V)' ./chart/Chart.yaml
 
-# replace distributor version in 'values.yaml'
-DV="$DISTRIBUTOR_VERSION" yq e -i '.distributor.image.tag = strenv(DV)' ./chart/values.yaml
 
 mkdir installer/
 

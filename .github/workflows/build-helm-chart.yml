@@ -9,10 +9,6 @@ on:
       version:
         type: string
         required: true
-      distributor-version:
-        description: "The version of the distributor, that will be used in values.yml"
-        type: string
-        required: true
       datetime:
         type: string
         required: false
@@ -39,7 +35,6 @@ jobs:
       VERSION: ${{ inputs.version }}
       DATETIME: ${{ inputs.datetime }}
       RELEASE_BUILD: ${{ inputs.release }}
-      DISTRIBUTOR_VERSION: ${{ inputs.distributor-version  }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3.0.2
@@ -56,10 +51,10 @@ jobs:
         run: |
           if [[ "$BRANCH" == "master" ]] && [[ "$RELEASE_BUILD" == 'false' ]] && [[ $DATETIME != "" ]]; then
             # use VERSION.DATETIME for the image tag (e.g., nightly build)
-            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}.${DATETIME}" "${IMAGE}" "${DISTRIBUTOR_VERSION}"
+            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}.${DATETIME}" "${IMAGE}"
           else
             # just use VERSION for the image tag
-            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}" "${IMAGE}" "${DISTRIBUTOR_VERSION}"
+            ./gh-actions-scripts/build_helm_chart.sh "${VERSION}" "${VERSION}" "${IMAGE}"
           fi
 
       - name: Upload Helm Chart as an artifact
