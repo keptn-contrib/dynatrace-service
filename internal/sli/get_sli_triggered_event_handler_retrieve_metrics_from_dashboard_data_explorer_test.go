@@ -582,3 +582,25 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 
 	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile tests that an excluded tile is skipped.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/excluded_tile/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_excluded_tile.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-B67B3EC4C95E0FA7%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136.52852484946527),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "rt_jid", "MV2;MicroSecond;entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+}

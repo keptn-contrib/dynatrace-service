@@ -64,8 +64,8 @@ func (r *QueryResult) addTileResult(result *TileResult) {
 
 	r.sli.Indicators[result.sliName] = result.sliQuery
 
-	if result.objective != nil {
-		r.slo.Objectives = append(r.slo.Objectives, result.objective)
+	if result.sloDefinition != nil {
+		r.slo.Objectives = append(r.slo.Objectives, result.sloDefinition)
 	}
 
 	r.sliResults = append(r.sliResults, result.sliResult)

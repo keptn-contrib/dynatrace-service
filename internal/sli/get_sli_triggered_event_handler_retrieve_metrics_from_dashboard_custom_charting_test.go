@@ -391,6 +391,30 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_NonDbChildCallCo
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
+// TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile tests an additional custom charting tile with exclude set to true is skipped.
+// This results in success, as this is supported.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/custom_charting/excluded_tile/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_excluded_tile.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
+		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29.31312208863131),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "service_response_time", "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():avg:names")
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
 func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLIsAssertionsFunc func(t *testing.T, actual *dynatrace.SLI), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
 	kClient := &keptnClientMock{}
 	rClient := &uploadErrorResourceClientMock{t: t}

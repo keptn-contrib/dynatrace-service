@@ -347,3 +347,23 @@ func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
 
 	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
+
+// TestRetrieveMetricsFromDashboardUSQLTile_ExcludedTile tests that a tile with exclude set to true is skipped.
+func TestRetrieveMetricsFromDashboardUSQLTile_ExcludedTile(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/usql_tiles/excluded_tile/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("usql_metric", 62731.12784806213),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric", "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession")
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+}

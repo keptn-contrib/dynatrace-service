@@ -80,9 +80,9 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileR
 	}
 
 	return &TileResult{
-		sliResult: result.NewSuccessfulSLIResult(indicatorName, sloResult.EvaluatedPercentage),
-		objective: sloDefinition,
-		sliName:   indicatorName,
-		sliQuery:  slo.NewQueryProducer(*query).Produce(),
+		sliResult:     result.NewSuccessfulSLIResult(indicatorName, sloResult.EvaluatedPercentage),
+		sloDefinition: sloDefinition,
+		sliName:       indicatorName,
+		sliQuery:      slo.NewQueryProducer(*query).Produce(),
 	}
 }

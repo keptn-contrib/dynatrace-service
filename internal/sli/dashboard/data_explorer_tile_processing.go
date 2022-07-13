@@ -36,13 +36,19 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 
 // Process processes the specified Data Explorer dashboard tile.
 func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
-	sloDefinition, err := parseSLODefinition(tile.Name)
+	sloDefinitionParsingResult, err := parseSLODefinition(tile.Name)
 	var sloDefError *sloDefinitionError
 	if errors.As(err, &sloDefError) {
 		failedTileResult := newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Data Explorer tile title parsing error", err)
 		return []*TileResult{&failedTileResult}
 	}
 
+	if sloDefinitionParsingResult.exclude {
+		log.WithField("tileName", tile.Name).Debug("Tile excluded as name includes exclude=true")
+		return nil
+	}
+
+	sloDefinition := sloDefinitionParsingResult.sloDefinition
 	if sloDefinition.SLI == "" {
 		log.WithField("tileName", tile.Name).Debug("Omitted Data Explorer tile as no SLI name could be derived")
 		return nil
@@ -60,7 +66,7 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 	return p.processQuery(ctx, sloDefinition, tile.Queries[0], managementZoneFilter)
 }
 
-func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefinition *keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []*TileResult {
+func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefinition keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []*TileResult {
 	log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
 
 	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(ctx, dataQuery, managementZoneFilter)

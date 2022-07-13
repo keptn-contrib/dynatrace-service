@@ -7,6 +7,7 @@ import (
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -37,11 +38,22 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 // Process processes the specified USQL dashboard tile.
 // TODO: 2022-03-07: Investigate if all error and warning cases are covered. E.g. what happens if a query returns no results?
 func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []*TileResult {
-	sloDefinition, err := parseSLODefinition(tile.CustomName)
+	sloDefinitionParsingResult, err := parseSLODefinition(tile.CustomName)
 	var sloDefError *sloDefinitionError
 	if errors.As(err, &sloDefError) {
 		failedTileResult := newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "User Sessions Query tile title parsing error", err)
 		return []*TileResult{&failedTileResult}
+	}
+
+	if sloDefinitionParsingResult.exclude {
+		log.WithField("tile.CustomName", tile.Name).Debug("Tile excluded as name includes exclude=true")
+		return nil
+	}
+
+	sloDefinition := sloDefinitionParsingResult.sloDefinition
+	if sloDefinition.SLI == "" {
+		log.WithField("tile.CustomName", tile.Name).Debug("Omitted User Sessions Query tile as no SLI name could be derived")
+		return nil
 	}
 
 	query, err := usql.NewQuery(tile.Query)
@@ -69,7 +81,7 @@ func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) 
 	}
 }
 
-func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition *keptncommon.SLO, baseQuery usql.Query) TileResult {
+func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, baseQuery usql.Query) TileResult {
 	if len(usqlResult.Values) == 0 {
 		return newWarningTileResultFromSLODefinition(sloDefinition, "User sessions API returned zero values")
 	}
@@ -85,7 +97,7 @@ func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefi
 	return createSuccessfulTileResultForDimensionNameAndValue("", dimensionValue, sloDefinition, dynatrace.SingleValueVisualizationType, baseQuery)
 }
 
-func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition *keptncommon.SLO, visualizationType string, baseQuery usql.Query) []*TileResult {
+func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, visualizationType string, baseQuery usql.Query) []*TileResult {
 	if len(usqlResult.Values) == 0 {
 		warningTileResult := newWarningTileResultFromSLODefinition(sloDefinition, "User sessions API returned zero values")
 		return []*TileResult{&warningTileResult}
@@ -155,7 +167,7 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 	return "", errors.New("dimension name should be a string")
 }
 
-func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition *keptncommon.SLO, visualizationType string, baseQuery usql.Query) TileResult {
+func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, visualizationType string, baseQuery usql.Query) TileResult {
 	indicatorName := sloDefinition.SLI
 	if dimensionName != "" {
 		indicatorName = cleanIndicatorName(indicatorName + "_" + dimensionName)
@@ -168,7 +180,7 @@ func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, di
 
 	return TileResult{
 		sliResult: result.NewSuccessfulSLIResult(indicatorName, dimensionValue),
-		objective: &keptncommon.SLO{
+		sloDefinition: &keptncommon.SLO{
 			SLI:         indicatorName,
 			DisplayName: sloDefinition.DisplayName,
 			Weight:      sloDefinition.Weight,

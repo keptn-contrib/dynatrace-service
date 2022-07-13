@@ -25,7 +25,7 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 }
 
 // Process generates SLI & SLO definitions based on the metric query and the number of dimensions in the chart definition.
-func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
+func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
 	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryParameters(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe))
@@ -142,7 +142,7 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 			tileResults,
 			&TileResult{
 				sliResult: result.NewSuccessfulSLIResult(indicatorName, value),
-				objective: &keptncommon.SLO{
+				sloDefinition: &keptncommon.SLO{
 					SLI:         indicatorName,
 					DisplayName: sloDefinition.DisplayName,
 					Weight:      sloDefinition.Weight,

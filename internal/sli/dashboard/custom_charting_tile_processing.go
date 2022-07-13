@@ -42,13 +42,19 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 		return nil
 	}
 
-	sloDefinition, err := parseSLODefinition(tile.FilterConfig.CustomName)
+	sloDefinitionParsingResult, err := parseSLODefinition(tile.FilterConfig.CustomName)
 	var sloDefError *sloDefinitionError
 	if errors.As(err, &sloDefError) {
 		failedTileResult := newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Custom charting tile title parsing error", err)
 		return []*TileResult{&failedTileResult}
 	}
 
+	if sloDefinitionParsingResult.exclude {
+		log.WithField("tile.FilterConfig.CustomName", tile.FilterConfig.CustomName).Debug("Tile excluded as name includes exclude=true")
+		return nil
+	}
+
+	sloDefinition := sloDefinitionParsingResult.sloDefinition
 	if sloDefinition.SLI == "" {
 		log.WithField("tile.FilterConfig.CustomName", tile.FilterConfig.CustomName).Debug("Tile not included as name doesnt include sli=SLINAME")
 		return nil
@@ -72,7 +78,7 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	return p.processSeries(ctx, sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
 }
 
-func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition *keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []*TileResult {
+func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []*TileResult {
 
 	metricQuery, err := p.generateMetricQueryFromChartSeries(ctx, series, tileManagementZoneFilter, filtersPerEntityType)
 

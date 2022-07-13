@@ -19,6 +19,7 @@ By default, the tile's title is taken as the display name of the SLO. A clean ve
 | `warning` | Add `<value>` as a warning criterion to the SLO | `warning=<300` |
 | `key` | Mark SLI as a key SLI | `key=true` |
 | `weight` | Set the weight of the SLO to `<value>` | `weight=2` |
+| `exclude` | Set to `true` to exclude this tile | `exclude=true` |
 
 Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo/#objectives) for more details on configuring objectives.
 

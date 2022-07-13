@@ -15,7 +15,13 @@ const (
 	sloDefWarning = "warning"
 	sloDefKey     = "key"
 	sloDefWeight  = "weight"
+	sloDefExclude = "exclude"
 )
+
+type sloDefinitionParsingResult struct {
+	sloDefinition keptncommon.SLO
+	exclude       bool
+}
 
 // parseSLODefinition takes a value such as
 //   Example 1: Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true
@@ -24,10 +30,13 @@ const (
 // can also take a value like
 // 	 "KQG;project=myproject;pass=90%;warning=75%;"
 // This will return a SLO object or an error if parsing was not possible
-func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
-	result := &keptncommon.SLO{
-		Weight: 1,
-		KeySLI: false,
+func parseSLODefinition(sloDefinition string) (*sloDefinitionParsingResult, error) {
+	result := &sloDefinitionParsingResult{
+		sloDefinition: keptncommon.SLO{
+			Weight: 1,
+			KeySLI: false,
+		},
+		exclude: false,
 	}
 	var errs []error
 
@@ -36,7 +45,7 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 
 		if !kv.split {
 			if i == 0 {
-				result.DisplayName = kv.key
+				result.sloDefinition.DisplayName = kv.key
 			}
 			continue
 		}
@@ -55,10 +64,10 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 				break
 			}
 
-			if result.DisplayName == "" {
-				result.DisplayName = kv.value
+			if result.sloDefinition.DisplayName == "" {
+				result.sloDefinition.DisplayName = kv.value
 			}
-			result.SLI = cleanIndicatorName(kv.value)
+			result.sloDefinition.SLI = cleanIndicatorName(kv.value)
 
 		case sloDefPass:
 			passCriteria, err := parseSLOCriteriaString(kv.value)
@@ -66,7 +75,7 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", sloDefPass, err))
 				break
 			}
-			result.Pass = append(result.Pass, passCriteria)
+			result.sloDefinition.Pass = append(result.sloDefinition.Pass, passCriteria)
 
 		case sloDefWarning:
 			warningCriteria, err := parseSLOCriteriaString(kv.value)
@@ -74,7 +83,7 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", sloDefWarning, err))
 				break
 			}
-			result.Warning = append(result.Warning, warningCriteria)
+			result.sloDefinition.Warning = append(result.sloDefinition.Warning, warningCriteria)
 
 		case sloDefKey:
 			if keyFound[sloDefKey] {
@@ -83,7 +92,7 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 			}
 			keyFound[sloDefKey] = true
 
-			result.KeySLI, err = strconv.ParseBool(kv.value)
+			result.sloDefinition.KeySLI, err = strconv.ParseBool(kv.value)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", sloDefKey, kv.value))
 			}
@@ -95,21 +104,32 @@ func parseSLODefinition(sloDefinition string) (*keptncommon.SLO, error) {
 			}
 			keyFound[sloDefWeight] = true
 
-			result.Weight, err = strconv.Atoi(kv.value)
+			result.sloDefinition.Weight, err = strconv.Atoi(kv.value)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not an integer value: %v", sloDefWeight, kv.value))
 			}
 
+		case sloDefExclude:
+			if keyFound[sloDefExclude] {
+				errs = append(errs, &duplicateKeyError{key: sloDefExclude})
+				break
+			}
+			keyFound[sloDefExclude] = true
+
+			result.exclude, err = strconv.ParseBool(kv.value)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", sloDefExclude, kv.value))
+			}
 		}
 	}
 
-	if result.SLI == "" && result.DisplayName != "" {
-		result.SLI = cleanIndicatorName(result.DisplayName)
+	if result.sloDefinition.SLI == "" && result.sloDefinition.DisplayName != "" {
+		result.sloDefinition.SLI = cleanIndicatorName(result.sloDefinition.DisplayName)
 	}
 
 	if len(errs) > 0 {
 		return nil, &sloDefinitionError{
-			sliName:   result.SLI,
+			sliName:   result.sloDefinition.SLI,
 			tileTitle: sloDefinition,
 			errors:    errs,
 		}

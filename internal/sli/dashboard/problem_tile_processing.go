@@ -59,10 +59,10 @@ func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, quer
 	}
 
 	return &TileResult{
-		sliResult: sliResult,
-		objective: sloDefinition,
-		sliName:   problemsIndicatorName,
-		sliQuery:  problemsv2.NewQueryProducer(query).Produce(),
+		sliResult:     sliResult,
+		sloDefinition: sloDefinition,
+		sliName:       problemsIndicatorName,
+		sliQuery:      problemsv2.NewQueryProducer(query).Produce(),
 	}
 }
 

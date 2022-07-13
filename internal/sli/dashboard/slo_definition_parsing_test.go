@@ -11,57 +11,62 @@ func TestParseSLODefinition_SuccessCases(t *testing.T) {
 	tests := []struct {
 		name      string
 		sloString string
-		want      *keptnapi.SLO
+		want      *sloDefinitionParsingResult
 	}{
 		{
 			name:      "just some SLI - so no error",
 			sloString: "Some SLI",
-			want:      createSLO("Some_SLI", "Some SLI", [][]string{}, [][]string{}, 1, false),
+			want:      createSLODefinitionParsingResult(false, "Some_SLI", "Some SLI", [][]string{}, [][]string{}, 1, false),
 		},
 		{
 			name:      "just some SLI, but with separator - so no error",
 			sloString: "Some SLI;with separator",
-			want:      createSLO("Some_SLI", "Some SLI", [][]string{}, [][]string{}, 1, false),
+			want:      createSLODefinitionParsingResult(false, "Some_SLI", "Some SLI", [][]string{}, [][]string{}, 1, false),
 		},
 		{
 			name:      "multiple pass and warning criteria - AND",
 			sloString: "Test step response time;sli=teststep_rt;pass=<500,<+10%;warning=<1000,<+20%;weight=1;key=true",
-			want:      createSLO("teststep_rt", "Test step response time", [][]string{{"<500", "<+10%"}}, [][]string{{"<1000", "<+20%"}}, 1, true),
+			want:      createSLODefinitionParsingResult(false, "teststep_rt", "Test step response time", [][]string{{"<500", "<+10%"}}, [][]string{{"<1000", "<+20%"}}, 1, true),
 		},
 		{
 			name:      "multiple pass and warning criteria - AND/OR",
 			sloString: "Test step response time;sli=teststep_rt;pass=>=500,>-10%;pass=>=400,>=-15%;warning=<1000,<+20%;warning=<900,<+25%;weight=1;key=true",
-			want:      createSLO("teststep_rt", "Test step response time", [][]string{{">=500", ">-10%"}, {">=400", ">=-15%"}}, [][]string{{"<1000", "<+20%"}, {"<900", "<+25%"}}, 1, true),
+			want:      createSLODefinitionParsingResult(false, "teststep_rt", "Test step response time", [][]string{{">=500", ">-10%"}, {">=400", ">=-15%"}}, [][]string{{"<1000", "<+20%"}, {"<900", "<+25%"}}, 1, true),
 		},
 		{
 			name:      "multiple pass and warning criteria - AND/OR with decimals",
 			sloString: "Test step response time;sli=teststep_rt;pass=>=500.74,>-10.3%;pass=>=400.89,>=-15.7%;warning=<1000.12,<+20.50%;warning=<900.34,<+25.29%;weight=1;key=true",
-			want:      createSLO("teststep_rt", "Test step response time", [][]string{{">=500.74", ">-10.3%"}, {">=400.89", ">=-15.7%"}}, [][]string{{"<1000.12", "<+20.50%"}, {"<900.34", "<+25.29%"}}, 1, true),
+			want:      createSLODefinitionParsingResult(false, "teststep_rt", "Test step response time", [][]string{{">=500.74", ">-10.3%"}, {">=400.89", ">=-15.7%"}}, [][]string{{"<1000.12", "<+20.50%"}, {"<900.34", "<+25.29%"}}, 1, true),
 		},
 		{
 			name:      "test with = in pass/warn expression",
 			sloString: "Host Disk Queue Length (max);sli=host_disk_queue;pass==0;warning=<=1;key=false",
-			want:      createSLO("host_disk_queue", "Host Disk Queue Length (max)", [][]string{{"=0"}}, [][]string{{"<=1"}}, 1, false),
+			want:      createSLODefinitionParsingResult(false, "host_disk_queue", "Host Disk Queue Length (max)", [][]string{{"=0"}}, [][]string{{"<=1"}}, 1, false),
 		},
 		{
 			name:      "test weight",
 			sloString: "Host CPU %;sli=host_cpu;pass=<20;warning=<50;key=false;weight=2",
-			want:      createSLO("host_cpu", "Host CPU %", [][]string{{"<20"}}, [][]string{{"<50"}}, 2, false),
+			want:      createSLODefinitionParsingResult(false, "host_cpu", "Host CPU %", [][]string{{"<20"}}, [][]string{{"<50"}}, 2, false),
 		},
 		{
 			name:      "informational SLI only - no pass or warn",
 			sloString: "Host CPU %;sli=host_cpu;just for informational purposes",
-			want:      createSLO("host_cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
+			want:      createSLODefinitionParsingResult(false, "host_cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
 		},
 		{
 			name:      "informational SLI name with space - changed to underscore",
 			sloString: "Host CPU %;sli=host cpu;just for informational purposes",
-			want:      createSLO("host_cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
+			want:      createSLODefinitionParsingResult(false, "host_cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
 		},
 		{
 			name:      "informational SLI name with space - no display name",
 			sloString: "sli=host cpu;just for informational purposes",
-			want:      createSLO("host_cpu", "host cpu", [][]string{}, [][]string{}, 1, false),
+			want:      createSLODefinitionParsingResult(false, "host_cpu", "host cpu", [][]string{}, [][]string{}, 1, false),
+		},
+		{
+			name:      "excluded tile",
+			sloString: "example data explorer tile; exclude=true",
+			want:      createSLODefinitionParsingResult(true, "example_data_explorer_tile", "example data explorer tile", [][]string{}, [][]string{}, 1, false),
 		},
 	}
 	for _, tt := range tests {
@@ -151,6 +156,11 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 			errMessages: []string{"key", "yes"},
 		},
 		{
+			name:        "invalid exclude - not a bool",
+			sloString:   "sli=some_sli_name;exclude=enable",
+			errMessages: []string{"exclude", "enable"},
+		},
+		{
 			name:        "sli name is empty",
 			sloString:   "sli=;pass=<600",
 			errMessages: []string{"sli", "is empty"},
@@ -176,8 +186,13 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 			errMessages: []string{"'weight'", "duplicate key"},
 		},
 		{
-			name:        "duplication for sli, key, weight",
-			sloString:   "sli=first_name;weight=7;key=false;sli=last_name;pass=<600;weight=3;key=true",
+			name:        "duplicate exclude",
+			sloString:   "sli=first_name;exclude=true;pass=<600;exclude=false",
+			errMessages: []string{"'exclude'", "duplicate key"},
+		},
+		{
+			name:        "duplication for sli, key, weight, exclude",
+			sloString:   "sli=first_name;weight=7;key=false;exclude=false;sli=last_name;pass=<600;weight=3;key=true;exclude=true",
 			errMessages: []string{"'weight'", "'key'", "'sli'", "duplicate key"},
 		},
 	}
@@ -193,7 +208,7 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 	}
 }
 
-func createSLO(indicatorName string, displayName string, pass [][]string, warning [][]string, weight int, isKey bool) *keptnapi.SLO {
+func createSLODefinitionParsingResult(exclude bool, indicatorName string, displayName string, pass [][]string, warning [][]string, weight int, isKey bool) *sloDefinitionParsingResult {
 	var passCriteria []*keptnapi.SLOCriteria
 	for _, criteria := range pass {
 		passCriteria = append(passCriteria, &keptnapi.SLOCriteria{Criteria: criteria})
@@ -204,12 +219,15 @@ func createSLO(indicatorName string, displayName string, pass [][]string, warnin
 		warningCriteria = append(warningCriteria, &keptnapi.SLOCriteria{Criteria: criteria})
 	}
 
-	return &keptnapi.SLO{
-		SLI:         indicatorName,
-		DisplayName: displayName,
-		Pass:        passCriteria,
-		Warning:     warningCriteria,
-		Weight:      weight,
-		KeySLI:      isKey,
+	return &sloDefinitionParsingResult{
+		exclude: exclude,
+		sloDefinition: keptnapi.SLO{
+			SLI:         indicatorName,
+			DisplayName: displayName,
+			Pass:        passCriteria,
+			Warning:     warningCriteria,
+			Weight:      weight,
+			KeySLI:      isKey,
+		},
 	}
 }
