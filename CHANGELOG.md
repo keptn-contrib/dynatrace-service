@@ -2,6 +2,67 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.23.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.22.0...0.23.0) (2022-07-13)
+
+### Release validated with
+ | Dynatrace-service: `0.23.0` | Keptn: `0.16.1` | Dynatrace: `1.245` |
+ |---|---|---|
+
+
+### ⚠ BREAKING CHANGES
+
+* parsing errors in markdown tiles for SLO configuration will now return `result=fail` in the event payload.
+* security problems are no longer considered when evaluating a problem tile of a Dynatrace dashboard
+
+### Features
+
+* Add context to Keptn clients ([#792](https://github.com/keptn-contrib/dynatrace-service/issues/792)) ([2408c78](https://github.com/keptn-contrib/dynatrace-service/commit/2408c78ec4bace58d68065e09f4b9672ff278bfa))
+* add new custom property `evaluationHeatmapURL` to evaluation finished events ([#841](https://github.com/keptn-contrib/dynatrace-service/issues/841)) ([dc53e66](https://github.com/keptn-contrib/dynatrace-service/commit/dc53e668b4169ec310c8772a594e4c512566270b))
+* Initial support for graceful shutdown ([#789](https://github.com/keptn-contrib/dynatrace-service/issues/789)) ([6daf187](https://github.com/keptn-contrib/dynatrace-service/commit/6daf18788e6aad150dc4343db436222c009930c0))
+* send evaluation finished events to PGI level ([#822](https://github.com/keptn-contrib/dynatrace-service/issues/822)) ([6fcb16b](https://github.com/keptn-contrib/dynatrace-service/commit/6fcb16b9288eb0e961d12e983b09f00e9e0c1c13))
+* try to push all events to pgi level ([#847](https://github.com/keptn-contrib/dynatrace-service/issues/847)) ([91f6140](https://github.com/keptn-contrib/dynatrace-service/commit/91f614056577ddfab48ef044f63f49eea6e78207))
+* Use cp-connector instead of distributor ([#817](https://github.com/keptn-contrib/dynatrace-service/issues/817)) ([9fb6b1e](https://github.com/keptn-contrib/dynatrace-service/commit/9fb6b1eb3ef77bc471b802f20a140149d82548ca))
+* Use keptn/go-utils to access Keptn APIs ([#767](https://github.com/keptn-contrib/dynatrace-service/issues/767)) ([a2a798a](https://github.com/keptn-contrib/dynatrace-service/commit/a2a798a62c9ee64de27c80b421082f6a440feee9))
+* Use multiple explicit event subscriptions rather than wildcard ([#828](https://github.com/keptn-contrib/dynatrace-service/issues/828)) ([c940513](https://github.com/keptn-contrib/dynatrace-service/commit/c9405136269c9e4b879c163cfa5760a0958c61ab))
+
+
+### Bug Fixes
+
+* Data Explorer tiles using a management zone should produce an error if no entity type can be determined ([#804](https://github.com/keptn-contrib/dynatrace-service/issues/804)) ([40f7fc7](https://github.com/keptn-contrib/dynatrace-service/commit/40f7fc738acd895beb4d685fb6bd1bff94609f73))
+* description cannot be empty for event in release triggered handler ([#820](https://github.com/keptn-contrib/dynatrace-service/issues/820)) ([440b159](https://github.com/keptn-contrib/dynatrace-service/commit/440b159eb0642a9e0b6414605aab83bd21131d5a))
+* Disconnect `nats.NatsConnector` on shutdown ([#852](https://github.com/keptn-contrib/dynatrace-service/issues/852)) ([0d9494b](https://github.com/keptn-contrib/dynatrace-service/commit/0d9494b2672b37486e47932f6deeb35154bef00f))
+* do not query security problems for problem tiles when retrieving SLIs via dashboards ([#759](https://github.com/keptn-contrib/dynatrace-service/issues/759)) ([963d74b](https://github.com/keptn-contrib/dynatrace-service/commit/963d74b2126f6a3a324537f007696f565bffc53f))
+* invalid syntax in dashboard tile titles should return error ([#800](https://github.com/keptn-contrib/dynatrace-service/issues/800)) ([c93c862](https://github.com/keptn-contrib/dynatrace-service/commit/c93c862bd1007054a447cbab35784947697ea643))
+* Make K8S_NAMESPACE and K8S_NODE_NAME configureable for cp-connector ([#850](https://github.com/keptn-contrib/dynatrace-service/issues/850)) ([5240f78](https://github.com/keptn-contrib/dynatrace-service/commit/5240f785d35b3b4055073db2478ff486bcf30d14))
+* markdown processing returns errors ([#802](https://github.com/keptn-contrib/dynatrace-service/issues/802)) ([e68b556](https://github.com/keptn-contrib/dynatrace-service/commit/e68b5561868c0547a481691ae7831e1db6a094a8))
+* Move `GetSLIs()` and `GetShipyard()` to `keptn.ConfigClient` ([#806](https://github.com/keptn-contrib/dynatrace-service/issues/806)) ([9f3e01d](https://github.com/keptn-contrib/dynatrace-service/commit/9f3e01df59b5a544fde564c59d56a5f992bab891))
+* Refactor service onboarder ([#755](https://github.com/keptn-contrib/dynatrace-service/issues/755)) ([a773756](https://github.com/keptn-contrib/dynatrace-service/commit/a773756b180d479ba958e6266072eb16b73a622a))
+* Refactor service onboarder tests ([#760](https://github.com/keptn-contrib/dynatrace-service/issues/760)) ([4661475](https://github.com/keptn-contrib/dynatrace-service/commit/46614756e3f6930144cdb7eaaca0cc6dc7645036))
+* Use correct URLs in Keptn API clients ([#783](https://github.com/keptn-contrib/dynatrace-service/issues/783)) ([479d2f2](https://github.com/keptn-contrib/dynatrace-service/commit/479d2f22dc165c87beff19db4773aa78acb54617))
+
+
+### Docs
+
+* add troubleshooting for subscriptions ([#756](https://github.com/keptn-contrib/dynatrace-service/issues/756)) ([2adc84a](https://github.com/keptn-contrib/dynatrace-service/commit/2adc84aadfcf32bd3b69aaed0471ddf919ab5e23))
+* Added a note to not exclude http usage ([#770](https://github.com/keptn-contrib/dynatrace-service/issues/770)) ([5baa6f5](https://github.com/keptn-contrib/dynatrace-service/commit/5baa6f50c7d5df3275c36a9532263feb0c8a5ee6))
+* adding documentation for events on PGI level ([#842](https://github.com/keptn-contrib/dynatrace-service/issues/842)) ([03d84e2](https://github.com/keptn-contrib/dynatrace-service/commit/03d84e271d01a8acfcd80bec43998f693d9498bf)), closes [#848](https://github.com/keptn-contrib/dynatrace-service/issues/848)
+* Fix compatibility ([f898006](https://github.com/keptn-contrib/dynatrace-service/commit/f898006b1579b3849c28115e4e82bd411287a157))
+* Provide a workaround for Keptn 0.14.1 installation ([#766](https://github.com/keptn-contrib/dynatrace-service/issues/766)) ([211102f](https://github.com/keptn-contrib/dynatrace-service/commit/211102f9d536500ed10acf912140a28efc8ca7ba))
+* update compatibility matrix for previous release ([#854](https://github.com/keptn-contrib/dynatrace-service/issues/854)) ([f2fad37](https://github.com/keptn-contrib/dynatrace-service/commit/f2fad377432fe730f8f432e37fef89b85700a40c))
+* Update doc to be aligned with official Dynatrace documentation ([#768](https://github.com/keptn-contrib/dynatrace-service/issues/768)) ([461bd13](https://github.com/keptn-contrib/dynatrace-service/commit/461bd13e741191afe2648cdefc4a0e3d0edead15))
+* Use `spec_version` ([#758](https://github.com/keptn-contrib/dynatrace-service/issues/758)) ([cbd69f6](https://github.com/keptn-contrib/dynatrace-service/commit/cbd69f693ab1ec84c0928e699818574b304074a2))
+
+
+### Other
+
+* Clean up Keptn dependencies ([#839](https://github.com/keptn-contrib/dynatrace-service/issues/839)) ([1038696](https://github.com/keptn-contrib/dynatrace-service/commit/10386964574eaa4e28b350882af39e70d8a05ec6))
+* remove warning for distributor from README.md ([#855](https://github.com/keptn-contrib/dynatrace-service/issues/855)) ([4cb9035](https://github.com/keptn-contrib/dynatrace-service/commit/4cb90353c92ef2e887612288f80128da9cd6ef2f))
+* Switch to golangci-lint ([#837](https://github.com/keptn-contrib/dynatrace-service/issues/837)) ([fdf4503](https://github.com/keptn-contrib/dynatrace-service/commit/fdf45031220e7565390e072f1234ef8d921c492f))
+* Update `go-utils`, `cp-common` and `cp-connector` ([#835](https://github.com/keptn-contrib/dynatrace-service/issues/835)) ([bb9eb8f](https://github.com/keptn-contrib/dynatrace-service/commit/bb9eb8f7e178960e349aaa434ee45a27af973957))
+* Update to `gopkg.in/yaml.v3` ([#816](https://github.com/keptn-contrib/dynatrace-service/issues/816)) ([9bc11cc](https://github.com/keptn-contrib/dynatrace-service/commit/9bc11cc6234717a836fc36707813f053654c0551))
+* Update to `keptn/go-utils v0.16.1-0.20220628141633-eb5fb9ba43e0` ([#840](https://github.com/keptn-contrib/dynatrace-service/issues/840)) ([e22d438](https://github.com/keptn-contrib/dynatrace-service/commit/e22d43884b0bb726571b200073cb40f5575c5a96))
+* Update to Go 1.18 ([#833](https://github.com/keptn-contrib/dynatrace-service/issues/833)) ([d7e8dfc](https://github.com/keptn-contrib/dynatrace-service/commit/d7e8dfc7af7a64efa6011ef834a01bc5414b5c01))
+
 ## [0.22.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.21.0...0.22.0) (2022-03-23)
 
 ### Release validated with
