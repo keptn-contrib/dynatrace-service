@@ -27,17 +27,17 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 		testDataFolder+"metrics_get_by_query_builtin_servicekeyrequest_totalprocessingtime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("processing_time_findLocations", 18.22756816390859),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_getJourneyById", 2.8606086572438163),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_getJourneyPageByTenant", 15.964052631578946),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_findJourneys", 23.587584492453388),
+		createSuccessfulSLIResultAssertionsFunc("processing_time_findlocations", 18.22756816390859),
+		createSuccessfulSLIResultAssertionsFunc("processing_time_getjourneybyid", 2.8606086572438163),
+		createSuccessfulSLIResultAssertionsFunc("processing_time_getjourneypagebytenant", 15.964052631578946),
+		createSuccessfulSLIResultAssertionsFunc("processing_time_findjourneys", 23.587584492453388),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_findLocations", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-935D5E52D2E0C97E\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_getJourneyById", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-3CE2B68F45050ED9\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_getJourneyPageByTenant", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-7E279028E3327C67\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_findJourneys", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-00542666DD40A496\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
+		assertSLIDefinitionIsPresent(t, actual, "processing_time_findlocations", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-935D5E52D2E0C97E\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
+		assertSLIDefinitionIsPresent(t, actual, "processing_time_getjourneybyid", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-3CE2B68F45050ED9\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
+		assertSLIDefinitionIsPresent(t, actual, "processing_time_getjourneypagebytenant", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-7E279028E3327C67\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
+		assertSLIDefinitionIsPresent(t, actual, "processing_time_findjourneys", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-00542666DD40A496\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -104,7 +104,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.keyRequest.totalProcessingTime", testDataFolder+"metrics_get_by_id_builtin_servicekeyrequest_totalprocessingtime.json")
 
 	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testCustomChartingGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("tpt_key_requests_journeyService"))
+	runAndAssertThatDashboardTestIsCorrect(t, testCustomChartingGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("tpt_key_requests_journeyservice"))
 }
 
 // TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAutoTag tests a custom charting tile that splits by service and filters by tag.
@@ -121,13 +121,13 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_EasytravelService", 132.27823461853978),
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_JourneyService", 20.256493055555555),
+		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_easytravelservice", 132.27823461853978),
+		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_journeyservice", 20.256493055555555),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_EasytravelService", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-B67B3EC4C95E0FA7\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_JourneyService", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-F2455557EF67362B\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
+		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_easytravelservice", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-B67B3EC4C95E0FA7\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
+		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_journeyservice", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-F2455557EF67362B\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)

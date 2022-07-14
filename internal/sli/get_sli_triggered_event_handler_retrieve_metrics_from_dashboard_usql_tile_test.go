@@ -24,14 +24,14 @@ func TestRetrieveMetricsFromDashboardUSQLTile_ColumnChart(t *testing.T) {
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
 		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 492.6603364080304),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_AOL_Explorer", 500.2868314283638),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_Acoo_Browser", 500.5150319856381),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_aol_explorer", 500.2868314283638),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_acoo_browser", 500.5150319856381),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
 		assertSLIDefinitionIsPresent(t, actual, "usql_metric_null", "USQL;COLUMN_CHART;null;SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3")
-		assertSLIDefinitionIsPresent(t, actual, "usql_metric_AOL_Explorer", "USQL;COLUMN_CHART;AOL Explorer;SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3")
-		assertSLIDefinitionIsPresent(t, actual, "usql_metric_Acoo_Browser", "USQL;COLUMN_CHART;Acoo Browser;SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_aol_explorer", "USQL;COLUMN_CHART;AOL Explorer;SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_acoo_browser", "USQL;COLUMN_CHART;Acoo Browser;SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -48,14 +48,14 @@ func TestRetrieveMetricsFromDashboardUSQLTile_PieChart(t *testing.T) {
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
 		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 60154.328623114205),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_Ashburn", 53567.040172786175),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_Beijing", 65199.979558462794),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_ashburn", 53567.040172786175),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_beijing", 65199.979558462794),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
 		assertSLIDefinitionIsPresent(t, actual, "usql_metric_null", "USQL;PIE_CHART;null;SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
-		assertSLIDefinitionIsPresent(t, actual, "usql_metric_Ashburn", "USQL;PIE_CHART;Ashburn;SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
-		assertSLIDefinitionIsPresent(t, actual, "usql_metric_Beijing", "USQL;PIE_CHART;Beijing;SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_ashburn", "USQL;PIE_CHART;Ashburn;SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_beijing", "USQL;PIE_CHART;Beijing;SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -91,13 +91,13 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+continent%2C+totalErrorCount%2C+totalLicenseCreditCount%2C+userActionCount+FROM+usersession+limit+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_North_America", 1),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_Europe", 2),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 1),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_europe", 2),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "usql_metric_North_America", "USQL;TABLE;North America;SELECT continent, totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession limit 2")
-		assertSLIDefinitionIsPresent(t, actual, "usql_metric_Europe", "USQL;TABLE;Europe;SELECT continent, totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession limit 2")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_north_america", "USQL;TABLE;North America;SELECT continent, totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession limit 2")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_europe", "USQL;TABLE;Europe;SELECT continent, totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession limit 2")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -113,13 +113,13 @@ func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+continent%2C+userActionCount+FROM+usersession+limit+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_North_America", 1),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_Europe", 2),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 1),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_europe", 2),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "usql_metric_North_America", "USQL;LINE_CHART;North America;SELECT continent, userActionCount FROM usersession limit 2")
-		assertSLIDefinitionIsPresent(t, actual, "usql_metric_Europe", "USQL;LINE_CHART;Europe;SELECT continent, userActionCount FROM usersession limit 2")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_north_america", "USQL;LINE_CHART;North America;SELECT continent, userActionCount FROM usersession limit 2")
+		assertSLIDefinitionIsPresent(t, actual, "usql_metric_europe", "USQL;LINE_CHART;Europe;SELECT continent, userActionCount FROM usersession limit 2")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)

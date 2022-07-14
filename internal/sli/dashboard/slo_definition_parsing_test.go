@@ -16,12 +16,12 @@ func TestParseSLODefinition_SuccessCases(t *testing.T) {
 		{
 			name:      "just some SLI - so no error",
 			sloString: "Some SLI",
-			want:      createSLODefinitionParsingResult(false, "Some_SLI", "Some SLI", [][]string{}, [][]string{}, 1, false),
+			want:      createSLODefinitionParsingResult(false, "some_sli", "Some SLI", [][]string{}, [][]string{}, 1, false),
 		},
 		{
 			name:      "just some SLI, but with separator - so no error",
 			sloString: "Some SLI;with separator",
-			want:      createSLODefinitionParsingResult(false, "Some_SLI", "Some SLI", [][]string{}, [][]string{}, 1, false),
+			want:      createSLODefinitionParsingResult(false, "some_sli", "Some SLI", [][]string{}, [][]string{}, 1, false),
 		},
 		{
 			name:      "multiple pass and warning criteria - AND",
@@ -56,6 +56,11 @@ func TestParseSLODefinition_SuccessCases(t *testing.T) {
 		{
 			name:      "informational SLI name with space - changed to underscore",
 			sloString: "Host CPU %;sli=host cpu;just for informational purposes",
+			want:      createSLODefinitionParsingResult(false, "host_cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
+		},
+		{
+			name:      "informational SLI name with uppercase - changed to lowercase",
+			sloString: "Host CPU %;sli=HOST_CPU;just for informational purposes",
 			want:      createSLODefinitionParsingResult(false, "host_cpu", "Host CPU %", [][]string{}, [][]string{}, 1, false),
 		},
 		{

@@ -10,7 +10,7 @@ In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-servic
 
 ## Defining SLIs and SLOs
 
-By default, the tile's title is taken as the display name of the SLO. A clean version of this name (with spaces, `/`,  `%`, `$` and `.` replaced with `_`) is used as the base-name of the associated SLI. The properties of the SLO can be further customized by appending `;`-separated `<key>=<value>` pairs to the tile's title. The following keys are supported:
+By default, the tile's title is taken as the display name of the SLO. A clean version of this name (lower case, with spaces, `/`,  `%`, `$` and `.` replaced with `_`) is used as the base-name of the associated SLI. The properties of the SLO can be further customized by appending `;`-separated `<key>=<value>` pairs to the tile's title. The following keys are supported:
 
 | Key | Description | Example |
 |---|---|---|
@@ -36,7 +36,7 @@ In case dynatrace-service could not parse the tile title correctly it will stop 
   results in an SLO objective:
 
   ```{yaml}
-  - sli: Av_Response_Time_(Info)
+  - sli: av_response_time_(info)
     displayName: Av Response Time (Info)
     pass: []
     warning: []
@@ -53,7 +53,7 @@ In case dynatrace-service could not parse the tile title correctly it will stop 
   results in an SLO objective:
 
   ```{yaml}
-  - sli: Av_Response_Time
+  - sli: av_response_time
     displayName: Av Response Time
     pass:
       - criteria:
