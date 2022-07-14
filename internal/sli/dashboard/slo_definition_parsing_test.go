@@ -193,7 +193,7 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 		{
 			name:        "duplication for sli, key, weight, exclude",
 			sloString:   "sli=first_name;weight=7;key=false;exclude=false;sli=last_name;pass=<600;weight=3;key=true;exclude=true",
-			errMessages: []string{"'weight'", "'key'", "'sli'", "duplicate key"},
+			errMessages: []string{"'weight'", "'key'", "'sli'", "'exclude'", "duplicate key"},
 		},
 	}
 	for _, tt := range tests {
