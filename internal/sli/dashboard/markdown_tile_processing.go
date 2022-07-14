@@ -32,14 +32,6 @@ func (err *invalidValueError) Error() string {
 	return fmt.Sprintf("invalid value for '%s': %s", err.key, err.value)
 }
 
-type duplicateKeyError struct {
-	key string
-}
-
-func (err *duplicateKeyError) Error() string {
-	return fmt.Sprintf("duplicate key '%s' in markdown definition", err.key)
-}
-
 type markdownParsingResult struct {
 	totalScore keptncommon.SLOScore
 	comparison keptncommon.SLOComparison
@@ -91,44 +83,38 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 	var errs []error
 	keyFound := make(map[string]bool)
 
-	markdownSplits := strings.Split(markdown, ";")
-	for _, markdownSplitValue := range markdownSplits {
-		configValueSplits := strings.Split(markdownSplitValue, "=")
-		if len(configValueSplits) != 2 {
+	for _, kv := range newKeyValueParsing(markdown).parse() {
+		if !kv.split {
 			continue
 		}
 
-		// lets separate key and value
-		key := strings.ToLower(configValueSplits[0])
-		value := configValueSplits[1]
-
-		switch key {
+		switch strings.ToLower(kv.key) {
 		case TotalPass:
 			if keyFound[TotalPass] {
 				errs = append(errs, &duplicateKeyError{key: TotalPass})
 				break
 			}
-			if isNotAPercentValue(value) {
-				errs = append(errs, &invalidValueError{key: TotalPass, value: value})
+			if isNotAPercentValue(kv.value) {
+				errs = append(errs, &invalidValueError{key: TotalPass, value: kv.value})
 			}
-			result.totalScore.Pass = value
+			result.totalScore.Pass = kv.value
 			keyFound[TotalPass] = true
 		case TotalWarning:
 			if keyFound[TotalWarning] {
 				errs = append(errs, &duplicateKeyError{key: TotalWarning})
 				break
 			}
-			if isNotAPercentValue(value) {
-				errs = append(errs, &invalidValueError{key: TotalWarning, value: value})
+			if isNotAPercentValue(kv.value) {
+				errs = append(errs, &invalidValueError{key: TotalWarning, value: kv.value})
 			}
-			result.totalScore.Warning = value
+			result.totalScore.Warning = kv.value
 			keyFound[TotalWarning] = true
 		case CompareWithScore:
 			if keyFound[CompareWithScore] {
 				errs = append(errs, &duplicateKeyError{key: CompareWithScore})
 				break
 			}
-			score, err := parseCompareWithScore(value)
+			score, err := parseCompareWithScore(kv.value)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -139,7 +125,7 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 				errs = append(errs, &duplicateKeyError{key: CompareResults})
 				break
 			}
-			numberOfResults, err := parseCompareNumberOfResults(value)
+			numberOfResults, err := parseCompareNumberOfResults(kv.value)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -150,7 +136,7 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 				errs = append(errs, &duplicateKeyError{key: CompareFunction})
 				break
 			}
-			aggregateFunc, err := parseAggregateFunction(value)
+			aggregateFunc, err := parseAggregateFunction(kv.value)
 			if err != nil {
 				errs = append(errs, err)
 			}

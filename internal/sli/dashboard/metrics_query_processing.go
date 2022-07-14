@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
@@ -26,7 +25,7 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 }
 
 // Process generates SLI & SLO definitions based on the metric query and the number of dimensions in the chart definition.
-func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition *keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
+func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
 	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryParameters(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe))
@@ -118,7 +117,7 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 		}
 
 		// make sure we have a valid indicator name by getting rid of special characters
-		indicatorName = common.CleanIndicatorName(indicatorName)
+		indicatorName = cleanIndicatorName(indicatorName)
 
 		// calculating the value
 		value := 0.0
@@ -143,12 +142,13 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 			tileResults,
 			&TileResult{
 				sliResult: result.NewSuccessfulSLIResult(indicatorName, value),
-				objective: &keptncommon.SLO{
-					SLI:     indicatorName,
-					Weight:  sloDefinition.Weight,
-					KeySLI:  sloDefinition.KeySLI,
-					Pass:    sloDefinition.Pass,
-					Warning: sloDefinition.Warning,
+				sloDefinition: &keptncommon.SLO{
+					SLI:         indicatorName,
+					DisplayName: sloDefinition.DisplayName,
+					Weight:      sloDefinition.Weight,
+					KeySLI:      sloDefinition.KeySLI,
+					Pass:        sloDefinition.Pass,
+					Warning:     sloDefinition.Warning,
 				},
 				sliName:  indicatorName,
 				sliQuery: getMetricsQueryString(metricQueryComponents.metricUnit, *metricQueryForSLI),

@@ -54,11 +54,11 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileR
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
 	if err != nil {
-		failedTileResult := newFailedTileResult(common.CleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
+		failedTileResult := newFailedTileResult(cleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
 		return &failedTileResult
 	}
 
-	indicatorName := common.CleanIndicatorName(sloResult.Name)
+	indicatorName := cleanIndicatorName(sloResult.Name)
 
 	log.WithFields(
 		log.Fields{
@@ -80,9 +80,9 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileR
 	}
 
 	return &TileResult{
-		sliResult: result.NewSuccessfulSLIResult(indicatorName, sloResult.EvaluatedPercentage),
-		objective: sloDefinition,
-		sliName:   indicatorName,
-		sliQuery:  slo.NewQueryProducer(*query).Produce(),
+		sliResult:     result.NewSuccessfulSLIResult(indicatorName, sloResult.EvaluatedPercentage),
+		sloDefinition: sloDefinition,
+		sliName:       indicatorName,
+		sliQuery:      slo.NewQueryProducer(*query).Produce(),
 	}
 }

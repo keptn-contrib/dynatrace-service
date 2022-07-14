@@ -21,11 +21,11 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 	handler.AddExact(dynatrace.SLOPath+"/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1631862000000&timeFrame=GTF&to=1631865600000", testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("Static_SLO_-_Pass", 95),
+		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95),
 	}
 
 	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "Static_SLO_-_Pass", "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4")
+		assertSLIDefinitionIsPresent(t, actual, "static_slo_-_pass", "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4")
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -38,7 +38,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 		}
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:     "Static_SLO_-_Pass",
+			SLI:     "static_slo_-_pass",
 			Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
 			Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
 			Weight:  1,

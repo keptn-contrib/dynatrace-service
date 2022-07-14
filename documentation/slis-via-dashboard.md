@@ -10,20 +10,106 @@ In response to  a `sh.keptn.event.get-sli.triggered` event, the dynatrace-servic
 
 ## Defining SLIs and SLOs
 
-The base name of the SLI as well as the properties of the SLO must be set by appending `;`-separated `<key>=<value>` pairs to the tile's title. The following keys are supported:
+By default, the tile's title is taken as the display name of the SLO. A clean version of this name (lower case, with spaces, `/`,  `%`, `$` and `.` replaced with `_`) is used as the base-name of the associated SLI. The properties of the SLO can be further customized by appending `;`-separated `<key>=<value>` pairs to the tile's title. The following keys are supported:
 
-| Key | Description | Required | Example |
-|---|---|---|---|
-| `sli` | Use `<value>` as the base-name of the SLI | Yes | `sli=response_time` |
-| `pass` | Add `<value>` as a pass criterion to the SLO | No | `pass=<200` |
-| `warning` | Add `<value>` as a warning criterion to the SLO | No | `warning=<300` |
-| `key` | Mark SLI as a key SLI | No | `key=true` |
-| `weight` | Set the weight of the SLO to `<value>` | No | `weight=2` |
+| Key | Description | Example |
+|---|---|---|
+| `sli` | Use `<value>` as the base-name of the SLI | `sli=response_time` |
+| `pass` | Add `<value>` as a pass criterion to the SLO | `pass=<200` |
+| `warning` | Add `<value>` as a warning criterion to the SLO | `warning=<300` |
+| `key` | Mark SLI as a key SLI | `key=true` |
+| `weight` | Set the weight of the SLO to `<value>` | `weight=2` |
+| `exclude` | Set to `true` to exclude this tile | `exclude=true` |
 
 Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo/#objectives) for more details on configuring objectives.
 
 **Note:**
 In case dynatrace-service could not parse the tile title correctly it will stop the processing of this tile and return an error for the concerned SLI.
+
+### Examples
+* **Informational SLO**
+  
+  To retrieve the value of an SLI purely for informational purposes, giving the tile a title is sufficient. As it does not include a pass criterion it will not be included in an evaluation. For example, the title `Av Response Time (Info)`
+
+  ![Example of an informational SLO](images/tile-example-infomational.png "Example of an informational SLO")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: av_response_time_(info)
+    displayName: Av Response Time (Info)
+    pass: []
+    warning: []
+    weight: 1
+    key_sli: false
+  ```
+
+* **Display name and pass criterion**
+  
+  To include an SLO as part of an evaluation, simply append a pass criterion. For example, the title `Av Response Time; pass=<=75000`
+
+  ![Example of an SLO with display name and pass criterion](images/tile-example-display-name-pass.png "Example of an SLO with display name and pass criterion")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: av_response_time
+    displayName: Av Response Time
+    pass:
+      - criteria:
+          - <=75000
+    warning: []
+    weight: 1
+    key_sli: false
+  ```
+
+* **SLI name and pass criterion**
+  
+  Alternatively, create an SLO by providing an SLI name and a pass criterion. For example, the title `sli=service_rt_av; pass=<=75000`
+
+  ![Example of an SLO with SLI name and pass criterion](images/tile-example-sli-name-pass.png "Example of an SLO with SLI name and pass criterion")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: service_rt_av
+    displayName: service_rt_av
+    pass:
+      - criteria:
+          - <=75000
+    warning: []
+    weight: 1
+    key_sli: false
+  ```
+
+* **Custom SLI name with pass and warning criteria**
+
+  The SLI name as well as the properties of the SLO may be customized. For example, the title `Av Svc Resp. Time; sli=srt_av; pass=<=70000; warning=<=80000; key=true; weight=2`
+
+  ![Example of a customized SLO](images/tile-example-customized.png "Example of a customized SLO")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: srt_av
+    displayName: Av Svc Resp. Time
+    pass:
+      - criteria:
+          - <=70000
+    warning:
+      - criteria:
+          - <=80000
+    weight: 2
+    key_sli: true
+  ```
+
+* **Excluded tile**
+
+  To exclude a tile, simply add the key-value pair `exclude=true`. For example, the title `Av Response Time; exclude=true`
+
+  ![Example of an excluded tile](images/tile-example-exclude.png "Example of an excluded tile")
+
+  will ensure that the tile is not processed.
 
 ### Logical AND/OR operators for pass and warning criteria
 

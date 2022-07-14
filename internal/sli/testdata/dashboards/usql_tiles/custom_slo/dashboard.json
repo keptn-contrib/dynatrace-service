@@ -1,0 +1,33 @@
+{
+    "metadata": {
+      "configurationVersions": [
+        5
+      ],
+      "clusterVersion": "1.233.0.20211217-153056"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+      "name": "SLO tile dashboard",
+      "shared": false,
+      "owner": ""
+    },
+    "tiles": [
+      {
+        "name": "User Sessions Query",
+        "nameSize": "",
+        "tileType": "DTAQL",
+        "configured": true,
+        "bounds": {
+          "top": 494,
+          "left": 722,
+          "width": 304,
+          "height": 304
+        },
+        "tileFilter": {},
+        "customName": "Average user session duration; sli=average_session_duration; pass=<=100; weight=2; key=true",
+        "query": "SELECT AVG(duration) FROM usersession",
+        "type": "SINGLE_VALUE",
+        "limit": 50
+      }
+    ]
+  }

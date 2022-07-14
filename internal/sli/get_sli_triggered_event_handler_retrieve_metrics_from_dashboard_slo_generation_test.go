@@ -40,9 +40,10 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *t
 		}
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:    "srt",
-			Pass:   []*keptnapi.SLOCriteria{{Criteria: []string{"<28"}}},
-			Weight: 1,
+			SLI:         "srt",
+			DisplayName: "srt",
+			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<28"}}},
+			Weight:      1,
 		}, actual.Objectives[0])
 	}
 
@@ -76,9 +77,10 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 		}
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:    "response_time",
-			Pass:   []*keptnapi.SLOCriteria{{Criteria: []string{"<1200"}}},
-			Weight: 1,
+			SLI:         "response_time",
+			DisplayName: "response_time",
+			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<1200"}}},
+			Weight:      1,
 		}, actual.Objectives[0])
 	}
 
@@ -115,9 +117,10 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 		}
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:    "srt_service",
-			Pass:   []*keptnapi.SLOCriteria{{Criteria: []string{"<10"}}},
-			Weight: 1,
+			SLI:         "srt_service",
+			DisplayName: "srt_service",
+			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<10"}}},
+			Weight:      1,
 		}, actual.Objectives[0])
 	}
 

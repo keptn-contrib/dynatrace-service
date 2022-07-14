@@ -3,6 +3,8 @@ package sli
 import (
 	"testing"
 
+	keptn "github.com/keptn/go-utils/pkg/lib"
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
@@ -540,4 +542,65 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 
 	rClient := &uploadErrorResourceClientMock{t: t}
 	runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("vulnerabilities_high", "has no entity type"))
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO tests propagation of a customized SLO.
+// This is will result in a SLIResult with success, as this is supported.
+// Here also the SLO is checked, including the display name, weight and key SLI.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
+
+	const testDataFolder = "./testdata/dashboards/data_explorer/custom_slo/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("srt", 29.192929640271974),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "srt", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names")
+	}
+
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+		if !assert.EqualValues(t, 1, len(actual.Objectives)) {
+			return
+		}
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:         "srt",
+			DisplayName: "Service response time",
+			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<30"}}},
+			Weight:      4,
+			KeySLI:      true,
+		}, actual.Objectives[0])
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile tests that an excluded tile is skipped.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/excluded_tile/"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_excluded_tile.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(
+		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-B67B3EC4C95E0FA7%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
+		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136.52852484946527),
+	}
+
+	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
+		assertSLIDefinitionIsPresent(t, actual, "rt_jid", "MV2;MicroSecond;entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
 }

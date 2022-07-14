@@ -20,7 +20,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 
 	type args struct {
 		noOfDimensionsInChart int
-		sloDefinition         *keptncommon.SLO
+		sloDefinition         keptncommon.SLO
 		metricQueryComponents *queryComponents
 	}
 
@@ -39,7 +39,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			fullMetricQueryString:       "entitySelector=type%28SERVICE%29&from=1633420800000&metricSelector=builtin%3Aservice.response.client%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
-				sloDefinition: &keptncommon.SLO{
+				sloDefinition: keptncommon.SLO{
 					SLI:    "csrt",
 					Weight: 1,
 				},
@@ -52,7 +52,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			expectedResults: []*TileResult{
 				{
 					sliResult: result.NewSuccessfulSLIResult("csrt", 15.868648438045174),
-					objective: &keptncommon.SLO{
+					sloDefinition: &keptncommon.SLO{
 						SLI:    "csrt",
 						Weight: 1,
 					},
@@ -67,7 +67,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
-				sloDefinition: &keptncommon.SLO{
+				sloDefinition: keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
 				},
@@ -80,7 +80,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			expectedResults: []*TileResult{
 				{
 					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
-					objective: &keptncommon.SLO{
+					sloDefinition: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
 					},
@@ -95,7 +95,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			fullMetricQueryString:       "entitySelector=type%28HOST%29&from=1633420800000&metricSelector=builtin%3Ahost.dns.queryCount%3Amerge%28%22dnsServerIp%22%29%3Amerge%28%22dt.entity.host%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
-				sloDefinition: &keptncommon.SLO{
+				sloDefinition: keptncommon.SLO{
 					SLI:    "hdqc",
 					Weight: 1,
 				},
@@ -108,7 +108,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			expectedResults: []*TileResult{
 				{
 					sliResult: result.NewSuccessfulSLIResult("hdqc", 96.94525462962963),
-					objective: &keptncommon.SLO{
+					sloDefinition: &keptncommon.SLO{
 						SLI:    "hdqc",
 						Weight: 1,
 					},
@@ -125,7 +125,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
-				sloDefinition: &keptncommon.SLO{
+				sloDefinition: keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
 				},
@@ -138,7 +138,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			expectedResults: []*TileResult{
 				{
 					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
-					objective: &keptncommon.SLO{
+					sloDefinition: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
 					},
@@ -153,7 +153,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
-				sloDefinition: &keptncommon.SLO{
+				sloDefinition: keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
 				},
@@ -167,7 +167,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			expectedResults: []*TileResult{
 				{
 					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
-					objective: &keptncommon.SLO{
+					sloDefinition: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
 					},
@@ -182,7 +182,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
-				sloDefinition: &keptncommon.SLO{
+				sloDefinition: keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
 				},
@@ -195,7 +195,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			expectedResults: []*TileResult{
 				{
 					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
-					objective: &keptncommon.SLO{
+					sloDefinition: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
 					},
@@ -210,7 +210,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
 				noOfDimensionsInChart: 0,
-				sloDefinition: &keptncommon.SLO{
+				sloDefinition: keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
 				},
@@ -223,7 +223,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			expectedResults: []*TileResult{
 				{
 					sliResult: result.NewSuccessfulSLIResult("cmu", 48975.83345935025),
-					objective: &keptncommon.SLO{
+					sloDefinition: &keptncommon.SLO{
 						SLI:    "cmu",
 						Weight: 1,
 					},

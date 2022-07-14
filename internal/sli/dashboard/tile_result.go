@@ -10,10 +10,10 @@ import (
 
 // TileResult stores the result of processing a dashboard tile and retrieving the SLIResult.
 type TileResult struct {
-	sliResult result.SLIResult
-	objective *keptnapi.SLO
-	sliName   string
-	sliQuery  string
+	sliResult     result.SLIResult
+	sloDefinition *keptnapi.SLO
+	sliName       string
+	sliQuery      string
 }
 
 func newFailedTileResult(indicatorName string, message string) TileResult {
@@ -30,36 +30,36 @@ func newFailedTileResultFromError(indicatorName string, message string, err erro
 	}
 }
 
-func newFailedTileResultFromSLODefinition(sloDefinition *keptnapi.SLO, message string) TileResult {
+func newFailedTileResultFromSLODefinition(sloDefinition keptnapi.SLO, message string) TileResult {
 	return TileResult{
-		sliResult: result.NewFailedSLIResult(sloDefinition.SLI, message),
-		objective: sloDefinition,
-		sliName:   sloDefinition.SLI,
+		sliResult:     result.NewFailedSLIResult(sloDefinition.SLI, message),
+		sloDefinition: &sloDefinition,
+		sliName:       sloDefinition.SLI,
 	}
 }
 
-func newWarningTileResultFromSLODefinition(sloDefinition *keptnapi.SLO, message string) TileResult {
+func newWarningTileResultFromSLODefinition(sloDefinition keptnapi.SLO, message string) TileResult {
 	return TileResult{
-		sliResult: result.NewWarningSLIResult(sloDefinition.SLI, message),
-		objective: sloDefinition,
-		sliName:   sloDefinition.SLI,
+		sliResult:     result.NewWarningSLIResult(sloDefinition.SLI, message),
+		sloDefinition: &sloDefinition,
+		sliName:       sloDefinition.SLI,
 	}
 }
 
-func newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition *keptnapi.SLO, sliQuery string, message string) TileResult {
+func newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition keptnapi.SLO, sliQuery string, message string) TileResult {
 	return TileResult{
-		sliResult: result.NewFailedSLIResult(sloDefinition.SLI, message),
-		objective: sloDefinition,
-		sliName:   sloDefinition.SLI,
-		sliQuery:  sliQuery,
+		sliResult:     result.NewFailedSLIResult(sloDefinition.SLI, message),
+		sloDefinition: &sloDefinition,
+		sliName:       sloDefinition.SLI,
+		sliQuery:      sliQuery,
 	}
 }
 
-func newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition *keptnapi.SLO, sliQuery string, message string) TileResult {
+func newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition keptnapi.SLO, sliQuery string, message string) TileResult {
 	return TileResult{
-		sliResult: result.NewWarningSLIResult(sloDefinition.SLI, message),
-		objective: sloDefinition,
-		sliName:   sloDefinition.SLI,
-		sliQuery:  sliQuery,
+		sliResult:     result.NewWarningSLIResult(sloDefinition.SLI, message),
+		sloDefinition: &sloDefinition,
+		sliName:       sloDefinition.SLI,
+		sliQuery:      sliQuery,
 	}
 }

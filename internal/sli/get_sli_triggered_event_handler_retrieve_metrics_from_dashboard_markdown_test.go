@@ -20,7 +20,7 @@ type data struct {
 // there is one SLO tile as well to have a fully working example where SLOs would be stored as well
 func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-single-sli-template.json"
-	const sliName = "Static_SLO_-_Pass"
+	const sliName = "static_slo_-_pass"
 
 	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95)
 
