@@ -29,7 +29,7 @@ In case dynatrace-service could not parse the tile title correctly it will stop 
 ### Examples
 * **Informational SLO**
   
-  To simply retrieve the value of an SLI purely for informational purpose, giving the tile a title is sufficient. As it does not include a pass criterion it will not be included in an evaluation. For example, the title `Av Response Time (Info)`: 
+  To retrieve the value of an SLI purely for informational purposes, giving the tile a title is sufficient. As it does not include a pass criterion it will not be included in an evaluation. For example, the title `Av Response Time (Info)`
 
   ![Example of an informational SLO](images/tile-example-infomational.png "Example of an informational SLO")
 
@@ -44,9 +44,47 @@ In case dynatrace-service could not parse the tile title correctly it will stop 
     key_sli: false
   ```
 
+* **Display name and pass criterion**
+  
+  To include an SLO as part of an evaluation, simply append a pass criterion. For example, the title `Av Response Time; pass=<=75000`
+
+  ![Example of an SLO with display name and pass criterion](images/tile-example-display-name-pass.png "Example of an SLO with display name and pass criterion")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: Av_Response_Time
+    displayName: Av Response Time
+    pass:
+      - criteria:
+          - <=75000
+    warning: []
+    weight: 1
+    key_sli: false
+  ```
+
+* **SLI name and pass criterion**
+  
+  Alternatively, create an SLO by providing an SLI name and a pass criterion. For example, the title `sli=service_rt_av; pass=<=75000`
+
+  ![Example of an SLO with SLI name and pass criterion](images/tile-example-sli-name-pass.png "Example of an SLO with SLI name and pass criterion")
+
+  results in an SLO objective:
+
+  ```{yaml}
+  - sli: service_rt_av
+    displayName: service_rt_av
+    pass:
+      - criteria:
+          - <=75000
+    warning: []
+    weight: 1
+    key_sli: false
+  ```
+
 * **Custom SLI name with pass and warning criteria**
 
-  The SLI name as well as the properties of the SLO may be customized. For example, the title `Av Svc Resp. Time; sli=srt_av; pass=<=70000; warning=<=80000; key=true; weight=2`:
+  The SLI name as well as the properties of the SLO may be customized. For example, the title `Av Svc Resp. Time; sli=srt_av; pass=<=70000; warning=<=80000; key=true; weight=2`
 
   ![Example of a customized SLO](images/tile-example-customized.png "Example of a customized SLO")
 
@@ -65,24 +103,13 @@ In case dynatrace-service could not parse the tile title correctly it will stop 
     key_sli: true
   ```
 
-* **Display name and pass criterion**
-  
-  Alternatively, create an SLO simply by appending a pass criterion. For example, the title `sli=service_rt_av; pass=<=75000`:
+* **Excluded tile**
 
-  ![Example of an SLO with display name](images/tile-example-display-name-pass.png "Example of an SLO with display name")
+  To exclude a tile, simply add the key-value pair `exclude=true`. For example, the title `Av Response Time; exclude=true`
 
-  results in an SLO objective:
+  ![Example of an excluded tile](images/tile-example-exclude.png "Example of an excluded tile")
 
-  ```{yaml}
-  - sli: service_rt_av
-    displayName: service_rt_av
-    pass:
-      - criteria:
-          - <=75000
-    warning: []
-    weight: 1
-    key_sli: false
-  ```
+  will ensure that the tile is not processed.
 
 ### Logical AND/OR operators for pass and warning criteria
 
