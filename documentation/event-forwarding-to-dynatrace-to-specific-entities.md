@@ -84,12 +84,3 @@ If **version information** would be provided in both ways, then the information 
 * If version information is not available:
     * either default attach rules are used, as described in the section [targeting specific entities using attach rules](event-forwarding-to-dynatrace.md#targeting-specific-entities-using-attach-rules), or
     * user provided attach rules are used (if available)
-
-## Enriching events sent to Dynatrace with more context
-
-The dynatrace-service sends `CUSTOM_DEPLOYMENT`, `CUSTOM_INFO` and `CUSTOM_ANNOTATION` events when it handles Keptn events such as `sh.keptn.event.deployment.finished`, `sh.keptn.event.test.finished`, `sh.keptn.event.release.triggered` or `sh.keptn.event.evaluation.finished`. The dynatrace-service will parse all labels in the Keptn event and will pass them on to Dynatrace as custom properties. This makes it easy to pass more context to Dynatrace, e.g: `ciBackLink` for a `CUSTOM_DEPLOYMENT` or ensure that things like Jenkins Job ID, Jenkins Job URL, etc. show up in Dynatrace as well. 
-
-
-## Sending events to different Dynatrace environments per project, stage or service
-
-To instruct the dynatrace-service to send events to a specific Dynatrace environment for a specific Keptn project, stage or service, overwrite the credentials secret name in a `dynatrace/dynatrace.conf.yaml` file and add it to the appropriate stage of the Keptn project.
