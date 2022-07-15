@@ -42,7 +42,7 @@ If you are planning to upgrade to dynatrace-service version `0.18.0` or newer fr
     - [SLIs via `dynatrace/sli.yaml` files](documentation/slis-via-files.md)
     - [SLIs via a Dynatrace dashboard](documentation/slis-via-dashboard.md)
   - [Forwarding events from Keptn to Dynatrace](documentation/event-forwarding-to-dynatrace.md)
-    - [Targeting specific entities for deployment, test, evaluation and release information](documentation/event-forwarding-to-dynatrace-to-specific-entities)
+    - [Targeting specific entities for deployment, test, evaluation and release information](documentation/event-forwarding-to-dynatrace-to-specific-entities.md)
   - [Forwarding problem notifications from Dynatrace to Keptn](documentation/problem-forwarding-to-keptn.md)
   - [Automatic onboarding of monitored service entities](documentation/auto-service-onboarding.md)
 - [Troubleshooting common problems](documentation/troubleshooting.md)
