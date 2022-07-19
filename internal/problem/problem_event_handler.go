@@ -21,14 +21,14 @@ type DTProblemEvent struct {
 }
 
 type ProblemEventHandler struct {
-	event  ProblemAdapterInterface
-	client keptn.ClientInterface
+	event             ProblemAdapterInterface
+	eventSenderClient keptn.EventSenderClientInterface
 }
 
-func NewProblemEventHandler(event ProblemAdapterInterface, client keptn.ClientInterface) ProblemEventHandler {
+func NewProblemEventHandler(event ProblemAdapterInterface, client keptn.EventSenderClientInterface) ProblemEventHandler {
 	return ProblemEventHandler{
-		event:  event,
-		client: client,
+		event:             event,
+		eventSenderClient: client,
 	}
 }
 
@@ -82,7 +82,7 @@ func (eh ProblemEventHandler) handleOpenedProblemFromDT() error {
 }
 
 func (eh ProblemEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {
-	err := eh.client.SendCloudEvent(factory)
+	err := eh.eventSenderClient.SendCloudEvent(factory)
 	if err != nil {
 		log.WithError(err).Error("Failed to send cloud event")
 	}

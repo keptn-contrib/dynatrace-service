@@ -416,19 +416,19 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.
 }
 
 func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLIsAssertionsFunc func(t *testing.T, actual *dynatrace.SLI), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-	kClient := &keptnClientMock{}
+	eventSenderClient := &eventSenderClientMock{}
 	rClient := &uploadErrorResourceClientMock{t: t}
 
-	runTestAndAssertNoError(t, getSLIEventData, handler, kClient, rClient, testDashboardID)
-	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
 	uploadedSLIsAssertionsFunc(t, rClient.uploadedSLIs)
 }
 
 func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLIsAssertionsFunc func(t *testing.T, actual *dynatrace.SLI), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-	kClient := &keptnClientMock{}
+	eventSenderClient := &eventSenderClientMock{}
 	rClient := &uploadErrorResourceClientMock{t: t}
-	runTestAndAssertNoError(t, getSLIEventData, handler, kClient, rClient, testDashboardID)
-	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
 	uploadedSLIsAssertionsFunc(t, rClient.uploadedSLIs)
 	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
 }

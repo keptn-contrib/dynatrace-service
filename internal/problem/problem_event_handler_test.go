@@ -57,32 +57,28 @@ func TestProblemEventHandler_HandleEvent(t *testing.T) {
 				return
 			}
 
-			kClient := &keptnClientMock{}
-			ph := NewProblemEventHandler(adapter, kClient)
+			eventSenderClient := &eventSenderClientMock{}
+			ph := NewProblemEventHandler(adapter, eventSenderClient)
 
 			err = ph.HandleEvent(context.Background(), context.Background())
 
 			assert.NoError(t, err)
 			if tt.wantEmittedEvent {
-				if assert.EqualValues(t, 1, len(kClient.eventSink)) {
-					assert.EqualValues(t, tt.expectedEmittedEvent, kClient.eventSink[0])
+				if assert.EqualValues(t, 1, len(eventSenderClient.eventSink)) {
+					assert.EqualValues(t, tt.expectedEmittedEvent, eventSenderClient.eventSink[0])
 				}
 			} else {
-				assert.EqualValues(t, 0, len(kClient.eventSink))
+				assert.EqualValues(t, 0, len(eventSenderClient.eventSink))
 			}
 		})
 	}
 }
 
-type keptnClientMock struct {
+type eventSenderClientMock struct {
 	eventSink []*cloudevents.Event
 }
 
-func (m *keptnClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
-	panic("GetSLIs() should not be needed in this mock!")
-}
-
-func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
+func (m *eventSenderClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
 	// simulate errors while creating cloud event
 	if factory == nil {
 		return fmt.Errorf("missing factory")

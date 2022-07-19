@@ -221,9 +221,7 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 }
 
 func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient keptn.SLOAndSLIClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-	kClient := &keptnClientMock{}
-
-	runTestAndAssertNoError(t, getSLIEventData, handler, kClient, rClient, testDashboardID)
-
-	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+	eventSenderClient := &eventSenderClientMock{}
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }

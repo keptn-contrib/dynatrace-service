@@ -112,11 +112,7 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 }
 
 func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient keptn.SLOAndSLIClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-
-	// we do not need custom queries, as we are using the dashboard
-	kClient := &keptnClientMock{}
-
-	runTestAndAssertNoError(t, getSLIEventData, handler, kClient, rClient, dashboardID)
-
-	assertCorrectGetSLIEvents(t, kClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+	eventSenderClient := &eventSenderClientMock{}
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, dashboardID)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }

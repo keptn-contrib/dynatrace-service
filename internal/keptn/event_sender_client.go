@@ -8,28 +8,26 @@ import (
 	"github.com/keptn/go-utils/pkg/sdk/connector/controlplane"
 )
 
-const sliResourceURI = "dynatrace/sli.yaml"
-
-// ClientInterface sends cloud events.
-type ClientInterface interface {
+// EventSenderClientInterface sends cloud events.
+type EventSenderClientInterface interface {
 	// SendCloudEvent sends a cloud event from specified factory or returns an error.
 	SendCloudEvent(factory adapter.CloudEventFactoryInterface) error
 }
 
-// Client is an implementation of ClientInterface.
-type Client struct {
+// EventSenderClient is an implementation of EventSenderClientInterface.
+type EventSenderClient struct {
 	eventSender controlplane.EventSender
 }
 
-// NewClient creates a new Client using the specified event sender and event or returns an error.
-func NewClient(eventSender controlplane.EventSender) (*Client, error) {
-	return &Client{
+// NewEventSenderClient creates a new EventSenderClient using the specified event sender.
+func NewEventSenderClient(eventSender controlplane.EventSender) *EventSenderClient {
+	return &EventSenderClient{
 		eventSender: eventSender,
-	}, nil
+	}
 }
 
 // SendCloudEvent sends a cloud event from specified factory or returns an error.
-func (c *Client) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
+func (c *EventSenderClient) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
 	ev, err := factory.CreateCloudEvent()
 	if err != nil {
 		return fmt.Errorf("could not create cloud event: %s", err)

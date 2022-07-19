@@ -21,7 +21,7 @@ type keptnCredentialsCheckResult struct {
 type ConfigureMonitoringEventHandler struct {
 	event              ConfigureMonitoringAdapterInterface
 	dtClient           dynatrace.ClientInterface
-	kClient            keptn.ClientInterface
+	eventSenderClient  keptn.EventSenderClientInterface
 	shipyardReader     keptn.ShipyardReaderInterface
 	sliAndSLOReader    keptn.SLIAndSLOReaderInterface
 	serviceClient      keptn.ServiceClientInterface
@@ -29,11 +29,11 @@ type ConfigureMonitoringEventHandler struct {
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, shipyardReader keptn.ShipyardReaderInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, shipyardReader keptn.ShipyardReaderInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
 		event:              event,
 		dtClient:           dtClient,
-		kClient:            kClient,
+		eventSenderClient:  eventSenderClient,
 		shipyardReader:     shipyardReader,
 		sliAndSLOReader:    sliAndSLOReader,
 		serviceClient:      serviceClient,
@@ -64,7 +64,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 		return eh.handleError(err)
 	}
 
-	cfg := newConfiguration(eh.dtClient, eh.kClient, eh.sliAndSLOReader, eh.serviceClient)
+	cfg := newConfiguration(eh.dtClient, eh.eventSenderClient, eh.sliAndSLOReader, eh.serviceClient)
 
 	configuredEntities, err := cfg.configureMonitoring(ctx, eh.event.GetProject(), *shipyard)
 	if err != nil {
@@ -173,7 +173,7 @@ func (eh *ConfigureMonitoringEventHandler) handleSuccess(message string) error {
 }
 
 func (eh *ConfigureMonitoringEventHandler) sendConfigureMonitoringFinishedEvent(factory adapter.CloudEventFactoryInterface) error {
-	if err := eh.kClient.SendCloudEvent(factory); err != nil {
+	if err := eh.eventSenderClient.SendCloudEvent(factory); err != nil {
 		log.WithError(err).Error("Failed to send configure monitoring finished event")
 		return err
 	}
