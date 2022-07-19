@@ -51,8 +51,8 @@ func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *g
 	}
 }
 
-func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, kClient *keptnClientMock, rClient keptn.SLOAndSLIClientInterface, dashboard string) {
-	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, kClient, rClient, dashboard)
+func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient keptn.SLOAndSLIClientInterface, dashboard string) {
+	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, eventSenderClient, rClient, dashboard)
 	defer teardown()
 
 	assert.NoError(t, eh.HandleEvent(context.Background(), context.Background()))
@@ -281,11 +281,11 @@ func (m *resourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _
 	return nil
 }
 
-type keptnClientMock struct {
+type eventSenderClientMock struct {
 	eventSink []*cloudevents.Event
 }
 
-func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
+func (m *eventSenderClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
 	// simulate errors while creating cloud event
 	if factory == nil {
 		return fmt.Errorf("could not send create cloud event")
