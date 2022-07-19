@@ -8,8 +8,6 @@ import (
 	"github.com/keptn/go-utils/pkg/sdk/connector/controlplane"
 )
 
-const sliResourceURI = "dynatrace/sli.yaml"
-
 // ClientInterface sends cloud events.
 type ClientInterface interface {
 	// SendCloudEvent sends a cloud event from specified factory or returns an error.
