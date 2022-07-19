@@ -177,7 +177,13 @@ func (d dynatraceService) RegistrationData() controlplane.RegistrationData {
 }
 
 func gotEvent(workCtx context.Context, replyCtx context.Context, eventSender *keptn.EventSenderClient, event cloudevents.Event) {
-	handler, err := event_handler.NewEventHandler(workCtx, eventSender, event)
+	clientFactory, err := keptn.NewClientFactory()
+	if err != nil {
+		log.WithError(err).Error("Could not create a Keptn client factory")
+		return
+	}
+
+	handler, err := event_handler.NewEventHandler(workCtx, clientFactory, eventSender, event)
 	if err != nil {
 		log.WithError(err).Error("NewEventHandler() returned an error")
 		return
