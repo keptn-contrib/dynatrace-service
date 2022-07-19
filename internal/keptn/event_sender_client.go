@@ -19,11 +19,11 @@ type EventSenderClient struct {
 	eventSender controlplane.EventSender
 }
 
-// NewEventSenderClient creates a new EventSenderClient using the specified event sender or returns an error.
-func NewEventSenderClient(eventSender controlplane.EventSender) (*EventSenderClient, error) {
+// NewEventSenderClient creates a new EventSenderClient using the specified event sender.
+func NewEventSenderClient(eventSender controlplane.EventSender) *EventSenderClient {
 	return &EventSenderClient{
 		eventSender: eventSender,
-	}, nil
+	}
 }
 
 // SendCloudEvent sends a cloud event from specified factory or returns an error.

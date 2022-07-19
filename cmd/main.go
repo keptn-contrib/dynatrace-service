@@ -135,12 +135,7 @@ func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContext
 	}
 
 	cloudEvent := v0_2_0.ToCloudEvent(event)
-	eventSenderClient, err := keptn.NewEventSenderClient(eventSender)
-	if err != nil {
-		return err
-	}
-
-	d.onEvent(eventSenderClient, cloudEvent)
+	d.onEvent(keptn.NewEventSenderClient(eventSender), cloudEvent)
 	return nil
 }
 
