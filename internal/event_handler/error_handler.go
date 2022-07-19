@@ -16,19 +16,19 @@ import (
 
 // ErrorHandler handles errors by trying to send them to Keptn Uniform.
 type ErrorHandler struct {
-	err           error
-	event         cloudevents.Event
-	keptnClient   keptn.ClientInterface
-	uniformClient keptn.UniformClientInterface
+	err               error
+	event             cloudevents.Event
+	eventSenderClient keptn.EventSenderClientInterface
+	uniformClient     keptn.UniformClientInterface
 }
 
 // NewErrorHandler creates a new ErrorHandler for the specified error, event, ClientInterface and UniformClientInterface.
-func NewErrorHandler(err error, event cloudevents.Event, keptnClient keptn.ClientInterface, uniformClient keptn.UniformClientInterface) *ErrorHandler {
+func NewErrorHandler(err error, event cloudevents.Event, eventSenderClient keptn.EventSenderClientInterface, uniformClient keptn.UniformClientInterface) *ErrorHandler {
 	return &ErrorHandler{
-		err:           err,
-		event:         event,
-		keptnClient:   keptnClient,
-		uniformClient: uniformClient,
+		err:               err,
+		event:             event,
+		eventSenderClient: eventSenderClient,
+		uniformClient:     uniformClient,
 	}
 }
 
@@ -36,31 +36,31 @@ func NewErrorHandler(err error, event cloudevents.Event, keptnClient keptn.Clien
 func (eh ErrorHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
 	switch eh.event.Type() {
 	case keptnevents.ConfigureMonitoringEventType:
-		return eh.sendErroredConfigureMonitoringFinishedEvent(replyCtx, eh.keptnClient)
+		return eh.sendErroredConfigureMonitoringFinishedEvent(replyCtx, eh.eventSenderClient)
 	case keptnv2.GetTriggeredEventType(keptnv2.GetSLITaskName):
-		return eh.sendErroredGetSLIFinishedEvent(replyCtx, eh.keptnClient)
+		return eh.sendErroredGetSLIFinishedEvent(replyCtx, eh.eventSenderClient)
 	default:
-		return eh.sendErrorEvent(replyCtx, eh.keptnClient)
+		return eh.sendErrorEvent(replyCtx, eh.eventSenderClient)
 	}
 }
 
-func (eh ErrorHandler) sendErroredConfigureMonitoringFinishedEvent(ctx context.Context, keptnClient keptn.ClientInterface) error {
+func (eh ErrorHandler) sendErroredConfigureMonitoringFinishedEvent(ctx context.Context, eventSenderClient keptn.EventSenderClientInterface) error {
 	adapter, err := monitoring.NewConfigureMonitoringAdapterFromEvent(eh.event)
 	if err != nil {
-		return eh.sendErrorEvent(ctx, keptnClient)
+		return eh.sendErrorEvent(ctx, eventSenderClient)
 	}
-	return keptnClient.SendCloudEvent(monitoring.NewErroredConfigureMonitoringFinishedEventFactory(adapter, eh.err))
+	return eventSenderClient.SendCloudEvent(monitoring.NewErroredConfigureMonitoringFinishedEventFactory(adapter, eh.err))
 }
 
-func (eh ErrorHandler) sendErroredGetSLIFinishedEvent(ctx context.Context, keptnClient keptn.ClientInterface) error {
+func (eh ErrorHandler) sendErroredGetSLIFinishedEvent(ctx context.Context, eventSenderClient keptn.EventSenderClientInterface) error {
 	adapter, err := sli.NewGetSLITriggeredAdapterFromEvent(eh.event)
 	if err != nil {
-		return eh.sendErrorEvent(ctx, keptnClient)
+		return eh.sendErrorEvent(ctx, eventSenderClient)
 	}
-	return keptnClient.SendCloudEvent(sli.NewErroredGetSLIFinishedEventFactory(adapter, nil, eh.err))
+	return eventSenderClient.SendCloudEvent(sli.NewErroredGetSLIFinishedEventFactory(adapter, nil, eh.err))
 }
 
-func (eh ErrorHandler) sendErrorEvent(ctx context.Context, keptnClient keptn.ClientInterface) error {
+func (eh ErrorHandler) sendErrorEvent(ctx context.Context, eventSenderClient keptn.EventSenderClientInterface) error {
 	integrationID, err := eh.uniformClient.GetIntegrationIDByName(ctx, adapter.GetEventSource())
 	if err != nil {
 		log.WithError(err).Error("Could not retrieve integration ID from Keptn Uniform")
@@ -69,6 +69,6 @@ func (eh ErrorHandler) sendErrorEvent(ctx context.Context, keptnClient keptn.Cli
 	}
 
 	log.WithError(eh.err).Debug("Sending error to Keptn Uniform")
-	return keptnClient.SendCloudEvent(
+	return eventSenderClient.SendCloudEvent(
 		NewErrorEventFactory(eh.event, eh.err, integrationID))
 }

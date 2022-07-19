@@ -23,23 +23,23 @@ const ProblemOpenSLI = "problem_open"
 const NoMetricIndicator = "no metric"
 
 type GetSLIEventHandler struct {
-	event          GetSLITriggeredAdapterInterface
-	dtClient       dynatrace.ClientInterface
-	kClient        keptn.ClientInterface
-	resourceClient keptn.SLOAndSLIClientInterface
+	event             GetSLITriggeredAdapterInterface
+	dtClient          dynatrace.ClientInterface
+	eventSenderClient keptn.EventSenderClientInterface
+	resourceClient    keptn.SLOAndSLIClientInterface
 
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, kClient keptn.ClientInterface, resourceClient keptn.SLOAndSLIClientInterface, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, resourceClient keptn.SLOAndSLIClientInterface, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
-		event:          event,
-		dtClient:       dtClient,
-		kClient:        kClient,
-		resourceClient: resourceClient,
-		secretName:     secretName,
-		dashboard:      dashboard,
+		event:             event,
+		dtClient:          dtClient,
+		eventSenderClient: eventSenderClient,
+		resourceClient:    resourceClient,
+		secretName:        secretName,
+		dashboard:         dashboard,
 	}
 }
 
@@ -288,7 +288,7 @@ func resetSLIResultsInCaseOfError(err error, eventData GetSLITriggeredAdapterInt
 }
 
 func (eh *GetSLIEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {
-	err := eh.kClient.SendCloudEvent(factory)
+	err := eh.eventSenderClient.SendCloudEvent(factory)
 	if err != nil {
 		log.WithError(err).Error("Could not send get sli cloud event")
 		return err

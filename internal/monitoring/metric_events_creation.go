@@ -28,16 +28,16 @@ type criteriaObject struct {
 }
 
 type metricEventCreation struct {
-	dtClient        dynatrace.ClientInterface
-	kClient         keptn.ClientInterface
-	sliAndSLOReader keptn.SLIAndSLOReaderInterface
+	dtClient          dynatrace.ClientInterface
+	eventSenderClient keptn.EventSenderClientInterface
+	sliAndSLOReader   keptn.SLIAndSLOReaderInterface
 }
 
-func newMetricEventCreation(dynatraceClient dynatrace.ClientInterface, keptnClient keptn.ClientInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface) metricEventCreation {
+func newMetricEventCreation(dynatraceClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface) metricEventCreation {
 	return metricEventCreation{
-		dtClient:        dynatraceClient,
-		kClient:         keptnClient,
-		sliAndSLOReader: sliAndSLOReader,
+		dtClient:          dynatraceClient,
+		eventSenderClient: eventSenderClient,
+		sliAndSLOReader:   sliAndSLOReader,
 	}
 }
 

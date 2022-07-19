@@ -113,19 +113,19 @@ func createFailedSLIResultAssertionsFunc(expectedMetric string, expectedMessageS
 	}
 }
 
-func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, kClient keptn.ClientInterface, rClient keptn.SLOAndSLIClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
+func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, rClient keptn.SLOAndSLIClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
 	assert.NoError(t, err)
 
 	eh := &GetSLIEventHandler{
-		event:          keptnEvent,
-		dtClient:       dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
-		kClient:        kClient,
-		resourceClient: rClient,
-		dashboard:      dashboard,
-		secretName:     "dynatrace", // we do not need this string
+		event:             keptnEvent,
+		dtClient:          dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
+		eventSenderClient: eventSenderClient,
+		resourceClient:    rClient,
+		dashboard:         dashboard,
+		secretName:        "dynatrace", // we do not need this string
 	}
 
 	return eh, url, teardown

@@ -33,7 +33,7 @@ import (
 )
 
 type dynatraceService struct {
-	onEvent func(keptnClient *keptn.Client, event cloudevents.Event)
+	onEvent func(eventSenderClient *keptn.EventSenderClient, event cloudevents.Event)
 }
 
 func main() {
@@ -98,11 +98,11 @@ func _main() int {
 	// register for events
 	// the actual processing is done in a separate goroutine so that it doesn't block other events
 	log.Info("Registering with control plane")
-	err = controlPlane.Register(notifyCtx, dynatraceService{onEvent: func(keptnClient *keptn.Client, event cloudevents.Event) {
+	err = controlPlane.Register(notifyCtx, dynatraceService{onEvent: func(eventSenderClient *keptn.EventSenderClient, event cloudevents.Event) {
 		workerWaitGroup.Add(1)
 		go func() {
 			defer workerWaitGroup.Done()
-			gotEvent(workCtx, replyCtx, keptnClient, event)
+			gotEvent(workCtx, replyCtx, eventSenderClient, event)
 		}()
 	}})
 	if err != nil {
@@ -135,12 +135,12 @@ func (d dynatraceService) OnEvent(ctx context.Context, event models.KeptnContext
 	}
 
 	cloudEvent := v0_2_0.ToCloudEvent(event)
-	keptnClient, err := keptn.NewClient(eventSender)
+	eventSenderClient, err := keptn.NewEventSenderClient(eventSender)
 	if err != nil {
 		return err
 	}
 
-	d.onEvent(keptnClient, cloudEvent)
+	d.onEvent(eventSenderClient, cloudEvent)
 	return nil
 }
 
@@ -181,8 +181,8 @@ func (d dynatraceService) RegistrationData() controlplane.RegistrationData {
 	}
 }
 
-func gotEvent(workCtx context.Context, replyCtx context.Context, keptnClient *keptn.Client, event cloudevents.Event) {
-	handler, err := event_handler.NewEventHandler(workCtx, keptnClient, event)
+func gotEvent(workCtx context.Context, replyCtx context.Context, eventSender *keptn.EventSenderClient, event cloudevents.Event) {
+	handler, err := event_handler.NewEventHandler(workCtx, eventSender, event)
 	if err != nil {
 		log.WithError(err).Error("NewEventHandler() returned an error")
 		return
