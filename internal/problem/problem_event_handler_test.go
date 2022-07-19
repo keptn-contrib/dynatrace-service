@@ -78,10 +78,6 @@ type keptnClientMock struct {
 	eventSink []*cloudevents.Event
 }
 
-func (m *keptnClientMock) GetSLIs(project string, stage string, service string) (map[string]string, error) {
-	panic("GetSLIs() should not be needed in this mock!")
-}
-
 func (m *keptnClientMock) SendCloudEvent(factory adapter.CloudEventFactoryInterface) error {
 	// simulate errors while creating cloud event
 	if factory == nil {
