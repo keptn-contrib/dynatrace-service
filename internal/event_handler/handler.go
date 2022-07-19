@@ -122,7 +122,14 @@ func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 	case keptnv2.GetFinishedEventType(keptnv2.ActionTaskName):
 		return action.NewActionFinishedAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.GetSLITaskName):
-		return sli.NewGetSLITriggeredAdapterFromEvent(e)
+		a, err := sli.NewGetSLITriggeredAdapterFromEvent(e)
+		if err != nil {
+			return nil, err
+		}
+		if a.IsNotForDynatrace() {
+			return nil, nil
+		}
+		return a, nil
 	case keptnv2.GetFinishedEventType(keptnv2.DeploymentTaskName):
 		return action.NewDeploymentFinishedAdapterFromEvent(e)
 	case keptnv2.GetTriggeredEventType(keptnv2.TestTaskName):

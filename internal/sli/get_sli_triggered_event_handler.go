@@ -45,11 +45,6 @@ func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient d
 
 // HandleEvent handles a get-SLI triggered event.
 func (eh GetSLIEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
-	// do not continue if SLIProvider is not dynatrace
-	if eh.event.IsNotForDynatrace() {
-		return nil
-	}
-
 	if err := eh.sendGetSLIStartedEvent(); err != nil {
 		return err
 	}
