@@ -29,7 +29,7 @@ type DynatraceEventHandler interface {
 }
 
 // NewEventHandler creates a new DynatraceEventHandler for the specified event.
-func NewEventHandler(ctx context.Context, clientFactory keptn.ClientFactoryInterface, eventSenderClient *keptn.EventSenderClient, event cloudevents.Event) (DynatraceEventHandler, error) {
+func NewEventHandler(ctx context.Context, clientFactory keptn.ClientFactoryInterface, eventSenderClient keptn.EventSenderClientInterface, event cloudevents.Event) (DynatraceEventHandler, error) {
 	eventHandler, err := getEventHandler(ctx, eventSenderClient, event, clientFactory)
 	if err != nil {
 		err = fmt.Errorf("cannot handle event: %w", err)
@@ -41,7 +41,7 @@ func NewEventHandler(ctx context.Context, clientFactory keptn.ClientFactoryInter
 	return eventHandler, nil
 }
 
-func getEventHandler(ctx context.Context, eventSenderClient *keptn.EventSenderClient, event cloudevents.Event, clientFactory keptn.ClientFactoryInterface) (DynatraceEventHandler, error) {
+func getEventHandler(ctx context.Context, eventSenderClient keptn.EventSenderClientInterface, event cloudevents.Event, clientFactory keptn.ClientFactoryInterface) (DynatraceEventHandler, error) {
 	log.WithField("eventType", event.Type()).Debug("Received event")
 
 	keptnEvent, err := getEventAdapter(event)
