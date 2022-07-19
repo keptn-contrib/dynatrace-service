@@ -31,7 +31,7 @@ func Test_getEventAdapterForGetSLITriggeredForDynatrace(t *testing.T) {
 	assert.NotNil(t, getSLITriggeredAdapter)
 }
 
-// Test_getEventAdapterForGetSLITriggeredForDynatrace tests that getEventAdapter returns nil and no error for an "sh.keptn.event.get-sli.triggered" event with an SLIProvider other than "dynatrace".
+// Test_getEventAdapterForGetSLITriggeredForNotDynatrace tests that getEventAdapter returns nil and no error for an "sh.keptn.event.get-sli.triggered" event with an SLIProvider other than "dynatrace".
 func Test_getEventAdapterForGetSLITriggeredNotForDynatrace(t *testing.T) {
 	getSLITriggeredEvent, err := createTestGetSLITriggeredCloudEvent("other")
 	if !assert.NoError(t, err) {
