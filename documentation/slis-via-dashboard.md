@@ -21,7 +21,7 @@ By default, the tile's title is taken as the display name of the SLO. A clean ve
 | `weight` | Set the weight of the SLO to `<value>` | `weight=2` |
 | `exclude` | Set to `true` to exclude this tile | `exclude=true` |
 
-Consult [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo/#objectives) for more details on configuring objectives.
+Consult [the Keptn documentation](https://keptn.sh/docs/0.16.x/reference/files/slo/#objectives) for more details on configuring objectives.
 
 **Note:**
 In case dynatrace-service could not parse the tile title correctly it will stop the processing of this tile and return an error for the concerned SLI.
@@ -202,7 +202,7 @@ total_score:
   warning: 75%
 ```
 
-Further details about SLO comparison and scoring are provided in [the Keptn documentation](https://keptn.sh/docs/0.11.x/quality_gates/slo/).
+Further details about SLO comparison and scoring are provided in [the Keptn documentation](https://keptn.sh/docs/0.16.x/reference/files/slo/).
 
 To override these defaults, add a markdown tile to the dashboard with one or more of the following `;`-separated `<key>=<value>` pairs:
 
