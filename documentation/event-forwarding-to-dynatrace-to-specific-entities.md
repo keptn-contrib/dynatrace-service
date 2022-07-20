@@ -64,7 +64,7 @@ If your releases are monitored by Dynatrace, the dynatrace-service can make use 
 
 **Note**:
 
-* If you are using the helm-service to deploy your service and use a deployment strategy other than `user_managed` then you need to use the property `image` defined in your `values.yaml` file inside your `deployment.yaml` accordingly. Please refer to the [Keptn documentation](https://keptn.sh/docs/0.16.x/continuous_delivery/deployment_helm/#direct-deployments) or these example files: [values.yaml](https://github.com/keptn/examples/blob/0.11.0/onboarding-carts/carts/values.yaml#L1), [deployment.yaml](https://github.com/keptn/examples/blob/0.11.0/onboarding-carts/carts/templates/deployment.yaml#L24) for more details.
+* If you are using the helm-service to deploy your service and use a deployment strategy other than `user_managed` then you need to use the property `image` defined in your `values.yaml` file inside your `deployment.yaml` accordingly. Please refer to the [Keptn documentation](https://keptn.sh/docs/0.16.x/continuous_delivery/deployment_helm/#direct-deployments) or these example files: [values.yaml](https://github.com/keptn/examples/blob/0.11.0/onboarding-carts/carts/values.yaml#L1), [deployment.yaml](https://github.com/keptn/examples/blob/0.16.0/onboarding-carts/carts/templates/deployment.yaml#L24) for more details.
 
 * If you are using a deployment strategy of `user_managed` then you can also use the label - as mentioned above - to provide **version information**.
 

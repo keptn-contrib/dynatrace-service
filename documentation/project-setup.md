@@ -6,7 +6,7 @@ These steps are described in detail in the sections below.
 
 ## Prerequisite: Keptn project
 
-Before continuing, please ensure a Keptn project is available with a valid Git upstream repository. For instructions, please see [Create a project](https://keptn.sh/docs/0.11.x/manage/project/#create-a-project) in the Keptn documentation.
+Before continuing, please ensure a Keptn project is available with a valid Git upstream repository. For instructions, please see [Create a project](https://keptn.sh/docs/0.16.x/manage/project/#create-a-project) in the Keptn documentation.
 
 
 ## 1. Create a Dynatrace API credentials secret
@@ -73,7 +73,7 @@ dtCreds: dynatrace
 ```
 
 In case you have access to the Git repository containing the configuration of your Keptn project, add the file in the master/main branch and execute a Git add, commit, and push.
-If you do not have direct access to the Git repository (e.g. if you did not set an upstream yet), you can also use the [`keptn add resource` command](https://keptn.sh/docs/0.11.x/reference/cli/commands/keptn_add-resource/).
+If you do not have direct access to the Git repository (e.g. if you did not set an upstream yet), you can also use the [`keptn add resource` command](https://keptn.sh/docs/0.16.x/reference/cli/commands/keptn_add-resource/).
 
 ## 3. Configure Dynatrace as the monitoring provider
 

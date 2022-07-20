@@ -4,7 +4,7 @@ By default, the dynatrace-service subscribes to all `sh.keptn` events using the 
 
 ![default dynatrace-service subscription](images/subscriptions.png)
 
-If you have changed this via Keptn Uniform and want to restore the default of `sh.keptn.*`, this can be achieved using the [Keptn API](https://keptn.sh/docs/0.13.x/reference/api/). In the future Keptn might introduce a way to restore the default via the Keptn Uniform UI.
+If you have changed this via Keptn Uniform and want to restore the default of `sh.keptn.*`, this can be achieved using the [Keptn API](https://keptn.sh/docs/0.16.x/reference/api/). In the future Keptn might introduce a way to restore the default via the Keptn Uniform UI.
 
 ## Get all subscriptions for the dynatrace-service
 
