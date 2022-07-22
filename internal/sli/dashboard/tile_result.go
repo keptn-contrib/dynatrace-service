@@ -16,6 +16,15 @@ type TileResult struct {
 	sliQuery      string
 }
 
+func newSuccessfulTileResult(sloDefinition keptnapi.SLO, value float64, sliQuery string) TileResult {
+	return TileResult{
+		sliResult:     result.NewSuccessfulSLIResult(sloDefinition.SLI, value),
+		sloDefinition: &sloDefinition,
+		sliName:       sloDefinition.SLI,
+		sliQuery:      sliQuery,
+	}
+}
+
 func newFailedTileResult(indicatorName string, message string) TileResult {
 	return TileResult{
 		sliResult: result.NewFailedSLIResult(indicatorName, message),

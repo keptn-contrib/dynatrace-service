@@ -6,7 +6,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
@@ -68,18 +67,15 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) TileRe
 	passCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Warning)}}
 	warningCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Target)}}
 
-	sloDefinition := &keptn.SLO{
-		SLI:     indicatorName,
-		Pass:    []*keptn.SLOCriteria{&passCriterion},
-		Warning: []*keptn.SLOCriteria{&warningCriterion},
-		Weight:  1,
-		KeySLI:  false,
-	}
-
-	return TileResult{
-		sliResult:     result.NewSuccessfulSLIResult(indicatorName, sloResult.EvaluatedPercentage),
-		sloDefinition: sloDefinition,
-		sliName:       indicatorName,
-		sliQuery:      slo.NewQueryProducer(*query).Produce(),
-	}
+	return newSuccessfulTileResult(
+		keptn.SLO{
+			SLI:     indicatorName,
+			Pass:    []*keptn.SLOCriteria{&passCriterion},
+			Warning: []*keptn.SLOCriteria{&warningCriterion},
+			Weight:  1,
+			KeySLI:  false,
+		},
+		sloResult.EvaluatedPercentage,
+		slo.NewQueryProducer(*query).Produce(),
+	)
 }

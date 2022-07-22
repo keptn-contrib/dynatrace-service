@@ -6,7 +6,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
 	v1mv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/mv2"
@@ -130,23 +129,20 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 				"value": value,
 			}).Debug("Got indicator value")
 
-		// add this to our SLI Indicator JSON in case we need to generate an SLI.yaml
-		// we also add the SLO definition in case we need to generate an SLO.yaml
-		tileResults = append(
-			tileResults,
-			TileResult{
-				sliResult: result.NewSuccessfulSLIResult(indicatorName, value),
-				sloDefinition: &keptncommon.SLO{
-					SLI:         indicatorName,
-					DisplayName: sloDefinition.DisplayName,
-					Weight:      sloDefinition.Weight,
-					KeySLI:      sloDefinition.KeySLI,
-					Pass:        sloDefinition.Pass,
-					Warning:     sloDefinition.Warning,
-				},
-				sliName:  indicatorName,
-				sliQuery: getMetricsQueryString(metricQueryComponents.metricUnit, *metricQueryForSLI),
-			})
+		tileResult := newSuccessfulTileResult(
+			keptncommon.SLO{
+				SLI:         indicatorName,
+				DisplayName: sloDefinition.DisplayName,
+				Weight:      sloDefinition.Weight,
+				KeySLI:      sloDefinition.KeySLI,
+				Pass:        sloDefinition.Pass,
+				Warning:     sloDefinition.Warning,
+			},
+			value,
+			getMetricsQueryString(metricQueryComponents.metricUnit, *metricQueryForSLI),
+		)
+
+		tileResults = append(tileResults, tileResult)
 	}
 
 	return tileResults

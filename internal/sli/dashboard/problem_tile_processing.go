@@ -6,10 +6,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	log "github.com/sirupsen/logrus"
 )
 
 const problemsIndicatorName = "problems"
@@ -41,36 +39,18 @@ func (p *ProblemTileProcessing) Process(ctx context.Context, tile *dynatrace.Til
 }
 
 func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, query problems.Query) TileResult {
-
-	sliResult := p.getProblemCountAsSLIResult(ctx, query)
-
-	log.WithFields(
-		log.Fields{
-			"indicatorName": problemsIndicatorName,
-			"value":         sliResult.Value,
-		}).Debug("Adding SLO to sloResult")
-
 	// TODO: 2022-02-14: check: maybe in the future we will allow users to add additional SLO defs via the tile name, e.g. weight or KeySli.
-	sloDefinition := &keptn.SLO{
+	sloDefinition := keptn.SLO{
 		SLI:    problemsIndicatorName,
 		Pass:   []*keptn.SLOCriteria{{Criteria: []string{"<=0"}}},
 		Weight: 1,
 		KeySLI: true,
 	}
 
-	return TileResult{
-		sliResult:     sliResult,
-		sloDefinition: sloDefinition,
-		sliName:       problemsIndicatorName,
-		sliQuery:      problemsv2.NewQueryProducer(query).Produce(),
-	}
-}
-
-func (p *ProblemTileProcessing) getProblemCountAsSLIResult(ctx context.Context, query problems.Query) result.SLIResult {
 	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, dynatrace.NewProblemsV2ClientQueryParameters(query, p.timeframe))
 	if err != nil {
-		return result.NewFailedSLIResult(problemsIndicatorName, "error querying Problems API v2: "+err.Error())
+		return newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, problemsv2.NewQueryProducer(query).Produce(), "error querying Problems API v2: "+err.Error())
 	}
 
-	return result.NewSuccessfulSLIResult(problemsIndicatorName, float64(totalProblemCount))
+	return newSuccessfulTileResult(sloDefinition, float64(totalProblemCount), problemsv2.NewQueryProducer(query).Produce())
 }

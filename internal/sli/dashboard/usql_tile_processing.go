@@ -12,7 +12,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 )
@@ -168,9 +167,8 @@ func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, di
 		return newFailedTileResultFromSLODefinition(sloDefinition, "could not create USQL v1 query: "+err.Error())
 	}
 
-	return TileResult{
-		sliResult: result.NewSuccessfulSLIResult(indicatorName, dimensionValue),
-		sloDefinition: &keptncommon.SLO{
+	return newSuccessfulTileResult(
+		keptncommon.SLO{
 			SLI:         indicatorName,
 			DisplayName: sloDefinition.DisplayName,
 			Weight:      sloDefinition.Weight,
@@ -178,7 +176,7 @@ func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, di
 			Pass:        sloDefinition.Pass,
 			Warning:     sloDefinition.Warning,
 		},
-		sliName:  indicatorName,
-		sliQuery: v1usql.NewQueryProducer(*v1USQLQuery).Produce(),
-	}
+		dimensionValue,
+		v1usql.NewQueryProducer(*v1USQLQuery).Produce(),
+	)
 }
