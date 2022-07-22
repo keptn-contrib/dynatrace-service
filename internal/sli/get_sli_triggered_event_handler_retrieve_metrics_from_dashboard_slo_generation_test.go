@@ -23,11 +23,7 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *t
 		testDataFolder+"metrics_query_builtin_service_response_time.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("srt", 29.192929640271974),
-	}
-
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "srt", "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names")
+		createSuccessfulDashboardSLIResultAssertionsFunc("srt", 29.192929640271974, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -47,7 +43,7 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *t
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile tests that an SLO objective is also created for an unsupported data explorer tile.
@@ -61,10 +57,6 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
 		createFailedSLIResultAssertionsFunc("response_time"),
-	}
-
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "response_time", "")
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -84,7 +76,7 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile tests that an SLO objective is created for a data explorer tile which results in a metrics query that returns no data.
@@ -100,11 +92,7 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 		testDataFolder+"metrics_query_builtin_service_response_time.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createFailedSLIResultAssertionsFunc("srt_service"),
-	}
-
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "srt_service", "entitySelector=entityId(SERVICE-C33B8A4C73748469)&metricSelector=builtin:service.response.time:splitBy():avg:names")
+		createFailedSLIResultAssertionsFunc("srt_service", "entitySelector=entityId(SERVICE-C33B8A4C73748469)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -124,5 +112,5 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }

@@ -57,9 +57,7 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 	if dataResultCount == 0 {
 		if len(singleResult.Warnings) > 0 {
 			return []TileResult{newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))}
-
 		}
-
 		return []TileResult{newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points")}
 	}
 

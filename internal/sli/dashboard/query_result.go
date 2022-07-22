@@ -3,15 +3,12 @@ package dashboard
 import (
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 )
 
 // QueryResult is the object returned by querying a Dynatrace dashboard for SLIs
 type QueryResult struct {
 	dashboardLink *DashboardLink
-	dashboard     *dynatrace.Dashboard
-	sli           *dynatrace.SLI
 	slo           *keptnapi.ServiceLevelObjectives
 	sliResults    []result.SLIResult
 }
@@ -25,20 +22,6 @@ func NewQueryResultFrom(dashboardLink *DashboardLink) *QueryResult {
 
 func (r *QueryResult) DashboardLink() *DashboardLink {
 	return r.dashboardLink
-}
-
-func (r *QueryResult) Dashboard() *dynatrace.Dashboard {
-	return r.dashboard
-}
-
-// SLIs gets the SLIs.
-func (r *QueryResult) SLIs() *dynatrace.SLI {
-	return r.sli
-}
-
-// HasSLIs checks whether any indicators are available
-func (r *QueryResult) HasSLIs() bool {
-	return r.sli != nil && len(r.sli.Indicators) > 0
 }
 
 // SLOs gets the SLOs.
@@ -56,10 +39,8 @@ func (r *QueryResult) SLIResults() []result.SLIResult {
 	return r.sliResults
 }
 
-// addTileResult adds a TileResult to the QueryResult, also allows nil values for convenience
+// addTileResult adds a TileResult to the QueryResult
 func (r *QueryResult) addTileResult(result TileResult) {
-	r.sli.Indicators[result.sliName] = result.sliQuery
-
 	if result.sloDefinition != nil {
 		r.slo.Objectives = append(r.slo.Objectives, result.sloDefinition)
 	}

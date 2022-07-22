@@ -26,13 +26,27 @@ type GetSLIEventHandler struct {
 	event             GetSLITriggeredAdapterInterface
 	dtClient          dynatrace.ClientInterface
 	eventSenderClient keptn.EventSenderClientInterface
-	resourceClient    keptn.SLOAndSLIClientInterface
+	resourceClient    resourceClientInterface
 
 	secretName string
 	dashboard  string
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, resourceClient keptn.SLOAndSLIClientInterface, secretName string, dashboard string) GetSLIEventHandler {
+// resourceClientInterface is a resource client for processing sh.keptn.event.get-sli.triggered events.
+// It can read SLIs and read and write SLOs.
+type resourceClientInterface interface {
+
+	// GetSLIs gets the SLIs stored for the specified project, stage and service.
+	GetSLIs(ctx context.Context, project string, stage string, service string) (map[string]string, error)
+
+	// GetSLOs gets the SLOs stored for exactly the specified project, stage and service.
+	GetSLOs(ctx context.Context, project string, stage string, service string) (*keptncommon.ServiceLevelObjectives, error)
+
+	// UploadSLOs uploads the SLOs for the specified project, stage and service.
+	UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptncommon.ServiceLevelObjectives) error
+}
+
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, resourceClient resourceClientInterface, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:             event,
 		dtClient:          dtClient,
@@ -123,14 +137,6 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 	queryResult, err := sliQuerying.GetSLIValues(ctx, eh.dashboard, timeframe)
 	if err != nil {
 		return nil, nil, dashboard.NewQueryError(err)
-	}
-
-	// let's write the SLI to the config repo
-	if queryResult.HasSLIs() {
-		err = eh.resourceClient.UploadSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLIs())
-		if err != nil {
-			return nil, nil, dashboard.NewUploadFileError("SLI", err)
-		}
 	}
 
 	// let's write the SLO to the config repo

@@ -88,7 +88,7 @@ func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefi
 		return newWarningTileResultFromSLODefinition(sloDefinition, err.Error())
 	}
 
-	return createSuccessfulTileResultForDimensionNameAndValue("", dimensionValue, sloDefinition, dynatrace.SingleValueVisualizationType, baseQuery)
+	return newSuccessfulTileResultForDimensionNameAndValue("", dimensionValue, sloDefinition, dynatrace.SingleValueVisualizationType, baseQuery)
 }
 
 func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, visualizationType string, baseQuery usql.Query) []TileResult {
@@ -114,7 +114,7 @@ func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloD
 			continue
 		}
 
-		tileResults = append(tileResults, createSuccessfulTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, visualizationType, baseQuery))
+		tileResults = append(tileResults, newSuccessfulTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, visualizationType, baseQuery))
 	}
 	return tileResults
 }
@@ -156,7 +156,7 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 	return "", errors.New("dimension name should be a string")
 }
 
-func createSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, visualizationType string, baseQuery usql.Query) TileResult {
+func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, visualizationType string, baseQuery usql.Query) TileResult {
 	indicatorName := sloDefinition.SLI
 	if dimensionName != "" {
 		indicatorName = cleanIndicatorName(indicatorName + "_" + dimensionName)

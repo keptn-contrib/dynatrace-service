@@ -24,11 +24,17 @@ type SLIResult struct {
 
 // NewSuccessfulSLIResult creates a new SLIResult with result of success.
 func NewSuccessfulSLIResult(metric string, value float64) SLIResult {
+	return NewSuccessfulSLIResultWithMessage(metric, value, "")
+}
+
+// NewSuccessfulSLIResult creates a new SLIResult with a message and a result of success.
+func NewSuccessfulSLIResultWithMessage(metric string, value float64, message string) SLIResult {
 	return SLIResult{
 		keptnResult: keptnv2.SLIResult{
 			Metric:  metric,
 			Success: true,
 			Value:   value,
+			Message: message,
 		},
 		indicatorResult: IndicatorResultSuccessful,
 	}

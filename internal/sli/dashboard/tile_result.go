@@ -13,15 +13,13 @@ type TileResult struct {
 	sliResult     result.SLIResult
 	sloDefinition *keptnapi.SLO
 	sliName       string
-	sliQuery      string
 }
 
-func newSuccessfulTileResult(sloDefinition keptnapi.SLO, value float64, sliQuery string) TileResult {
+func newSuccessfulTileResult(sloDefinition keptnapi.SLO, value float64, query string) TileResult {
 	return TileResult{
-		sliResult:     result.NewSuccessfulSLIResult(sloDefinition.SLI, value),
+		sliResult:     result.NewSuccessfulSLIResultWithMessage(sloDefinition.SLI, value, query),
 		sloDefinition: &sloDefinition,
 		sliName:       sloDefinition.SLI,
-		sliQuery:      sliQuery,
 	}
 }
 
@@ -57,18 +55,20 @@ func newWarningTileResultFromSLODefinition(sloDefinition keptnapi.SLO, message s
 
 func newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition keptnapi.SLO, sliQuery string, message string) TileResult {
 	return TileResult{
-		sliResult:     result.NewFailedSLIResult(sloDefinition.SLI, message),
+		sliResult:     result.NewFailedSLIResult(sloDefinition.SLI, formatMessageAndQuery(message, sliQuery)),
 		sloDefinition: &sloDefinition,
 		sliName:       sloDefinition.SLI,
-		sliQuery:      sliQuery,
 	}
 }
 
 func newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition keptnapi.SLO, sliQuery string, message string) TileResult {
 	return TileResult{
-		sliResult:     result.NewWarningSLIResult(sloDefinition.SLI, message),
+		sliResult:     result.NewWarningSLIResult(sloDefinition.SLI, formatMessageAndQuery(message, sliQuery)),
 		sloDefinition: &sloDefinition,
 		sliName:       sloDefinition.SLI,
-		sliQuery:      sliQuery,
 	}
+}
+
+func formatMessageAndQuery(message string, query string) string {
+	return fmt.Sprintf("%s: %s", message, query)
 }

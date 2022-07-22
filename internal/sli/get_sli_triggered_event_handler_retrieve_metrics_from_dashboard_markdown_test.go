@@ -22,7 +22,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-single-sli-template.json"
 	const sliName = "static_slo_-_pass"
 
-	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95)
+	assertionFunc := createSuccessfulDashboardSLIResultAssertionsFunc(sliName, 95, "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4")
 
 	expectedSLO := &keptnapi.SLO{
 		SLI:     sliName,

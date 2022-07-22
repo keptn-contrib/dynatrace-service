@@ -23,11 +23,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 	handler.AddExact(dynatrace.ProblemsV2Path+"?from=1631862000000&problemSelector=status%28%22open%22%29&to=1631865600000", testDataFolder+"problems_status_open.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("problems", 0),
-	}
-
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "problems", "PV2;problemSelector=status(\"open\")")
+		createSuccessfulDashboardSLIResultAssertionsFunc("problems", 0, "PV2;problemSelector=status(\"open\")"),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -47,7 +43,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone tests retrieving the problem and security problem count SLIs in response to a problems dashboard tile with a custom management zone.
@@ -60,11 +56,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 	handler.AddExact(dynatrace.ProblemsV2Path+"?from=1631862000000&problemSelector=status%28%22open%22%29%2CmanagementZoneIds%289130632296508575249%29&to=1631865600000", testDataFolder+"problems_status_open.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("problems", 10),
-	}
-
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "problems", "PV2;problemSelector=status(\"open\"),managementZoneIds(9130632296508575249)")
+		createSuccessfulDashboardSLIResultAssertionsFunc("problems", 10, "PV2;problemSelector=status(\"open\"),managementZoneIds(9130632296508575249)"),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -84,7 +76,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardProblemTile_MissingScopes tests the failure case for retrieving the problem and security problem count SLIs in response to a problems dashboard tile.
@@ -101,10 +93,6 @@ func TestRetrieveMetricsFromDashboardProblemTile_MissingScopes(t *testing.T) {
 		createFailedSLIResultAssertionsFunc("problems"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "problems", "PV2;problemSelector=status(\"open\")")
-	}
-
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
 		if !assert.NotNil(t, actual) {
 			return
@@ -122,5 +110,5 @@ func TestRetrieveMetricsFromDashboardProblemTile_MissingScopes(t *testing.T) {
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLIsAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }

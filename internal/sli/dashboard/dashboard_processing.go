@@ -59,11 +59,6 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 	// generate our own SLIResult array based on the dashboard configuration
 	result := &QueryResult{
 		dashboardLink: dashboardLinkAsLabel,
-		dashboard:     dashboard,
-		sli: &dynatrace.SLI{
-			SpecVersion: "0.1.4",
-			Indicators:  make(map[string]string),
-		},
 		slo: &keptncommon.ServiceLevelObjectives{
 			Objectives: []*keptncommon.SLO{},
 			TotalScore: &totalScore,

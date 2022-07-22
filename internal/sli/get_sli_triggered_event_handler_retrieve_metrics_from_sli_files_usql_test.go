@@ -168,7 +168,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 				indicator: tc.query,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, tc.expectedValue))
+			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(indicator, tc.expectedValue))
 		})
 	}
 }
@@ -189,7 +189,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		indicator: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 62737.44360695537))
+	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(indicator, 62737.44360695537))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.

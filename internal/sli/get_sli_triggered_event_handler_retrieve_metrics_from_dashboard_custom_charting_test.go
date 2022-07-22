@@ -8,7 +8,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/stretchr/testify/assert"
 )
 
 var testCustomChartingGetSLIEventData = createTestGetSLIEventDataWithStartAndEnd("2021-09-17T07:00:00.000Z", "2021-09-17T08:00:00.000Z")
@@ -27,20 +26,13 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 		testDataFolder+"metrics_get_by_query_builtin_servicekeyrequest_totalprocessingtime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("processing_time_findlocations", 18.22756816390859),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_getjourneybyid", 2.8606086572438163),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_getjourneypagebytenant", 15.964052631578946),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_findjourneys", 23.587584492453388),
+		createSuccessfulDashboardSLIResultAssertionsFunc("processing_time_findlocations", 18.22756816390859, "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-935D5E52D2E0C97E\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names"),
+		createSuccessfulDashboardSLIResultAssertionsFunc("processing_time_getjourneybyid", 2.8606086572438163, "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-3CE2B68F45050ED9\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names"),
+		createSuccessfulDashboardSLIResultAssertionsFunc("processing_time_getjourneypagebytenant", 15.964052631578946, "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-7E279028E3327C67\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names"),
+		createSuccessfulDashboardSLIResultAssertionsFunc("processing_time_findjourneys", 23.587584492453388, "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-00542666DD40A496\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_findlocations", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-935D5E52D2E0C97E\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_getjourneybyid", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-3CE2B68F45050ED9\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_getjourneypagebytenant", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-7E279028E3327C67\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
-		assertSLIDefinitionIsPresent(t, actual, "processing_time_findjourneys", "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\")),entityId(\"SERVICE_METHOD-00542666DD40A496\")&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardCustomChartingTile_WithSLIButNoSeries tests a custom charting tile with an SLI name defined, i.e. in the title, but no series.
@@ -83,14 +75,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *t
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29.31312208863131),
+		createSuccessfulDashboardSLIResultAssertionsFunc("service_response_time", 29.31312208863131, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "service_response_time", "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByServiceOfServiceMethod tests a custom charting tile that splits by service key request and filters by service of service method.
@@ -121,16 +109,11 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_easytravelservice", 132.27823461853978),
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_journeyservice", 20.256493055555555),
+		createSuccessfulDashboardSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_easytravelservice", 132.27823461853978, "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-B67B3EC4C95E0FA7\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
+		createSuccessfulDashboardSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_journeyservice", 20.256493055555555, "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-F2455557EF67362B\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_easytravelservice", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-B67B3EC4C95E0FA7\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_autotags_journeyservice", "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),entityId(\"SERVICE-F2455557EF67362B\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySpecificEntity tests a custom charting tile that splits by service and filters by specific entity.
@@ -147,14 +130,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySp
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_specificentity", 20.256493055555555),
+		createSuccessfulDashboardSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_specificentity", 20.256493055555555, "MV2;MicroSecond;entitySelector=type(SERVICE),entityId(\"SERVICE-F2455557EF67362B\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "services_response_time_splitby_service_filterby_specificentity", "MV2;MicroSecond;entitySelector=type(SERVICE),entityId(\"SERVICE-F2455557EF67362B\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByFilterByServiceSoftwareTech tests a custom charting tile that filters by service software tech.
@@ -183,14 +162,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_WorkerProcessCou
 		testDataFolder+"metrics_query_builtin_tech_generic_processCount_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("proc_count", 48.63491666452461),
+		createSuccessfulDashboardSLIResultAssertionsFunc("proc_count", 48.63491666452461, "entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.processCount:splitBy():avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "proc_count", "entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.processCount:splitBy():avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP90(t *testing.T) {
@@ -205,14 +180,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP90(
 		testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_rt_p90", 35.00002454848894),
+		createSuccessfulDashboardSLIResultAssertionsFunc("svc_rt_p90", 35.00002454848894, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(90.000000):names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "svc_rt_p90", "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(90.000000):names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP50(t *testing.T) {
@@ -227,14 +198,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP50(
 		testDataFolder+"metrics_query_builtin_service_response_time_p50.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_rt_p50", 1.500151733421778),
+		createSuccessfulDashboardSLIResultAssertionsFunc("svc_rt_p50", 1.500151733421778, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(50.000000):names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "svc_rt_p50", "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(50.000000):names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg(t *testing.T) {
@@ -249,14 +216,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg
 		testDataFolder+"metrics_query_builtin_tech_generic_mem_workingsetsize_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("process_memory", 1437907.0484235594),
+		createSuccessfulDashboardSLIResultAssertionsFunc("process_memory", 1437907.0484235594, "MV2;Byte;entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.mem.workingSetSize:splitBy():avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "process_memory", "MV2;Byte;entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.mem.workingSetSize:splitBy():avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessCPUAvg(t *testing.T) {
@@ -271,14 +234,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessCPUAvg(t 
 		testDataFolder+"metrics_query_builtin_tech_generic_cpu_usage_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("process_cpu", 14.223367878298156),
+		createSuccessfulDashboardSLIResultAssertionsFunc("process_cpu", 14.223367878298156, "entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.cpu.usage:splitBy():avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "process_cpu", "entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.cpu.usage:splitBy():avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_Throughput(t *testing.T) {
@@ -293,14 +252,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_Throughput(t *te
 		testDataFolder+"metrics_query_builtin_service_requestcount_total_value.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_tp_min", 68044716),
+		createSuccessfulDashboardSLIResultAssertionsFunc("svc_tp_min", 68044716, "entitySelector=type(SERVICE)&metricSelector=builtin:service.requestCount.total:splitBy():value:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "svc_tp_min", "entitySelector=type(SERVICE)&metricSelector=builtin:service.requestCount.total:splitBy():value:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostCPUUsageAvg(t *testing.T) {
@@ -315,14 +270,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostCPUUsageAvg(
 		testDataFolder+"metrics_query_builtin_host_cpu_usage_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("host_cpu", 20.309976061722214),
+		createSuccessfulDashboardSLIResultAssertionsFunc("host_cpu", 20.309976061722214, "entitySelector=type(HOST)&metricSelector=builtin:host.cpu.usage:splitBy():avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "host_cpu", "entitySelector=type(HOST)&metricSelector=builtin:host.cpu.usage:splitBy():avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostMemoryUsageAvg(t *testing.T) {
@@ -337,14 +288,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostMemoryUsageA
 		testDataFolder+"metrics_query_builtin_host_mem_usage_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("host_mem", 45.443796324058994),
+		createSuccessfulDashboardSLIResultAssertionsFunc("host_mem", 45.443796324058994, "entitySelector=type(HOST)&metricSelector=builtin:host.mem.usage:splitBy():avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "host_mem", "entitySelector=type(HOST)&metricSelector=builtin:host.mem.usage:splitBy():avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostDiskQueueLengthMax(t *testing.T) {
@@ -359,14 +306,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostDiskQueueLen
 		testDataFolder+"metrics_query_builtin_host_disk_queuelength_max.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("host_disk_queue", 100),
+		createSuccessfulDashboardSLIResultAssertionsFunc("host_disk_queue", 100, "entitySelector=type(HOST)&metricSelector=builtin:host.disk.queueLength:splitBy():max:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "host_disk_queue", "entitySelector=type(HOST)&metricSelector=builtin:host.disk.queueLength:splitBy():max:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_NonDbChildCallCount(t *testing.T) {
@@ -381,14 +324,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_NonDbChildCallCo
 		testDataFolder+"metrics_query_builtin_service_nondbchildcallcount.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("svc2svc_calls", 13657068),
+		createSuccessfulDashboardSLIResultAssertionsFunc("svc2svc_calls", 13657068, "entitySelector=type(SERVICE)&metricSelector=builtin:service.nonDbChildCallCount:splitBy():value:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "svc2svc_calls", "entitySelector=type(SERVICE)&metricSelector=builtin:service.nonDbChildCallCount:splitBy():value:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile tests an additional custom charting tile with exclude set to true is skipped.
@@ -405,38 +344,24 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
-		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29.31312208863131),
+		createSuccessfulDashboardSLIResultAssertionsFunc("service_response_time", 29.31312208863131, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
-	uploadedSLIsAssertionsFunc := func(t *testing.T, actual *dynatrace.SLI) {
-		assertSLIDefinitionIsPresent(t, actual, "service_response_time", "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():avg:names")
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLIsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLIsAssertionsFunc func(t *testing.T, actual *dynatrace.SLI), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 	rClient := &uploadErrorResourceClientMock{t: t}
 
 	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
-	uploadedSLIsAssertionsFunc(t, rClient.uploadedSLIs)
 }
 
-func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLIsAssertionsFunc func(t *testing.T, actual *dynatrace.SLI), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 	rClient := &uploadErrorResourceClientMock{t: t}
 	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
-	uploadedSLIsAssertionsFunc(t, rClient.uploadedSLIs)
 	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
-}
-
-func assertSLIDefinitionIsPresent(t *testing.T, slis *dynatrace.SLI, metric string, definition string) {
-	if !assert.NotNil(t, slis) {
-		return
-	}
-	assert.Contains(t, slis.Indicators, metric)
-	assert.EqualValues(t, definition, slis.Indicators[metric])
 }

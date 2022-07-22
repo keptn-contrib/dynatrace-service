@@ -44,7 +44,7 @@ func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) [
 func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) TileResult {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
-		// TODO: 2022-02-14: Check that this indicator name still aligns with all possible errors.
+		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
 		return newFailedTileResult("slo_without_id", err.Error())
 	}
 

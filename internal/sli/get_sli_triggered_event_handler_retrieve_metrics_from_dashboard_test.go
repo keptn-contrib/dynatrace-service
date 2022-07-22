@@ -11,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -19,9 +18,6 @@ type uploadErrorResourceClientMock struct {
 	t              *testing.T
 	uploadSLOError error
 	slosUploaded   bool
-	uploadSLIError error
-	slisUploaded   bool
-	uploadedSLIs   *dynatrace.SLI
 	uploadedSLOs   *keptnapi.ServiceLevelObjectives
 }
 
@@ -33,16 +29,6 @@ func (m *uploadErrorResourceClientMock) GetSLIs(_ context.Context, _ string, _ s
 func (m *uploadErrorResourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 	return nil, nil
-}
-
-func (m *uploadErrorResourceClientMock) UploadSLIs(_ context.Context, _ string, _ string, _ string, slis *dynatrace.SLI) error {
-	if m.uploadSLIError != nil {
-		return m.uploadSLIError
-	}
-
-	m.uploadedSLIs = slis
-	m.slisUploaded = true
-	return nil
 }
 
 func (m *uploadErrorResourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, slos *keptnapi.ServiceLevelObjectives) error {
@@ -67,7 +53,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 
 	testConfigs := []struct {
 		name                    string
-		resourceClientMock      keptn.SLOAndSLIClientInterface
+		resourceClientMock      resourceClientInterface
 		sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)
 		shouldFail              bool
 	}{
@@ -80,22 +66,13 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 			sliResultAssertionsFunc: failureAssertionsFunc,
 			shouldFail:              true,
 		},
-		{
-			name: "SLI upload fails",
-			resourceClientMock: &uploadErrorResourceClientMock{
-				t:              t,
-				uploadSLIError: errors.New("SLI upload failed"),
-			},
-			sliResultAssertionsFunc: failureAssertionsFunc,
-			shouldFail:              true,
-		},
 		// success case:
 		{
 			name: "upload of all files works",
 			resourceClientMock: &uploadErrorResourceClientMock{
 				t: t,
 			},
-			sliResultAssertionsFunc: createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443),
+			sliResultAssertionsFunc: createSuccessfulDashboardSLIResultAssertionsFunc(indicator, 12.439619479902443, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(95.000000):names"),
 			shouldFail:              false,
 		},
 	}
@@ -146,8 +123,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	rClient := &uploadErrorResourceClientMock{t: t}
 
 	// value is divided by 1000 from dynatrace API result!
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443))
-	assert.True(t, rClient.slisUploaded)
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulDashboardSLIResultAssertionsFunc(indicator, 12.439619479902443, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(95.000000):names"))
 	assert.True(t, rClient.slosUploaded)
 }
 
@@ -163,11 +139,6 @@ func (m *uploadWillFailResourceClientMock) GetSLIs(_ context.Context, _ string, 
 func (m *uploadWillFailResourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 	return nil, nil
-}
-
-func (m *uploadWillFailResourceClientMock) UploadSLIs(_ context.Context, _ string, _ string, _ string, _ *dynatrace.SLI) error {
-	m.t.Fatalf("UploadSLIs() should not be needed in this mock!")
-	return nil
 }
 
 func (m *uploadWillFailResourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
@@ -220,7 +191,7 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
 }
 
-func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient keptn.SLOAndSLIClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)

@@ -51,7 +51,7 @@ func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *g
 	}
 }
 
-func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient keptn.SLOAndSLIClientInterface, dashboard string) {
+func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient resourceClientInterface, dashboard string) {
 	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, eventSenderClient, rClient, dashboard)
 	defer teardown()
 
@@ -86,14 +86,23 @@ func assertCorrectSLIResults(t *testing.T, getSLIFinishedEventData *keptnv2.GetS
 	}
 }
 
-func createSLIAssertionsFunc(expectedMetric string, expectedDefintion string) func(t *testing.T, actualMetric string, actualDefinition string) {
+func createSLIAssertionsFunc(expectedMetric string, expectedDefinition string) func(t *testing.T, actualMetric string, actualDefinition string) {
 	return func(t *testing.T, actualMetric string, actualDefinition string) {
 		assert.EqualValues(t, expectedMetric, actualMetric)
-		assert.EqualValues(t, expectedDefintion, actualDefinition)
+		assert.EqualValues(t, expectedDefinition, actualDefinition)
 	}
 }
 
-func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValue float64) func(t *testing.T, actual *keptnv2.SLIResult) {
+func createSuccessfulDashboardSLIResultAssertionsFunc(expectedMetric string, expectedValue float64, expectedQuery string) func(t *testing.T, actual *keptnv2.SLIResult) {
+	return func(t *testing.T, actual *keptnv2.SLIResult) {
+		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
+		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
+		assert.EqualValues(t, expectedQuery, actual.Message, "Message should be expected query")
+		assert.True(t, actual.Success, "Indicator success should be true")
+	}
+}
+
+func createSuccessfulFileSLIResultAssertionsFunc(expectedMetric string, expectedValue float64) func(t *testing.T, actual *keptnv2.SLIResult) {
 	return func(t *testing.T, actual *keptnv2.SLIResult) {
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
@@ -113,7 +122,7 @@ func createFailedSLIResultAssertionsFunc(expectedMetric string, expectedMessageS
 	}
 }
 
-func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, rClient keptn.SLOAndSLIClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
+func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, rClient resourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
@@ -269,11 +278,6 @@ func (m *resourceClientMock) GetSLIs(_ context.Context, _ string, _ string, _ st
 func (m *resourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 	return nil, nil
-}
-
-func (m *resourceClientMock) UploadSLIs(_ context.Context, _ string, _ string, _ string, _ *dynatrace.SLI) error {
-	m.t.Fatalf("UploadSLIs() should not be needed in this mock!")
-	return nil
 }
 
 func (m *resourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {

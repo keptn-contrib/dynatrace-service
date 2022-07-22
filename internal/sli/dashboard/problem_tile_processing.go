@@ -49,7 +49,7 @@ func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, quer
 
 	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, dynatrace.NewProblemsV2ClientQueryParameters(query, p.timeframe))
 	if err != nil {
-		return newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, problemsv2.NewQueryProducer(query).Produce(), "error querying Problems API v2: "+err.Error())
+		return newFailedTileResultFromSLODefinition(sloDefinition, "error querying Problems API v2: "+err.Error())
 	}
 
 	return newSuccessfulTileResult(sloDefinition, float64(totalProblemCount), problemsv2.NewQueryProducer(query).Produce())
