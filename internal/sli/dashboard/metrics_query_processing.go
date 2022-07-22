@@ -25,7 +25,7 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 }
 
 // Process generates SLI & SLO definitions based on the metric query and the number of dimensions in the chart definition.
-func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents) []*TileResult {
+func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents) []TileResult {
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
 	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryParameters(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe))
@@ -33,22 +33,17 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 	// ERROR-CASE: Metric API return no values or an error
 	// we could not query data - so - we return the error back as part of our SLIResults
 	if err != nil {
-		failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "error querying Metrics API v2: "+err.Error())
-		return []*TileResult{&failedTileResult}
+		return []TileResult{newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "error querying Metrics API v2: "+err.Error())}
 	}
 
 	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
 	if len(queryResult.Result) == 0 {
-		warningTileResult := newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero results")
-		return []*TileResult{&warningTileResult}
+		return []TileResult{newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero results")}
 	}
 
 	if len(queryResult.Result) > 1 {
-		warningTileResult := newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned more than one result")
-		return []*TileResult{&warningTileResult}
+		return []TileResult{newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned more than one result")}
 	}
-
-	var tileResults []*TileResult
 
 	// SUCCESS-CASE: we retrieved values - now create an indicator result for every dimension
 	singleResult := queryResult.Result[0]
@@ -62,14 +57,14 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 	dataResultCount := len(singleResult.Data)
 	if dataResultCount == 0 {
 		if len(singleResult.Warnings) > 0 {
-			warningTileResult := newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))
-			return []*TileResult{&warningTileResult}
+			return []TileResult{newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))}
 
 		}
-		warningTileResult := newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points")
-		return []*TileResult{&warningTileResult}
+
+		return []TileResult{newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points")}
 	}
 
+	var tileResults []TileResult
 	for _, singleDataEntry := range singleResult.Data {
 		//
 		// we need to generate the indicator name based on the base name + all dimensions, e.g: teststep_MYTESTSTEP, teststep_MYOTHERTESTSTEP
@@ -112,8 +107,7 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 
 		metricQueryForSLI, err := metrics.NewQuery(metricSelectorForSLI, entitySelectorForSLI)
 		if err != nil {
-			failedTileResult := newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "error creating Metrics v2 query for SLI")
-			return []*TileResult{&failedTileResult}
+			return []TileResult{newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "error creating Metrics v2 query for SLI")}
 		}
 
 		// make sure we have a valid indicator name by getting rid of special characters
@@ -140,7 +134,7 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 		// we also add the SLO definition in case we need to generate an SLO.yaml
 		tileResults = append(
 			tileResults,
-			&TileResult{
+			TileResult{
 				sliResult: result.NewSuccessfulSLIResult(indicatorName, value),
 				sloDefinition: &keptncommon.SLO{
 					SLI:         indicatorName,

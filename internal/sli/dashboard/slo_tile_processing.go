@@ -27,13 +27,12 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Tim
 }
 
 // Process processes the specified SLO dashboard tile.
-func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []*TileResult {
+func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []TileResult {
 	if len(tile.AssignedEntities) == 0 {
-		failedTileResult := newFailedTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")
-		return []*TileResult{&failedTileResult}
+		return []TileResult{newFailedTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")}
 	}
 
-	var results []*TileResult
+	var results []TileResult
 	for _, sloID := range tile.AssignedEntities {
 		log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
 		results = append(results, p.processSLO(ctx, sloID))
@@ -43,19 +42,17 @@ func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) [
 
 // processSLO processes an SLO by querying the data from the Dynatrace API.
 // Returns a TileResult with sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileResult {
+func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) TileResult {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
-		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
-		failedTileResult := newFailedTileResult("slo_without_id", err.Error())
-		return &failedTileResult
+		// TODO: 2022-02-14: Check that this indicator name still aligns with all possible errors.
+		return newFailedTileResult("slo_without_id", err.Error())
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
 	if err != nil {
-		failedTileResult := newFailedTileResult(cleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
-		return &failedTileResult
+		return newFailedTileResult(cleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
 	}
 
 	indicatorName := cleanIndicatorName(sloResult.Name)
@@ -79,7 +76,7 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) *TileR
 		KeySLI:  false,
 	}
 
-	return &TileResult{
+	return TileResult{
 		sliResult:     result.NewSuccessfulSLIResult(indicatorName, sloResult.EvaluatedPercentage),
 		sloDefinition: sloDefinition,
 		sliName:       indicatorName,

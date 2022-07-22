@@ -30,17 +30,17 @@ func NewProblemTileProcessing(client dynatrace.ClientInterface, timeframe common
 
 // Process retrieves the open problem count and returns this as a TileResult.
 // An SLO definition with a pass criteria of <= 0 is also included as we don't allow problems.
-func (p *ProblemTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) *TileResult {
+func (p *ProblemTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []TileResult {
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	// query the number of open problems based on the management zone filter of the tile
 	problemSelector := "status(\"open\")" + tileManagementZoneFilter.ForProblemSelector()
-	return p.processOpenProblemTile(ctx, problems.NewQuery(problemSelector, ""))
+	return []TileResult{p.processOpenProblemTile(ctx, problems.NewQuery(problemSelector, ""))}
 }
 
-func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, query problems.Query) *TileResult {
+func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, query problems.Query) TileResult {
 
 	sliResult := p.getProblemCountAsSLIResult(ctx, query)
 
@@ -58,7 +58,7 @@ func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, quer
 		KeySLI: true,
 	}
 
-	return &TileResult{
+	return TileResult{
 		sliResult:     sliResult,
 		sloDefinition: sloDefinition,
 		sliName:       problemsIndicatorName,

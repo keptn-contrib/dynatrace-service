@@ -234,7 +234,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				return
 			}
 
-			tileResult := *tileResults[0]
+			tileResult := tileResults[0]
 
 			assert.EqualValues(t, tt.expectedTileResult.sliName, tileResult.sliName)
 			assert.EqualValues(t, tt.expectedTileResult.sloDefinition, tileResult.sloDefinition)

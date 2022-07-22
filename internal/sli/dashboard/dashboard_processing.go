@@ -91,20 +91,15 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 				markdownAlreadyProcessed = true
 			}
 		case dynatrace.SLOTileType:
-			tileResults := NewSLOTileProcessing(p.client, p.timeframe).Process(ctx, &tile)
-			result.addTileResults(tileResults)
+			result.addTileResults(NewSLOTileProcessing(p.client, p.timeframe).Process(ctx, &tile))
 		case dynatrace.OpenProblemsTileType:
-			tileResult := NewProblemTileProcessing(p.client, p.timeframe).Process(ctx, &tile, dashboard.GetFilter())
-			result.addTileResult(tileResult)
+			result.addTileResults(NewProblemTileProcessing(p.client, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
 		case dynatrace.DataExplorerTileType:
-			tileResults := NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboard.GetFilter())
-			result.addTileResults(tileResults)
+			result.addTileResults(NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
 		case dynatrace.CustomChartingTileType:
-			tileResults := NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboard.GetFilter())
-			result.addTileResults(tileResults)
+			result.addTileResults(NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
 		case dynatrace.USQLTileType:
-			tileResults := NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile)
-			result.addTileResults(tileResults)
+			result.addTileResults(NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile))
 		default:
 			// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)
 			continue

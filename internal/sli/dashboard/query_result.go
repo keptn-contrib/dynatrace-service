@@ -57,11 +57,7 @@ func (r *QueryResult) SLIResults() []result.SLIResult {
 }
 
 // addTileResult adds a TileResult to the QueryResult, also allows nil values for convenience
-func (r *QueryResult) addTileResult(result *TileResult) {
-	if result == nil {
-		return
-	}
-
+func (r *QueryResult) addTileResult(result TileResult) {
 	r.sli.Indicators[result.sliName] = result.sliQuery
 
 	if result.sloDefinition != nil {
@@ -72,7 +68,7 @@ func (r *QueryResult) addTileResult(result *TileResult) {
 }
 
 // addTileResult adds multiple TileResult to the QueryResult,
-func (r *QueryResult) addTileResults(results []*TileResult) {
+func (r *QueryResult) addTileResults(results []TileResult) {
 	for _, result := range results {
 		r.addTileResult(result)
 	}
