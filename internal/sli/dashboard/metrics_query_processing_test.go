@@ -236,7 +236,16 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 
 			tileResult := *tileResults[0]
 
-			assert.EqualValues(t, tt.expectedTileResult, tileResult)
+			assert.EqualValues(t, tt.expectedTileResult.sliName, tileResult.sliName)
+			assert.EqualValues(t, tt.expectedTileResult.sloDefinition, tileResult.sloDefinition)
+			assert.EqualValues(t, tt.expectedTileResult.sliQuery, tileResult.sliQuery)
+
+			assert.EqualValues(t, tt.expectedTileResult.sliResult.Metric(), tileResult.sliResult.Metric())
+			assert.EqualValues(t, tt.expectedTileResult.sliResult.Success(), tileResult.sliResult.Success())
+			assert.EqualValues(t, tt.expectedTileResult.sliResult.Message(), tileResult.sliResult.Message())
+			assert.EqualValues(t, tt.expectedTileResult.sliResult.IndicatorResult(), tileResult.sliResult.IndicatorResult())
+
+			assert.InDelta(t, tt.expectedTileResult.sliResult.Value(), tileResult.sliResult.Value(), 0.01)
 		})
 	}
 }
