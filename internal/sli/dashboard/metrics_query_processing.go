@@ -48,9 +48,7 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 	singleResult := queryResult.Result[0]
 	log.WithFields(
 		log.Fields{
-			"metricId":                    singleResult.MetricID,
-			"metricSelectorTargetSnippet": metricQueryComponents.metricSelectorTargetSnippet,
-			"entitySelectorTargetSnippet": metricQueryComponents.entitySelectorTargetSnippet,
+			"metricId": singleResult.MetricID,
 		}).Debug("Processing result")
 
 	if len(singleResult.Data) == 0 {
@@ -71,43 +69,19 @@ func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, 
 		// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
 		indicatorName := sloDefinition.SLI
 
-		metricSelectorForSLI := metricQueryComponents.metricsQuery.GetMetricSelector()
-		entitySelectorForSLI := metricQueryComponents.metricsQuery.GetEntitySelector()
-
-		// we need this one to "fake" the MetricQuery for the SLi.yaml to include the dynamic dimension name for each value
-		// we initialize it with ":names" as this is the part of the metric query string we will replace
-		filterSLIDefinitionAggregatorValue := ":names"
-
 		if len(singleResultData) > 1 {
 			// because we use the ":names" transformation we always get two dimension entries for entity dimensions, e.g: Host, Service .... First is the Name of the entity, then the ID of the Entity
 			// lets first validate that we really received Dimension Names
 			dimensionCount := len(singleDataEntry.Dimensions)
 			dimensionIncrement := 2
 			if dimensionCount != (noOfDimensionsInChart * 2) {
-				// ph.Logger.Debug(fmt.Sprintf("DIDNT RECEIVE ID and Names. Lets assume we just received the dimension IDs"))
 				dimensionIncrement = 1
 			}
 
 			// lets iterate through the list and get all names
 			for dimIx := 0; dimIx < len(singleDataEntry.Dimensions); dimIx = dimIx + dimensionIncrement {
-				dimensionValue := singleDataEntry.Dimensions[dimIx]
-				indicatorName = indicatorName + "_" + dimensionValue
-
-				filterSLIDefinitionAggregatorValue = ":names" + strings.Replace(metricQueryComponents.metricSelectorTargetSnippet, "FILTERDIMENSIONVALUE", dimensionValue, 1)
-
-				if metricQueryComponents.entitySelectorTargetSnippet != "" && dimensionIncrement == 2 {
-					dimensionEntityID := singleDataEntry.Dimensions[dimIx+1]
-					entitySelectorForSLI = entitySelectorForSLI + strings.Replace(metricQueryComponents.entitySelectorTargetSnippet, "FILTERDIMENSIONVALUE", dimensionEntityID, 1)
-				}
+				indicatorName = indicatorName + "_" + singleDataEntry.Dimensions[dimIx]
 			}
-		}
-
-		// we use ":names" to find the right spot to add our custom dimension filter
-		metricSelectorForSLI = strings.Replace(metricSelectorForSLI, ":names", filterSLIDefinitionAggregatorValue, 1)
-
-		metricQueryForSLI, err := metrics.NewQuery(metricSelectorForSLI, entitySelectorForSLI)
-		if err != nil {
-			return []TileResult{newFailedTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "error creating Metrics v2 query for SLI")}
 		}
 
 		// make sure we have a valid indicator name by getting rid of special characters
@@ -140,7 +114,7 @@ func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, 
 				Warning:     sloDefinition.Warning,
 			},
 			value,
-			getMetricsQueryString(metricQueryComponents.metricUnit, *metricQueryForSLI),
+			getMetricsQueryString(metricQueryComponents.metricUnit, metricQueryComponents.metricsQuery),
 		)
 
 		tileResults = append(tileResults, tileResult)

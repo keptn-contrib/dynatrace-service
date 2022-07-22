@@ -136,8 +136,6 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 	// build split by
 	splitBy := ""
 	filterAggregator := ""
-	metricSelectorTargetSnippet := ""
-	entitySelectorTargetSnippet := ""
 	if len(series.Dimensions) > 1 {
 		return nil, errors.New("only a single dimension is supported")
 	} else if len(series.Dimensions) == 1 {
@@ -148,16 +146,10 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 		// TODO: support multiple filters - right now we only support 1
 		if len(seriesDim.Values) > 1 {
 			return nil, errors.New("only a single dimension filter is supported")
-		} else if len(seriesDim.Values) == 1 {
+		}
+
+		if len(seriesDim.Values) == 1 {
 			filterAggregator = fmt.Sprintf(":filter(eq(%s,%s))", seriesDim.Name, seriesDim.Values[0])
-		} else {
-			// we need this for the generation of the SLI for each individual dimension value
-			// if the dimension is a dt.entity we have to add an additional entityId to the entitySelector - otherwise we add a filter for the dimension
-			if strings.HasPrefix(seriesDim.Name, "dt.entity.") {
-				entitySelectorTargetSnippet = fmt.Sprintf(",entityId(\"FILTERDIMENSIONVALUE\")")
-			} else {
-				metricSelectorTargetSnippet = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", seriesDim.Name)
-			}
 		}
 	} else {
 		splitBy = ":splitBy()"
@@ -174,11 +166,9 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 	}
 
 	return &queryComponents{
-		metricsQuery:                *metricsQuery,
-		timeframe:                   p.timeframe,
-		metricUnit:                  metricDefinition.Unit,
-		entitySelectorTargetSnippet: entitySelectorTargetSnippet,
-		metricSelectorTargetSnippet: metricSelectorTargetSnippet,
+		metricsQuery: *metricsQuery,
+		timeframe:    p.timeframe,
+		metricUnit:   metricDefinition.Unit,
 	}, nil
 }
 
