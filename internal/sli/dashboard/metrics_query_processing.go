@@ -53,16 +53,19 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 			"entitySelectorTargetSnippet": metricQueryComponents.entitySelectorTargetSnippet,
 		}).Debug("Processing result")
 
-	dataResultCount := len(singleResult.Data)
-	if dataResultCount == 0 {
+	if len(singleResult.Data) == 0 {
 		if len(singleResult.Warnings) > 0 {
 			return []TileResult{newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))}
 		}
 		return []TileResult{newWarningTileResultFromSLODefinitionAndSLIQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points")}
 	}
 
+	return r.processSingleResult(noOfDimensionsInChart, sloDefinition, metricQueryComponents, singleResult.Data)
+}
+
+func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents, singleResultData []dynatrace.MetricQueryResultNumbers) []TileResult {
 	var tileResults []TileResult
-	for _, singleDataEntry := range singleResult.Data {
+	for _, singleDataEntry := range singleResultData {
 		//
 		// we need to generate the indicator name based on the base name + all dimensions, e.g: teststep_MYTESTSTEP, teststep_MYOTHERTESTSTEP
 		// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
@@ -75,7 +78,7 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 		// we initialize it with ":names" as this is the part of the metric query string we will replace
 		filterSLIDefinitionAggregatorValue := ":names"
 
-		if dataResultCount > 1 {
+		if len(singleResultData) > 1 {
 			// because we use the ":names" transformation we always get two dimension entries for entity dimensions, e.g: Host, Service .... First is the Name of the entity, then the ID of the Entity
 			// lets first validate that we really received Dimension Names
 			dimensionCount := len(singleDataEntry.Dimensions)
