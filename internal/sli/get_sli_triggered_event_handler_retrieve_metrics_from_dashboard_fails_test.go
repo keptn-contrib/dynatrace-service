@@ -1,7 +1,6 @@
 package sli
 
 import (
-	"net/http"
 	"strconv"
 	"testing"
 
@@ -108,10 +107,4 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 			runAndAssertDashboardTest(t, testEvent, handler, rClient, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
 		})
 	}
-}
-
-func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-	eventSenderClient := &eventSenderClientMock{}
-	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, dashboardID)
-	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }

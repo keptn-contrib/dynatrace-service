@@ -51,6 +51,42 @@ func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *g
 	}
 }
 
+func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+	eventSenderClient := &eventSenderClientMock{}
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, dashboardID)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+}
+
+func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+	eventSenderClient := &eventSenderClientMock{}
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+}
+
+func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+	eventSenderClient := &eventSenderClientMock{}
+	rClient := &uploadErrorResourceClientMock{t: t}
+
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+	eventSenderClient := &eventSenderClientMock{}
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
+}
+
+func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
+	// we use the special mock for the resource client
+	// we do not want to query a dashboard, so we leave it empty
+	runTestAndAssertNoError(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, eventSenderClient, rClient, "")
+
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+}
+
 func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient resourceClientInterface, dashboard string) {
 	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, eventSenderClient, rClient, dashboard)
 	defer teardown()
@@ -302,5 +338,32 @@ func (m *eventSenderClientMock) SendCloudEvent(factory adapter.CloudEventFactory
 
 	m.eventSink = append(m.eventSink, ce)
 
+	return nil
+}
+
+type uploadErrorResourceClientMock struct {
+	t              *testing.T
+	uploadSLOError error
+	slosUploaded   bool
+	uploadedSLOs   *keptnapi.ServiceLevelObjectives
+}
+
+func (m *uploadErrorResourceClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
+	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
+	return nil, nil
+}
+
+func (m *uploadErrorResourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
+	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
+	return nil, nil
+}
+
+func (m *uploadErrorResourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, slos *keptnapi.ServiceLevelObjectives) error {
+	if m.uploadSLOError != nil {
+		return m.uploadSLOError
+	}
+
+	m.uploadedSLOs = slos
+	m.slosUploaded = true
 	return nil
 }

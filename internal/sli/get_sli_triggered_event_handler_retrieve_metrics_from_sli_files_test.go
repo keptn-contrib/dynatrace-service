@@ -2,10 +2,7 @@ package sli
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
-
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
@@ -64,12 +61,4 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 	rClient := newResourceClientMockWithGetSLIsError(t, fmt.Errorf(errorMessage))
 
 	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, errorMessage))
-}
-
-func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
-	// we use the special mock for the resource client
-	// we do not want to query a dashboard, so we leave it empty
-	runTestAndAssertNoError(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, eventSenderClient, rClient, "")
-
-	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }

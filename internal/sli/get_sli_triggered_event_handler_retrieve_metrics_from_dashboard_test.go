@@ -3,7 +3,6 @@ package sli
 import (
 	"context"
 	"errors"
-	"net/http"
 	"testing"
 
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
@@ -13,33 +12,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
-
-type uploadErrorResourceClientMock struct {
-	t              *testing.T
-	uploadSLOError error
-	slosUploaded   bool
-	uploadedSLOs   *keptnapi.ServiceLevelObjectives
-}
-
-func (m *uploadErrorResourceClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
-	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
-	return nil, nil
-}
-
-func (m *uploadErrorResourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
-	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
-	return nil, nil
-}
-
-func (m *uploadErrorResourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, slos *keptnapi.ServiceLevelObjectives) error {
-	if m.uploadSLOError != nil {
-		return m.uploadSLOError
-	}
-
-	m.uploadedSLOs = slos
-	m.slosUploaded = true
-	return nil
-}
 
 // Retrieving (a single) SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
 //
@@ -189,10 +161,4 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 	}
 
 	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
-}
-
-func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-	eventSenderClient := &eventSenderClientMock{}
-	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
-	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }

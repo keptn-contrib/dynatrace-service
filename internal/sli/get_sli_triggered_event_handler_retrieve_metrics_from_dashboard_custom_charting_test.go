@@ -1,12 +1,10 @@
 package sli
 
 import (
-	"net/http"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -348,20 +346,4 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testCustomChartingGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-	eventSenderClient := &eventSenderClientMock{}
-	rClient := &uploadErrorResourceClientMock{t: t}
-
-	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
-	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-	eventSenderClient := &eventSenderClientMock{}
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, testDashboardID)
-	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
-	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
 }
