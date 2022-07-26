@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
@@ -28,14 +27,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "response_time_p95")
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "response_time_p95"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -54,14 +46,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		indicator: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "error parsing Metrics v2 query")
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "error parsing Metrics v2 query"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -78,14 +63,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 	const errorMessage = "invalid YAML file - some parsing issue"
 	rClient := newResourceClientMockWithGetSLIsError(t, fmt.Errorf(errorMessage))
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, errorMessage)
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, errorMessage))
 }
 
 func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {

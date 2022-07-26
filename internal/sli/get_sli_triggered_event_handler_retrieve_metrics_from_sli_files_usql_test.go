@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
@@ -48,14 +47,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 				indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			sliResultAssertionsFunc := func(t *testing.T, sliResult *keptnv2.SLIResult) {
-				assert.EqualValues(t, indicator, sliResult.Metric)
-				assert.EqualValues(t, 0, sliResult.Value)
-				assert.EqualValues(t, false, sliResult.Success)
-				assert.Contains(t, sliResult.Message, "incorrect prefix")
-			}
-
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "incorrect prefix"))
 		})
 	}
 }
@@ -110,14 +102,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 				indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-				assert.EqualValues(t, indicator, actual.Metric)
-				assert.EqualValues(t, 0, actual.Value)
-				assert.EqualValues(t, false, actual.Success)
-				assert.Contains(t, actual.Message, tc.expectedErrorMessage)
-			}
-
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, tc.getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, tc.getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, tc.expectedErrorMessage))
 		})
 	}
 }
@@ -208,14 +193,7 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		indicator: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 	})
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "could not find dimension name")
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "could not find dimension name"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -361,14 +339,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				indicator: tc.usqlQuery,
 			})
 
-			sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-				assert.EqualValues(t, indicator, actual.Metric)
-				assert.EqualValues(t, 0, actual.Value)
-				assert.EqualValues(t, false, actual.Success)
-				assert.Contains(t, actual.Message, tc.expectedErrorMessage)
-			}
-
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, tc.getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, tc.getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, tc.expectedErrorMessage))
 		})
 	}
 }
