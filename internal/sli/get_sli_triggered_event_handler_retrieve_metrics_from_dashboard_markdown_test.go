@@ -242,8 +242,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 				},
 			)
 
-			rClient := &uploadErrorResourceClientMock{t: t}
-			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
 		})
 	}
 }
@@ -291,8 +290,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownMultipleTilesErrors(t *testing.T) 
 				},
 			)
 
-			rClient := &uploadErrorResourceClientMock{t: t}
-			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
 		})
 	}
 }

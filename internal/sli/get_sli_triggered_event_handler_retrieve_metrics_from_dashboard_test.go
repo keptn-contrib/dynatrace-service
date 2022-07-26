@@ -132,14 +132,12 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
 		"./testdata/sli_via_dashboard_test/response_time_p95_200_0_results.json")
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultWarning, actual.Result)
 		assert.Contains(t, actual.Message, "Metrics API v2 returned zero data points")
 	}
 
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventDataWithDefaultStartAndEnd, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
 }
 
 // Retrieving a dashboard by ID works, but dashboard processing did not produce any results, so we expect an error

@@ -149,8 +149,7 @@ func TestRetrieveMetricsFromDashboard_TileTitleParsingErrors(t *testing.T) {
 					},
 				)
 
-				rClient := &uploadErrorResourceClientMock{t: t}
-				runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, dataExplorerTest.assertionsFunc)
+				runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, dataExplorerTest.assertionsFunc)
 			})
 		}
 	}

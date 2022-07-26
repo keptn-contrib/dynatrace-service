@@ -112,8 +112,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Funnel(t *testing.T) {
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_NoQuery tests that extracting SLIs from a USQL tile with no query does not work.
@@ -128,8 +127,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_NoQuery(t *testing.T) {
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_MissingScopes tests that extracting SLIs from a USQL tile with missing API token scopes does not work.
@@ -145,8 +143,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_MissingScopes(t *testing.T) {
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiColumns tests that extracting SLIs from a USQL tile with single value visualization type and a multi-column result produces a warning.
@@ -162,8 +159,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiColumns(t *testin
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiRows tests that extracting SLIs from a USQL tile with single value visualization type and a multi-row result produces a warning.
@@ -179,8 +175,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiRows(t *testing.T
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType tests that extracting SLIs from a USQL tile with single value visualization type with an invalid result type produces a warning.
@@ -196,8 +191,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType(t *t
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues tests that extracting SLIs from a USQL tile with single value visualization type with no values produces a warning.
@@ -213,8 +207,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues(t *testing.T)
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns tests that extracting SLIs from a USQL tile with table visualization type with not enough columns produces a warning.
@@ -230,8 +223,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns(t *testing.
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName tests that extracting SLIs from a USQL tile with table visualization type with non-string dimension names produces a warning.
@@ -248,8 +240,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName(t *test
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue tests that extracting SLIs from a USQL tile with table visualization type with non-numerical dimension values produces a warning.
@@ -266,8 +257,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *tes
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues tests that extracting SLIs from a USQL tile with table visualization type with no values produces a warning.
@@ -283,8 +273,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues(t *testing.T) {
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertThatDashboardTestIsCorrect(t, testUSQLTileGetSLIEventData, handler, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO tests that extracting an SLI and SLO from a USQL tile works as expected.
