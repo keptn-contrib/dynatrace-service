@@ -117,21 +117,21 @@ type clientFactoryMock struct {
 }
 
 func (m *clientFactoryMock) CreateEventClient() keptn.EventClientInterface {
-	m.t.Fatalf("SendCloudEvent() should not be needed in this mock!")
+	m.t.Fatalf("CreateEventClient() should not be needed in this mock!")
 	return nil
 }
 
 func (m *clientFactoryMock) CreateResourceClient() keptn.ResourceClientInterface {
-	m.t.Fatalf("SendCloudEvent() should not be needed in this mock!")
+	m.t.Fatalf("CreateResourceClient() should not be needed in this mock!")
 	return nil
 }
 
 func (m *clientFactoryMock) CreateServiceClient() keptn.ServiceClientInterface {
-	m.t.Fatalf("SendCloudEvent() should not be needed in this mock!")
+	m.t.Fatalf("CreateServiceClient() should not be needed in this mock!")
 	return nil
 }
 
 func (m *clientFactoryMock) CreateUniformClient() keptn.UniformClientInterface {
-	m.t.Fatalf("SendCloudEvent() should not be needed in this mock!")
+	m.t.Fatalf("CreateUniformClient() should not be needed in this mock!")
 	return nil
 }
