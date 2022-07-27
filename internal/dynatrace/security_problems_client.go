@@ -22,30 +22,30 @@ const (
 	securityProblemSelectorKey = "securityProblemSelector"
 )
 
-// SecurityProblemsV2ClientQueryParameters encapsulates the query parameters for the SecurityProblemsClient's GetTotalCountByQuery method.
-type SecurityProblemsV2ClientQueryParameters struct {
+// SecurityProblemsV2ClientQueryRequest encapsulates the request for the SecurityProblemsClient's GetTotalCountByQuery method.
+type SecurityProblemsV2ClientQueryRequest struct {
 	query     secpv2.Query
 	timeframe common.Timeframe
 }
 
-// NewSecurityProblemsV2ClientQueryParameters creates new SecurityProblemsV2ClientQueryParameters.
-func NewSecurityProblemsV2ClientQueryParameters(query secpv2.Query, timeframe common.Timeframe) SecurityProblemsV2ClientQueryParameters {
-	return SecurityProblemsV2ClientQueryParameters{
+// NewSecurityProblemsClientQueryRequest creates new SecurityProblemsV2ClientQueryRequest.
+func NewSecurityProblemsClientQueryRequest(query secpv2.Query, timeframe common.Timeframe) SecurityProblemsV2ClientQueryRequest {
+	return SecurityProblemsV2ClientQueryRequest{
 		query:     query,
 		timeframe: timeframe,
 	}
 }
 
-// encode encodes SecurityProblemsV2ClientQueryParameters into a URL-encoded string.
-func (q *SecurityProblemsV2ClientQueryParameters) encode() string {
+// RequestString encodes SecurityProblemsV2ClientQueryRequest into a request string.
+func (q *SecurityProblemsV2ClientQueryRequest) RequestString() string {
 	queryParameters := newQueryParameters()
 	if q.query.GetSecurityProblemSelector() != "" {
 		queryParameters.add(securityProblemSelectorKey, q.query.GetSecurityProblemSelector())
 	}
-
 	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
 	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
-	return queryParameters.encode()
+
+	return SecurityProblemsPath + "?" + queryParameters.encode()
 }
 
 type securityProblemQueryResult struct {
@@ -65,13 +65,13 @@ func NewSecurityProblemsClient(client ClientInterface) *SecurityProblemsClient {
 }
 
 // GetTotalCountByQuery calls the Dynatrace API to retrieve the total count of security problems for the given query and timeframe.
-func (sc *SecurityProblemsClient) GetTotalCountByQuery(ctx context.Context, parameters SecurityProblemsV2ClientQueryParameters) (int, error) {
-	err := NewTimeframeDelay(parameters.timeframe, SecurityProblemsV2RequiredDelay, SecurityProblemsV2MaximumWait).Wait(ctx)
+func (sc *SecurityProblemsClient) GetTotalCountByQuery(ctx context.Context, request SecurityProblemsV2ClientQueryRequest) (int, error) {
+	err := NewTimeframeDelay(request.timeframe, SecurityProblemsV2RequiredDelay, SecurityProblemsV2MaximumWait).Wait(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	body, err := sc.client.Get(ctx, SecurityProblemsPath+"?"+parameters.encode())
+	body, err := sc.client.Get(ctx, request.RequestString())
 	if err != nil {
 		return 0, err
 	}

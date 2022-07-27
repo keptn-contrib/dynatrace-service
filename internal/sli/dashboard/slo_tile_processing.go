@@ -49,7 +49,7 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) TileRe
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe))
 	if err != nil {
 		return newFailedTileResult(cleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
 	}

@@ -21,7 +21,7 @@ func TestProblemsV2Client_GetTotalCountByQuery(t *testing.T) {
 	assert.NoError(t, err)
 
 	problemQuery := problems.NewQuery("status(\"open\")", "")
-	totalProblemCount, err := NewProblemsV2Client(dtClient).GetTotalCountByQuery(context.TODO(), NewProblemsV2ClientQueryParameters(problemQuery, *timeframe))
+	totalProblemCount, err := NewProblemsV2Client(dtClient).GetTotalCountByQuery(context.TODO(), NewProblemsV2ClientQueryRequest(problemQuery, *timeframe))
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1, totalProblemCount)

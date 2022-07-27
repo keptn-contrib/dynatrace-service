@@ -59,7 +59,7 @@ func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) 
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "error creating USQL query: "+err.Error())}
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, dynatrace.NewUSQLClientQueryParameters(*query, p.timeframe))
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, dynatrace.NewUSQLClientQueryRequest(*query, p.timeframe))
 	if err != nil {
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "error querying User sessions API: "+err.Error())}
 	}

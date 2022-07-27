@@ -25,29 +25,30 @@ const (
 	endTimestampKey      = "endTimestamp"
 )
 
-// USQLClientQueryParameters encapsulates the query parameters for the USQLClient's GetByQuery method.
-type USQLClientQueryParameters struct {
+// USQLClientQueryRequest encapsulates the request for the USQLClient's GetByQuery method.
+type USQLClientQueryRequest struct {
 	query     usql.Query
 	timeframe common.Timeframe
 }
 
-// NewUSQLClientQueryParameters creates new USQLClientQueryParameters.
-func NewUSQLClientQueryParameters(query usql.Query, timeframe common.Timeframe) USQLClientQueryParameters {
-	return USQLClientQueryParameters{
+// NewUSQLClientQueryRequest creates new USQLClientQueryRequest.
+func NewUSQLClientQueryRequest(query usql.Query, timeframe common.Timeframe) USQLClientQueryRequest {
+	return USQLClientQueryRequest{
 		query:     query,
 		timeframe: timeframe,
 	}
 }
 
-// encode encodes USQLClientQueryParameters into a URL-encoded string.
-func (q *USQLClientQueryParameters) encode() string {
+// RequestString encodes USQLClientQueryRequest into a request string.
+func (q *USQLClientQueryRequest) RequestString() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(queryKey, q.query.GetQuery())
 	queryParameters.add(explainKey, "false")
 	queryParameters.add(addDeepLinkFieldsKey, "false")
 	queryParameters.add(startTimestampKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
 	queryParameters.add(endTimestampKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
-	return queryParameters.encode()
+
+	return USQLPath + "?" + queryParameters.encode()
 }
 
 // DTUSQLResult struct
@@ -68,13 +69,13 @@ func NewUSQLClient(client ClientInterface) *USQLClient {
 }
 
 // GetByQuery executes the passed USQL API query, validates that the call returns data and returns the data set.
-func (uc *USQLClient) GetByQuery(ctx context.Context, parameters USQLClientQueryParameters) (*DTUSQLResult, error) {
-	err := NewTimeframeDelay(parameters.timeframe, USQLRequiredDelay, USQLMaximumWait).Wait(ctx)
+func (uc *USQLClient) GetByQuery(ctx context.Context, request USQLClientQueryRequest) (*DTUSQLResult, error) {
+	err := NewTimeframeDelay(request.timeframe, USQLRequiredDelay, USQLMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := uc.client.Get(ctx, USQLPath+"?"+parameters.encode())
+	body, err := uc.client.Get(ctx, request.RequestString())
 	if err != nil {
 		return nil, err
 	}

@@ -21,29 +21,28 @@ const (
 	timeFrameKey = "timeFrame"
 )
 
-// SLOClientGetParameters encapsulates the parameters for the SLOClient's Get method.
-type SLOClientGetParameters struct {
+// SLOClientGetRequest encapsulates the request for the SLOClient's Get method.
+type SLOClientGetRequest struct {
 	sloID     string
 	timeframe common.Timeframe
 }
 
-// NewSLOClientGetParameters creates new SLOClientGetParameters.
-func NewSLOClientGetParameters(sloID string, timeframe common.Timeframe) SLOClientGetParameters {
-	return SLOClientGetParameters{
+// NewSLOClientGetRequest creates new SLOClientGetRequest.
+func NewSLOClientGetRequest(sloID string, timeframe common.Timeframe) SLOClientGetRequest {
+	return SLOClientGetRequest{
 		sloID:     sloID,
 		timeframe: timeframe,
 	}
 }
 
-// encode encodes MetricsClientQueryParameters into a URL-encoded string.
-func (q *SLOClientGetParameters) encode() string {
-
-	// TODO:  2022-01-26: Fix string composition and think about a better struct for REST parameters for all Dynatrace clients
+// RequestString encodes SLOClientGetRequest into a request string.
+func (q *SLOClientGetRequest) RequestString() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
 	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	queryParameters.add(timeFrameKey, "GTF")
-	return q.sloID + "?" + queryParameters.encode()
+
+	return SLOPath + "/" + q.sloID + "?" + queryParameters.encode()
 }
 
 type SLOResult struct {
@@ -66,13 +65,13 @@ func NewSLOClient(client ClientInterface) *SLOClient {
 
 // Get calls Dynatrace API to retrieve the values of the Dynatrace SLO for that timeframe.
 // It returns a SLOResult object on success, an error otherwise.
-func (c *SLOClient) Get(ctx context.Context, parameters SLOClientGetParameters) (*SLOResult, error) {
-	err := NewTimeframeDelay(parameters.timeframe, SLORequiredDelay, SLOMaximumWait).Wait(ctx)
+func (c *SLOClient) Get(ctx context.Context, request SLOClientGetRequest) (*SLOResult, error) {
+	err := NewTimeframeDelay(request.timeframe, SLORequiredDelay, SLOMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := c.client.Get(ctx, SLOPath+"/"+parameters.encode())
+	body, err := c.client.Get(ctx, request.RequestString())
 	if err != nil {
 		return nil, err
 	}

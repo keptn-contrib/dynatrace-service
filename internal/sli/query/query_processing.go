@@ -86,7 +86,7 @@ func (p *Processing) executeUSQLQuery(ctx context.Context, name string, usqlQuer
 		return result.NewFailedSLIResult(name, "error parsing USQL query: "+err.Error())
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, dynatrace.NewUSQLClientQueryParameters(query.GetQuery(), p.timeframe))
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, dynatrace.NewUSQLClientQueryRequest(query.GetQuery(), p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying User sessions API: "+err.Error())
 	}
@@ -164,7 +164,7 @@ func (p *Processing) executeSLOQuery(ctx context.Context, name string, sloQuery 
 		return result.NewFailedSLIResult(name, "error parsing SLO query: "+err.Error())
 	}
 
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying Service level objectives API: "+err.Error())
 	}
@@ -178,7 +178,7 @@ func (p *Processing) executeProblemQuery(ctx context.Context, name string, probl
 		return result.NewFailedSLIResult(name, "error parsing Problems v2 query: "+err.Error())
 	}
 
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, dynatrace.NewProblemsV2ClientQueryParameters(*query, p.timeframe))
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, dynatrace.NewProblemsV2ClientQueryRequest(*query, p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying Problems API v2: "+err.Error())
 	}
@@ -192,7 +192,7 @@ func (p *Processing) executeSecurityProblemQuery(ctx context.Context, name strin
 		return result.NewFailedSLIResult(name, "error parsing Security Problems v2 query: "+err.Error())
 	}
 
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(ctx, dynatrace.NewSecurityProblemsV2ClientQueryParameters(*query, p.timeframe))
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(ctx, dynatrace.NewSecurityProblemsClientQueryRequest(*query, p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying Security problems API: "+err.Error())
 	}
@@ -223,7 +223,7 @@ func (p *Processing) executeMetricsQuery(ctx context.Context, name string, query
 }
 
 func (p *Processing) processMetricsQuery(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
-	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryParameters(query, p.timeframe))
+	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryRequest(query, p.timeframe))
 	if err != nil {
 		return result.NewFailedSLIResult(name, "error querying Metrics API v2: "+err.Error())
 	}

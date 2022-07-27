@@ -25,22 +25,22 @@ const (
 	problemSelectorKey = "problemSelector"
 )
 
-// ProblemsV2ClientQueryParameters encapsulates the query parameters for the ProblemsV2Client's GetTotalCountByQuery method.
-type ProblemsV2ClientQueryParameters struct {
+// ProblemsV2ClientQueryRequest encapsulates the request for the ProblemsV2Client's GetTotalCountByQuery method.
+type ProblemsV2ClientQueryRequest struct {
 	query     problems.Query
 	timeframe common.Timeframe
 }
 
-// NewProblemsV2ClientQueryParameters creates new ProblemsV2ClientQueryParameters.
-func NewProblemsV2ClientQueryParameters(query problems.Query, timeframe common.Timeframe) ProblemsV2ClientQueryParameters {
-	return ProblemsV2ClientQueryParameters{
+// NewProblemsV2ClientQueryRequest creates new ProblemsV2ClientQueryRequest.
+func NewProblemsV2ClientQueryRequest(query problems.Query, timeframe common.Timeframe) ProblemsV2ClientQueryRequest {
+	return ProblemsV2ClientQueryRequest{
 		query:     query,
 		timeframe: timeframe,
 	}
 }
 
-// encode encodes ProblemsV2ClientQueryParameters into a URL-encoded string.
-func (q *ProblemsV2ClientQueryParameters) encode() string {
+// RequestString encodes ProblemsV2ClientQueryRequest into a request string.
+func (q *ProblemsV2ClientQueryRequest) RequestString() string {
 	queryParameters := newQueryParameters()
 	if q.query.GetProblemSelector() != "" {
 		queryParameters.add(problemSelectorKey, q.query.GetProblemSelector())
@@ -51,7 +51,8 @@ func (q *ProblemsV2ClientQueryParameters) encode() string {
 
 	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
 	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
-	return queryParameters.encode()
+
+	return ProblemsV2Path + "?" + queryParameters.encode()
 }
 
 // ProblemQueryResult result of query to /api/v2/problems
@@ -79,13 +80,13 @@ func NewProblemsV2Client(client ClientInterface) *ProblemsV2Client {
 }
 
 // GetTotalCountByQuery calls the Dynatrace V2 API to retrieve the total count of problems for a given query and timeframe.
-func (pc *ProblemsV2Client) GetTotalCountByQuery(ctx context.Context, parameters ProblemsV2ClientQueryParameters) (int, error) {
-	err := NewTimeframeDelay(parameters.timeframe, ProblemsV2RequiredDelay, ProblemsV2MaximumWait).Wait(ctx)
+func (pc *ProblemsV2Client) GetTotalCountByQuery(ctx context.Context, request ProblemsV2ClientQueryRequest) (int, error) {
+	err := NewTimeframeDelay(request.timeframe, ProblemsV2RequiredDelay, ProblemsV2MaximumWait).Wait(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	body, err := pc.client.Get(ctx, ProblemsV2Path+"?"+parameters.encode())
+	body, err := pc.client.Get(ctx, request.RequestString())
 	if err != nil {
 		return 0, err
 	}

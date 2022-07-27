@@ -29,22 +29,22 @@ const (
 	entitySelectorKey = "entitySelector"
 )
 
-// MetricsClientQueryParameters encapsulates the query parameters for the MetricsClient's GetByQuery method.
-type MetricsClientQueryParameters struct {
+// MetricsClientQueryRequest encapsulates the request for the MetricsClient's GetByQuery method.
+type MetricsClientQueryRequest struct {
 	query     metrics.Query
 	timeframe common.Timeframe
 }
 
-// NewMetricsClientQueryParameters creates new MetricsClientQueryParameters.
-func NewMetricsClientQueryParameters(query metrics.Query, timeframe common.Timeframe) MetricsClientQueryParameters {
-	return MetricsClientQueryParameters{
+// NewMetricsClientQueryRequest creates a new MetricsClientQueryRequest.
+func NewMetricsClientQueryRequest(query metrics.Query, timeframe common.Timeframe) MetricsClientQueryRequest {
+	return MetricsClientQueryRequest{
 		query:     query,
 		timeframe: timeframe,
 	}
 }
 
-// encode encodes MetricsClientQueryParameters into a URL-encoded string.
-func (q *MetricsClientQueryParameters) encode() string {
+// RequestString encodes MetricsClientQueryRequest into a request string.
+func (q *MetricsClientQueryRequest) RequestString() string {
 	queryParameters := newQueryParameters()
 	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
 	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
@@ -53,7 +53,8 @@ func (q *MetricsClientQueryParameters) encode() string {
 	if q.query.GetEntitySelector() != "" {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
 	}
-	return queryParameters.encode()
+
+	return MetricsQueryPath + "?" + queryParameters.encode()
 }
 
 // MetricDefinition defines the output of /metrics/<metricID>
@@ -125,13 +126,13 @@ func (mc *MetricsClient) GetByID(ctx context.Context, metricID string) (*MetricD
 }
 
 // GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set.
-func (mc *MetricsClient) GetByQuery(ctx context.Context, parameters MetricsClientQueryParameters) (*MetricsQueryResult, error) {
-	err := NewTimeframeDelay(parameters.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(ctx)
+func (mc *MetricsClient) GetByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricsQueryResult, error) {
+	err := NewTimeframeDelay(request.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := mc.client.Get(ctx, MetricsQueryPath+"?"+parameters.encode())
+	body, err := mc.client.Get(ctx, request.RequestString())
 	if err != nil {
 		return nil, err
 	}
