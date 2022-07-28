@@ -21,7 +21,9 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-single-sli-template.json"
 	const sliName = "static_slo_-_pass"
 
-	assertionFunc := createSuccessfulDashboardSLIResultAssertionsFunc(sliName, 95, "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4")
+	const expectedSLORequest = dynatrace.SLOPath + "/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000"
+
+	assertionFunc := createSuccessfulDashboardSLIResultAssertionsFunc(sliName, 95, expectedSLORequest)
 
 	expectedSLO := &keptnapi.SLO{
 		SLI:     sliName,
@@ -121,7 +123,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 					Markdown: markdownTest.markdown,
 				},
 			)
-			handler.AddExactFile(dynatrace.SLOPath+"/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000", "./testdata/dashboards/slo_tiles/passing_slo/slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
+			handler.AddExactFile(expectedSLORequest, "./testdata/dashboards/slo_tiles/passing_slo/slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
 			rClient := &uploadErrorResourceClientMock{t: t}
 			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, assertionFunc)
