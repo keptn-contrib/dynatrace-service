@@ -3,7 +3,6 @@ package sli
 import (
 	"testing"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -53,7 +52,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		indicator: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)",
 	})
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+	sliResultAssertionsFunc := func(t *testing.T, actual sliResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
@@ -84,7 +83,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		indicator: "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
+	sliResultAssertionsFunc := func(t *testing.T, actual sliResult) {
 		assert.EqualValues(t, indicator, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)

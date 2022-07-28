@@ -25,17 +25,17 @@ const testDashboardID = "12345678-1111-4444-8888-123456789012"
 
 var testGetSLIEventDataWithDefaultStartAndEnd = createTestGetSLIEventDataWithStartAndEnd("", "")
 
-var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
+var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *getSLIFinishedEventData) {
 	assert.EqualValues(t, keptnv2.ResultPass, data.Result)
 	assert.Empty(t, data.Message)
 }
 
-var getSLIFinishedEventWarningAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
+var getSLIFinishedEventWarningAssertionsFunc = func(t *testing.T, data *getSLIFinishedEventData) {
 	assert.EqualValues(t, keptnv2.ResultWarning, data.Result)
 	assert.NotEmpty(t, data.Message)
 }
 
-var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *keptnv2.GetSLIFinishedEventData) {
+var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *getSLIFinishedEventData) {
 	assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
 	assert.NotEmpty(t, data.Message)
 }
@@ -51,27 +51,27 @@ func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *g
 	}
 }
 
-func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, dashboardID)
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
-func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	runAndAssertDashboardTest(t, getSLIEventData, handler, rClient, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
-func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultsAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	runAndAssertDashboardTest(t, getSLIEventData, handler, &uploadErrorResourceClientMock{t: t}, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	rClient := &uploadErrorResourceClientMock{t: t}
 	runAndAssertDashboardTest(t, getSLIEventData, handler, rClient, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
 	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
 }
 
-func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
+func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
 	// we use the special mock for the resource client
 	// we do not want to query a dashboard, so we leave it empty
 	runTestAndAssertNoError(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, eventSenderClient, rClient, "")
@@ -86,13 +86,13 @@ func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Han
 	assert.NoError(t, eh.HandleEvent(context.Background(), context.Background()))
 }
 
-func assertCorrectGetSLIEvents(t *testing.T, events []*cloudevents.Event, getSLIFinishedEventAssertionsFunc func(*testing.T, *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(*testing.T, *keptnv2.SLIResult)) {
+func assertCorrectGetSLIEvents(t *testing.T, events []*cloudevents.Event, getSLIFinishedEventAssertionsFunc func(*testing.T, *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(*testing.T, sliResult)) {
 	assert.EqualValues(t, 2, len(events))
 
 	assert.EqualValues(t, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), events[0].Type())
 	assert.EqualValues(t, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), events[1].Type())
 
-	var data keptnv2.GetSLIFinishedEventData
+	var data getSLIFinishedEventData
 	err := json.Unmarshal(events[1].Data(), &data)
 	if err != nil {
 		t.Fatalf("could not parse event payload correctly: %s", err)
@@ -105,7 +105,7 @@ func assertCorrectGetSLIEvents(t *testing.T, events []*cloudevents.Event, getSLI
 	assertCorrectSLIResults(t, &data, sliResultAssertionsFuncs...)
 }
 
-func assertCorrectSLIResults(t *testing.T, getSLIFinishedEventData *keptnv2.GetSLIFinishedEventData, sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
+func assertCorrectSLIResults(t *testing.T, getSLIFinishedEventData *getSLIFinishedEventData, sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	if !assert.EqualValues(t, len(sliResultAssertionsFuncs), len(getSLIFinishedEventData.GetSLI.IndicatorValues), "number of assertions should match number of SLI indicator values") {
 		return
 	}
@@ -121,8 +121,8 @@ func createSLIAssertionsFunc(expectedMetric string, expectedDefinition string) f
 	}
 }
 
-func createSuccessfulDashboardSLIResultAssertionsFunc(expectedMetric string, expectedValue float64, expectedQuery string) func(t *testing.T, actual *keptnv2.SLIResult) {
-	return func(t *testing.T, actual *keptnv2.SLIResult) {
+func createSuccessfulDashboardSLIResultAssertionsFunc(expectedMetric string, expectedValue float64, expectedQuery string) func(t *testing.T, actual sliResult) {
+	return func(t *testing.T, actual sliResult) {
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
 		assert.EqualValues(t, expectedQuery, actual.Message, "Message should be expected query")
@@ -130,16 +130,16 @@ func createSuccessfulDashboardSLIResultAssertionsFunc(expectedMetric string, exp
 	}
 }
 
-func createSuccessfulFileSLIResultAssertionsFunc(expectedMetric string, expectedValue float64) func(t *testing.T, actual *keptnv2.SLIResult) {
-	return func(t *testing.T, actual *keptnv2.SLIResult) {
+func createSuccessfulFileSLIResultAssertionsFunc(expectedMetric string, expectedValue float64) func(t *testing.T, actual sliResult) {
+	return func(t *testing.T, actual sliResult) {
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
 		assert.True(t, actual.Success, "Indicator success should be true")
 	}
 }
 
-func createFailedSLIResultAssertionsFunc(expectedMetric string, expectedMessageSubstrings ...string) func(*testing.T, *keptnv2.SLIResult) {
-	return func(t *testing.T, actual *keptnv2.SLIResult) {
+func createFailedSLIResultAssertionsFunc(expectedMetric string, expectedMessageSubstrings ...string) func(*testing.T, sliResult) {
+	return func(t *testing.T, actual sliResult) {
 		assert.False(t, actual.Success, "Indicator success should be false")
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.Zero(t, actual.Value, "Indicator value should be zero")

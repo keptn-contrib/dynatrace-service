@@ -3,8 +3,6 @@ package sli
 import (
 	"testing"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
@@ -64,7 +62,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 		name                              string
 		usqlPrefix                        string
 		expectedErrorMessage              string
-		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData)
+		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData)
 	}{
 		{
 			name:                              "unknown type fails",
@@ -208,7 +206,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 		usqlQuery                         string
 		dataReturned                      string
 		expectedErrorMessage              string
-		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData)
+		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData)
 	}{
 		{
 			name:                              "dimension name is not allowed for single value result type",

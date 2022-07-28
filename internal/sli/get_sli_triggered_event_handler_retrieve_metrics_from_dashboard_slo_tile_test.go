@@ -6,7 +6,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +19,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.SLOPath+"/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1631862000000&timeFrame=GTF&to=1631865600000", testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("static_slo_-_pass", 95, "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4"),
 	}
 
@@ -52,7 +51,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_TileWithNoIDs(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("slo_tile_without_slo"),
 	}
 
@@ -71,7 +70,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_TileWithEmptyID(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("slo_without_id"),
 	}
 
@@ -91,7 +90,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_TileWithUnknownID(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.SLOPath+"/7d07efde-b714-3e6e-ad95-08490e2540c5?from=1631862000000&timeFrame=GTF&to=1631865600000", testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c5.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("slo_7d07efde-b714-3e6e-ad95-08490e2540c5"),
 	}
 

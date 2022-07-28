@@ -5,7 +5,6 @@ import (
 
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -27,7 +26,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName(t *
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CentityName%28%22%2Fservices%2FConfigurationService%2F+on+haproxy%3A80+%28opaque%29%22%29&from=1609459200000&metricSelector=builtin%3Aservice.errors.total.count%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_get_by_query_builtin_service_errors_total_count.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("any_errors", 5324, "entitySelector=type(SERVICE),entityName(\"/services/ConfigurationService/ on haproxy:80 (opaque)\")&metricSelector=builtin:service.errors.total.count:splitBy():avg:names"),
 	}
 
@@ -48,10 +47,10 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_FilterByDimension(t *testi
 	handler.AddExact(dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-FFD81F003E39B468%29&from=1571649084000&metricSelector=jmeter.usermetrics.transaction.meantime%3Aavg%3Anames&resolution=Inf&to=1571649085000",
 		testDataFolder+"metrics_get_by_query_jmeter.usermetrics_transaction_meantime.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		// include two function because two results are expected, but the values are not checked
-		func(t *testing.T, actual *keptnv2.SLIResult) {},
-		func(t *testing.T, actual *keptnv2.SLIResult) {},
+		func(t *testing.T, actual sliResult) {},
+		func(t *testing.T, actual sliResult) {},
 	}
 
 	getSLIEventData := createTestGetSLIEventDataWithStartAndEnd("2019-10-21T09:11:24Z", "2019-10-21T09:11:25Z")
@@ -95,7 +94,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgNoFilterBy(t *te
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_avg", 29.192929640271974, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
@@ -115,7 +114,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgCountNoFilterBy(t *
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Acount%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_count.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_count", 1060428.829, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():count:names"),
 	}
 
@@ -135,7 +134,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMaxNoFilterBy(t *te
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Amax%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_max.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_max", 45156.016, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():max:names"),
 	}
 
@@ -155,7 +154,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMedianNoFilterBy(t 
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Amedian%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_median.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_median", 1.4999996049587276, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():median:names"),
 	}
 
@@ -175,7 +174,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMinNoFilterBy(t *te
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Amin%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_min.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_min", 0, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():min:names"),
 	}
 
@@ -195,7 +194,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP10NoFilterBy(t *te
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2810%29%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_p10.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_p10", 1.0000048892760918, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():percentile(10):names"),
 	}
 
@@ -215,7 +214,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP75NoFilterBy(t *te
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2875%29%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_p75.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_p75", 3.2541557923119475, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():percentile(75):names"),
 	}
 
@@ -235,7 +234,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgp90NoFilterBy(t *te
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890%29%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_p90", 35.00000424055808, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():percentile(90):names"),
 	}
 
@@ -255,7 +254,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy(t *te
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Asum%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_sum.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_sum", 30957024193.513, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():sum:names"),
 	}
 
@@ -289,7 +288,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById(t *te
 		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-B67B3EC4C95E0FA7%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_jid", 136.52852484946527, "MV2;MicroSecond;entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 	}
 
@@ -309,7 +308,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag(t *t
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_keptn_manager", 18.533351299277793, "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptnmanager\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 	}
 
@@ -329,7 +328,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAt
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_svc_etw_db", 1.0706877628404, "MV2;MicroSecond;entitySelector=type(SERVICE),databaseName(\"EasyTravelWeatherCache\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 	}
 
@@ -349,7 +348,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimensio
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Reads+in+JourneyCollection%22%29%29%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_calc_service_dbcalls_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("svc_db_calls", 0.005373592355230029, "MV2;MicroSecond;metricSelector=calc:service.dbcalls:filter(EQ(\"Statement\",\"Reads in JourneyCollection\")):splitBy():avg:names"),
 	}
 
@@ -383,7 +382,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_NoManagementZone(
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("srt_no_filter_no_mz", 29.192929640271974, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
@@ -403,7 +402,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_NoManage
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22service_tag%22%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("srt_servicetag_filter_no_mz", 288.95723558253565, "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"service_tag\")&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
@@ -423,7 +422,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_WithCustomManagem
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CmzId%282311420533206603714%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("srt_no_filter_custom_mz", 7.045031103506126, "MV2;MicroSecond;entitySelector=type(SERVICE),mzId(2311420533206603714)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
@@ -443,7 +442,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCust
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%282311420533206603714%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("srt_servicetag_filter_custom_mz", 8.283891270010905, "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"service_tag\"),mzId(2311420533206603714)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
@@ -476,7 +475,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("srt", 29.192929640271974, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
@@ -508,7 +507,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-B67B3EC4C95E0FA7%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("rt_jid", 136.52852484946527, "MV2;MicroSecond;entitySelector=entityId(SERVICE-B67B3EC4C95E0FA7)&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 	}
 

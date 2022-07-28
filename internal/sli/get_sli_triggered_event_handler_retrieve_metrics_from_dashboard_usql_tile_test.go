@@ -7,7 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,7 +21,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_ColumnChart(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+browserFamily%2C+AVG%28useraction.visuallyCompleteTime%29%2C+AVG%28useraction.domCompleteTime%29%2C+AVG%28totalErrorCount%29+FROM+usersession+GROUP+BY+browserFamily+LIMIT+3&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_null", 492.6603364080304, "USQL;COLUMN_CHART;null;SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_aol_explorer", 500.2868314283638, "USQL;COLUMN_CHART;AOL Explorer;SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_acoo_browser", 500.5150319856381, "USQL;COLUMN_CHART;Acoo Browser;SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3"),
@@ -40,7 +39,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_PieChart(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+city%2C+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_null", 60154.328623114205, "USQL;PIE_CHART;null;SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_ashburn", 53567.040172786175, "USQL;PIE_CHART;Ashburn;SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_beijing", 65199.979558462794, "USQL;PIE_CHART;Beijing;SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3"),
@@ -58,7 +57,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric", 62731.12784806213, "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession"),
 	}
 
@@ -74,7 +73,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+continent%2C+totalErrorCount%2C+totalLicenseCreditCount%2C+userActionCount+FROM+usersession+limit+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_north_america", 1, "USQL;TABLE;North America;SELECT continent, totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession limit 2"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_europe", 2, "USQL;TABLE;Europe;SELECT continent, totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession limit 2"),
 	}
@@ -91,7 +90,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+continent%2C+userActionCount+FROM+usersession+limit+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_north_america", 1, "USQL;LINE_CHART;North America;SELECT continent, userActionCount FROM usersession limit 2"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_europe", 2, "USQL;LINE_CHART;Europe;SELECT continent, userActionCount FROM usersession limit 2"),
 	}
@@ -108,7 +107,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Funnel(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+FUNNEL%28useraction.name%3D%22AppStart+%28easyTravel%29%22+AS+%22Open+easytravel%22%2C+useraction.name+%3D+%22searchJourney%22+AS+%22Search+journey%22%2C+useraction.name+%3D+%22bookJourney%22+AS+%22Book+journey%22%29+FROM+usersession&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -123,7 +122,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_NoQuery(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -139,7 +138,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_MissingScopes(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExactError(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1631862000000", 403, testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -155,7 +154,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiColumns(t *testin
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+city%2C+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -171,7 +170,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiRows(t *testing.T
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -187,7 +186,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType(t *t
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+1&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -203,7 +202,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues(t *testing.T)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+1&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -219,7 +218,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns(t *testing.
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+3&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -235,7 +234,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName(t *test
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+totalErrorCount%2C+totalLicenseCreditCount%2C+userActionCount+FROM+usersession+LIMIT+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
@@ -252,7 +251,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *tes
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+totalErrorCount%2C+city+FROM+usersession+LIMIT+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
@@ -269,7 +268,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+totalErrorCount%2C+city+FROM+usersession+LIMIT+2&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
 	}
 
@@ -286,7 +285,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("average_session_duration", 62731.12784806213, "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession"),
 	}
 
@@ -316,7 +315,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_ExcludedTile(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1631865600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1631862000000", testDataFolder+"usql_result_table.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric", 62731.12784806213, "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession"),
 	}
 

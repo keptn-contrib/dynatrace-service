@@ -7,6 +7,31 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
+// getSLIFinishedEventData is a keptnv2.GetSLIFinishedEventData using the getSLIFinished type defined here.
+type getSLIFinishedEventData struct {
+	keptnv2.EventData
+	GetSLI getSLIFinished `json:"get-sli"`
+}
+
+// getSLIFinished is a keptnv2.GetSLIFinished using the sliResult type defined here.
+type getSLIFinished struct {
+	// Start defines the start timestamp
+	Start string `json:"start"`
+	// End defines the end timestamp
+	End string `json:"end"`
+	// IndicatorValues defines the fetched SLI values
+	IndicatorValues []sliResult `json:"indicatorValues,omitempty"`
+}
+
+// sliResult is a simplified keptnv2.SLIResult with an additional query field.
+type sliResult struct {
+	Metric  string  `json:"metric"`
+	Value   float64 `json:"value"`
+	Success bool    `json:"success"`
+	Message string  `json:"message,omitempty"`
+	Query   string  `json:"query,omitempty"`
+}
+
 // GetSLIStartedEventFactory is a factory for get-sli.started cloud events.
 type GetSLIStartedEventFactory struct {
 	event GetSLITriggeredAdapterInterface
@@ -79,7 +104,7 @@ func (f *GetSLIFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 		result = keptnv2.ResultFailed
 	}
 
-	getSLIFinishedEvent := keptnv2.GetSLIFinishedEventData{
+	getSLIFinishedEvent := getSLIFinishedEventData{
 		EventData: keptnv2.EventData{
 			Project: f.event.GetProject(),
 			Stage:   f.event.GetStage(),
@@ -89,8 +114,8 @@ func (f *GetSLIFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 			Result:  result,
 			Message: message,
 		},
-		GetSLI: keptnv2.GetSLIFinished{
-			IndicatorValues: getKeptnIndicatorValues(f.indicatorValues),
+		GetSLI: getSLIFinished{
+			IndicatorValues: convertIndicatorValues(f.indicatorValues),
 			Start:           f.event.GetSLIStart(),
 			End:             f.event.GetSLIEnd(),
 		},
@@ -99,12 +124,17 @@ func (f *GetSLIFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 	return adapter.NewCloudEventFactory(f.event, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), getSLIFinishedEvent).CreateCloudEvent()
 }
 
-// getKeptnIndicatorValues unwraps the indicator values to Keptn SLIResults.
-func getKeptnIndicatorValues(indicatorValues []result.SLIResult) []*keptnv2.SLIResult {
-	var keptnIndicatorValues []*keptnv2.SLIResult
+// convertIndicatorValues converts the indicator values to sliResults for serialization.
+func convertIndicatorValues(indicatorValues []result.SLIResult) []sliResult {
+	var convertedIndicatorValues []sliResult
 	for _, indicator := range indicatorValues {
-		keptnSLIResult := indicator.KeptnSLIResult()
-		keptnIndicatorValues = append(keptnIndicatorValues, &keptnSLIResult)
+		convertedIndicatorValues = append(convertedIndicatorValues,
+			sliResult{
+				Metric:  indicator.Metric(),
+				Value:   indicator.Value(),
+				Success: indicator.Success(),
+				Message: indicator.Message(),
+				Query:   indicator.Query()})
 	}
-	return keptnIndicatorValues
+	return convertedIndicatorValues
 }

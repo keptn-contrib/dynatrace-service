@@ -3,8 +3,6 @@ package sli
 import (
 	"testing"
 
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
@@ -37,7 +35,7 @@ func TestRetrieveMetricsFromDashboard_TileTitleParsingErrors(t *testing.T) {
 
 	tests := []struct {
 		tileTitle      string
-		assertionsFunc func(*testing.T, *keptnv2.SLIResult)
+		assertionsFunc func(*testing.T, sliResult)
 	}{
 		{
 			tileTitle:      "empty sli name;sli=;pass=<500;pass=<600,<+5%;warning=<800,<+10%;weight=10;key=true;",

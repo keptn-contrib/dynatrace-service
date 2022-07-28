@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -22,7 +21,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.ProblemsV2Path+"?from=1631862000000&problemSelector=status%28%22open%22%29&to=1631865600000", testDataFolder+"problems_status_open.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("problems", 0, "PV2;problemSelector=status(\"open\")"),
 	}
 
@@ -55,7 +54,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.ProblemsV2Path+"?from=1631862000000&problemSelector=status%28%22open%22%29%2CmanagementZoneIds%289130632296508575249%29&to=1631865600000", testDataFolder+"problems_status_open.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("problems", 10, "PV2;problemSelector=status(\"open\"),managementZoneIds(9130632296508575249)"),
 	}
 
@@ -89,7 +88,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_MissingScopes(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExactError(dynatrace.ProblemsV2Path+"?from=1631862000000&problemSelector=status%28%22open%22%29&to=1631865600000", 403, testDataFolder+"problems_missing_scope.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("problems"),
 	}
 

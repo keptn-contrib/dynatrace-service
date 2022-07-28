@@ -6,7 +6,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,7 +21,7 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *t
 		dynatrace.MetricsQueryPath+"?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("srt", 29.192929640271974, "MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
@@ -55,7 +54,7 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("response_time"),
 	}
 
@@ -91,7 +90,7 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 		dynatrace.MetricsQueryPath+"?entitySelector=entityId%28SERVICE-C33B8A4C73748469%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000",
 		testDataFolder+"metrics_query_builtin_service_response_time.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("srt_service", "entitySelector=entityId(SERVICE-C33B8A4C73748469)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 

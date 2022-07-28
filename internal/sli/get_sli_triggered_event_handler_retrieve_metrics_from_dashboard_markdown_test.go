@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -159,7 +158,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 	tests := []struct {
 		name           string
 		markdown       string
-		assertionsFunc func(*testing.T, *keptnv2.SLIResult)
+		assertionsFunc func(*testing.T, sliResult)
 	}{
 		{
 			name:           "unknown compare with score function",
@@ -264,7 +263,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownMultipleTilesErrors(t *testing.T) 
 		name           string
 		firstMarkdown  string
 		secondMarkdown string
-		assertionsFunc func(*testing.T, *keptnv2.SLIResult)
+		assertionsFunc func(*testing.T, sliResult)
 	}{
 		{
 			name:           "union does not overlap",

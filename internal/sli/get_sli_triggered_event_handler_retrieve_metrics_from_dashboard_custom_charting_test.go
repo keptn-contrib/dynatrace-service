@@ -5,7 +5,6 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 var testCustomChartingGetSLIEventData = createTestGetSLIEventDataWithStartAndEnd("2021-09-17T07:00:00.000Z", "2021-09-17T08:00:00.000Z")
@@ -23,7 +22,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE_METHOD%29%2CfromRelationships.isServiceMethodOfService%28type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29%29&from=1631862000000&metricSelector=builtin%3Aservice.keyRequest.totalProcessingTime%3AsplitBy%28%22dt.entity.service_method%22%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_get_by_query_builtin_servicekeyrequest_totalprocessingtime.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("processing_time_findlocations", 18.22756816390859, "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\"))&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("processing_time_getjourneybyid", 2.8606086572438163, "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\"))&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("processing_time_getjourneypagebytenant", 15.964052631578946, "MV2;MicroSecond;entitySelector=type(SERVICE_METHOD),fromRelationships.isServiceMethodOfService(type(SERVICE),tag(\"keptnmanager\"))&metricSelector=builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names"),
@@ -70,7 +69,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *t
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("service_response_time", 29.31312208863131, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
@@ -103,7 +102,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_easytravelservice", 132.27823461853978, "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 		createSuccessfulDashboardSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_journeyservice", 20.256493055555555, "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 	}
@@ -124,7 +123,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySp
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2CentityId%28%22SERVICE-F2455557EF67362B%22%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_specificentity", 20.256493055555555, "MV2;MicroSecond;entitySelector=type(SERVICE),entityId(\"SERVICE-F2455557EF67362B\")&metricSelector=builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names"),
 	}
 
@@ -155,7 +154,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_WorkerProcessCou
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1631862000000&metricSelector=builtin%3Atech.generic.processCount%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_tech_generic_processCount_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("proc_count", 48.63491666452461, "entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.processCount:splitBy():avg:names"),
 	}
 
@@ -173,7 +172,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP90(
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890.000000%29%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("svc_rt_p90", 35.00002454848894, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(90.000000):names"),
 	}
 
@@ -191,7 +190,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP50(
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2850.000000%29%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_service_response_time_p50.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("svc_rt_p50", 1.500151733421778, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(50.000000):names"),
 	}
 
@@ -209,7 +208,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1631862000000&metricSelector=builtin%3Atech.generic.mem.workingSetSize%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_tech_generic_mem_workingsetsize_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("process_memory", 1437907.0484235594, "MV2;Byte;entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.mem.workingSetSize:splitBy():avg:names"),
 	}
 
@@ -227,7 +226,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessCPUAvg(t 
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28PROCESS_GROUP_INSTANCE%29&from=1631862000000&metricSelector=builtin%3Atech.generic.cpu.usage%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_tech_generic_cpu_usage_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("process_cpu", 14.223367878298156, "entitySelector=type(PROCESS_GROUP_INSTANCE)&metricSelector=builtin:tech.generic.cpu.usage:splitBy():avg:names"),
 	}
 
@@ -245,7 +244,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_Throughput(t *te
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.requestCount.total%3AsplitBy%28%29%3Avalue%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_service_requestcount_total_value.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("svc_tp_min", 68044716, "entitySelector=type(SERVICE)&metricSelector=builtin:service.requestCount.total:splitBy():value:names"),
 	}
 
@@ -263,7 +262,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostCPUUsageAvg(
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28HOST%29&from=1631862000000&metricSelector=builtin%3Ahost.cpu.usage%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_host_cpu_usage_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("host_cpu", 20.309976061722214, "entitySelector=type(HOST)&metricSelector=builtin:host.cpu.usage:splitBy():avg:names"),
 	}
 
@@ -281,7 +280,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostMemoryUsageA
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28HOST%29&from=1631862000000&metricSelector=builtin%3Ahost.mem.usage%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_host_mem_usage_avg.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("host_mem", 45.443796324058994, "entitySelector=type(HOST)&metricSelector=builtin:host.mem.usage:splitBy():avg:names"),
 	}
 
@@ -299,7 +298,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostDiskQueueLen
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28HOST%29&from=1631862000000&metricSelector=builtin%3Ahost.disk.queueLength%3AsplitBy%28%29%3Amax%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_host_disk_queuelength_max.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("host_disk_queue", 100, "entitySelector=type(HOST)&metricSelector=builtin:host.disk.queueLength:splitBy():max:names"),
 	}
 
@@ -317,7 +316,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_NonDbChildCallCo
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.nonDbChildCallCount%3AsplitBy%28%29%3Avalue%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_query_builtin_service_nondbchildcallcount.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("svc2svc_calls", 13657068, "entitySelector=type(SERVICE)&metricSelector=builtin:service.nonDbChildCallCount:splitBy():value:names"),
 	}
 
@@ -337,7 +336,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1631862000000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1631865600000",
 		testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual *keptnv2.SLIResult){
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulDashboardSLIResultAssertionsFunc("service_response_time", 29.31312208863131, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 

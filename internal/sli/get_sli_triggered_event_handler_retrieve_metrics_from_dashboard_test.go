@@ -26,7 +26,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 	testConfigs := []struct {
 		name                    string
 		resourceClientMock      resourceClientInterface
-		sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)
+		sliResultAssertionsFunc func(t *testing.T, actual sliResult)
 		shouldFail              bool
 	}{
 		{
@@ -60,7 +60,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
 
-			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
+			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 				if tc.shouldFail {
 					assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 					assert.Contains(t, actual.Message, "upload failed")
@@ -132,7 +132,7 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
 		"./testdata/sli_via_dashboard_test/response_time_p95_200_0_results.json")
 
-	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
+	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultWarning, actual.Result)
 		assert.Contains(t, actual.Message, "Metrics API v2 returned zero data points")
 	}
@@ -153,7 +153,7 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 	// sli and slo should not happen, otherwise we fail
 	rClient := &uploadWillFailResourceClientMock{t: t}
 
-	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
+	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 		assert.Contains(t, actual.Message, "any SLI results")
 	}

@@ -1,7 +1,5 @@
 package result
 
-import keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-
 // IndicatorResultType represents the type of indicator result, i.e. success, warning or fail.
 type IndicatorResultType string
 
@@ -18,7 +16,11 @@ const (
 
 // SLIResult encapsulates a Keptn SLIResult with an additional result of success, warning or fail.
 type SLIResult struct {
-	keptnResult     keptnv2.SLIResult
+	metric          string
+	value           float64
+	success         bool
+	message         string
+	query           string
 	indicatorResult IndicatorResultType
 }
 
@@ -30,12 +32,10 @@ func NewSuccessfulSLIResult(metric string, value float64) SLIResult {
 // NewSuccessfulSLIResult creates a new SLIResult with a message and a result of success.
 func NewSuccessfulSLIResultWithMessage(metric string, value float64, message string) SLIResult {
 	return SLIResult{
-		keptnResult: keptnv2.SLIResult{
-			Metric:  metric,
-			Success: true,
-			Value:   value,
-			Message: message,
-		},
+		metric:          metric,
+		success:         true,
+		value:           value,
+		message:         message,
 		indicatorResult: IndicatorResultSuccessful,
 	}
 }
@@ -43,11 +43,9 @@ func NewSuccessfulSLIResultWithMessage(metric string, value float64, message str
 // NewWarningSLIResult creates a new SLIResult with result of warning.
 func NewWarningSLIResult(metric string, message string) SLIResult {
 	return SLIResult{
-		keptnResult: keptnv2.SLIResult{
-			Metric:  metric,
-			Success: false,
-			Message: message,
-		},
+		metric:          metric,
+		success:         false,
+		message:         message,
 		indicatorResult: IndicatorResultWarning,
 	}
 }
@@ -55,38 +53,36 @@ func NewWarningSLIResult(metric string, message string) SLIResult {
 // NewFailedSLIResult creates a new SLIResult with result of fail.
 func NewFailedSLIResult(metric string, message string) SLIResult {
 	return SLIResult{
-		keptnResult: keptnv2.SLIResult{
-			Metric:  metric,
-			Success: false,
-			Message: message,
-		},
+		metric:          metric,
+		success:         false,
+		message:         message,
 		indicatorResult: IndicatorResultFailed,
 	}
 }
 
 // Metric gets the metric.
 func (r SLIResult) Metric() string {
-	return r.keptnResult.Metric
+	return r.metric
 }
 
 // Value gets the value.
 func (r SLIResult) Value() float64 {
-	return r.keptnResult.Value
+	return r.value
 }
 
 // Success gets the success.
 func (r SLIResult) Success() bool {
-	return r.keptnResult.Success
+	return r.success
 }
 
 // Message gets the message.
 func (r SLIResult) Message() string {
-	return r.keptnResult.Message
+	return r.message
 }
 
-// KeptnSLIResult gets the wrapped Keptn SLIResult.
-func (r SLIResult) KeptnSLIResult() keptnv2.SLIResult {
-	return r.keptnResult
+// Query gets the query.
+func (r SLIResult) Query() string {
+	return r.query
 }
 
 // IndicatorResult gets the indicator result, i.e. pass, warning or fail.

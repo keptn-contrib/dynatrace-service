@@ -97,7 +97,7 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 			// sli and slo upload works
 			rClient := &uploadErrorResourceClientMock{t: t}
 
-			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
+			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 				assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 				assert.Contains(t, actual.Message, tc.def.dashboardID)
 				assert.Contains(t, actual.Message, strconv.Itoa(tc.def.errorCode))
