@@ -6,7 +6,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/problemsv2"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
@@ -47,10 +46,11 @@ func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, quer
 		KeySLI: true,
 	}
 
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, dynatrace.NewProblemsV2ClientQueryRequest(query, p.timeframe))
+	request := dynatrace.NewProblemsV2ClientQueryRequest(query, p.timeframe)
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, request)
 	if err != nil {
-		return newFailedTileResultFromSLODefinition(sloDefinition, "error querying Problems API v2: "+err.Error())
+		return newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "error querying Problems API v2: "+err.Error())
 	}
 
-	return newSuccessfulTileResult(sloDefinition, float64(totalProblemCount), problemsv2.NewQueryProducer(query).Produce())
+	return newSuccessfulTileResult(sloDefinition, float64(totalProblemCount), request.RequestString())
 }
