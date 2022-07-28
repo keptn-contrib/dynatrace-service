@@ -125,7 +125,7 @@ func createSuccessfulDashboardSLIResultAssertionsFunc(expectedMetric string, exp
 	return func(t *testing.T, actual sliResult) {
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
-		assert.EqualValues(t, expectedQuery, actual.Message, "Message should be expected query")
+		assert.EqualValues(t, expectedQuery, actual.Query, "Indicator query should match")
 		assert.True(t, actual.Success, "Indicator success should be true")
 	}
 }
@@ -143,6 +143,20 @@ func createFailedSLIResultAssertionsFunc(expectedMetric string, expectedMessageS
 		assert.False(t, actual.Success, "Indicator success should be false")
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.Zero(t, actual.Value, "Indicator value should be zero")
+		assert.Empty(t, actual.Query, "Indicator query should be empty")
+
+		for _, expectedSubstring := range expectedMessageSubstrings {
+			assert.Contains(t, actual.Message, expectedSubstring, "all substrings should be contained in message")
+		}
+	}
+}
+
+func createFailedSLIResultWithQueryAssertionsFunc(expectedMetric string, expectedQuery string, expectedMessageSubstrings ...string) func(*testing.T, sliResult) {
+	return func(t *testing.T, actual sliResult) {
+		assert.False(t, actual.Success, "Indicator success should be false")
+		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
+		assert.Zero(t, actual.Value, "Indicator value should be zero")
+		assert.EqualValues(t, expectedQuery, actual.Query, "Indicator query should match")
 
 		for _, expectedSubstring := range expectedMessageSubstrings {
 			assert.Contains(t, actual.Message, expectedSubstring, "all substrings should be contained in message")

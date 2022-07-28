@@ -91,7 +91,7 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 		testDataFolder+"metrics_query_builtin_service_response_time.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createFailedSLIResultAssertionsFunc("srt_service", "entitySelector=entityId(SERVICE-C33B8A4C73748469)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
+		createFailedSLIResultWithQueryAssertionsFunc("srt_service", "entitySelector=entityId(SERVICE-C33B8A4C73748469)&metricSelector=builtin:service.response.time:splitBy():avg:names"),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {

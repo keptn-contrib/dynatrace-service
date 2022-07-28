@@ -26,36 +26,48 @@ type SLIResult struct {
 
 // NewSuccessfulSLIResult creates a new SLIResult with result of success.
 func NewSuccessfulSLIResult(metric string, value float64) SLIResult {
-	return NewSuccessfulSLIResultWithMessage(metric, value, "")
+	return NewSuccessfulSLIResultWithQuery(metric, value, "")
 }
 
-// NewSuccessfulSLIResult creates a new SLIResult with a message and a result of success.
-func NewSuccessfulSLIResultWithMessage(metric string, value float64, message string) SLIResult {
+// NewSuccessfulSLIResultWithQuery creates a new SLIResult with a query and a result of success.
+func NewSuccessfulSLIResultWithQuery(metric string, value float64, query string) SLIResult {
 	return SLIResult{
 		metric:          metric,
 		success:         true,
 		value:           value,
-		message:         message,
+		query:           query,
 		indicatorResult: IndicatorResultSuccessful,
 	}
 }
 
 // NewWarningSLIResult creates a new SLIResult with result of warning.
 func NewWarningSLIResult(metric string, message string) SLIResult {
+	return NewWarningSLIResultWithQuery(metric, message, "")
+}
+
+// NewWarningSLIResultWithQuery creates a new SLIResult with a query and a result of warning.
+func NewWarningSLIResultWithQuery(metric string, message string, query string) SLIResult {
 	return SLIResult{
 		metric:          metric,
 		success:         false,
 		message:         message,
+		query:           query,
 		indicatorResult: IndicatorResultWarning,
 	}
 }
 
 // NewFailedSLIResult creates a new SLIResult with result of fail.
 func NewFailedSLIResult(metric string, message string) SLIResult {
+	return NewFailedSLIResultWithQuery(metric, message, "")
+}
+
+// NewFailedSLIResultWithQuery creates a new SLIResult with a query and a result of fail.
+func NewFailedSLIResultWithQuery(metric string, message string, query string) SLIResult {
 	return SLIResult{
 		metric:          metric,
 		success:         false,
 		message:         message,
+		query:           query,
 		indicatorResult: IndicatorResultFailed,
 	}
 }

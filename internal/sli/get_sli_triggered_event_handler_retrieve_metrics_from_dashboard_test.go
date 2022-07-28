@@ -137,7 +137,7 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 		assert.Contains(t, actual.Message, "Metrics API v2 returned zero data points")
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventDataWithDefaultStartAndEnd, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventDataWithDefaultStartAndEnd, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(indicator, "entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(95.000000):names"))
 }
 
 // Retrieving a dashboard by ID works, but dashboard processing did not produce any results, so we expect an error
