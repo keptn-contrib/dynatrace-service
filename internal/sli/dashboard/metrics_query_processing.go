@@ -5,10 +5,7 @@ import (
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
-	v1metrics "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/metrics"
-	v1mv2 "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/mv2"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 )
@@ -27,21 +24,22 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents) []TileResult {
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryRequest(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe))
+	request := dynatrace.NewMetricsClientQueryRequest(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe)
+	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(ctx, request)
 
 	// ERROR-CASE: Metric API return no values or an error
 	// we could not query data - so - we return the error back as part of our SLIResults
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "error querying Metrics API v2: "+err.Error())}
+		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "error querying Metrics API v2: "+err.Error())}
 	}
 
 	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
 	if len(queryResult.Result) == 0 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero results")}
+		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero results")}
 	}
 
 	if len(queryResult.Result) > 1 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned more than one result")}
+		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned more than one result")}
 	}
 
 	// SUCCESS-CASE: we retrieved values - now create an indicator result for every dimension
@@ -53,15 +51,15 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 
 	if len(singleResult.Data) == 0 {
 		if len(singleResult.Warnings) > 0 {
-			return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))}
+			return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))}
 		}
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, v1metrics.NewQueryProducer(metricQueryComponents.metricsQuery).Produce(), "Metrics API v2 returned zero data points")}
+		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero data points")}
 	}
 
-	return r.processSingleResult(noOfDimensionsInChart, sloDefinition, metricQueryComponents, singleResult.Data)
+	return r.processSingleResult(noOfDimensionsInChart, sloDefinition, metricQueryComponents, singleResult.Data, request)
 }
 
-func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents, singleResultData []dynatrace.MetricQueryResultNumbers) []TileResult {
+func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents, singleResultData []dynatrace.MetricQueryResultNumbers, request dynatrace.MetricsClientQueryRequest) []TileResult {
 	var tileResults []TileResult
 	for _, singleDataEntry := range singleResultData {
 		//
@@ -114,21 +112,11 @@ func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, 
 				Warning:     sloDefinition.Warning,
 			},
 			value,
-			getMetricsQueryString(metricQueryComponents.metricUnit, metricQueryComponents.metricsQuery),
+			request.RequestString(),
 		)
 
 		tileResults = append(tileResults, tileResult)
 	}
 
 	return tileResults
-}
-
-// getMetricsQueryString gets the query string for the metrics query, either MV2 or normal.
-func getMetricsQueryString(unit string, query metrics.Query) string {
-	mv2Query, err := v1mv2.NewQuery(unit, query)
-	if err == nil {
-		return v1mv2.NewQueryProducer(*mv2Query).Produce()
-	}
-
-	return v1metrics.NewQueryProducer(query).Produce()
 }

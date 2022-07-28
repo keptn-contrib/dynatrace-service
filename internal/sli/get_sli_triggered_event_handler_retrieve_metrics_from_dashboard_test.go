@@ -20,6 +20,7 @@ import (
 //   * all processing and SLI result retrieval works
 //   * if an upload of either SLO, SLI or dashboard file fails, then the test must fail
 func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
+	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000"
 
 	failureAssertionsFunc := createFailedSLIResultAssertionsFunc(indicator)
 
@@ -44,7 +45,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 			resourceClientMock: &uploadErrorResourceClientMock{
 				t: t,
 			},
-			sliResultAssertionsFunc: createSuccessfulDashboardSLIResultAssertionsFunc(indicator, 12.439619479902443, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(95.000000):names"),
+			sliResultAssertionsFunc: createSuccessfulDashboardSLIResultAssertionsFunc(indicator, 12.439619479902443, expectedMetricsRequest),
 			shouldFail:              false,
 		},
 	}
@@ -52,9 +53,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
-		"./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
 
 	for _, testConfig := range testConfigs {
 		tc := testConfig
@@ -83,19 +82,19 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 //   * we will not fallback to processing the stored SLI files, but process the dashboard again
 func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 
+	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000"
+
 	// we need metrics definition, because we will be retrieving metrics from dashboard
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli_parse_only_on_change.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
-		"./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
 
 	// sli and slo upload works
 	rClient := &uploadErrorResourceClientMock{t: t}
 
 	// value is divided by 1000 from dynatrace API result!
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulDashboardSLIResultAssertionsFunc(indicator, 12.439619479902443, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(95.000000):names"))
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulDashboardSLIResultAssertionsFunc(indicator, 12.439619479902443, expectedMetricsRequest))
 	assert.True(t, rClient.slosUploaded)
 }
 
@@ -125,19 +124,19 @@ func (m *uploadWillFailResourceClientMock) UploadSLOs(_ context.Context, _ strin
 //   * all processing works, but SLI result retrieval failed with 0 results (no data available)
 //   * therefore SLI and SLO should be empty and an upload of either SLO or SLI should fail the test
 func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
+	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000"
+
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000",
-		"./testdata/sli_via_dashboard_test/response_time_p95_200_0_results.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/sli_via_dashboard_test/response_time_p95_200_0_results.json")
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultWarning, actual.Result)
 		assert.Contains(t, actual.Message, "Metrics API v2 returned zero data points")
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventDataWithDefaultStartAndEnd, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(indicator, "entitySelector=type(SERVICE)&metricSelector=builtin:service.response.time:splitBy():percentile(95.000000):names"))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventDataWithDefaultStartAndEnd, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(indicator, expectedMetricsRequest))
 }
 
 // Retrieving a dashboard by ID works, but dashboard processing did not produce any results, so we expect an error
