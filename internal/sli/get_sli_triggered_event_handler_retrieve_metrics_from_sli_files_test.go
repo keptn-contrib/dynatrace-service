@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -73,4 +74,22 @@ func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 	})
 
 	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorSecurityProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 103, securityProblemsRequest))
+}
+
+// TestRetrieveMetricsFromFile_ProblemsV2 tests the success case for file-based ProblemsV2 SLIs.
+func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
+	const (
+		problemsRequest           = dynatrace.ProblemsV2Path + "?from=1632834999000&problemSelector=status%28%22open%22%29&to=1632835299000"
+		testDataFolder            = "./testdata/sli_files/pv2_success/"
+		testIndicatorProblemCount = "problem_count"
+	)
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(problemsRequest, testDataFolder+"problems_status_open.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
+	})
+
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 0, problemsRequest))
 }

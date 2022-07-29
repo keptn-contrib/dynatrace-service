@@ -178,12 +178,13 @@ func (p *Processing) executeProblemQuery(ctx context.Context, name string, probl
 		return result.NewFailedSLIResult(name, "error parsing Problems v2 query: "+err.Error())
 	}
 
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, dynatrace.NewProblemsV2ClientQueryRequest(*query, p.timeframe))
+	request := dynatrace.NewProblemsV2ClientQueryRequest(*query, p.timeframe)
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying Problems API v2: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying Problems API v2: "+err.Error(), request.RequestString())
 	}
 
-	return result.NewSuccessfulSLIResult(name, float64(totalProblemCount))
+	return result.NewSuccessfulSLIResultWithQuery(name, float64(totalProblemCount), request.RequestString())
 }
 
 func (p *Processing) executeSecurityProblemQuery(ctx context.Context, name string, queryString string) result.SLIResult {
