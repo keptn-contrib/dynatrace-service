@@ -164,12 +164,13 @@ func (p *Processing) executeSLOQuery(ctx context.Context, name string, sloQuery 
 		return result.NewFailedSLIResult(name, "error parsing SLO query: "+err.Error())
 	}
 
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe))
+	request := dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe)
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying Service level objectives API: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying Service level objectives API: "+err.Error(), request.RequestString())
 	}
 
-	return result.NewSuccessfulSLIResult(name, sloResult.EvaluatedPercentage)
+	return result.NewSuccessfulSLIResultWithQuery(name, sloResult.EvaluatedPercentage, request.RequestString())
 }
 
 func (p *Processing) executeProblemQuery(ctx context.Context, name string, problemsQuery string) result.SLIResult {

@@ -93,3 +93,21 @@ func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 
 	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 0, problemsRequest))
 }
+
+// TestRetrieveMetricsFromFile_SLO tests the success case for file-based SLO SLIs.
+func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
+	const (
+		sloRequest            = dynatrace.SLOPath + "/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1632834999000&timeFrame=GTF&to=1632835299000"
+		testDataFolder        = "./testdata/sli_files/slo_success/"
+		testIndicatorSLOValue = "slo_value"
+	)
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(sloRequest, testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorSLOValue: "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4",
+	})
+
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorSLOValue, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, sloRequest))
+}
