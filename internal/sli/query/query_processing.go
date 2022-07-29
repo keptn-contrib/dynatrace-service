@@ -223,36 +223,37 @@ func (p *Processing) executeMetricsQuery(ctx context.Context, name string, query
 }
 
 func (p *Processing) processMetricsQuery(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
-	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryRequest(query, p.timeframe))
+	request := dynatrace.NewMetricsClientQueryRequest(query, p.timeframe)
+	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying Metrics API v2: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying Metrics API v2: "+err.Error(), request.RequestString())
 	}
 
 	// TODO 2021-10-13: Collect and log all warnings
 
 	// TODO 2021-10-13: Check if having a query result with zero results is even plausable
 	if len(res.Result) == 0 {
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned zero results")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero results", request.RequestString())
 	}
 
 	if len(res.Result) > 1 {
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned more than one result")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one result", request.RequestString())
 	}
 
 	singleResult := res.Result[0]
 
 	if len(singleResult.Data) == 0 {
 		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResult(name, "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))
+			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
 		}
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned zero data points")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data points", request.RequestString())
 	}
 
 	if len(singleResult.Data) > 1 {
 		if len(singleResult.Warnings) > 0 {
-			return result.NewFailedSLIResult(name, "Metrics API v2 returned more than one data point. Warnings: "+strings.Join(singleResult.Warnings, ", "))
+			return result.NewFailedSLIResultWithQuery(name, "Metrics API v2 returned more than one data point. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
 		}
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned more than one data point")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point", request.RequestString())
 	}
 
 	singleDataPoint := singleResult.Data[0]
@@ -260,18 +261,18 @@ func (p *Processing) processMetricsQuery(ctx context.Context, name string, query
 	// TODO 2021-10-13: Check if having a query result with zero values is even plausable
 	if len(singleDataPoint.Values) == 0 {
 		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResult(name, "Metrics API v2 returned zero data point values. Warnings: "+strings.Join(singleResult.Warnings, ", "))
+			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data point values. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
 		}
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned zero data point values")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data point values", request.RequestString())
 	}
 
 	if len(singleDataPoint.Values) > 1 {
 		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResult(name, "Metrics API v2 returned more than one data point value. Warnings: "+strings.Join(singleResult.Warnings, ", "))
+			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point value. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
 		}
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned more than one data point value")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point value", request.RequestString())
 	}
 
 	singleValue := singleDataPoint.Values[0]
-	return result.NewSuccessfulSLIResult(name, unit.ScaleData(query.GetMetricSelector(), metricUnit, singleValue))
+	return result.NewSuccessfulSLIResultWithQuery(name, unit.ScaleData(query.GetMetricSelector(), metricUnit, singleValue), request.RequestString())
 }

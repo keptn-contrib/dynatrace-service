@@ -141,6 +141,7 @@ func createSuccessfulFileSLIResultAssertionsFunc(expectedMetric string, expected
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
 		assert.True(t, actual.Success, "Indicator success should be true")
+		assert.Empty(t, actual.Query)
 	}
 }
 

@@ -16,18 +16,18 @@ import (
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 0 results and a warning
 //   - e.g. misspelled dimension key in merge transformation
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsAndWarning(t *testing.T) {
+	expectedMetricsRequest := dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.services%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000"
+
 	// error here: merge(dt.entity.services)
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.services%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
-		"./testdata/response_time_p95_200_0_result_warning_entity-selector.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_0_result_warning_entity-selector.json")
 
 	// error here as well: merge("dt.entity.services")
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "zero data points", "Warning"))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "zero data points", "Warning"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -37,11 +37,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 0 results and no warning
 //	 - e.g. misspelled tag name
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(t *testing.T) {
+	expectedMetricsRequest :=
+		dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astagin%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000"
+
 	// error here: tag(keptn_project:stagin)
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astagin%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
-		"./testdata/response_time_p95_200_0_result_wrong-tag.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_0_result_wrong-tag.json")
 
 	// error here as well: tag(keptn_project:stagin)
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
@@ -49,10 +50,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 	})
 
 	sliResultAssertionsFunc := func(t *testing.T, actual sliResult) {
-		assert.EqualValues(t, testIndicatorResponseTimeP95, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "zero data points")
+		createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "zero data points")(t, actual)
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
@@ -66,11 +64,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 3 results instead of 1 and no warning
 //	 - e.g. missing merge('dimension_key') transformation
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleResults(t *testing.T) {
+	expectedMetricsRequest :=
+		dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Apercentile%2895%29&resolution=Inf&to=1632835299000"
+
 	// error here: missing merge("dt.entity.service) transformation
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
-		"./testdata/response_time_p95_200_3_results.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_3_results.json")
 
 	// error here as well: missing merge("dt.entity.service) transformation
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
@@ -78,10 +77,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 	})
 
 	sliResultAssertionsFunc := func(t *testing.T, actual sliResult) {
-		assert.EqualValues(t, testIndicatorResponseTimeP95, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "more than one")
+		createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "more than one")(t, actual)
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
@@ -95,7 +91,6 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 // * the defined SLI is valid YAML, but the MV2 prefix is used incorrectly, so we return an error for that
 //	 - e.g. MV2;MicroSeconds;<query>
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetricUnit(t *testing.T) {
-
 	testConfigs := []struct {
 		name      string
 		mv2Prefix string
@@ -145,18 +140,18 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 // * there is no 'dynatrace/sli.yaml' file
 //   - currently this would lead to a fallback for default SLI definitions
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
+	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000"
+
 	// fallback: mind the default SLI definitions in the URL below
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
-		"./testdata/response_time_p95_200_1_result_defaults.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_1_result_defaults.json")
 
 	// no custom queries defined here
 	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
 	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
 	rClient := newResourceClientMock(t)
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443, expectedMetricsRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -164,14 +159,14 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
+	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000"
+
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
-		"./testdata/response_time_p95_200_1_result.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_1_result.json")
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443, expectedMetricsRequest))
 }
