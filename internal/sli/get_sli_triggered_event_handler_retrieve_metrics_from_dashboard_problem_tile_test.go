@@ -23,7 +23,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 	handler.AddExact(expectedProblemsRequest, testDataFolder+"problems_status_open.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("problems", 0, expectedProblemsRequest),
+		createSuccessfulSLIResultAssertionsFunc("problems", 0, expectedProblemsRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -57,7 +57,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 	handler.AddExact(expectedProblemsRequest, testDataFolder+"problems_status_open.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("problems", 10, expectedProblemsRequest),
+		createSuccessfulSLIResultAssertionsFunc("problems", 10, expectedProblemsRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {

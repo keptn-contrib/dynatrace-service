@@ -121,7 +121,7 @@ func createSLIAssertionsFunc(expectedMetric string, expectedDefinition string) f
 	}
 }
 
-func createSuccessfulDashboardSLIResultAssertionsFunc(expectedMetric string, expectedValue float64, expectedQuery string) func(t *testing.T, actual sliResult) {
+func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValue float64, expectedQuery string) func(t *testing.T, actual sliResult) {
 	return func(t *testing.T, actual sliResult) {
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")

@@ -45,7 +45,7 @@ func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
 			resourceClientMock: &uploadErrorResourceClientMock{
 				t: t,
 			},
-			sliResultAssertionsFunc: createSuccessfulDashboardSLIResultAssertionsFunc(indicator, 12.439619479902443, expectedMetricsRequest),
+			sliResultAssertionsFunc: createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443, expectedMetricsRequest),
 			shouldFail:              false,
 		},
 	}
@@ -94,7 +94,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	rClient := &uploadErrorResourceClientMock{t: t}
 
 	// value is divided by 1000 from dynatrace API result!
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulDashboardSLIResultAssertionsFunc(indicator, 12.439619479902443, expectedMetricsRequest))
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443, expectedMetricsRequest))
 	assert.True(t, rClient.slosUploaded)
 }
 

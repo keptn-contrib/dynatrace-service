@@ -23,9 +23,9 @@ func TestRetrieveMetricsFromDashboardUSQLTile_ColumnChart(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_null", 492.6603364080304, expectedUSQLRequest),
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_aol_explorer", 500.2868314283638, expectedUSQLRequest),
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_acoo_browser", 500.5150319856381, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 492.6603364080304, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_aol_explorer", 500.2868314283638, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_acoo_browser", 500.5150319856381, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -42,9 +42,9 @@ func TestRetrieveMetricsFromDashboardUSQLTile_PieChart(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_null", 60154.328623114205, expectedUSQLRequest),
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_ashburn", 53567.040172786175, expectedUSQLRequest),
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_beijing", 65199.979558462794, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 60154.328623114205, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_ashburn", 53567.040172786175, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_beijing", 65199.979558462794, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -61,7 +61,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric", 62731.12784806213, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric", 62731.12784806213, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -78,8 +78,8 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_north_america", 1, expectedUSQLRequest),
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_europe", 2, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 1, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_europe", 2, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -96,8 +96,8 @@ func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_north_america", 1, expectedUSQLRequest),
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric_europe", 2, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 1, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_europe", 2, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -302,7 +302,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("average_session_duration", 62731.12784806213, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("average_session_duration", 62731.12784806213, expectedUSQLRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
@@ -333,7 +333,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_ExcludedTile(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("usql_metric", 62731.12784806213, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric", 62731.12784806213, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testUSQLTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)

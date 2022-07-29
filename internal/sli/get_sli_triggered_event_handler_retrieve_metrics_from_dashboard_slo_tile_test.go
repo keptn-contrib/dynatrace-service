@@ -21,7 +21,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 	handler.AddExact(expectedSLORequest, testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulDashboardSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {

@@ -23,7 +23,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 
 	const expectedSLORequest = dynatrace.SLOPath + "/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000"
 
-	assertionFunc := createSuccessfulDashboardSLIResultAssertionsFunc(sliName, 95, expectedSLORequest)
+	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95, expectedSLORequest)
 
 	expectedSLO := &keptnapi.SLO{
 		SLI:     sliName,
