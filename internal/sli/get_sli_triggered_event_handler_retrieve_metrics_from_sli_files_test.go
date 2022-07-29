@@ -17,14 +17,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 	// no need to have something here, because we should not send an API request
 	handler := test.NewFileBasedURLHandler(t)
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	// error here in the misspelled indicator:
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "response_time_p95"))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "SLI definition", "not found"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -36,14 +34,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 	// error here: metric(s)Selector=
 	handler := test.NewFileBasedURLHandler(t)
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	// error here as well: metric(s)Selector=
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
-		indicator: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		testIndicatorResponseTimeP95: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "error parsing Metrics v2 query"))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing Metrics v2 query"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -55,10 +51,8 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 	// make sure we would not be able to query any metric due to a parsing error
 	handler := test.NewFileBasedURLHandler(t)
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	const errorMessage = "invalid YAML file - some parsing issue"
 	rClient := newResourceClientMockWithGetSLIsError(t, fmt.Errorf(errorMessage))
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, errorMessage))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, errorMessage))
 }

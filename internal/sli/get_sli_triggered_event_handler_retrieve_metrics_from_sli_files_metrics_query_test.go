@@ -22,14 +22,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.services%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_0_result_warning_entity-selector.json")
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	// error here as well: merge("dt.entity.services")
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
-		indicator: "metricSelector=builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "zero data points", "Warning"))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "zero data points", "Warning"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -45,22 +43,20 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astagin%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_0_result_wrong-tag.json")
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	// error here as well: tag(keptn_project:stagin)
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
-		indicator: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)",
+		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)",
 	})
 
 	sliResultAssertionsFunc := func(t *testing.T, actual sliResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, testIndicatorResponseTimeP95, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
 		assert.Contains(t, actual.Message, "zero data points")
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -76,22 +72,20 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_3_results.json")
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	// error here as well: missing merge("dt.entity.service) transformation
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
-		indicator: "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
 	sliResultAssertionsFunc := func(t *testing.T, actual sliResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
+		assert.EqualValues(t, testIndicatorResponseTimeP95, actual.Metric)
 		assert.EqualValues(t, 0, actual.Value)
 		assert.EqualValues(t, false, actual.Success)
 		assert.Contains(t, actual.Message, "more than one")
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -134,14 +128,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 			// no handler needed
 			handler := test.NewFileBasedURLHandler(t)
 
-			eventSenderClient := &eventSenderClientMock{}
-
 			// error here: in value of tc.mv2Prefix
 			rClient := newResourceClientMockWithSLIs(t, map[string]string{
-				indicator: tc.mv2Prefix + "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+				testIndicatorResponseTimeP95: tc.mv2Prefix + "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "error parsing MV2 query"))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing MV2 query"))
 		})
 	}
 }
@@ -159,14 +151,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_1_result_defaults.json")
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	// no custom queries defined here
 	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
 	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
 	rClient := newResourceClientMock(t)
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(indicator, 12.439619479902443))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -179,11 +169,9 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		dynatrace.MetricsQueryPath+"?entitySelector=type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29&resolution=Inf&to=1632835299000",
 		"./testdata/response_time_p95_200_1_result.json")
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
-		indicator: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(indicator, 12.439619479902443))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443))
 }

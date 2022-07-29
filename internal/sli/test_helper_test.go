@@ -19,7 +19,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-const indicator = "response_time_p95"
+const testIndicatorResponseTimeP95 = "response_time_p95"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 const testDashboardID = "12345678-1111-4444-8888-123456789012"
 
@@ -41,6 +41,10 @@ var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *getSLIFi
 }
 
 func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *getSLIEventData {
+	return createTestGetSLIEventDataWithIndicatorAndStartAndEnd(testIndicatorResponseTimeP95, sliStart, sliEnd)
+}
+
+func createTestGetSLIEventDataWithIndicatorAndStartAndEnd(indicator string, sliStart string, sliEnd string) *getSLIEventData {
 	return &getSLIEventData{
 		project:    "sockshop",
 		stage:      "staging",
@@ -71,10 +75,12 @@ func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.H
 	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
 }
 
-func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, requestedIndicator string, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+	eventSenderClient := &eventSenderClientMock{}
+
 	// we use the special mock for the resource client
 	// we do not want to query a dashboard, so we leave it empty
-	runTestAndAssertNoError(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, eventSenderClient, rClient, "")
+	runTestAndAssertNoError(t, createTestGetSLIEventDataWithIndicatorAndStartAndEnd(requestedIndicator, "", ""), handler, eventSenderClient, rClient, "")
 
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }

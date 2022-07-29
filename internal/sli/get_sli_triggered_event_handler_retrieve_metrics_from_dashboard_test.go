@@ -13,65 +13,56 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-// Retrieving (a single) SLI from a dashboard works, but Upload of dashboard, SLO or SLI file could fail
+// TestNoErrorIsReturnedWhenSLOFileWritingSucceeds tests that no error is returned if retrieving (a single) SLI from a dashboard works and the resulting SLO file is uploaded.
 //
 // prerequisites:
 //   * we use a valid dashboard ID
 //   * all processing and SLI result retrieval works
-//   * if an upload of either SLO, SLI or dashboard file fails, then the test must fail
-func TestErrorIsReturnedWhenSLISLOOrDashboardFileWritingFails(t *testing.T) {
+func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000"
-
-	failureAssertionsFunc := createFailedSLIResultAssertionsFunc(indicator)
-
-	testConfigs := []struct {
-		name                    string
-		resourceClientMock      resourceClientInterface
-		sliResultAssertionsFunc func(t *testing.T, actual sliResult)
-		shouldFail              bool
-	}{
-		{
-			name: "SLO upload fails",
-			resourceClientMock: &uploadErrorResourceClientMock{
-				t:              t,
-				uploadSLOError: errors.New("SLO upload failed"),
-			},
-			sliResultAssertionsFunc: failureAssertionsFunc,
-			shouldFail:              true,
-		},
-		// success case:
-		{
-			name: "upload of all files works",
-			resourceClientMock: &uploadErrorResourceClientMock{
-				t: t,
-			},
-			sliResultAssertionsFunc: createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443, expectedMetricsRequest),
-			shouldFail:              false,
-		},
-	}
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
 	handler.AddExact(expectedMetricsRequest, "./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
 
-	for _, testConfig := range testConfigs {
-		tc := testConfig
-		t.Run(tc.name, func(t *testing.T) {
-
-			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
-				if tc.shouldFail {
-					assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-					assert.Contains(t, actual.Message, "upload failed")
-				} else {
-					assert.EqualValues(t, keptnv2.ResultPass, actual.Result)
-					assert.Empty(t, actual.Message)
-				}
-			}
-
-			runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, tc.resourceClientMock, getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
-		})
+	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultPass, actual.Result)
+		assert.Empty(t, actual.Message)
 	}
+
+	resourceClientMock := &uploadErrorResourceClientMock{
+		t: t,
+	}
+
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, resourceClientMock, getSLIFinishedEventAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443, expectedMetricsRequest))
+}
+
+// TestErrorIsReturnedWhenSLOFileWritingFails tests that an error is returned if retrieving (a single) SLI from a dashboard works but upload of SLO file fails.
+//
+// prerequisites:
+//   * we use a valid dashboard ID
+//   * all processing and SLI result retrieval works
+//   * if an upload of either SLO, SLI or dashboard file fails, then the test must fail
+func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
+	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?entitySelector=type%28SERVICE%29&from=1632834999000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames&resolution=Inf&to=1632835299000"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/sli_via_dashboard_test/dashboard_custom_charting_single_sli.json")
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
+	handler.AddExact(expectedMetricsRequest, "./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
+
+	resourceClientMock := &uploadErrorResourceClientMock{
+		t:              t,
+		uploadSLOError: errors.New("SLO upload failed"),
+	}
+
+	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
+		assert.Contains(t, actual.Message, "upload failed")
+	}
+
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, resourceClientMock, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
 }
 
 // Retrieving a dashboard by ID works, and we ignore the outdated parse behaviour
@@ -94,7 +85,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	rClient := &uploadErrorResourceClientMock{t: t}
 
 	// value is divided by 1000 from dynatrace API result!
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 12.439619479902443, expectedMetricsRequest))
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443, expectedMetricsRequest))
 	assert.True(t, rClient.slosUploaded)
 }
 
@@ -136,7 +127,7 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 		assert.Contains(t, actual.Message, "Metrics API v2 returned zero data points")
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventDataWithDefaultStartAndEnd, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(indicator, expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventDataWithDefaultStartAndEnd, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest))
 }
 
 // Retrieving a dashboard by ID works, but dashboard processing did not produce any results, so we expect an error
@@ -157,5 +148,5 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 		assert.Contains(t, actual.Message, "any SLI results")
 	}
 
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator))
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
 }

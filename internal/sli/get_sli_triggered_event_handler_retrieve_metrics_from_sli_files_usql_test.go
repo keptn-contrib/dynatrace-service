@@ -7,6 +7,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
+const testIndicatorUSQL = "usql_sli"
+
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
@@ -38,14 +40,12 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 			// no handler needed
 			handler := test.NewFileBasedURLHandler(t)
 
-			eventSenderClient := &eventSenderClientMock{}
-
 			// error here: in value of tc.usqlPrefix
 			rClient := newResourceClientMockWithSLIs(t, map[string]string{
-				indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "incorrect prefix"))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "incorrect prefix"))
 		})
 	}
 }
@@ -93,14 +93,12 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 				dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
 				"./testdata/usql_200_multiple_results.json")
 
-			eventSenderClient := &eventSenderClientMock{}
-
 			// errors here: in value of tc.usqlPrefix
 			rClient := newResourceClientMockWithSLIs(t, map[string]string{
-				indicator: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, tc.getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, tc.expectedErrorMessage))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedErrorMessage))
 		})
 	}
 }
@@ -145,13 +143,11 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-
-			eventSenderClient := &eventSenderClientMock{}
 			rClient := newResourceClientMockWithSLIs(t, map[string]string{
-				indicator: tc.query,
+				testIndicatorUSQL: tc.query,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(indicator, tc.expectedValue))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue))
 		})
 	}
 }
@@ -166,13 +162,11 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1632834999000",
 		"./testdata/usql_200_single_result.json")
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
-		indicator: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
+		testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(indicator, 62737.44360695537))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -185,13 +179,11 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
 		"./testdata/usql_200_0_results.json")
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
-		indicator: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+		testIndicatorUSQL: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, "could not find dimension name"))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "could not find dimension name"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -331,13 +323,11 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=",
 				tc.dataReturned)
 
-			eventSenderClient := &eventSenderClientMock{}
-
 			rClient := newResourceClientMockWithSLIs(t, map[string]string{
-				indicator: tc.usqlQuery,
+				testIndicatorUSQL: tc.usqlQuery,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, tc.getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(indicator, tc.expectedErrorMessage))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedErrorMessage))
 		})
 	}
 }
