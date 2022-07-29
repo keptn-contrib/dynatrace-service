@@ -56,3 +56,21 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 
 	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, errorMessage))
 }
+
+// TestRetrieveMetricsFromFile_SecurityProblemsV2 tests the success case for file-based SecurityProblemsV2 SLIs.
+func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
+	const (
+		securityProblemsRequest           = "/api/v2/securityProblems?from=1632834999000&securityProblemSelector=status%28%22open%22%29&to=1632835299000"
+		testDataFolder                    = "./testdata/sli_files/secpv2_success/"
+		testIndicatorSecurityProblemCount = "security_problem_count"
+	)
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(securityProblemsRequest, testDataFolder+"security_problems_status_open.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorSecurityProblemCount: "SECPV2;securityProblemSelector=status(\"open\")",
+	})
+
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorSecurityProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 103, securityProblemsRequest))
+}
