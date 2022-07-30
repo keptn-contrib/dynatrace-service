@@ -86,25 +86,26 @@ func (p *Processing) executeUSQLQuery(ctx context.Context, name string, usqlQuer
 		return result.NewFailedSLIResult(name, "error parsing USQL query: "+err.Error())
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, dynatrace.NewUSQLClientQueryRequest(query.GetQuery(), p.timeframe))
+	request := dynatrace.NewUSQLClientQueryRequest(query.GetQuery(), p.timeframe)
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying User sessions API: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying User sessions API: "+err.Error(), request.RequestString())
 	}
 
 	if query.GetResultType() == v1usql.SingleValueResultType {
 		if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
-			return result.NewWarningSLIResult(name, fmt.Sprintf("USQL result type %s should only return a single result", v1usql.SingleValueResultType))
+			return result.NewWarningSLIResultWithQuery(name, fmt.Sprintf("USQL result type %s should only return a single result", v1usql.SingleValueResultType), request.RequestString())
 		}
 		value, err := tryCastDimensionValueToNumeric(usqlResult.Values[0][0])
 		if err != nil {
-			return result.NewWarningSLIResult(name, err.Error())
+			return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 		}
-		return result.NewSuccessfulSLIResult(name, value)
+		return result.NewSuccessfulSLIResultWithQuery(name, value, request.RequestString())
 	}
 
 	// all other types must at least have 2 columns to work properly
 	if len(usqlResult.ColumnNames) < 2 {
-		return result.NewWarningSLIResult(name, fmt.Sprintf("USQL result type %s should at least have two columns", query.GetResultType()))
+		return result.NewWarningSLIResultWithQuery(name, fmt.Sprintf("USQL result type %s should at least have two columns", query.GetResultType()), request.RequestString())
 	}
 
 	for _, rowValue := range usqlResult.Values {
@@ -120,24 +121,24 @@ func (p *Processing) executeUSQLQuery(ctx context.Context, name string, usqlQuer
 			dimensionValue = rowValue[len(rowValue)-1]
 		default:
 			// this is unlikely to be reached as it should be handled by the query parser, but a failed result is generated because it is unsupported
-			return result.NewFailedSLIResult(name, fmt.Sprintf("unknown USQL result type: %s", query.GetResultType()))
+			return result.NewFailedSLIResultWithQuery(name, fmt.Sprintf("unknown USQL result type: %s", query.GetResultType()), request.RequestString())
 		}
 
 		dimensionNameString, err := tryCastDimensionNameToString(dimensionName)
 		if err != nil {
-			return result.NewWarningSLIResult(name, err.Error())
+			return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 		}
 
 		if dimensionNameString == query.GetDimension() {
 			value, err := tryCastDimensionValueToNumeric(dimensionValue)
 			if err != nil {
-				return result.NewWarningSLIResult(name, err.Error())
+				return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 			}
-			return result.NewSuccessfulSLIResult(name, value)
+			return result.NewSuccessfulSLIResultWithQuery(name, value, request.RequestString())
 		}
 	}
 
-	return result.NewWarningSLIResult(name, fmt.Sprintf("could not find dimension name '%s' in result", query.GetDimension()))
+	return result.NewWarningSLIResultWithQuery(name, fmt.Sprintf("could not find dimension name '%s' in result", query.GetDimension()), request.RequestString())
 }
 
 func tryCastDimensionValueToNumeric(dimensionValue interface{}) (float64, error) {

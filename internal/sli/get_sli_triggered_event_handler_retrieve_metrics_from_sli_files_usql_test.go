@@ -57,30 +57,31 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 // * the defined SLI is valid YAML and the USQL prefix is used correctly, but the fields are used incorrectly.
 //   So we return an error for that
 func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
-
+	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
 	testConfigs := []struct {
 		name                              string
 		usqlPrefix                        string
 		expectedErrorMessage              string
-		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData)
+		getSLIFinishedEventAssertionsFunc func(*testing.T, *getSLIFinishedEventData)
+		sliResultAssertionsFunc           func(*testing.T, sliResult)
 	}{
 		{
 			name:                              "unknown type fails",
 			usqlPrefix:                        "USQL;COLUMN_CHARTS;iOS 11.4.1;",
-			expectedErrorMessage:              "unknown result type: COLUMN_CHARTS",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "unknown result type: COLUMN_CHARTS"),
 		},
 		{
 			name:                              "unknown dimension name fails",
 			usqlPrefix:                        "USQL;COLUMN_CHART;iOS 17.2.3;",
-			expectedErrorMessage:              "could not find dimension name 'iOS 17.2.3'",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlRequest, "could not find dimension name 'iOS 17.2.3'"),
 		},
 		{
 			name:                              "missing fields fails",
 			usqlPrefix:                        "USQL;;;",
-			expectedErrorMessage:              "result type should not be empty",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "result type should not be empty"),
 		},
 	}
 	for _, testConfig := range testConfigs {
@@ -89,16 +90,14 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 
 			// handler with 200 result needed
 			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact(
-				dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
-				"./testdata/usql_200_multiple_results.json")
+			handler.AddExact(usqlRequest, "./testdata/usql_200_multiple_results.json")
 
 			// errors here: in value of tc.usqlPrefix
 			rClient := newResourceClientMockWithSLIs(t, map[string]string{
 				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedErrorMessage))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }
@@ -108,10 +107,10 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
+	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
+	handler.AddExact(usqlRequest,
 		"./testdata/usql_200_multiple_results.json")
 
 	testConfigs := []struct {
@@ -147,7 +146,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 				testIndicatorUSQL: tc.query,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, usqlRequest))
 		})
 	}
 }
@@ -157,16 +156,16 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
+	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1632834999000"
+
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1632834999000",
-		"./testdata/usql_200_single_result.json")
+	handler.AddExact(usqlRequest, "./testdata/usql_200_single_result.json")
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulFileSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, usqlRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -174,16 +173,16 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
+	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
+
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(
-		dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000",
-		"./testdata/usql_200_0_results.json")
+	handler.AddExact(usqlRequest, "./testdata/usql_200_0_results.json")
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorUSQL: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "could not find dimension name"))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlRequest, "could not find dimension name"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -192,125 +191,141 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, but the fields of the USQL prefix are used incorrectly together, so we return errors for that
 func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
-
+	const usqlSingleResultRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1632834999000"
+	const usqlMultipleResultRequest1 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
+	const usqlMultipleResultRequest2 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CosVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
+	const usqlMultipleResultRequest3 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
 	testConfigs := []struct {
 		name                              string
+		request                           string
 		usqlQuery                         string
 		dataReturned                      string
 		expectedErrorMessage              string
 		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData)
+		sliResultAssertionsFunc           func(*testing.T, sliResult)
 	}{
 		{
 			name:                              "dimension name is not allowed for single value result type",
 			usqlQuery:                         "USQL;SINGLE_VALUE;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage:              "dimension should be empty",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for COLUMN_CHART result types",
 			usqlQuery:                         "USQL;COLUMN_CHART;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage:              "dimension should not be empty",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for PIE_CHART result types",
 			usqlQuery:                         "USQL;PIE_CHART;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage:              "dimension should not be empty",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for TABLE result types",
 			usqlQuery:                         "USQL;TABLE;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results.json",
-			expectedErrorMessage:              "dimension should not be empty",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for COLUMN_CHART result types even if result only has single value",
 			usqlQuery:                         "USQL;COLUMN_CHART;;SELECT AVG(duration) FROM usersession",
 			dataReturned:                      "./testdata/usql_200_single_result.json",
-			expectedErrorMessage:              "dimension should not be empty",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for PIE_CHART result types even if result only has single value",
 			usqlQuery:                         "USQL;PIE_CHART;;SELECT AVG(duration) FROM usersession",
 			dataReturned:                      "./testdata/usql_200_single_result.json",
-			expectedErrorMessage:              "dimension should not be empty",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for TABLE result types even if result only has single value",
 			usqlQuery:                         "USQL;TABLE;;SELECT AVG(duration) FROM usersession",
 			dataReturned:                      "./testdata/usql_200_single_result.json",
-			expectedErrorMessage:              "dimension should not be empty",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "COLUMN_CHART should have at least two columns",
+			request:                           usqlSingleResultRequest,
 			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
 			dataReturned:                      "./testdata/usql_200_single_result.json",
-			expectedErrorMessage:              "should at least have two columns",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlSingleResultRequest, "should at least have two columns"),
 		},
 		{
 			name:                              "PIE_CHART should have at least two columns",
+			request:                           usqlSingleResultRequest,
 			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
 			dataReturned:                      "./testdata/usql_200_single_result.json",
-			expectedErrorMessage:              "should at least have two columns",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlSingleResultRequest, "should at least have two columns"),
 		},
 		{
 			name:                              "TABLE should have at least two columns",
+			request:                           usqlSingleResultRequest,
 			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
 			dataReturned:                      "./testdata/usql_200_single_result.json",
-			expectedErrorMessage:              "should at least have two columns",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlSingleResultRequest, "should at least have two columns"),
 		},
 		{
 			name:                              "result has more than one column, but first column is not a string value for COLUMN_CHART",
+			request:                           usqlMultipleResultRequest1,
 			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
-			expectedErrorMessage:              "dimension name should be a string",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest1, "dimension name should be a string"),
 		},
+
 		{
 			name:                              "result has more than one column, but first column is not a string value for PIE_CHART",
+			request:                           usqlMultipleResultRequest1,
 			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
-			expectedErrorMessage:              "dimension name should be a string",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest1, "dimension name should be a string"),
 		},
+
 		{
 			name:                              "result has more than one column, but first column is not a string value for TABLE",
+			request:                           usqlMultipleResultRequest1,
 			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
-			expectedErrorMessage:              "dimension name should be a string",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest1, "dimension name should be a string"),
 		},
 		{
 			name:                              "result has more than one column, but second column is not a numeric value for COLUMN_CHART",
+			request:                           usqlMultipleResultRequest2,
 			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_second_column_type.json",
-			expectedErrorMessage:              "dimension value should be a number",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest2, "dimension value should be a number"),
 		},
 		{
 			name:                              "result has more than one column, but second column is not a numeric value for PIE_CHART",
+			request:                           usqlMultipleResultRequest2,
 			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_second_column_type.json",
-			expectedErrorMessage:              "dimension value should be a number",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest2, "dimension value should be a number"),
 		},
 		{
 			name:                              "result has more than one column, but last column is not a numeric value for TABLE",
+			request:                           usqlMultipleResultRequest3,
 			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT osVersion,AVG(duration),osVersion FROM usersession GROUP BY osVersion",
 			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_last_column_type.json",
-			expectedErrorMessage:              "dimension value should be a number",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest3, "dimension value should be a number"),
 		},
 	}
 	for _, testConfig := range testConfigs {
@@ -319,15 +334,15 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 
 			// as there is only a single SLI, matching with 'starts with' should be sufficiently 'exact'
 			handler := test.NewFileBasedURLHandler(t)
-			handler.AddStartsWith(
-				dynatrace.USQLPath+"?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=",
-				tc.dataReturned)
+			if tc.request != "" {
+				handler.AddStartsWith(tc.request, tc.dataReturned)
+			}
 
 			rClient := newResourceClientMockWithSLIs(t, map[string]string{
 				testIndicatorUSQL: tc.usqlQuery,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedErrorMessage))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }
