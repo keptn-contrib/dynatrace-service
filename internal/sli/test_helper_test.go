@@ -136,15 +136,6 @@ func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValu
 	}
 }
 
-func createSuccessfulFileSLIResultAssertionsFunc(expectedMetric string, expectedValue float64) func(t *testing.T, actual sliResult) {
-	return func(t *testing.T, actual sliResult) {
-		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
-		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
-		assert.True(t, actual.Success, "Indicator success should be true")
-		assert.Empty(t, actual.Query)
-	}
-}
-
 func createFailedSLIResultAssertionsFunc(expectedMetric string, expectedMessageSubstrings ...string) func(*testing.T, sliResult) {
 	return func(t *testing.T, actual sliResult) {
 		assert.False(t, actual.Success, "Indicator success should be false")
