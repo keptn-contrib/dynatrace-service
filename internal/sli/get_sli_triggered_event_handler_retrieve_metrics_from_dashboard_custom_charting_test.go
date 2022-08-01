@@ -20,10 +20,10 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_servicekeyrequest_totalprocessingtime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("processing_time_findlocations", 18.22756816390859, expectedMetricsRequest),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_getjourneybyid", 2.8606086572438163, expectedMetricsRequest),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_getjourneypagebytenant", 15.964052631578946, expectedMetricsRequest),
-		createSuccessfulSLIResultAssertionsFunc("processing_time_findjourneys", 23.587584492453388, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("processing_time_findlocations", 18227.56816390859, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("processing_time_getjourneybyid", 2860.6086572438163, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("processing_time_getjourneypagebytenant", 15964.052631578946, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("processing_time_findjourneys", 23587.584492453388, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -65,7 +65,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *t
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29.31312208863131, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29313.12208863131, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -96,8 +96,8 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_easytravelservice", 132.27823461853978, expectedMetricsRequest),
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_journeyservice", 20.256493055555555, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_easytravelservice", 132278.23461853978, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_journeyservice", 20256.493055555555, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -116,7 +116,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySp
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_specificentity", 20.256493055555555, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_specificentity", 20256.493055555555, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -162,7 +162,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP90(
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_rt_p90", 35.00002454848894, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("svc_rt_p90", 35000.02454848894, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -179,7 +179,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP50(
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p50.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_rt_p50", 1.500151733421778, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("svc_rt_p50", 1500.151733421778, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -196,7 +196,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_tech_generic_mem_workingsetsize_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("process_memory", 1437907.0484235594, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("process_memory", 1472416817.5857248, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -317,7 +317,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29.31312208863131, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29313.12208863131, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)

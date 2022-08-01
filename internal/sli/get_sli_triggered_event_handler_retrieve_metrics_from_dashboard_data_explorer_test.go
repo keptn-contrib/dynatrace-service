@@ -87,7 +87,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgNoFilterBy(t *te
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_avg", 29.192929640271974, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_avg", 29192.929640271974, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -106,7 +106,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgCountNoFilterBy(t *
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_count.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_count", 1060428.829, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_count", 1060428829, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -125,7 +125,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMaxNoFilterBy(t *te
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_max.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_max", 45156.016, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_max", 45156016, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -144,7 +144,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMedianNoFilterBy(t 
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_median.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_median", 1.4999996049587276, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_median", 1499.9996049587276, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -182,7 +182,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP10NoFilterBy(t *te
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p10.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p10", 1.0000048892760918, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_p10", 1000.0048892760917, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -201,7 +201,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP75NoFilterBy(t *te
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p75.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p75", 3.2541557923119475, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_p75", 3254.1557923119476, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -220,7 +220,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgp90NoFilterBy(t *te
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p90", 35.00000424055808, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_p90", 35000.004240558075, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -239,7 +239,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy(t *te
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_sum.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_sum", 30957024193.513, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_sum", 30957024193513, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -271,7 +271,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById(t *te
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136.52852484946527, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136528.52484946526, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -290,7 +290,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag(t *t
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_keptn_manager", 18.533351299277793, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_keptn_manager", 18533.351299277794, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -309,7 +309,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAt
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_svc_etw_db", 1.0706877628404, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_svc_etw_db", 1070.6877628404, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -328,7 +328,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimensio
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_calc_service_dbcalls_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_db_calls", 0.005373592355230029, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("svc_db_calls", 5.37359235523003, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -360,7 +360,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_NoManagementZone(
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_no_filter_no_mz", 29.192929640271974, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt_no_filter_no_mz", 29192.929640271974, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -379,7 +379,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_NoManage
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_servicetag_filter_no_mz", 288.95723558253565, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt_servicetag_filter_no_mz", 288957.2355825356, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -398,7 +398,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_WithCustomManagem
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_no_filter_custom_mz", 7.045031103506126, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt_no_filter_custom_mz", 7045.031103506126, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -417,7 +417,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCust
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_servicetag_filter_custom_mz", 8.283891270010905, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt_servicetag_filter_custom_mz", 8283.891270010905, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -449,7 +449,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt", 29.192929640271974, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
@@ -481,7 +481,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136.52852484946527, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136528.52484946526, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)

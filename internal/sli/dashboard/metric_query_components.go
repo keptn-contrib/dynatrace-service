@@ -8,5 +8,4 @@ import (
 type queryComponents struct {
 	metricsQuery metrics.Query
 	timeframe    common.Timeframe
-	metricUnit   string
 }

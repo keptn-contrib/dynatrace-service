@@ -168,7 +168,6 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 	return &queryComponents{
 		metricsQuery: *metricsQuery,
 		timeframe:    p.timeframe,
-		metricUnit:   metricDefinition.Unit,
 	}, nil
 }
 

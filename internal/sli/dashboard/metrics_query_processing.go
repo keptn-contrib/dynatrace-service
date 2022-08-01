@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/unit"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 )
@@ -91,9 +90,6 @@ func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, 
 			value = value + singleValue
 		}
 		value = value / float64(len(singleDataEntry.Values))
-
-		// lets scale the metric
-		value = unit.ScaleData(metricQueryComponents.metricUnit, value)
 
 		// we got our metric, SLOs and the value
 		log.WithFields(
