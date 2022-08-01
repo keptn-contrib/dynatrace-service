@@ -34,7 +34,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 
 		// MV2 prefix tests
 		{
-			name:                        "csrt - MicroSecond - should MV2 prefix",
+			name:                        "csrt - MicroSecond",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_service.response.client.json",
 			fullMetricQueryString:       "entitySelector=type%28SERVICE%29&from=1633420800000&metricSelector=builtin%3Aservice.response.client%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
@@ -50,7 +50,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 			},
 			expectedTileResult: TileResult{
-				sliResult: result.NewSuccessfulSLIResultWithQuery("csrt", 15.868648438045174, "MV2;MicroSecond;entitySelector=type(SERVICE)&metricSelector=builtin:service.response.client:merge(\"dt.entity.service\"):avg:names"),
+				sliResult: result.NewSuccessfulSLIResultWithQuery("csrt", 15.868648438045174, "/api/v2/metrics/query?entitySelector=type%28SERVICE%29&from=1633420800000&metricSelector=builtin%3Aservice.response.client%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
 				sloDefinition: &keptncommon.SLO{
 					SLI:    "csrt",
 					Weight: 1,
@@ -59,7 +59,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 		},
 		{
-			name:                        "cmu - Byte - should MV2 prefix",
+			name:                        "cmu - Byte",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_containers.memory_usage2.json",
 			fullMetricQueryString:       "entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
@@ -75,7 +75,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 			},
 			expectedTileResult: TileResult{
-				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.83345935025, "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names"),
+				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.83345935025, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
 				sloDefinition: &keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
@@ -84,7 +84,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			},
 		},
 		{
-			name:                        "hdqc - Count - should not MV2 prefix",
+			name:                        "hdqc - Count",
 			metricQueryResponseFilename: "./testdata/metrics_query_processing_test/metrics_get_by_query_builtin_host.dns.queryCount.json",
 			fullMetricQueryString:       "entitySelector=type%28HOST%29&from=1633420800000&metricSelector=builtin%3Ahost.dns.queryCount%3Amerge%28%22dnsServerIp%22%29%3Amerge%28%22dt.entity.host%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000",
 			args: args{
@@ -100,7 +100,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 			},
 			expectedTileResult: TileResult{
-				sliResult: result.NewSuccessfulSLIResultWithQuery("hdqc", 96.94525462962963, "entitySelector=type(HOST)&metricSelector=builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names"),
+				sliResult: result.NewSuccessfulSLIResultWithQuery("hdqc", 96.94525462962963, "/api/v2/metrics/query?entitySelector=type%28HOST%29&from=1633420800000&metricSelector=builtin%3Ahost.dns.queryCount%3Amerge%28%22dnsServerIp%22%29%3Amerge%28%22dt.entity.host%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
 				sloDefinition: &keptncommon.SLO{
 					SLI:    "hdqc",
 					Weight: 1,
@@ -127,7 +127,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 			},
 			expectedTileResult: TileResult{
-				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.8334593502, "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names"),
+				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 50151253.46237466/1024, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
 				sloDefinition: &keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
@@ -153,7 +153,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 			},
 			expectedTileResult: TileResult{
-				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.83345935025, "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names"),
+				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.83345935025, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
 				sloDefinition: &keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
@@ -178,7 +178,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 			},
 			expectedTileResult: TileResult{
-				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.83345935025, "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names"),
+				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.83345935025, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
 				sloDefinition: &keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
@@ -203,7 +203,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 				},
 			},
 			expectedTileResult: TileResult{
-				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.83345935025, "MV2;Byte;entitySelector=type(DOCKER_CONTAINER_GROUP_INSTANCE)&metricSelector=builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names"),
+				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 48975.83345935025, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
 				sloDefinition: &keptncommon.SLO{
 					SLI:    "cmu",
 					Weight: 1,
@@ -227,17 +227,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			if !assert.EqualValues(t, 1, len(tileResults)) {
 				return
 			}
-			tileResult := tileResults[0]
 
-			assert.EqualValues(t, tt.expectedTileResult.sliName, tileResult.sliName)
-			assert.EqualValues(t, tt.expectedTileResult.sloDefinition, tileResult.sloDefinition)
-
-			assert.EqualValues(t, tt.expectedTileResult.sliResult.Metric(), tileResult.sliResult.Metric())
-			assert.EqualValues(t, tt.expectedTileResult.sliResult.Success(), tileResult.sliResult.Success())
-			assert.EqualValues(t, tt.expectedTileResult.sliResult.Message(), tileResult.sliResult.Message())
-			assert.EqualValues(t, tt.expectedTileResult.sliResult.IndicatorResult(), tileResult.sliResult.IndicatorResult())
-
-			assert.InDelta(t, tt.expectedTileResult.sliResult.Value(), tileResult.sliResult.Value(), 0.01)
+			assert.EqualValues(t, tt.expectedTileResult, tileResults[0])
 		})
 	}
 }
