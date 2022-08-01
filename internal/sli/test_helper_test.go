@@ -23,7 +23,7 @@ const testIndicatorResponseTimeP95 = "response_time_p95"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 const testDashboardID = "12345678-1111-4444-8888-123456789012"
 
-var testGetSLIEventDataWithDefaultStartAndEnd = createTestGetSLIEventDataWithStartAndEnd("", "")
+var testGetSLIEventData = createTestGetSLIEventDataWithIndicator(testIndicatorResponseTimeP95)
 
 var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *getSLIFinishedEventData) {
 	assert.EqualValues(t, keptnv2.ResultPass, data.Result)
@@ -40,18 +40,14 @@ var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *getSLIFi
 	assert.NotEmpty(t, data.Message)
 }
 
-func createTestGetSLIEventDataWithStartAndEnd(sliStart string, sliEnd string) *getSLIEventData {
-	return createTestGetSLIEventDataWithIndicatorAndStartAndEnd(testIndicatorResponseTimeP95, sliStart, sliEnd)
-}
-
-func createTestGetSLIEventDataWithIndicatorAndStartAndEnd(indicator string, sliStart string, sliEnd string) *getSLIEventData {
+func createTestGetSLIEventDataWithIndicator(indicator string) *getSLIEventData {
 	return &getSLIEventData{
 		project:    "sockshop",
 		stage:      "staging",
 		service:    "carts",
 		indicators: []string{indicator}, // we need this to check later on in the custom queries
-		sliStart:   sliStart,
-		sliEnd:     sliEnd,
+		sliStart:   "2021-01-01T00:00:00.000Z",
+		sliEnd:     "2021-01-02T00:00:00.000Z",
 	}
 }
 
@@ -80,7 +76,7 @@ func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, reques
 
 	// we use the special mock for the resource client
 	// we do not want to query a dashboard, so we leave it empty
-	runTestAndAssertNoError(t, createTestGetSLIEventDataWithIndicatorAndStartAndEnd(requestedIndicator, "", ""), handler, eventSenderClient, rClient, "")
+	runTestAndAssertNoError(t, createTestGetSLIEventDataWithIndicator(requestedIndicator), handler, eventSenderClient, rClient, "")
 
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }

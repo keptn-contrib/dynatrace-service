@@ -126,7 +126,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 			handler.AddExactFile(expectedSLORequest, "./testdata/dashboards/slo_tiles/passing_slo/slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
 			rClient := &uploadErrorResourceClientMock{t: t}
-			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, assertionFunc)
+			runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, assertionFunc)
 
 			assert.EqualValues(t, rClient.uploadedSLOs, markdownTest.expectedSLO)
 		})
@@ -243,7 +243,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 				},
 			)
 
-			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
 		})
 	}
 }
@@ -291,7 +291,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownMultipleTilesErrors(t *testing.T) 
 				},
 			)
 
-			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
 		})
 	}
 }

@@ -82,15 +82,6 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			testEvent := &getSLIEventData{
-				project:    "sockshop",
-				stage:      "staging",
-				service:    "carts",
-				indicators: tc.eventIndicators,
-				sliStart:   "", // use defaults here
-				sliEnd:     "", // use defaults here
-			}
-
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddExactError(dynatrace.DashboardsPath+"/"+tc.def.dashboardID, tc.def.errorCode, tc.def.payload)
 
@@ -104,7 +95,7 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 				assert.Contains(t, actual.Message, tc.def.errorMessage)
 			}
 
-			runAndAssertDashboardTest(t, testEvent, handler, rClient, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
+			runAndAssertDashboardTest(t, testGetSLIEventData, handler, rClient, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
 		})
 	}
 }

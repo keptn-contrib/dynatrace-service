@@ -61,7 +61,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 // TestRetrieveMetricsFromFile_SecurityProblemsV2 tests the success case for file-based SecurityProblemsV2 SLIs.
 func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 	const (
-		securityProblemsRequest           = "/api/v2/securityProblems?from=1632834999000&securityProblemSelector=status%28%22open%22%29&to=1632835299000"
+		securityProblemsRequest           = "/api/v2/securityProblems?from=1609459200000&securityProblemSelector=status%28%22open%22%29&to=1609545600000"
 		testDataFolder                    = "./testdata/sli_files/secpv2_success/"
 		testIndicatorSecurityProblemCount = "security_problem_count"
 	)
@@ -79,7 +79,7 @@ func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 // TestRetrieveMetricsFromFile_ProblemsV2 tests the success case for file-based ProblemsV2 SLIs.
 func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 	const (
-		problemsRequest           = dynatrace.ProblemsV2Path + "?from=1632834999000&problemSelector=status%28%22open%22%29&to=1632835299000"
+		problemsRequest           = dynatrace.ProblemsV2Path + "?from=1609459200000&problemSelector=status%28%22open%22%29&to=1609545600000"
 		testDataFolder            = "./testdata/sli_files/pv2_success/"
 		testIndicatorProblemCount = "problem_count"
 	)
@@ -97,7 +97,7 @@ func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 // TestRetrieveMetricsFromFile_SLO tests the success case for file-based SLO SLIs.
 func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
 	const (
-		sloRequest            = dynatrace.SLOPath + "/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1632834999000&timeFrame=GTF&to=1632835299000"
+		sloRequest            = dynatrace.SLOPath + "/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000"
 		testDataFolder        = "./testdata/sli_files/slo_success/"
 		testIndicatorSLOValue = "slo_value"
 	)

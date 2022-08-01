@@ -10,13 +10,11 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-var testProblemTileGetSLIEventData = createTestGetSLIEventDataWithStartAndEnd("2021-09-17T07:00:00.000Z", "2021-09-17T08:00:00.000Z")
-
 // TestRetrieveMetricsFromDashboardProblemTile_Success tests the success case for retrieving the problem and security problem count SLIs in response to a problems dashboard tile.
 func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/problem_tile_success/"
 
-	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1631862000000&problemSelector=status%28%22open%22%29&to=1631865600000"
+	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1609459200000&problemSelector=status%28%22open%22%29&to=1609545600000"
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
@@ -43,14 +41,14 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone tests retrieving the problem and security problem count SLIs in response to a problems dashboard tile with a custom management zone.
 func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/custom_management_zone/"
 
-	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1631862000000&problemSelector=status%28%22open%22%29%2CmanagementZoneIds%289130632296508575249%29&to=1631865600000"
+	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1609459200000&problemSelector=status%28%22open%22%29%2CmanagementZoneIds%289130632296508575249%29&to=1609545600000"
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
@@ -77,7 +75,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardProblemTile_MissingScopes tests the failure case for retrieving the problem and security problem count SLIs in response to a problems dashboard tile.
@@ -85,14 +83,14 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 func TestRetrieveMetricsFromDashboardProblemTile_MissingScopes(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/missing_scopes/"
 
-	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1631862000000&problemSelector=status%28%22open%22%29&to=1631865600000"
+	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1609459200000&problemSelector=status%28%22open%22%29&to=1609545600000"
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExactError(expectedProblemsRequest, 403, testDataFolder+"problems_missing_scope.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createFailedSLIResultWithQueryAssertionsFunc("problems", dynatrace.ProblemsV2Path+"?from=1631862000000&problemSelector=status%28%22open%22%29&to=1631865600000"),
+		createFailedSLIResultWithQueryAssertionsFunc("problems", dynatrace.ProblemsV2Path+"?from=1609459200000&problemSelector=status%28%22open%22%29&to=1609545600000"),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -112,5 +110,5 @@ func TestRetrieveMetricsFromDashboardProblemTile_MissingScopes(t *testing.T) {
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testProblemTileGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }

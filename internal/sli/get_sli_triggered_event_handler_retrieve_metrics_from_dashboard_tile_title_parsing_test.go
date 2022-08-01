@@ -147,7 +147,7 @@ func TestRetrieveMetricsFromDashboard_TileTitleParsingErrors(t *testing.T) {
 					},
 				)
 
-				runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testDataExplorerGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, dataExplorerTest.assertionsFunc)
+				runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, dataExplorerTest.assertionsFunc)
 			})
 		}
 	}

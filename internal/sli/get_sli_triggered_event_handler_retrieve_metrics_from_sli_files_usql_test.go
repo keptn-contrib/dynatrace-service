@@ -57,7 +57,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 // * the defined SLI is valid YAML and the USQL prefix is used correctly, but the fields are used incorrectly.
 //   So we return an error for that
 func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
-	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
+	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
 	testConfigs := []struct {
 		name                              string
 		usqlPrefix                        string
@@ -107,7 +107,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
-	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
+	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(usqlRequest,
@@ -156,7 +156,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
-	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1632834999000"
+	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1609459200000"
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(usqlRequest, "./testdata/usql_200_single_result.json")
@@ -173,7 +173,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
-	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
+	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(usqlRequest, "./testdata/usql_200_0_results.json")
@@ -191,10 +191,10 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, but the fields of the USQL prefix are used incorrectly together, so we return errors for that
 func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
-	const usqlSingleResultRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1632834999000"
-	const usqlMultipleResultRequest1 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+AVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
-	const usqlMultipleResultRequest2 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CosVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
-	const usqlMultipleResultRequest3 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1632835299000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1632834999000"
+	const usqlSingleResultRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1609459200000"
+	const usqlMultipleResultRequest1 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+AVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
+	const usqlMultipleResultRequest2 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CosVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
+	const usqlMultipleResultRequest3 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
 	testConfigs := []struct {
 		name                              string
 		request                           string
