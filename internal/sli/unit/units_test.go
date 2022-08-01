@@ -1,8 +1,9 @@
 package unit
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestScaleDataWithUnit(t *testing.T) {
@@ -61,45 +62,7 @@ func TestScaleDataWithUnit(t *testing.T) {
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			actual := ScaleData("", tc.unit, tc.inputValue)
-
-			assert.EqualValues(t, tc.expectedResult, actual)
-		})
-	}
-}
-
-func TestScaleDataWithResponseTime(t *testing.T) {
-	testConfigs := []struct {
-		name           string
-		metricID       string
-		inputValue     float64
-		expectedResult float64
-	}{
-		// response time
-		{
-			name:           "builtin:service.response.time works",
-			metricID:       "builtin:service.response.time",
-			inputValue:     1000000.0,
-			expectedResult: 1000.0,
-		},
-		// units for unknown metric IDs are unchanged
-		{
-			name:           "service.response.time substring does not work",
-			metricID:       "service.response.time",
-			inputValue:     123.0,
-			expectedResult: 123.0,
-		},
-		{
-			name:           "builtin:service.response substring does not work",
-			metricID:       "builtin:service.response",
-			inputValue:     123.0,
-			expectedResult: 123.0,
-		},
-	}
-	for _, testConfig := range testConfigs {
-		tc := testConfig
-		t.Run(tc.name, func(t *testing.T) {
-			actual := ScaleData(tc.metricID, "", tc.inputValue)
+			actual := ScaleData(tc.unit, tc.inputValue)
 
 			assert.EqualValues(t, tc.expectedResult, actual)
 		})

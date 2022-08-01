@@ -278,5 +278,5 @@ func (p *Processing) processMetricsQuery(ctx context.Context, name string, query
 	}
 
 	singleValue := singleDataPoint.Values[0]
-	return result.NewSuccessfulSLIResultWithQuery(name, unit.ScaleData(query.GetMetricSelector(), metricUnit, singleValue), request.RequestString())
+	return result.NewSuccessfulSLIResultWithQuery(name, unit.ScaleData(metricUnit, singleValue), request.RequestString())
 }

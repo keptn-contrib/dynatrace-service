@@ -93,7 +93,7 @@ func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, 
 		value = value / float64(len(singleDataEntry.Values))
 
 		// lets scale the metric
-		value = unit.ScaleData(metricQueryComponents.metricsQuery.GetMetricSelector(), metricQueryComponents.metricUnit, value)
+		value = unit.ScaleData(metricQueryComponents.metricUnit, value)
 
 		// we got our metric, SLOs and the value
 		log.WithFields(
