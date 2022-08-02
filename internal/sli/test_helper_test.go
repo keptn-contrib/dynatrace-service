@@ -80,6 +80,11 @@ func buildProblemsV2Request(encodedProblemSelector string) string {
 	return fmt.Sprintf("%s?from=%s&problemSelector=%s&to=%s", dynatrace.ProblemsV2Path, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedProblemSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
+// buildSLORequest builds a SLO request string with the specified SLO ID for use in testing.
+func buildSLORequest(sloID string) string {
+	return fmt.Sprintf("%s/%s?from=%s&timeFrame=GTF&to=%s", dynatrace.SLOPath, sloID, convertTimeStringToUnixMillisecondsString(testSLIStart), convertTimeStringToUnixMillisecondsString(testSLIEnd))
+}
+
 // buildUSQLRequest builds a USQL request string with the specified encoded query for use in testing.
 func buildUSQLRequest(encodedQuery string) string {
 	return fmt.Sprintf("%s?addDeepLinkFields=false&endTimestamp=%s&explain=false&query=%s&startTimestamp=%s", dynatrace.USQLPath, convertTimeStringToUnixMillisecondsString(testSLIEnd), encodedQuery, convertTimeStringToUnixMillisecondsString(testSLIStart))

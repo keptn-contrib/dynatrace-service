@@ -21,7 +21,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-single-sli-template.json"
 	const sliName = "static_slo_-_pass"
 
-	const expectedSLORequest = dynatrace.SLOPath + "/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000"
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
 
 	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95, expectedSLORequest)
 

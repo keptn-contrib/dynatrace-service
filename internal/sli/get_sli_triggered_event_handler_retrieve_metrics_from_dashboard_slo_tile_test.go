@@ -12,7 +12,7 @@ import (
 func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/slo_tiles/passing_slo/"
 
-	const expectedSLORequest = dynatrace.SLOPath + "/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000"
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
@@ -84,7 +84,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_TileWithUnknownID(t *testing.T) {
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.SLOPath+"/7d07efde-b714-3e6e-ad95-08490e2540c5?from=1609459200000&timeFrame=GTF&to=1609545600000", testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c5.json")
+	handler.AddExact(buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c5"), testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c5.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("slo_7d07efde-b714-3e6e-ad95-08490e2540c5"),

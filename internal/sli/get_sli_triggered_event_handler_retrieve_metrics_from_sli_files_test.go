@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -98,17 +97,18 @@ func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 // TestRetrieveMetricsFromFile_SLO tests the success case for file-based SLO SLIs.
 func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
 	const (
-		sloRequest            = dynatrace.SLOPath + "/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000"
 		testDataFolder        = "./testdata/sli_files/slo_success/"
 		testIndicatorSLOValue = "slo_value"
 	)
 
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
+
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(sloRequest, testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
+	handler.AddExact(expectedSLORequest, testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorSLOValue: "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorSLOValue, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, sloRequest))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorSLOValue, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, expectedSLORequest))
 }
