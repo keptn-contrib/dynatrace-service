@@ -79,19 +79,20 @@ func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 // TestRetrieveMetricsFromFile_ProblemsV2 tests the success case for file-based ProblemsV2 SLIs.
 func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 	const (
-		problemsRequest           = dynatrace.ProblemsV2Path + "?from=1609459200000&problemSelector=status%28%22open%22%29&to=1609545600000"
 		testDataFolder            = "./testdata/sli_files/pv2_success/"
 		testIndicatorProblemCount = "problem_count"
 	)
 
+	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
+
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(problemsRequest, testDataFolder+"problems_status_open.json")
+	handler.AddExact(expectedProblemsRequest, testDataFolder+"problems_status_open.json")
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 0, problemsRequest))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 0, expectedProblemsRequest))
 }
 
 // TestRetrieveMetricsFromFile_SLO tests the success case for file-based SLO SLIs.

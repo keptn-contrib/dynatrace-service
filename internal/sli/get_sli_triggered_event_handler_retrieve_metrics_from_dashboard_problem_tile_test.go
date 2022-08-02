@@ -14,7 +14,7 @@ import (
 func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/problem_tile_success/"
 
-	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1609459200000&problemSelector=status%28%22open%22%29&to=1609545600000"
+	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
@@ -48,7 +48,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/custom_management_zone/"
 
-	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1609459200000&problemSelector=status%28%22open%22%29%2CmanagementZoneIds%289130632296508575249%29&to=1609545600000"
+	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29%2CmanagementZoneIds%289130632296508575249%29")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
@@ -83,14 +83,14 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 func TestRetrieveMetricsFromDashboardProblemTile_MissingScopes(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/missing_scopes/"
 
-	const expectedProblemsRequest = dynatrace.ProblemsV2Path + "?from=1609459200000&problemSelector=status%28%22open%22%29&to=1609545600000"
+	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExactError(expectedProblemsRequest, 403, testDataFolder+"problems_missing_scope.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createFailedSLIResultWithQueryAssertionsFunc("problems", dynatrace.ProblemsV2Path+"?from=1609459200000&problemSelector=status%28%22open%22%29&to=1609545600000"),
+		createFailedSLIResultWithQueryAssertionsFunc("problems", expectedProblemsRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {

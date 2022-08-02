@@ -75,6 +75,11 @@ func buildMetricsV2RequestStringWithEntitySelector(encodedEntitySelector string,
 	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, encodedEntitySelector, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
+// buildProblemsV2Request builds a Problems V2 request string with the specified encoded problem selector for use in testing.
+func buildProblemsV2Request(encodedProblemSelector string) string {
+	return fmt.Sprintf("%s?from=%s&problemSelector=%s&to=%s", dynatrace.ProblemsV2Path, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedProblemSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+}
+
 // buildUSQLRequest builds a USQL request string with the specified encoded query for use in testing.
 func buildUSQLRequest(encodedQuery string) string {
 	return fmt.Sprintf("%s?addDeepLinkFields=false&endTimestamp=%s&explain=false&query=%s&startTimestamp=%s", dynatrace.USQLPath, convertTimeStringToUnixMillisecondsString(testSLIEnd), encodedQuery, convertTimeStringToUnixMillisecondsString(testSLIStart))
