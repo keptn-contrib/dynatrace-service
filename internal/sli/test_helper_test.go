@@ -8,11 +8,13 @@ import (
 	"testing"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/keptn/go-utils/pkg/common/timeutils"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -22,6 +24,8 @@ import (
 const testIndicatorResponseTimeP95 = "response_time_p95"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 const testDashboardID = "12345678-1111-4444-8888-123456789012"
+const testSLIStart = "2021-01-01T00:00:00.000Z"
+const testSLIEnd = "2021-01-02T00:00:00.000Z"
 
 var testGetSLIEventData = createTestGetSLIEventDataWithIndicator(testIndicatorResponseTimeP95)
 
@@ -46,9 +50,29 @@ func createTestGetSLIEventDataWithIndicator(indicator string) *getSLIEventData {
 		stage:      "staging",
 		service:    "carts",
 		indicators: []string{indicator}, // we need this to check later on in the custom queries
-		sliStart:   "2021-01-01T00:00:00.000Z",
-		sliEnd:     "2021-01-02T00:00:00.000Z",
+		sliStart:   testSLIStart,
+		sliEnd:     testSLIEnd,
 	}
+}
+
+// convertTimeStringToUnixMillisecondsString converts a ISO8601 (or fallback format RFC3339) time string to a string with the Unix timestamp, or "0" if this cannot be done.
+func convertTimeStringToUnixMillisecondsString(timeString string) string {
+	time, err := timeutils.ParseTimestamp(timeString)
+	if err != nil {
+		return "0"
+	}
+
+	return common.TimestampToUnixMillisecondsString(*time)
+}
+
+// buildMetricsV2RequestString builds a Metrics v2 request string with the specified encoded metric selector for use in testing.
+func buildMetricsV2RequestString(encodedMetricSelector string) string {
+	return fmt.Sprintf("%s?from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+}
+
+// buildMetricsV2RequestStringWithEntitySelector builds a Metrics v2 request string with the specified encoded entity and metric selectors for use in testing.
+func buildMetricsV2RequestStringWithEntitySelector(encodedEntitySelector string, encodedMetricSelector string) string {
+	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, encodedEntitySelector, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
 func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {

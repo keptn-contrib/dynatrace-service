@@ -13,7 +13,7 @@ import (
 func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/slo_generation/supported_data_explorer_tile/"
 
-	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000"
+	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
@@ -80,7 +80,7 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/slo_generation/data_explorer_tile_no_data/"
 
-	const expectedMetricsRequest = dynatrace.MetricsQueryPath + "?entitySelector=entityId%28SERVICE-C33B8A4C73748469%29&from=1609459200000&metricSelector=builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames&resolution=Inf&to=1609545600000"
+	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-C33B8A4C73748469%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
