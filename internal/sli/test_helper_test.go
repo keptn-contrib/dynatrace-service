@@ -75,6 +75,11 @@ func buildMetricsV2RequestStringWithEntitySelector(encodedEntitySelector string,
 	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, encodedEntitySelector, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
+// buildUSQLRequest builds a USQL request string with the specified encoded query for use in testing.
+func buildUSQLRequest(encodedQuery string) string {
+	return fmt.Sprintf("%s?addDeepLinkFields=false&endTimestamp=%s&explain=false&query=%s&startTimestamp=%s", dynatrace.USQLPath, convertTimeStringToUnixMillisecondsString(testSLIEnd), encodedQuery, convertTimeStringToUnixMillisecondsString(testSLIStart))
+}
+
 func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, dashboardID)

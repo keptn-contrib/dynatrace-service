@@ -3,7 +3,6 @@ package sli
 import (
 	"testing"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -57,7 +56,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 // * the defined SLI is valid YAML and the USQL prefix is used correctly, but the fields are used incorrectly.
 //   So we return an error for that
 func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
-	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
+	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
 	testConfigs := []struct {
 		name                              string
 		usqlPrefix                        string
@@ -75,7 +74,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 			name:                              "unknown dimension name fails",
 			usqlPrefix:                        "USQL;COLUMN_CHART;iOS 17.2.3;",
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
-			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlRequest, "could not find dimension name 'iOS 17.2.3'"),
+			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name 'iOS 17.2.3'"),
 		},
 		{
 			name:                              "missing fields fails",
@@ -90,7 +89,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 
 			// handler with 200 result needed
 			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact(usqlRequest, "./testdata/usql_200_multiple_results.json")
+			handler.AddExact(expectedUSQLRequest, "./testdata/usql_200_multiple_results.json")
 
 			// errors here: in value of tc.usqlPrefix
 			rClient := newResourceClientMockWithSLIs(t, map[string]string{
@@ -107,10 +106,10 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
-	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
+	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(usqlRequest,
+	handler.AddExact(expectedUSQLRequest,
 		"./testdata/usql_200_multiple_results.json")
 
 	testConfigs := []struct {
@@ -146,7 +145,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 				testIndicatorUSQL: tc.query,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, usqlRequest))
+			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, expectedUSQLRequest))
 		})
 	}
 }
@@ -156,16 +155,16 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
-	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1609459200000"
+	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(usqlRequest, "./testdata/usql_200_single_result.json")
+	handler.AddExact(expectedUSQLRequest, "./testdata/usql_200_single_result.json")
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, usqlRequest))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, expectedUSQLRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -173,16 +172,16 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
-	const usqlRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
+	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(usqlRequest, "./testdata/usql_200_0_results.json")
+	handler.AddExact(expectedUSQLRequest, "./testdata/usql_200_0_results.json")
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorUSQL: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlRequest, "could not find dimension name"))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -191,10 +190,11 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, but the fields of the USQL prefix are used incorrectly together, so we return errors for that
 func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
-	const usqlSingleResultRequest = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+AVG%28duration%29+FROM+usersession&startTimestamp=1609459200000"
-	const usqlMultipleResultRequest1 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+AVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
-	const usqlMultipleResultRequest2 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CosVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
-	const usqlMultipleResultRequest3 = dynatrace.USQLPath + "?addDeepLinkFields=false&endTimestamp=1609545600000&explain=false&query=SELECT+osVersion%2CAVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion&startTimestamp=1609459200000"
+	usqlSingleResultRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	usqlMultipleResultRequest1 := buildUSQLRequest("SELECT+AVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion")
+	usqlMultipleResultRequest2 := buildUSQLRequest("SELECT+osVersion%2CosVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
+	usqlMultipleResultRequest3 := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion")
+
 	testConfigs := []struct {
 		name                              string
 		request                           string
