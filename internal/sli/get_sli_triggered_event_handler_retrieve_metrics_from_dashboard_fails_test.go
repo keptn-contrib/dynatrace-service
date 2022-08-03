@@ -1,7 +1,6 @@
 package sli
 
 import (
-	"net/http"
 	"strconv"
 	"testing"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -84,35 +82,20 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			testEvent := &getSLIEventData{
-				project:    "sockshop",
-				stage:      "staging",
-				service:    "carts",
-				indicators: tc.eventIndicators,
-				sliStart:   "", // use defaults here
-				sliEnd:     "", // use defaults here
-			}
-
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddExactError(dynatrace.DashboardsPath+"/"+tc.def.dashboardID, tc.def.errorCode, tc.def.payload)
 
 			// sli and slo upload works
 			rClient := &uploadErrorResourceClientMock{t: t}
 
-			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData) {
+			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 				assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 				assert.Contains(t, actual.Message, tc.def.dashboardID)
 				assert.Contains(t, actual.Message, strconv.Itoa(tc.def.errorCode))
 				assert.Contains(t, actual.Message, tc.def.errorMessage)
 			}
 
-			runAndAssertDashboardTest(t, testEvent, handler, rClient, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
+			runAndAssertDashboardTest(t, testGetSLIEventData, handler, rClient, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
 		})
 	}
-}
-
-func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient keptn.SLOAndSLIClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual *keptnv2.SLIResult)) {
-	eventSenderClient := &eventSenderClientMock{}
-	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, dashboardID)
-	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }

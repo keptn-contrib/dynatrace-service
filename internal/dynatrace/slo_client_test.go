@@ -19,7 +19,7 @@ func TestExecuteGetDynatraceSLO(t *testing.T) {
 	assert.NoError(t, err)
 
 	sloID := "524ca177-849b-3e8c-8175-42b93fbc33c5"
-	sloResult, err := NewSLOClient(dtClient).Get(context.TODO(), NewSLOClientGetParameters(sloID, *timeframe))
+	sloResult, err := NewSLOClient(dtClient).Get(context.TODO(), NewSLOClientGetRequest(sloID, *timeframe))
 
 	assert.NoError(t, err)
 	assert.NotNil(t, sloResult, "No SLO Result returned for "+sloID)

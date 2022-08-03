@@ -35,13 +35,10 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, result, "No result returned")
 	assert.NotNil(t, result.dashboardLink, "No dashboard link label generated")
-	assert.NotNil(t, result.dashboard, "No Dashboard JSON returned")
-	assert.NotNil(t, result.sli, "No SLI returned")
 	assert.NotNil(t, result.slo, "No SLO returned")
 	assert.NotNil(t, result.sliResults, "No SLI Results returned")
 
 	const expectedSLOs = 2
-	assert.Equal(t, expectedSLOs, len(result.sli.Indicators))
 	assert.Equal(t, expectedSLOs, len(result.slo.Objectives))
 	assert.EqualValues(t, &keptnapi.SLOScore{Pass: "90%", Warning: "70%"}, result.slo.TotalScore)
 	assert.EqualValues(

@@ -36,7 +36,7 @@ func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData
 }
 
 // Process processes the specified Custom Charting dashboard tile.
-func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
+func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []TileResult {
 	if tile.FilterConfig == nil {
 		log.Debug("Skipping custom charting tile as it is missing a filterConfig element")
 		return nil
@@ -45,8 +45,7 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	sloDefinitionParsingResult, err := parseSLODefinition(tile.FilterConfig.CustomName)
 	var sloDefError *sloDefinitionError
 	if errors.As(err, &sloDefError) {
-		failedTileResult := newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Custom charting tile title parsing error", err)
-		return []*TileResult{&failedTileResult}
+		return []TileResult{newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Custom charting tile title parsing error", err)}
 	}
 
 	if sloDefinitionParsingResult.exclude {
@@ -71,21 +70,19 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	if len(tile.FilterConfig.ChartConfig.Series) != 1 {
-		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile must have exactly one series")
-		return []*TileResult{&failedTileResult}
+		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile must have exactly one series")}
 	}
 
 	return p.processSeries(ctx, sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
 }
 
-func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []*TileResult {
+func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []TileResult {
 
 	metricQuery, err := p.generateMetricQueryFromChartSeries(ctx, series, tileManagementZoneFilter, filtersPerEntityType)
 
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
-		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())
-		return []*TileResult{&failedTileResult}
+		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}
 	}
 
 	return NewMetricsQueryProcessing(p.client).Process(ctx, len(series.Dimensions), sloDefinition, metricQuery)
@@ -139,8 +136,6 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 	// build split by
 	splitBy := ""
 	filterAggregator := ""
-	metricSelectorTargetSnippet := ""
-	entitySelectorTargetSnippet := ""
 	if len(series.Dimensions) > 1 {
 		return nil, errors.New("only a single dimension is supported")
 	} else if len(series.Dimensions) == 1 {
@@ -151,16 +146,10 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 		// TODO: support multiple filters - right now we only support 1
 		if len(seriesDim.Values) > 1 {
 			return nil, errors.New("only a single dimension filter is supported")
-		} else if len(seriesDim.Values) == 1 {
+		}
+
+		if len(seriesDim.Values) == 1 {
 			filterAggregator = fmt.Sprintf(":filter(eq(%s,%s))", seriesDim.Name, seriesDim.Values[0])
-		} else {
-			// we need this for the generation of the SLI for each individual dimension value
-			// if the dimension is a dt.entity we have to add an additional entityId to the entitySelector - otherwise we add a filter for the dimension
-			if strings.HasPrefix(seriesDim.Name, "dt.entity.") {
-				entitySelectorTargetSnippet = fmt.Sprintf(",entityId(\"FILTERDIMENSIONVALUE\")")
-			} else {
-				metricSelectorTargetSnippet = fmt.Sprintf(":filter(eq(%s,FILTERDIMENSIONVALUE))", seriesDim.Name)
-			}
 		}
 	} else {
 		splitBy = ":splitBy()"
@@ -177,11 +166,9 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 	}
 
 	return &queryComponents{
-		metricsQuery:                *metricsQuery,
-		timeframe:                   p.timeframe,
-		metricUnit:                  metricDefinition.Unit,
-		entitySelectorTargetSnippet: entitySelectorTargetSnippet,
-		metricSelectorTargetSnippet: metricSelectorTargetSnippet,
+		metricsQuery: *metricsQuery,
+		timeframe:    p.timeframe,
+		metricUnit:   metricDefinition.Unit,
 	}, nil
 }
 

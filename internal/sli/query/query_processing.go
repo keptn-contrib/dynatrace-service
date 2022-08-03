@@ -86,25 +86,26 @@ func (p *Processing) executeUSQLQuery(ctx context.Context, name string, usqlQuer
 		return result.NewFailedSLIResult(name, "error parsing USQL query: "+err.Error())
 	}
 
-	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, dynatrace.NewUSQLClientQueryParameters(query.GetQuery(), p.timeframe))
+	request := dynatrace.NewUSQLClientQueryRequest(query.GetQuery(), p.timeframe)
+	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying User sessions API: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying User sessions API: "+err.Error(), request.RequestString())
 	}
 
 	if query.GetResultType() == v1usql.SingleValueResultType {
 		if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
-			return result.NewWarningSLIResult(name, fmt.Sprintf("USQL result type %s should only return a single result", v1usql.SingleValueResultType))
+			return result.NewWarningSLIResultWithQuery(name, fmt.Sprintf("USQL result type %s should only return a single result", v1usql.SingleValueResultType), request.RequestString())
 		}
 		value, err := tryCastDimensionValueToNumeric(usqlResult.Values[0][0])
 		if err != nil {
-			return result.NewWarningSLIResult(name, err.Error())
+			return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 		}
-		return result.NewSuccessfulSLIResult(name, value)
+		return result.NewSuccessfulSLIResultWithQuery(name, value, request.RequestString())
 	}
 
 	// all other types must at least have 2 columns to work properly
 	if len(usqlResult.ColumnNames) < 2 {
-		return result.NewWarningSLIResult(name, fmt.Sprintf("USQL result type %s should at least have two columns", query.GetResultType()))
+		return result.NewWarningSLIResultWithQuery(name, fmt.Sprintf("USQL result type %s should at least have two columns", query.GetResultType()), request.RequestString())
 	}
 
 	for _, rowValue := range usqlResult.Values {
@@ -120,24 +121,24 @@ func (p *Processing) executeUSQLQuery(ctx context.Context, name string, usqlQuer
 			dimensionValue = rowValue[len(rowValue)-1]
 		default:
 			// this is unlikely to be reached as it should be handled by the query parser, but a failed result is generated because it is unsupported
-			return result.NewFailedSLIResult(name, fmt.Sprintf("unknown USQL result type: %s", query.GetResultType()))
+			return result.NewFailedSLIResultWithQuery(name, fmt.Sprintf("unknown USQL result type: %s", query.GetResultType()), request.RequestString())
 		}
 
 		dimensionNameString, err := tryCastDimensionNameToString(dimensionName)
 		if err != nil {
-			return result.NewWarningSLIResult(name, err.Error())
+			return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 		}
 
 		if dimensionNameString == query.GetDimension() {
 			value, err := tryCastDimensionValueToNumeric(dimensionValue)
 			if err != nil {
-				return result.NewWarningSLIResult(name, err.Error())
+				return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 			}
-			return result.NewSuccessfulSLIResult(name, value)
+			return result.NewSuccessfulSLIResultWithQuery(name, value, request.RequestString())
 		}
 	}
 
-	return result.NewWarningSLIResult(name, fmt.Sprintf("could not find dimension name '%s' in result", query.GetDimension()))
+	return result.NewWarningSLIResultWithQuery(name, fmt.Sprintf("could not find dimension name '%s' in result", query.GetDimension()), request.RequestString())
 }
 
 func tryCastDimensionValueToNumeric(dimensionValue interface{}) (float64, error) {
@@ -164,12 +165,13 @@ func (p *Processing) executeSLOQuery(ctx context.Context, name string, sloQuery 
 		return result.NewFailedSLIResult(name, "error parsing SLO query: "+err.Error())
 	}
 
-	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, dynatrace.NewSLOClientGetParameters(query.GetSLOID(), p.timeframe))
+	request := dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe)
+	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying Service level objectives API: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying Service level objectives API: "+err.Error(), request.RequestString())
 	}
 
-	return result.NewSuccessfulSLIResult(name, sloResult.EvaluatedPercentage)
+	return result.NewSuccessfulSLIResultWithQuery(name, sloResult.EvaluatedPercentage, request.RequestString())
 }
 
 func (p *Processing) executeProblemQuery(ctx context.Context, name string, problemsQuery string) result.SLIResult {
@@ -178,12 +180,13 @@ func (p *Processing) executeProblemQuery(ctx context.Context, name string, probl
 		return result.NewFailedSLIResult(name, "error parsing Problems v2 query: "+err.Error())
 	}
 
-	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, dynatrace.NewProblemsV2ClientQueryParameters(*query, p.timeframe))
+	request := dynatrace.NewProblemsV2ClientQueryRequest(*query, p.timeframe)
+	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying Problems API v2: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying Problems API v2: "+err.Error(), request.RequestString())
 	}
 
-	return result.NewSuccessfulSLIResult(name, float64(totalProblemCount))
+	return result.NewSuccessfulSLIResultWithQuery(name, float64(totalProblemCount), request.RequestString())
 }
 
 func (p *Processing) executeSecurityProblemQuery(ctx context.Context, name string, queryString string) result.SLIResult {
@@ -192,12 +195,13 @@ func (p *Processing) executeSecurityProblemQuery(ctx context.Context, name strin
 		return result.NewFailedSLIResult(name, "error parsing Security Problems v2 query: "+err.Error())
 	}
 
-	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(ctx, dynatrace.NewSecurityProblemsV2ClientQueryParameters(*query, p.timeframe))
+	request := dynatrace.NewSecurityProblemsClientQueryRequest(*query, p.timeframe)
+	totalSecurityProblemCount, err := dynatrace.NewSecurityProblemsClient(p.client).GetTotalCountByQuery(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying Security problems API: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying Security problems API: "+err.Error(), request.RequestString())
 	}
 
-	return result.NewSuccessfulSLIResult(name, float64(totalSecurityProblemCount))
+	return result.NewSuccessfulSLIResultWithQuery(name, float64(totalSecurityProblemCount), request.RequestString())
 }
 
 func (p *Processing) executeMetricsV2Query(ctx context.Context, name string, queryString string) result.SLIResult {
@@ -223,36 +227,37 @@ func (p *Processing) executeMetricsQuery(ctx context.Context, name string, query
 }
 
 func (p *Processing) processMetricsQuery(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
-	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(ctx, dynatrace.NewMetricsClientQueryParameters(query, p.timeframe))
+	request := dynatrace.NewMetricsClientQueryRequest(query, p.timeframe)
+	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIResult(name, "error querying Metrics API v2: "+err.Error())
+		return result.NewFailedSLIResultWithQuery(name, "error querying Metrics API v2: "+err.Error(), request.RequestString())
 	}
 
 	// TODO 2021-10-13: Collect and log all warnings
 
 	// TODO 2021-10-13: Check if having a query result with zero results is even plausable
 	if len(res.Result) == 0 {
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned zero results")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero results", request.RequestString())
 	}
 
 	if len(res.Result) > 1 {
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned more than one result")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one result", request.RequestString())
 	}
 
 	singleResult := res.Result[0]
 
 	if len(singleResult.Data) == 0 {
 		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResult(name, "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))
+			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
 		}
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned zero data points")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data points", request.RequestString())
 	}
 
 	if len(singleResult.Data) > 1 {
 		if len(singleResult.Warnings) > 0 {
-			return result.NewFailedSLIResult(name, "Metrics API v2 returned more than one data point. Warnings: "+strings.Join(singleResult.Warnings, ", "))
+			return result.NewFailedSLIResultWithQuery(name, "Metrics API v2 returned more than one data point. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
 		}
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned more than one data point")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point", request.RequestString())
 	}
 
 	singleDataPoint := singleResult.Data[0]
@@ -260,18 +265,18 @@ func (p *Processing) processMetricsQuery(ctx context.Context, name string, query
 	// TODO 2021-10-13: Check if having a query result with zero values is even plausable
 	if len(singleDataPoint.Values) == 0 {
 		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResult(name, "Metrics API v2 returned zero data point values. Warnings: "+strings.Join(singleResult.Warnings, ", "))
+			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data point values. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
 		}
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned zero data point values")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data point values", request.RequestString())
 	}
 
 	if len(singleDataPoint.Values) > 1 {
 		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResult(name, "Metrics API v2 returned more than one data point value. Warnings: "+strings.Join(singleResult.Warnings, ", "))
+			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point value. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
 		}
-		return result.NewWarningSLIResult(name, "Metrics API v2 returned more than one data point value")
+		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point value", request.RequestString())
 	}
 
 	singleValue := singleDataPoint.Values[0]
-	return result.NewSuccessfulSLIResult(name, unit.ScaleData(query.GetMetricSelector(), metricUnit, singleValue))
+	return result.NewSuccessfulSLIResultWithQuery(name, unit.ScaleData(query.GetMetricSelector(), metricUnit, singleValue), request.RequestString())
 }

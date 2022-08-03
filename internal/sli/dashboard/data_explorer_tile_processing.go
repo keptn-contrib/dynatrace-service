@@ -35,12 +35,11 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 }
 
 // Process processes the specified Data Explorer dashboard tile.
-func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []*TileResult {
+func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []TileResult {
 	sloDefinitionParsingResult, err := parseSLODefinition(tile.Name)
 	var sloDefError *sloDefinitionError
 	if errors.As(err, &sloDefError) {
-		failedTileResult := newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Data Explorer tile title parsing error", err)
-		return []*TileResult{&failedTileResult}
+		return []TileResult{newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Data Explorer tile title parsing error", err)}
 	}
 
 	if sloDefinitionParsingResult.exclude {
@@ -55,8 +54,7 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 	}
 
 	if len(tile.Queries) != 1 {
-		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile must have exactly one query")
-		return []*TileResult{&failedTileResult}
+		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile must have exactly one query")}
 	}
 
 	// get the tile specific management zone filter that might be needed by different tile processors
@@ -66,14 +64,13 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 	return p.processQuery(ctx, sloDefinition, tile.Queries[0], managementZoneFilter)
 }
 
-func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefinition keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []*TileResult {
+func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefinition keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []TileResult {
 	log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
 
 	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(ctx, dataQuery, managementZoneFilter)
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
-		failedTileResult := newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())
-		return []*TileResult{&failedTileResult}
+		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())}
 	}
 
 	return NewMetricsQueryProcessing(p.client).Process(ctx, len(dataQuery.SplitBy), sloDefinition, metricQuery)
@@ -127,10 +124,10 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ct
 	var splitBy string
 	if len(dataQuery.SplitBy) > 1 {
 		return nil, fmt.Errorf("only a single splitBy dimension is supported")
-	} else if len(dataQuery.SplitBy) == 1 {
+	}
+
+	if len(dataQuery.SplitBy) == 1 {
 		splitBy = fmt.Sprintf(":splitBy(\"%s\")", dataQuery.SplitBy[0])
-		// if we split by a dimension we need to include that dimension in our individual SLI query definitions - thats why we hand this back in the filter clause
-		processedFilter.metricSelectorTargetSnippet = fmt.Sprintf("%s:filter(eq(%s,FILTERDIMENSIONVALUE))", processedFilter.metricSelectorTargetSnippet, dataQuery.SplitBy[0])
 	} else {
 		splitBy = ":splitBy()"
 	}
@@ -160,11 +157,9 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ct
 	}
 
 	return &queryComponents{
-		metricsQuery:                *metricsQuery,
-		timeframe:                   p.timeframe,
-		metricUnit:                  metricDefinition.Unit,
-		entitySelectorTargetSnippet: processedFilter.entitySelectorTargetSnippet,
-		metricSelectorTargetSnippet: processedFilter.metricSelectorTargetSnippet,
+		metricsQuery: *metricsQuery,
+		timeframe:    p.timeframe,
+		metricUnit:   metricDefinition.Unit,
 	}, nil
 
 }
@@ -182,42 +177,35 @@ func ensureEntitySelectorFilter(existingEntitySelectorFilter string, metricDefin
 }
 
 type processedFilterComponents struct {
-	metricSelectorFilter        string
-	metricSelectorTargetSnippet string
-	entitySelectorFilter        string
-	entitySelectorTargetSnippet string
+	metricSelectorFilter string
+	entitySelectorFilter string
 }
 
 func processFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*processedFilterComponents, error) {
 	switch filter.FilterType {
 	case "ID":
 		return &processedFilterComponents{
-			entitySelectorFilter:        fmt.Sprintf("entityId(%s)", filter.Criteria[0].Value),
-			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+			entitySelectorFilter: fmt.Sprintf("entityId(%s)", filter.Criteria[0].Value),
 		}, nil
 
 	case "NAME":
 		return &processedFilterComponents{
-			entitySelectorFilter:        fmt.Sprintf("type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
-			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+			entitySelectorFilter: fmt.Sprintf("type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
 		}, nil
 
 	case "TAG":
 		return &processedFilterComponents{
-			entitySelectorFilter:        fmt.Sprintf("type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
-			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+			entitySelectorFilter: fmt.Sprintf("type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
 		}, nil
 
 	case "ENTITY_ATTRIBUTE":
 		return &processedFilterComponents{
-			entitySelectorFilter:        fmt.Sprintf("type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
-			entitySelectorTargetSnippet: ",entityId(FILTERDIMENSIONVALUE)",
+			entitySelectorFilter: fmt.Sprintf("type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
 		}, nil
 
 	case "DIMENSION":
 		return &processedFilterComponents{
-			metricSelectorFilter:        fmt.Sprintf(":filter(%s(\"%s\",\"%s\"))", filter.Criteria[0].Evaluator, filter.Filter, filter.Criteria[0].Value),
-			metricSelectorTargetSnippet: fmt.Sprintf(":filter(eq(\"%s\",\"FILTERDIMENSIONVALUE\"))", filter.Filter),
+			metricSelectorFilter: fmt.Sprintf(":filter(%s(\"%s\",\"%s\"))", filter.Criteria[0].Evaluator, filter.Filter, filter.Criteria[0].Value),
 		}, nil
 
 	default:

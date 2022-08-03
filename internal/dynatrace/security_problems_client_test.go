@@ -22,7 +22,7 @@ func TestSecurityProblemsClient_GetTotalCountByQuery_None(t *testing.T) {
 
 	securityProblemQuery := secpv2.NewQuery("status(OPEN)")
 
-	totalSecurityProblemCount, err := NewSecurityProblemsClient(dtClient).GetTotalCountByQuery(context.TODO(), NewSecurityProblemsV2ClientQueryParameters(securityProblemQuery, *timeframe))
+	totalSecurityProblemCount, err := NewSecurityProblemsClient(dtClient).GetTotalCountByQuery(context.TODO(), NewSecurityProblemsClientQueryRequest(securityProblemQuery, *timeframe))
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, 0, totalSecurityProblemCount)
@@ -40,7 +40,7 @@ func TestSecurityProblemsClient_GetTotalCountByQuery_Some(t *testing.T) {
 
 	securityProblemQuery := secpv2.NewQuery("status(OPEN)")
 
-	totalSecurityProblemCount, err := NewSecurityProblemsClient(dtClient).GetTotalCountByQuery(context.TODO(), NewSecurityProblemsV2ClientQueryParameters(securityProblemQuery, *timeframe))
+	totalSecurityProblemCount, err := NewSecurityProblemsClient(dtClient).GetTotalCountByQuery(context.TODO(), NewSecurityProblemsClientQueryRequest(securityProblemQuery, *timeframe))
 
 	assert.NoError(t, err)
 	assert.EqualValues(t, 177, totalSecurityProblemCount)

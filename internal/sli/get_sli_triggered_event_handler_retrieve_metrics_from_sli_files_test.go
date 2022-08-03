@@ -2,11 +2,7 @@ package sli
 
 import (
 	"fmt"
-	"net/http"
 	"testing"
-
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
@@ -21,21 +17,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 	// no need to have something here, because we should not send an API request
 	handler := test.NewFileBasedURLHandler(t)
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	// error here in the misspelled indicator:
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "response_time_p95")
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "SLI definition", "not found"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -47,21 +34,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 	// error here: metric(s)Selector=
 	handler := test.NewFileBasedURLHandler(t)
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	// error here as well: metric(s)Selector=
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
-		indicator: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		testIndicatorResponseTimeP95: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, "error parsing Metrics v2 query")
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing Metrics v2 query"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -73,25 +51,64 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 	// make sure we would not be able to query any metric due to a parsing error
 	handler := test.NewFileBasedURLHandler(t)
 
-	eventSenderClient := &eventSenderClientMock{}
-
 	const errorMessage = "invalid YAML file - some parsing issue"
 	rClient := newResourceClientMockWithGetSLIsError(t, fmt.Errorf(errorMessage))
 
-	sliResultAssertionsFunc := func(t *testing.T, actual *keptnv2.SLIResult) {
-		assert.EqualValues(t, indicator, actual.Metric)
-		assert.EqualValues(t, 0, actual.Value)
-		assert.EqualValues(t, false, actual.Success)
-		assert.Contains(t, actual.Message, errorMessage)
-	}
-
-	assertThatCustomSLITestIsCorrect(t, handler, eventSenderClient, rClient, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFunc)
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, errorMessage))
 }
 
-func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *keptnv2.GetSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual *keptnv2.SLIResult)) {
-	// we use the special mock for the resource client
-	// we do not want to query a dashboard, so we leave it empty
-	runTestAndAssertNoError(t, testGetSLIEventDataWithDefaultStartAndEnd, handler, eventSenderClient, rClient, "")
+// TestRetrieveMetricsFromFile_SecurityProblemsV2 tests the success case for file-based SecurityProblemsV2 SLIs.
+func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
+	const (
+		securityProblemsRequest           = "/api/v2/securityProblems?from=1609459200000&securityProblemSelector=status%28%22open%22%29&to=1609545600000"
+		testDataFolder                    = "./testdata/sli_files/secpv2_success/"
+		testIndicatorSecurityProblemCount = "security_problem_count"
+	)
 
-	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(securityProblemsRequest, testDataFolder+"security_problems_status_open.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorSecurityProblemCount: "SECPV2;securityProblemSelector=status(\"open\")",
+	})
+
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorSecurityProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 103, securityProblemsRequest))
+}
+
+// TestRetrieveMetricsFromFile_ProblemsV2 tests the success case for file-based ProblemsV2 SLIs.
+func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
+	const (
+		testDataFolder            = "./testdata/sli_files/pv2_success/"
+		testIndicatorProblemCount = "problem_count"
+	)
+
+	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(expectedProblemsRequest, testDataFolder+"problems_status_open.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
+	})
+
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 0, expectedProblemsRequest))
+}
+
+// TestRetrieveMetricsFromFile_SLO tests the success case for file-based SLO SLIs.
+func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
+	const (
+		testDataFolder        = "./testdata/sli_files/slo_success/"
+		testIndicatorSLOValue = "slo_value"
+	)
+
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(expectedSLORequest, testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorSLOValue: "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4",
+	})
+
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorSLOValue, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, expectedSLORequest))
 }

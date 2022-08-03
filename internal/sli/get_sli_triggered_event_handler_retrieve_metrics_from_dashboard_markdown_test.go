@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -22,7 +21,9 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-single-sli-template.json"
 	const sliName = "static_slo_-_pass"
 
-	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95)
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
+
+	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95, expectedSLORequest)
 
 	expectedSLO := &keptnapi.SLO{
 		SLI:     sliName,
@@ -122,10 +123,10 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 					Markdown: markdownTest.markdown,
 				},
 			)
-			handler.AddExactFile(dynatrace.SLOPath+"/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000", "./testdata/dashboards/slo_tiles/passing_slo/slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
+			handler.AddExactFile(expectedSLORequest, "./testdata/dashboards/slo_tiles/passing_slo/slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
 			rClient := &uploadErrorResourceClientMock{t: t}
-			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, assertionFunc)
+			runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, assertionFunc)
 
 			assert.EqualValues(t, rClient.uploadedSLOs, markdownTest.expectedSLO)
 		})
@@ -159,7 +160,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 	tests := []struct {
 		name           string
 		markdown       string
-		assertionsFunc func(*testing.T, *keptnv2.SLIResult)
+		assertionsFunc func(*testing.T, sliResult)
 	}{
 		{
 			name:           "unknown compare with score function",
@@ -242,8 +243,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 				},
 			)
 
-			rClient := &uploadErrorResourceClientMock{t: t}
-			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
 		})
 	}
 }
@@ -265,7 +265,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownMultipleTilesErrors(t *testing.T) 
 		name           string
 		firstMarkdown  string
 		secondMarkdown string
-		assertionsFunc func(*testing.T, *keptnv2.SLIResult)
+		assertionsFunc func(*testing.T, sliResult)
 	}{
 		{
 			name:           "union does not overlap",
@@ -291,8 +291,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownMultipleTilesErrors(t *testing.T) 
 				},
 			)
 
-			rClient := &uploadErrorResourceClientMock{t: t}
-			runAndAssertThatDashboardTestIsCorrect(t, testDataExplorerGetSLIEventData, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, markdownTest.assertionsFunc)
 		})
 	}
 }

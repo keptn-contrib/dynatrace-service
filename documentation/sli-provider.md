@@ -7,6 +7,7 @@ The dynatrace-service can support the evaluation of the quality gates by retriev
 
 The mode selected by the dynatrace-service depends on the value of the `dashboard` key in the `dynatrace/dynatrace.conf.yaml` used for a particular event as outlined in [Dashboard SLI-mode configuration (`dashboard`)](dynatrace-conf-yaml-file.md#dashboard-sli-mode-configuration-dashboard)
 
+To help you understand the queries used for obtaining the SLIs, the dynatrace-service includes a custom `query` field in each element of `indicatorValues` in the `sh.keptn.event.get-sli.finished` event. This consists of the path and query string of the associated API request and is viewable directly in the Event payload in the Bridge. 
 
 ## SLI evaluation in auto-remediation workflows
 

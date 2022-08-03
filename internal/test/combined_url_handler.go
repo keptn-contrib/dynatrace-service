@@ -50,10 +50,3 @@ func (h *CombinedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.templatingHandler.ServeHTTP(w, r)
 }
-
-/*
-/api/v2/slo/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1631862000000&timeFrame=GTF&to=1631865600000
-
-/api/v2/slo/7d07efde-b714-3e6e-ad95-08490e2540c4?from=1609459200000&timeFrame=GTF&to=1609545600000
-
-*/
