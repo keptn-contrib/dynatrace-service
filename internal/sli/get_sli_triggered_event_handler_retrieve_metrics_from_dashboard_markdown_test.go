@@ -113,6 +113,21 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 			markdown:    "KQG.Total.Pass=95%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass_or_warn;KQG.Compare.Results=6;KQG.Compare.Function=p95",
 			expectedSLO: createSLO("95%", "75%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePassOrWarn, 6, dashboard.CompareFunctionP95, expectedSLO),
 		},
+		{
+			name:        "newline at the end",
+			markdown:    "KQG.Total.Pass=85%;KQG.Total.Warning=80%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=avg\\n",
+			expectedSLO: createSLO("85%", "80%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 3, dashboard.CompareFunctionAvg, expectedSLO),
+		},
+		{
+			name:        "newline after every key value pair",
+			markdown:    "KQG.Total.Pass=85%;\\nKQG.Total.Warning=80%;\\nKQG.Compare.WithScore=pass;\\nKQG.Compare.Results=3;\\nKQG.Compare.Function=avg\\n",
+			expectedSLO: createSLO("85%", "80%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 3, dashboard.CompareFunctionAvg, expectedSLO),
+		},
+		{
+			name:        "whitespace around each key-value pair",
+			markdown:    "KQG.Total.Pass = 85%;\\nKQG.Total.Warning = 80%;\\nKQG.Compare.WithScore = pass;\\nKQG.Compare.Results = 3;\\nKQG.Compare.Function = avg\\n",
+			expectedSLO: createSLO("85%", "80%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 3, dashboard.CompareFunctionAvg, expectedSLO),
+		},
 	}
 	for _, markdownTest := range tests {
 		t.Run(markdownTest.name, func(t *testing.T) {
