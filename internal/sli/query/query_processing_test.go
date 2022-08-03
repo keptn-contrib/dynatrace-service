@@ -29,7 +29,7 @@ func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 
 	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
-	assert.EqualValues(t, 287.10692602352884/1000, sliResult.Value())
+	assert.EqualValues(t, 287.10692602352884, sliResult.Value())
 	assert.EqualValues(t, result.IndicatorResultSuccessful, sliResult.IndicatorResult())
 	assert.True(t, sliResult.Success())
 }
@@ -153,7 +153,7 @@ func TestGetSLIValue(t *testing.T) {
 	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
 
 	assert.True(t, sliResult.Success())
-	assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
+	assert.InDelta(t, 8433.40, sliResult.Value(), 0.001)
 }
 
 // tests the GETSliValue function to return the proper datapoint with the old custom query format
@@ -204,7 +204,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		sliResult := p.GetSLIResultFromIndicator(context.TODO(), responseTimeP50)
 
 		assert.True(t, sliResult.Success())
-		assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
+		assert.InDelta(t, 8433.40, sliResult.Value(), 0.001)
 	}
 }
 
@@ -290,7 +290,7 @@ func TestGetSLISleep(t *testing.T) {
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
 	assert.True(t, sliResult.Success())
-	assert.InDelta(t, 8.43340, sliResult.Value(), 0.001)
+	assert.InDelta(t, 8433.40, sliResult.Value(), 0.001)
 
 	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
 }
@@ -426,7 +426,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 		{
 			indicator:        "response_time2",
 			query:            "entitySelector=type(SERVICE),tag(\"keptn_deployment:$DEPLOYMENT\"),tag(\"context:$CONTEXT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
-			expectedSLIValue: 0.29,
+			expectedSLIValue: 290,
 		},
 		{
 			indicator:        "problems",

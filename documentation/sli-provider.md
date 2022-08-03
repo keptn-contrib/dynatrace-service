@@ -9,6 +9,9 @@ The mode selected by the dynatrace-service depends on the value of the `dashboar
 
 To help you understand the queries used for obtaining the SLIs, the dynatrace-service includes a custom `query` field in each element of `indicatorValues` in the `sh.keptn.event.get-sli.finished` event. This consists of the path and query string of the associated API request and is viewable directly in the Event payload in the Bridge. 
 
+## Specifying the units of SLIs based on the Metrics v2 API 
+The dynatrace-service always returns SLIs in the same units as the underlying metric expression. To convert between units, append a [`:toUnit(<sourceUnit>,<targetUnit>)` transformation](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/metric-selector#to-unit) to the metric expression (e.g. in the **Code** tab of the Data Explorer). For example, `builtin:service.response.time:toUnit(MicroSecond,MilliSecond)` will produce a service response time metric in milliseconds. Alternatively, for file-based SLIs, the [`MV2` prefix](slis-via-files.md#converted-metrics-prefix-mv2) may be used to convert microseconds to milliseconds or bytes to kilobytes in a concise way. For example, `MV2;MicroSecond;metricSelector=builtin:service.response.time:splitBy():avg&entitySelector=type(SERVICE)` will convert the `builtin:service.response.time` metric from microseconds to milliseconds.
+
 ## SLI evaluation in auto-remediation workflows
 
 As part of its auto-remediation sequence, Keptn also evaluates SLOs after executing the remediation action. By default, the auto-remediation workflow can be terminated if and only if the problem has been closed in Dynatrace.

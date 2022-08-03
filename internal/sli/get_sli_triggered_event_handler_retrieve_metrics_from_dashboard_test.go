@@ -35,7 +35,7 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 		t: t,
 	}
 
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, resourceClientMock, getSLIFinishedEventAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443, expectedMetricsRequest))
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, resourceClientMock, getSLIFinishedEventAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
 }
 
 // TestErrorIsReturnedWhenSLOFileWritingFails tests that an error is returned if retrieving (a single) SLI from a dashboard works but upload of SLO file fails.
@@ -85,7 +85,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	rClient := &uploadErrorResourceClientMock{t: t}
 
 	// value is divided by 1000 from dynatrace API result!
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443, expectedMetricsRequest))
+	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
 	assert.True(t, rClient.slosUploaded)
 }
 

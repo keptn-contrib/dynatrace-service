@@ -148,7 +148,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
 	rClient := newResourceClientMock(t)
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443, expectedMetricsRequest))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -165,5 +165,5 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12.439619479902443, expectedMetricsRequest))
+	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
 }
