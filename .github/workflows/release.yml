@@ -327,4 +327,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ steps.create-release-package.outputs.tag-name }}
         run: |
-          gh release create "${{ env.RELEASE_TAG }}" --notes-file "${{ env.RELEASE_NOTES_FILE }}" --title "${{ env.RELEASE_TAG }}" ./dist/installer/*.tgz
+          gh release create "${{ env.RELEASE_TAG }}" --draft --notes-file "${{ env.RELEASE_NOTES_FILE }}" --title "${{ env.RELEASE_TAG }}" ./dist/installer/*.tgz
