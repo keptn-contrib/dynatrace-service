@@ -98,9 +98,9 @@ func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore
 			continue
 		}
 
-		// lets separate key and value
-		key := strings.ToLower(configValueSplits[0])
-		value := configValueSplits[1]
+		// separate key and value and trim whitespace
+		key := strings.ToLower(strings.TrimSpace(configValueSplits[0]))
+		value := strings.TrimSpace(configValueSplits[1])
 
 		switch key {
 		case TotalPass:
