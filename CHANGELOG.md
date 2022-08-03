@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.23.1](https://github.com/keptn-contrib/dynatrace-service/compare/0.23.0...0.23.1) (2022-08-03)
+
+### Release validated with
+ | Dynatrace-service: `0.23.1` | Keptn: `0.16.1` | Dynatrace: `1.245` |
+ |---|---|---|
+
+
+### Bug Fixes
+
+* Trim whitespace from key-value pairs in markdown tiles ([#868](https://github.com/keptn-contrib/dynatrace-service/issues/868)) ([2449853](https://github.com/keptn-contrib/dynatrace-service/commit/2449853eecbe359fbfce12264130d6aac4921b9c))
+
 ## [0.23.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.22.0...0.23.0) (2022-07-13)
 
 ### Release validated with
