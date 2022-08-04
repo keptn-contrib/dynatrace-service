@@ -113,6 +113,21 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 			markdown:    "KQG.Total.Pass=95%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass_or_warn;KQG.Compare.Results=6;KQG.Compare.Function=p95",
 			expectedSLO: createSLO("95%", "75%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePassOrWarn, 6, dashboard.CompareFunctionP95, expectedSLO),
 		},
+		{
+			name:        "newline at the end",
+			markdown:    "KQG.Total.Pass=85%;KQG.Total.Warning=80%;KQG.Compare.WithScore=pass;KQG.Compare.Results=3;KQG.Compare.Function=avg\\n",
+			expectedSLO: createSLO("85%", "80%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 3, dashboard.CompareFunctionAvg, expectedSLO),
+		},
+		{
+			name:        "newline after every key value pair",
+			markdown:    "KQG.Total.Pass=85%;\\nKQG.Total.Warning=80%;\\nKQG.Compare.WithScore=pass;\\nKQG.Compare.Results=3;\\nKQG.Compare.Function=avg\\n",
+			expectedSLO: createSLO("85%", "80%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 3, dashboard.CompareFunctionAvg, expectedSLO),
+		},
+		{
+			name:        "whitespace around each key-value pair",
+			markdown:    "KQG.Total.Pass = 85%;\\nKQG.Total.Warning = 80%;\\nKQG.Compare.WithScore = pass;\\nKQG.Compare.Results = 3;\\nKQG.Compare.Function = avg\\n",
+			expectedSLO: createSLO("85%", "80%", dashboard.CompareResultsMultiple, dashboard.CompareWithScorePass, 3, dashboard.CompareFunctionAvg, expectedSLO),
+		},
 	}
 	for _, markdownTest := range tests {
 		t.Run(markdownTest.name, func(t *testing.T) {
@@ -156,6 +171,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 
 	const indicator = "no metric"
 	const duplicationError = "duplicate key"
+	const invalidValueError = "invalid value"
 
 	tests := []struct {
 		name           string
@@ -231,6 +247,11 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 				dashboard.CompareWithScore, "passing",
 				dashboard.CompareFunction, "p97",
 				dashboard.CompareResults, "7.5"),
+		},
+		{
+			name:           "extra content on new line causes invalid value",
+			markdown:       "KQG.Total.Pass=90%;KQG.Total.Warning=70%;KQG.Compare.WithScore=all;KQG.Compare.Results=4;KQG.Compare.Function=avg\\n\\n## View results in the [Keptn Bridge] (https://cloudautomation.live.dynatrace.com/bridge/project/sbs)",
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, invalidValueError, dashboard.CompareFunction),
 		},
 	}
 	for _, markdownTest := range tests {
