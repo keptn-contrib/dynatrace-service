@@ -171,6 +171,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 
 	const indicator = "no metric"
 	const duplicationError = "duplicate key"
+	const invalidValueError = "invalid value"
 
 	tests := []struct {
 		name           string
@@ -246,6 +247,11 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 				dashboard.CompareWithScore, "passing",
 				dashboard.CompareFunction, "p97",
 				dashboard.CompareResults, "7.5"),
+		},
+		{
+			name:           "extra content on new line causes invalid value",
+			markdown:       "KQG.Total.Pass=90%;KQG.Total.Warning=70%;KQG.Compare.WithScore=all;KQG.Compare.Results=4;KQG.Compare.Function=avg\\n\\n## View results in the [Keptn Bridge] (https://cloudautomation.live.dynatrace.com/bridge/project/sbs)",
+			assertionsFunc: createFailedSLIResultAssertionsFunc(indicator, invalidValueError, dashboard.CompareFunction),
 		},
 	}
 	for _, markdownTest := range tests {
