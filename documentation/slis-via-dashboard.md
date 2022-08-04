@@ -204,7 +204,7 @@ total_score:
 
 Further details about SLO comparison and scoring are provided in [the Keptn documentation](https://keptn.sh/docs/0.16.x/reference/files/slo/).
 
-To override these defaults, add a markdown tile to the dashboard with one or more of the following `;`-separated `<key>=<value>` pairs:
+To override these defaults, add a markdown tile to the dashboard consisting of a single line with one or more of the following `;`-separated `<key>=<value>` pairs:
 
 | Key                     | Data type (restriction)                | Description                                                                                                                                          |
 |-------------------------|----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -214,7 +214,7 @@ To override these defaults, add a markdown tile to the dashboard with one or mor
 | `KQG.Total.Pass`        | number (with optional `%`)             | Use `<value>` as the `total_score: pass` value                                                                                                       |
 | `KQG.Total.Warning`     | number (with optional `%`)             | Use `<value>` as the `total_score: warning` value                                                                                                    |
 
-For example, the defaults above could be specified using a markdown tile containing:
+For example, the defaults above could be specified using the following markdown tile:
 
 ```
 KQG.Total.Pass=90%;KQG.Total.Warning=75%;KQG.Compare.WithScore=pass;KQG.Compare.Results=1;KQG.Compare.Function=avg
