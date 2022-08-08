@@ -92,17 +92,23 @@ type Tile struct {
 
 // VisualConfig is the visual configuration for a dashboard tile.
 type VisualConfig struct {
-	Thresholds []Threshold `json:"thresholds,omitempty"`
+	Thresholds []Threshold        `json:"thresholds,omitempty"`
+	Rules      []VisualConfigRule `json:"rules,omitempty"`
+}
+
+// VisualConfigRule is a rule for the visual configuration.
+type VisualConfigRule struct {
+	UnitTransform string `json:"unitTransform,omitempty"`
 }
 
 // Threshold is a threshold configuration for a Data Explorer tile.
 type Threshold struct {
-	Visible bool   `json:"visible"`
-	Rules   []Rule `json:"rules,omitempty"`
+	Visible bool            `json:"visible"`
+	Rules   []ThresholdRule `json:"rules,omitempty"`
 }
 
-// Rule is a rule for a threshold.
-type Rule struct {
+// ThresholdRule is a rule for a threshold.
+type ThresholdRule struct {
 	Value *float64 `json:"value,omitempty"`
 	Color string   `json:"color"`
 }

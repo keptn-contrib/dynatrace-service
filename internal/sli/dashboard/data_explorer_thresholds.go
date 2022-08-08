@@ -55,7 +55,7 @@ func isPassColor(color string) bool {
 	return slices.Contains(passColors, color)
 }
 
-func isPassRule(rule dynatrace.Rule) bool {
+func isPassRule(rule dynatrace.ThresholdRule) bool {
 	return isPassColor(rule.Color) && rule.Value != nil
 }
 
@@ -63,7 +63,7 @@ func isWarnColor(color string) bool {
 	return slices.Contains(warnColors, color)
 }
 
-func isWarnRule(rule dynatrace.Rule) bool {
+func isWarnRule(rule dynatrace.ThresholdRule) bool {
 	return isWarnColor(rule.Color) && rule.Value != nil
 }
 
@@ -71,7 +71,7 @@ func isFailColor(color string) bool {
 	return slices.Contains(failColors, color)
 }
 
-func isFailRule(rule dynatrace.Rule) bool {
+func isFailRule(rule dynatrace.ThresholdRule) bool {
 	return isFailColor(rule.Color) && rule.Value != nil
 }
 
@@ -146,7 +146,7 @@ func parseThresholds(threshold *dynatrace.Threshold) (*passAndWarningCriteria, e
 }
 
 // tryParsePassWarnFailThresholdRules tries to parse a pass-warn-fail dashboard threshold struct and returns pass and warning SLO criteria or nil.
-func tryParsePassWarnFailThresholdRules(rules []dynatrace.Rule) *passAndWarningCriteria {
+func tryParsePassWarnFailThresholdRules(rules []dynatrace.ThresholdRule) *passAndWarningCriteria {
 	if len(rules) != 3 {
 		return nil
 	}
@@ -183,7 +183,7 @@ func tryParsePassWarnFailThresholdRules(rules []dynatrace.Rule) *passAndWarningC
 }
 
 // tryParseFailWarnPassThresholdRules tries to parse a fail-warn-pass dashboard threshold struct and returns pass and warning SLO criteria or nil.
-func tryParseFailWarnPassThresholdRules(rules []dynatrace.Rule) *passAndWarningCriteria {
+func tryParseFailWarnPassThresholdRules(rules []dynatrace.ThresholdRule) *passAndWarningCriteria {
 	if len(rules) != 3 {
 		return nil
 	}

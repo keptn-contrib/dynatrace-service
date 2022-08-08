@@ -638,6 +638,11 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsErrors(t *te
 			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_two_fail.json",
 			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
 		},
+		{
+			name:                    "Unit transform set to MilliSecond (not Auto)",
+			dashboardFilename:       testDataFolder + "dashboard_unit_transform_millisecond.json",
+			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "must be set to 'Auto'"),
+		},
 	}
 
 	for _, thresholdTest := range tests {

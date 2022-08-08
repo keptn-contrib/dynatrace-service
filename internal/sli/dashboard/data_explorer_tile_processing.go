@@ -65,8 +65,9 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 		}
 	}
 
-	if len(tile.Queries) != 1 {
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile must have exactly one query")}
+	err = validateDataExplorerTile(tile)
+	if err != nil {
+		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, err.Error())}
 	}
 
 	// get the tile specific management zone filter that might be needed by different tile processors
@@ -74,6 +75,33 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 	managementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	return p.processQuery(ctx, sloDefinition, tile.Queries[0], managementZoneFilter)
+}
+
+func validateDataExplorerTile(tile *dynatrace.Tile) error {
+	if len(tile.Queries) != 1 {
+		return fmt.Errorf("Data Explorer tile must have exactly one query")
+	}
+
+	if tile.VisualConfig == nil {
+		return nil
+	}
+
+	if len(tile.VisualConfig.Rules) == 0 {
+		return nil
+	}
+
+	if len(tile.VisualConfig.Rules) > 1 {
+		return fmt.Errorf("Data Explorer tile must have exactly one visual configuration rule")
+	}
+
+	return validateDataExplorerVisualConfigurationRule(tile.VisualConfig.Rules[0])
+}
+
+func validateDataExplorerVisualConfigurationRule(rule dynatrace.VisualConfigRule) error {
+	if rule.UnitTransform != "" {
+		return fmt.Errorf("Data Explorer query unit must be set to 'Auto' rather than '%s'", rule.UnitTransform)
+	}
+	return nil
 }
 
 func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefinition keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []TileResult {
