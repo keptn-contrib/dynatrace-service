@@ -81,19 +81,19 @@
                         "rules": [
                             {
                                 "value": 0,
-                                "color": "#14a8f5"
+                                "color": "#7dc540"
                             },
                             {
                                 "value": 68000,
                                 "color": "#f5d30f"
                             },
                             {
-                                "value": 69000,
+                                "value": 68000,
                                 "color": "#dc172a"
                             }
                         ],
                         "queryId": "",
-                        "visible": true
+                        "visible": false
                     }
                 ],
                 "tableSettings": {

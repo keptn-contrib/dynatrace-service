@@ -84,16 +84,16 @@
                                 "color": "#7dc540"
                             },
                             {
-                                "value": 69000,
+                                "value": 68000,
                                 "color": "#f5d30f"
                             },
                             {
-                                "value": 68000,
+                                "value": 69000,
                                 "color": "#dc172a"
                             }
                         ],
                         "queryId": "",
-                        "visible": true
+                        "visible": false
                     }
                 ],
                 "tableSettings": {

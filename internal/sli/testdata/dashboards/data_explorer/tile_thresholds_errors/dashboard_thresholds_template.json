@@ -78,19 +78,11 @@
                 "thresholds": [
                     {
                         "axisTarget": "LEFT",
-                        "rules": [
+                        "rules": [{{$first := true}}{{$colors := .ThresholdColors}}{{range $i, $e := .ThresholdValues}}{{if $first}}{{$first = false}}{{else}},{{end}}    
                             {
-                                "value": 0,
-                                "color": "#7dc540"
-                            },
-                            {
-                                "value": 68000,
-                                "color": "#7dc540"
-                            },
-                            {
-                                "value": 69000,
-                                "color": "#dc172a"
-                            }
+                                {{if not $e}}{{else}}"value":{{$e}},{{end}}
+                                "color": "{{index $colors $i}}"
+                            }{{end}}
                         ],
                         "queryId": "",
                         "visible": true

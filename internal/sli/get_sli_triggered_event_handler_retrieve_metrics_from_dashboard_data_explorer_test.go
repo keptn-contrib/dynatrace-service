@@ -488,14 +488,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-type tileThresholdsTemplateData struct {
-	TileTitle      string
-	TileThresholds string
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_TileThreshold tests setting pass and warning criteria via thresholds on the tile.
-// This is will result in a SLIResult with success, as this is supported.
-// Here also the SLO is checked, including the display name, weight and key SLI.
+// TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork tests that setting pass and warning criteria via thresholds on the tile works as expected.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_success/"
 
@@ -509,42 +502,37 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 
 		expectedSLO *keptnapi.SLO
 	}{
-
 		{
 			name:              "Valid pass-warn-fail thresholds and no pass or warning defined in title",
 			dashboardFilename: testDataFolder + "dashboard_just_thresholds_pass_warn_fail.json",
-			expectedSLO: &keptnapi.SLO{
-				SLI:         "srt",
-				DisplayName: "Service Response Time",
-				Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{fmt.Sprintf(">=%f", float64(0)), fmt.Sprintf("<%f", float64(68000))}}},
-				Warning:     []*keptnapi.SLOCriteria{{Criteria: []string{fmt.Sprintf("<%f", float64(69000))}}},
-				Weight:      1,
-				KeySLI:      false,
-			},
+			expectedSLO:       createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 68000), createBandSLOCriteria(0, 69000)),
 		},
 		{
 			name:              "Valid fail-warn-pass thresholds and no pass or warning defined in title",
 			dashboardFilename: testDataFolder + "dashboard_just_thresholds_fail_warn_pass.json",
-			expectedSLO: &keptnapi.SLO{
-				SLI:         "srt",
-				DisplayName: "Service Response Time",
-				Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{fmt.Sprintf(">=%f", float64(69000))}}},
-				Warning:     []*keptnapi.SLOCriteria{{Criteria: []string{fmt.Sprintf(">=%f", float64(68000))}}},
-				Weight:      1,
-				KeySLI:      false,
-			},
+			expectedSLO:       createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), createLowerBoundSLOCriteria(68000)),
 		},
 		{
 			name:              "Pass or warning defined in title take precedence over valid thresholds ",
 			dashboardFilename: testDataFolder + "dashboard_both_thresholds_and_pass_and_warning_in_title.json",
-			expectedSLO: &keptnapi.SLO{
-				SLI:         "srt",
-				DisplayName: "Service Response Time",
-				Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<70000"}}},
-				Warning:     []*keptnapi.SLOCriteria{{Criteria: []string{"<71000"}}},
-				Weight:      1,
-				KeySLI:      false,
-			},
+			expectedSLO: createExpectedServiceResponseTimeSLO(
+				[]*keptnapi.SLOCriteria{{Criteria: []string{"<70000"}}},
+				[]*keptnapi.SLOCriteria{{Criteria: []string{"<71000"}}}),
+		},
+		{
+			name:              "Visible thresholds with no values are ignored",
+			dashboardFilename: testDataFolder + "dashboard_visible_thresholds_without_values.json",
+			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+		},
+		{
+			name:              "Not visible thresholds with valid values are ignored",
+			dashboardFilename: testDataFolder + "dashboard_not_visible_thresholds_with_valid_values.json",
+			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+		},
+		{
+			name:              "Not visible thresholds with invalid values are ignored",
+			dashboardFilename: testDataFolder + "dashboard_not_visible_thresholds_with_invalid_values.json",
+			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
 		},
 	}
 
@@ -567,91 +555,38 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 	}
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_TileThreshold tests setting pass and warning criteria via thresholds on the tile.
-// This is will result in a SLIResult with success, as this is supported.
-// Here also the SLO is checked, including the display name, weight and key SLI.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsErrors(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_errors/"
+// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto tests that unit transforms other than auto are not allowed.
+// This is will result in a SLIResult with failure, as this is not allowed.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto(t *testing.T) {
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/dashboards/data_explorer/unit_transform_is_not_auto/dashboard.json")
 
-	tests := []struct {
-		name                    string
-		dashboardFilename       string
-		sliResultAssertionsFunc func(t *testing.T, actual sliResult)
-	}{
-		{
-			name:                    "Too few rules in thresholds",
-			dashboardFilename:       testDataFolder + "dashboard_too_few_rules.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "expected 3 threshold rules"),
-		},
-		{
-			name:                    "Too many rules in thresholds",
-			dashboardFilename:       testDataFolder + "dashboard_too_many_rules.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "expected 3 threshold rules"),
-		},
-		{
-			name:                    "Invalid color in thresholds 1",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_color_1.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold color"),
-		},
-		{
-			name:                    "Invalid color in thresholds 2",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_color_2.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold color"),
-		},
-		{
-			name:                    "Invalid color in thresholds 3",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_color_3.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold color"),
-		},
-		{
-			name:                    "Invalid ascending-descending sequence",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_ascending_descending.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
-		},
-		{
-			name:                    "Invalid descending-ascending sequence",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_descending_ascending.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
-		},
-		{
-			name:                    "Invalid sequence with no warn",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_no_warn.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
-		},
-		{
-			name:                    "Invalid sequence with no fail",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_no_fail.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
-		},
-		{
-			name:                    "Invalid sequence with two pass",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_two_pass.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
-		},
-		{
-			name:                    "Invalid sequence with two warn",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_two_warn.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
-		},
-		{
-			name:                    "Invalid sequence with two fail",
-			dashboardFilename:       testDataFolder + "dashboard_invalid_sequence_two_fail.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "invalid threshold sequence"),
-		},
-		{
-			name:                    "Unit transform set to MilliSecond (not Auto)",
-			dashboardFilename:       testDataFolder + "dashboard_unit_transform_millisecond.json",
-			sliResultAssertionsFunc: createFailedSLIResultAssertionsFunc("srt", "must be set to 'Auto'"),
-		},
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "must be set to 'Auto'"))
+}
+
+func createExpectedServiceResponseTimeSLO(passCriteria []*keptnapi.SLOCriteria, warningCriteria []*keptnapi.SLOCriteria) *keptnapi.SLO {
+	return &keptnapi.SLO{
+		SLI:         "srt",
+		DisplayName: "Service Response Time",
+		Pass:        passCriteria,
+		Warning:     warningCriteria,
+		Weight:      1,
+		KeySLI:      false,
 	}
+}
 
-	for _, thresholdTest := range tests {
-		t.Run(thresholdTest.name, func(t *testing.T) {
+func createBandSLOCriteria(lowerBoundInclusive float64, upperBoundExclusive float64) []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{{Criteria: []string{createGreaterThanOrEqualSLOCriterion(lowerBoundInclusive), createLessThanSLOCriterion(upperBoundExclusive)}}}
+}
 
-			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, thresholdTest.dashboardFilename)
+func createLowerBoundSLOCriteria(lowerBoundInclusive float64) []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{{Criteria: []string{createGreaterThanOrEqualSLOCriterion(lowerBoundInclusive)}}}
+}
 
-			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, thresholdTest.sliResultAssertionsFunc)
-		})
-	}
+func createGreaterThanOrEqualSLOCriterion(v float64) string {
+	return fmt.Sprintf(">=%f", v)
+}
+
+func createLessThanSLOCriterion(v float64) string {
+	return fmt.Sprintf("<%f", v)
 }

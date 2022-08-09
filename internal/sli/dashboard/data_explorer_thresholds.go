@@ -3,10 +3,11 @@ package dashboard
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
-	"golang.org/x/exp/slices"
+	log "github.com/sirupsen/logrus"
 )
 
 type passAndWarningCriteria struct {
@@ -14,65 +15,134 @@ type passAndWarningCriteria struct {
 	warning keptnapi.SLOCriteria
 }
 
-var passColors = []string{
-	"#006613",
-	"#1f7e1e",
-	"#5ead35",
-	"#7dc540",
-	"#9cd575",
-	"#e8f9dc",
-	"#048855",
-	"#009e60",
-	"#2ab06f",
-	"#54c27d",
-	"#99dea8",
-	"#e1f7dc",
+type thresholdColor int
+
+const (
+	unknownThresholdColor thresholdColor = 0
+	passThresholdColor    thresholdColor = 1
+	warnThresholdColor    thresholdColor = 2
+	failThresholdColor    thresholdColor = 3
+)
+
+type thresholdColorSequence int
+
+const (
+	unknownColorSequence      thresholdColorSequence = 0
+	passWarnFailColorSequence thresholdColorSequence = 1
+	failWarnPassColorSequence thresholdColorSequence = 2
+)
+
+var thresholdColors = map[string]thresholdColor{
+	// pass colors
+	"#006613": passThresholdColor,
+	"#1f7e1e": passThresholdColor,
+	"#5ead35": passThresholdColor,
+	"#7dc540": passThresholdColor,
+	"#9cd575": passThresholdColor,
+	"#e8f9dc": passThresholdColor,
+	"#048855": passThresholdColor,
+	"#009e60": passThresholdColor,
+	"#2ab06f": passThresholdColor,
+	"#54c27d": passThresholdColor,
+	"#99dea8": passThresholdColor,
+	"#e1f7dc": passThresholdColor,
+
+	// warn colors
+	"#ef651f": warnThresholdColor,
+	"#fd8232": warnThresholdColor,
+	"#ffa86c": warnThresholdColor,
+	"#ffd0ab": warnThresholdColor,
+	"#c9a000": warnThresholdColor,
+	"#e6be00": warnThresholdColor,
+	"#f5d30f": warnThresholdColor,
+	"#ffe11c": warnThresholdColor,
+	"#ffee7c": warnThresholdColor,
+	"#fff9d5": warnThresholdColor,
+
+	// fail colors
+	"#93060e": failThresholdColor,
+	"#ab0c17": failThresholdColor,
+	"#c41425": failThresholdColor,
+	"#dc172a": failThresholdColor,
+	"#f28289": failThresholdColor,
+	"#ffeaea": failThresholdColor,
 }
 
-var warnColors = []string{
-	"#ef651f",
-	"#fd8232",
-	"#ffa86c",
-	"#ffd0ab",
-	"#c9a000",
-	"#e6be00",
-	"#f5d30f",
-	"#ffe11c",
-	"#ffee7c",
-	"#fff9d5",
+func getColorType(c string) thresholdColor {
+	v, ok := thresholdColors[c]
+	if !ok {
+		return unknownThresholdColor
+	}
+
+	return v
 }
 
-var failColors = []string{
-	"#93060e",
-	"#ab0c17",
-	"#c41425",
-	"#dc172a",
-	"#f28289",
-	"#ffeaea",
+func getColorTypeString(colorType thresholdColor) string {
+	switch colorType {
+	case passThresholdColor:
+		return "pass"
+	case warnThresholdColor:
+		return "warn"
+	case failThresholdColor:
+		return "fail"
+	}
+	return "unknown"
 }
 
-func isPassColor(color string) bool {
-	return slices.Contains(passColors, color)
+type thresholdParsingErrors struct {
+	errors []error
 }
 
-func isPassRule(rule dynatrace.ThresholdRule) bool {
-	return isPassColor(rule.Color) && rule.Value != nil
+func (err *thresholdParsingErrors) Error() string {
+	var errStrings = make([]string, len(err.errors))
+	for i, e := range err.errors {
+		errStrings[i] = e.Error()
+	}
+	return strings.Join(errStrings, "; ")
 }
 
-func isWarnColor(color string) bool {
-	return slices.Contains(warnColors, color)
+type incorrectThresholdRuleCountError struct {
+	count int
 }
 
-func isWarnRule(rule dynatrace.ThresholdRule) bool {
-	return isWarnColor(rule.Color) && rule.Value != nil
+func (err *incorrectThresholdRuleCountError) Error() string {
+	return fmt.Sprintf("expected 3 rules rather than %d rules", err.count)
 }
 
-func isFailColor(color string) bool {
-	return slices.Contains(failColors, color)
+type invalidThresholdColorError struct {
+	position int
+	color    string
 }
 
-func isFailRule(rule dynatrace.ThresholdRule) bool {
-	return isFailColor(rule.Color) && rule.Value != nil
+func (err *invalidThresholdColorError) Error() string {
+	return fmt.Sprintf("invalid color %s at position %d ", err.color, err.position)
+}
+
+type missingThresholdValueError struct {
+	position int
+}
+
+func (err *missingThresholdValueError) Error() string {
+	return fmt.Sprintf("missing value at position %d ", err.position)
+}
+
+type strictlyMonotonicallyIncreasingConstraintError struct {
+	value1 float64
+	value2 float64
+}
+
+func (err *strictlyMonotonicallyIncreasingConstraintError) Error() string {
+	return fmt.Sprintf("values (%f %f) must increase strictly monotonically", err.value1, err.value2)
+}
+
+type invalidThresholdColorSequenceError struct {
+	colorType1 thresholdColor
+	colorType2 thresholdColor
+	colorType3 thresholdColor
+}
+
+func (err *invalidThresholdColorSequenceError) Error() string {
+	return fmt.Sprintf("invalid color sequence: %s %s %s", getColorTypeString(err.colorType1), getColorTypeString(err.colorType2), getColorTypeString(err.colorType3))
 }
 
 // tryGetThresholdPassAndWarningCriteria tries to get pass and warning criteria defined using the thresholds placed on a Data Explorer tile.
@@ -88,7 +158,7 @@ func tryGetThresholdPassAndWarningCriteria(tile *dynatrace.Tile) (*passAndWarnin
 	}
 
 	if len(visualConfig.Thresholds) > 1 {
-		return nil, errors.New("Too many threshold configurations")
+		return nil, errors.New("too many threshold configurations")
 	}
 
 	thresholdConfiguration := &visualConfig.Thresholds[0]
@@ -117,55 +187,106 @@ func areThresholdsEnabled(threshold *dynatrace.Threshold) bool {
 // parseThresholds parses a dashboard threshold struct and returns pass and warning SLO criteria or an error.
 func parseThresholds(threshold *dynatrace.Threshold) (*passAndWarningCriteria, error) {
 	if !threshold.Visible {
+		log.Error("parseThresholds should not be called for thresholds that are not visible")
 		return nil, errors.New("threshold is not visible")
 	}
 
-	if len(threshold.Rules) != 3 {
-		return nil, errors.New("expected 3 threshold rules")
+	err := validateThresholdRules(threshold.Rules)
+	if err != nil {
+		return nil, err
 	}
 
-	for _, rule := range threshold.Rules {
-		if rule.Value == nil {
-			return nil, errors.New("missing threshold value")
-		}
-
-		if !(isPassColor(rule.Color) || isWarnColor(rule.Color) || isFailColor(rule.Color)) {
-			return nil, fmt.Errorf("invalid threshold color: %s", rule.Color)
-		}
-	}
-
-	if criteria := tryParsePassWarnFailThresholdRules(threshold.Rules); criteria != nil {
-		return criteria, nil
-	}
-
-	if criteria := tryParseFailWarnPassThresholdRules(threshold.Rules); criteria != nil {
-		return criteria, nil
-	}
-
-	return nil, errors.New("invalid threshold sequence")
+	return convertThresholdRulesToPassAndWarningCriteria(threshold.Rules)
 }
 
-// tryParsePassWarnFailThresholdRules tries to parse a pass-warn-fail dashboard threshold struct and returns pass and warning SLO criteria or nil.
-func tryParsePassWarnFailThresholdRules(rules []dynatrace.ThresholdRule) *passAndWarningCriteria {
+// validateThresholdRules checks that the threshold rules are complete or returns an error.
+func validateThresholdRules(rules []dynatrace.ThresholdRule) error {
+	var errs []error
+
 	if len(rules) != 3 {
-		return nil
+		// log this error as it may mean something has changed on the Data Explorer side
+		log.WithField("ruleCount", len(rules)).Error("Encountered unexpected number of threshold rules")
+
+		errs = append(errs, &incorrectThresholdRuleCountError{count: len(rules)})
 	}
 
-	if !isPassRule(rules[0]) || !isWarnRule(rules[1]) || !isFailRule(rules[2]) {
-		return nil
+	for i, rule := range rules {
+		if rule.Value == nil {
+			errs = append(errs, &missingThresholdValueError{position: i + 1})
+		}
+
+		if getColorType(rule.Color) == unknownThresholdColor {
+			errs = append(errs, &invalidThresholdColorError{color: rule.Color, position: i + 1})
+		}
 	}
 
+	if len(errs) > 0 {
+		return &thresholdParsingErrors{errors: errs}
+	}
+
+	return nil
+}
+
+// convertThresholdRulesToPassAndWarningCriteria converts the threshold rules to SLO pass and warning criteria or returns an error.
+// Note: assumes rules have passed validateThresholdRules
+func convertThresholdRulesToPassAndWarningCriteria(rules []dynatrace.ThresholdRule) (*passAndWarningCriteria, error) {
+	var errs []error
+
+	v1 := *rules[0].Value
+	v2 := *rules[1].Value
+	v3 := *rules[2].Value
+
+	if v1 >= v2 {
+		errs = append(errs, &strictlyMonotonicallyIncreasingConstraintError{value1: v1, value2: v2})
+	}
+
+	if v2 >= v3 {
+		errs = append(errs, &strictlyMonotonicallyIncreasingConstraintError{value1: v2, value2: v3})
+	}
+
+	colorSequence, err := getThresholdColorSequence(rules)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	if len(errs) > 0 {
+		return nil, &thresholdParsingErrors{errors: errs}
+	}
+
+	switch colorSequence {
+	case passWarnFailColorSequence:
+		return convertPassWarnFailThresholdsToSLOCriteria(rules), nil
+	case failWarnPassColorSequence:
+		return convertFailWarnPassThresholdsToSLOCriteria(rules), nil
+	}
+
+	// log this error as this should never occur
+	log.Error("Encountered unexpected threshold color sequence")
+	return nil, errors.New("unable to generate SLO pass and warning criteria for color sequence")
+}
+
+// getThresholdColorSequence returns the color sequence that the thresholds follow or an error.
+// Note: assumes rules have passed validateThresholdRules
+func getThresholdColorSequence(rules []dynatrace.ThresholdRule) (thresholdColorSequence, error) {
+	colorType1 := getColorType(rules[0].Color)
+	colorType2 := getColorType(rules[1].Color)
+	colorType3 := getColorType(rules[2].Color)
+
+	if (colorType1 == passThresholdColor) && (colorType2 == warnThresholdColor) && (colorType3 == failThresholdColor) {
+		return passWarnFailColorSequence, nil
+	}
+
+	if (colorType1 == failThresholdColor) && (colorType2 == warnThresholdColor) && (colorType3 == passThresholdColor) {
+		return failWarnPassColorSequence, nil
+	}
+
+	return unknownColorSequence, &invalidThresholdColorSequenceError{colorType1: colorType1, colorType2: colorType2, colorType3: colorType3}
+}
+
+func convertPassWarnFailThresholdsToSLOCriteria(rules []dynatrace.ThresholdRule) *passAndWarningCriteria {
 	passThreshold := *rules[0].Value
 	warnThreshold := *rules[1].Value
 	failThreshold := *rules[2].Value
-
-	if passThreshold >= warnThreshold {
-		return nil
-	}
-
-	if warnThreshold >= failThreshold {
-		return nil
-	}
 
 	return &passAndWarningCriteria{
 		pass: keptnapi.SLOCriteria{
@@ -176,33 +297,16 @@ func tryParsePassWarnFailThresholdRules(rules []dynatrace.ThresholdRule) *passAn
 		},
 		warning: keptnapi.SLOCriteria{
 			Criteria: []string{
+				fmt.Sprintf(">=%f", passThreshold),
 				fmt.Sprintf("<%f", failThreshold),
 			},
 		},
 	}
 }
 
-// tryParseFailWarnPassThresholdRules tries to parse a fail-warn-pass dashboard threshold struct and returns pass and warning SLO criteria or nil.
-func tryParseFailWarnPassThresholdRules(rules []dynatrace.ThresholdRule) *passAndWarningCriteria {
-	if len(rules) != 3 {
-		return nil
-	}
-
-	if !isFailRule(rules[0]) || !isWarnRule(rules[1]) || !isPassRule(rules[2]) {
-		return nil
-	}
-
-	failThreshold := *rules[0].Value
+func convertFailWarnPassThresholdsToSLOCriteria(rules []dynatrace.ThresholdRule) *passAndWarningCriteria {
 	warnThreshold := *rules[1].Value
 	passThreshold := *rules[2].Value
-
-	if failThreshold >= warnThreshold {
-		return nil
-	}
-
-	if warnThreshold >= passThreshold {
-		return nil
-	}
 
 	return &passAndWarningCriteria{
 		pass: keptnapi.SLOCriteria{
