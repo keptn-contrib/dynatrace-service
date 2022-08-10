@@ -89,7 +89,7 @@ jobs:
           echo "::set-output name=RUN_ID::$RUN_ID"
 
       - name: Download all artifacts from last successful build of specified branch
-        uses: dawidd6/action-download-artifact@v2.21.1
+        uses: dawidd6/action-download-artifact@v2.22.0
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           # Required, workflow file name or ID
