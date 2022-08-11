@@ -15,78 +15,79 @@ type passAndWarningCriteria struct {
 	warning keptnapi.SLOCriteria
 }
 
-type thresholdColor int
+type thresholdColorType int
 
 const (
-	unknownThresholdColor thresholdColor = 0
-	passThresholdColor    thresholdColor = 1
-	warnThresholdColor    thresholdColor = 2
-	failThresholdColor    thresholdColor = 3
+	unknownThresholdColorType thresholdColorType = 0
+	passThresholdColorType    thresholdColorType = 1
+	warnThresholdColorType    thresholdColorType = 2
+	failThresholdColorType    thresholdColorType = 3
 )
 
-type thresholdColorSequence int
-
-const (
-	unknownColorSequence      thresholdColorSequence = 0
-	passWarnFailColorSequence thresholdColorSequence = 1
-	failWarnPassColorSequence thresholdColorSequence = 2
-)
-
-var thresholdColors = map[string]thresholdColor{
+var thresholdColors = map[string]thresholdColorType{
 	// pass colors
-	"#006613": passThresholdColor,
-	"#1f7e1e": passThresholdColor,
-	"#5ead35": passThresholdColor,
-	"#7dc540": passThresholdColor,
-	"#9cd575": passThresholdColor,
-	"#e8f9dc": passThresholdColor,
-	"#048855": passThresholdColor,
-	"#009e60": passThresholdColor,
-	"#2ab06f": passThresholdColor,
-	"#54c27d": passThresholdColor,
-	"#99dea8": passThresholdColor,
-	"#e1f7dc": passThresholdColor,
+	"#006613": passThresholdColorType,
+	"#1f7e1e": passThresholdColorType,
+	"#5ead35": passThresholdColorType,
+	"#7dc540": passThresholdColorType,
+	"#9cd575": passThresholdColorType,
+	"#e8f9dc": passThresholdColorType,
+	"#048855": passThresholdColorType,
+	"#009e60": passThresholdColorType,
+	"#2ab06f": passThresholdColorType,
+	"#54c27d": passThresholdColorType,
+	"#99dea8": passThresholdColorType,
+	"#e1f7dc": passThresholdColorType,
 
 	// warn colors
-	"#ef651f": warnThresholdColor,
-	"#fd8232": warnThresholdColor,
-	"#ffa86c": warnThresholdColor,
-	"#ffd0ab": warnThresholdColor,
-	"#c9a000": warnThresholdColor,
-	"#e6be00": warnThresholdColor,
-	"#f5d30f": warnThresholdColor,
-	"#ffe11c": warnThresholdColor,
-	"#ffee7c": warnThresholdColor,
-	"#fff9d5": warnThresholdColor,
+	"#ef651f": warnThresholdColorType,
+	"#fd8232": warnThresholdColorType,
+	"#ffa86c": warnThresholdColorType,
+	"#ffd0ab": warnThresholdColorType,
+	"#c9a000": warnThresholdColorType,
+	"#e6be00": warnThresholdColorType,
+	"#f5d30f": warnThresholdColorType,
+	"#ffe11c": warnThresholdColorType,
+	"#ffee7c": warnThresholdColorType,
+	"#fff9d5": warnThresholdColorType,
 
 	// fail colors
-	"#93060e": failThresholdColor,
-	"#ab0c17": failThresholdColor,
-	"#c41425": failThresholdColor,
-	"#dc172a": failThresholdColor,
-	"#f28289": failThresholdColor,
-	"#ffeaea": failThresholdColor,
+	"#93060e": failThresholdColorType,
+	"#ab0c17": failThresholdColorType,
+	"#c41425": failThresholdColorType,
+	"#dc172a": failThresholdColorType,
+	"#f28289": failThresholdColorType,
+	"#ffeaea": failThresholdColorType,
 }
 
-func getColorType(c string) thresholdColor {
+func getColorType(c string) thresholdColorType {
 	v, ok := thresholdColors[c]
 	if !ok {
-		return unknownThresholdColor
+		return unknownThresholdColorType
 	}
 
 	return v
 }
 
-func getColorTypeString(colorType thresholdColor) string {
+func (colorType thresholdColorType) String() string {
 	switch colorType {
-	case passThresholdColor:
+	case passThresholdColorType:
 		return "pass"
-	case warnThresholdColor:
+	case warnThresholdColorType:
 		return "warn"
-	case failThresholdColor:
+	case failThresholdColorType:
 		return "fail"
 	}
 	return "unknown"
+}
+
+type thresholdConfiguration struct {
+	thresholds [3]threshold
+}
+
+type threshold struct {
+	colorType thresholdColorType
+	value     float64
 }
 
 type thresholdParsingErrors struct {
@@ -136,13 +137,13 @@ func (err *strictlyMonotonicallyIncreasingConstraintError) Error() string {
 }
 
 type invalidThresholdColorSequenceError struct {
-	colorType1 thresholdColor
-	colorType2 thresholdColor
-	colorType3 thresholdColor
+	colorType1 thresholdColorType
+	colorType2 thresholdColorType
+	colorType3 thresholdColorType
 }
 
 func (err *invalidThresholdColorSequenceError) Error() string {
-	return fmt.Sprintf("invalid color sequence: %s %s %s", getColorTypeString(err.colorType1), getColorTypeString(err.colorType2), getColorTypeString(err.colorType3))
+	return fmt.Sprintf("invalid color sequence: %s %s %s", err.colorType1, err.colorType2, err.colorType3)
 }
 
 // tryGetThresholdPassAndWarningCriteria tries to get pass and warning criteria defined using the thresholds placed on a Data Explorer tile.
@@ -161,15 +162,20 @@ func tryGetThresholdPassAndWarningCriteria(tile *dynatrace.Tile) (*passAndWarnin
 		return nil, errors.New("too many threshold configurations")
 	}
 
-	thresholdConfiguration := &visualConfig.Thresholds[0]
-	if !areThresholdsEnabled(thresholdConfiguration) {
+	t := &visualConfig.Thresholds[0]
+	if !areThresholdsEnabled(t) {
 		return nil, nil
 	}
 
-	return parseThresholds(thresholdConfiguration)
+	thresholdConfiguration, err := convertThresholdRulesToThresholdConfiguration(t.Rules)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertThresholdConfigurationToPassAndWarningCriteria(*thresholdConfiguration)
 }
 
-// areThresholdsEnabled returns true if a user has set thresholds that will be displayed.
+// areThresholdsEnabled returns true if a user has set thresholds that will be displayed, i.e. if thresholds are visible and at least one value has been set.
 func areThresholdsEnabled(threshold *dynatrace.Threshold) bool {
 	if !threshold.Visible {
 		return false
@@ -184,23 +190,8 @@ func areThresholdsEnabled(threshold *dynatrace.Threshold) bool {
 	return false
 }
 
-// parseThresholds parses a dashboard threshold struct and returns pass and warning SLO criteria or an error.
-func parseThresholds(threshold *dynatrace.Threshold) (*passAndWarningCriteria, error) {
-	if !threshold.Visible {
-		log.Error("parseThresholds should not be called for thresholds that are not visible")
-		return nil, errors.New("threshold is not visible")
-	}
-
-	err := validateThresholdRules(threshold.Rules)
-	if err != nil {
-		return nil, err
-	}
-
-	return convertThresholdRulesToPassAndWarningCriteria(threshold.Rules)
-}
-
-// validateThresholdRules checks that the threshold rules are complete or returns an error.
-func validateThresholdRules(rules []dynatrace.ThresholdRule) error {
+// convertThresholdRulesToThresholdConfiguration checks that the threshold rules are complete and returns them as a threshold configuration or returns an error.
+func convertThresholdRulesToThresholdConfiguration(rules []dynatrace.ThresholdRule) (*thresholdConfiguration, error) {
 	var errs []error
 
 	if len(rules) != 3 {
@@ -215,26 +206,28 @@ func validateThresholdRules(rules []dynatrace.ThresholdRule) error {
 			errs = append(errs, &missingThresholdValueError{position: i + 1})
 		}
 
-		if getColorType(rule.Color) == unknownThresholdColor {
+		if getColorType(rule.Color) == unknownThresholdColorType {
 			errs = append(errs, &invalidThresholdColorError{color: rule.Color, position: i + 1})
 		}
 	}
 
 	if len(errs) > 0 {
-		return &thresholdParsingErrors{errors: errs}
+		return nil, &thresholdParsingErrors{errors: errs}
 	}
 
-	return nil
+	return &thresholdConfiguration{
+		thresholds: [3]threshold{
+			{colorType: getColorType(rules[0].Color), value: *rules[0].Value},
+			{colorType: getColorType(rules[1].Color), value: *rules[1].Value},
+			{colorType: getColorType(rules[2].Color), value: *rules[2].Value}}}, nil
 }
 
-// convertThresholdRulesToPassAndWarningCriteria converts the threshold rules to SLO pass and warning criteria or returns an error.
-// Note: assumes rules have passed validateThresholdRules
-func convertThresholdRulesToPassAndWarningCriteria(rules []dynatrace.ThresholdRule) (*passAndWarningCriteria, error) {
+func convertThresholdConfigurationToPassAndWarningCriteria(t thresholdConfiguration) (*passAndWarningCriteria, error) {
 	var errs []error
 
-	v1 := *rules[0].Value
-	v2 := *rules[1].Value
-	v3 := *rules[2].Value
+	v1 := t.thresholds[0].value
+	v2 := t.thresholds[1].value
+	v3 := t.thresholds[2].value
 
 	if v1 >= v2 {
 		errs = append(errs, &strictlyMonotonicallyIncreasingConstraintError{value1: v1, value2: v2})
@@ -244,7 +237,7 @@ func convertThresholdRulesToPassAndWarningCriteria(rules []dynatrace.ThresholdRu
 		errs = append(errs, &strictlyMonotonicallyIncreasingConstraintError{value1: v2, value2: v3})
 	}
 
-	colorSequence, err := getThresholdColorSequence(rules)
+	sloCriteria, err := matchThresholdColorSequenceAndConvertToPassAndWarningCriteria(t)
 	if err != nil {
 		errs = append(errs, err)
 	}
@@ -253,40 +246,29 @@ func convertThresholdRulesToPassAndWarningCriteria(rules []dynatrace.ThresholdRu
 		return nil, &thresholdParsingErrors{errors: errs}
 	}
 
-	switch colorSequence {
-	case passWarnFailColorSequence:
-		return convertPassWarnFailThresholdsToSLOCriteria(rules), nil
-	case failWarnPassColorSequence:
-		return convertFailWarnPassThresholdsToSLOCriteria(rules), nil
-	}
-
-	// log this error as this should never occur
-	log.Error("Encountered unexpected threshold color sequence")
-	return nil, errors.New("unable to generate SLO pass and warning criteria for color sequence")
+	return sloCriteria, nil
 }
 
-// getThresholdColorSequence returns the color sequence that the thresholds follow or an error.
-// Note: assumes rules have passed validateThresholdRules
-func getThresholdColorSequence(rules []dynatrace.ThresholdRule) (thresholdColorSequence, error) {
-	colorType1 := getColorType(rules[0].Color)
-	colorType2 := getColorType(rules[1].Color)
-	colorType3 := getColorType(rules[2].Color)
+func matchThresholdColorSequenceAndConvertToPassAndWarningCriteria(t thresholdConfiguration) (*passAndWarningCriteria, error) {
+	colorType1 := t.thresholds[0].colorType
+	colorType2 := t.thresholds[1].colorType
+	colorType3 := t.thresholds[2].colorType
 
-	if (colorType1 == passThresholdColor) && (colorType2 == warnThresholdColor) && (colorType3 == failThresholdColor) {
-		return passWarnFailColorSequence, nil
+	if (colorType1 == passThresholdColorType) && (colorType2 == warnThresholdColorType) && (colorType3 == failThresholdColorType) {
+		return convertPassWarnFailThresholdsToPassAndWarningCriteria(t), nil
 	}
 
-	if (colorType1 == failThresholdColor) && (colorType2 == warnThresholdColor) && (colorType3 == passThresholdColor) {
-		return failWarnPassColorSequence, nil
+	if (colorType1 == failThresholdColorType) && (colorType2 == warnThresholdColorType) && (colorType3 == passThresholdColorType) {
+		return convertFailWarnPassThresholdsToPassAndWarningCriteria(t), nil
 	}
 
-	return unknownColorSequence, &invalidThresholdColorSequenceError{colorType1: colorType1, colorType2: colorType2, colorType3: colorType3}
+	return nil, &invalidThresholdColorSequenceError{colorType1: colorType1, colorType2: colorType2, colorType3: colorType3}
 }
 
-func convertPassWarnFailThresholdsToSLOCriteria(rules []dynatrace.ThresholdRule) *passAndWarningCriteria {
-	passThreshold := *rules[0].Value
-	warnThreshold := *rules[1].Value
-	failThreshold := *rules[2].Value
+func convertPassWarnFailThresholdsToPassAndWarningCriteria(t thresholdConfiguration) *passAndWarningCriteria {
+	passThreshold := t.thresholds[0].value
+	warnThreshold := t.thresholds[1].value
+	failThreshold := t.thresholds[2].value
 
 	return &passAndWarningCriteria{
 		pass: keptnapi.SLOCriteria{
@@ -304,9 +286,9 @@ func convertPassWarnFailThresholdsToSLOCriteria(rules []dynatrace.ThresholdRule)
 	}
 }
 
-func convertFailWarnPassThresholdsToSLOCriteria(rules []dynatrace.ThresholdRule) *passAndWarningCriteria {
-	warnThreshold := *rules[1].Value
-	passThreshold := *rules[2].Value
+func convertFailWarnPassThresholdsToPassAndWarningCriteria(t thresholdConfiguration) *passAndWarningCriteria {
+	warnThreshold := t.thresholds[1].value
+	passThreshold := t.thresholds[2].value
 
 	return &passAndWarningCriteria{
 		pass: keptnapi.SLOCriteria{

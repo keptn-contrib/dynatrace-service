@@ -140,40 +140,19 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdRuleParsingEr
 		createDataExplorerThresholdsErrorTestWithColorSequence("Invalid fail-fail-fail sequence", failThresholdColor, failThresholdColor, failThresholdColor),
 
 		// Not strictly monotonically increasing values
-		createDataExplorerThresholdsErrorTestWithWrongValues(0, 0, 0),
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 0, 0),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 0, 0),
-
-		createDataExplorerThresholdsErrorTestWithWrongValues(0, 68000, 0),
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 68000, 0),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 68000, 0),
-
-		createDataExplorerThresholdsErrorTestWithWrongValues(0, 69000, 0),
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 69000, 0),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 69000, 0),
-
-		createDataExplorerThresholdsErrorTestWithWrongValues(0, 0, 68000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 0, 68000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 0, 68000),
-
-		createDataExplorerThresholdsErrorTestWithWrongValues(0, 68000, 68000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 68000, 68000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 68000, 68000),
-
-		createDataExplorerThresholdsErrorTestWithWrongValues(0, 69000, 68000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 69000, 68000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 69000, 68000),
-
-		createDataExplorerThresholdsErrorTestWithWrongValues(0, 0, 69000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 0, 69000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 0, 69000),
-
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 68000, 69000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 68000, 69000),
-
-		createDataExplorerThresholdsErrorTestWithWrongValues(0, 69000, 69000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 69000, 69000),
-		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 69000, 69000),
+		// Redundant cases have been removed
+		createDataExplorerThresholdsErrorTestWithWrongValues(0, 0, 0),         // *-same-same
+		createDataExplorerThresholdsErrorTestWithWrongValues(0, 0, 68000),     // *-same-higher
+		createDataExplorerThresholdsErrorTestWithWrongValues(0, 68000, 68000), // *-higher-higher
+		createDataExplorerThresholdsErrorTestWithWrongValues(0, 68000, 0),     // *-higher-same
+		createDataExplorerThresholdsErrorTestWithWrongValues(0, 69000, 68000), // *-even_higher-higher
+		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 0, 0),     // *-lower-lower
+		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 0, 68000), // *-lower-same
+		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 0, 69000), // *-lower-higher
+		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 68000, 0), // *-same-lower
+		createDataExplorerThresholdsErrorTestWithWrongValues(68000, 69000, 0), // *-higher-lower
+		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 0, 68000), // *-even_lower-lower
+		createDataExplorerThresholdsErrorTestWithWrongValues(69000, 68000, 0), // *-lower-even_lower
 
 		// Combined invalid color sequence and not strictly monotonically increasing values
 		{
