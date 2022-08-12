@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"fmt"
 	"testing"
 
 	keptn "github.com/keptn/go-utils/pkg/lib"
@@ -485,4 +486,107 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork tests that setting pass and warning criteria via thresholds on the tile works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_success/"
+
+	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+
+	successfulSLIResultAllectionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest)
+
+	tests := []struct {
+		name              string
+		dashboardFilename string
+
+		expectedSLO *keptnapi.SLO
+	}{
+		{
+			name:              "Valid pass-warn-fail thresholds and no pass or warning defined in title",
+			dashboardFilename: testDataFolder + "dashboard_just_thresholds_pass_warn_fail.json",
+			expectedSLO:       createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 68000), createBandSLOCriteria(0, 69000)),
+		},
+		{
+			name:              "Valid fail-warn-pass thresholds and no pass or warning defined in title",
+			dashboardFilename: testDataFolder + "dashboard_just_thresholds_fail_warn_pass.json",
+			expectedSLO:       createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), createLowerBoundSLOCriteria(68000)),
+		},
+		{
+			name:              "Pass or warning defined in title take precedence over valid thresholds ",
+			dashboardFilename: testDataFolder + "dashboard_both_thresholds_and_pass_and_warning_in_title.json",
+			expectedSLO: createExpectedServiceResponseTimeSLO(
+				[]*keptnapi.SLOCriteria{{Criteria: []string{"<70000"}}},
+				[]*keptnapi.SLOCriteria{{Criteria: []string{"<71000"}}}),
+		},
+		{
+			name:              "Visible thresholds with no values are ignored",
+			dashboardFilename: testDataFolder + "dashboard_visible_thresholds_without_values.json",
+			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+		},
+		{
+			name:              "Not visible thresholds with valid values are ignored",
+			dashboardFilename: testDataFolder + "dashboard_not_visible_thresholds_with_valid_values.json",
+			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+		},
+		{
+			name:              "Not visible thresholds with invalid values are ignored",
+			dashboardFilename: testDataFolder + "dashboard_not_visible_thresholds_with_invalid_values.json",
+			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+		},
+	}
+
+	for _, thresholdTest := range tests {
+		t.Run(thresholdTest.name, func(t *testing.T) {
+
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, thresholdTest.dashboardFilename)
+			handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+			uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+				if assert.Equal(t, 1, len(actual.Objectives)) {
+					assert.EqualValues(t, thresholdTest.expectedSLO, actual.Objectives[0])
+				}
+			}
+
+			runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, successfulSLIResultAllectionsFunc)
+		})
+	}
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto tests that unit transforms other than auto are not allowed.
+// This is will result in a SLIResult with failure, as this is not allowed.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto(t *testing.T) {
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, "./testdata/dashboards/data_explorer/unit_transform_is_not_auto/dashboard.json")
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "must be set to 'Auto'"))
+}
+
+func createExpectedServiceResponseTimeSLO(passCriteria []*keptnapi.SLOCriteria, warningCriteria []*keptnapi.SLOCriteria) *keptnapi.SLO {
+	return &keptnapi.SLO{
+		SLI:         "srt",
+		DisplayName: "Service Response Time",
+		Pass:        passCriteria,
+		Warning:     warningCriteria,
+		Weight:      1,
+		KeySLI:      false,
+	}
+}
+
+func createBandSLOCriteria(lowerBoundInclusive float64, upperBoundExclusive float64) []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{{Criteria: []string{createGreaterThanOrEqualSLOCriterion(lowerBoundInclusive), createLessThanSLOCriterion(upperBoundExclusive)}}}
+}
+
+func createLowerBoundSLOCriteria(lowerBoundInclusive float64) []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{{Criteria: []string{createGreaterThanOrEqualSLOCriterion(lowerBoundInclusive)}}}
+}
+
+func createGreaterThanOrEqualSLOCriterion(v float64) string {
+	return fmt.Sprintf(">=%f", v)
+}
+
+func createLessThanSLOCriterion(v float64) string {
+	return fmt.Sprintf("<%f", v)
 }

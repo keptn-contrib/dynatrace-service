@@ -87,6 +87,30 @@ type Tile struct {
 	AssignedEntities          []string            `json:"assignedEntities,omitempty"`
 	ExcludeMaintenanceWindows bool                `json:"excludeMaintenanceWindows,omitempty"`
 	FilterConfig              *FilterConfig       `json:"filterConfig,omitempty"`
+	VisualConfig              *VisualConfig       `json:"visualConfig,omitempty"`
+}
+
+// VisualConfig is the visual configuration for a dashboard tile.
+type VisualConfig struct {
+	Thresholds []Threshold        `json:"thresholds,omitempty"`
+	Rules      []VisualConfigRule `json:"rules,omitempty"`
+}
+
+// VisualConfigRule is a rule for the visual configuration.
+type VisualConfigRule struct {
+	UnitTransform string `json:"unitTransform,omitempty"`
+}
+
+// Threshold is a threshold configuration for a Data Explorer tile.
+type Threshold struct {
+	Visible bool            `json:"visible"`
+	Rules   []ThresholdRule `json:"rules,omitempty"`
+}
+
+// ThresholdRule is a rule for a threshold.
+type ThresholdRule struct {
+	Value *float64 `json:"value,omitempty"`
+	Color string   `json:"color"`
 }
 
 type Bounds struct {
