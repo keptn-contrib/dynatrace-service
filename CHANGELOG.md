@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.23.2](https://github.com/keptn-contrib/dynatrace-service/compare/0.23.1...0.23.2) (2022-08-16)
+
+### Release validated with
+ | Dynatrace-service: `0.23.2` | Keptn: `0.16.1` | Dynatrace: `1.247` |
+ |---|---|---|
+
+
+### Bug Fixes
+
+* Support auto space aggregation ([#876](https://github.com/keptn-contrib/dynatrace-service/issues/876)) ([3fb43be](https://github.com/keptn-contrib/dynatrace-service/commit/3fb43be6dad9fd20c725740eb4b03563db7ec912))
+
 ### [0.23.1](https://github.com/keptn-contrib/dynatrace-service/compare/0.23.0...0.23.1) (2022-08-03)
 
 ### Release validated with
