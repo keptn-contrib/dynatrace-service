@@ -246,17 +246,23 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy(t *te
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy tests no space aggregation and no filterby.
-// This is will result in a SLIResult with failure, as a space aggregation must be supplied.
+// TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy tests no space aggregation set and no filterby.
+// This is will result in a SLIResult with success, as this is supported: auto will be used as the space aggregation
 func TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/no_spaceag_no_filterby/"
 
-	handler := test.NewFileBasedURLHandler(t)
+	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aauto%3Anames")
 
+	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_no_spaceag_no_filterby.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_auto.json")
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("rt"))
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("rt", 29192.929640271974, expectedMetricsRequest),
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById tests average space aggregation and filterby entity id.
