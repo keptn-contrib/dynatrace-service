@@ -28,7 +28,6 @@
           {
             "id": "A",
             "metric": "builtin:service.response.time",
-            "spaceAggregation": "",
             "timeAggregation": "DEFAULT",
             "splitBy": [],
             "filterBy": {

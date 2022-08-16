@@ -254,6 +254,8 @@ func processFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*pr
 
 func getSpaceAggregationTransformation(spaceAggregation string) (string, error) {
 	switch spaceAggregation {
+	case "":
+		return "auto", nil
 	case "AVG":
 		return "avg", nil
 	case "SUM":
