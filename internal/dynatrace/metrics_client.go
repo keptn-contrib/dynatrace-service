@@ -27,6 +27,7 @@ const (
 	metricSelectorKey = "metricSelector"
 	resolutionKey     = "resolution"
 	entitySelectorKey = "entitySelector"
+	mzSelectorKey     = "mzSelector"
 )
 
 // MetricsClientQueryRequest encapsulates the request for the MetricsClient's GetByQuery method.
@@ -49,9 +50,13 @@ func (q *MetricsClientQueryRequest) RequestString() string {
 	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
 	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
 	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
-	queryParameters.add(resolutionKey, "Inf")
+	queryParameters.add(resolutionKey, q.query.GetResolution())
 	if q.query.GetEntitySelector() != "" {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
+	}
+
+	if q.query.GetMZSelector() != "" {
+		queryParameters.add(mzSelectorKey, q.query.GetMZSelector())
 	}
 
 	return MetricsQueryPath + "?" + queryParameters.encode()
