@@ -3,6 +3,8 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -102,6 +104,34 @@ type MetricQueryResultNumbers struct {
 	Values       []float64         `json:"values"`
 }
 
+// MetricsQueryFailedError represents an error for a metrics query that could not be retrieved because of an error.
+type MetricsQueryFailedError struct {
+	cause error
+}
+
+// Error returns a string representation of this error.
+func (e *MetricsQueryFailedError) Error() string {
+	return fmt.Sprintf("error querying Metrics API v2: %v", e.cause)
+}
+
+// Unwrap returns the cause of the MetricsQueryFailedError.
+func (e *MetricsQueryFailedError) Unwrap() error {
+	return e.cause
+}
+
+type MetricsQueryProcessingError struct {
+	Message  string
+	Warnings []string
+}
+
+// Error returns a string representation of this error.
+func (e *MetricsQueryProcessingError) Error() string {
+	if len(e.Warnings) > 0 {
+		return fmt.Sprintf("%s. Warnings: %s", e.Message, strings.Join(e.Warnings, ", "))
+	}
+	return e.Message
+}
+
 // MetricsClient is a client for interacting with the Dynatrace problems endpoints
 type MetricsClient struct {
 	client ClientInterface
@@ -130,8 +160,30 @@ func (mc *MetricsClient) GetByID(ctx context.Context, metricID string) (*MetricD
 	return &result, nil
 }
 
-// GetByQuery executes the passed Metrics API Call, validates that the call returns data and returns the data set.
-func (mc *MetricsClient) GetByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricsQueryResult, error) {
+// GetSingleResultByQuery executes the request, validates and returns a single result with at least one data point or an error.
+func (mc *MetricsClient) GetSingleResultByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricQueryResultValues, error) {
+	queryResult, err := mc.getByQuery(ctx, request)
+	if err != nil {
+		return nil, &MetricsQueryFailedError{cause: err}
+	}
+
+	if len(queryResult.Result) == 0 {
+		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero results"}
+	}
+
+	if len(queryResult.Result) > 1 {
+		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned more than one result"}
+	}
+
+	singleResult := queryResult.Result[0]
+	if len(singleResult.Data) == 0 {
+		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero data points", Warnings: singleResult.Warnings}
+	}
+
+	return &singleResult, nil
+}
+
+func (mc *MetricsClient) getByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricsQueryResult, error) {
 	err := NewTimeframeDelay(request.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err

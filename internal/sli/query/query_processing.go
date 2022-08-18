@@ -210,73 +210,55 @@ func (p *Processing) executeMetricsV2Query(ctx context.Context, name string, que
 		return result.NewFailedSLIResult(name, "error parsing MV2 query: "+err.Error())
 	}
 
-	return p.processMetricsQuery(ctx, name, query.GetQuery(), query.GetUnit())
+	return p.processMetricsQueryAndMakeSLIResult(ctx, name, query.GetQuery(), query.GetUnit())
 }
 
 func (p *Processing) executeMetricsQuery(ctx context.Context, name string, queryString string) result.SLIResult {
 	query, err := v1metrics.NewQueryParser(queryString).Parse()
 	if err == nil {
-		return p.processMetricsQuery(ctx, name, *query, "")
+		return p.processMetricsQueryAndMakeSLIResult(ctx, name, *query, "")
 	}
 
 	query, legacyErr := v1metrics.NewLegacyQueryParser(queryString).Parse()
 	if legacyErr != nil {
 		return result.NewFailedSLIResult(name, "error parsing Metrics v2 query: "+err.Error())
 	}
-	return p.processMetricsQuery(ctx, name, *query, "")
+	return p.processMetricsQueryAndMakeSLIResult(ctx, name, *query, "")
 }
 
-func (p *Processing) processMetricsQuery(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
+func (p *Processing) processMetricsQueryAndMakeSLIResult(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
 	request := dynatrace.NewMetricsClientQueryRequest(query, p.timeframe)
-	res, err := dynatrace.NewMetricsClient(p.client).GetByQuery(ctx, request)
+	value, err := p.processMetricsQuery(ctx, request, metricUnit)
 	if err != nil {
-		return result.NewFailedSLIResultWithQuery(name, "error querying Metrics API v2: "+err.Error(), request.RequestString())
-	}
-
-	// TODO 2021-10-13: Collect and log all warnings
-
-	// TODO 2021-10-13: Check if having a query result with zero results is even plausable
-	if len(res.Result) == 0 {
-		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero results", request.RequestString())
-	}
-
-	if len(res.Result) > 1 {
-		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one result", request.RequestString())
-	}
-
-	singleResult := res.Result[0]
-
-	if len(singleResult.Data) == 0 {
-		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
+		var qpErrorType *dynatrace.MetricsQueryProcessingError
+		if errors.As(err, &qpErrorType) {
+			return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 		}
-		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data points", request.RequestString())
+		return result.NewFailedSLIResultWithQuery(name, err.Error(), request.RequestString())
+	}
+	return result.NewSuccessfulSLIResultWithQuery(name, value, request.RequestString())
+}
+
+func (p *Processing) processMetricsQuery(ctx context.Context, request dynatrace.MetricsClientQueryRequest, metricUnit string) (float64, error) {
+	singleResult, err := dynatrace.NewMetricsClient(p.client).GetSingleResultByQuery(ctx, request)
+	if err != nil {
+		return 0, err
 	}
 
 	if len(singleResult.Data) > 1 {
-		if len(singleResult.Warnings) > 0 {
-			return result.NewFailedSLIResultWithQuery(name, "Metrics API v2 returned more than one data point. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
-		}
-		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point", request.RequestString())
+		return 0, &dynatrace.MetricsQueryProcessingError{Message: "Metrics API v2 returned more than one data point", Warnings: singleResult.Warnings}
 	}
 
 	singleDataPoint := singleResult.Data[0]
 
 	// TODO 2021-10-13: Check if having a query result with zero values is even plausable
 	if len(singleDataPoint.Values) == 0 {
-		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data point values. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
-		}
-		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned zero data point values", request.RequestString())
+		return 0, &dynatrace.MetricsQueryProcessingError{Message: "Metrics API v2 returned zero data point values", Warnings: singleResult.Warnings}
 	}
 
 	if len(singleDataPoint.Values) > 1 {
-		if len(singleResult.Warnings) > 0 {
-			return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point value. Warnings: "+strings.Join(singleResult.Warnings, ", "), request.RequestString())
-		}
-		return result.NewWarningSLIResultWithQuery(name, "Metrics API v2 returned more than one data point value", request.RequestString())
+		return 0, &dynatrace.MetricsQueryProcessingError{Message: "Metrics API v2 returned more than one data point value", Warnings: singleResult.Warnings}
 	}
 
-	singleValue := singleDataPoint.Values[0]
-	return result.NewSuccessfulSLIResultWithQuery(name, unit.ScaleData(metricUnit, singleValue), request.RequestString())
+	return unit.ScaleData(metricUnit, singleDataPoint.Values[0]), nil
 }

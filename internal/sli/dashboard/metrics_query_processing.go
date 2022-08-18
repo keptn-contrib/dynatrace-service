@@ -2,7 +2,7 @@ package dashboard
 
 import (
 	"context"
-	"strings"
+	"errors"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
@@ -24,35 +24,13 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 
 	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
 	request := dynatrace.NewMetricsClientQueryRequest(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe)
-	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(ctx, request)
-
-	// ERROR-CASE: Metric API return no values or an error
-	// we could not query data - so - we return the error back as part of our SLIResults
+	singleResult, err := dynatrace.NewMetricsClient(r.client).GetSingleResultByQuery(ctx, request)
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "error querying Metrics API v2: "+err.Error())}
-	}
-
-	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
-	if len(queryResult.Result) == 0 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero results")}
-	}
-
-	if len(queryResult.Result) > 1 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned more than one result")}
-	}
-
-	// SUCCESS-CASE: we retrieved values - now create an indicator result for every dimension
-	singleResult := queryResult.Result[0]
-	log.WithFields(
-		log.Fields{
-			"metricId": singleResult.MetricID,
-		}).Debug("Processing result")
-
-	if len(singleResult.Data) == 0 {
-		if len(singleResult.Warnings) > 0 {
-			return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))}
+		var qpErrorType *dynatrace.MetricsQueryProcessingError
+		if errors.As(err, &qpErrorType) {
+			return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())}
 		}
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero data points")}
+		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())}
 	}
 
 	return r.processSingleResult(noOfDimensionsInChart, sloDefinition, metricQueryComponents, singleResult.Data, request)
