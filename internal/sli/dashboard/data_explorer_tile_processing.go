@@ -113,7 +113,7 @@ func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefini
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())}
 	}
 
-	return NewMetricsQueryProcessing(p.client).Process(ctx, len(dataQuery.SplitBy), sloDefinition, metricQuery)
+	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, metricQuery)
 }
 
 func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ctx context.Context, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) (*queryComponents, error) {

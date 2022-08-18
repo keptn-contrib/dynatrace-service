@@ -3,10 +3,13 @@ package dashboard
 import (
 	"context"
 	"errors"
+	"sort"
+	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 )
 
 type MetricsQueryProcessing struct {
@@ -20,9 +23,7 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 }
 
 // Process generates SLI & SLO definitions based on the metric query and the number of dimensions in the chart definition.
-func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents) []TileResult {
-
-	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
+func (r *MetricsQueryProcessing) Process(ctx context.Context, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents) []TileResult {
 	request := dynatrace.NewMetricsClientQueryRequest(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe)
 	singleResult, err := dynatrace.NewMetricsClient(r.client).GetSingleResultByQuery(ctx, request)
 	if err != nil {
@@ -33,48 +34,18 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInCh
 		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())}
 	}
 
-	return r.processSingleResult(noOfDimensionsInChart, sloDefinition, metricQueryComponents, singleResult.Data, request)
+	return r.processSingleResult(sloDefinition, singleResult.Data, request)
 }
 
-func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents, singleResultData []dynatrace.MetricQueryResultNumbers, request dynatrace.MetricsClientQueryRequest) []TileResult {
+func (r *MetricsQueryProcessing) processSingleResult(sloDefinition keptncommon.SLO, singleResultData []dynatrace.MetricQueryResultNumbers, request dynatrace.MetricsClientQueryRequest) []TileResult {
 	var tileResults []TileResult
+
 	for _, singleDataEntry := range singleResultData {
-		//
-		// we need to generate the indicator name based on the base name + all dimensions, e.g: teststep_MYTESTSTEP, teststep_MYOTHERTESTSTEP
-		// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
-		indicatorName := sloDefinition.SLI
 
+		indicatorName := cleanIndicatorName(sloDefinition.SLI)
 		if len(singleResultData) > 1 {
-			// because we use the ":names" transformation we always get two dimension entries for entity dimensions, e.g: Host, Service .... First is the Name of the entity, then the ID of the Entity
-			// lets first validate that we really received Dimension Names
-			dimensionCount := len(singleDataEntry.Dimensions)
-			dimensionIncrement := 2
-			if dimensionCount != (noOfDimensionsInChart * 2) {
-				dimensionIncrement = 1
-			}
-
-			// lets iterate through the list and get all names
-			for dimIx := 0; dimIx < len(singleDataEntry.Dimensions); dimIx = dimIx + dimensionIncrement {
-				indicatorName = indicatorName + "_" + singleDataEntry.Dimensions[dimIx]
-			}
+			indicatorName = indicatorName + "_" + generateIndicatorNameSuffix(singleDataEntry.DimensionMap)
 		}
-
-		// make sure we have a valid indicator name by getting rid of special characters
-		indicatorName = cleanIndicatorName(indicatorName)
-
-		// calculating the value
-		value := 0.0
-		for _, singleValue := range singleDataEntry.Values {
-			value = value + singleValue
-		}
-		value = value / float64(len(singleDataEntry.Values))
-
-		// we got our metric, SLOs and the value
-		log.WithFields(
-			log.Fields{
-				"name":  indicatorName,
-				"value": value,
-			}).Debug("Got indicator value")
 
 		tileResult := newSuccessfulTileResult(
 			keptncommon.SLO{
@@ -85,12 +56,61 @@ func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, 
 				Pass:        sloDefinition.Pass,
 				Warning:     sloDefinition.Warning,
 			},
-			value,
+			averageValues(singleDataEntry.Values),
 			request.RequestString(),
 		)
+
+		// we got our metric, SLOs and the value
+		log.WithFields(
+			log.Fields{
+				"tileResult": tileResult,
+			}).Debug("Got indicator value")
 
 		tileResults = append(tileResults, tileResult)
 	}
 
 	return tileResults
+}
+
+// averageValues returns the arithmetic average of the values.
+func averageValues(values []float64) float64 {
+	value := 0.0
+	for _, singleValue := range values {
+		value = value + singleValue
+	}
+	return value / float64(len(values))
+}
+
+// generateIndicatorNameSuffix generates an indicator name suffix based on all dimensions.
+func generateIndicatorNameSuffix(dimensionMap map[string]string) string {
+	const nameSuffix = ".name"
+
+	// take all dimension values except where both names and IDs are available, in that case only take the names
+	suffixComponents := map[string]string{}
+	for key, value := range dimensionMap {
+		if value == "" {
+			continue
+		}
+
+		if strings.HasSuffix(key, nameSuffix) {
+			keyWithoutNameSuffix := strings.TrimSuffix(key, nameSuffix)
+			suffixComponents[keyWithoutNameSuffix] = value
+			continue
+		}
+
+		_, found := suffixComponents[key]
+		if !found {
+			suffixComponents[key] = value
+		}
+	}
+
+	// ensure suffix component values are ordered by key alphabetically
+	keys := maps.Keys(suffixComponents)
+	sort.Strings(keys)
+	sortedSuffixComponentValues := make([]string, 0, len(keys))
+	for _, k := range keys {
+		sortedSuffixComponentValues = append(sortedSuffixComponentValues, suffixComponents[k])
+	}
+
+	return cleanIndicatorName(strings.Join(sortedSuffixComponentValues, "_"))
 }
