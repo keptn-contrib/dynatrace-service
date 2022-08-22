@@ -107,16 +107,16 @@ func validateDataExplorerVisualConfigurationRule(rule dynatrace.VisualConfigRule
 func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefinition keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []TileResult {
 	log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
 
-	metricQuery, err := p.generateMetricQueryFromDataExplorerQuery(ctx, dataQuery, managementZoneFilter)
+	metricsQuery, err := p.generateMetricQueryFromDataExplorerQuery(ctx, dataQuery, managementZoneFilter)
 	if err != nil {
 		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())}
 	}
 
-	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, metricQuery)
+	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
 }
 
-func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ctx context.Context, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) (*queryComponents, error) {
+func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ctx context.Context, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
 
 	// TODO 2021-08-04: there are too many return values and they are have the same type
 
@@ -196,11 +196,7 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ct
 		return nil, err
 	}
 
-	return &queryComponents{
-		metricsQuery: *metricsQuery,
-		timeframe:    p.timeframe,
-	}, nil
-
+	return metricsQuery, nil
 }
 
 func ensureEntitySelectorFilter(existingEntitySelectorFilter string, metricDefinition *dynatrace.MetricDefinition) (string, error) {

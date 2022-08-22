@@ -19,8 +19,8 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 	assert.NoError(t, err)
 
 	type args struct {
-		sloDefinition         keptncommon.SLO
-		metricQueryComponents *queryComponents
+		sloDefinition keptncommon.SLO
+		metricsQuery  metrics.Query
 	}
 
 	tests := []struct {
@@ -41,10 +41,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "csrt",
 					Weight: 1,
 				},
-				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery(t, "builtin:service.response.client:merge(\"dt.entity.service\"):avg:names", "type(SERVICE)"),
-					timeframe:    *timeframe,
-				},
+				metricsQuery: createMetricsQuery(t, "builtin:service.response.client:merge(\"dt.entity.service\"):avg:names", "type(SERVICE)"),
 			},
 			expectedTileResult: TileResult{
 				sliResult: result.NewSuccessfulSLIResultWithQuery("csrt", 15868.648438045173, "/api/v2/metrics/query?entitySelector=type%28SERVICE%29&from=1633420800000&metricSelector=builtin%3Aservice.response.client%3Amerge%28%22dt.entity.service%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
@@ -64,10 +61,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
-					timeframe:    *timeframe,
-				},
+				metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 			},
 			expectedTileResult: TileResult{
 				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 50151253.46237466, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
@@ -87,10 +81,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "hdqc",
 					Weight: 1,
 				},
-				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery(t, "builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names", "type(HOST)"),
-					timeframe:    *timeframe,
-				},
+				metricsQuery: createMetricsQuery(t, "builtin:host.dns.queryCount:merge(\"dnsServerIp\"):merge(\"dt.entity.host\"):avg:names", "type(HOST)"),
 			},
 			expectedTileResult: TileResult{
 				sliResult: result.NewSuccessfulSLIResultWithQuery("hdqc", 96.94525462962963, "/api/v2/metrics/query?entitySelector=type%28HOST%29&from=1633420800000&metricSelector=builtin%3Ahost.dns.queryCount%3Amerge%28%22dnsServerIp%22%29%3Amerge%28%22dt.entity.host%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
@@ -112,10 +103,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
-					timeframe:    *timeframe,
-				},
+				metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 			},
 			expectedTileResult: TileResult{
 				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 50151253.46237466, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
@@ -135,11 +123,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				metricQueryComponents: &queryComponents{
-
-					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
-					timeframe:    *timeframe,
-				},
+				metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 			},
 			expectedTileResult: TileResult{
 				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 50151253.46237466, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
@@ -159,10 +143,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
-					timeframe:    *timeframe,
-				},
+				metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(container_id):merge(\"dt.entity.docker_container_group_instance\"):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 			},
 			expectedTileResult: TileResult{
 				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 50151253.46237466, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28container_id%29%3Amerge%28%22dt.entity.docker_container_group_instance%22%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
@@ -182,10 +163,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				metricQueryComponents: &queryComponents{
-					metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
-					timeframe:    *timeframe,
-				},
+				metricsQuery: createMetricsQuery(t, "builtin:containers.memory_usage2:merge(\"container_id\"):merge(dt.entity.docker_container_group_instance):avg:names", "type(DOCKER_CONTAINER_GROUP_INSTANCE)"),
 			},
 			expectedTileResult: TileResult{
 				sliResult: result.NewSuccessfulSLIResultWithQuery("cmu", 50151253.46237466, "/api/v2/metrics/query?entitySelector=type%28DOCKER_CONTAINER_GROUP_INSTANCE%29&from=1633420800000&metricSelector=builtin%3Acontainers.memory_usage2%3Amerge%28%22container_id%22%29%3Amerge%28dt.entity.docker_container_group_instance%29%3Aavg%3Anames&resolution=Inf&to=1633507200000"),
@@ -207,7 +185,7 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 			defer teardown()
 
 			processing := NewMetricsQueryProcessing(dtClient)
-			tileResults := processing.Process(context.TODO(), tt.args.sloDefinition, tt.args.metricQueryComponents)
+			tileResults := processing.Process(context.TODO(), tt.args.sloDefinition, tt.args.metricsQuery, *timeframe)
 
 			if !assert.EqualValues(t, 1, len(tileResults)) {
 				return
