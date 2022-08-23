@@ -129,7 +129,7 @@ type TileFilter struct {
 type DataExplorerQuery struct {
 	ID               string              `json:"id"`
 	Metric           string              `json:"metric"`
-	SpaceAggregation string              `json:"spaceAggregation"`
+	SpaceAggregation string              `json:"spaceAggregation,omitempty"`
 	TimeAggregation  string              `json:"timeAggregation"`
 	SplitBy          []string            `json:"splitBy"`
 	FilterBy         *DataExplorerFilter `json:"filterBy,omitempty"`
