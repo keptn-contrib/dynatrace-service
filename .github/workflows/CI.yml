@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - "master"
-      - "release-*"
   # in addition, execute for pull requests to those branches
   pull_request:
     branches:
