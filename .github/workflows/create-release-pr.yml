@@ -1,0 +1,157 @@
+name: Create release PR
+on:
+  workflow_dispatch:
+    inputs:
+      keptn-version:
+        description: "The version of Keptn this release has been tested with. This will be included in all compatibility updates. E.g. `0.11.3`"
+        required: true
+        type: string
+      dynatrace-version:
+        description: "The version of Dynatrace this release has been tested with. This version will be included in all compatibility updates. E.g. `1.233`"
+        required: true
+        type: string
+
+env:
+  KEPTN_BOT_NAME: "Keptn Contrib Bot"
+  KEPTN_BOT_EMAIL: "keptn-contrib-bot@users.noreply.github.com"
+  COMPATIBILITY_MATRIX_FILE: "documentation/compatibility.md"
+  README_FILE: "README.md"
+  VERSION_FILE: "x-release-please-version.json"
+
+defaults:
+  run:
+    shell: bash
+jobs:
+  prepare:
+    name: Prepare release run
+    runs-on: ubuntu-20.04
+    if: startsWith(github.ref, 'refs/heads/release-')
+    outputs:
+      next-version: ${{ steps.version_number.outputs.next-version }}
+      branch: ${{ steps.current_branch.outputs.branch }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3.0.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.KEPTN_BOT_TOKEN }}
+
+      - name: Validate Keptn Version
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+        run: |
+          ./gh-actions-scripts/check-version.sh "$KEPTN_VERSION" release-3
+
+      - name: Validate Dynatrace Version
+        env:
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          ./gh-actions-scripts/check-version.sh "$DYNATRACE_VERSION" release-2
+
+      - name: Find current branch
+        id: current_branch
+        run: |
+          branch=${GITHUB_REF#refs/heads/}
+          echo "::set-output name=branch::${branch}"
+
+  ############################################################################
+  # Create Release-PR and special version updates
+  ############################################################################
+  release-please:
+    needs:
+      - prepare
+    runs-on: ubuntu-20.04
+    name: Release please
+    if: startsWith(github.ref, 'refs/heads/release-')
+    outputs:
+      release_created: ${{ steps.release_please.outputs.release_created }}
+      tag_name: ${{ steps.release_please.outputs.tag_name }}
+      major: ${{ steps.release_please.outputs.major }}
+      minor: ${{ steps.release_please.outputs.minor }}
+      patch: ${{ steps.release_please.outputs.patch }}
+    steps:
+      - name: Release please
+        env:
+          KEPTN_BOT_NAME: ${{ env.KEPTN_BOT_NAME }}
+          KEPTN_BOT_EMAIL: ${{ env.KEPTN_BOT_EMAIL }}
+        id: release_please
+        uses: google-github-actions/release-please-action@v3.4.0
+        with:
+          command: release-pr
+          release-type: go
+          package-name: dynatrace-service
+          changelog-path: CHANGELOG.md
+          default-branch: ${{ needs.prepare.outputs.branch }}
+          bump-minor-pre-major: true
+          bump-patch-for-minor-pre-major: false
+          include-v-in-tag: false
+          signoff: "${{ env.KEPTN_BOT_NAME }} <${{ env.KEPTN_BOT_EMAIL }}>"
+          pull-request-title-pattern: "build${scope}: release ${component} ${version}"
+          extra-files: |
+            ${{ env.VERSION_FILE }}
+          changelog-types: |
+            [{"type":"feat","section":"Features","hidden":false},
+            {"type":"fix","section":"Bug Fixes","hidden":false},
+            {"type":"chore","section":"Other","hidden":false},
+            {"type":"docs","section":"Docs","hidden":false},
+            {"type":"perf","section":"Performance","hidden":false},
+            {"type":"refactor","section":"Refactoring","hidden":false},
+            {"type":"build","section":"Build","hidden":true},
+            {"type":"ci","section":"CI","hidden":true},
+            {"type":"revert","section":"Revert","hidden":true},
+            {"type":"style","section":"Style","hidden":true},
+            {"type":"test","section":"Test","hidden":true}]
+
+      - name: Checkout repo
+        if: ${{ !needs.release-please.outputs.release_created }}
+        uses: actions/checkout@v3.0.2
+        with:
+          ref: release-please--branches--${{ needs.prepare.outputs.branch }}--components--dynatrace-service
+          fetch-depth: 0
+          token: ${{ secrets.KEPTN_BOT_TOKEN }}
+
+      - name: Configure Git
+        if: ${{ !needs.release-please.outputs.release_created }}
+        env:
+          KEPTN_BOT_NAME: ${{ env.KEPTN_BOT_NAME }}
+          KEPTN_BOT_EMAIL: ${{ env.KEPTN_BOT_EMAIL }}
+        run: |
+          git config user.name "$KEPTN_BOT_NAME"
+          git config user.email "$KEPTN_BOT_EMAIL"
+
+      - name: Update README.md
+        if: ${{ !needs.release-please.outputs.release_created }}
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          sed "s/^.*|.*Dynatrace-service.*|.*Keptn.*|.*Dynatrace.*$/| Dynatrace-service: \`$(jq -r '."x-release-please-version"' ${{ env.VERSION_FILE }})\` | Keptn: \`$KEPTN_VERSION\` | Dynatrace: \`$DYNATRACE_VERSION\` |/" \
+            -i "${{ env.README_FILE }}"
+          git add "${{ env.README_FILE }}"
+
+      - name: Bump Version Compatibility
+        if: ${{ !needs.release-please.outputs.release_created }}
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          printf '| `%s` | `%s` | `%s` |\n' \
+            "$(jq -r '."x-release-please-version"' ${{ env.VERSION_FILE }})" "$KEPTN_VERSION" "$DYNATRACE_VERSION" \
+            >> "${{ env.COMPATIBILITY_MATRIX_FILE }}"
+          git add "${{ env.COMPATIBILITY_MATRIX_FILE }}"
+
+      - name: Update Changelog with version compatibility
+        if: ${{ !needs.release-please.outputs.release_created }}
+        env:
+          KEPTN_VERSION: ${{ github.event.inputs.keptn-version }}
+          DYNATRACE_VERSION: ${{ github.event.inputs.dynatrace-version }}
+        run: |
+          sed -r "0,/^##(#)? \[[0-9]+\.[0-9]+\.[0-9]+\].*$/ s//&\n\n### Release validated with\n | Dynatrace-service: \`$(jq -r '."x-release-please-version"' ${{ env.VERSION_FILE }})\` | Keptn: \`$KEPTN_VERSION\` | Dynatrace: \`$DYNATRACE_VERSION\` |\n |---|---|---|/" \
+            -i CHANGELOG.md
+          git add CHANGELOG.md
+
+      - name: Push special version bumps
+        if: ${{ !needs.release-please.outputs.release_created }}
+        run: |
+          git commit --signoff -m "chore: add special version bumps"
+          git push
