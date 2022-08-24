@@ -165,8 +165,10 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdRuleParsingEr
 
 	for _, thresholdTest := range tests {
 		t.Run(thresholdTest.name, func(t *testing.T) {
-			handler := test.NewTemplatingPayloadBasedURLHandler(t, testDataFolder+"dashboard_thresholds_template.json")
-			handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, tileThresholdsTemplateData{ThresholdValues: thresholdTest.thresholdValues, ThresholdColors: thresholdTest.thresholdColors})
+			handler := test.NewTemplatingPayloadBasedURLHandler(t)
+			handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID,
+				testDataFolder+"dashboard_thresholds_template.json",
+				tileThresholdsTemplateData{ThresholdValues: thresholdTest.thresholdValues, ThresholdColors: thresholdTest.thresholdColors})
 
 			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, thresholdTest.sliResultAssertionsFunc)
 		})

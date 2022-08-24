@@ -131,9 +131,10 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	}
 	for _, markdownTest := range tests {
 		t.Run(markdownTest.name, func(t *testing.T) {
-			handler := test.NewCombinedURLHandler(t, templateFile)
+			handler := test.NewCombinedURLHandler(t)
 			handler.AddExactTemplate(
 				dynatrace.DashboardsPath+"/"+testDashboardID,
+				templateFile,
 				&data{
 					Markdown: markdownTest.markdown,
 				},
@@ -256,9 +257,10 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingErrors(t *testing.T) {
 	}
 	for _, markdownTest := range tests {
 		t.Run(markdownTest.name, func(t *testing.T) {
-			handler := test.NewTemplatingPayloadBasedURLHandler(t, templateFile)
+			handler := test.NewTemplatingPayloadBasedURLHandler(t)
 			handler.AddExact(
 				dynatrace.DashboardsPath+"/"+testDashboardID,
+				templateFile,
 				&data{
 					Markdown: markdownTest.markdown,
 				},
@@ -303,9 +305,10 @@ func TestRetrieveMetricsFromDashboard_MarkdownMultipleTilesErrors(t *testing.T) 
 	}
 	for _, markdownTest := range tests {
 		t.Run(markdownTest.name, func(t *testing.T) {
-			handler := test.NewTemplatingPayloadBasedURLHandler(t, templateFile)
+			handler := test.NewTemplatingPayloadBasedURLHandler(t)
 			handler.AddExact(
 				dynatrace.DashboardsPath+"/"+testDashboardID,
+				templateFile,
 				&data{
 					MarkdownTileOne: markdownTest.firstMarkdown,
 					MarkdownTileTwo: markdownTest.secondMarkdown,

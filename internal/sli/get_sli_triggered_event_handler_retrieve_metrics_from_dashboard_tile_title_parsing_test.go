@@ -139,9 +139,10 @@ func TestRetrieveMetricsFromDashboard_TileTitleParsingErrors(t *testing.T) {
 	for _, templateConfig := range templatesConfig {
 		for _, dataExplorerTest := range tests {
 			t.Run(templateConfig.name+"_"+dataExplorerTest.tileTitle, func(t *testing.T) {
-				handler := test.NewTemplatingPayloadBasedURLHandler(t, templateConfig.templateFile)
+				handler := test.NewTemplatingPayloadBasedURLHandler(t)
 				handler.AddExact(
 					dynatrace.DashboardsPath+"/"+testDashboardID,
+					templateConfig.templateFile,
 					&data{
 						TileTitle: dataExplorerTest.tileTitle,
 					},
