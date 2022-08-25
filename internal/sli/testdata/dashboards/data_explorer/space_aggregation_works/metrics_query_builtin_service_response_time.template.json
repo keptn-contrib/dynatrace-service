@@ -3,8 +3,8 @@
   "nextPageKey": null,
   "resolution": "Inf",
   "result": [
-    {
-      "metricId": "builtin:service.response.time:splitBy():count:names",
+    {      
+      "metricId": "builtin:service.response.time:splitBy():{{.Aggregation}}:names",
       "data": [
         {
           "dimensions": [],
@@ -13,7 +13,7 @@
             1609545600000
           ],
           "values": [
-            1060428829
+            29192.929640271974
           ]
         }
       ]

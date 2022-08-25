@@ -76,194 +76,105 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIAndTwoQueries(t *te
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("two"))
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgNoFilterBy tests average space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_no_filterby/"
+// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAggregationWorks tests applying a space aggregation to the Data Explorer tile works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAggregationWorks(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/space_aggregation_works/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_avg", 29192.929640271974, expectedMetricsRequest),
+	tests := []struct {
+		name                          string
+		spaceAggregation              string
+		metricsQueryResultAggregation string
+		expectedMetricsRequest        string
+	}{
+		{
+			name:                          "auto",
+			spaceAggregation:              "",
+			metricsQueryResultAggregation: "auto",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aauto%3Anames"),
+		},
+		{
+			name:                          "average",
+			spaceAggregation:              "AVG",
+			metricsQueryResultAggregation: "avg",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+		{
+			name:                          "count",
+			spaceAggregation:              "COUNT",
+			metricsQueryResultAggregation: "count",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Acount%3Anames"),
+		},
+		{
+			name:                          "maximum",
+			spaceAggregation:              "MAX",
+			metricsQueryResultAggregation: "max",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amax%3Anames"),
+		},
+		{
+			name:                          "minimum",
+			spaceAggregation:              "MIN",
+			metricsQueryResultAggregation: "min",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amin%3Anames"),
+		},
+		{
+			name:                          "sum",
+			spaceAggregation:              "SUM",
+			metricsQueryResultAggregation: "sum",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Asum%3Anames"),
+		},
+		{
+			name:                          "median",
+			spaceAggregation:              "MEDIAN",
+			metricsQueryResultAggregation: "median",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amedian%3Anames"),
+		},
+		{
+			name:                          "value",
+			spaceAggregation:              "VALUE",
+			metricsQueryResultAggregation: "value",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Avalue%3Anames"),
+		},
+		{
+			name:                          "percentile(10)",
+			spaceAggregation:              "PERCENTILE_10",
+			metricsQueryResultAggregation: "percentile(10)",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2810%29%3Anames"),
+		},
+		{
+			name:                          "percentile(75)",
+			spaceAggregation:              "PERCENTILE_75",
+			metricsQueryResultAggregation: "percentile(75)",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2875%29%3Anames"),
+		},
+		{
+			name:                          "percentile(90)",
+			spaceAggregation:              "PERCENTILE_90",
+			metricsQueryResultAggregation: "percentile(90)",
+			expectedMetricsRequest:        buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890%29%3Anames"),
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := createHandlerWithTemplatedDashboard(t,
+				testDataFolder+"dashboard.template.json",
+				struct {
+					SpaceAggregation string
+				}{
+					SpaceAggregation: tt.spaceAggregation,
+				},
+			)
+			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExactTemplate(tt.expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time.template.json",
+				struct {
+					Aggregation string
+				}{
+					Aggregation: tt.metricsQueryResultAggregation,
+				})
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgCountNoFilterBy tests count space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgCountNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_count_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Acount%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_count_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_count.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_count", 1060428829, expectedMetricsRequest),
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, tt.expectedMetricsRequest))
+		})
 	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMaxNoFilterBy tests max space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMaxNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_max_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amax%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_max_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_max.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_max", 45156016, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMedianNoFilterBy tests median space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMedianNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_median_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amedian%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_median_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_median.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_median", 1499.9996049587276, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMinNoFilterBy tests min space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMinNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_min_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amin%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_min_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_min.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_min", 0, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP10NoFilterBy tests percentile(10) space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP10NoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_p10_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2810%29%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p10_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p10.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p10", 1000.0048892760917, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP75NoFilterBy tests percentile(75) space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP75NoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_p75_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2875%29%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p75_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p75.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p75", 3254.1557923119476, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgp90NoFilterBy tests percentile(90) space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgp90NoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_p90_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890%29%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p90_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p90", 35000.004240558075, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy tests sum space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_sum_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Asum%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_sum_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_sum.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_sum", 30957024193513, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy tests no space aggregation set and no filterby.
-// This is will result in a SLIResult with success, as this is supported: auto will be used as the space aggregation
-func TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/no_spaceag_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aauto%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_no_spaceag_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_auto.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt", 29192.929640271974, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById tests average space aggregation and filterby entity id.

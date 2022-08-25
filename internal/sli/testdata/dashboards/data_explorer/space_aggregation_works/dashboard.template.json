@@ -7,13 +7,13 @@
     },
     "id": "12345678-1111-4444-8888-123456789012",
     "dashboardMetadata": {
-        "name": "Test-414",
+        "name": "Space Aggregation Test",
         "shared": false,
         "owner": ""
     },
     "tiles": [
         {
-            "name": "Avg response time;sli=rt_avg;pass=<300",
+            "name": "Service response time; sli=srt; pass=<300",
             "tileType": "DATA_EXPLORER",
             "configured": true,
             "bounds": {
@@ -28,7 +28,7 @@
                 {
                     "id": "A",
                     "metric": "builtin:service.response.time",
-                    "spaceAggregation": "AVG",
+                    {{if .SpaceAggregation}}"spaceAggregation": "{{.SpaceAggregation}}",{{end}}
                     "timeAggregation": "DEFAULT",
                     "splitBy": [],
                     "filterBy": {
