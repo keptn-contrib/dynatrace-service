@@ -13,25 +13,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName tests space aggregation average and filterby name.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_name/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CentityName%28%22%2Fservices%2FConfigurationService%2F+on+haproxy%3A80+%28opaque%29%22%29", "builtin%3Aservice.errors.total.count%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_name.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.errors.total.count", testDataFolder+"metrics_get_by_id_builtin_service_errors_total_count.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_errors_total_count.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("any_errors", 5324, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
 // TestRetrieveMetricsFromDashboardDataExplorerTile_FilterAndSplitByDimension tests filtering by dimension and splitting by dimension works as expected.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_FilterAndSplitByDimension(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/splitby_transaction_and_filterby_service/"
@@ -547,82 +528,6 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAggregationWorks(t *t
 			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, tt.expectedMetricsRequest))
 		})
 	}
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById tests average space aggregation and filterby entity id.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_id/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-B67B3EC4C95E0FA7%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_id.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136528.52484946526, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag tests average space aggregation and filterby tag.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_tag/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_tag.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_keptn_manager", 18533.351299277794, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAttribute tests average space aggregation and filterby entity attribute.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAttribute(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_entityattribute/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_entityattribute.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_svc_etw_db", 1070.6877628404, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimension tests average space aggregation and filterby dimension.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimension(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_dimension/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Reads+in+JourneyCollection%22%29%29%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_dimension.json")
-	handler.AddExact(dynatrace.MetricsPath+"/calc:service.dbcalls", testDataFolder+"metrics_calc_service_dbcalls.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_calc_service_dbcalls_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_db_calls", 5.37359235523003, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgTwoFilters tests average space aggregation and two filters.
