@@ -32,23 +32,21 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName(t *
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_FilterByDimension tests filtering by dimension and splitting by dimension.
-// TODO: 2021-11-11: Investigate and fix this test
-func TestRetrieveMetricsFromDashboardDataExplorerTile_FilterByDimension(t *testing.T) {
-	t.Skip("Skipping test, as DIMENSION filter type needs to be investigated")
+// TestRetrieveMetricsFromDashboardDataExplorerTile_FilterAndSplitByDimension tests filtering by dimension and splitting by dimension works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_FilterAndSplitByDimension(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/splitby_transaction_and_filterby_service/"
 
-	const testDataFolder = "./testdata/dashboards/data_explorer/filterby_dimension/"
+	expectedMetricsRequest := buildMetricsV2RequestString("jmeter.usermetrics.transaction.meantime%3Afilter%28EQ%28%22dt.entity.service%22%2C%22SERVICE-FFD81F003E39B468%22%29%29%3AsplitBy%28%22transaction%22%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_filterby_dimension.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.MetricsPath+"/jmeter.usermetrics.transaction.meantime", testDataFolder+"metrics_get_by_id_jmeter_usermetrics_transaction_meantime.json")
-	handler.AddExact(buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-FFD81F003E39B468%29", "jmeter.usermetrics.transaction.meantime%3Aavg%3Anames"),
+	handler.AddExact(expectedMetricsRequest,
 		testDataFolder+"metrics_get_by_query_jmeter.usermetrics_transaction_meantime.json")
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		// include two function because two results are expected, but the values are not checked
-		func(t *testing.T, actual sliResult) {},
-		func(t *testing.T, actual sliResult) {},
+		createSuccessfulSLIResultAssertionsFunc("jm_tx_med_4_-_random_search", 1808.208984375, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("jm_tx_med_2_-_calculaterecommendations", 858.5491536458334, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)

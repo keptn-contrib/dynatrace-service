@@ -1,7 +1,7 @@
 {
   "result": [
     {
-      "metricId": "jmeter.usermetrics.transaction.meantime:avg:names",
+      "metricId": "jmeter.usermetrics.transaction.meantime:filter(EQ(\"dt.entity.service\",\"SERVICE-FFD81F003E39B468\")):splitBy(\"transaction\"):avg:names",
       "data": [
         {
           "dimensions": [
