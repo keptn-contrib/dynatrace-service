@@ -62,8 +62,9 @@ type SharingDetails struct {
 	LinkShared bool `json:"linkShared"`
 	Published  bool `json:"published"`
 }
+
 type DashboardFilter struct {
-	Timeframe      string               `json:"timeframe"`
+	Timeframe      string               `json:"timeframe,omitempty"`
 	ManagementZone *ManagementZoneEntry `json:"managementZone,omitempty"`
 }
 
@@ -121,7 +122,7 @@ type Bounds struct {
 }
 
 type TileFilter struct {
-	Timeframe      string               `json:"timeframe"`
+	Timeframe      string               `json:"timeframe,omitempty"`
 	ManagementZone *ManagementZoneEntry `json:"managementZone,omitempty"`
 }
 
@@ -136,10 +137,10 @@ type DataExplorerQuery struct {
 }
 
 type DataExplorerFilter struct {
-	Filter          string                  `json:"filter"`
-	FilterType      string                  `json:"filterType"`
-	FilterOperator  string                  `json:"filterOperator"`
-	EntityAttribute string                  `json:"entityAttribute"`
+	Filter          string                  `json:"filter,omitempty"`
+	FilterType      string                  `json:"filterType,omitempty"`
+	FilterOperator  string                  `json:"filterOperator,omitempty"`
+	EntityAttribute string                  `json:"entityAttribute,omitempty"`
 	NestedFilters   []DataExplorerFilter    `json:"nestedFilters"`
 	Criteria        []DataExplorerCriterion `json:"criteria"`
 }

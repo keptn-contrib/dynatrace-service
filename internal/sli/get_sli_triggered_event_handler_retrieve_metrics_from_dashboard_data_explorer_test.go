@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -354,80 +355,133 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgTwoFilters(t *te
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("rt_jt"))
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_NoManagementZone tests applying no filter and no management zone.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_NoManagementZone(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones/no_filter_no_managementzone/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_no_filter_no_mz", 29192.929640271974, expectedMetricsRequest),
+// TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork tests applying management zones to the dashboard and tile work as expected, also when combined with a filter that appears on the entity selector.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones_work/"
+	dashboardFilterWithManagementZone := dynatrace.DashboardFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "-1234567890123456789",
+			Name: "mz-1",
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
+	emptyTileFilter := dynatrace.TileFilter{}
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_NoManagementZone tests applying service tag filter and no management zone.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_NoManagementZone(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones/servicetag_filter_no_managementzone/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_servicetag_filter_no_mz", 288957.2355825356, expectedMetricsRequest),
+	tileFilterWithManagementZone := dynatrace.TileFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "2311420533206603714",
+			Name: "ap_mz_1",
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_WithCustomManagementZone tests applying no filter and custom management zone.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_WithCustomManagementZone(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones/no_filter_with_custommanagementzone/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_no_filter_custom_mz", 7045.031103506126, expectedMetricsRequest),
+	emptyQueryFilter := dynatrace.DataExplorerFilter{
+		NestedFilters: []dynatrace.DataExplorerFilter{},
+		Criteria:      []dynatrace.DataExplorerCriterion{},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCustomManagementZone tests applying service tag filter and custom management zone.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCustomManagementZone(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones/servicetag_filter_with_custommanagementzone/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_servicetag_filter_custom_mz", 8283.891270010905, expectedMetricsRequest),
+	queryFilterWithTag := dynatrace.DataExplorerFilter{
+		FilterOperator: "AND",
+		NestedFilters: []dynatrace.DataExplorerFilter{
+			{
+				Filter:         "dt.entity.service",
+				FilterType:     "TAG",
+				FilterOperator: "OR",
+				Criteria: []dynatrace.DataExplorerCriterion{
+					{
+						Value:     "service_tag",
+						Evaluator: "in",
+					},
+				},
+			},
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+	tests := []struct {
+		name                   string
+		dashboardFilter        *dynatrace.DashboardFilter
+		tileFilter             dynatrace.TileFilter
+		queryFilter            dynatrace.DataExplorerFilter
+		expectedMetricsRequest string
+	}{
+		{
+			name:                   "no dashboard filter, empty tile filter, empty query filter",
+			dashboardFilter:        nil,
+			tileFilter:             emptyTileFilter,
+			queryFilter:            emptyQueryFilter,
+			expectedMetricsRequest: buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+		{
+			name:                   "dashboard filter with mz, empty tile filter, empty query filter",
+			dashboardFilter:        &dashboardFilterWithManagementZone,
+			tileFilter:             emptyTileFilter,
+			queryFilter:            emptyQueryFilter,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CmzId%28-1234567890123456789%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+		{
+			name:                   "no dashboard filter, tile filter with mz, empty query filter",
+			dashboardFilter:        nil,
+			tileFilter:             tileFilterWithManagementZone,
+			queryFilter:            emptyQueryFilter,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+		{
+			name:                   "dashboard filter with mz, tile filter with mz, empty query filter",
+			dashboardFilter:        &dashboardFilterWithManagementZone,
+			tileFilter:             tileFilterWithManagementZone,
+			queryFilter:            emptyQueryFilter,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+		{
+			name:                   "no dashboard filter, empty tile filter, query filter with tag",
+			dashboardFilter:        nil,
+			tileFilter:             emptyTileFilter,
+			queryFilter:            queryFilterWithTag,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+		{
+			name:                   "dashboard filter with mz, empty tile filter, query filter with tag",
+			dashboardFilter:        &dashboardFilterWithManagementZone,
+			tileFilter:             emptyTileFilter,
+			queryFilter:            queryFilterWithTag,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%28-1234567890123456789%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+		{
+			name:                   "no dashboard filter, tile filter with mz, query filter with tag",
+			dashboardFilter:        nil,
+			tileFilter:             tileFilterWithManagementZone,
+			queryFilter:            queryFilterWithTag,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+		{
+			name:                   "dashboard filter with mz, tile filter with mz, query filter with tag",
+			dashboardFilter:        &dashboardFilterWithManagementZone,
+			tileFilter:             tileFilterWithManagementZone,
+			queryFilter:            queryFilterWithTag,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := createHandlerWithTemplatedDashboard(t,
+				testDataFolder+"dashboard.template.json",
+				struct {
+					DashboardFilterString string
+					TileFilterString      string
+					QueryFilterString     string
+				}{
+					DashboardFilterString: convertToJSONStringOrEmptyIfNil(t, tt.dashboardFilter),
+					TileFilterString:      convertToJSONString(t, tt.tileFilter),
+					QueryFilterString:     convertToJSONString(t, tt.queryFilter),
+				},
+			)
+			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExactFile(tt.expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("srt", 8283.891270010905, tt.expectedMetricsRequest))
+		})
+	}
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType tests that an error is produced for data explorer tiles with a management zone and no obvious entity type.
@@ -595,4 +649,25 @@ func createGreaterThanOrEqualSLOCriterion(v float64) string {
 
 func createLessThanSLOCriterion(v float64) string {
 	return fmt.Sprintf("<%f", v)
+}
+
+func convertToJSONStringOrEmptyIfNil[T any](t *testing.T, o *T) string {
+	if o == nil {
+		return ""
+	}
+	return convertToJSONString(t, *o)
+}
+
+func convertToJSONString[T any](t *testing.T, o T) string {
+	bytes, err := json.Marshal(o)
+	if err != nil {
+		t.Fatal("could not marshal object to JSON")
+	}
+	return string(bytes)
+}
+
+func createHandlerWithTemplatedDashboard(t *testing.T, templateFilename string, templatingData interface{}) *test.CombinedURLHandler {
+	handler := test.NewCombinedURLHandler(t)
+	handler.AddExactTemplate(dynatrace.DashboardsPath+"/"+testDashboardID, templateFilename, templatingData)
+	return handler
 }
