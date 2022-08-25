@@ -1,0 +1,25 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "calc:service.dbcalls:splitBy():auto:names",
+      "dataPointCountRatio": 0.00018075,
+      "dimensionCountRatio": 0.00005,
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            2113.049892441478
+          ]
+        }
+      ]
+    }
+  ]
+}
+

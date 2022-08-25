@@ -1,0 +1,64 @@
+
+
+{
+  "totalCount": 11,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "warnings": [
+    "For the dimension 'Statement' the number of dimension values was reduced to its TopX of 10"
+  ],
+  "result": [
+    {
+      "metricId": "calc:service.dbcalls:splitBy(Statement):auto:names",
+      "dataPointCountRatio": 0.00039765,
+      "dimensionCountRatio": 0.00011,
+      "data": [
+        {
+          "dimensions": [
+            "SQL Commit"
+          ],
+          "dimensionMap": {
+            "Statement": "SQL Commit"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            2000
+          ]
+        },
+        {
+          "dimensions": [
+            "Insert into table1"
+          ],
+          "dimensionMap": {
+            "Statement": "Insert into table1"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            1500
+          ]
+        },
+        {
+          "dimensions": [
+            "Insert into table2"
+          ],
+          "dimensionMap": {
+            "Statement": "Insert into table2"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            1500
+          ]
+        }
+      ],
+      "warnings": [
+        "For the dimension 'Statement' the number of dimension values was reduced to its TopX of 10"
+      ]
+    }
+  ]
+}

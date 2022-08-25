@@ -1,0 +1,59 @@
+{
+  "metricId": "calc:service.dbcalls",
+  "displayName": "DB Calls",
+  "description": "",
+  "unit": "MicroSecond",
+  "dduBillable": true,
+  "created": 1593530438075,
+  "lastWritten": 1661419574435,
+  "entityType": [
+    "SERVICE"
+  ],
+  "aggregationTypes": [
+    "auto",
+    "avg",
+    "count",
+    "max",
+    "min",
+    "sum"
+  ],
+  "transformations": [
+    "filter",
+    "fold",
+    "limit",
+    "merge",
+    "names",
+    "parents",
+    "timeshift",
+    "sort",
+    "last",
+    "splitBy",
+    "lastReal",
+    "setUnit"
+  ],
+  "defaultAggregation": {
+    "type": "avg"
+  },
+  "dimensionDefinitions": [
+    {
+      "key": "dt.entity.service",
+      "name": "Service",
+      "displayName": "Service",
+      "index": 0,
+      "type": "ENTITY"
+    },
+    {
+      "key": "Statement",
+      "name": "Statement",
+      "displayName": "Statement",
+      "index": 1,
+      "type": "STRING"
+    }
+  ],
+  "tags": [],
+  "metricValueType": {
+    "type": "unknown"
+  },
+  "scalar": false,
+  "resolutionInfSupported": true
+}

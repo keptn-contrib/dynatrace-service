@@ -1,0 +1,28 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "calc:service.dbcalls:splitBy(Statement):auto:names",
+      "dataPointCountRatio": 0.00018075,
+      "dimensionCountRatio": 0.00005,
+      "data": [
+        {
+          "dimensions": [
+            "Writes in weathercacheentries"
+          ],
+          "dimensionMap": {
+            "Statement": "Writes in weathercacheentries"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            1387.1373288989516
+          ]
+        }
+      ]
+    }
+  ]
+}

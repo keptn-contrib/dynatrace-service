@@ -74,6 +74,380 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIAndTwoQueries(t *te
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("two"))
 }
 
+func TestRetrieveMetricsFromDashboardDataExplorerTile_SplitByFilterByWorks(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/splitby_filterby_works/"
+
+	splitByNone := []string{}
+	splitByService := []string{"dt.entity.service"}
+	splitByStatement := []string{"Statement"}
+
+	var filterByNone *dynatrace.DataExplorerFilter = nil
+	filterByName := &dynatrace.DataExplorerFilter{
+		Filter:          "dt.entity.service",
+		FilterType:      "NAME",
+		FilterOperator:  "OR",
+		EntityAttribute: "entityName",
+		Criteria: []dynatrace.DataExplorerCriterion{
+			{
+				Value:     "EasyTravelWeatherCache",
+				Evaluator: "IN",
+			},
+		},
+	}
+
+	filterByID := &dynatrace.DataExplorerFilter{
+		Filter:         "dt.entity.service",
+		FilterType:     "ID",
+		FilterOperator: "OR",
+		Criteria: []dynatrace.DataExplorerCriterion{
+			{
+				Value:     "SERVICE-15366E052E74E22B",
+				Evaluator: "IN",
+			},
+		},
+	}
+
+	filterByTag := &dynatrace.DataExplorerFilter{
+		Filter:         "dt.entity.service",
+		FilterType:     "TAG",
+		FilterOperator: "OR",
+		Criteria: []dynatrace.DataExplorerCriterion{
+			{
+				Value:     "frontend",
+				Evaluator: "IN",
+			},
+		},
+	}
+
+	filterByEntityAttribute := &dynatrace.DataExplorerFilter{
+		Filter:          "dt.entity.service",
+		FilterType:      "ENTITY_ATTRIBUTE",
+		FilterOperator:  "OR",
+		EntityAttribute: "databaseName",
+		Criteria: []dynatrace.DataExplorerCriterion{
+			{
+				Value:     "EasyTravelWeatherCache",
+				Evaluator: "IN",
+			},
+		},
+	}
+
+	filterByDimension := &dynatrace.DataExplorerFilter{
+		Filter:         "Statement",
+		FilterType:     "DIMENSION",
+		FilterOperator: "OR",
+		Criteria: []dynatrace.DataExplorerCriterion{
+			{
+				Value:     "Writes in weathercacheentries",
+				Evaluator: "EQ",
+			},
+		},
+	}
+
+	type sliNameAndValue struct {
+		name  string
+		value float64
+	}
+
+	tests := []struct {
+		name                   string
+		queryResultsFilename   string
+		splitBy                []string
+		filterby               *dynatrace.DataExplorerFilter
+		expectedMetricsRequest string
+		sliNamesAndValues      []sliNameAndValue
+	}{
+		{
+			name:                   "no splitby, no filterby",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_no_splitby_no_filterby.json",
+			splitBy:                splitByNone,
+			filterby:               filterByNone,
+			expectedMetricsRequest: buildMetricsV2RequestString("calc%3Aservice.dbcalls%3AsplitBy%28%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{{
+				name:  "db_calls",
+				value: 1867.049541046755,
+			}},
+		},
+		{
+			name:                   "splitby service, no filterby",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_service_no_filterby.json",
+			splitBy:                splitByService,
+			filterby:               filterByNone,
+			expectedMetricsRequest: buildMetricsV2RequestString("calc%3Aservice.dbcalls%3AsplitBy%28%22dt.entity.service%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls_service_port:_1234",
+					value: 3166.5399830501183,
+				},
+				{
+					name:  "db_calls_service_port:_3306",
+					value: 1125.1679389312976,
+				},
+			},
+		},
+		{
+			name:                   "splitby statement, no filterby",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_statement_no_filterby.json",
+			splitBy:                splitByStatement,
+			filterby:               filterByNone,
+			expectedMetricsRequest: buildMetricsV2RequestString("calc%3Aservice.dbcalls%3AsplitBy%28%22Statement%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls_aggregations_in_bookingcollection",
+					value: 9.46440931624731,
+				},
+				{
+					name:  "db_calls_aggregations_in_journeycollection",
+					value: 9.532175723785853,
+				},
+			},
+		},
+
+		{
+			name:                   "no splitby, filterby name",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_no_splitby_filterby_name.json",
+			splitBy:                splitByNone,
+			filterby:               filterByName,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CentityName%28%22EasyTravelWeatherCache%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{{
+				name:  "db_calls",
+				value: 1941.0758136433176,
+			}},
+		},
+		{
+			name:                   "splitby service, filterby name",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_service_filterby_name.json",
+			splitBy:                splitByService,
+			filterby:               filterByName,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CentityName%28%22EasyTravelWeatherCache%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%22dt.entity.service%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls",
+					value: 1941.034179538489,
+				},
+			},
+		},
+		{
+			name:                   "splitby statement, filterby name",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_statement_filterby_name.json",
+			splitBy:                splitByStatement,
+			filterby:               filterByName,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CentityName%28%22EasyTravelWeatherCache%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%22Statement%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls_writes_in_weathercacheentries",
+					value: 2035.7494656150955,
+				},
+				{
+					name:  "db_calls_reads_in_weathercacheentries",
+					value: 1920.5535757845726,
+				},
+			},
+		},
+
+		{
+			name:                   "no splitby, filterby ID",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_no_splitby_filterby_id.json",
+			splitBy:                splitByNone,
+			filterby:               filterByID,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-15366E052E74E22B%29", "calc%3Aservice.dbcalls%3AsplitBy%28%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{{
+				name:  "db_calls",
+				value: 3166.6748652161255,
+			}},
+		},
+		{
+			name:                   "splitby service, filterby ID",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_service_filterby_id.json",
+			splitBy:                splitByService,
+			filterby:               filterByID,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-15366E052E74E22B%29", "calc%3Aservice.dbcalls%3AsplitBy%28%22dt.entity.service%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls",
+					value: 3166.674865603506,
+				},
+			},
+		},
+		{
+			name:                   "splitby statement, filterby ID",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_statement_filterby_id.json",
+			splitBy:                splitByStatement,
+			filterby:               filterByID,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-15366E052E74E22B%29", "calc%3Aservice.dbcalls%3AsplitBy%28%22Statement%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls_sql_commit",
+					value: 2000,
+				},
+				{
+					name:  "db_calls_insert_into_table1",
+					value: 1500,
+				},
+				{
+					name:  "db_calls_insert_into_table2",
+					value: 1500,
+				},
+			},
+		},
+
+		{
+			name:                   "no splitby, filterby tag",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_no_splitby_filterby_tag.json",
+			splitBy:                splitByNone,
+			filterby:               filterByTag,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22frontend%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{{
+				name:  "db_calls",
+				value: 2023.748,
+			}},
+		},
+		{
+			name:                   "splitby service, filterby tag",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_service_filterby_tag.json",
+			splitBy:                splitByService,
+			filterby:               filterByTag,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22frontend%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%22dt.entity.service%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls",
+					value: 1136.486560350667,
+				},
+			},
+		},
+		{
+			name:                   "splitby statement, filterby tag",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_statement_filterby_tag.json",
+			splitBy:                splitByStatement,
+			filterby:               filterByTag,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22frontend%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%22Statement%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls_insert_into_table1",
+					value: 1200,
+				},
+				{
+					name:  "db_calls_insert_into_table2",
+					value: 1200,
+				},
+			},
+		},
+
+		{
+			name:                   "no splitby, filterby entity attribute",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_no_splitby_filterby_entity_attribute.json",
+			splitBy:                splitByNone,
+			filterby:               filterByEntityAttribute,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{{
+				name:  "db_calls",
+				value: 1321.804989244147,
+			}},
+		},
+		{
+			name:                   "splitby service, filterby entity attribute",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_service_filterby_entity_attribute.json",
+			splitBy:                splitByService,
+			filterby:               filterByEntityAttribute,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%22dt.entity.service%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls_easytravelweathercache",
+					value: 1940.9776856154995,
+				},
+				{
+					name:  "db_calls_service_port:_27017",
+					value: 1312.8391313736909,
+				},
+			},
+		},
+		{
+			name:                   "splitby statement, filterby entity attribute",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_statement_filterby_entity_attribute.json",
+			splitBy:                splitByStatement,
+			filterby:               filterByEntityAttribute,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29", "calc%3Aservice.dbcalls%3AsplitBy%28%22Statement%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls_writes_in_weathercacheentries",
+					value: 1387.1373288989516,
+				},
+				{
+					name:  "db_calls_writes",
+					value: 1232.7777777777778,
+				},
+				{
+					name:  "db_calls_reads_in_weathercacheentries",
+					value: 1301.3870571893435,
+				},
+			},
+		},
+
+		{
+			name:                   "no splitby, filterby dimension",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_no_splitby_filterby_dimension.json",
+			splitBy:                splitByNone,
+			filterby:               filterByDimension,
+			expectedMetricsRequest: buildMetricsV2RequestString("calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Writes+in+weathercacheentries%22%29%29%3AsplitBy%28%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{{
+				name:  "db_calls",
+				value: 2113.049892441478,
+			}},
+		},
+		{
+			name:                   "splitby service, filterby dimension",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_service_filterby_dimension.json",
+			splitBy:                splitByService,
+			filterby:               filterByDimension,
+			expectedMetricsRequest: buildMetricsV2RequestString("calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Writes+in+weathercacheentries%22%29%29%3AsplitBy%28%22dt.entity.service%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls",
+					value: 1941.9776856154995,
+				},
+			},
+		},
+		{
+			name:                   "splitby statement, filterby entity dimension",
+			queryResultsFilename:   "metrics_query_calc_service_dbcalls_splitby_statement_filterby_dimension.json",
+			splitBy:                splitByStatement,
+			filterby:               filterByDimension,
+			expectedMetricsRequest: buildMetricsV2RequestString("calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Writes+in+weathercacheentries%22%29%29%3AsplitBy%28%22Statement%22%29%3Aauto%3Anames"),
+			sliNamesAndValues: []sliNameAndValue{
+				{
+					name:  "db_calls",
+					value: 1387.1373288989516,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := createHandlerWithTemplatedDashboard(t,
+				testDataFolder+"dashboard.template.json",
+				struct {
+					SplitByString  string
+					FilterByString string
+				}{
+					SplitByString:  convertToJSONString(t, tt.splitBy),
+					FilterByString: convertToJSONStringOrEmptyIfNil(t, tt.filterby),
+				},
+			)
+			handler.AddExactFile(dynatrace.MetricsPath+"/calc:service.dbcalls", testDataFolder+"metrics_calc_service_dbcalls.json")
+			handler.AddExactFile(tt.expectedMetricsRequest, testDataFolder+tt.queryResultsFilename)
+
+			sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){}
+			for _, s := range tt.sliNamesAndValues {
+				sliResultsAssertionsFuncs = append(sliResultsAssertionsFuncs, createSuccessfulSLIResultAssertionsFunc(s.name, s.value, tt.expectedMetricsRequest))
+			}
+
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+		})
+	}
+}
+
 // TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAggregationWorks tests applying a space aggregation to the Data Explorer tile works as expected.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAggregationWorks(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/space_aggregation_works/"

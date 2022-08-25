@@ -1,0 +1,31 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "warnings": [
+    "For the dimension 'Statement' the number of dimension values was reduced to its TopX of 10"
+  ],
+  "result": [
+    {
+      "metricId": "calc:service.dbcalls:splitBy():auto:names",
+      "dataPointCountRatio": 0.00039765,
+      "dimensionCountRatio": 0.00011,
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            3166.6748652161255
+          ]
+        }
+      ],
+      "warnings": [
+        "For the dimension 'Statement' the number of dimension values was reduced to its TopX of 10"
+      ]
+    }
+  ]
+}
+

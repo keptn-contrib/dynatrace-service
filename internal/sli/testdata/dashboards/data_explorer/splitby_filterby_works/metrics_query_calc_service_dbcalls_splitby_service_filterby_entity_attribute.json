@@ -1,0 +1,46 @@
+{
+  "totalCount": 2,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "calc:service.dbcalls:splitBy(\"dt.entity.service\"):auto:names",
+      "dataPointCountRatio": 0.00018075,
+      "dimensionCountRatio": 0.00005,
+      "data": [
+        {
+          "dimensions": [
+            "EasyTravelWeatherCache",
+            "SERVICE-57C4CC8AC83CB7F3"
+          ],
+          "dimensionMap": {
+            "dt.entity.service.name": "EasyTravelWeatherCache",
+            "dt.entity.service": "SERVICE-57C4CC8AC83CB7F3"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            1940.9776856154995
+          ]
+        },
+        {
+          "dimensions": [
+            "Service port: 27017",
+            "SERVICE-8BAD3267D6D7967D"
+          ],
+          "dimensionMap": {
+            "dt.entity.service.name": "Service port: 27017",
+            "dt.entity.service": "SERVICE-8BAD3267D6D7967D"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            1312.8391313736909
+          ]
+        }
+      ]
+    }
+  ]
+}

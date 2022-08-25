@@ -1,0 +1,48 @@
+{
+  "totalCount": 2,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "warnings": [
+    "The used `entityName` clause may severely degrade the performance of your query. Please consider using any of the following to improve query performance: `entityName.in`, `entityName.equals`, `entityName.startsWith`."
+  ],
+  "result": [
+    {
+      "metricId": "calc:service.dbcalls:splitBy(Statement):auto:names",
+      "dataPointCountRatio": 0.0000723,
+      "dimensionCountRatio": 0.00002,
+      "data": [
+        {
+          "dimensions": [
+            "Writes in weathercacheentries"
+          ],
+          "dimensionMap": {
+            "Statement": "Writes in weathercacheentries"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            2035.7494656150955
+          ]
+        },
+        {
+          "dimensions": [
+            "Reads in weathercacheentries"
+          ],
+          "dimensionMap": {
+            "Statement": "Reads in weathercacheentries"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            1920.5535757845726
+          ]
+        }
+      ],
+      "warnings": [
+        "The used `entityName` clause may severely degrade the performance of your query. Please consider using any of the following to improve query performance: `entityName.in`, `entityName.equals`, `entityName.startsWith`."
+      ]
+    }
+  ]
+}

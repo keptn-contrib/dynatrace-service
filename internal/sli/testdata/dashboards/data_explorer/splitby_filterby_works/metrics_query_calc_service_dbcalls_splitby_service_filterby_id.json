@@ -1,0 +1,36 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "warnings": [
+    "For the dimension 'Statement' the number of dimension values was reduced to its TopX of 10"
+  ],
+  "result": [
+    {
+      "metricId": "calc:service.dbcalls:splitBy(\"dt.entity.service\"):auto:names",
+      "dataPointCountRatio": 0.00039765,
+      "dimensionCountRatio": 0.00011,
+      "data": [
+        {
+          "dimensions": [
+            "Service port: 1234",
+            "SERVICE-15366E052E74E22B"
+          ],
+          "dimensionMap": {
+            "dt.entity.service.name": "Service port: 1234",
+            "dt.entity.service": "SERVICE-15366E052E74E22B"
+          },
+          "timestamps": [
+            1609545600000
+          ],
+          "values": [
+            3166.674865603506
+          ]
+        }
+      ],
+      "warnings": [
+        "For the dimension 'Statement' the number of dimension values was reduced to its TopX of 10"
+      ]
+    }
+  ]
+}
