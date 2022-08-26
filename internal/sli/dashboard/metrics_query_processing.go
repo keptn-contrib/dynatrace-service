@@ -45,14 +45,17 @@ func (r *MetricsQueryProcessing) processSingleResult(sloDefinition keptncommon.S
 	for _, singleDataEntry := range singleResultData {
 
 		indicatorName := cleanIndicatorName(sloDefinition.SLI)
+		displayName := sloDefinition.DisplayName
 		if len(singleResultData) > 1 {
-			indicatorName = indicatorName + "_" + generateIndicatorNameSuffix(singleDataEntry.DimensionMap)
+			suffix := generateIndicatorSuffix(singleDataEntry.DimensionMap)
+			indicatorName = indicatorName + "_" + cleanIndicatorName(suffix)
+			displayName = displayName + " (" + suffix + ")"
 		}
 
 		tileResult := newSuccessfulTileResult(
 			keptncommon.SLO{
 				SLI:         indicatorName,
-				DisplayName: sloDefinition.DisplayName,
+				DisplayName: displayName,
 				Weight:      sloDefinition.Weight,
 				KeySLI:      sloDefinition.KeySLI,
 				Pass:        sloDefinition.Pass,
@@ -83,8 +86,9 @@ func averageValues(values []float64) float64 {
 	return value / float64(len(values))
 }
 
-// generateIndicatorNameSuffix generates an indicator name suffix based on all dimensions.
-func generateIndicatorNameSuffix(dimensionMap map[string]string) string {
+// generateIndicatorSuffix generates an indicator suffix based on all dimensions.
+// As this is used for both indicator and display names, it must then be cleaned before use in indicator names.
+func generateIndicatorSuffix(dimensionMap map[string]string) string {
 	const nameSuffix = ".name"
 
 	// take all dimension values except where both names and IDs are available, in that case only take the names
@@ -114,5 +118,5 @@ func generateIndicatorNameSuffix(dimensionMap map[string]string) string {
 		sortedSuffixComponentValues = append(sortedSuffixComponentValues, suffixComponents[k])
 	}
 
-	return cleanIndicatorName(strings.Join(sortedSuffixComponentValues, "_"))
+	return strings.Join(sortedSuffixComponentValues, " ")
 }

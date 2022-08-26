@@ -202,16 +202,16 @@ func createMetricsQuery(t *testing.T, metricSelector string, entitySelector stri
 	return *query
 }
 
-func Test_generateIndicatorNameSuffix(t *testing.T) {
+func Test_generateIndicatorSuffix(t *testing.T) {
 	tests := []struct {
-		name                        string
-		dimensionMap                map[string]string
-		expectedIndicatorNameSuffix string
+		name                    string
+		dimensionMap            map[string]string
+		expectedIndicatorSuffix string
 	}{
 		{
-			name:                        "dimension without name: expect suffix with dimension value",
-			dimensionMap:                map[string]string{"dt.entity.application": "APPLICATION-007CAB1ABEACDFE1"},
-			expectedIndicatorNameSuffix: "application-007cab1abeacdfe1",
+			name:                    "dimension without name: expect suffix with dimension value",
+			dimensionMap:            map[string]string{"dt.entity.application": "APPLICATION-007CAB1ABEACDFE1"},
+			expectedIndicatorSuffix: "APPLICATION-007CAB1ABEACDFE1",
 		},
 		{
 			name: "dimension with name available: expect suffix with dimension name",
@@ -219,7 +219,7 @@ func Test_generateIndicatorNameSuffix(t *testing.T) {
 				"dt.entity.application.name": "easytravel-ang.lab.dynatrace.org",
 				"dt.entity.application":      "APPLICATION-007CAB1ABEACDFE1",
 			},
-			expectedIndicatorNameSuffix: "easytravel-ang_lab_dynatrace_org",
+			expectedIndicatorSuffix: "easytravel-ang.lab.dynatrace.org",
 		},
 		{
 			name: "multiple dimensions with names: expect suffix with dimension names",
@@ -229,7 +229,7 @@ func Test_generateIndicatorNameSuffix(t *testing.T) {
 				"dt.entity.browser.name":     "Synthetic monitor",
 				"dt.entity.browser":          "BROWSER-1CFF5AB60CE3BBAF",
 			},
-			expectedIndicatorNameSuffix: "easytravel-ang_lab_dynatrace_org_synthetic_monitor",
+			expectedIndicatorSuffix: "easytravel-ang.lab.dynatrace.org Synthetic monitor",
 		},
 		{
 			name: "multiple dimensions, but not all have names: expect suffix with dimension names where available, other dimensions where no names are available",
@@ -238,18 +238,18 @@ func Test_generateIndicatorNameSuffix(t *testing.T) {
 				"dt.entity.browser.name": "Synthetic monitor",
 				"dt.entity.browser":      "BROWSER-1CFF5AB60CE3BBAF",
 			},
-			expectedIndicatorNameSuffix: "application-007cab1abeacdfe1_synthetic_monitor",
+			expectedIndicatorSuffix: "APPLICATION-007CAB1ABEACDFE1 Synthetic monitor",
 		},
 
 		// Should not occur, but test it works as expected:
 		{
-			name:                        "no dimensions: expect no suffix",
-			expectedIndicatorNameSuffix: "",
+			name:                    "no dimensions: expect no suffix",
+			expectedIndicatorSuffix: "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.EqualValues(t, tt.expectedIndicatorNameSuffix, generateIndicatorNameSuffix(tt.dimensionMap))
+			assert.EqualValues(t, tt.expectedIndicatorSuffix, generateIndicatorSuffix(tt.dimensionMap))
 		})
 	}
 }
