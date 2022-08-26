@@ -55,6 +55,9 @@
             "limit": 100,
             "enabled": true
           }
+        ],
+        "metricExpressions": [
+          "resolution=null&(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names"
         ]
       }
     ]

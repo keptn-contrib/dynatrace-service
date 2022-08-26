@@ -35,7 +35,162 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIAndTwoQueries(t *te
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("two"))
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork tests applying management zones to the dashboard and tile work as expected, also when combined with a filter that appears on the entity selector.
+// TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions tests support of metric expressions works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/metric_expressions/"
+
+	const singleValueVisualConfigType = "SINGLE_VALUE"
+	const graphChartVisualConfigType = "GRAPH_CHART"
+	const splitByService = "dt.entity.service"
+
+	const singleResultMetricExpression = "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
+	const multipleResultMetricExpression = "(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
+
+	const resolutionIsNullKeyValuePair = "resolution=null&"
+
+	const singleQueryResultFilename = testDataFolder + "metrics_query_builtin_service_response_time_avg_single.json"
+	const multipleQueryResultsFilename = testDataFolder + "metrics_query_builtin_service_response_time_avg_multiple.json"
+
+	expectedSingleResultMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+	expectedMultipleResultMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+
+	singleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedSingleResultMetricsRequest)}
+	multipleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("srt_service_a", 31676.5399830501183, expectedMultipleResultMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt_service_b", 11285.1679389312976, expectedMultipleResultMetricsRequest)}
+
+	tests := []struct {
+		name                              string
+		visualConfigType                  string
+		splitBy                           string
+		metricExpressions                 *[]string
+		expectedMetricsRequest            string
+		queryResultsFilename              string
+		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData)
+		sliResultsAssertionsFuncs         []func(t *testing.T, actual sliResult)
+	}{
+		{
+			name:                              "single value visualization with single result works",
+			visualConfigType:                  singleValueVisualConfigType,
+			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + singleResultMetricExpression, singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultsAssertionsFuncs:         singleSuccessfulSLIResultAssertionsFuncs,
+		},
+		{
+			name:                              "graph chart visualization with single result works",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultsAssertionsFuncs:         singleSuccessfulSLIResultAssertionsFuncs,
+		},
+		{
+			name:                              "graph chart visualization with multiple result works",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + multipleResultMetricExpression},
+			queryResultsFilename:              multipleQueryResultsFilename,
+			expectedMetricsRequest:            expectedMultipleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultsAssertionsFuncs:         multipleSuccessfulSLIResultAssertionsFuncs,
+		},
+		{
+			name:                              "single value visualization with multiple results produces error",
+			visualConfigType:                  singleValueVisualConfigType,
+			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + multipleResultMetricExpression, multipleResultMetricExpression},
+			queryResultsFilename:              multipleQueryResultsFilename,
+			expectedMetricsRequest:            expectedMultipleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings(expectedMultipleResultMetricsRequest, "tile is configured for single value"),
+		},
+		{
+			name:                              "graph chart visualization with no metric expressions produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 nil,
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "tile has no metric expressions"),
+		},
+		{
+			name:                              "zero metric expressions produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "tile has no metric expressions"),
+		},
+		{
+			name:                              "missing resolution key value pair produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "metric expression does not contain two components"),
+		},
+		{
+			name:                              "wrong order in metric expression produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{singleResultMetricExpression + resolutionIsNullKeyValuePair},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "unexpected prefix in key value pair"),
+		},
+		{
+			name:                              "empty value in resolution key value pair produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{"resolution=&" + singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "resolution must not be empty"),
+		},
+		{
+			name:                              "resolution other than null (inf) produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{"resolution=30m&" + singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "resolution must be set to 'Auto'"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := createHandlerWithTemplatedDashboard(t,
+				testDataFolder+"dashboard.template.json",
+				struct {
+					SplitBy                 string
+					VisualConfigType        string
+					MetricExpressionsString string
+				}{
+					SplitBy:                 tt.splitBy,
+					VisualConfigType:        tt.visualConfigType,
+					MetricExpressionsString: convertToJSONStringOrEmptyIfNil(t, tt.metricExpressions),
+				},
+			)
+			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExactFile(tt.expectedMetricsRequest, tt.queryResultsFilename)
+
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, tt.getSLIFinishedEventAssertionsFunc, tt.sliResultsAssertionsFuncs...)
+		})
+	}
+}
+
+func createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings(expectedQuery string, expectedMessageSubStrings ...string) []func(t *testing.T, actual sliResult) {
+	return []func(t *testing.T, actual sliResult){
+		createFailedSLIResultWithQueryAssertionsFunc("srt", expectedQuery, expectedMessageSubStrings...)}
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork tests applying management zones to the dashboard and tile work as expected.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones_work/"
 	dashboardFilterWithManagementZone := dynatrace.DashboardFilter{
@@ -54,90 +209,37 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 		},
 	}
 
-	emptyQueryFilter := dynatrace.DataExplorerFilter{
-		NestedFilters: []dynatrace.DataExplorerFilter{},
-		Criteria:      []dynatrace.DataExplorerCriterion{},
-	}
-
-	queryFilterWithTag := dynatrace.DataExplorerFilter{
-		FilterOperator: "AND",
-		NestedFilters: []dynatrace.DataExplorerFilter{
-			{
-				Filter:         "dt.entity.service",
-				FilterType:     "TAG",
-				FilterOperator: "OR",
-				Criteria: []dynatrace.DataExplorerCriterion{
-					{
-						Value:     "service_tag",
-						Evaluator: "in",
-					},
-				},
-			},
-		},
-	}
+	expectedEncodedMetricSelector := "%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Asort%28value%28auto%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames"
 
 	tests := []struct {
 		name                   string
 		dashboardFilter        *dynatrace.DashboardFilter
 		tileFilter             dynatrace.TileFilter
-		queryFilter            dynatrace.DataExplorerFilter
 		expectedMetricsRequest string
 	}{
 		{
-			name:                   "no dashboard filter, empty tile filter, empty query filter",
+			name:                   "no dashboard filter, empty tile filter",
 			dashboardFilter:        nil,
 			tileFilter:             emptyTileFilter,
-			queryFilter:            emptyQueryFilter,
-			expectedMetricsRequest: buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+			expectedMetricsRequest: buildMetricsV2RequestString(expectedEncodedMetricSelector),
 		},
 		{
-			name:                   "dashboard filter with mz, empty tile filter, empty query filter",
+			name:                   "dashboard filter with mz, empty tile filter",
 			dashboardFilter:        &dashboardFilterWithManagementZone,
 			tileFilter:             emptyTileFilter,
-			queryFilter:            emptyQueryFilter,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CmzId%28-1234567890123456789%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%28-1234567890123456789%29"),
 		},
 		{
-			name:                   "no dashboard filter, tile filter with mz, empty query filter",
+			name:                   "no dashboard filter, tile filter with mz",
 			dashboardFilter:        nil,
 			tileFilter:             tileFilterWithManagementZone,
-			queryFilter:            emptyQueryFilter,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%282311420533206603714%29"),
 		},
 		{
-			name:                   "dashboard filter with mz, tile filter with mz, empty query filter",
+			name:                   "dashboard filter with mz, tile filter with mz",
 			dashboardFilter:        &dashboardFilterWithManagementZone,
 			tileFilter:             tileFilterWithManagementZone,
-			queryFilter:            emptyQueryFilter,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
-		},
-		{
-			name:                   "no dashboard filter, empty tile filter, query filter with tag",
-			dashboardFilter:        nil,
-			tileFilter:             emptyTileFilter,
-			queryFilter:            queryFilterWithTag,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
-		},
-		{
-			name:                   "dashboard filter with mz, empty tile filter, query filter with tag",
-			dashboardFilter:        &dashboardFilterWithManagementZone,
-			tileFilter:             emptyTileFilter,
-			queryFilter:            queryFilterWithTag,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%28-1234567890123456789%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
-		},
-		{
-			name:                   "no dashboard filter, tile filter with mz, query filter with tag",
-			dashboardFilter:        nil,
-			tileFilter:             tileFilterWithManagementZone,
-			queryFilter:            queryFilterWithTag,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
-		},
-		{
-			name:                   "dashboard filter with mz, tile filter with mz, query filter with tag",
-			dashboardFilter:        &dashboardFilterWithManagementZone,
-			tileFilter:             tileFilterWithManagementZone,
-			queryFilter:            queryFilterWithTag,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames"),
+			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%282311420533206603714%29"),
 		},
 	}
 
@@ -149,11 +251,9 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 				struct {
 					DashboardFilterString string
 					TileFilterString      string
-					QueryFilterString     string
 				}{
 					DashboardFilterString: convertToJSONStringOrEmptyIfNil(t, tt.dashboardFilter),
 					TileFilterString:      convertToJSONString(t, tt.tileFilter),
-					QueryFilterString:     convertToJSONString(t, tt.queryFilter),
 				},
 			)
 			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
@@ -169,11 +269,14 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/no_entity_type/"
 
+	expectedMetricsRequest := buildMetricsV2RequestStringWithMZSelector("%28builtin%3Asecurity.securityProblem.open.managementZone%3Afilter%28and%28or%28eq%28%22Risk+Level%22%2CHIGH%29%29%29%29%3AsplitBy%28%22Risk+Level%22%29%3Asum%3Aauto%3Asort%28value%28sum%2Cdescending%29%29%3Alimit%28100%29%29%3Alimit%28100%29%3Anames", "mzId%28-1234567890123456789%29")
+
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:security.securityProblem.open.managementZone", testDataFolder+"metrics_builtin_security_securityProblem_open_managementZone.json")
+	handler.AddExactError(expectedMetricsRequest, 400, testDataFolder+"metrics_query_builtin_security_securityProblem_open_managementZone.json")
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("vulnerabilities_high", "has no entity type"))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("vulnerabilities_high", expectedMetricsRequest))
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO tests propagation of a customized SLO.
@@ -182,7 +285,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/custom_slo/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
@@ -214,7 +317,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/excluded_tile/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-B67B3EC4C95E0FA7%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3Afilter%28and%28or%28in%28%22dt.entity.service%22%2CentitySelector%28%22type%28service%29%2CentityId%28~%22SERVICE-B67B3EC4C95E0FA7~%22%29%22%29%29%29%29%29%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_excluded_tile.json")
@@ -229,11 +332,10 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork tests that setting pass and warning criteria via thresholds on the tile works as expected.
-// TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork tests that setting pass and warning criteria via thresholds on the tile works as expected.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_success/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	successfulSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest)
 

@@ -57,11 +57,17 @@
       "visualConfig": {
         "type": "GRAPH_CHART",
         "global": {
-          "theme": "DEFAULT",
-          "seriesType": "LINE",
           "hideLegend": false
         },
-        "rules": [],
+        "rules": [
+          {
+            "matcher": "A:",
+            "properties": {
+              "color": "DEFAULT"
+            },
+            "seriesOverrides": []
+          }
+        ],
         "axes": {
           "xAxis": {
             "displayName": "",
@@ -69,7 +75,9 @@
           },
           "yAxes": []
         },
-        "heatmapSettings": {},
+        "heatmapSettings": {
+          "yAxis": "VALUE"
+        },
         "thresholds": [
           {
             "axisTarget": "LEFT",
@@ -93,15 +101,23 @@
         },
         "graphChartSettings": {
           "connectNulls": false
+        },
+        "honeycombSettings": {
+          "showHive": true,
+          "showLegend": true,
+          "showLabels": false
         }
-      }
+      },
+      "metricExpressions": [
+        "resolution=null&(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-B67B3EC4C95E0FA7~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
+      ]
     },
     {
       "name": "Journey service ID response time;sli=rt_jid;pass=<6;exclude=true",
       "tileType": "DATA_EXPLORER",
       "configured": true,
       "bounds": {
-        "top": 400,
+        "top": 304,
         "left": 3344,
         "width": 304,
         "height": 304
@@ -141,11 +157,17 @@
       "visualConfig": {
         "type": "GRAPH_CHART",
         "global": {
-          "theme": "DEFAULT",
-          "seriesType": "LINE",
           "hideLegend": false
         },
-        "rules": [],
+        "rules": [
+          {
+            "matcher": "A:",
+            "properties": {
+              "color": "DEFAULT"
+            },
+            "seriesOverrides": []
+          }
+        ],
         "axes": {
           "xAxis": {
             "displayName": "",
@@ -153,7 +175,9 @@
           },
           "yAxes": []
         },
-        "heatmapSettings": {},
+        "heatmapSettings": {
+          "yAxis": "VALUE"
+        },
         "thresholds": [
           {
             "axisTarget": "LEFT",
@@ -177,8 +201,16 @@
         },
         "graphChartSettings": {
           "connectNulls": false
+        },
+        "honeycombSettings": {
+          "showHive": true,
+          "showLegend": true,
+          "showLabels": false
         }
-      }
+      },
+      "metricExpressions": [
+        "resolution=null&(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-B67B3EC4C95E0FA7~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
+      ]
     }
   ]
 }

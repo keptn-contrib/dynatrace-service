@@ -74,7 +74,14 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	managementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
-	return p.processQuery(ctx, sloDefinition, tile.Queries[0], managementZoneFilter)
+	tileResults := p.processMetricExpressions(ctx, sloDefinition, tile.MetricExpressions, managementZoneFilter)
+
+	// check for mismatch between number of results and visual config type
+	if tileHasSingleValueVisualization(tile) && len(tileResults) > 1 {
+		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, tileResults[0].sliResult.Query(), fmt.Sprintf("Data Explorer tile is configured for single value but query produced %d results", len(tileResults)))}
+	}
+
+	return tileResults
 }
 
 func validateDataExplorerTile(tile *dynatrace.Tile) error {
@@ -104,175 +111,70 @@ func validateDataExplorerVisualConfigurationRule(rule dynatrace.VisualConfigRule
 	return nil
 }
 
-func (p *DataExplorerTileProcessing) processQuery(ctx context.Context, sloDefinition keptnapi.SLO, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) []TileResult {
-	log.WithField("metric", dataQuery.Metric).Debug("Processing data explorer query")
+func tileHasSingleValueVisualization(tile *dynatrace.Tile) bool {
+	if tile.VisualConfig == nil {
+		return false
+	}
 
-	metricsQuery, err := p.generateMetricQueryFromDataExplorerQuery(ctx, dataQuery, managementZoneFilter)
+	if tile.VisualConfig.Type == dynatrace.SingleValueVisualConfigType {
+		return true
+	}
+
+	return false
+}
+
+func (p *DataExplorerTileProcessing) processMetricExpressions(ctx context.Context, sloDefinition keptnapi.SLO, metricExpressions []string, managementZoneFilter *ManagementZoneFilter) []TileResult {
+	if len(metricExpressions) == 0 {
+		log.Warn("processMetricExpressions found no metric expressions, SLI will not be used")
+		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile has no metric expressions")}
+	}
+
+	if len(metricExpressions) > 2 {
+		log.WithField("metricExpressions", metricExpressions).Warn("processMetricExpressions found more than 2 metric expressions")
+	}
+
+	metricsQuery, err := p.generateMetricQueryFromMetricExpression(ctx, sloDefinition, metricExpressions[0], managementZoneFilter)
 	if err != nil {
-		log.WithError(err).Warn("generateMetricQueryFromDataExplorerQuery returned an error, SLI will not be used")
+		log.WithError(err).Warn("processMetricExpressions returned an error, SLI will not be used")
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())}
 	}
 
 	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
 }
 
-func (p *DataExplorerTileProcessing) generateMetricQueryFromDataExplorerQuery(ctx context.Context, dataQuery dynatrace.DataExplorerQuery, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
-
-	// TODO 2021-08-04: there are too many return values and they are have the same type
-
-	if dataQuery.Metric == "" {
-		return nil, fmt.Errorf("metric query generation requires that data explorer query has a metric")
+func (p *DataExplorerTileProcessing) generateMetricQueryFromMetricExpression(ctx context.Context, sloDefinition keptnapi.SLO, metricExpression string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
+	pieces := strings.SplitN(metricExpression, "&", 2)
+	if len(pieces) != 2 {
+		return nil, fmt.Errorf("metric expression does not contain two components: %s", metricExpression)
 	}
 
-	// Lets query the metric definition as we need to know how many dimension the metric has
-	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(ctx, dataQuery.Metric)
+	// TODO: 2022-08-24: support resolutions other than auto, encoded as null, assumed here to be the same as resolution inf.
+	resolution, err := parseResolutionKeyValuePair(pieces[0])
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not parse resolution metric expression component: %w", err)
 	}
 
-	processedFilter := &processedFilterComponents{}
-
-	// Create the right entity Selectors for the queries execute
-	if dataQuery.FilterBy != nil && len(dataQuery.FilterBy.NestedFilters) > 0 {
-
-		// TODO: 2021-10-29: consider supporting more than a single filter with a single criterion
-		if len(dataQuery.FilterBy.NestedFilters) != 1 {
-			return nil, fmt.Errorf("only a single filter is supported")
-		}
-
-		if len(dataQuery.FilterBy.NestedFilters[0].Criteria) != 1 {
-			return nil, fmt.Errorf("only a single filter criterion is supported")
-		}
-
-		if len(dataQuery.FilterBy.NestedFilters[0].NestedFilters) > 0 {
-			return nil, fmt.Errorf("nested filters are not permitted")
-		}
-
-		entityType := strings.ToUpper(strings.TrimPrefix(dataQuery.FilterBy.NestedFilters[0].Filter, "dt.entity."))
-		if len(metricDefinition.EntityType) > 0 {
-			entityType = metricDefinition.EntityType[0]
-		}
-
-		processedFilter, err = processFilter(entityType, &dataQuery.FilterBy.NestedFilters[0])
-		if err != nil {
-			return nil, err
-		}
+	if resolution != metrics.ResolutionInf {
+		return nil, fmt.Errorf("resolution must be set to 'Auto' rather than '%s'", resolution)
 	}
 
-	// optionally split by a single dimension
-	// TODO: 2021-10-29: consider adding support for more than one split dimension
-	var splitBy string
-	if len(dataQuery.SplitBy) > 1 {
-		return nil, fmt.Errorf("only a single splitBy dimension is supported")
-	}
-
-	if len(dataQuery.SplitBy) == 1 {
-		splitBy = fmt.Sprintf(":splitBy(\"%s\")", dataQuery.SplitBy[0])
-	} else {
-		splitBy = ":splitBy()"
-	}
-
-	metricAggregation, err := getSpaceAggregationTransformation(dataQuery.SpaceAggregation)
-	if err != nil {
-		return nil, err
-	}
-
-	// optionally add management zone filter to entity selector filter
-	managementZoneFilterString := managementZoneFilter.ForEntitySelector()
-	if managementZoneFilterString != "" {
-		entitySelectorFilter, err := ensureEntitySelectorFilter(processedFilter.entitySelectorFilter, metricDefinition)
-		if err != nil {
-			return nil, err
-		}
-		processedFilter.entitySelectorFilter = entitySelectorFilter + managementZoneFilterString
-	}
-
-	// NOTE: add :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
-	metricSelector := fmt.Sprintf("%s%s%s:%s:names",
-		dataQuery.Metric, processedFilter.metricSelectorFilter, splitBy, strings.ToLower(metricAggregation))
-
-	metricsQuery, err := metrics.NewQuery(metricSelector, processedFilter.entitySelectorFilter)
-	if err != nil {
-		return nil, err
-	}
-
-	return metricsQuery, nil
+	return metrics.NewQueryWithResolutionAndMZSelector(pieces[1], "", resolution, managementZoneFilter.ForMZSelector())
 }
 
-func ensureEntitySelectorFilter(existingEntitySelectorFilter string, metricDefinition *dynatrace.MetricDefinition) (string, error) {
-	if existingEntitySelectorFilter != "" {
-		return existingEntitySelectorFilter, nil
+func parseResolutionKeyValuePair(keyValuePair string) (string, error) {
+	const resolutionPrefix = "resolution="
+	if !strings.HasPrefix(keyValuePair, resolutionPrefix) {
+		return "", fmt.Errorf("unexpected prefix in key value pair: %s", keyValuePair)
 	}
 
-	if len(metricDefinition.EntityType) == 0 {
-		return "", fmt.Errorf("metric %s has no entity type", metricDefinition.MetricID)
+	resolution := strings.TrimPrefix(keyValuePair, resolutionPrefix)
+	if resolution == "" {
+		return "", errors.New("resolution must not be empty")
 	}
 
-	return fmt.Sprintf("type(%s)", metricDefinition.EntityType[0]), nil
-}
-
-type processedFilterComponents struct {
-	metricSelectorFilter string
-	entitySelectorFilter string
-}
-
-func processFilter(entityType string, filter *dynatrace.DataExplorerFilter) (*processedFilterComponents, error) {
-	switch filter.FilterType {
-	case "ID":
-		return &processedFilterComponents{
-			entitySelectorFilter: fmt.Sprintf("entityId(%s)", filter.Criteria[0].Value),
-		}, nil
-
-	case "NAME":
-		return &processedFilterComponents{
-			entitySelectorFilter: fmt.Sprintf("type(%s),entityName(\"%s\")", entityType, filter.Criteria[0].Value),
-		}, nil
-
-	case "TAG":
-		return &processedFilterComponents{
-			entitySelectorFilter: fmt.Sprintf("type(%s),tag(\"%s\")", entityType, filter.Criteria[0].Value),
-		}, nil
-
-	case "ENTITY_ATTRIBUTE":
-		return &processedFilterComponents{
-			entitySelectorFilter: fmt.Sprintf("type(%s),%s(\"%s\")", entityType, filter.EntityAttribute, filter.Criteria[0].Value),
-		}, nil
-
-	case "DIMENSION":
-		return &processedFilterComponents{
-			metricSelectorFilter: fmt.Sprintf(":filter(%s(\"%s\",\"%s\"))", filter.Criteria[0].Evaluator, filter.Filter, filter.Criteria[0].Value),
-		}, nil
-
-	default:
-		return nil, fmt.Errorf("unsupported filter type: %s", filter.FilterType)
+	if resolution == "null" {
+		return metrics.ResolutionInf, nil
 	}
-}
 
-func getSpaceAggregationTransformation(spaceAggregation string) (string, error) {
-	switch spaceAggregation {
-	case "":
-		return "auto", nil
-	case "AVG":
-		return "avg", nil
-	case "SUM":
-		return "sum", nil
-	case "MIN":
-		return "min", nil
-	case "MAX":
-		return "max", nil
-	case "COUNT":
-		return "count", nil
-	case "MEDIAN":
-		return "median", nil
-	case "PERCENTILE_10":
-		return "percentile(10)", nil
-	case "PERCENTILE_75":
-		return "percentile(75)", nil
-	case "PERCENTILE_90":
-		return "percentile(90)", nil
-	case "VALUE":
-		return "value", nil
-	default:
-		return "", fmt.Errorf("unknown space aggregation: %s", spaceAggregation)
-	}
+	return resolution, nil
 }

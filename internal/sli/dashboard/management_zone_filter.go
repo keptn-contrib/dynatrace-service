@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
@@ -34,6 +35,13 @@ func (filter *ManagementZoneFilter) ForProblemSelector() string {
 	return filter.forSelector(createFilterQueryForProblemSelector)
 }
 
+// ForMZSelector returns the ID of the ManagementZone in a valid representation for the mzSelector.
+// If a ManagementZone for a Dashboard tile is given, then it will take precedence over the ManagementZone of the DashboardFilter
+// If none of both are given it will return an empty string
+func (filter *ManagementZoneFilter) ForMZSelector() string {
+	return filter.forSelector(createFilterQueryForMZSelector)
+}
+
 func (filter *ManagementZoneFilter) forSelector(mapper func(string) string) string {
 	if filter.tileManagementZone != nil {
 		return mapper(filter.tileManagementZone.ID)
@@ -52,4 +60,8 @@ func createFilterQueryForEntitySelector(managementZoneID string) string {
 
 func createFilterQueryForProblemSelector(managementZoneID string) string {
 	return fmt.Sprintf(",managementZoneIds(%s)", managementZoneID)
+}
+
+func createFilterQueryForMZSelector(managementZoneID string) string {
+	return fmt.Sprintf("mzId(%s)", managementZoneID)
 }

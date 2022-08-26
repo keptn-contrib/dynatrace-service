@@ -14,7 +14,7 @@
     },
     "tiles": [
         {
-          "name": "Service response time; sli=srt; pass=<30; weight=4; key=true",
+          "name": "Service response time; sli=srt",
           "tileType": "DATA_EXPLORER",
           "configured": true,
           "bounds": {
@@ -40,7 +40,7 @@
             }
           ],
           "visualConfig": {
-            "type": "GRAPH_CHART",
+            "type": "{{.VisualConfigType}}",
             "global": {
               "hideLegend": false
             },
@@ -104,10 +104,8 @@
               "showLegend": true,
               "showLabels": false
             }
-          },
-          "metricExpressions": [
-            "resolution=null&(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
-          ]
+          }{{if .MetricExpressionsString}},
+          "metricExpressions": {{.MetricExpressionsString}}{{end}}
         }
       ]
 }

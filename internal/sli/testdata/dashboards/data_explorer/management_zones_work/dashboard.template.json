@@ -33,7 +33,10 @@
           "spaceAggregation": "AVG",
           "timeAggregation": "DEFAULT",
           "splitBy": [],
-          "filterBy": {{.QueryFilterString}},
+          "filterBy": {
+            "nestedFilters": [],
+            "criteria": []
+          },
           "enabled": true
         }
       ],
@@ -96,7 +99,10 @@
         "graphChartSettings": {
           "connectNulls": false
         }
-      }
+      },
+      "metricExpressions": [
+        "resolution=null&(builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(10)):limit(100):names"
+      ]
     }
   ]
 }

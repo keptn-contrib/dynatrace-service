@@ -12,7 +12,7 @@
       "owner": "",
       "popularity": 1
     },
-    "tiles": [      
+    "tiles": [
       {
         "name": "sli=srt_service;pass=<10",
         "tileType": "DATA_EXPLORER",
@@ -56,7 +56,6 @@
         "visualConfig": {
           "type": "GRAPH_CHART",
           "global": {
-            "seriesType": "LINE",
             "hideLegend": false
           },
           "rules": [
@@ -87,7 +86,9 @@
               }
             ]
           },
-          "heatmapSettings": {},
+          "heatmapSettings": {
+            "yAxis": "VALUE"
+          },
           "thresholds": [
             {
               "axisTarget": "LEFT",
@@ -111,8 +112,16 @@
           },
           "graphChartSettings": {
             "connectNulls": false
+          },
+          "honeycombSettings": {
+            "showHive": true,
+            "showLegend": true,
+            "showLabels": false
           }
-        }
+        },
+        "metricExpressions": [
+          "resolution=null&(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C33B8A4C73748469~\")\"))))):splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
+        ]
       }
     ]
   }

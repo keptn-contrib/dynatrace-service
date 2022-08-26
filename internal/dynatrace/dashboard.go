@@ -89,13 +89,18 @@ type Tile struct {
 	ExcludeMaintenanceWindows bool                `json:"excludeMaintenanceWindows,omitempty"`
 	FilterConfig              *FilterConfig       `json:"filterConfig,omitempty"`
 	VisualConfig              *VisualConfig       `json:"visualConfig,omitempty"`
+	MetricExpressions         []string            `json:"metricExpressions,omitempty"`
 }
 
 // VisualConfig is the visual configuration for a dashboard tile.
 type VisualConfig struct {
+	Type       string             `json:"type,omitempty"`
 	Thresholds []Threshold        `json:"thresholds,omitempty"`
 	Rules      []VisualConfigRule `json:"rules,omitempty"`
 }
+
+// SingleValueVisualConfigType is the single value visualization type for VisualConfigs
+const SingleValueVisualConfigType = "SINGLE_VALUE"
 
 // VisualConfigRule is a rule for the visual configuration.
 type VisualConfigRule struct {
