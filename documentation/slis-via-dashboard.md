@@ -157,13 +157,11 @@ The following dashboard tile types are supported:
 
 ### Data explorer tiles
 
-Data explorer tiles must only include a single query (i.e., one metric) and include up to one *filter by* and up to one *split by* clause. Furthermore, the unit of the query must be set to `auto` (the default setting). 
-
-Metric selectors provided via the code tab are currently not supported.
+Data explorer tiles must only include a single query (i.e., one metric) with the unit and resolution set to `auto` (the default setting). Furthermore, queries are limited to a maximum of 100 results.
 
 To make it easy to define SLOs using Data Explorer tiles, pass and warning criteria may be specified by adding visual thresholds directly to the tile rather than using pass and warn criteria in the tile's title. If thresholds and pass and warn criteria have been specified, the thresholds will be ignored.
 
- Pass-warn-fail and fail-warn-pass configurations are supported. In both cases, three thresholds must be added using strictly monotonically increasing values and colors from the pre-defined color palette:
+Pass-warn-fail and fail-warn-pass configurations are supported. In both cases, three thresholds must be added using strictly monotonically increasing values and colors from the pre-defined color palette:
 
 ![Threshold colors in Data Explorer color palette](images/data-explorer-color-palette.png "Threshold colors in Data Explorer color palette")
 
