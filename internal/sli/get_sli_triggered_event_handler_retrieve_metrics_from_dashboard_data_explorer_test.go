@@ -717,60 +717,74 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork tests that setting pass and warning criteria via thresholds on the tile works as expected.
+// TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork tests that setting pass and warning criteria via thresholds on the tile works as expected.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_success/"
 
 	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
 
-	successfulSLIResultAllectionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest)
+	successfulSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest)
 
 	tests := []struct {
-		name              string
-		dashboardFilename string
-
+		name        string
+		tileName    string
+		thresholds  dynatrace.Threshold
 		expectedSLO *keptnapi.SLO
 	}{
 		{
-			name:              "Valid pass-warn-fail thresholds and no pass or warning defined in title",
-			dashboardFilename: testDataFolder + "dashboard_just_thresholds_pass_warn_fail.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 68000), createBandSLOCriteria(0, 69000)),
+			name:        "Valid pass-warn-fail thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(69000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 68000), createBandSLOCriteria(0, 69000)),
 		},
 		{
-			name:              "Valid fail-warn-pass thresholds and no pass or warning defined in title",
-			dashboardFilename: testDataFolder + "dashboard_just_thresholds_fail_warn_pass.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), createLowerBoundSLOCriteria(68000)),
+			name:        "Valid fail-warn-pass thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createFailThresholdRule(0), createWarnThresholdRule(68000), createPassThresholdRule(69000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), createLowerBoundSLOCriteria(68000)),
 		},
 		{
-			name:              "Pass or warning defined in title take precedence over valid thresholds ",
-			dashboardFilename: testDataFolder + "dashboard_both_thresholds_and_pass_and_warning_in_title.json",
+			name:       "Pass or warning defined in title take precedence over valid thresholds ",
+			tileName:   "Service Response Time; sli=srt; pass=<70000; warning=<71000",
+			thresholds: createVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(69000)),
 			expectedSLO: createExpectedServiceResponseTimeSLO(
 				[]*keptnapi.SLOCriteria{{Criteria: []string{"<70000"}}},
 				[]*keptnapi.SLOCriteria{{Criteria: []string{"<71000"}}}),
 		},
 		{
-			name:              "Visible thresholds with no values are ignored",
-			dashboardFilename: testDataFolder + "dashboard_visible_thresholds_without_values.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+			name:        "Visible thresholds with no values are ignored",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createPassThresholdRuleWithPointer(nil), createWarnThresholdRuleWithPointer(nil), createFailThresholdRuleWithPointer(nil)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(nil, nil),
 		},
 		{
-			name:              "Not visible thresholds with valid values are ignored",
-			dashboardFilename: testDataFolder + "dashboard_not_visible_thresholds_with_valid_values.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+			name:        "Not visible thresholds with valid values are ignored",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createNotVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(69000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(nil, nil),
 		},
 		{
-			name:              "Not visible thresholds with invalid values are ignored",
-			dashboardFilename: testDataFolder + "dashboard_not_visible_thresholds_with_invalid_values.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+			name:        "Not visible thresholds with invalid values are ignored",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createNotVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(68000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(nil, nil),
 		},
 	}
 
 	for _, thresholdTest := range tests {
 		t.Run(thresholdTest.name, func(t *testing.T) {
 
-			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, thresholdTest.dashboardFilename)
-			handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-			handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+			handler := createHandlerWithTemplatedDashboard(t,
+				"./testdata/dashboards/data_explorer/tile_thresholds_success/dashboard.template.json",
+				struct {
+					TileName         string
+					ThresholdsString string
+				}{
+					TileName:         thresholdTest.tileName,
+					ThresholdsString: convertToJSONString(t, thresholdTest.thresholds),
+				})
+			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExactFile(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 			uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
 				if assert.Equal(t, 1, len(actual.Objectives)) {
@@ -778,8 +792,46 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 				}
 			}
 
-			runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, successfulSLIResultAllectionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, successfulSLIResultAssertionsFunc)
 		})
+	}
+}
+
+func createPassThresholdRule(value float64) dynatrace.ThresholdRule {
+	return createPassThresholdRuleWithPointer(&value)
+}
+
+func createPassThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
+	return dynatrace.ThresholdRule{Value: value, Color: "#7dc540"}
+}
+
+func createWarnThresholdRule(value float64) dynatrace.ThresholdRule {
+	return createWarnThresholdRuleWithPointer(&value)
+}
+
+func createWarnThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
+	return dynatrace.ThresholdRule{Value: value, Color: "#f5d30f"}
+}
+
+func createFailThresholdRule(value float64) dynatrace.ThresholdRule {
+	return createFailThresholdRuleWithPointer(&value)
+}
+
+func createFailThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
+	return dynatrace.ThresholdRule{Value: value, Color: "#dc172a"}
+}
+
+func createVisibleThresholds(rule1 dynatrace.ThresholdRule, rule2 dynatrace.ThresholdRule, rule3 dynatrace.ThresholdRule) dynatrace.Threshold {
+	return dynatrace.Threshold{
+		Rules:   []dynatrace.ThresholdRule{rule1, rule2, rule3},
+		Visible: true,
+	}
+}
+
+func createNotVisibleThresholds(rule1 dynatrace.ThresholdRule, rule2 dynatrace.ThresholdRule, rule3 dynatrace.ThresholdRule) dynatrace.Threshold {
+	return dynatrace.Threshold{
+		Rules:   []dynatrace.ThresholdRule{rule1, rule2, rule3},
+		Visible: false,
 	}
 }
 
