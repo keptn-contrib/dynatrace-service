@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - "master"
-      - "release-*"
   # in addition, execute for pull requests to those branches
   pull_request:
     branches:
@@ -16,6 +15,8 @@ on:
 defaults:
   run:
     shell: bash
+env:
+  VERSION_FILE: "x-release-please-version.json"
 jobs:
   ############################################################################
   # Prepare CI Run (determine version, git sha, datetime, ...)               #
@@ -37,15 +38,45 @@ jobs:
         uses: ./.github/actions/unit-tests
 
   ############################################################################
+  # Use version of release please if gh ref is a release-please pr branch    #
+  ############################################################################
+  verify-next-version:
+    needs: prepare_ci_run
+    name: Verify next version
+    runs-on: ubuntu-20.04
+    env:
+      VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
+    outputs:
+      NEXT-VERSION: ${{ steps.verify-next-version.outputs.NEXT-VERSION }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3.0.2
+        with:
+          token: ${{ secrets.KEPTN_BOT_TOKEN }}
+      - name: Overwrite version variable from prepare_ci_run in case of a release-please-branch
+        id: verify-next-version
+        run: |
+          echo "Note: GITHUB_REF_HEADS=${GITHUB_HEAD_REF}"
+          if [[ "${GITHUB_HEAD_REF}" == "release-please-"* ]]; then
+            # Release PR: extract version from x-release-please-version.json
+            RELEASEPLEASE_VERSION=$(jq -r '."x-release-please-version"' ${{ env.VERSION_FILE }})
+            echo "::set-output name=NEXT-VERSION::${RELEASEPLEASE_VERSION}-rc"
+          else
+            echo "::set-output name=NEXT-VERSION::${VERSION}"
+          fi 
+
+  ############################################################################
   # Build Helm Charts                                                        #
   ############################################################################
   helm_charts_build:
-    needs: prepare_ci_run
+    needs:
+      - prepare_ci_run
+      - verify-next-version
     name: Build Helm Charts
     runs-on: ubuntu-20.04
     env:
       BRANCH: ${{ needs.prepare_ci_run.outputs.BRANCH }}
-      VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
+      VERSION: ${{ needs.verify-next-version.outputs.NEXT-VERSION }}
       DATETIME: ${{ needs.prepare_ci_run.outputs.DATETIME }}
       GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
     steps:
@@ -80,12 +111,15 @@ jobs:
   # Build Docker Image                                                      #
   ############################################################################
   docker_build:
-    needs: [prepare_ci_run, unit-tests]
+    needs:
+      - prepare_ci_run
+      - verify-next-version
+      - unit-tests
     name: Docker Build
     runs-on: ubuntu-20.04
     env:
       BRANCH: ${{ needs.prepare_ci_run.outputs.BRANCH }}
-      VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
+      VERSION: ${{ needs.verify-next-version.outputs.NEXT-VERSION }}
       DATETIME: ${{ needs.prepare_ci_run.outputs.DATETIME }}
       GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
     steps:
@@ -125,14 +159,16 @@ jobs:
 
   store-output-in-build-config:
     name: "Store output of last step in build-config.env"
-    needs: prepare_ci_run
+    needs:
+      - prepare_ci_run
+      - verify-next-version
     runs-on: ubuntu-20.04
     steps:
       - name: Create build config file
         env:
           BRANCH: ${{ needs.prepare_ci_run.outputs.BRANCH }}
           BRANCH_SLUG: ${{ needs.prepare_ci_run.outputs.BRANCH_SLUG }}
-          VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
+          VERSION: ${{ needs.verify-next-version.outputs.NEXT-VERSION }}
           DATETIME: ${{ needs.prepare_ci_run.outputs.DATETIME }}
           GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
         run: |
