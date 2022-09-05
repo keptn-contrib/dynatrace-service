@@ -51,8 +51,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3.0.2
-        with:
-          token: ${{ secrets.KEPTN_BOT_TOKEN }}
       - name: Overwrite version variable from prepare_ci_run in case of a release-please-branch
         id: verify-next-version
         run: |
