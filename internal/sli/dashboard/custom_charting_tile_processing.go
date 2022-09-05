@@ -59,12 +59,6 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 		return nil
 	}
 
-	log.WithFields(
-		log.Fields{
-			"tile.FilterConfig.CustomName": tile.FilterConfig.CustomName,
-			"baseIndicatorName":            sloDefinition.SLI,
-		}).Debug("Processing custom chart")
-
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
@@ -77,11 +71,8 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 }
 
 func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []TileResult {
-
 	metricsQuery, err := p.generateMetricQueryFromChartSeries(ctx, series, tileManagementZoneFilter, filtersPerEntityType)
-
 	if err != nil {
-		log.WithError(err).Warn("generateMetricQueryFromChart returned an error, SLI will not be used")
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}
 	}
 
@@ -93,7 +84,6 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 	// Lets query the metric definition as we need to know how many dimension the metric has
 	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(ctx, series.Metric)
 	if err != nil {
-		log.WithError(err).WithField("metric", series.Metric).Debug("Error retrieving metric description")
 		return nil, err
 	}
 

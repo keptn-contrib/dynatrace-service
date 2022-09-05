@@ -76,7 +76,6 @@ func (eh GetSLIEventHandler) HandleEvent(workCtx context.Context, replyCtx conte
 		return eh.sendGetSLIFinishedEvent(nil, err)
 	}
 
-	log.Info("Finished retrieving SLI results, sending sh.keptn.event.get-sli.finished event now...")
 	return eh.sendGetSLIFinishedEvent(sliResults, err)
 }
 
@@ -260,9 +259,19 @@ func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
 
 // sendGetSLIFinishedEvent sends the SLI finished event. If err != nil it will send an error message
 func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(sliResults []result.SLIResult, err error) error {
+	for _, sliResult := range sliResults {
+		if sliResult.IndicatorResult() == result.IndicatorResultSuccessful {
+			log.WithField("sliResult", fmt.Sprintf("%+v", sliResult)).Debug("Retrieved SLI result")
+			continue
+		}
+
+		log.WithField("sliResult", fmt.Sprintf("%+v", sliResult)).Warn("Failed to retrieve SLI result")
+	}
+
 	// if an error was set - the SLI results will be set to failed and an error message is set to each
 	sliResults = resetSLIResultsInCaseOfError(err, eh.event, sliResults)
 
+	log.Info("Finished retrieving SLI results, sending sh.keptn.event.get-sli.finished event now...")
 	return eh.sendEvent(NewSucceededGetSLIFinishedEventFactory(eh.event, sliResults, err))
 }
 

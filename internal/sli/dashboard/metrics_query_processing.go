@@ -10,7 +10,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 )
 
@@ -64,12 +63,6 @@ func (r *MetricsQueryProcessing) processSingleResult(sloDefinition keptncommon.S
 			averageValues(singleDataEntry.Values),
 			request.RequestString(),
 		)
-
-		// we got our metric, SLOs and the value
-		log.WithFields(
-			log.Fields{
-				"tileResult": tileResult,
-			}).Debug("Got indicator value")
 
 		tileResults = append(tileResults, tileResult)
 	}

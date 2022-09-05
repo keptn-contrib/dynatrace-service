@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -55,13 +54,6 @@ func (p *Processing) GetSLIResultFromIndicator(ctx context.Context, name string)
 	}
 
 	sliQuery := common.ReplaceQueryParameters(rawQuery, p.customFilters, p.eventData)
-
-	log.WithFields(
-		log.Fields{
-			"name":     name,
-			"rawQuery": rawQuery,
-			"query":    sliQuery,
-		}).Debug("Retrieved SLI query")
 
 	switch {
 	case strings.HasPrefix(sliQuery, v1usql.USQLPrefix):
