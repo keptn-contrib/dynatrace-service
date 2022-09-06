@@ -112,3 +112,36 @@ func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
 
 	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorSLOValue, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, expectedSLORequest))
 }
+
+// TestErrorMessageWhenNoSLIsAreRequested tests that the correct error message is generated when no SLIs are requested.
+func TestErrorMessageWhenNoSLIsAreRequested(t *testing.T) {
+	tests := []struct {
+		name string
+		slis map[string]string
+	}{
+		{
+			name: "No SLIs requested and no SLIs defined",
+		},
+		{
+			name: "No SLIs requested and a single SLI is defined",
+			slis: map[string]string{
+				"response_time_p95": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			eventSenderClient := &eventSenderClientMock{}
+
+			// no need to have something here, because we should not send an API request
+			handler := test.NewFileBasedURLHandler(t)
+
+			rClient := newResourceClientMockWithSLIs(t, tt.slis)
+
+			runTestAndAssertNoError(t, createTestGetSLIEventDataWithNoIndicators(), handler, eventSenderClient, rClient, "")
+			assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric", "no SLIs were requested"))
+		})
+	}
+}

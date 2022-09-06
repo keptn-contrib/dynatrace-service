@@ -151,6 +151,10 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 }
 
 func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
+	if len(eh.event.GetIndicators()) == 0 {
+		return nil, errors.New("no SLIs were requested")
+	}
+
 	slis, err := eh.resourceClient.GetSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
 		log.WithError(err).Error("could not retrieve custom SLI definitions")
