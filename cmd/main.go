@@ -37,6 +37,7 @@ type dynatraceService struct {
 }
 
 func main() {
+	log.SetFormatter(&log.JSONFormatter{})
 	log.SetLevel(env.GetLogLevel())
 	os.Exit(_main())
 }

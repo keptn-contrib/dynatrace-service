@@ -13,9 +13,9 @@ import (
 )
 
 type keptnCredentialsCheckResult struct {
-	apiURL  string
-	success bool
-	message string
+	APIURL  string
+	Success bool
+	Message string
 }
 
 type ConfigureMonitoringEventHandler struct {
@@ -79,24 +79,24 @@ func (eh *ConfigureMonitoringEventHandler) checkKeptnCredentials(ctx context.Con
 	keptnCredentials, err := credentials.GetKeptnCredentials(ctx)
 	if err != nil {
 		return keptnCredentialsCheckResult{
-			success: false,
-			message: fmt.Sprintf("Failed to get Keptn API credentials: %s", err.Error()),
-			apiURL:  "unknown",
+			Success: false,
+			Message: fmt.Sprintf("Failed to get Keptn API credentials: %s", err.Error()),
+			APIURL:  "unknown",
 		}
 	}
 
 	err = eh.credentialsChecker.CheckCredentials(*keptnCredentials)
 	if err != nil {
 		return keptnCredentialsCheckResult{
-			success: false,
-			message: fmt.Sprintf("Failed to verify to Keptn API credentials: %s", err.Error()),
-			apiURL:  keptnCredentials.GetAPIURL(),
+			Success: false,
+			Message: fmt.Sprintf("Failed to verify to Keptn API credentials: %s", err.Error()),
+			APIURL:  keptnCredentials.GetAPIURL(),
 		}
 	}
 
 	return keptnCredentialsCheckResult{
-		success: true,
-		apiURL:  keptnCredentials.GetAPIURL(),
+		Success: true,
+		APIURL:  keptnCredentials.GetAPIURL(),
 	}
 
 }
@@ -156,15 +156,15 @@ func getConfigureMonitoringResultMessage(keptnCredentialsCheckResult keptnCreden
 	}
 
 	msg = msg + "---Keptn API Connection Check:--- \n"
-	msg = msg + "  - Keptn API URL: " + keptnCredentialsCheckResult.apiURL + "\n"
-	msg = msg + fmt.Sprintf("  - Connection Successful: %v. %s\n", keptnCredentialsCheckResult.success, keptnCredentialsCheckResult.message)
+	msg = msg + "  - Keptn API URL: " + keptnCredentialsCheckResult.APIURL + "\n"
+	msg = msg + fmt.Sprintf("  - Connection Successful: %v. %s\n", keptnCredentialsCheckResult.Success, keptnCredentialsCheckResult.Message)
 	msg = msg + "\n"
 
 	return msg
 }
 
 func (eh *ConfigureMonitoringEventHandler) handleError(err error) error {
-	log.Error(err)
+	log.WithError(err).Error("Error handling configure monitoring event")
 	return eh.sendConfigureMonitoringFinishedEvent(NewErroredConfigureMonitoringFinishedEventFactory(eh.event, err))
 }
 

@@ -11,6 +11,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const projectFieldName = "project"
+const stageFieldName = "stage"
+const serviceFieldName = "service"
+const resourceURIFieldName = "resourceURI"
+
 // ResourceClientInterface defines the methods for interacting with resources of Keptn's configuration service.
 type ResourceClientInterface interface {
 	// GetResource tries to find the first instance of a given resource on service, stage or project level.
@@ -116,19 +121,21 @@ func (rc *ResourceClient) GetResource(ctx context.Context, project string, stage
 		if errors.As(err, &rnfErrorType) {
 			log.WithFields(
 				log.Fields{
-					"project": project,
-					"stage":   stage,
-					"service": service,
-				}).Debugf("%s not available for service", resourceURI)
+					projectFieldName:     project,
+					stageFieldName:       stage,
+					serviceFieldName:     service,
+					resourceURIFieldName: resourceURI,
+				}).Debug("Resource not available for service")
 		} else if err != nil {
 			return "", err
 		} else {
 			log.WithFields(
 				log.Fields{
-					"project": project,
-					"stage":   stage,
-					"service": service,
-				}).Infof("Found %s for service", resourceURI)
+					projectFieldName:     project,
+					stageFieldName:       stage,
+					serviceFieldName:     service,
+					resourceURIFieldName: resourceURI,
+				}).Info("Found resource for service")
 			return keptnResourceContent, nil
 		}
 	}
@@ -138,17 +145,19 @@ func (rc *ResourceClient) GetResource(ctx context.Context, project string, stage
 		if errors.As(err, &rnfErrorType) {
 			log.WithFields(
 				log.Fields{
-					"project": project,
-					"stage":   stage,
-				}).Debugf("%s not available for stage", resourceURI)
+					projectFieldName:     project,
+					stageFieldName:       stage,
+					resourceURIFieldName: resourceURI,
+				}).Debug("Resource not available for stage")
 		} else if err != nil {
 			return "", err
 		} else {
 			log.WithFields(
 				log.Fields{
-					"project": project,
-					"stage":   stage,
-				}).Infof("Found %s for stage", resourceURI)
+					projectFieldName:     project,
+					stageFieldName:       stage,
+					resourceURIFieldName: resourceURI,
+				}).Info("Found resource for stage")
 			return keptnResourceContent, nil
 		}
 	}
@@ -156,16 +165,23 @@ func (rc *ResourceClient) GetResource(ctx context.Context, project string, stage
 	if project != "" {
 		keptnResourceContent, err := rc.GetProjectResource(ctx, project, resourceURI)
 		if errors.As(err, &rnfErrorType) {
-			log.WithField("project", project).Debugf("%s not available for project", resourceURI)
+			log.WithFields(
+				log.Fields{
+					projectFieldName:     project,
+					resourceURIFieldName: resourceURI,
+				}).Debug("Resource not available for project")
 		} else if err != nil {
 			return "", err
 		} else {
-			log.WithField("project", project).Infof("Found %s for project", resourceURI)
+			log.WithFields(
+				log.Fields{projectFieldName: project,
+					resourceURIFieldName: resourceURI,
+				}).Info("Found resource for project")
 			return keptnResourceContent, nil
 		}
 	}
 
-	log.Infof("%s not found", resourceURI)
+	log.WithField(resourceURIFieldName, resourceURI).Info("Resource not found")
 	return "", &ResourceNotFoundError{uri: resourceURI, project: project, stage: stage, service: service}
 }
 

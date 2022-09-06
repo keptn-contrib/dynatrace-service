@@ -32,10 +32,8 @@ type DynatraceEventHandler interface {
 func NewEventHandler(ctx context.Context, clientFactory keptn.ClientFactoryInterface, eventSenderClient keptn.EventSenderClientInterface, event cloudevents.Event) (DynatraceEventHandler, error) {
 	eventHandler, err := getEventHandler(ctx, eventSenderClient, event, clientFactory)
 	if err != nil {
-		err = fmt.Errorf("cannot handle event: %w", err)
-		log.Error(err.Error())
-
-		return NewErrorHandler(err, event, eventSenderClient, clientFactory.CreateUniformClient()), nil
+		log.WithError(err).Error("Cannot handle event")
+		return NewErrorHandler(fmt.Errorf("cannot handle event: %w", err), event, eventSenderClient, clientFactory.CreateUniformClient()), nil
 	}
 
 	return eventHandler, nil
@@ -136,7 +134,7 @@ func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 	case keptnv2.GetTriggeredEventType(keptnv2.ReleaseTaskName):
 		return action.NewReleaseTriggeredAdapterFromEvent(e)
 	default:
-		log.WithField("EventType", e.Type()).Debug("Ignoring event")
+		log.WithField("eventType", e.Type()).Debug("Ignoring event")
 		return nil, nil
 	}
 }

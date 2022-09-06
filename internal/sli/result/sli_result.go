@@ -16,12 +16,12 @@ const (
 
 // SLIResult encapsulates a Keptn SLIResult with an additional result of success, warning or fail.
 type SLIResult struct {
-	metric          string
-	value           float64
-	success         bool
-	message         string
-	query           string
-	indicatorResult IndicatorResultType
+	Metric          string
+	Value           float64
+	Success         bool
+	Message         string
+	Query           string
+	IndicatorResult IndicatorResultType
 }
 
 // NewSuccessfulSLIResult creates a new SLIResult with result of success.
@@ -32,11 +32,11 @@ func NewSuccessfulSLIResult(metric string, value float64) SLIResult {
 // NewSuccessfulSLIResultWithQuery creates a new SLIResult with a query and a result of success.
 func NewSuccessfulSLIResultWithQuery(metric string, value float64, query string) SLIResult {
 	return SLIResult{
-		metric:          metric,
-		success:         true,
-		value:           value,
-		query:           query,
-		indicatorResult: IndicatorResultSuccessful,
+		Metric:          metric,
+		Success:         true,
+		Value:           value,
+		Query:           query,
+		IndicatorResult: IndicatorResultSuccessful,
 	}
 }
 
@@ -48,11 +48,11 @@ func NewWarningSLIResult(metric string, message string) SLIResult {
 // NewWarningSLIResultWithQuery creates a new SLIResult with a query and a result of warning.
 func NewWarningSLIResultWithQuery(metric string, message string, query string) SLIResult {
 	return SLIResult{
-		metric:          metric,
-		success:         false,
-		message:         message,
-		query:           query,
-		indicatorResult: IndicatorResultWarning,
+		Metric:          metric,
+		Success:         false,
+		Message:         message,
+		Query:           query,
+		IndicatorResult: IndicatorResultWarning,
 	}
 }
 
@@ -64,40 +64,10 @@ func NewFailedSLIResult(metric string, message string) SLIResult {
 // NewFailedSLIResultWithQuery creates a new SLIResult with a query and a result of fail.
 func NewFailedSLIResultWithQuery(metric string, message string, query string) SLIResult {
 	return SLIResult{
-		metric:          metric,
-		success:         false,
-		message:         message,
-		query:           query,
-		indicatorResult: IndicatorResultFailed,
+		Metric:          metric,
+		Success:         false,
+		Message:         message,
+		Query:           query,
+		IndicatorResult: IndicatorResultFailed,
 	}
-}
-
-// Metric gets the metric.
-func (r SLIResult) Metric() string {
-	return r.metric
-}
-
-// Value gets the value.
-func (r SLIResult) Value() float64 {
-	return r.value
-}
-
-// Success gets the success.
-func (r SLIResult) Success() bool {
-	return r.success
-}
-
-// Message gets the message.
-func (r SLIResult) Message() string {
-	return r.message
-}
-
-// Query gets the query.
-func (r SLIResult) Query() string {
-	return r.query
-}
-
-// IndicatorResult gets the indicator result, i.e. pass, warning or fail.
-func (r SLIResult) IndicatorResult() IndicatorResultType {
-	return r.indicatorResult
 }

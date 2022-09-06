@@ -26,13 +26,13 @@ func (s SLIResultSummarizer) SummaryMessage() string {
 func groupIndicatorMessages(indicatorValues []SLIResult) map[string]messageIndicatorSet {
 	messageSetMap := make(map[string]messageIndicatorSet)
 	for ordering, indicator := range indicatorValues {
-		if indicator.Success() == false {
-			ms, ok := messageSetMap[indicator.Message()]
+		if indicator.Success == false {
+			ms, ok := messageSetMap[indicator.Message]
 			if !ok {
-				ms = newMessageIndicatorSet(indicator.Message(), ordering)
+				ms = newMessageIndicatorSet(indicator.Message, ordering)
 			}
-			ms.addIndicator(indicator.Metric())
-			messageSetMap[indicator.Message()] = ms
+			ms.addIndicator(indicator.Metric)
+			messageSetMap[indicator.Message] = ms
 		}
 	}
 	return messageSetMap
@@ -63,7 +63,7 @@ func (s SLIResultSummarizer) Result() keptnv2.ResultType {
 
 	seenWarning := false
 	for _, indicator := range s.indicatorValues {
-		switch indicator.IndicatorResult() {
+		switch indicator.IndicatorResult {
 		case IndicatorResultSuccessful:
 			// this is fine, do nothing
 		case IndicatorResultWarning:

@@ -51,7 +51,7 @@ func getTaskFromEvent(eventType string) string {
 
 	taskName, _, err := keptnv2.ParseTaskEventType(eventType)
 	if err != nil {
-		log.WithError(err).Warnf("could not extract task name from event type: %s, will set it to full type", eventType)
+		log.WithError(err).WithField("eventType", eventType).Warn("Could not extract task name from event type, will set it to full type")
 		return eventType
 	}
 

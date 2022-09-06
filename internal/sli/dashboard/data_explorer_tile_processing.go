@@ -78,7 +78,7 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 
 	// check for mismatch between number of results and visual config type
 	if tileHasSingleValueVisualization(tile) && len(tileResults) > 1 {
-		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, tileResults[0].sliResult.Query(), fmt.Sprintf("Data Explorer tile is configured for single value but query produced %d results", len(tileResults)))}
+		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, tileResults[0].sliResult.Query, fmt.Sprintf("Data Explorer tile is configured for single value but query produced %d results", len(tileResults)))}
 	}
 
 	return tileResults

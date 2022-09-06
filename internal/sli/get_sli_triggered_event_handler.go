@@ -260,12 +260,12 @@ func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
 // sendGetSLIFinishedEvent sends the SLI finished event. If err != nil it will send an error message
 func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(sliResults []result.SLIResult, err error) error {
 	for _, sliResult := range sliResults {
-		if sliResult.IndicatorResult() == result.IndicatorResultSuccessful {
-			log.WithField("sliResult", fmt.Sprintf("%+v", sliResult)).Debug("Retrieved SLI result")
+		if sliResult.IndicatorResult == result.IndicatorResultSuccessful {
+			log.WithField("sliResult", sliResult).Debug("Retrieved SLI result")
 			continue
 		}
 
-		log.WithField("sliResult", fmt.Sprintf("%+v", sliResult)).Warn("Failed to retrieve SLI result")
+		log.WithField("sliResult", sliResult).Warn("Failed to retrieve SLI result")
 	}
 
 	// if an error was set - the SLI results will be set to failed and an error message is set to each
@@ -296,7 +296,7 @@ func resetSLIResultsInCaseOfError(err error, eventData GetSLITriggeredAdapterInt
 
 	erroredSLIResults := make([]result.SLIResult, 0, len(sliResults))
 	for _, sliResult := range sliResults {
-		erroredSLIResults = append(erroredSLIResults, result.NewFailedSLIResult(sliResult.Metric(), err.Error()))
+		erroredSLIResults = append(erroredSLIResults, result.NewFailedSLIResult(sliResult.Metric, err.Error()))
 	}
 
 	return erroredSLIResults
@@ -305,7 +305,7 @@ func resetSLIResultsInCaseOfError(err error, eventData GetSLITriggeredAdapterInt
 func (eh *GetSLIEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {
 	err := eh.eventSenderClient.SendCloudEvent(factory)
 	if err != nil {
-		log.WithError(err).Error("Could not send get sli cloud event")
+		log.WithError(err).Error("Could not send get-sli cloud event")
 		return err
 	}
 
