@@ -78,7 +78,7 @@ jobs:
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
-        uses: c-py/action-dotenv-to-setenv@v3
+        uses: c-py/action-dotenv-to-setenv@v4
         with:
           env-file: .ci_env
 
@@ -89,7 +89,7 @@ jobs:
           echo "::set-output name=RUN_ID::$RUN_ID"
 
       - name: Download all artifacts from last successful build of specified branch
-        uses: dawidd6/action-download-artifact@v2.22.0
+        uses: dawidd6/action-download-artifact@v2.23.0
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           # Required, workflow file name or ID
@@ -100,7 +100,7 @@ jobs:
 
       - name: Load Build-Config Environment from ./dist/build-config/build-config.env
         id: load_build_env
-        uses: c-py/action-dotenv-to-setenv@v3
+        uses: c-py/action-dotenv-to-setenv@v4
         with:
           env-file: ./dist/build-config/build-config.env
 
