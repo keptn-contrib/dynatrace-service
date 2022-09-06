@@ -55,6 +55,17 @@ func createTestGetSLIEventDataWithIndicator(indicator string) *getSLIEventData {
 	}
 }
 
+func createTestGetSLIEventDataWithNoIndicators() *getSLIEventData {
+	return &getSLIEventData{
+		project:    "sockshop",
+		stage:      "staging",
+		service:    "carts",
+		indicators: []string{},
+		sliStart:   testSLIStart,
+		sliEnd:     testSLIEnd,
+	}
+}
+
 // convertTimeStringToUnixMillisecondsString converts a ISO8601 (or fallback format RFC3339) time string to a string with the Unix timestamp, or "0" if this cannot be done.
 func convertTimeStringToUnixMillisecondsString(timeString string) string {
 	time, err := timeutils.ParseTimestamp(timeString)
