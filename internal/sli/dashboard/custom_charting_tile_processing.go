@@ -82,7 +82,7 @@ func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDef
 func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx context.Context, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) (*metrics.Query, error) {
 
 	// Lets query the metric definition as we need to know how many dimension the metric has
-	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetByID(ctx, series.Metric)
+	metricDefinition, err := dynatrace.NewMetricsClient(p.client).GetMetricDefinitionByID(ctx, series.Metric)
 	if err != nil {
 		return nil, err
 	}

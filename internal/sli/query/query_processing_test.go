@@ -58,53 +58,59 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 	}{
 		// this case may not occur in reality, but check it here for completeness
 		{
-			name:                         "Zero results 1 - want failure",
+			name:                         "Zero metric series collections 1 - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_0results_fake3.json",
-			expectedErrorSubString:       "Metrics API v2 returned zero results",
+			expectedErrorSubString:       "Metrics API v2 returned zero metric series collections",
 		},
 
 		{
-			name:                         "One result, no data - want failure",
+			name:                         "One metric series collection, no metric series - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_0data.json",
-			expectedErrorSubString:       "Metrics API v2 returned zero data points",
+			expectedErrorSubString:       "Metrics API v2 returned zero metric series",
 		},
 
 		// this case may not occur in reality, but check it here for completeness
 		{
-			name:                         "One result, one data, no values - want failure",
+			name:                         "One metric series collection, one metric sereis, no values, fake 1 - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_0values_fake1.json",
-			expectedErrorSubString:       "Metrics API v2 returned zero data point values",
+			expectedErrorSubString:       "Metrics API v2 returned zero values",
 		},
 
 		// this case may not occur in reality, but check it here for completeness
 		{
-			name:                         "One result, one data, no values - want failure",
+			name:                         "One metric series collection, one metric series, no values, fake 2 - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_0values_fake2.json",
-			expectedErrorSubString:       "Metrics API v2 returned zero data point values",
+			expectedErrorSubString:       "Metrics API v2 returned zero values",
 		},
 
 		{
-			name:                         "One result, one data, two values - want failure",
+			name:                         "One metric series collection, one metric series, null value - want failure",
+			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_null_value.json",
+			expectedErrorSubString:       "Metrics API v2 returned 'null' as value",
+		},
+
+		{
+			name:                         "One metric series collection, one metric series, two values - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_1data_2values.json",
-			expectedErrorSubString:       "Metrics API v2 returned more than one data point value",
+			expectedErrorSubString:       "Metrics API v2 returned 2 values",
 		},
 
 		{
-			name:                         "One result, two data - want failure",
+			name:                         "One metric series collection, two metric series - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_1result_2data.json",
-			expectedErrorSubString:       "Metrics API v2 returned more than one data point",
+			expectedErrorSubString:       "Metrics API v2 returned 2 metric series",
 		},
 
 		{
-			name:                         "Two results, one data - want failure",
+			name:                         "Two metric series collections, one metric series - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_2results_1data.json",
-			expectedErrorSubString:       "Metrics API v2 returned more than one result",
+			expectedErrorSubString:       "Metrics API v2 returned 2 metric series collections",
 		},
 
 		{
-			name:                         "Two results, two data - want failure",
+			name:                         "Two metric series collections, two metric series - want failure",
 			metricsQueryResponseFilename: "./testdata/metrics_query_error_handling_test/metrics_query_2results_2data.json",
-			expectedErrorSubString:       "Metrics API v2 returned more than one result",
+			expectedErrorSubString:       "Metrics API v2 returned 2 metric series collections",
 		},
 	}
 

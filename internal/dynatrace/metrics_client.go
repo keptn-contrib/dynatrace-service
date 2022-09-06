@@ -86,22 +86,22 @@ type DimensionDefinition struct {
 	DisplayName string `json:"displayName"`
 }
 
-// MetricsQueryResult is struct for /metrics/query
-type MetricsQueryResult struct {
-	Result []MetricQueryResultValues `json:"result"`
+// MetricData is struct for the response from /api/v2/metrics/query
+type MetricData struct {
+	Result []MetricSeriesCollection `json:"result"`
 }
 
-type MetricQueryResultValues struct {
-	MetricID string                     `json:"metricId"`
-	Data     []MetricQueryResultNumbers `json:"data"`
-	Warnings []string                   `json:"warnings,omitempty"`
+type MetricSeriesCollection struct {
+	MetricID string         `json:"metricId"`
+	Data     []MetricSeries `json:"data"`
+	Warnings []string       `json:"warnings,omitempty"`
 }
 
-type MetricQueryResultNumbers struct {
+type MetricSeries struct {
 	Dimensions   []string          `json:"dimensions"`
 	DimensionMap map[string]string `json:"dimensionMap,omitempty"`
 	Timestamps   []int64           `json:"timestamps"`
-	Values       []float64         `json:"values"`
+	Values       []*float64        `json:"values"`
 }
 
 // MetricsQueryFailedError represents an error for a metrics query that could not be retrieved because of an error.
@@ -144,8 +144,8 @@ func NewMetricsClient(client ClientInterface) *MetricsClient {
 	}
 }
 
-// GetByID calls the Dynatrace API to retrieve MetricDefinition details.
-func (mc *MetricsClient) GetByID(ctx context.Context, metricID string) (*MetricDefinition, error) {
+// GetMetricDefinitionByID calls the Dynatrace API to retrieve MetricDefinition details.
+func (mc *MetricsClient) GetMetricDefinitionByID(ctx context.Context, metricID string) (*MetricDefinition, error) {
 	body, err := mc.client.Get(ctx, MetricsPath+"/"+metricID)
 	if err != nil {
 		return nil, err
@@ -160,30 +160,30 @@ func (mc *MetricsClient) GetByID(ctx context.Context, metricID string) (*MetricD
 	return &result, nil
 }
 
-// GetSingleResultByQuery executes the request, validates and returns a single result with at least one data point or an error.
-func (mc *MetricsClient) GetSingleResultByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricQueryResultValues, error) {
-	queryResult, err := mc.getByQuery(ctx, request)
+// GetSingleMetricSeriesCollectionByQuery executes the request, validates and returns a single metric series collection with at least one metric series or an error.
+func (mc *MetricsClient) GetSingleMetricSeriesCollectionByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricSeriesCollection, error) {
+	metricData, err := mc.getMetricDataByQuery(ctx, request)
 	if err != nil {
 		return nil, &MetricsQueryFailedError{cause: err}
 	}
 
-	if len(queryResult.Result) == 0 {
-		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero results"}
+	if len(metricData.Result) == 0 {
+		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero metric series collections"}
 	}
 
-	if len(queryResult.Result) > 1 {
-		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned more than one result"}
+	if len(metricData.Result) > 1 {
+		return nil, &MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d metric series collections", len(metricData.Result))}
 	}
 
-	singleResult := queryResult.Result[0]
-	if len(singleResult.Data) == 0 {
-		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero data points", Warnings: singleResult.Warnings}
+	metricSeriesCollection := metricData.Result[0]
+	if len(metricSeriesCollection.Data) == 0 {
+		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero metric series", Warnings: metricSeriesCollection.Warnings}
 	}
 
-	return &singleResult, nil
+	return &metricSeriesCollection, nil
 }
 
-func (mc *MetricsClient) getByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricsQueryResult, error) {
+func (mc *MetricsClient) getMetricDataByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricData, error) {
 	err := NewTimeframeDelay(request.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err
@@ -194,7 +194,7 @@ func (mc *MetricsClient) getByQuery(ctx context.Context, request MetricsClientQu
 		return nil, err
 	}
 
-	var result MetricsQueryResult
+	var result MetricData
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -26,7 +27,7 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 // Process generates SLI & SLO definitions based on the metric query and the number of dimensions in the chart definition.
 func (r *MetricsQueryProcessing) Process(ctx context.Context, sloDefinition keptncommon.SLO, metricsQuery metrics.Query, timeframe common.Timeframe) []TileResult {
 	request := dynatrace.NewMetricsClientQueryRequest(metricsQuery, timeframe)
-	singleResult, err := dynatrace.NewMetricsClient(r.client).GetSingleResultByQuery(ctx, request)
+	singleResult, err := dynatrace.NewMetricsClient(r.client).GetSingleMetricSeriesCollectionByQuery(ctx, request)
 	if err != nil {
 		var qpErrorType *dynatrace.MetricsQueryProcessingError
 		if errors.As(err, &qpErrorType) {
@@ -35,48 +36,47 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, sloDefinition kept
 		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())}
 	}
 
-	return r.processSingleResult(sloDefinition, singleResult.Data, request)
+	return r.processMetricSeries(sloDefinition, singleResult.Data, request)
 }
 
-func (r *MetricsQueryProcessing) processSingleResult(sloDefinition keptncommon.SLO, singleResultData []dynatrace.MetricQueryResultNumbers, request dynatrace.MetricsClientQueryRequest) []TileResult {
-	var tileResults []TileResult
-
-	for _, singleDataEntry := range singleResultData {
-
-		indicatorName := cleanIndicatorName(sloDefinition.SLI)
-		displayName := sloDefinition.DisplayName
-		if len(singleResultData) > 1 {
-			suffix := generateIndicatorSuffix(singleDataEntry.DimensionMap)
-			indicatorName = indicatorName + "_" + cleanIndicatorName(suffix)
-			displayName = displayName + " (" + suffix + ")"
-		}
-
-		tileResult := newSuccessfulTileResult(
-			keptncommon.SLO{
-				SLI:         indicatorName,
-				DisplayName: displayName,
-				Weight:      sloDefinition.Weight,
-				KeySLI:      sloDefinition.KeySLI,
-				Pass:        sloDefinition.Pass,
-				Warning:     sloDefinition.Warning,
-			},
-			averageValues(singleDataEntry.Values),
-			request.RequestString(),
-		)
-
-		tileResults = append(tileResults, tileResult)
+func (r *MetricsQueryProcessing) processMetricSeries(sloDefinition keptncommon.SLO, metricSeries []dynatrace.MetricSeries, request dynatrace.MetricsClientQueryRequest) []TileResult {
+	if len(metricSeries) == 0 {
+		return []TileResult{}
 	}
 
+	if len(metricSeries) == 1 {
+		return []TileResult{processValues(metricSeries[0].Values, sloDefinition, request)}
+	}
+
+	var tileResults []TileResult
+	for _, singleMetricSeries := range metricSeries {
+		tileResults = append(tileResults, processValues(singleMetricSeries.Values, createSLODefinitionForDimensionMap(sloDefinition, singleMetricSeries.DimensionMap), request))
+	}
 	return tileResults
 }
 
-// averageValues returns the arithmetic average of the values.
-func averageValues(values []float64) float64 {
-	value := 0.0
-	for _, singleValue := range values {
-		value = value + singleValue
+func processValues(values []*float64, sloDefinition keptncommon.SLO, request dynatrace.MetricsClientQueryRequest) TileResult {
+	if len(values) != 1 {
+		return newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), fmt.Sprintf("Expected a single value but retrieved %d", len(values)))
 	}
-	return value / float64(len(values))
+
+	if values[0] == nil {
+		return newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Expected a value but retrieved 'null'")
+	}
+
+	return newSuccessfulTileResult(sloDefinition, *values[0], request.RequestString())
+}
+
+func createSLODefinitionForDimensionMap(baseSLODefinition keptncommon.SLO, dimensionMap map[string]string) keptncommon.SLO {
+	suffix := generateIndicatorSuffix(dimensionMap)
+	return keptncommon.SLO{
+		SLI:         baseSLODefinition.SLI + "_" + cleanIndicatorName(suffix),
+		DisplayName: baseSLODefinition.DisplayName + " (" + suffix + ")",
+		Weight:      baseSLODefinition.Weight,
+		KeySLI:      baseSLODefinition.KeySLI,
+		Pass:        baseSLODefinition.Pass,
+		Warning:     baseSLODefinition.Warning,
+	}
 }
 
 // generateIndicatorSuffix generates an indicator suffix based on all dimensions.
