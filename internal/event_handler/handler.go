@@ -52,15 +52,24 @@ func getEventHandler(ctx context.Context, eventSenderClient keptn.EventSenderCli
 		return NoOpHandler{}, nil
 	}
 
-	log.WithFields(
-		log.Fields{
-			"type":           keptnEvent.GetEvent(),
-			"shKeptnContext": keptnEvent.GetShKeptnContext(),
-			"source":         keptnEvent.GetSource(),
-			"project":        keptnEvent.GetProject(),
-			"stage":          keptnEvent.GetStage(),
-			"service":        keptnEvent.GetService(),
-			"labels":         keptnEvent.GetLabels()}).Debug("Created event adapter")
+	log.WithField(
+		"event", struct {
+			Type           string
+			ShKeptnContext string
+			Source         string
+			Project        string
+			Stage          string
+			Service        string
+			Labels         map[string]string
+		}{
+			Type:           keptnEvent.GetEvent(),
+			ShKeptnContext: keptnEvent.GetShKeptnContext(),
+			Source:         keptnEvent.GetSource(),
+			Project:        keptnEvent.GetProject(),
+			Stage:          keptnEvent.GetStage(),
+			Service:        keptnEvent.GetService(),
+			Labels:         keptnEvent.GetLabels(),
+		}).Debug("Created event adapter")
 
 	if keptnEvent.GetProject() == "" {
 		return nil, errors.New("event has no project")
