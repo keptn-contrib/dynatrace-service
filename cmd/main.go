@@ -42,7 +42,7 @@ func (f *WrappedJSONFormatter) Format(entry *log.Entry) ([]byte, error) {
 	if err != nil {
 		return b, err
 	}
-	return []byte(fmt.Sprintf("%s %s", entry.Time.Format(time.RFC3339), string(b))), nil
+	return []byte(fmt.Sprintf("\n%s", entry.Time.Format(time.RFC3339), string(b))), nil
 }
 
 type dynatraceService struct {
@@ -52,6 +52,7 @@ type dynatraceService struct {
 func main() {
 	log.SetFormatter(&WrappedJSONFormatter{jsonFormatter: log.JSONFormatter{}})
 	log.SetLevel(env.GetLogLevel())
+
 	os.Exit(_main())
 }
 
