@@ -3,8 +3,7 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"strings"
+	"net/url"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -52,7 +51,9 @@ func (q *MetricsClientQueryRequest) RequestString() string {
 	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
 	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
 	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
-	queryParameters.add(resolutionKey, q.query.GetResolution())
+	if q.query.GetResolution() != "" {
+		queryParameters.add(resolutionKey, q.query.GetResolution())
+	}
 	if q.query.GetEntitySelector() != "" {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
 	}
@@ -63,6 +64,8 @@ func (q *MetricsClientQueryRequest) RequestString() string {
 
 	return MetricsQueryPath + "?" + queryParameters.encode()
 }
+
+const AggregationTypeValue = "value"
 
 // MetricDefinition defines the output of /metrics/<metricID>
 type MetricDefinition struct {
@@ -75,8 +78,9 @@ type MetricDefinition struct {
 	DefaultAggregation struct {
 		Type string `json:"type"`
 	} `json:"defaultAggregation"`
-	DimensionDefinitions []DimensionDefinition `json:"dimensionDefinitions"`
-	EntityType           []string              `json:"entityType"`
+	DimensionDefinitions   []DimensionDefinition `json:"dimensionDefinitions"`
+	EntityType             []string              `json:"entityType"`
+	ResolutionInfSupported bool                  `json:"resolutionInfSupported"`
 }
 
 type DimensionDefinition struct {
@@ -104,35 +108,13 @@ type MetricSeries struct {
 	Values       []*float64        `json:"values"`
 }
 
-// MetricsQueryFailedError represents an error for a metrics query that could not be retrieved because of an error.
-type MetricsQueryFailedError struct {
-	cause error
+// MetricsClientInterface defines functions for interacting with Dynatrace Metrics V2 endpoints.
+type MetricsClientInterface interface {
+	GetMetricDefinitionByID(ctx context.Context, metricID string) (*MetricDefinition, error)
+	GetMetricDataByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricData, error)
 }
 
-// Error returns a string representation of this error.
-func (e *MetricsQueryFailedError) Error() string {
-	return fmt.Sprintf("error querying Metrics API v2: %v", e.cause)
-}
-
-// Unwrap returns the cause of the MetricsQueryFailedError.
-func (e *MetricsQueryFailedError) Unwrap() error {
-	return e.cause
-}
-
-type MetricsQueryProcessingError struct {
-	Message  string
-	Warnings []string
-}
-
-// Error returns a string representation of this error.
-func (e *MetricsQueryProcessingError) Error() string {
-	if len(e.Warnings) > 0 {
-		return fmt.Sprintf("%s. Warnings: %s", e.Message, strings.Join(e.Warnings, ", "))
-	}
-	return e.Message
-}
-
-// MetricsClient is a client for interacting with the Dynatrace problems endpoints
+// MetricsClient is a client for interacting with Dynatrace Metrics V2 endpoints.
 type MetricsClient struct {
 	client ClientInterface
 }
@@ -146,7 +128,7 @@ func NewMetricsClient(client ClientInterface) *MetricsClient {
 
 // GetMetricDefinitionByID calls the Dynatrace API to retrieve MetricDefinition details.
 func (mc *MetricsClient) GetMetricDefinitionByID(ctx context.Context, metricID string) (*MetricDefinition, error) {
-	body, err := mc.client.Get(ctx, MetricsPath+"/"+metricID)
+	body, err := mc.client.Get(ctx, MetricsPath+"/"+url.PathEscape(metricID))
 	if err != nil {
 		return nil, err
 	}
@@ -160,30 +142,8 @@ func (mc *MetricsClient) GetMetricDefinitionByID(ctx context.Context, metricID s
 	return &result, nil
 }
 
-// GetSingleMetricSeriesCollectionByQuery executes the request, validates and returns a single metric series collection with at least one metric series or an error.
-func (mc *MetricsClient) GetSingleMetricSeriesCollectionByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricSeriesCollection, error) {
-	metricData, err := mc.getMetricDataByQuery(ctx, request)
-	if err != nil {
-		return nil, &MetricsQueryFailedError{cause: err}
-	}
-
-	if len(metricData.Result) == 0 {
-		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero metric series collections"}
-	}
-
-	if len(metricData.Result) > 1 {
-		return nil, &MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d metric series collections", len(metricData.Result))}
-	}
-
-	metricSeriesCollection := metricData.Result[0]
-	if len(metricSeriesCollection.Data) == 0 {
-		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero metric series", Warnings: metricSeriesCollection.Warnings}
-	}
-
-	return &metricSeriesCollection, nil
-}
-
-func (mc *MetricsClient) getMetricDataByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricData, error) {
+// GetMetricDataByQuery gets MetricData by query or returns an error.
+func (mc *MetricsClient) GetMetricDataByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricData, error) {
 	err := NewTimeframeDelay(request.timeframe, MetricsRequiredDelay, MetricsMaximumWait).Wait(ctx)
 	if err != nil {
 		return nil, err

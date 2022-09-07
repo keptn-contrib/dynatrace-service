@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
@@ -160,8 +161,8 @@ func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
 	defer teardown()
 
 	const testDataFolder = "./testdata/test_synchronize_services_add_new/"
-	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", testDataFolder+"entities_response1.json")
-	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", testDataFolder+"entities_response2.json")
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", filepath.Join(testDataFolder, "entities_response1.json"))
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", filepath.Join(testDataFolder, "entities_response2.json"))
 
 	s := &ServiceSynchronizer{
 		servicesClient:        mockServicesClient,
@@ -307,8 +308,8 @@ func Test_ServiceSynchronizer_synchronizeServices_skipExisting(t *testing.T) {
 	defer teardown()
 
 	const testDataFolder = "./testdata/test_synchronize_services_add_new/"
-	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", testDataFolder+"entities_response1.json")
-	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", testDataFolder+"entities_response2.json")
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", filepath.Join(testDataFolder, "entities_response1.json"))
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", filepath.Join(testDataFolder, "entities_response2.json"))
 
 	s := &ServiceSynchronizer{
 		servicesClient:        mockServicesClient,

@@ -1,6 +1,0 @@
-{
-    "error": {
-        "code": 400,
-        "message": "Querying the metric `builtin:security.securityProblem.open.managementZone` is only supported for resolutions other than `Inf`."
-    }
-}

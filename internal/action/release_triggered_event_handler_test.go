@@ -1,10 +1,12 @@
 package action
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"net/http"
 	"testing"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
 type releaseTriggeredTestSetup struct {
@@ -19,19 +21,19 @@ type releaseTriggeredTestSetup struct {
 func (s releaseTriggeredTestSetup) createHandlerAndTeardown() (eventHandler, func()) {
 	event := releaseTriggeredEventData{
 		baseEventData: baseEventData{
-			context: "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
+			context: testKeptnShContext,
 			source:  "jmeter-service",
 			event:   "sh.keptn.event.test.finished",
-			project: "pod-tato-head",
-			stage:   "hardening",
-			service: "helloservice",
+			project: testProject,
+			stage:   testStage,
+			service: testService,
 			labels:  s.labels,
 		},
 	}
 
 	client, _, teardown := createDynatraceClient(s.t, s.handler)
 
-	return NewReleaseTriggeredEventHandler(&event, client, s.eClient, s.customAttachRules), teardown
+	return NewReleaseTriggeredEventHandler(&event, client, s.eClient, keptn.NewBridgeURLCreator(newKeptnCredentialsProviderMock()), s.customAttachRules), teardown
 }
 
 func (s releaseTriggeredTestSetup) createExpectedDynatraceEvent() dynatrace.InfoEvent {
@@ -39,10 +41,11 @@ func (s releaseTriggeredTestSetup) createExpectedDynatraceEvent() dynatrace.Info
 	properties := customProperties{
 		"Image":         s.eClient.imageAndTag.Image(),
 		"Keptn Service": "jmeter-service",
-		"KeptnContext":  "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
-		"Project":       "pod-tato-head",
-		"Service":       "helloservice",
-		"Stage":         "hardening",
+		"KeptnContext":  testKeptnShContext,
+		"Keptns Bridge": testKeptnsBridge,
+		"Project":       testProject,
+		"Service":       testService,
+		"Stage":         testStage,
 		"Tag":           tag,
 		"TestStrategy":  "",
 	}

@@ -74,14 +74,13 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	managementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
-	tileResults := p.processMetricExpressions(ctx, sloDefinition, tile.MetricExpressions, managementZoneFilter)
-
-	// check for mismatch between number of results and visual config type
-	if tileHasSingleValueVisualization(tile) && len(tileResults) > 1 {
-		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, tileResults[0].sliResult.Query, fmt.Sprintf("Data Explorer tile is configured for single value but query produced %d results", len(tileResults)))}
+	query, err := p.createMetricsQueryForMetricExpressions(tile.MetricExpressions, managementZoneFilter)
+	if err != nil {
+		log.WithError(err).Warn("generateMetricQueryFromMetricExpressions returned an error, SLI will not be used")
+		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metrics query: "+err.Error())}
 	}
 
-	return tileResults
+	return p.createMetricsQueryProcessingForTile(tile).Process(ctx, sloDefinition, *query, p.timeframe)
 }
 
 func validateDataExplorerTile(tile *dynatrace.Tile) error {
@@ -111,38 +110,31 @@ func validateDataExplorerVisualConfigurationRule(rule dynatrace.VisualConfigRule
 	return nil
 }
 
-func tileHasSingleValueVisualization(tile *dynatrace.Tile) bool {
+func (p *DataExplorerTileProcessing) createMetricsQueryProcessingForTile(tile *dynatrace.Tile) *MetricsQueryProcessing {
 	if tile.VisualConfig == nil {
-		return false
+		return NewMetricsQueryProcessing(p.client)
 	}
 
 	if tile.VisualConfig.Type == dynatrace.SingleValueVisualConfigType {
-		return true
+		return NewMetricsQueryProcessingThatAllowsOnlyOneResult(p.client)
 	}
 
-	return false
+	return NewMetricsQueryProcessing(p.client)
 }
 
-func (p *DataExplorerTileProcessing) processMetricExpressions(ctx context.Context, sloDefinition keptnapi.SLO, metricExpressions []string, managementZoneFilter *ManagementZoneFilter) []TileResult {
+func (p *DataExplorerTileProcessing) createMetricsQueryForMetricExpressions(metricExpressions []string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
 	if len(metricExpressions) == 0 {
-		log.Warn("processMetricExpressions found no metric expressions, SLI will not be used")
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile has no metric expressions")}
+		return nil, errors.New("Data Explorer tile has no metric expressions")
 	}
 
 	if len(metricExpressions) > 2 {
 		log.WithField("metricExpressions", metricExpressions).Warn("processMetricExpressions found more than 2 metric expressions")
 	}
 
-	metricsQuery, err := p.generateMetricQueryFromMetricExpression(ctx, sloDefinition, metricExpressions[0], managementZoneFilter)
-	if err != nil {
-		log.WithError(err).Warn("processMetricExpressions returned an error, SLI will not be used")
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())}
-	}
-
-	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
+	return p.createMetricsQueryForMetricExpression(metricExpressions[0], managementZoneFilter)
 }
 
-func (p *DataExplorerTileProcessing) generateMetricQueryFromMetricExpression(ctx context.Context, sloDefinition keptnapi.SLO, metricExpression string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
+func (p *DataExplorerTileProcessing) createMetricsQueryForMetricExpression(metricExpression string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
 	pieces := strings.SplitN(metricExpression, "&", 2)
 	if len(pieces) != 2 {
 		return nil, fmt.Errorf("metric expression does not contain two components: %s", metricExpression)
@@ -154,13 +146,10 @@ func (p *DataExplorerTileProcessing) generateMetricQueryFromMetricExpression(ctx
 		return nil, fmt.Errorf("could not parse resolution metric expression component: %w", err)
 	}
 
-	if resolution != metrics.ResolutionInf {
-		return nil, fmt.Errorf("resolution must be set to 'Auto' rather than '%s'", resolution)
-	}
-
-	return metrics.NewQueryWithResolutionAndMZSelector(pieces[1], "", resolution, managementZoneFilter.ForMZSelector())
+	return metrics.NewQuery(pieces[1], "", resolution, managementZoneFilter.ForMZSelector())
 }
 
+// parseResolutionKeyValuePair parses the resolution key value pair, returning resolution or error. In the case that no resolution is set in UI, i.e. resolution=null, an empty string is returned.
 func parseResolutionKeyValuePair(keyValuePair string) (string, error) {
 	const resolutionPrefix = "resolution="
 	if !strings.HasPrefix(keyValuePair, resolutionPrefix) {
@@ -173,7 +162,7 @@ func parseResolutionKeyValuePair(keyValuePair string) (string, error) {
 	}
 
 	if resolution == "null" {
-		return metrics.ResolutionInf, nil
+		return "", nil
 	}
 
 	return resolution, nil

@@ -1,0 +1,24 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "10m",
+    "result": [
+        {
+            "metricId": "(builtin:pgi.availability:splitBy()):fold",
+            "dataPointCountRatio": 0.3896208,
+            "dimensionCountRatio": 0.27057,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        97.46884534911891
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -9,19 +9,21 @@ import (
 
 // TestTriggeredEventHandler handles a test triggered event.
 type TestTriggeredEventHandler struct {
-	event       TestTriggeredAdapterInterface
-	dtClient    dynatrace.ClientInterface
-	eClient     keptn.EventClientInterface
-	attachRules *dynatrace.AttachRules
+	event            TestTriggeredAdapterInterface
+	dtClient         dynatrace.ClientInterface
+	eClient          keptn.EventClientInterface
+	bridgeURLCreator keptn.BridgeURLCreatorInterface
+	attachRules      *dynatrace.AttachRules
 }
 
 // NewTestTriggeredEventHandler creates a new TestTriggeredEventHandler.
-func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *TestTriggeredEventHandler {
+func NewTestTriggeredEventHandler(event TestTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, bridgeURLCreator keptn.BridgeURLCreatorInterface, attachRules *dynatrace.AttachRules) *TestTriggeredEventHandler {
 	return &TestTriggeredEventHandler{
-		event:       event,
-		dtClient:    dtClient,
-		eClient:     eClient,
-		attachRules: attachRules,
+		event:            event,
+		dtClient:         dtClient,
+		eClient:          eClient,
+		bridgeURLCreator: bridgeURLCreator,
+		attachRules:      attachRules,
 	}
 }
 
@@ -35,7 +37,7 @@ func (eh *TestTriggeredEventHandler) HandleEvent(workCtx context.Context, _ cont
 		Source:                eventSource,
 		AnnotationType:        getValueFromLabels(eh.event, "type", "Start Tests: "+eh.event.GetTestStrategy()),
 		AnnotationDescription: getValueFromLabels(eh.event, "description", "Start running tests: "+eh.event.GetTestStrategy()+" against "+eh.event.GetService()),
-		CustomProperties:      newCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		CustomProperties:      newCustomProperties(eh.event, imageAndTag, eh.bridgeURLCreator.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:           attachRules,
 	}
 

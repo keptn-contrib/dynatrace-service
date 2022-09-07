@@ -1,0 +1,24 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "30m",
+    "result": [
+        {
+            "metricId": "(builtin:service.response.time:splitBy()):fold",
+            "dataPointCountRatio": 0.023208,
+            "dimensionCountRatio": 0.04835,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        54896.504858650806
+                    ]
+                }
+            ]
+        }
+    ]
+}

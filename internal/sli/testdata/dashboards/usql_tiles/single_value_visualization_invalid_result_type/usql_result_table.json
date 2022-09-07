@@ -1,11 +1,11 @@
 {
-  "extrapolationLevel": 1,
-  "columnNames": [
-    "city"
-  ],
-  "values": [
-    [
-      "Beijing"
+    "extrapolationLevel": 16,
+    "columnNames": [
+        "city"
+    ],
+    "values": [
+        [
+            "null"
+        ]
     ]
-  ]
 }

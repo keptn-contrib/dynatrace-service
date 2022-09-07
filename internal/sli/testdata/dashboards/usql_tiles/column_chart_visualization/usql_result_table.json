@@ -1,29 +1,29 @@
 {
-    "extrapolationLevel": 1,
+    "extrapolationLevel": 16,
     "columnNames": [
-      "browserFamily",
-      "avg(useraction.visuallyCompleteTime)",
-      "avg(useraction.domCompleteTime)",
-      "avg(totalErrorCount)"
+        "browserFamily",
+        "avg(useraction.visuallyCompleteTime)",
+        "avg(useraction.domCompleteTime)",
+        "avg(totalErrorCount)"
     ],
     "values": [
-      [
-        "null",
-        492.6603364080304,
-        639.26875,
-        2.019440364014188
-      ],
-      [
-        "AOL Explorer",
-        500.2868314283638,
-        641.2485086150393,
-        0.2907746958986688
-      ],
-      [
-        "Acoo Browser",
-        500.5150319856381,
-        642.5968903557023,
-        0.2929327415500171
-      ]
+        [
+            "AOL Explorer",
+            1428.282447519664,
+            2195.868114759317,
+            1.5701858827968953
+        ],
+        [
+            "null",
+            1402.0759668508288,
+            2186.5623273480664,
+            2.0711094885665924
+        ],
+        [
+            "Acoo Browser",
+            1427.2675735742882,
+            2197.0254990998737,
+            1.5918448653657946
+        ]
     ]
-  }
+}

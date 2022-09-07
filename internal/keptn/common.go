@@ -1,46 +1,11 @@
 package keptn
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
-	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 
 	api "github.com/keptn/go-utils/pkg/api/utils"
 	v2 "github.com/keptn/go-utils/pkg/api/utils/v2"
 )
-
-// TryGetBridgeURLForKeptnContext gets a backlink to the Keptn Bridge if available or returns empty string.
-func TryGetBridgeURLForKeptnContext(ctx context.Context, event adapter.EventContentAdapter) string {
-	keptnBridgeURL := tryGetBridgeURL(ctx)
-	if keptnBridgeURL == "" {
-		return ""
-	}
-
-	return keptnBridgeURL + "/trace/" + event.GetShKeptnContext()
-}
-
-// tryGetBridgeURL gets the Keptn Bridge URL if available or returns empty string.
-func tryGetBridgeURL(ctx context.Context) string {
-	creds, err := credentials.GetKeptnCredentials(ctx)
-	if err != nil {
-		return ""
-	}
-
-	return creds.GetBridgeURL()
-}
-
-// TryGetBridgeURLForEvaluation gets a backlink to the evaluation in Keptn Bridge if available or returns empty string.
-func TryGetBridgeURLForEvaluation(ctx context.Context, event adapter.EventContentAdapter) string {
-	keptnBridgeURL := tryGetBridgeURL(ctx)
-	if keptnBridgeURL == "" {
-		return ""
-	}
-
-	return fmt.Sprintf("%s/evaluation/%s/%s", keptnBridgeURL, event.GetShKeptnContext(), event.GetStage())
-}
 
 // GetV1InClusterAPIMappings returns the InClusterAPIMappings.
 func GetV1InClusterAPIMappings() api.InClusterAPIMappings {

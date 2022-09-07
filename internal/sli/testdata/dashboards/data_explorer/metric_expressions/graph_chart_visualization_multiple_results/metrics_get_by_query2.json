@@ -1,0 +1,174 @@
+{
+    "totalCount": 10,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names",
+            "dataPointCountRatio": 2.4155E-4,
+            "dimensionCountRatio": 0.04831,
+            "data": [
+                {
+                    "dimensions": [
+                        "narf dynatrace-saas:1.246.9999.90000101-000000",
+                        "SERVICE-30B0C2B894843ABA"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "narf dynatrace-saas:1.246.9999.90000101-000000",
+                        "dt.entity.service": "SERVICE-30B0C2B894843ABA"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        1.1743294266666667E8
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "narf EVALUATION",
+                        "SERVICE-0011C75C0CFCACA3"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "narf EVALUATION",
+                        "dt.entity.service": "SERVICE-0011C75C0CFCACA3"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        2.468577514285714E7
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "volatile Span",
+                        "SERVICE-0A57009E62BF52D3"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "volatile Span",
+                        "dt.entity.service": "SERVICE-0A57009E62BF52D3"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        9603724.393200295
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "Service port: 8080",
+                        "SERVICE-622430BEB6B7AD57"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "Service port: 8080",
+                        "dt.entity.service": "SERVICE-622430BEB6B7AD57"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        5012392
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "Requests executed in background threads of LAMBDA_1-IG-1",
+                        "SERVICE-A55819CF461C12BB"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "Requests executed in background threads of LAMBDA_1-IG-1",
+                        "dt.entity.service": "SERVICE-A55819CF461C12BB"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        4899999.862939175
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "Service port: 443",
+                        "SERVICE-EDCCF8180A520736"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "Service port: 443",
+                        "dt.entity.service": "SERVICE-EDCCF8180A520736"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        4899999.862939175
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "Service port: 8810",
+                        "SERVICE-608C9FF4EC34F5EC"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "Service port: 8810",
+                        "dt.entity.service": "SERVICE-608C9FF4EC34F5EC"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        2675495.4583333335
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "Service port: 443",
+                        "SERVICE-EF55DC20A636FC34"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "Service port: 443",
+                        "dt.entity.service": "SERVICE-EF55DC20A636FC34"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        2662613
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "/services/AuthenticationService.AuthenticationServiceHttpSoap12Endpoint on dynatrace-dev-BB:8091 (opaque)",
+                        "SERVICE-7A96961077A1AED2"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "/services/AuthenticationService.AuthenticationServiceHttpSoap12Endpoint on dynatrace-dev-BB:8091 (opaque)",
+                        "dt.entity.service": "SERVICE-7A96961077A1AED2"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        2038121
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "Service port: 443",
+                        "SERVICE-8D96B52849A3E3FC"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "Service port: 443",
+                        "dt.entity.service": "SERVICE-8D96B52849A3E3FC"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        1599031.3548387096
+                    ]
+                }
+            ]
+        }
+    ]
+}

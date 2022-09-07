@@ -1,0 +1,46 @@
+{
+    "metricId": "builtin:host.cpu.usage:splitBy():avg:names",
+    "displayName": "CPU usage %",
+    "description": "Percentage of CPU time currently utilized.",
+    "unit": "Percent",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1665490433574,
+    "entityType": [
+        "HOST"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "value"
+    ],
+    "transformations": [
+        "fold",
+        "limit",
+        "timeshift",
+        "rate",
+        "sort",
+        "last",
+        "splitBy",
+        "default",
+        "delta",
+        "lastReal",
+        "smooth",
+        "rollup",
+        "partition",
+        "toUnit",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "value"
+    },
+    "dimensionDefinitions": [],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true,
+    "warnings": [
+        "The field dimensionCardinalities is only supported for untransformed single metric keys and was ignored."
+    ]
+}

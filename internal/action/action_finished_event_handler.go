@@ -12,19 +12,21 @@ import (
 )
 
 type ActionFinishedEventHandler struct {
-	event       ActionFinishedAdapterInterface
-	dtClient    dynatrace.ClientInterface
-	eClient     keptn.EventClientInterface
-	attachRules *dynatrace.AttachRules
+	event            ActionFinishedAdapterInterface
+	dtClient         dynatrace.ClientInterface
+	eClient          keptn.EventClientInterface
+	bridgeURLCreator keptn.BridgeURLCreatorInterface
+	attachRules      *dynatrace.AttachRules
 }
 
 // NewActionFinishedEventHandler creates a new ActionFinishedEventHandler
-func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *ActionFinishedEventHandler {
+func NewActionFinishedEventHandler(event ActionFinishedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, bridgeURLCreator keptn.BridgeURLCreatorInterface, attachRules *dynatrace.AttachRules) *ActionFinishedEventHandler {
 	return &ActionFinishedEventHandler{
-		event:       event,
-		dtClient:    dtClient,
-		eClient:     eClient,
-		attachRules: attachRules,
+		event:            event,
+		dtClient:         dtClient,
+		eClient:          eClient,
+		bridgeURLCreator: bridgeURLCreator,
+		attachRules:      attachRules,
 	}
 }
 
@@ -37,7 +39,7 @@ func (eh *ActionFinishedEventHandler) HandleEvent(workCtx context.Context, _ con
 		return err
 	}
 
-	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
+	bridgeURL := eh.bridgeURLCreator.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
 
 	comment := fmt.Sprintf("[Keptn finished execution](%s) of action by: %s\nResult: %s\nStatus: %s",
 		bridgeURL,

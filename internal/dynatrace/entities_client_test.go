@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -165,7 +166,7 @@ func TestEntitiesClient_GetAllPGIsForKeptnServices(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact(url, testdataFolder+tt.fileName)
+			handler.AddExact(url, filepath.Join(testdataFolder, tt.fileName))
 
 			client, teardown := createEventsClient(t, handler)
 			defer teardown()

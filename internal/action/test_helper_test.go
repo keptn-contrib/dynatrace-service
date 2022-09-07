@@ -15,6 +15,18 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
+const testKeptnAPIURL = "https://test.url/api"
+const testKeptnAPIToken = "abcdef123456"
+const testKeptnBridgeURL = "https://test.url/bridge"
+
+const testKeptnShContext = "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9"
+const testProject = "pod-tato-head"
+const testService = "helloservice"
+const testStage = "hardening"
+
+const testKeptnsBridge = testKeptnBridgeURL + "/trace/" + testKeptnShContext
+const testEvaluationHeatmapURL = testKeptnBridgeURL + "/evaluation/" + testKeptnShContext + "/" + testStage
+
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
 const testdataFolder = "./testdata/attach_rules/"
@@ -36,17 +48,17 @@ func getDefaultAttachRules() dynatrace.AttachRules {
 					{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_project",
-						Value:   "pod-tato-head",
+						Value:   testProject,
 					},
 					{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_stage",
-						Value:   "hardening",
+						Value:   testStage,
 					},
 					{
 						Context: "CONTEXTLESS",
 						Key:     "keptn_service",
-						Value:   "helloservice",
+						Value:   testService,
 					},
 				},
 			},
@@ -235,4 +247,15 @@ func (e *baseEventData) GetDeploymentStrategy() string {
 
 func (e *baseEventData) GetLabels() map[string]string {
 	return e.labels
+}
+
+type KeptnCredentialsProviderMock struct{}
+
+func newKeptnCredentialsProviderMock() *KeptnCredentialsProviderMock {
+	return &KeptnCredentialsProviderMock{}
+}
+
+// GetKeptnCredentials gets Keptn credentials or returns an error.
+func (_ *KeptnCredentialsProviderMock) GetKeptnCredentials(ctx context.Context) (*credentials.KeptnCredentials, error) {
+	return credentials.NewKeptnCredentials(testKeptnAPIURL, testKeptnAPIToken, testKeptnBridgeURL)
 }

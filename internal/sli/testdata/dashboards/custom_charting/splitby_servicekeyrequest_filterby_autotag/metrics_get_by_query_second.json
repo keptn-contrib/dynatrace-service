@@ -1,0 +1,46 @@
+{
+    "totalCount": 2,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names",
+            "dataPointCountRatio": 1.0E-7,
+            "dimensionCountRatio": 2.0E-5,
+            "data": [
+                {
+                    "dimensions": [
+                        "logUpload",
+                        "SERVICE_METHOD-968FE23B21B6064A"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service_method": "SERVICE_METHOD-968FE23B21B6064A",
+                        "dt.entity.service_method.name": "logUpload"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        2087.646963562753
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "doAllImportantWork10",
+                        "SERVICE_METHOD-93434991D607805F"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service_method": "SERVICE_METHOD-93434991D607805F",
+                        "dt.entity.service_method.name": "doAllImportantWork10"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        34999.99917777245
+                    ]
+                }
+            ]
+        }
+    ]
+}

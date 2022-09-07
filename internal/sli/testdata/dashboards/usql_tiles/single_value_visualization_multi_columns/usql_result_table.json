@@ -1,13 +1,21 @@
 {
-  "extrapolationLevel": 1,
-  "columnNames": [
-    "city",
-    "avg(duration)"
-  ],
-  "values": [
-    [
-      "Ashburn",
-      53567.040172786175
+    "extrapolationLevel": 16,
+    "columnNames": [
+        "city",
+        "avg(duration)"
+    ],
+    "values": [
+        [
+            "null",
+            85673.22361214698
+        ],
+        [
+            "Ashburn",
+            73031.44078516903
+        ],
+        [
+            "London",
+            88003.95643322475
+        ]
     ]
-  ]
 }

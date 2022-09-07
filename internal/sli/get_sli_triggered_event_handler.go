@@ -26,15 +26,15 @@ type GetSLIEventHandler struct {
 	event             GetSLITriggeredAdapterInterface
 	dtClient          dynatrace.ClientInterface
 	eventSenderClient keptn.EventSenderClientInterface
-	resourceClient    resourceClientInterface
+	configClient      configClientInterface
 
 	secretName string
 	dashboard  string
 }
 
-// resourceClientInterface is a resource client for processing sh.keptn.event.get-sli.triggered events.
+// configClientInterface is a subset of a keptn.ConfigClientInterface for processing sh.keptn.event.get-sli.triggered events.
 // It can read SLIs and read and write SLOs.
-type resourceClientInterface interface {
+type configClientInterface interface {
 
 	// GetSLIs gets the SLIs stored for the specified project, stage and service.
 	GetSLIs(ctx context.Context, project string, stage string, service string) (map[string]string, error)
@@ -46,12 +46,12 @@ type resourceClientInterface interface {
 	UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptncommon.ServiceLevelObjectives) error
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, resourceClient resourceClientInterface, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, secretName string, dashboard string) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:             event,
 		dtClient:          dtClient,
 		eventSenderClient: eventSenderClient,
-		resourceClient:    resourceClient,
+		configClient:      configClient,
 		secretName:        secretName,
 		dashboard:         dashboard,
 	}
@@ -140,7 +140,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 
 	// let's write the SLO to the config repo
 	if queryResult.HasSLOs() {
-		err = eh.resourceClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLOs())
+		err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLOs())
 		if err != nil {
 			return nil, nil, dashboard.NewUploadFileError("SLO", err)
 		}
@@ -154,7 +154,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context
 		return nil, errors.New("no SLIs were requested")
 	}
 
-	slis, err := eh.resourceClient.GetSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+	slis, err := eh.configClient.GetSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
 		log.WithError(err).Error("could not retrieve custom SLI definitions")
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
@@ -219,7 +219,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Contex
 func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO) error {
 
 	// first - lets load the SLO.yaml from the config repo
-	dashboardSLO, err := eh.resourceClient.GetSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+	dashboardSLO, err := eh.configClient.GetSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
 		var rnfErr *keptn.ResourceNotFoundError
 		if !errors.As(err, &rnfErr) {
@@ -249,7 +249,7 @@ func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO
 
 	// now - lets add our newSLO to the list
 	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
-	err = eh.resourceClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
+	err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
 	if err != nil {
 		return err
 	}

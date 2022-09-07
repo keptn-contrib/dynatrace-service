@@ -1,0 +1,8 @@
+{
+    "extrapolationLevel": 16,
+    "columnNames": [
+        "osVersion",
+        "avg(duration)"
+    ],
+    "values": []
+}

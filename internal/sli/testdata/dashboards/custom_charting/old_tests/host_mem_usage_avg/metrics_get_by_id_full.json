@@ -1,0 +1,48 @@
+{
+    "metricId": "builtin:host.mem.usage:splitBy():avg:names",
+    "displayName": "Memory used %",
+    "description": "Percentage of memory currently used. Note: Calculated by taking 100% - \"Memory available %\".",
+    "unit": "Percent",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1665490440715,
+    "entityType": [
+        "HOST"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "value"
+    ],
+    "transformations": [
+        "fold",
+        "limit",
+        "timeshift",
+        "rate",
+        "sort",
+        "last",
+        "splitBy",
+        "default",
+        "delta",
+        "lastReal",
+        "smooth",
+        "rollup",
+        "partition",
+        "toUnit",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "value"
+    },
+    "dimensionDefinitions": [],
+    "tags": [],
+    "metricValueType": {
+        "type": "error"
+    },
+    "minimumValue": 0.0,
+    "maximumValue": 100.0,
+    "scalar": false,
+    "resolutionInfSupported": true,
+    "warnings": [
+        "The field dimensionCardinalities is only supported for untransformed single metric keys and was ignored."
+    ]
+}

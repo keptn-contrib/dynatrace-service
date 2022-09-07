@@ -5,6 +5,7 @@ import (
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
@@ -26,18 +27,20 @@ type configResult struct {
 }
 
 type configuration struct {
-	dtClient          dynatrace.ClientInterface
-	eventSenderClient keptn.EventSenderClientInterface
-	sliAndSLOReader   keptn.SLIAndSLOReaderInterface
-	serviceClient     keptn.ServiceClientInterface
+	dtClient                 dynatrace.ClientInterface
+	eventSenderClient        keptn.EventSenderClientInterface
+	serviceClient            keptn.ServiceClientInterface
+	keptnCredentialsProvider credentials.KeptnCredentialsProvider
+	sliAndSLOReader          keptn.SLIAndSLOReaderInterface
 }
 
-func newConfiguration(dynatraceClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface) *configuration {
+func newConfiguration(dynatraceClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, serviceClient keptn.ServiceClientInterface, keptnCredentialsProvider credentials.KeptnCredentialsProvider, sliAndSLOReader keptn.SLIAndSLOReaderInterface) *configuration {
 	return &configuration{
-		dtClient:          dynatraceClient,
-		eventSenderClient: eventSenderClient,
-		sliAndSLOReader:   sliAndSLOReader,
-		serviceClient:     serviceClient,
+		dtClient:                 dynatraceClient,
+		eventSenderClient:        eventSenderClient,
+		serviceClient:            serviceClient,
+		keptnCredentialsProvider: keptnCredentialsProvider,
+		sliAndSLOReader:          sliAndSLOReader,
 	}
 }
 
@@ -51,7 +54,7 @@ func (mc *configuration) configureMonitoring(ctx context.Context, project string
 	}
 
 	if env.IsProblemNotificationsGenerationEnabled() {
-		configuredEntities.ProblemNotifications = newProblemNotificationCreation(mc.dtClient).create(ctx, project)
+		configuredEntities.ProblemNotifications = newProblemNotificationCreation(mc.dtClient, mc.keptnCredentialsProvider).create(ctx, project)
 	}
 
 	if env.IsManagementZonesGenerationEnabled() {

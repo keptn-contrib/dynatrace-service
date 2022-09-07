@@ -1,0 +1,54 @@
+{
+    "metricId": "builtin:service.response.time",
+    "displayName": "Response time",
+    "description": "",
+    "unit": "MicroSecond",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1665490313574,
+    "entityType": [
+        "SERVICE"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "avg",
+        "count",
+        "max",
+        "median",
+        "min",
+        "percentile",
+        "sum"
+    ],
+    "transformations": [
+        "filter",
+        "fold",
+        "limit",
+        "merge",
+        "names",
+        "parents",
+        "timeshift",
+        "sort",
+        "last",
+        "splitBy",
+        "lastReal",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "avg"
+    },
+    "dimensionDefinitions": [
+        {
+            "key": "dt.entity.service",
+            "name": "Service",
+            "displayName": "Service",
+            "index": 0,
+            "type": "ENTITY"
+        }
+    ],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true
+}

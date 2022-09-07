@@ -83,7 +83,7 @@ func getEventHandler(ctx context.Context, eventSenderClient keptn.EventSenderCli
 
 	dynatraceCredentialsProvider, err := credentials.NewDefaultDynatraceK8sSecretReader()
 	if err != nil {
-		return nil, fmt.Errorf("could not create Kubernetes secret reader: %w", err)
+		return nil, fmt.Errorf("could not create Dynatrace credentials reader: %w", err)
 	}
 
 	dynatraceCredentials, err := dynatraceCredentialsProvider.GetDynatraceCredentials(ctx, dynatraceConfig.DtCreds)
@@ -93,29 +93,34 @@ func getEventHandler(ctx context.Context, eventSenderClient keptn.EventSenderCli
 
 	dtClient := dynatrace.NewClient(dynatraceCredentials)
 
+	keptnCredentialsProvider, err := credentials.NewDefaultKeptnCredentialsReader()
+	if err != nil {
+		return nil, fmt.Errorf("could not create Keptn credentials reader: %w", err)
+	}
+
 	switch aType := keptnEvent.(type) {
 	case *monitoring.ConfigureMonitoringAdapter:
-		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, eventSenderClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), keptn.NewConfigClient(clientFactory.CreateResourceClient()), clientFactory.CreateServiceClient(), keptn.NewDefaultCredentialsChecker()), nil
+		return monitoring.NewConfigureMonitoringEventHandler(keptnEvent.(*monitoring.ConfigureMonitoringAdapter), dtClient, eventSenderClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), keptn.NewConfigClient(clientFactory.CreateResourceClient()), clientFactory.CreateServiceClient(), keptnCredentialsProvider, keptn.NewDefaultCredentialsChecker()), nil
 	case *problem.ProblemAdapter:
 		return problem.NewProblemEventHandler(keptnEvent.(*problem.ProblemAdapter), eventSenderClient), nil
 	case *action.ActionTriggeredAdapter:
-		return action.NewActionTriggeredEventHandler(keptnEvent.(*action.ActionTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+		return action.NewActionTriggeredEventHandler(keptnEvent.(*action.ActionTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	case *action.ActionStartedAdapter:
-		return action.NewActionStartedEventHandler(keptnEvent.(*action.ActionStartedAdapter), dtClient, clientFactory.CreateEventClient()), nil
+		return action.NewActionStartedEventHandler(keptnEvent.(*action.ActionStartedAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider)), nil
 	case *action.ActionFinishedAdapter:
-		return action.NewActionFinishedEventHandler(keptnEvent.(*action.ActionFinishedAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+		return action.NewActionFinishedEventHandler(keptnEvent.(*action.ActionFinishedAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
 		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, eventSenderClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard), nil
 	case *action.DeploymentFinishedAdapter:
-		return action.NewDeploymentFinishedEventHandler(keptnEvent.(*action.DeploymentFinishedAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+		return action.NewDeploymentFinishedEventHandler(keptnEvent.(*action.DeploymentFinishedAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	case *action.TestTriggeredAdapter:
-		return action.NewTestTriggeredEventHandler(keptnEvent.(*action.TestTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+		return action.NewTestTriggeredEventHandler(keptnEvent.(*action.TestTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	case *action.TestFinishedAdapter:
-		return action.NewTestFinishedEventHandler(keptnEvent.(*action.TestFinishedAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+		return action.NewTestFinishedEventHandler(keptnEvent.(*action.TestFinishedAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	case *action.EvaluationFinishedAdapter:
-		return action.NewEvaluationFinishedEventHandler(keptnEvent.(*action.EvaluationFinishedAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+		return action.NewEvaluationFinishedEventHandler(keptnEvent.(*action.EvaluationFinishedAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	case *action.ReleaseTriggeredAdapter:
-		return action.NewReleaseTriggeredEventHandler(keptnEvent.(*action.ReleaseTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), dynatraceConfig.AttachRules), nil
+		return action.NewReleaseTriggeredEventHandler(keptnEvent.(*action.ReleaseTriggeredAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	default:
 		return NewErrorHandler(fmt.Errorf("this should not have happened, we are missing an implementation for: %T", aType), event, eventSenderClient, clientFactory.CreateUniformClient()), nil
 	}

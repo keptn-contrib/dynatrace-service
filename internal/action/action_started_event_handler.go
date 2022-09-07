@@ -10,17 +10,19 @@ import (
 )
 
 type ActionStartedEventHandler struct {
-	event    ActionStartedAdapterInterface
-	dtClient dynatrace.ClientInterface
-	eClient  keptn.EventClientInterface
+	event            ActionStartedAdapterInterface
+	dtClient         dynatrace.ClientInterface
+	eClient          keptn.EventClientInterface
+	bridgeURLCreator keptn.BridgeURLCreatorInterface
 }
 
 // NewActionStartedEventHandler creates a new ActionStartedEventHandler
-func NewActionStartedEventHandler(event ActionStartedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface) *ActionStartedEventHandler {
+func NewActionStartedEventHandler(event ActionStartedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, bridgeURLCreator keptn.BridgeURLCreatorInterface) *ActionStartedEventHandler {
 	return &ActionStartedEventHandler{
-		event:    event,
-		dtClient: dtClient,
-		eClient:  eClient,
+		event:            event,
+		dtClient:         dtClient,
+		eClient:          eClient,
+		bridgeURLCreator: bridgeURLCreator,
 	}
 }
 
@@ -32,7 +34,7 @@ func (eh *ActionStartedEventHandler) HandleEvent(workCtx context.Context, replyC
 		return err
 	}
 
-	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event), eh.event.GetSource())
+	comment := fmt.Sprintf("[Keptn remediation action](%s) started execution by: %s", eh.bridgeURLCreator.TryGetBridgeURLForKeptnContext(workCtx, eh.event), eh.event.GetSource())
 	dynatrace.NewProblemsClient(eh.dtClient).AddProblemComment(workCtx, pid, comment)
 
 	return nil

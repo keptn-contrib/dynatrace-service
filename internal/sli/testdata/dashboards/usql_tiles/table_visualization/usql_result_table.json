@@ -1,23 +1,23 @@
 {
-  "extrapolationLevel": 1,
-  "columnNames": [
-    "continent",
-    "totalErrorCount",
-    "totalLicenseCreditCount",
-    "userActionCount"
-  ],
-  "values": [
-    [
-      "North America",
-      1,
-      0,
-      1
+    "extrapolationLevel": 16,
+    "columnNames": [
+        "continent",
+        "totalErrorCount",
+        "totalLicenseCreditCount",
+        "userActionCount"
     ],
-    [
-      "Europe",
-      0,
-      0,
-      2
+    "values": [
+        [
+            "Asia",
+            0,
+            1,
+            2
+        ],
+        [
+            "North America",
+            1,
+            1,
+            5
+        ]
     ]
-  ]
 }

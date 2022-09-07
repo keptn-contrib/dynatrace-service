@@ -1,0 +1,46 @@
+{
+    "totalCount": 2,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names",
+            "dataPointCountRatio": 1.0E-7,
+            "dimensionCountRatio": 2.0E-5,
+            "data": [
+                {
+                    "dimensions": [
+                        "BookingService",
+                        "SERVICE-F91837027736B19E"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "BookingService",
+                        "dt.entity.service": "SERVICE-F91837027736B19E"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        357668.85193320084
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "/",
+                        "SERVICE-504937D81F10F081"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "/",
+                        "dt.entity.service": "SERVICE-504937D81F10F081"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        645.8395061728395
+                    ]
+                }
+            ]
+        }
+    ]
+}
