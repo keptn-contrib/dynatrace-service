@@ -49,7 +49,6 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "csrt",
 					Weight: 1,
 				},
-				sliName: "csrt",
 			},
 		},
 		{
@@ -69,7 +68,6 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				sliName: "cmu",
 			},
 		},
 		{
@@ -89,7 +87,6 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "hdqc",
 					Weight: 1,
 				},
-				sliName: "hdqc",
 			},
 		},
 
@@ -111,7 +108,6 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				sliName: "cmu",
 			},
 		},
 		{
@@ -131,7 +127,6 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				sliName: "cmu",
 			},
 		},
 		{
@@ -151,7 +146,6 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				sliName: "cmu",
 			},
 		},
 		{
@@ -171,7 +165,6 @@ func TestMetricsQueryProcessing_Process(t *testing.T) {
 					SLI:    "cmu",
 					Weight: 1,
 				},
-				sliName: "cmu",
 			},
 		},
 	}
