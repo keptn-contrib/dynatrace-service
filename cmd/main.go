@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	context2 "github.com/keptn-contrib/dynatrace-service/internal/context"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
@@ -32,11 +33,24 @@ import (
 	"github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
+type WrappedJSONFormatter struct {
+	jsonFormatter log.JSONFormatter
+}
+
+func (f *WrappedJSONFormatter) Format(entry *log.Entry) ([]byte, error) {
+	b, err := f.jsonFormatter.Format(entry)
+	if err != nil {
+		return b, err
+	}
+	return []byte(fmt.Sprintf("%s %s", entry.Time.Format(time.RFC3339), string(b))), nil
+}
+
 type dynatraceService struct {
 	onEvent func(eventSenderClient *keptn.EventSenderClient, event cloudevents.Event)
 }
 
 func main() {
+	log.SetFormatter(&WrappedJSONFormatter{jsonFormatter: log.JSONFormatter{}})
 	log.SetLevel(env.GetLogLevel())
 	os.Exit(_main())
 }
