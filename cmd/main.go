@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
 	context2 "github.com/keptn-contrib/dynatrace-service/internal/context"
 	"github.com/keptn-contrib/dynatrace-service/internal/env"
@@ -42,7 +41,7 @@ func (f *WrappedJSONFormatter) Format(entry *log.Entry) ([]byte, error) {
 	if err != nil {
 		return b, err
 	}
-	return []byte(fmt.Sprintf("\n%s", entry.Time.Format(time.RFC3339), string(b))), nil
+	return []byte(fmt.Sprintf("\n%s", string(b))), nil
 }
 
 type dynatraceService struct {
