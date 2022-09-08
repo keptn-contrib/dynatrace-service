@@ -5,15 +5,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
+
+const nameFieldName = "name"
 
 // NewTriggeredTimeoutContext creates a new Context that is done:
 // a. after a timeout which is triggered after waitCtx is done, or
 // b. if parentCtx is done.
 // It returns the new context and a function that cancels the context.
 func NewTriggeredTimeoutContext(parentCtx context.Context, waitCtx context.Context, timeout time.Duration, name string) (context.Context, func()) {
-	logrus.WithField("name", name).WithField("timeout", timeout).Debug("Creating ThenWithTimeoutContext")
+	log.WithField(nameFieldName, name).WithField("timeout", timeout).Debug("Creating ThenWithTimeoutContext")
 	triggeredTimeoutCtx, innerCancel := context.WithCancel(parentCtx)
 
 	// start a monitoring goroutine to ultimately set triggeredTimeoutContext done state
@@ -32,7 +34,7 @@ func NewTriggeredTimeoutContext(parentCtx context.Context, waitCtx context.Conte
 			return
 		}
 
-		logrus.WithField("name", name).Debug("TriggeredTimeoutContext triggered")
+		log.WithField(nameFieldName, name).Debug("TriggeredTimeoutContext triggered")
 
 		// wait for the timeout or triggeredTimeoutContext
 		select {
@@ -42,12 +44,12 @@ func NewTriggeredTimeoutContext(parentCtx context.Context, waitCtx context.Conte
 			return
 		}
 
-		logrus.WithField("name", name).Debug("TriggeredTimeoutContext timeout")
+		log.WithField(nameFieldName, name).Debug("TriggeredTimeoutContext timeout")
 
 	}()
 
 	cancel := func() {
-		logrus.WithField("name", name).Debug("Cancelling TriggeredTimeoutContext")
+		log.WithField(nameFieldName, name).Debug("Cancelling TriggeredTimeoutContext")
 		innerCancel()
 		waitGroup.Wait()
 	}

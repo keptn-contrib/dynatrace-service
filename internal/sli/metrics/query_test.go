@@ -6,29 +6,39 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewQuery(t *testing.T) {
+func TestNewQueryWithResolutionAndMZSelector(t *testing.T) {
 	type args struct {
 	}
 	tests := []struct {
 		name                   string
 		metricSelector         string
 		entitySelector         string
+		resolution             string
+		mzSelector             string
 		expectedMetricSelector string
 		expectedEntitySelector string
+		expectedResolution     string
+		expectedMZSelector     string
 		expectError            bool
 		expectedErrorMessage   string
 	}{
 		{
-			name:                   "with metric and entity selector",
+			name:                   "with metric and entity selector, resolution and management zone selector",
 			metricSelector:         "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
 			entitySelector:         "type(SERVICE),tag(keptn_managed),tag(keptn_service:my-service)",
+			mzSelector:             "mzId(123,456)",
+			resolution:             "Inf",
 			expectedMetricSelector: "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
 			expectedEntitySelector: "type(SERVICE),tag(keptn_managed),tag(keptn_service:my-service)",
+			expectedResolution:     "Inf",
+			expectedMZSelector:     "mzId(123,456)",
 		},
 		{
-			name:                   "with just metric selector",
+			name:                   "with just metric selector and resolution",
 			metricSelector:         "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			resolution:             "5m",
 			expectedMetricSelector: "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			expectedResolution:     "5m",
 		},
 		// Error cases below:
 		{
@@ -43,10 +53,16 @@ func TestNewQuery(t *testing.T) {
 			expectError:          true,
 			expectedErrorMessage: "metrics query must include a metric selector",
 		},
+		{
+			name:                 "with just entity selector",
+			metricSelector:       "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			expectError:          true,
+			expectedErrorMessage: "metrics query must include a resolution",
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			query, err := NewQuery(tc.metricSelector, tc.entitySelector)
+			query, err := NewQueryWithResolutionAndMZSelector(tc.metricSelector, tc.entitySelector, tc.resolution, tc.mzSelector)
 			if tc.expectError {
 				assert.Nil(t, query)
 				if assert.Error(t, err) {
@@ -57,8 +73,22 @@ func TestNewQuery(t *testing.T) {
 				if assert.NotNil(t, query) {
 					assert.EqualValues(t, tc.expectedMetricSelector, query.GetMetricSelector())
 					assert.EqualValues(t, tc.expectedEntitySelector, query.GetEntitySelector())
+					assert.EqualValues(t, tc.expectedResolution, query.GetResolution())
+					assert.EqualValues(t, tc.expectedMZSelector, query.GetMZSelector())
 				}
 			}
 		})
+	}
+}
+
+func TestNewQuery(t *testing.T) {
+	metricSelector := "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg"
+	query, err := NewQuery(metricSelector, "")
+
+	if assert.NoError(t, err) {
+		assert.EqualValues(t, metricSelector, query.GetMetricSelector())
+		assert.Empty(t, query.GetEntitySelector())
+		assert.EqualValues(t, "Inf", query.GetResolution())
+		assert.Empty(t, query.GetMZSelector())
 	}
 }

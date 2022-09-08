@@ -39,7 +39,6 @@
       "visualConfig": {
         "type": "GRAPH_CHART",
         "global": {
-          "seriesType": "LINE",
           "hideLegend": false
         },
         "rules": [
@@ -70,7 +69,9 @@
             }
           ]
         },
-        "heatmapSettings": {},
+        "heatmapSettings": {
+          "yAxis": "VALUE"
+        },
         "thresholds": [
           {
             "axisTarget": "LEFT",
@@ -94,8 +95,16 @@
         },
         "graphChartSettings": {
           "connectNulls": false
+        },
+        "honeycombSettings": {
+          "showHive": true,
+          "showLegend": true,
+          "showLabels": false
         }
-      }
+      },
+      "metricExpressions": [
+        "resolution=null&(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(5)):limit(100):names"
+      ]
     }
   ]
 }

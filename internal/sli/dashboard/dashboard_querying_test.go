@@ -57,7 +57,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	}
 
 	for _, sliResult := range result.sliResults {
-		assert.True(t, sliResult.Success())
+		assert.True(t, sliResult.Success)
 	}
 }
 

@@ -130,11 +130,11 @@ func convertIndicatorValues(indicatorValues []result.SLIResult) []sliResult {
 	for _, indicator := range indicatorValues {
 		convertedIndicatorValues = append(convertedIndicatorValues,
 			sliResult{
-				Metric:  indicator.Metric(),
-				Value:   indicator.Value(),
-				Success: indicator.Success(),
-				Message: indicator.Message(),
-				Query:   indicator.Query()})
+				Metric:  indicator.Metric,
+				Value:   indicator.Value,
+				Success: indicator.Success,
+				Message: indicator.Message,
+				Query:   indicator.Query})
 	}
 	return convertedIndicatorValues
 }

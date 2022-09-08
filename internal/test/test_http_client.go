@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	log "github.com/sirupsen/logrus"
 	"net"
 	"net/http"
 	"net/http/httptest"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // CreateHTTPClient create a fake http client for integration tests
@@ -32,7 +33,7 @@ func CreateHTTPSClient(handler http.Handler) (*http.Client, string, func()) {
 
 	cert, err := x509.ParseCertificate(server.TLS.Certificates[0].Certificate[0])
 	if err != nil {
-		log.Fatal(err)
+		log.WithError(err).Fatal("Could not parse certificate")
 	}
 
 	certpool := x509.NewCertPool()

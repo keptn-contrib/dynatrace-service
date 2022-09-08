@@ -9,9 +9,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const urlFieldName = "url"
+
 type errConfigForFile struct {
-	status   int
-	fileName string
+	Status   int
+	FileName string
 }
 
 type FileBasedURLHandler struct {
@@ -37,7 +39,7 @@ func (h *FileBasedURLHandler) AddExact(url string, fileName string) {
 
 	oldFileName, isSet := h.exactURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the file for exact url match '%s'! Old: %s, new: %s", url, oldFileName, fileName)
+		log.WithFields(log.Fields{urlFieldName: url, "oldFileName": oldFileName, "fileName": fileName}).Warn("Replacing the file for exact URL match")
 	}
 
 	h.exactURLs[url] = fileName
@@ -48,10 +50,10 @@ func (h *FileBasedURLHandler) AddExactError(url string, statusCode int, fileName
 
 	oldEntry, isSet := h.exactErrorURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the file for exact error url match '%s'! Old: %s, new: %s", url, oldEntry.fileName, fileName)
+		log.WithFields(log.Fields{urlFieldName: url, "oldEntry": oldEntry, "fileName": fileName}).Warn("Replacing the file for exact error URL match")
 	}
 
-	h.exactErrorURLs[url] = errConfigForFile{status: statusCode, fileName: fileName}
+	h.exactErrorURLs[url] = errConfigForFile{Status: statusCode, FileName: fileName}
 }
 
 func (h *FileBasedURLHandler) AddStartsWith(url string, fileName string) {
@@ -59,7 +61,7 @@ func (h *FileBasedURLHandler) AddStartsWith(url string, fileName string) {
 
 	oldFileName, isSet := h.startsWithURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the file for starts with url match '%s'! Old: %s, new: %s", url, oldFileName, fileName)
+		log.WithFields(log.Fields{urlFieldName: url, "oldFileName": oldFileName, "fileName": fileName}).Warn("Replacing the file for starts with URL match")
 	}
 
 	h.startsWithURLs[url] = fileName
@@ -70,10 +72,10 @@ func (h *FileBasedURLHandler) AddStartsWithError(url string, statusCode int, fil
 
 	oldEntry, isSet := h.startsWithErrorURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the file for starts with error url match '%s'! Old: %s, new: %s", url, oldEntry.fileName, fileName)
+		log.WithFields(log.Fields{urlFieldName: url, "oldEntry": oldEntry, "fileName": fileName}).Warn("Replacing the file for starts with error URL match")
 	}
 
-	h.startsWithErrorURLs[url] = errConfigForFile{status: statusCode, fileName: fileName}
+	h.startsWithErrorURLs[url] = errConfigForFile{Status: statusCode, FileName: fileName}
 }
 
 func (h *FileBasedURLHandler) assertFileIsInTestDataFolder(fileName string) {
@@ -84,11 +86,11 @@ func (h *FileBasedURLHandler) assertFileIsInTestDataFolder(fileName string) {
 
 func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestedURL := r.URL.String()
-	log.Debug("Mock for: " + requestedURL)
+	log.WithField(urlFieldName, requestedURL).Debug("Mock requested for URL")
 
 	for url, fileName := range h.exactURLs {
 		if url == requestedURL {
-			log.Debug("Found Mock: " + url + " --> " + fileName)
+			log.WithFields(log.Fields{urlFieldName: url, "fileName": fileName}).Debug("Found mock for exact URL")
 
 			writeFileToResponseWriter(w, http.StatusOK, fileName)
 			return
@@ -97,7 +99,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	for url, fileName := range h.startsWithURLs {
 		if strings.Index(requestedURL, url) == 0 {
-			log.Debug("Found Mock: " + url + " --> " + fileName)
+			log.WithFields(log.Fields{urlFieldName: url, "fileName": fileName}).Debug("Found mock for starts with URL")
 
 			writeFileToResponseWriter(w, http.StatusOK, fileName)
 			return
@@ -106,18 +108,18 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	for url, config := range h.exactErrorURLs {
 		if url == requestedURL {
-			log.Debug("Found Mock: " + url + " --> " + config.fileName)
+			log.WithFields(log.Fields{urlFieldName: url, "fileName": config.FileName}).Debug("Found mock for exact error URL")
 
-			writeFileToResponseWriter(w, config.status, config.fileName)
+			writeFileToResponseWriter(w, config.Status, config.FileName)
 			return
 		}
 	}
 
 	for url, config := range h.startsWithErrorURLs {
 		if strings.Index(requestedURL, url) == 0 {
-			log.Debug("Found Mock: " + url + " --> " + config.fileName)
+			log.WithFields(log.Fields{urlFieldName: url, "fileName": config.FileName}).Debug("Found mock for starts with error URL")
 
-			writeFileToResponseWriter(w, config.status, config.fileName)
+			writeFileToResponseWriter(w, config.Status, config.FileName)
 			return
 		}
 	}

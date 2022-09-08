@@ -62,8 +62,9 @@ type SharingDetails struct {
 	LinkShared bool `json:"linkShared"`
 	Published  bool `json:"published"`
 }
+
 type DashboardFilter struct {
-	Timeframe      string               `json:"timeframe"`
+	Timeframe      string               `json:"timeframe,omitempty"`
 	ManagementZone *ManagementZoneEntry `json:"managementZone,omitempty"`
 }
 
@@ -88,13 +89,18 @@ type Tile struct {
 	ExcludeMaintenanceWindows bool                `json:"excludeMaintenanceWindows,omitempty"`
 	FilterConfig              *FilterConfig       `json:"filterConfig,omitempty"`
 	VisualConfig              *VisualConfig       `json:"visualConfig,omitempty"`
+	MetricExpressions         []string            `json:"metricExpressions,omitempty"`
 }
 
 // VisualConfig is the visual configuration for a dashboard tile.
 type VisualConfig struct {
+	Type       string             `json:"type,omitempty"`
 	Thresholds []Threshold        `json:"thresholds,omitempty"`
 	Rules      []VisualConfigRule `json:"rules,omitempty"`
 }
+
+// SingleValueVisualConfigType is the single value visualization type for VisualConfigs
+const SingleValueVisualConfigType = "SINGLE_VALUE"
 
 // VisualConfigRule is a rule for the visual configuration.
 type VisualConfigRule struct {
@@ -121,7 +127,7 @@ type Bounds struct {
 }
 
 type TileFilter struct {
-	Timeframe      string               `json:"timeframe"`
+	Timeframe      string               `json:"timeframe,omitempty"`
 	ManagementZone *ManagementZoneEntry `json:"managementZone,omitempty"`
 }
 
@@ -129,17 +135,17 @@ type TileFilter struct {
 type DataExplorerQuery struct {
 	ID               string              `json:"id"`
 	Metric           string              `json:"metric"`
-	SpaceAggregation string              `json:"spaceAggregation"`
+	SpaceAggregation string              `json:"spaceAggregation,omitempty"`
 	TimeAggregation  string              `json:"timeAggregation"`
 	SplitBy          []string            `json:"splitBy"`
 	FilterBy         *DataExplorerFilter `json:"filterBy,omitempty"`
 }
 
 type DataExplorerFilter struct {
-	Filter          string                  `json:"filter"`
-	FilterType      string                  `json:"filterType"`
-	FilterOperator  string                  `json:"filterOperator"`
-	EntityAttribute string                  `json:"entityAttribute"`
+	Filter          string                  `json:"filter,omitempty"`
+	FilterType      string                  `json:"filterType,omitempty"`
+	FilterOperator  string                  `json:"filterOperator,omitempty"`
+	EntityAttribute string                  `json:"entityAttribute,omitempty"`
 	NestedFilters   []DataExplorerFilter    `json:"nestedFilters"`
 	Criteria        []DataExplorerCriterion `json:"criteria"`
 }

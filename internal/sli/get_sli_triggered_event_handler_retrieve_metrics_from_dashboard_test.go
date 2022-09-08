@@ -124,7 +124,7 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultWarning, actual.Result)
-		assert.Contains(t, actual.Message, "Metrics API v2 returned zero data points")
+		assert.Contains(t, actual.Message, "Metrics API v2 returned zero metric series")
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest))

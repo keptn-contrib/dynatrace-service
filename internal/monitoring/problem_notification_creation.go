@@ -36,7 +36,7 @@ func (pn *problemNotificationCreation) create(ctx context.Context, project strin
 	notificationsClient := dynatrace.NewNotificationsClient(pn.client)
 	err = notificationsClient.DeleteExistingKeptnProblemNotifications(ctx)
 	if err != nil {
-		log.WithError(err).Error("failed to delete existing notifications")
+		log.WithError(err).Error("Failed to delete existing notifications")
 	}
 
 	keptnCredentials, err := credentials.GetKeptnCredentials(ctx)
@@ -74,14 +74,14 @@ func getOrCreateKeptnAlertingProfile(ctx context.Context, alertingProfilesClient
 		return alertingProfileID, nil
 	}
 
-	log.Info("Creating Keptn alerting profile.")
+	log.Info("Creating Keptn alerting profile")
 	alertingProfile := createKeptnAlertingProfile()
 	profileID, err := alertingProfilesClient.Create(ctx, alertingProfile)
 	if err != nil {
 		return "", fmt.Errorf("failed to create Keptn alerting profile: %v", err)
 	}
 
-	log.Info("Alerting profile created successfully.")
+	log.Info("Alerting profile created successfully")
 	return profileID, nil
 }
 

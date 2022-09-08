@@ -32,10 +32,8 @@ type DynatraceEventHandler interface {
 func NewEventHandler(ctx context.Context, clientFactory keptn.ClientFactoryInterface, eventSenderClient keptn.EventSenderClientInterface, event cloudevents.Event) (DynatraceEventHandler, error) {
 	eventHandler, err := getEventHandler(ctx, eventSenderClient, event, clientFactory)
 	if err != nil {
-		err = fmt.Errorf("cannot handle event: %w", err)
-		log.Error(err.Error())
-
-		return NewErrorHandler(err, event, eventSenderClient, clientFactory.CreateUniformClient()), nil
+		log.WithError(err).Error("Cannot handle event")
+		return NewErrorHandler(fmt.Errorf("cannot handle event: %w", err), event, eventSenderClient, clientFactory.CreateUniformClient()), nil
 	}
 
 	return eventHandler, nil
@@ -53,6 +51,25 @@ func getEventHandler(ctx context.Context, eventSenderClient keptn.EventSenderCli
 	if keptnEvent == nil {
 		return NoOpHandler{}, nil
 	}
+
+	log.WithField(
+		"event", struct {
+			Type           string
+			ShKeptnContext string
+			Source         string
+			Project        string
+			Stage          string
+			Service        string
+			Labels         map[string]string
+		}{
+			Type:           keptnEvent.GetEvent(),
+			ShKeptnContext: keptnEvent.GetShKeptnContext(),
+			Source:         keptnEvent.GetSource(),
+			Project:        keptnEvent.GetProject(),
+			Stage:          keptnEvent.GetStage(),
+			Service:        keptnEvent.GetService(),
+			Labels:         keptnEvent.GetLabels(),
+		}).Debug("Created event adapter")
 
 	if keptnEvent.GetProject() == "" {
 		return nil, errors.New("event has no project")
@@ -136,7 +153,7 @@ func getEventAdapter(e cloudevents.Event) (adapter.EventContentAdapter, error) {
 	case keptnv2.GetTriggeredEventType(keptnv2.ReleaseTaskName):
 		return action.NewReleaseTriggeredAdapterFromEvent(e)
 	default:
-		log.WithField("EventType", e.Type()).Debug("Ignoring event")
+		log.WithField("eventType", e.Type()).Debug("Ignoring event")
 		return nil, nil
 	}
 }

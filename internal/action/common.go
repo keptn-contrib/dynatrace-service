@@ -43,7 +43,12 @@ func newCustomProperties(a adapter.EventContentAdapter, imageAndTag common.Image
 func (cp customProperties) add(key string, value string) {
 	oldValue, isContained := cp[key]
 	if isContained {
-		log.Warnf("Overwriting current value '%s' of key '%s' with new value '%s in custom properties", oldValue, key, value)
+		log.WithFields(
+			log.Fields{
+				"key":      key,
+				"oldValue": oldValue,
+				"value":    value,
+			}).Warn("Overwriting value in custom properties")
 	}
 
 	cp[key] = value
@@ -131,7 +136,7 @@ func createOrUpdateAttachRules(ctx context.Context, client dynatrace.ClientInter
 		To:      timeframe.End(),
 	})
 	if err != nil {
-		log.WithError(err).Errorf("could not find PGIs for version: %s", version)
+		log.WithError(err).WithField("version", version).Error("could not find PGIs for version")
 	}
 
 	if existingAttachRules != nil {

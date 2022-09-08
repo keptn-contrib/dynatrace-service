@@ -12,12 +12,12 @@ type CombinedURLHandler struct {
 	templatingHandler *TemplatingPayloadBasedURLHandler
 }
 
-func NewCombinedURLHandler(t *testing.T, templateFile string) *CombinedURLHandler {
+func NewCombinedURLHandler(t *testing.T) *CombinedURLHandler {
 	return &CombinedURLHandler{
 		t:                 t,
 		useFileHandler:    make(map[string]bool),
 		fileHandler:       NewFileBasedURLHandler(t),
-		templatingHandler: NewTemplatingPayloadBasedURLHandler(t, templateFile),
+		templatingHandler: NewTemplatingPayloadBasedURLHandler(t),
 	}
 }
 
@@ -31,14 +31,14 @@ func (h *CombinedURLHandler) AddExactFile(url string, fileName string) {
 	h.fileHandler.AddExact(url, fileName)
 }
 
-func (h *CombinedURLHandler) AddExactTemplate(url string, templatingData interface{}) {
+func (h *CombinedURLHandler) AddExactTemplate(url string, templateFilename string, templatingData interface{}) {
 	_, alreadyThere := h.useFileHandler[url]
 	if alreadyThere {
 		h.t.Fatalf("%s has been already stored, check your test configuration", url)
 	}
 
 	h.useFileHandler[url] = false
-	h.templatingHandler.AddExact(url, templatingData)
+	h.templatingHandler.AddExact(url, templateFilename, templatingData)
 }
 
 func (h *CombinedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

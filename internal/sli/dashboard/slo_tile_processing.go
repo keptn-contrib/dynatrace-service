@@ -8,7 +8,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
 	keptn "github.com/keptn/go-utils/pkg/lib"
-	log "github.com/sirupsen/logrus"
 )
 
 // SLOTileProcessing represents the processing of a SLO dashboard tile.
@@ -33,7 +32,6 @@ func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) [
 
 	var results []TileResult
 	for _, sloID := range tile.AssignedEntities {
-		log.WithField("sloEntity", sloID).Debug("Processing SLO Definition")
 		results = append(results, p.processSLO(ctx, sloID))
 	}
 	return results
@@ -57,11 +55,6 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) TileRe
 
 	indicatorName := cleanIndicatorName(sloResult.Name)
 
-	log.WithFields(
-		log.Fields{
-			"indicatorName": indicatorName,
-			"value":         sloResult.EvaluatedPercentage,
-		}).Debug("Adding SLO to sloResult")
 	// TODO: 2021-12-20: check: maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/97#issuecomment-766110172 for explanation about mappings to pass and warning

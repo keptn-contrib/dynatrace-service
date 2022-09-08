@@ -2,11 +2,16 @@ package dashboard
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"sort"
 	"strings"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
-	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 )
 
 type MetricsQueryProcessing struct {
@@ -20,99 +25,91 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryPr
 }
 
 // Process generates SLI & SLO definitions based on the metric query and the number of dimensions in the chart definition.
-func (r *MetricsQueryProcessing) Process(ctx context.Context, noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents) []TileResult {
-
-	// Lets run the Query and iterate through all data per dimension. Each Dimension will become its own indicator
-	request := dynatrace.NewMetricsClientQueryRequest(metricQueryComponents.metricsQuery, metricQueryComponents.timeframe)
-	queryResult, err := dynatrace.NewMetricsClient(r.client).GetByQuery(ctx, request)
-
-	// ERROR-CASE: Metric API return no values or an error
-	// we could not query data - so - we return the error back as part of our SLIResults
+func (r *MetricsQueryProcessing) Process(ctx context.Context, sloDefinition keptncommon.SLO, metricsQuery metrics.Query, timeframe common.Timeframe) []TileResult {
+	request := dynatrace.NewMetricsClientQueryRequest(metricsQuery, timeframe)
+	singleResult, err := dynatrace.NewMetricsClient(r.client).GetSingleMetricSeriesCollectionByQuery(ctx, request)
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "error querying Metrics API v2: "+err.Error())}
-	}
-
-	// TODO 2021-10-12: Check if having a query result with zero results is even plausable
-	if len(queryResult.Result) == 0 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero results")}
-	}
-
-	if len(queryResult.Result) > 1 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned more than one result")}
-	}
-
-	// SUCCESS-CASE: we retrieved values - now create an indicator result for every dimension
-	singleResult := queryResult.Result[0]
-	log.WithFields(
-		log.Fields{
-			"metricId": singleResult.MetricID,
-		}).Debug("Processing result")
-
-	if len(singleResult.Data) == 0 {
-		if len(singleResult.Warnings) > 0 {
-			return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero data points. Warnings: "+strings.Join(singleResult.Warnings, ", "))}
+		var qpErrorType *dynatrace.MetricsQueryProcessingError
+		if errors.As(err, &qpErrorType) {
+			return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())}
 		}
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Metrics API v2 returned zero data points")}
+		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())}
 	}
 
-	return r.processSingleResult(noOfDimensionsInChart, sloDefinition, metricQueryComponents, singleResult.Data, request)
+	return r.processMetricSeries(sloDefinition, singleResult.Data, request)
 }
 
-func (r *MetricsQueryProcessing) processSingleResult(noOfDimensionsInChart int, sloDefinition keptncommon.SLO, metricQueryComponents *queryComponents, singleResultData []dynatrace.MetricQueryResultNumbers, request dynatrace.MetricsClientQueryRequest) []TileResult {
-	var tileResults []TileResult
-	for _, singleDataEntry := range singleResultData {
-		//
-		// we need to generate the indicator name based on the base name + all dimensions, e.g: teststep_MYTESTSTEP, teststep_MYOTHERTESTSTEP
-		// EXCEPTION: If there is only ONE data value then we skip this and just use the base SLI name
-		indicatorName := sloDefinition.SLI
-
-		if len(singleResultData) > 1 {
-			// because we use the ":names" transformation we always get two dimension entries for entity dimensions, e.g: Host, Service .... First is the Name of the entity, then the ID of the Entity
-			// lets first validate that we really received Dimension Names
-			dimensionCount := len(singleDataEntry.Dimensions)
-			dimensionIncrement := 2
-			if dimensionCount != (noOfDimensionsInChart * 2) {
-				dimensionIncrement = 1
-			}
-
-			// lets iterate through the list and get all names
-			for dimIx := 0; dimIx < len(singleDataEntry.Dimensions); dimIx = dimIx + dimensionIncrement {
-				indicatorName = indicatorName + "_" + singleDataEntry.Dimensions[dimIx]
-			}
-		}
-
-		// make sure we have a valid indicator name by getting rid of special characters
-		indicatorName = cleanIndicatorName(indicatorName)
-
-		// calculating the value
-		value := 0.0
-		for _, singleValue := range singleDataEntry.Values {
-			value = value + singleValue
-		}
-		value = value / float64(len(singleDataEntry.Values))
-
-		// we got our metric, SLOs and the value
-		log.WithFields(
-			log.Fields{
-				"name":  indicatorName,
-				"value": value,
-			}).Debug("Got indicator value")
-
-		tileResult := newSuccessfulTileResult(
-			keptncommon.SLO{
-				SLI:         indicatorName,
-				DisplayName: sloDefinition.DisplayName,
-				Weight:      sloDefinition.Weight,
-				KeySLI:      sloDefinition.KeySLI,
-				Pass:        sloDefinition.Pass,
-				Warning:     sloDefinition.Warning,
-			},
-			value,
-			request.RequestString(),
-		)
-
-		tileResults = append(tileResults, tileResult)
+func (r *MetricsQueryProcessing) processMetricSeries(sloDefinition keptncommon.SLO, metricSeries []dynatrace.MetricSeries, request dynatrace.MetricsClientQueryRequest) []TileResult {
+	if len(metricSeries) == 0 {
+		return []TileResult{}
 	}
 
+	if len(metricSeries) == 1 {
+		return []TileResult{processValues(metricSeries[0].Values, sloDefinition, request)}
+	}
+
+	var tileResults []TileResult
+	for _, singleMetricSeries := range metricSeries {
+		tileResults = append(tileResults, processValues(singleMetricSeries.Values, createSLODefinitionForDimensionMap(sloDefinition, singleMetricSeries.DimensionMap), request))
+	}
 	return tileResults
+}
+
+func processValues(values []*float64, sloDefinition keptncommon.SLO, request dynatrace.MetricsClientQueryRequest) TileResult {
+	if len(values) != 1 {
+		return newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), fmt.Sprintf("Expected a single value but retrieved %d", len(values)))
+	}
+
+	if values[0] == nil {
+		return newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "Expected a value but retrieved 'null'")
+	}
+
+	return newSuccessfulTileResult(sloDefinition, *values[0], request.RequestString())
+}
+
+func createSLODefinitionForDimensionMap(baseSLODefinition keptncommon.SLO, dimensionMap map[string]string) keptncommon.SLO {
+	suffix := generateIndicatorSuffix(dimensionMap)
+	return keptncommon.SLO{
+		SLI:         baseSLODefinition.SLI + "_" + cleanIndicatorName(suffix),
+		DisplayName: baseSLODefinition.DisplayName + " (" + suffix + ")",
+		Weight:      baseSLODefinition.Weight,
+		KeySLI:      baseSLODefinition.KeySLI,
+		Pass:        baseSLODefinition.Pass,
+		Warning:     baseSLODefinition.Warning,
+	}
+}
+
+// generateIndicatorSuffix generates an indicator suffix based on all dimensions.
+// As this is used for both indicator and display names, it must then be cleaned before use in indicator names.
+func generateIndicatorSuffix(dimensionMap map[string]string) string {
+	const nameSuffix = ".name"
+
+	// take all dimension values except where both names and IDs are available, in that case only take the names
+	suffixComponents := map[string]string{}
+	for key, value := range dimensionMap {
+		if value == "" {
+			continue
+		}
+
+		if strings.HasSuffix(key, nameSuffix) {
+			keyWithoutNameSuffix := strings.TrimSuffix(key, nameSuffix)
+			suffixComponents[keyWithoutNameSuffix] = value
+			continue
+		}
+
+		_, found := suffixComponents[key]
+		if !found {
+			suffixComponents[key] = value
+		}
+	}
+
+	// ensure suffix component values are ordered by key alphabetically
+	keys := maps.Keys(suffixComponents)
+	sort.Strings(keys)
+	sortedSuffixComponentValues := make([]string, 0, len(keys))
+	for _, k := range keys {
+		sortedSuffixComponentValues = append(sortedSuffixComponentValues, suffixComponents[k])
+	}
+
+	return strings.Join(sortedSuffixComponentValues, " ")
 }

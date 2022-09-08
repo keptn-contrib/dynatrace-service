@@ -34,7 +34,7 @@ func NewPayloadBasedURLHandler(t *testing.T) *PayloadBasedURLHandler {
 func (h *PayloadBasedURLHandler) AddExact(url string, payload []byte) {
 	_, isSet := h.exactURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the payload for exact url match '%s'!", url)
+		log.WithField(urlFieldName, url).Warn("Replacing the payload for exact URL match")
 	}
 
 	h.exactURLs[url] = payload
@@ -43,7 +43,7 @@ func (h *PayloadBasedURLHandler) AddExact(url string, payload []byte) {
 func (h *PayloadBasedURLHandler) AddExactError(url string, statusCode int, payload []byte) {
 	_, isSet := h.exactURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the payload for exact error url match '%s'!", url)
+		log.WithField(urlFieldName, url).Warn("Replacing the payload for exact error URL match")
 	}
 
 	h.exactErrorURLs[url] = errConfigForPayload{status: statusCode, payload: payload}
@@ -52,7 +52,7 @@ func (h *PayloadBasedURLHandler) AddExactError(url string, statusCode int, paylo
 func (h *PayloadBasedURLHandler) AddStartsWith(url string, payload []byte) {
 	_, isSet := h.startsWithURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the file for starts with url match '%s'!", url)
+		log.WithField(urlFieldName, url).Warn("Replacing the payload for starts with URL match")
 	}
 
 	h.startsWithURLs[url] = payload
@@ -61,7 +61,7 @@ func (h *PayloadBasedURLHandler) AddStartsWith(url string, payload []byte) {
 func (h *PayloadBasedURLHandler) AddStartsWithError(url string, statusCode int, payload []byte) {
 	_, isSet := h.startsWithErrorURLs[url]
 	if isSet {
-		log.Warningf("You are replacing the payload for starts with error url match '%s'!", url)
+		log.WithField(urlFieldName, url).Warn("Replacing the payload for starts with error URL match")
 	}
 
 	h.startsWithErrorURLs[url] = errConfigForPayload{status: statusCode, payload: payload}
@@ -69,11 +69,11 @@ func (h *PayloadBasedURLHandler) AddStartsWithError(url string, statusCode int, 
 
 func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	requestedURL := r.URL.String()
-	log.Debug("Mock for: " + requestedURL)
+	log.WithField(urlFieldName, requestedURL).Debug("Mock requested for URL")
 
 	for url, payload := range h.exactURLs {
 		if url == requestedURL {
-			log.Debug("Found Mock: " + url)
+			log.WithField(urlFieldName, url).Debug("Found mock for exact URL")
 
 			writePayloadToResponseWriter(w, http.StatusOK, payload)
 			return
@@ -82,7 +82,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	for url, payload := range h.startsWithURLs {
 		if strings.Index(requestedURL, url) == 0 {
-			log.Debug("Found Mock: " + url)
+			log.WithField(urlFieldName, url).Debug("Found mock for starts with URL")
 
 			writePayloadToResponseWriter(w, http.StatusOK, payload)
 			return
@@ -91,7 +91,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	for url, config := range h.exactErrorURLs {
 		if url == requestedURL {
-			log.Debug("Found Mock: " + url)
+			log.WithField(urlFieldName, url).Debug("Found mock for exact error URL")
 
 			writePayloadToResponseWriter(w, config.status, config.payload)
 			return
@@ -100,7 +100,7 @@ func (h *PayloadBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	for url, config := range h.startsWithErrorURLs {
 		if strings.Index(requestedURL, url) == 0 {
-			log.Debug("Found Mock: " + url)
+			log.WithField(urlFieldName, url).Debug("Found mock for starts with error URL")
 
 			writePayloadToResponseWriter(w, config.status, config.payload)
 			return

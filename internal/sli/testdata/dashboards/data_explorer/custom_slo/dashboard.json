@@ -14,91 +14,100 @@
     },
     "tiles": [
         {
-            "name": "Service response time; sli=srt; pass=<30; weight=4; key=true",
-            "tileType": "DATA_EXPLORER",
-            "configured": true,
-            "bounds": {
-                "top": 76,
-                "left": 114,
-                "width": 304,
-                "height": 304
-            },
-            "tileFilter": {},
-            "customName": "Data explorer results",
-            "queries": [
-                {
-                    "id": "A",
-                    "metric": "builtin:service.response.time",
-                    "spaceAggregation": "AVG",
-                    "timeAggregation": "DEFAULT",
-                    "splitBy": [],
-                    "filterBy": {
-                        "nestedFilters": [],
-                        "criteria": []
-                    },
-                    "enabled": true
-                }
-            ],
-            "visualConfig": {
-                "type": "GRAPH_CHART",
-                "global": {
-                    "seriesType": "LINE",
-                    "hideLegend": false
-                },
-                "rules": [
-                    {
-                        "matcher": "A:",
-                        "properties": {
-                            "color": "DEFAULT"
-                        },
-                        "seriesOverrides": []
-                    }
-                ],
-                "axes": {
-                    "xAxis": {
-                        "displayName": "",
-                        "visible": true
-                    },
-                    "yAxes": [
-                        {
-                            "displayName": "",
-                            "visible": true,
-                            "min": "AUTO",
-                            "max": "AUTO",
-                            "position": "LEFT",
-                            "queryIds": [
-                                "A"
-                            ],
-                            "defaultAxis": true
-                        }
-                    ]
-                },
-                "heatmapSettings": {},
-                "thresholds": [
-                    {
-                        "axisTarget": "LEFT",
-                        "rules": [
-                            {
-                                "color": "#7dc540"
-                            },
-                            {
-                                "color": "#f5d30f"
-                            },
-                            {
-                                "color": "#dc172a"
-                            }
-                        ],
-                        "queryId": "",
-                        "visible": true
-                    }
-                ],
-                "tableSettings": {
-                    "isThresholdBackgroundAppliedToCell": false
-                },
-                "graphChartSettings": {
-                    "connectNulls": false
-                }
+          "name": "Service response time; sli=srt; pass=<30; weight=4; key=true",
+          "tileType": "DATA_EXPLORER",
+          "configured": true,
+          "bounds": {
+            "top": 76,
+            "left": 114,
+            "width": 304,
+            "height": 304
+          },
+          "tileFilter": {},
+          "customName": "Data explorer results",
+          "queries": [
+            {
+              "id": "A",
+              "metric": "builtin:service.response.time",
+              "spaceAggregation": "AVG",
+              "timeAggregation": "DEFAULT",
+              "splitBy": [],
+              "filterBy": {
+                "nestedFilters": [],
+                "criteria": []
+              },
+              "enabled": true
             }
+          ],
+          "visualConfig": {
+            "type": "GRAPH_CHART",
+            "global": {
+              "hideLegend": false
+            },
+            "rules": [
+              {
+                "matcher": "A:",
+                "properties": {
+                  "color": "DEFAULT"
+                },
+                "seriesOverrides": []
+              }
+            ],
+            "axes": {
+              "xAxis": {
+                "displayName": "",
+                "visible": true
+              },
+              "yAxes": [
+                {
+                  "displayName": "",
+                  "visible": true,
+                  "min": "AUTO",
+                  "max": "AUTO",
+                  "position": "LEFT",
+                  "queryIds": [
+                    "A"
+                  ],
+                  "defaultAxis": true
+                }
+              ]
+            },
+            "heatmapSettings": {
+              "yAxis": "VALUE"
+            },
+            "thresholds": [
+              {
+                "axisTarget": "LEFT",
+                "rules": [
+                  {
+                    "color": "#7dc540"
+                  },
+                  {
+                    "color": "#f5d30f"
+                  },
+                  {
+                    "color": "#dc172a"
+                  }
+                ],
+                "queryId": "",
+                "visible": true
+              }
+            ],
+            "tableSettings": {
+              "isThresholdBackgroundAppliedToCell": false
+            },
+            "graphChartSettings": {
+              "connectNulls": false
+            },
+            "honeycombSettings": {
+              "showHive": true,
+              "showLegend": true,
+              "showLabels": false
+            }
+          },
+          "metricExpressions": [
+            "resolution=null&(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
+          ]
         }
-    ]
+      ]
 }

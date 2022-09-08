@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -11,47 +12,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName tests space aggregation average and filterby name.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByName(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_name/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CentityName%28%22%2Fservices%2FConfigurationService%2F+on+haproxy%3A80+%28opaque%29%22%29", "builtin%3Aservice.errors.total.count%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_name.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.errors.total.count", testDataFolder+"metrics_get_by_id_builtin_service_errors_total_count.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_errors_total_count.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("any_errors", 5324, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_FilterByDimension tests filtering by dimension and splitting by dimension.
-// TODO: 2021-11-11: Investigate and fix this test
-func TestRetrieveMetricsFromDashboardDataExplorerTile_FilterByDimension(t *testing.T) {
-	t.Skip("Skipping test, as DIMENSION filter type needs to be investigated")
-
-	const testDataFolder = "./testdata/dashboards/data_explorer/filterby_dimension/"
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_filterby_dimension.json")
-	handler.AddExact(dynatrace.MetricsPath+"/jmeter.usermetrics.transaction.meantime", testDataFolder+"metrics_get_by_id_jmeter_usermetrics_transaction_meantime.json")
-	handler.AddExact(buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-FFD81F003E39B468%29", "jmeter.usermetrics.transaction.meantime%3Aavg%3Anames"),
-		testDataFolder+"metrics_get_by_query_jmeter.usermetrics_transaction_meantime.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		// include two function because two results are expected, but the values are not checked
-		func(t *testing.T, actual sliResult) {},
-		func(t *testing.T, actual sliResult) {},
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIButNoQuery tests a data explorer tile with an SLI name defined, i.e. in the title, but no query.
 // This is will result in a SLIResult with failure, as this is not allowed.
@@ -75,359 +35,233 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIAndTwoQueries(t *te
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("two"))
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgNoFilterBy tests average space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_no_filterby/"
+// TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions tests support of metric expressions works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/metric_expressions/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+	const singleValueVisualConfigType = "SINGLE_VALUE"
+	const graphChartVisualConfigType = "GRAPH_CHART"
+	const splitByService = "dt.entity.service"
 
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+	const singleResultMetricExpression = "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
+	const multipleResultMetricExpression = "(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_avg", 29192.929640271974, expectedMetricsRequest),
+	const resolutionIsNullKeyValuePair = "resolution=null&"
+
+	const singleQueryResultFilename = testDataFolder + "metrics_query_builtin_service_response_time_avg_single.json"
+	const multipleQueryResultsFilename = testDataFolder + "metrics_query_builtin_service_response_time_avg_multiple.json"
+
+	expectedSingleResultMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+	expectedMultipleResultMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+
+	singleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedSingleResultMetricsRequest)}
+	multipleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("srt_service_a", 31676.5399830501183, expectedMultipleResultMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt_service_b", 11285.1679389312976, expectedMultipleResultMetricsRequest)}
+
+	tests := []struct {
+		name                              string
+		visualConfigType                  string
+		splitBy                           string
+		metricExpressions                 *[]string
+		expectedMetricsRequest            string
+		queryResultsFilename              string
+		getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData)
+		sliResultsAssertionsFuncs         []func(t *testing.T, actual sliResult)
+	}{
+		{
+			name:                              "single value visualization with single result works",
+			visualConfigType:                  singleValueVisualConfigType,
+			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + singleResultMetricExpression, singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultsAssertionsFuncs:         singleSuccessfulSLIResultAssertionsFuncs,
+		},
+		{
+			name:                              "graph chart visualization with single result works",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultsAssertionsFuncs:         singleSuccessfulSLIResultAssertionsFuncs,
+		},
+		{
+			name:                              "graph chart visualization with multiple result works",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + multipleResultMetricExpression},
+			queryResultsFilename:              multipleQueryResultsFilename,
+			expectedMetricsRequest:            expectedMultipleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultsAssertionsFuncs:         multipleSuccessfulSLIResultAssertionsFuncs,
+		},
+		{
+			name:                              "single value visualization with multiple results produces error",
+			visualConfigType:                  singleValueVisualConfigType,
+			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + multipleResultMetricExpression, multipleResultMetricExpression},
+			queryResultsFilename:              multipleQueryResultsFilename,
+			expectedMetricsRequest:            expectedMultipleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings(expectedMultipleResultMetricsRequest, "tile is configured for single value"),
+		},
+		{
+			name:                              "graph chart visualization with no metric expressions produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 nil,
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "tile has no metric expressions"),
+		},
+		{
+			name:                              "zero metric expressions produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "tile has no metric expressions"),
+		},
+		{
+			name:                              "missing resolution key value pair produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "metric expression does not contain two components"),
+		},
+		{
+			name:                              "wrong order in metric expression produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{singleResultMetricExpression + resolutionIsNullKeyValuePair},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "unexpected prefix in key value pair"),
+		},
+		{
+			name:                              "empty value in resolution key value pair produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{"resolution=&" + singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "resolution must not be empty"),
+		},
+		{
+			name:                              "resolution other than null (inf) produces error",
+			visualConfigType:                  graphChartVisualConfigType,
+			metricExpressions:                 &[]string{"resolution=30m&" + singleResultMetricExpression},
+			queryResultsFilename:              singleQueryResultFilename,
+			expectedMetricsRequest:            expectedSingleResultMetricsRequest,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings("", "resolution must be set to 'Auto'"),
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := createHandlerWithTemplatedDashboard(t,
+				testDataFolder+"dashboard.template.json",
+				struct {
+					SplitBy                 string
+					VisualConfigType        string
+					MetricExpressionsString string
+				}{
+					SplitBy:                 tt.splitBy,
+					VisualConfigType:        tt.visualConfigType,
+					MetricExpressionsString: convertToJSONStringOrEmptyIfNil(t, tt.metricExpressions),
+				},
+			)
+			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExactFile(tt.expectedMetricsRequest, tt.queryResultsFilename)
+
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, tt.getSLIFinishedEventAssertionsFunc, tt.sliResultsAssertionsFuncs...)
+		})
+	}
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgCountNoFilterBy tests count space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgCountNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_count_no_filterby/"
+func createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings(expectedQuery string, expectedMessageSubStrings ...string) []func(t *testing.T, actual sliResult) {
+	return []func(t *testing.T, actual sliResult){
+		createFailedSLIResultWithQueryAssertionsFunc("srt", expectedQuery, expectedMessageSubStrings...)}
+}
 
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Acount%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_count_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_count.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_count", 1060428829, expectedMetricsRequest),
+// TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork tests applying management zones to the dashboard and tile work as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones_work/"
+	dashboardFilterWithManagementZone := dynatrace.DashboardFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "-1234567890123456789",
+			Name: "mz-1",
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
+	emptyTileFilter := dynatrace.TileFilter{}
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMaxNoFilterBy tests max space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMaxNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_max_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amax%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_max_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_max.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_max", 45156016, expectedMetricsRequest),
+	tileFilterWithManagementZone := dynatrace.TileFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "2311420533206603714",
+			Name: "ap_mz_1",
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
+	expectedEncodedMetricSelector := "%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Asort%28value%28auto%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames"
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMedianNoFilterBy tests median space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMedianNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_median_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amedian%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_median_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_median.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_median", 1499.9996049587276, expectedMetricsRequest),
+	tests := []struct {
+		name                   string
+		dashboardFilter        *dynatrace.DashboardFilter
+		tileFilter             dynatrace.TileFilter
+		expectedMetricsRequest string
+	}{
+		{
+			name:                   "no dashboard filter, empty tile filter",
+			dashboardFilter:        nil,
+			tileFilter:             emptyTileFilter,
+			expectedMetricsRequest: buildMetricsV2RequestString(expectedEncodedMetricSelector),
+		},
+		{
+			name:                   "dashboard filter with mz, empty tile filter",
+			dashboardFilter:        &dashboardFilterWithManagementZone,
+			tileFilter:             emptyTileFilter,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%28-1234567890123456789%29"),
+		},
+		{
+			name:                   "no dashboard filter, tile filter with mz",
+			dashboardFilter:        nil,
+			tileFilter:             tileFilterWithManagementZone,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%282311420533206603714%29"),
+		},
+		{
+			name:                   "dashboard filter with mz, tile filter with mz",
+			dashboardFilter:        &dashboardFilterWithManagementZone,
+			tileFilter:             tileFilterWithManagementZone,
+			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%282311420533206603714%29"),
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMinNoFilterBy tests min space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgMinNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_min_no_filterby/"
+			handler := createHandlerWithTemplatedDashboard(t,
+				testDataFolder+"dashboard.template.json",
+				struct {
+					DashboardFilterString string
+					TileFilterString      string
+				}{
+					DashboardFilterString: convertToJSONStringOrEmptyIfNil(t, tt.dashboardFilter),
+					TileFilterString:      convertToJSONString(t, tt.tileFilter),
+				},
+			)
+			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExactFile(tt.expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Amin%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_min_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_min.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_min", 0, expectedMetricsRequest),
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("srt", 8283.891270010905, tt.expectedMetricsRequest))
+		})
 	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP10NoFilterBy tests percentile(10) space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP10NoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_p10_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2810%29%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p10_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p10.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p10", 1000.0048892760917, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP75NoFilterBy tests percentile(75) space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgP75NoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_p75_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2875%29%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p75_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p75.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p75", 3254.1557923119476, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgp90NoFilterBy tests percentile(90) space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgp90NoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_p90_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890%29%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_p90_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_p90", 35000.004240558075, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy tests sum space aggregation and no filterby.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgSumNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_sum_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Asum%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_sum_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_sum.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_sum", 30957024193513, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy tests no space aggregation set and no filterby.
-// This is will result in a SLIResult with success, as this is supported: auto will be used as the space aggregation
-func TestRetrieveMetricsFromDashboardDataExplorerTile_NoSpaceAgNoFilterBy(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/no_spaceag_no_filterby/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aauto%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_no_spaceag_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_auto.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt", 29192.929640271974, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById tests average space aggregation and filterby entity id.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterById(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_id/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-B67B3EC4C95E0FA7%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_id.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_jid", 136528.52484946526, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag tests average space aggregation and filterby tag.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByTag(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_tag/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_tag.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_keptn_manager", 18533.351299277794, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAttribute tests average space aggregation and filterby entity attribute.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByEntityAttribute(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_entityattribute/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CdatabaseName%28%22EasyTravelWeatherCache%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_entityattribute.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_svc_etw_db", 1070.6877628404, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimension tests average space aggregation and filterby dimension.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgFilterByDimension(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_filterby_dimension/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("calc%3Aservice.dbcalls%3Afilter%28EQ%28%22Statement%22%2C%22Reads+in+JourneyCollection%22%29%29%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_filterby_dimension.json")
-	handler.AddExact(dynatrace.MetricsPath+"/calc:service.dbcalls", testDataFolder+"metrics_calc_service_dbcalls.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_calc_service_dbcalls_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_db_calls", 5.37359235523003, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgTwoFilters tests average space aggregation and two filters.
-// This is will result in a SLIResult with failure, as only a single filter is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_SpaceAgAvgTwoFilters(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/spaceag_avg_two_filters/"
-
-	handler := test.NewFileBasedURLHandler(t)
-
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_spaceag_avg_two_filters.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("rt_jt"))
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_NoManagementZone tests applying no filter and no management zone.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_NoManagementZone(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones/no_filter_no_managementzone/"
-
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_no_filter_no_mz", 29192.929640271974, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_NoManagementZone tests applying service tag filter and no management zone.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_NoManagementZone(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones/servicetag_filter_no_managementzone/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_servicetag_filter_no_mz", 288957.2355825356, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_WithCustomManagementZone tests applying no filter and custom management zone.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_NoFilter_WithCustomManagementZone(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones/no_filter_with_custommanagementzone/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_no_filter_custom_mz", 7045.031103506126, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
-}
-
-// TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCustomManagementZone tests applying service tag filter and custom management zone.
-// This is will result in a SLIResult with success, as this is supported.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCustomManagementZone(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones/servicetag_filter_with_custommanagementzone/"
-
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22service_tag%22%29%2CmzId%282311420533206603714%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_servicetag_filter_custom_mz", 8283.891270010905, expectedMetricsRequest),
-	}
-
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType tests that an error is produced for data explorer tiles with a management zone and no obvious entity type.
@@ -435,11 +269,14 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ServiceTag_Filter_WithCust
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/no_entity_type/"
 
+	expectedMetricsRequest := buildMetricsV2RequestStringWithMZSelector("%28builtin%3Asecurity.securityProblem.open.managementZone%3Afilter%28and%28or%28eq%28%22Risk+Level%22%2CHIGH%29%29%29%29%3AsplitBy%28%22Risk+Level%22%29%3Asum%3Aauto%3Asort%28value%28sum%2Cdescending%29%29%3Alimit%28100%29%29%3Alimit%28100%29%3Anames", "mzId%28-1234567890123456789%29")
+
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:security.securityProblem.open.managementZone", testDataFolder+"metrics_builtin_security_securityProblem_open_managementZone.json")
+	handler.AddExactError(expectedMetricsRequest, 400, testDataFolder+"metrics_query_builtin_security_securityProblem_open_managementZone.json")
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("vulnerabilities_high", "has no entity type"))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("vulnerabilities_high", expectedMetricsRequest))
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO tests propagation of a customized SLO.
@@ -448,7 +285,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/custom_slo/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
@@ -480,7 +317,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/excluded_tile/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("entityId%28SERVICE-B67B3EC4C95E0FA7%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3Afilter%28and%28or%28in%28%22dt.entity.service%22%2CentitySelector%28%22type%28service%29%2CentityId%28~%22SERVICE-B67B3EC4C95E0FA7~%22%29%22%29%29%29%29%29%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_excluded_tile.json")
@@ -498,57 +335,70 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_success/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
-	successfulSLIResultAllectionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest)
+	successfulSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest)
 
 	tests := []struct {
-		name              string
-		dashboardFilename string
-
+		name        string
+		tileName    string
+		thresholds  dynatrace.Threshold
 		expectedSLO *keptnapi.SLO
 	}{
 		{
-			name:              "Valid pass-warn-fail thresholds and no pass or warning defined in title",
-			dashboardFilename: testDataFolder + "dashboard_just_thresholds_pass_warn_fail.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 68000), createBandSLOCriteria(0, 69000)),
+			name:        "Valid pass-warn-fail thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(69000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 68000), createBandSLOCriteria(0, 69000)),
 		},
 		{
-			name:              "Valid fail-warn-pass thresholds and no pass or warning defined in title",
-			dashboardFilename: testDataFolder + "dashboard_just_thresholds_fail_warn_pass.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), createLowerBoundSLOCriteria(68000)),
+			name:        "Valid fail-warn-pass thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createFailThresholdRule(0), createWarnThresholdRule(68000), createPassThresholdRule(69000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), createLowerBoundSLOCriteria(68000)),
 		},
 		{
-			name:              "Pass or warning defined in title take precedence over valid thresholds ",
-			dashboardFilename: testDataFolder + "dashboard_both_thresholds_and_pass_and_warning_in_title.json",
+			name:       "Pass or warning defined in title take precedence over valid thresholds ",
+			tileName:   "Service Response Time; sli=srt; pass=<70000; warning=<71000",
+			thresholds: createVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(69000)),
 			expectedSLO: createExpectedServiceResponseTimeSLO(
 				[]*keptnapi.SLOCriteria{{Criteria: []string{"<70000"}}},
 				[]*keptnapi.SLOCriteria{{Criteria: []string{"<71000"}}}),
 		},
 		{
-			name:              "Visible thresholds with no values are ignored",
-			dashboardFilename: testDataFolder + "dashboard_visible_thresholds_without_values.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+			name:        "Visible thresholds with no values are ignored",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createPassThresholdRuleWithPointer(nil), createWarnThresholdRuleWithPointer(nil), createFailThresholdRuleWithPointer(nil)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(nil, nil),
 		},
 		{
-			name:              "Not visible thresholds with valid values are ignored",
-			dashboardFilename: testDataFolder + "dashboard_not_visible_thresholds_with_valid_values.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+			name:        "Not visible thresholds with valid values are ignored",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createNotVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(69000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(nil, nil),
 		},
 		{
-			name:              "Not visible thresholds with invalid values are ignored",
-			dashboardFilename: testDataFolder + "dashboard_not_visible_thresholds_with_invalid_values.json",
-			expectedSLO:       createExpectedServiceResponseTimeSLO(nil, nil),
+			name:        "Not visible thresholds with invalid values are ignored",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createNotVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(68000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(nil, nil),
 		},
 	}
 
 	for _, thresholdTest := range tests {
 		t.Run(thresholdTest.name, func(t *testing.T) {
 
-			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, thresholdTest.dashboardFilename)
-			handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-			handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
+			handler := createHandlerWithTemplatedDashboard(t,
+				"./testdata/dashboards/data_explorer/tile_thresholds_success/dashboard.template.json",
+				struct {
+					TileName         string
+					ThresholdsString string
+				}{
+					TileName:         thresholdTest.tileName,
+					ThresholdsString: convertToJSONString(t, thresholdTest.thresholds),
+				})
+			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+			handler.AddExactFile(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_avg.json")
 
 			uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
 				if assert.Equal(t, 1, len(actual.Objectives)) {
@@ -556,8 +406,46 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 				}
 			}
 
-			runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, successfulSLIResultAllectionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, successfulSLIResultAssertionsFunc)
 		})
+	}
+}
+
+func createPassThresholdRule(value float64) dynatrace.ThresholdRule {
+	return createPassThresholdRuleWithPointer(&value)
+}
+
+func createPassThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
+	return dynatrace.ThresholdRule{Value: value, Color: "#7dc540"}
+}
+
+func createWarnThresholdRule(value float64) dynatrace.ThresholdRule {
+	return createWarnThresholdRuleWithPointer(&value)
+}
+
+func createWarnThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
+	return dynatrace.ThresholdRule{Value: value, Color: "#f5d30f"}
+}
+
+func createFailThresholdRule(value float64) dynatrace.ThresholdRule {
+	return createFailThresholdRuleWithPointer(&value)
+}
+
+func createFailThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
+	return dynatrace.ThresholdRule{Value: value, Color: "#dc172a"}
+}
+
+func createVisibleThresholds(rule1 dynatrace.ThresholdRule, rule2 dynatrace.ThresholdRule, rule3 dynatrace.ThresholdRule) dynatrace.Threshold {
+	return dynatrace.Threshold{
+		Rules:   []dynatrace.ThresholdRule{rule1, rule2, rule3},
+		Visible: true,
+	}
+}
+
+func createNotVisibleThresholds(rule1 dynatrace.ThresholdRule, rule2 dynatrace.ThresholdRule, rule3 dynatrace.ThresholdRule) dynatrace.Threshold {
+	return dynatrace.Threshold{
+		Rules:   []dynatrace.ThresholdRule{rule1, rule2, rule3},
+		Visible: false,
 	}
 }
 
@@ -595,4 +483,25 @@ func createGreaterThanOrEqualSLOCriterion(v float64) string {
 
 func createLessThanSLOCriterion(v float64) string {
 	return fmt.Sprintf("<%f", v)
+}
+
+func convertToJSONStringOrEmptyIfNil[T any](t *testing.T, o *T) string {
+	if o == nil {
+		return ""
+	}
+	return convertToJSONString(t, *o)
+}
+
+func convertToJSONString[T any](t *testing.T, o T) string {
+	bytes, err := json.Marshal(o)
+	if err != nil {
+		t.Fatal("could not marshal object to JSON")
+	}
+	return string(bytes)
+}
+
+func createHandlerWithTemplatedDashboard(t *testing.T, templateFilename string, templatingData interface{}) *test.CombinedURLHandler {
+	handler := test.NewCombinedURLHandler(t)
+	handler.AddExactTemplate(dynatrace.DashboardsPath+"/"+testDashboardID, templateFilename, templatingData)
+	return handler
 }
