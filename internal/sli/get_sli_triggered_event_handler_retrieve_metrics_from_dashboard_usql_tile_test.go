@@ -80,7 +80,28 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 		createSuccessfulSLIResultAssertionsFunc("usql_metric_europe", 2, expectedUSQLRequest),
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+		if !assert.EqualValues(t, 2, len(actual.Objectives)) {
+			return
+		}
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:         "usql_metric_north_america",
+			DisplayName: "User sessions query results (North America)",
+			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<=100"}}},
+			Weight:      1,
+		}, actual.Objectives[0])
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:         "usql_metric_europe",
+			DisplayName: "User sessions query results (Europe)",
+			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<=100"}}},
+			Weight:      1,
+		}, actual.Objectives[1])
+
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 // TestRetrieveMetricsFromDashboardUSQLTile_LineChart tests that extracting SLIs from a USQL tile with line chart visualization type works as expected.

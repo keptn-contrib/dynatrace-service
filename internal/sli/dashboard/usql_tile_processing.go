@@ -88,7 +88,7 @@ func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefi
 		return newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())
 	}
 
-	return newSuccessfulTileResultForDimensionNameAndValue("", dimensionValue, sloDefinition, dynatrace.SingleValueVisualizationType, request)
+	return newSuccessfulTileResult(sloDefinition, dimensionValue, request.RequestString())
 }
 
 func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) []TileResult {
@@ -157,15 +157,10 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 }
 
 func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) TileResult {
-	indicatorName := sloDefinition.SLI
-	if dimensionName != "" {
-		indicatorName = cleanIndicatorName(indicatorName + "_" + dimensionName)
-	}
-
 	return newSuccessfulTileResult(
 		keptncommon.SLO{
-			SLI:         indicatorName,
-			DisplayName: sloDefinition.DisplayName,
+			SLI:         buildIndicatorNameWithDimensionName(sloDefinition.SLI, dimensionName),
+			DisplayName: buildDisplayNameWithDimensionName(sloDefinition.DisplayName, dimensionName),
 			Weight:      sloDefinition.Weight,
 			KeySLI:      sloDefinition.KeySLI,
 			Pass:        sloDefinition.Pass,
@@ -174,4 +169,20 @@ func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimen
 		dimensionValue,
 		request.RequestString(),
 	)
+}
+
+func buildIndicatorNameWithDimensionName(baseIndicatorName string, dimensionName string) string {
+	if dimensionName == "" {
+		return baseIndicatorName
+	}
+
+	return cleanIndicatorName(baseIndicatorName + "_" + dimensionName)
+}
+
+func buildDisplayNameWithDimensionName(baseDisplayName string, dimensionName string) string {
+	if dimensionName == "" {
+		return baseDisplayName
+	}
+
+	return baseDisplayName + " (" + dimensionName + ")"
 }
