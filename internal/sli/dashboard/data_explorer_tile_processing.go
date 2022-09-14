@@ -139,7 +139,7 @@ func (p *DataExplorerTileProcessing) processMetricExpressions(ctx context.Contex
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metric query: "+err.Error())}
 	}
 
-	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
+	return NewMetricsQueryProcessing(dynatrace.NewMetricsProcessing(p.client)).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
 }
 
 func (p *DataExplorerTileProcessing) generateMetricQueryFromMetricExpression(ctx context.Context, sloDefinition keptnapi.SLO, metricExpression string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {

@@ -76,7 +76,7 @@ func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDef
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}
 	}
 
-	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
+	return NewMetricsQueryProcessing(dynatrace.NewMetricsProcessing(p.client)).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
 }
 
 func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx context.Context, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) (*metrics.Query, error) {
@@ -159,8 +159,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 }
 
 // getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -
-// the return value always starts with a , (comma)
-//   return example: ,entityId("ABAD-222121321321")
+// the return value always starts with a , (comma), e.g.: ,entityId("ABAD-222121321321")
 func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace.FilterMap, entityType string) (string, error) {
 	filterMap, containsEntityType := filtersPerEntityType[entityType]
 	if !containsEntityType {

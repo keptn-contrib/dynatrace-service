@@ -223,7 +223,8 @@ func (p *Processing) processMetricsQueryAndMakeSLIResult(ctx context.Context, na
 	value, err := p.processMetricsQuery(ctx, request, metricUnit)
 	if err != nil {
 		var qpErrorType *dynatrace.MetricsQueryProcessingError
-		if errors.As(err, &qpErrorType) {
+		var qrmvErrorType *dynatrace.MetricsQueryReturnedMultipleValuesError
+		if errors.As(err, &qpErrorType) || errors.As(err, &qrmvErrorType) {
 			return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 		}
 		return result.NewFailedSLIResultWithQuery(name, err.Error(), request.RequestString())
@@ -232,30 +233,16 @@ func (p *Processing) processMetricsQueryAndMakeSLIResult(ctx context.Context, na
 }
 
 func (p *Processing) processMetricsQuery(ctx context.Context, request dynatrace.MetricsClientQueryRequest, metricUnit string) (float64, error) {
-	metricSeriesCollection, err := dynatrace.NewMetricsClient(p.client).GetSingleMetricSeriesCollectionByQuery(ctx, request)
+	processingResultsSet, err := dynatrace.NewMetricsProcessing(p.client).ProcessRequest(ctx, request)
 	if err != nil {
 		return 0, err
 	}
 
-	if len(metricSeriesCollection.Data) > 1 {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d metric series", len(metricSeriesCollection.Data)), Warnings: metricSeriesCollection.Warnings}
+	results := processingResultsSet.Results()
+
+	if len(results) != 1 {
+		return 0, &dynatrace.MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d metric series", len(results)), Warnings: processingResultsSet.Warnings()}
 	}
 
-	metricSeries := metricSeriesCollection.Data[0]
-
-	// TODO 2021-10-13: Check if having a metric series with zero values is even plausible
-	if len(metricSeries.Values) == 0 {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: "Metrics API v2 returned zero values", Warnings: metricSeriesCollection.Warnings}
-	}
-
-	if len(metricSeries.Values) > 1 {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d values", len(metricSeries.Values)), Warnings: metricSeriesCollection.Warnings}
-	}
-
-	value := metricSeries.Values[0]
-	if value == nil {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: "Metrics API v2 returned 'null' as value", Warnings: metricSeriesCollection.Warnings}
-	}
-
-	return unit.ScaleData(metricUnit, *value), nil
+	return unit.ScaleData(metricUnit, results[0].Value()), nil
 }
