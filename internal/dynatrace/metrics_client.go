@@ -62,6 +62,8 @@ func (q *MetricsClientQueryRequest) RequestString() string {
 	return MetricsQueryPath + "?" + queryParameters.encode()
 }
 
+const AggregationTypeValue = "value"
+
 // MetricDefinition defines the output of /metrics/<metricID>
 type MetricDefinition struct {
 	MetricID           string   `json:"metricId"`
@@ -73,8 +75,9 @@ type MetricDefinition struct {
 	DefaultAggregation struct {
 		Type string `json:"type"`
 	} `json:"defaultAggregation"`
-	DimensionDefinitions []DimensionDefinition `json:"dimensionDefinitions"`
-	EntityType           []string              `json:"entityType"`
+	DimensionDefinitions   []DimensionDefinition `json:"dimensionDefinitions"`
+	EntityType             []string              `json:"entityType"`
+	ResolutionInfSupported bool                  `json:"resolutionInfSupported"`
 }
 
 type DimensionDefinition struct {

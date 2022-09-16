@@ -2,10 +2,12 @@ package dynatrace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"golang.org/x/exp/maps"
 )
 
@@ -202,4 +204,63 @@ func generateResultName(dimensionMap map[string]string) string {
 	}
 
 	return strings.Join(sortedSuffixComponentValues, " ")
+}
+
+// SmartMetricsProcessing builds on MetricsProcessing by modifying the request in cases where multiple values are returned.
+type SmartMetricsProcessing struct {
+	client ClientInterface
+}
+
+// NewSmartMetricsProcessing creates a new SmartMetricsProcessing using the specified client interface.
+func NewSmartMetricsProcessing(client ClientInterface) *SmartMetricsProcessing {
+	return &SmartMetricsProcessing{
+		client: client,
+	}
+}
+
+// ProcessRequest queries and processes metrics using the specified request.
+func (p *SmartMetricsProcessing) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResultSet, error) {
+	metricsProcessing := NewMetricsProcessing(p.client)
+	resultSet, err := metricsProcessing.ProcessRequest(ctx, request)
+	if err == nil {
+		return resultSet, nil
+	}
+
+	var qrmvErrorType *MetricsQueryReturnedMultipleValuesError
+	if !errors.As(err, &qrmvErrorType) {
+		return nil, err
+	}
+
+	modifiedQuery, err := p.modifyQuery(ctx, request.query)
+	if err != nil {
+		return nil, err
+	}
+
+	return metricsProcessing.ProcessRequest(ctx, NewMetricsClientQueryRequest(*modifiedQuery, request.timeframe))
+}
+
+// modifyQuery modifies the supplied metrics query such that it should return a single value for each set of dimension values.
+// First, it tries to set resolution to Inf if resolution hasn't already been set and it is supported. Otherwise, it tries to do an auto fold if this wouldn't use value.
+// Other cases will produce an error, which should be bubbled up to the user to instruct them to fix their tile or query.
+func (p *SmartMetricsProcessing) modifyQuery(ctx context.Context, existingQuery metrics.Query) (*metrics.Query, error) {
+	// resolution Inf returning multiple values would indicate a broken API (so unlikely), but check for completeness
+	if existingQuery.GetResolution() == metrics.ResolutionInf {
+		return nil, errors.New("Metrics query returned multiple values but resolution is already set to Inf")
+	}
+
+	metricSelector := existingQuery.GetMetricSelector()
+	metricDefinition, err := NewMetricsClient(p.client).GetMetricDefinitionByID(ctx, metricSelector)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get definition for metric: %s", metricSelector)
+	}
+
+	if metricDefinition.ResolutionInfSupported && (existingQuery.GetResolution() == "") {
+		return metrics.NewQueryWithResolutionAndMZSelector(metricSelector, existingQuery.GetEntitySelector(), metrics.ResolutionInf, existingQuery.GetMZSelector())
+	}
+
+	if metricDefinition.DefaultAggregation.Type == AggregationTypeValue {
+		return nil, errors.New("Unable to apply ':fold()' to the metric selector as the default aggregation type is 'value'")
+	}
+
+	return metrics.NewQueryWithResolutionAndMZSelector(metricSelector+":fold()", existingQuery.GetEntitySelector(), existingQuery.GetResolution(), existingQuery.GetMZSelector())
 }
