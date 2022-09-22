@@ -14,10 +14,10 @@ import (
 // Retrieving a dashboard by an invalid ID returns an error
 //
 // prerequisites:
-//   * we use
-//  	* an invalid dashboard ID and Dynatrace API returns a 400 error, or
-//      * a valid, but not found dashboard ID and Dynatrace API returns a 404
-//   * the event can have multiple indicators or none. (There is an SLO file in Keptn and the SLO files may contain indicators)
+//   - we use
+//   - an invalid dashboard ID and Dynatrace API returns a 400 error, or
+//   - a valid, but not found dashboard ID and Dynatrace API returns a 404
+//   - the event can have multiple indicators or none. (There is an SLO file in Keptn and the SLO files may contain indicators)
 //
 // We do not want to see the error attached to any indicator coming from SLO files, but attached to a "no metric" indicator
 func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfThereAreIndicators(t *testing.T) {
@@ -95,7 +95,7 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 				assert.Contains(t, actual.Message, tc.def.errorMessage)
 			}
 
-			runAndAssertDashboardTest(t, testGetSLIEventData, handler, rClient, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
+			runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, testGetSLIEventData, handler, rClient, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
 		})
 	}
 }

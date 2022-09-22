@@ -16,8 +16,8 @@ import (
 // TestNoErrorIsReturnedWhenSLOFileWritingSucceeds tests that no error is returned if retrieving (a single) SLI from a dashboard works and the resulting SLO file is uploaded.
 //
 // prerequisites:
-//   * we use a valid dashboard ID
-//   * all processing and SLI result retrieval works
+//   - we use a valid dashboard ID
+//   - all processing and SLI result retrieval works
 func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
 
@@ -30,20 +30,15 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 		assert.EqualValues(t, keptnv2.ResultPass, actual.Result)
 		assert.Empty(t, actual.Message)
 	}
-
-	resourceClientMock := &uploadErrorResourceClientMock{
-		t: t,
-	}
-
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, resourceClientMock, getSLIFinishedEventAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
 }
 
 // TestErrorIsReturnedWhenSLOFileWritingFails tests that an error is returned if retrieving (a single) SLI from a dashboard works but upload of SLO file fails.
 //
 // prerequisites:
-//   * we use a valid dashboard ID
-//   * all processing and SLI result retrieval works
-//   * if an upload of either SLO, SLI or dashboard file fails, then the test must fail
+//   - we use a valid dashboard ID
+//   - all processing and SLI result retrieval works
+//   - if an upload of either SLO, SLI or dashboard file fails, then the test must fail
 func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
 
@@ -62,15 +57,15 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 		assert.Contains(t, actual.Message, "upload failed")
 	}
 
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, resourceClientMock, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestWithResourceClientAndCheckSLIs(t, handler, testGetSLIEventData, resourceClientMock, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
 }
 
 // Retrieving a dashboard by ID works, and we ignore the outdated parse behaviour
 //
 // prerequisites:
-//   * we use a valid dashboard ID and it is returned by Dynatrace API
-//   * The dashboard has 'KQG.QueryBehavior=ParseOnChange' set to only reparse the dashboard if it changed  (we do no longer consider this behaviour)
-//   * we will not fallback to processing the stored SLI files, but process the dashboard again
+//   - we use a valid dashboard ID and it is returned by Dynatrace API
+//   - The dashboard has 'KQG.QueryBehavior=ParseOnChange' set to only reparse the dashboard if it changed  (we do no longer consider this behaviour)
+//   - we will not fallback to processing the stored SLI files, but process the dashboard again
 func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
@@ -81,12 +76,11 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", "./testdata/sli_via_dashboard_test/metric_definition_service-response-time.json")
 	handler.AddExact(expectedMetricsRequest, "./testdata/sli_via_dashboard_test/response_time_p95_200_1_result.json")
 
-	// sli and slo upload works
-	rClient := &uploadErrorResourceClientMock{t: t}
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		assert.NotNil(t, actual)
+	}
 
-	// value is divided by 1000 from dynatrace API result!
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
-	assert.True(t, rClient.slosUploaded)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
 }
 
 type uploadWillFailResourceClientMock struct {
@@ -111,9 +105,9 @@ func (m *uploadWillFailResourceClientMock) UploadSLOs(_ context.Context, _ strin
 // Retrieving (a single) SLI from a dashboard did not work, but no empty SLI or SLO files would be written
 //
 // prerequisites:
-//   * we use a valid dashboard ID
-//   * all processing works, but SLI result retrieval failed with 0 results (no data available)
-//   * therefore SLI and SLO should be empty and an upload of either SLO or SLI should fail the test
+//   - we use a valid dashboard ID
+//   - all processing works, but SLI result retrieval failed with 0 results (no data available)
+//   - therefore SLI and SLO should be empty and an upload of either SLO or SLI should fail the test
 func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
 
@@ -133,8 +127,8 @@ func TestEmptySLOAndSLIAreNotWritten(t *testing.T) {
 // Retrieving a dashboard by ID works, but dashboard processing did not produce any results, so we expect an error
 //
 // prerequisites:
-//   * we use a valid dashboard ID and it is returned by Dynatrace API
-//   * the dashboard does have a CustomCharting tile, but not the correct tile name, that would qualify it as SLI/SLO source
+//   - we use a valid dashboard ID and it is returned by Dynatrace API
+//   - the dashboard does have a CustomCharting tile, but not the correct tile name, that would qualify it as SLI/SLO source
 func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.T) {
 
 	// we do not need metrics definition and metrics query, because we will should not be looking into the tile
@@ -148,5 +142,5 @@ func TestThatFallbackToSLIsFromDashboardIfDashboardDidNotChangeWorks(t *testing.
 		assert.Contains(t, actual.Message, "any SLI results")
 	}
 
-	runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestWithResourceClientAndCheckSLIs(t, handler, testGetSLIEventData, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
 }

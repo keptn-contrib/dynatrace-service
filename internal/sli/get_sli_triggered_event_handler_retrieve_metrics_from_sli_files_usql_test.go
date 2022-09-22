@@ -44,7 +44,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "incorrect prefix"))
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "incorrect prefix"))
 		})
 	}
 }
@@ -52,9 +52,9 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
-// * the defined SLI is valid YAML and the USQL prefix is used correctly, but the fields are used incorrectly.
-//   So we return an error for that
+//   - a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
+//   - the defined SLI is valid YAML and the USQL prefix is used correctly, but the fields are used incorrectly.
+//     So we return an error for that
 func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
 	testConfigs := []struct {
@@ -96,7 +96,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }
@@ -145,7 +145,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 				testIndicatorUSQL: tc.query,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, expectedUSQLRequest))
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, expectedUSQLRequest))
 		})
 	}
 }
@@ -164,7 +164,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, expectedUSQLRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, expectedUSQLRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -181,7 +181,7 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		testIndicatorUSQL: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -342,7 +342,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				testIndicatorUSQL: tc.usqlQuery,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }
