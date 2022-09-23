@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -138,6 +139,123 @@ func TestErrorMessageWhenNoSLIsAreRequested(t *testing.T) {
 			rClient := newResourceClientMockWithSLIs(t, tt.slis)
 
 			runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t, handler, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric", "no SLIs were requested"))
+		})
+	}
+}
+
+// TestGetSLIValueMetricsQuery_Success tests processing of Metrics API v2 results success case.
+// One result, one data - want success
+func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/success/"
+
+	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddStartsWith(expectedMetricsRequest, testDataFolder+"metrics_query_1result_1data_1value.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+	})
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 287.10692602352884, expectedMetricsRequest))
+}
+
+// TestGetSLIValueMetricsQueryErrorHandling_RequestFails tests handling of failed requests.
+func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/constraints_violated/"
+
+	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddStartsWithError(expectedMetricsRequest, 400, testDataFolder+"metrics_query_constraints_violated.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+	})
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "error querying Metrics API v2"))
+}
+
+// TestGetSLIValueMetricsQuery_Warnings tests processing of Metrics API v2 results for warnings.
+func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/warnings/"
+
+	// TODO 2021-10-13: add rich error types as described in #358, including warnings
+	tests := []struct {
+		name                         string
+		metricsQueryResponseFilename string
+		expectedErrorSubString       string
+	}{
+		// this case may not occur in reality, but check it here for completeness
+		{
+			name:                         "Zero metric series collections 1 - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_0results_fake3.json",
+			expectedErrorSubString:       "Metrics API v2 returned zero metric series collections",
+		},
+
+		{
+			name:                         "One metric series collection, no metric series - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_0data.json",
+			expectedErrorSubString:       "Metrics API v2 returned zero metric series",
+		},
+
+		// this case may not occur in reality, but check it here for completeness
+		{
+			name:                         "One metric series collection, one metric sereis, no values, fake 1 - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_1data_0values_fake1.json",
+			expectedErrorSubString:       "Metrics API v2 returned zero values",
+		},
+
+		// this case may not occur in reality, but check it here for completeness
+		{
+			name:                         "One metric series collection, one metric series, no values, fake 2 - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_1data_0values_fake2.json",
+			expectedErrorSubString:       "Metrics API v2 returned zero values",
+		},
+
+		{
+			name:                         "One metric series collection, one metric series, null value - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_1data_null_value.json",
+			expectedErrorSubString:       "Metrics API v2 returned 'null' as value",
+		},
+
+		{
+			name:                         "One metric series collection, one metric series, two values - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_1data_2values.json",
+			expectedErrorSubString:       "Metrics API v2 returned 2 values",
+		},
+
+		{
+			name:                         "One metric series collection, two metric series - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_2data.json",
+			expectedErrorSubString:       "Metrics API v2 returned 2 metric series",
+		},
+
+		{
+			name:                         "Two metric series collections, one metric series - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_2results_1data.json",
+			expectedErrorSubString:       "Metrics API v2 returned 2 metric series collections",
+		},
+
+		{
+			name:                         "Two metric series collections, two metric series - want failure",
+			metricsQueryResponseFilename: testDataFolder + "metrics_query_2results_2data.json",
+			expectedErrorSubString:       "Metrics API v2 returned 2 metric series collections",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddStartsWith(dynatrace.MetricsQueryPath, tt.metricsQueryResponseFilename)
+
+			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+				testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+			})
+
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, tt.expectedErrorSubString))
 		})
 	}
 }
