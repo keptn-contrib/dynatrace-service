@@ -20,58 +20,6 @@ import (
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
-// tests the GETSliValue function to return the proper datapoint with the old custom query format
-func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
-
-	okResponse := `{
-		"totalCount": 8,
-		"nextPageKey": null,
-		"result": [
-			{
-				"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
-				"data": [
-					{
-						"dimensions": [],
-						"timestamps": [
-							1579097520000
-						],
-						"values": [
-							8433.40
-						]
-					}
-				]
-			}
-		]
-	}`
-
-	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
-
-	httpClient, teardown := test.CreateHTTPClient(handler)
-	defer teardown()
-
-	keptnEvent := createDefaultTestEventData()
-
-	timeframe := createTestTimeframe(t)
-
-	testQueries := []string{
-		"metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT),type(SERVICE)",
-		"builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
-	}
-
-	for _, testQuery := range testQueries {
-
-		customQueries := make(map[string]string)
-		customQueries[responseTimeP50] = testQuery
-
-		p := createCustomQueryProcessing(t, keptnEvent, httpClient, NewCustomQueries(customQueries), timeframe)
-		sliResult := p.GetSLIResultFromIndicator(context.TODO(), responseTimeP50)
-
-		assert.True(t, sliResult.Success)
-		assert.InDelta(t, 8433.40, sliResult.Value, 0.001)
-	}
-}
-
 // Tests what happens when end time is too close to now. This test results in a short delay.
 func TestGetSLISleep(t *testing.T) {
 	okResponse := `{

@@ -259,3 +259,19 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 		})
 	}
 }
+
+// tests the GETSliValue function to return the proper datapoint with the old custom query format
+func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/old_metrics_format/"
+
+	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddStartsWith(expectedMetricsRequest, testDataFolder+"metrics_query.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
+	})
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 8433.40, expectedMetricsRequest))
+}
