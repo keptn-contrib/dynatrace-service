@@ -95,23 +95,33 @@ func buildUSQLRequest(encodedQuery string) string {
 	return fmt.Sprintf("%s?addDeepLinkFields=false&endTimestamp=%s&explain=false&query=%s&startTimestamp=%s", dynatrace.USQLPath, convertTimeStringToUnixMillisecondsString(testSLIEnd), encodedQuery, convertTimeStringToUnixMillisecondsString(testSLIStart))
 }
 
-func runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, handler, &uploadErrorResourceClientMock{t: t}, getSLIEventData, dashboard, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+}
+
+func runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	rClient := &uploadErrorResourceClientMock{t: t}
+	runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, handler, rClient, getSLIEventData, dashboard, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
+}
+
+func runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t *testing.T, handler http.Handler, rClient resourceClientInterface, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, dashboard)
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
 func runGetSLIsFromDashboardTestWithResourceClientAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, rClient resourceClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
-	runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, getSLIEventData, handler, rClient, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+	runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, handler, rClient, getSLIEventData, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
 func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultsAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
-	runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, getSLIEventData, handler, &uploadErrorResourceClientMock{t: t}, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, handler, &uploadErrorResourceClientMock{t: t}, getSLIEventData, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	rClient := &uploadErrorResourceClientMock{t: t}
-	runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, getSLIEventData, handler, rClient, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, handler, rClient, getSLIEventData, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
 	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
 }
 

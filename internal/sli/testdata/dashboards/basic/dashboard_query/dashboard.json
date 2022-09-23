@@ -7,7 +7,7 @@
   },
   "id": "12345678-1111-4444-8888-123456789012",
   "dashboardMetadata": {
-    "name": "KQG;project=qualitygate;service=evalservice;stage=qualitystage",
+    "name": "KQG;project=sockshop;service=carts;stage=staging",
     "shared": false,
     "owner": "",
     "sharingDetails": {
