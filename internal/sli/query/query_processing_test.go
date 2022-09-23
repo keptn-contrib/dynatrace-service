@@ -19,67 +19,6 @@ import (
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 
-// Tests the behaviour of the GetSLIValue function in case of a HTTP 400 return code
-func TestGetSLIValueWithErrorResponse(t *testing.T) {
-	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWithError(dynatrace.MetricsQueryPath, http.StatusBadRequest, []byte{})
-
-	httpClient, teardown := test.CreateHTTPClient(handler)
-	defer teardown()
-
-	keptnEvent := createDefaultTestEventData()
-	timeframe := createTestTimeframe(t)
-
-	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
-
-	sliResult := dh.GetSLIResultFromIndicator(context.TODO(), throughput)
-
-	assert.False(t, sliResult.Success)
-	assert.EqualValues(t, 0.0, sliResult.Value)
-}
-
-func TestGetSLIValueForIndicator(t *testing.T) {
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith("/api/v2/slo", "./testdata/test_get_slo_id.json")
-	handler.AddStartsWith("/api/v2/problems", "./testdata/test_get_problems.json")
-	handler.AddStartsWith("/api/v2/securityProblems", "./testdata/test_get_securityproblems.json")
-
-	httpClient, teardown := test.CreateHTTPClient(handler)
-	defer teardown()
-
-	keptnEvent := createDefaultTestEventData()
-	timeframe := createTestTimeframe(t)
-
-	testConfigs := []struct {
-		indicator string
-		query     string
-	}{
-		{
-			indicator: "problems",
-			query:     "PV2;problemSelector=status(open)",
-		},
-		{
-			indicator: "security_problems",
-			query:     "SECPV2;securityProblemSelector=status(open)",
-		},
-		{
-			indicator: "RT_faster_500ms",
-			query:     "SLO;524ca177-849b-3e8c-8175-42b93fbc33c5",
-		},
-	}
-
-	for _, testConfig := range testConfigs {
-		customQueries := make(map[string]string)
-		customQueries[testConfig.indicator] = testConfig.query
-
-		ret := createCustomQueryProcessing(t, keptnEvent, httpClient, NewCustomQueries(customQueries), timeframe)
-
-		sliResult := ret.GetSLIResultFromIndicator(context.TODO(), testConfig.indicator)
-
-		assert.True(t, sliResult.Success)
-	}
-}
-
 // TestGetSLIValueSupportsEnvPlaceholders tests that environment variable placeholders are replaced correctly in SLI definitions.
 func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
