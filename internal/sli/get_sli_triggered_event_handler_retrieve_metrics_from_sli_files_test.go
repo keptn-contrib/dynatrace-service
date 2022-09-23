@@ -3,9 +3,11 @@ package sli
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	"github.com/stretchr/testify/assert"
 )
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -274,4 +276,25 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 	})
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 8433.40, expectedMetricsRequest))
+}
+
+// Tests what happens when end time is too close to now. This test results in a short delay.
+func TestGetSLISleep(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/sleep/"
+
+	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddStartsWith(expectedMetricsRequest, testDataFolder+"metrics_query.json")
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
+	})
+
+	// time how long getting the SLI value takes
+	timeBeforeGetSLIValue := time.Now()
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 8433.40, expectedMetricsRequest))
+	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
+
+	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
 }

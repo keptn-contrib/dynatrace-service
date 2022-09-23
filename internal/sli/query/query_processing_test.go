@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -19,54 +18,6 @@ import (
 )
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
-
-// Tests what happens when end time is too close to now. This test results in a short delay.
-func TestGetSLISleep(t *testing.T) {
-	okResponse := `{
-		"totalCount": 3,
-		"nextPageKey": null,
-		"result": [
-			{
-				"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
-				"data": [
-					{
-						"dimensions": [],
-						"timestamps": [
-							1579097520000
-						],
-						"values": [
-							8433.40
-						]
-					}
-				]
-			}
-		]
-	}`
-
-	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
-
-	httpClient, teardown := test.CreateHTTPClient(handler)
-	defer teardown()
-
-	keptnEvent := createDefaultTestEventData()
-
-	// make timeframe with end in the near past, -115 seconds, causing a short delay of 120 - 115 = ~5 seconds while waiting for the Metrics V2 API
-	timeframe, err := common.NewTimeframe(time.Now().Add(-5*time.Minute), time.Now().Add(-115*time.Second))
-	assert.NoError(t, err)
-
-	dh := createQueryProcessing(t, keptnEvent, httpClient, *timeframe)
-
-	// time how long getting the SLI value takes
-	timeBeforeGetSLIValue := time.Now()
-	sliResult := dh.GetSLIResultFromIndicator(context.TODO(), responseTimeP50)
-	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
-
-	assert.True(t, sliResult.Success)
-	assert.InDelta(t, 8433.40, sliResult.Value, 0.001)
-
-	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
-}
 
 // Tests the behaviour of the GetSLIValue function in case of a HTTP 400 return code
 func TestGetSLIValueWithErrorResponse(t *testing.T) {
