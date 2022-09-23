@@ -11,7 +11,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -20,39 +19,6 @@ import (
 )
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
-
-// tests the GETSliValue function to return the proper datapoint
-func TestGetSLIValue(t *testing.T) {
-
-	okResponse := `{
-		"totalCount": 8,
-		"nextPageKey": null,
-		"result": [
-			{
-				"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
-				"data": [
-					{
-						"dimensions": [],
-						"timestamps": [
-							1579097520000
-						],
-						"values": [
-							8433.40
-						]
-					}
-				]
-			}
-		]
-	}`
-
-	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
-
-	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
-
-	assert.True(t, sliResult.Success)
-	assert.InDelta(t, 8433.40, sliResult.Value, 0.001)
-}
 
 // tests the GETSliValue function to return the proper datapoint with the old custom query format
 func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
@@ -104,45 +70,6 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		assert.True(t, sliResult.Success)
 		assert.InDelta(t, 8433.40, sliResult.Value, 0.001)
 	}
-}
-
-// Tests GetSLIValue with an empty result (no datapoints)
-func TestGetSLIValueWithEmptyResult(t *testing.T) {
-
-	okResponse := `{
-		"totalCount": 4,
-		"nextPageKey": null,
-		"result": [
-			{
-				"metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
-				"data": [
-				]
-			}
-		]
-	}`
-
-	handler := test.NewPayloadBasedURLHandler(t)
-	handler.AddStartsWith(dynatrace.MetricsQueryPath, []byte(okResponse))
-
-	sliResult := runGetSLIResultFromIndicatorTest(t, handler)
-
-	assert.False(t, sliResult.Success)
-	assert.EqualValues(t, 0.0, sliResult.Value)
-}
-
-/*
- * Helper function to test GetSLIValue
- */
-func runGetSLIResultFromIndicatorTest(t *testing.T, handler http.Handler) result.SLIResult {
-	httpClient, teardown := test.CreateHTTPClient(handler)
-	defer teardown()
-
-	keptnEvent := createDefaultTestEventData()
-	timeframe := createTestTimeframe(t)
-
-	dh := createQueryProcessing(t, keptnEvent, httpClient, timeframe)
-
-	return dh.GetSLIResultFromIndicator(context.TODO(), responseTimeP50)
 }
 
 // Tests what happens when end time is too close to now. This test results in a short delay.
