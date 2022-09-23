@@ -3,7 +3,6 @@ package query
 import (
 	"context"
 	"net/http"
-	"os"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -18,33 +17,6 @@ import (
 )
 
 const testDynatraceAPIToken = "dt0c01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
-
-// TestGetSLIValueSupportsEnvPlaceholders tests that environment variable placeholders are replaced correctly in SLI definitions.
-func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact("/api/v2/metrics/query?entitySelector=type%28SERVICE%29%2Ctag%28%22env_tag%3Asome_tag%22%29&from=1571649084000&metricSelector=builtin%3Aservice.response.time&resolution=Inf&to=1571649085000", "./testdata/get_sli_value_env_placeholders_test/metrics_query_result.json")
-
-	httpClient, teardown := test.CreateHTTPClient(handler)
-	defer teardown()
-
-	keptnEvent := &test.EventData{}
-	timeframe := createTestTimeframe(t)
-
-	indicator := "response_time_env"
-
-	os.Setenv("MY_ENV_TAG", "some_tag")
-
-	customQueries := make(map[string]string)
-	customQueries[indicator] = "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time"
-
-	ret := createCustomQueryProcessing(t, keptnEvent, httpClient, NewCustomQueries(customQueries), timeframe)
-	sliResult := ret.GetSLIResultFromIndicator(context.TODO(), indicator)
-
-	assert.True(t, sliResult.Success)
-	assert.EqualValues(t, 0.29, sliResult.Value)
-
-	os.Unsetenv("MY_ENV_TAG")
-}
 
 // TestGetSLIValueSupportsPlaceholders tests that placeholders are replaced correctly in SLI definitions.
 func TestGetSLIValueSupportsPlaceholders(t *testing.T) {

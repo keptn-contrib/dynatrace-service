@@ -2,6 +2,7 @@ package sli
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -297,4 +298,24 @@ func TestGetSLISleep(t *testing.T) {
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
 	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
+}
+
+// TestGetSLIValueSupportsEnvPlaceholders tests that environment variable placeholders are replaced correctly in SLI definitions.
+func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/env_placeholders/"
+
+	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22env_tag%3Asome_tag%22%29", "builtin%3Aservice.response.time")
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddStartsWith(expectedMetricsRequest, testDataFolder+"metrics_query_result.json")
+
+	indicator := "response_time_env"
+
+	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+		indicator: "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time",
+	})
+
+	os.Setenv("MY_ENV_TAG", "some_tag")
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, indicator, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 0.29, expectedMetricsRequest))
+	os.Unsetenv("MY_ENV_TAG")
 }
