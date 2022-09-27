@@ -26,7 +26,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 		"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "SLI definition", "not found"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "SLI definition", "not found"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -43,7 +43,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 		testIndicatorResponseTimeP95: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing Metrics v2 query"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing Metrics v2 query"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -58,7 +58,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 	const errorMessage = "invalid YAML file - some parsing issue"
 	rClient := newResourceClientMockWithGetSLIsError(t, fmt.Errorf(errorMessage))
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, errorMessage))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, errorMessage))
 }
 
 // TestRetrieveMetricsFromFile_SecurityProblemsV2 tests the success case for file-based SecurityProblemsV2 SLIs.
@@ -76,7 +76,7 @@ func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 		testIndicatorSecurityProblemCount: "SECPV2;securityProblemSelector=status(\"open\")",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorSecurityProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 103, securityProblemsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorSecurityProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 103, securityProblemsRequest))
 }
 
 // TestRetrieveMetricsFromFile_ProblemsV2 tests the success case for file-based ProblemsV2 SLIs.
@@ -95,7 +95,7 @@ func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 		testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorProblemCount, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 0, expectedProblemsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 0, expectedProblemsRequest))
 }
 
 // TestRetrieveMetricsFromFile_SLO tests the success case for file-based SLO SLIs.
@@ -114,7 +114,7 @@ func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
 		testIndicatorSLOValue: "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorSLOValue, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, expectedSLORequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorSLOValue, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, expectedSLORequest))
 }
 
 // TestErrorMessageWhenNoSLIsAreRequested tests that the correct error message is generated when no SLIs are requested.
@@ -160,7 +160,7 @@ func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 287.10692602352884, expectedMetricsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 287.10692602352884, expectedMetricsRequest))
 }
 
 // TestGetSLIValueMetricsQueryErrorHandling_RequestFails tests handling of failed requests.
@@ -176,7 +176,7 @@ func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "error querying Metrics API v2"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "error querying Metrics API v2"))
 }
 
 // TestGetSLIValueMetricsQuery_Warnings tests processing of Metrics API v2 results for warnings.
@@ -258,7 +258,7 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 				testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 			})
 
-			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, tt.expectedErrorSubString))
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, tt.expectedErrorSubString))
 		})
 	}
 }
@@ -276,7 +276,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 		testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 8433.40, expectedMetricsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 8433.40, expectedMetricsRequest))
 }
 
 // Tests what happens when end time is too close to now. This test results in a short delay.
@@ -294,7 +294,7 @@ func TestGetSLISleep(t *testing.T) {
 
 	// time how long getting the SLI value takes
 	timeBeforeGetSLIValue := time.Now()
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorResponseTimeP95, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 8433.40, expectedMetricsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 8433.40, expectedMetricsRequest))
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
 	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)
@@ -316,6 +316,106 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	})
 
 	os.Setenv("MY_ENV_TAG", "some_tag")
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, indicator, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 0.29, expectedMetricsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, indicator, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 0.29, expectedMetricsRequest))
 	os.Unsetenv("MY_ENV_TAG")
+}
+
+// TestGetSLIValueSupportsPlaceholders tests that placeholders are replaced correctly in SLI definitions.
+func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
+
+	const testDataFolder = "./testdata/sli_files/basic/placeholders/"
+
+	tests := []struct {
+		name             string
+		indicator        string
+		query            string
+		expectedRequest  string
+		responseFilename string
+		expectedSLIValue float64
+	}{
+		{
+			name:             "Metrics V2 with MV2 encoding",
+			indicator:        "response_time",
+			query:            "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),tag(\"keptn_project:$PROJECT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
+			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29%2Ctag%28%22keptn_project%3Amyproject%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29", "builtin%3Aservice.response.time"),
+			responseFilename: testDataFolder + "metrics_query_result.json",
+			expectedSLIValue: 0.29,
+		},
+
+		{
+			name:             "Metrics V2",
+			indicator:        "response_time2",
+			query:            "entitySelector=type(SERVICE),tag(\"keptn_deployment:$DEPLOYMENT\"),tag(\"context:$CONTEXT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
+			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_deployment%3Amydeployment%22%29%2Ctag%28%22context%3Amycontext%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29", "builtin%3Aservice.response.time"),
+			responseFilename: testDataFolder + "metrics_query_result.json",
+			expectedSLIValue: 290,
+		},
+
+		{
+			name:             "PV2",
+			indicator:        "problems",
+			query:            "PV2;problemSelector=status($LABEL.problem_status)",
+			expectedRequest:  buildProblemsV2Request("status%28open%29"),
+			responseFilename: testDataFolder + "problems_query_result.json",
+			expectedSLIValue: 1,
+		},
+		{
+			name:             "SECPV2",
+			indicator:        "security_problems",
+			query:            "SECPV2;securityProblemSelector=status($LABEL.problem_status)",
+			expectedRequest:  buildSecurityProblemsRequest("status%28open%29"),
+			responseFilename: testDataFolder + "security_problems_query_result.json",
+			expectedSLIValue: 4,
+		},
+
+		{
+			name:             "SLO",
+			indicator:        "RT_faster_500ms",
+			query:            "SLO;$LABEL.slo_id",
+			expectedRequest:  buildSLORequest("524ca177-849b-3e8c-8175-42b93fbc33c5"),
+			responseFilename: testDataFolder + "slo_query_result.json",
+			expectedSLIValue: 96,
+		},
+
+		{
+			name:             "USQL",
+			indicator:        "User_session_time",
+			query:            "USQL;COLUMN_CHART;iOS 12.1.4;SELECT osVersion, AVG(duration) FROM usersession WHERE country IN('$LABEL.country') GROUP BY osVersion",
+			expectedRequest:  buildUSQLRequest("SELECT+osVersion%2C+AVG%28duration%29+FROM+usersession+WHERE+country+IN%28%27Austria%27%29+GROUP+BY+osVersion"),
+			responseFilename: testDataFolder + "usql_query_result.json",
+			expectedSLIValue: 21478,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddExact(tt.expectedRequest, tt.responseFilename)
+
+			keptnEvent := &getSLIEventData{
+				context:      "mycontext",
+				event:        "myevent",
+				project:      "myproject",
+				stage:        "mystage",
+				service:      "myservice",
+				deployment:   "mydeployment",
+				testStrategy: "mystrategy",
+				labels: map[string]string{
+					"slo_id":         "524ca177-849b-3e8c-8175-42b93fbc33c5",
+					"problem_status": "open",
+					"country":        "Austria",
+				},
+
+				indicators: []string{tt.indicator},
+				sliStart:   testSLIStart,
+				sliEnd:     testSLIEnd,
+			}
+
+			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+				tt.indicator: tt.query,
+			})
+
+			runGetSLIsFromFilesTestWithEventAndCheckSLIs(t, handler, rClient, keptnEvent, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(tt.indicator, tt.expectedSLIValue, tt.expectedRequest))
+		})
+	}
 }

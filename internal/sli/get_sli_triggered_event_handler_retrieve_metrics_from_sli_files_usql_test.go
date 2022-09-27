@@ -44,7 +44,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "incorrect prefix"))
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorUSQL, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "incorrect prefix"))
 		})
 	}
 }
@@ -96,7 +96,7 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorUSQL, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }
@@ -145,7 +145,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 				testIndicatorUSQL: tc.query,
 			})
 
-			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, expectedUSQLRequest))
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorUSQL, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, expectedUSQLRequest))
 		})
 	}
 }
@@ -164,7 +164,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, expectedUSQLRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorUSQL, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, expectedUSQLRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -181,7 +181,7 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 		testIndicatorUSQL: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorUSQL, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -342,7 +342,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				testIndicatorUSQL: tc.usqlQuery,
 			})
 
-			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorUSQL, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }

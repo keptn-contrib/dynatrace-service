@@ -85,6 +85,11 @@ func buildProblemsV2Request(encodedProblemSelector string) string {
 	return fmt.Sprintf("%s?from=%s&problemSelector=%s&to=%s", dynatrace.ProblemsV2Path, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedProblemSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
+// buildSecurityProblemsRequest builds a Security Problems request string with the specified encoded security problem selector for use in testing.
+func buildSecurityProblemsRequest(encodedSecurityProblemSelector string) string {
+	return fmt.Sprintf("%s?from=%s&securityProblemSelector=%s&to=%s", dynatrace.SecurityProblemsPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedSecurityProblemSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+}
+
 // buildSLORequest builds a SLO request string with the specified SLO ID for use in testing.
 func buildSLORequest(sloID string) string {
 	return fmt.Sprintf("%s/%s?from=%s&timeFrame=GTF&to=%s", dynatrace.SLOPath, sloID, convertTimeStringToUnixMillisecondsString(testSLIStart), convertTimeStringToUnixMillisecondsString(testSLIEnd))
@@ -125,19 +130,23 @@ func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.H
 	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
 }
 
-func runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t *testing.T, handler http.Handler, requestedIndicator string, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
-	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, []string{requestedIndicator}, rClient, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+func runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t *testing.T, handler http.Handler, rClient *resourceClientMock, requestedIndicator string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, rClient, []string{requestedIndicator}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
 
 func runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t *testing.T, handler http.Handler, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
-	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, []string{}, rClient, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, rClient, []string{}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func runGetSLIsFromFilesTestAndCheckSLIs(t *testing.T, handler http.Handler, requestedIndicators []string, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromFilesTestAndCheckSLIs(t *testing.T, handler http.Handler, rClient *resourceClientMock, requestedIndicators []string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromFilesTestWithEventAndCheckSLIs(t, handler, rClient, createTestGetSLIEventDataWithIndicators(requestedIndicators), getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+}
+
+func runGetSLIsFromFilesTestWithEventAndCheckSLIs(t *testing.T, handler http.Handler, rClient *resourceClientMock, ev *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 
 	// we do not want to query a dashboard, so we leave it empty
-	runTestAndAssertNoError(t, createTestGetSLIEventDataWithIndicators(requestedIndicators), handler, eventSenderClient, rClient, "")
+	runTestAndAssertNoError(t, ev, handler, eventSenderClient, rClient, "")
 
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
