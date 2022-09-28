@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"path/filepath"
 	"testing"
 
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
@@ -17,8 +18,8 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedProblemsRequest, testDataFolder+"problems_status_open.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedProblemsRequest, filepath.Join(testDataFolder, "problems_status_open.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("problems", 0, expectedProblemsRequest),
@@ -51,8 +52,8 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29%2CmanagementZoneIds%289130632296508575249%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedProblemsRequest, testDataFolder+"problems_status_open.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedProblemsRequest, filepath.Join(testDataFolder, "problems_status_open.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("problems", 10, expectedProblemsRequest),
@@ -86,8 +87,8 @@ func TestRetrieveMetricsFromDashboardProblemTile_MissingScopes(t *testing.T) {
 	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExactError(expectedProblemsRequest, 403, testDataFolder+"problems_missing_scope.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExactError(expectedProblemsRequest, 403, filepath.Join(testDataFolder, "problems_missing_scope.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("problems", expectedProblemsRequest),

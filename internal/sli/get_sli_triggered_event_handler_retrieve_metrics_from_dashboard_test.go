@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"path/filepath"
 	"testing"
 
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
@@ -26,9 +27,9 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_single_sli.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metric_definition_service-response-time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"response_time_p95_200_1_result.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultPass, actual.Result)
@@ -49,9 +50,9 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_single_sli.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metric_definition_service-response-time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"response_time_p95_200_1_result.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
 
 	resourceClientMock := &uploadErrorResourceClientMock{
 		t:              t,
@@ -79,9 +80,9 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 
 	// we need metrics definition, because we will be retrieving metrics from dashboard
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_single_sli_parse_only_on_change.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metric_definition_service-response-time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"response_time_p95_200_1_result.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli_parse_only_on_change.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
 		assert.NotNil(t, actual)
@@ -120,9 +121,9 @@ func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_single_sli.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metric_definition_service-response-time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"response_time_p95_200_0_results.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_results.json"))
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultWarning, actual.Result)
@@ -142,7 +143,7 @@ func TestDashboardThatProducesNoResultsProducesError(t *testing.T) {
 
 	// we do not need metrics definition and metrics query, because we will should not be looking into the tile
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_without_matching_tile_name.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_without_matching_tile_name.json"))
 
 	// no SLOs should be uploaded
 	rClient := &uploadWillFailResourceClientMock{t: t}
@@ -160,10 +161,10 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/dashboard_query/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath, testDataFolder+"dashboards_query.json")
-	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", testDataFolder+"dashboard.json")
-	handler.AddExact(buildSLORequest("524ca177-849b-3e8c-8175-42b93fbc33c5"), testDataFolder+"slo_524ca177-849b-3e8c-8175-42b93fbc33c5.json")
-	handler.AddExact(buildProblemsV2Request("status%28%22open%22%29%2CmanagementZoneIds%287030365576649815430%29"), testDataFolder+"problems.json")
+	handler.AddExact(dynatrace.DashboardsPath, filepath.Join(testDataFolder, "dashboards_query.json"))
+	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(buildSLORequest("524ca177-849b-3e8c-8175-42b93fbc33c5"), filepath.Join(testDataFolder, "slo_524ca177-849b-3e8c-8175-42b93fbc33c5.json"))
+	handler.AddExact(buildProblemsV2Request("status%28%22open%22%29%2CmanagementZoneIds%287030365576649815430%29"), filepath.Join(testDataFolder, "problems.json"))
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
 		if !assert.NotNil(t, actual) {
@@ -202,7 +203,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 
 	// we add a handler to simulate a very concrete 404 Dashboards API request/response in this case.
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExactError(dynatrace.DashboardsPath+"/"+dashboardID, http.StatusNotFound, testDataFolder+"dashboards_query.json")
+	handler.AddExactError(dynatrace.DashboardsPath+"/"+dashboardID, http.StatusNotFound, filepath.Join(testDataFolder, "dashboards_query.json"))
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
@@ -224,7 +225,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 
 	// we add a handler to simulate a very concrete 400 Dashboards API request/response in this case.
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExactError(dynatrace.DashboardsPath+"/"+dashboardID, http.StatusBadRequest, testDataFolder+"dashboards_query.json")
+	handler.AddExactError(dynatrace.DashboardsPath+"/"+dashboardID, http.StatusBadRequest, filepath.Join(testDataFolder, "dashboards_query.json"))
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)

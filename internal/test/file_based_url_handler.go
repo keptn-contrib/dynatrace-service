@@ -79,7 +79,7 @@ func (h *FileBasedURLHandler) AddStartsWithError(url string, statusCode int, fil
 }
 
 func (h *FileBasedURLHandler) assertFileIsInTestDataFolder(fileName string) {
-	if !strings.HasPrefix(fileName, "./testdata/") {
+	if !strings.HasPrefix(fileName, "./testdata/") && !strings.HasPrefix(fileName, "testdata/") {
 		h.t.Fatalf("the file you specified is not in the local 'testdata' folder: %s", fileName)
 	}
 }

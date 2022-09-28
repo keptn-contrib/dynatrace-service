@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -35,13 +36,13 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 		errorCode:    400,
 		errorMessage: "Constraints violated",
 		dashboardID:  "some-invalid-dashboard-id",
-		payload:      testDataFolder + "dashboard_invalid_uuid_400.json",
+		payload:      filepath.Join(testDataFolder, "dashboard_invalid_uuid_400.json"),
 	}
 	idNotFound := definition{
 		errorCode:    404,
 		errorMessage: "not found",
 		dashboardID:  testDashboardID,
-		payload:      testDataFolder + "dashboard_id_not_found_404.json",
+		payload:      filepath.Join(testDataFolder, "dashboard_id_not_found_404.json"),
 	}
 
 	testConfigs := []struct {

@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -16,9 +17,9 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *t
 	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest),
@@ -51,8 +52,8 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 	const testDataFolder = "./testdata/dashboards/slo_generation/unsupported_data_explorer_tile/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("response_time"),
@@ -85,9 +86,9 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3Afilter%28and%28or%28in%28%22dt.entity.service%22%2CentitySelector%28%22type%28service%29%2CentityId%28~%22SERVICE-C33B8A4C73748469~%22%29%22%29%29%29%29%29%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("srt_service", expectedMetricsRequest),

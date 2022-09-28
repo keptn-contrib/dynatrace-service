@@ -2,6 +2,7 @@ package action
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -15,8 +16,8 @@ func nilAttachRulesFunc() *dynatrace.AttachRules { return nil }
 // multiple PGIs found will be returned, when no custom rules are defined
 func TestEventHandlers_HandleEvent_MultipleEntities(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"multiple_entities.json")
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_multiple_200.json")
+	handler.AddExact(getDefaultPGIQuery(), filepath.Join(testdataFolder, "multiple_entities.json"))
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_multiple_200.json"))
 
 	expectedAttachRules := getPGIOnlyAttachRules()
 
@@ -33,8 +34,8 @@ func TestEventHandlers_HandleEvent_MultipleEntities(t *testing.T) {
 // multiple PGIs found will be returned, when no custom rules are defined and version information is based on event label
 func TestEventHandlers_HandleEvent_MultipleEntitiesBasedOnLabel(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"multiple_entities.json")
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_multiple_200.json")
+	handler.AddExact(getDefaultPGIQuery(), filepath.Join(testdataFolder, "multiple_entities.json"))
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_multiple_200.json"))
 
 	labels := map[string]string{
 		"releasesVersion": "1.2.3",
@@ -55,8 +56,8 @@ func TestEventHandlers_HandleEvent_MultipleEntitiesBasedOnLabel(t *testing.T) {
 // single PGI found will be combined with the custom attach rules
 func TestEventHandlers_HandleEvent_SingleEntityAndUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"single_entity.json")
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_multiple_200.json")
+	handler.AddExact(getDefaultPGIQuery(), filepath.Join(testdataFolder, "single_entity.json"))
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_multiple_200.json"))
 
 	expectedAttachRules := getCustomAttachRulesWithEntityIds("PROCESS_GROUP_INSTANCE-D23E64F62FDC200A")
 
@@ -73,8 +74,8 @@ func TestEventHandlers_HandleEvent_SingleEntityAndUserSpecifiedAttachRules(t *te
 // single PGI found will be combined with the custom attach rules that include version information from event label
 func TestEventHandlers_HandleEvent_SingleEntityAndUserSpecifiedAttachRulesBasedOnLabel(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"single_entity.json")
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
+	handler.AddExact(getDefaultPGIQuery(), filepath.Join(testdataFolder, "single_entity.json"))
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_single_200.json"))
 
 	labels := map[string]string{
 		"releasesVersion": "1.2.3",
@@ -95,8 +96,8 @@ func TestEventHandlers_HandleEvent_SingleEntityAndUserSpecifiedAttachRulesBasedO
 // no PGIs found and no custom attach rules will result in default attach rules
 func TestEventHandlers_HandleEvent_NoEntitiesAndNoUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"no_entity.json")
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
+	handler.AddExact(getDefaultPGIQuery(), filepath.Join(testdataFolder, "no_entity.json"))
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_single_200.json"))
 
 	expectedAttachRules := getDefaultAttachRules()
 
@@ -115,7 +116,7 @@ func TestEventHandlers_HandleEvent_NoEntitiesAndNoUserSpecifiedAttachRules(t *te
 // does only partially apply for deployment finished - there's a different logic that is tested separately
 func TestEventHandlers_HandleEvent_NoEventsFoundAndNoCustomAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_single_200.json"))
 
 	expectedAttachRules := getDefaultAttachRules()
 
@@ -217,8 +218,8 @@ func TestEventHandlers_HandleEvent_NoEventsFoundAndNoCustomAttachRules(t *testin
 // no PGIs found but custom attach rules will result custom attach rules only
 func TestEventHandlers_HandleEvent_NoEntitiesAndUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"no_entity.json")
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
+	handler.AddExact(getDefaultPGIQuery(), filepath.Join(testdataFolder, "no_entity.json"))
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_single_200.json"))
 
 	customAttachRules := getCustomAttachRules()
 
@@ -235,7 +236,7 @@ func TestEventHandlers_HandleEvent_NoEntitiesAndUserSpecifiedAttachRules(t *test
 // no entities will be queried, because there is no version information. Default attach rules will be returned if there are no custom rules
 func TestEventHandlers_HandleEvent_NoVersionInformationAndNoUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_single_200.json"))
 
 	expectedAttachRules := getDefaultAttachRules()
 
@@ -252,7 +253,7 @@ func TestEventHandlers_HandleEvent_NoVersionInformationAndNoUserSpecifiedAttachR
 // no entities will be queried, because there is no version information. Custom attach rules will be returned if they are present
 func TestEventHandlers_HandleEvent_NoVersionInformationAndUserSpecifiedAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_single_200.json"))
 
 	customAttachRules := getCustomAttachRules()
 

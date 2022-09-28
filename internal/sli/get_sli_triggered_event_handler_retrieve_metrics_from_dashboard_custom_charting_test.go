@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -15,9 +16,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE_METHOD%29%2CfromRelationships.isServiceMethodOfService%28type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29%29", "builtin%3Aservice.keyRequest.totalProcessingTime%3AsplitBy%28%22dt.entity.service_method%22%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_splitby_servicekeyrequest_filterby_autotag.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.keyRequest.totalProcessingTime", testDataFolder+"metrics_get_by_id_builtin_servicekeyrequest_totalprocessingtime.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_servicekeyrequest_totalprocessingtime.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_splitby_servicekeyrequest_filterby_autotag.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.keyRequest.totalProcessingTime", filepath.Join(testDataFolder, "metrics_get_by_id_builtin_servicekeyrequest_totalprocessingtime.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query_builtin_servicekeyrequest_totalprocessingtime.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("processing_time_findlocations", 18227.56816390859, expectedMetricsRequest),
@@ -35,7 +36,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_WithSLIButNoSeries(t *te
 	const testDataFolder = "./testdata/dashboards/custom_charting/sli_name_no_series_test/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_sli_name_no_series.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_sli_name_no_series.json"))
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("empty_chart"))
 }
@@ -47,7 +48,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_WithSLIAndTwoSeries(t *t
 	const testDataFolder = "./testdata/dashboards/custom_charting/sli_name_two_series_test/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_sli_name_two_series.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_sli_name_two_series.json"))
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("services_response_time_two_series"))
 }
@@ -60,9 +61,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *t
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_no_splitby_no_filterby.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_no_splitby_no_filterby.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_get_by_id_builtin_service_responsetime.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query_builtin_service_responsetime.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29313.12208863131, expectedMetricsRequest),
@@ -77,8 +78,8 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 	const testDataFolder = "./testdata/dashboards/custom_charting/splitby_servicekeyrequest_filterby_serviceofservicemethod/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_splitby_servicekeyrequest_filterby_serviceofservicemethod.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.keyRequest.totalProcessingTime", testDataFolder+"metrics_get_by_id_builtin_servicekeyrequest_totalprocessingtime.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_splitby_servicekeyrequest_filterby_serviceofservicemethod.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.keyRequest.totalProcessingTime", filepath.Join(testDataFolder, "metrics_get_by_id_builtin_servicekeyrequest_totalprocessingtime.json"))
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("tpt_key_requests_journeyservice"))
 }
@@ -91,9 +92,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_splitby_service_filterby_autotag.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_splitby_service_filterby_autotag.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_get_by_id_builtin_service_responsetime.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query_builtin_service_responsetime.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_autotags_easytravelservice", 132278.23461853978, expectedMetricsRequest),
@@ -111,9 +112,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySp
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CentityId%28%22SERVICE-F2455557EF67362B%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_splitby_service_filterby_specificentity.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_splitby_service_filterby_specificentity.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_get_by_id_builtin_service_responsetime.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query_builtin_service_responsetime.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("services_response_time_splitby_service_filterby_specificentity", 20256.493055555555, expectedMetricsRequest),
@@ -128,8 +129,8 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByFilterByService
 	const testDataFolder = "./testdata/dashboards/custom_charting/no_splitby_filterby_servicesoftwaretech/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_custom_charting_filterby_servicetopg.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_filterby_servicetopg.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_get_by_id_builtin_service_responsetime.json"))
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("svc_rt_p95"))
 }
@@ -140,9 +141,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_WorkerProcessCou
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.processCount%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_worker_process_count_avg.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.processCount", testDataFolder+"metrics_builtin_tech_generic_processCount.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_tech_generic_processCount_avg.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_worker_process_count_avg.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.processCount", filepath.Join(testDataFolder, "metrics_builtin_tech_generic_processCount.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_tech_generic_processCount_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("proc_count", 48.63491666452461, expectedMetricsRequest),
@@ -157,9 +158,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP90(
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890.000000%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_response_time_p90.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p90.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_response_time_p90.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_p90.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("svc_rt_p90", 35000.02454848894, expectedMetricsRequest),
@@ -174,9 +175,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP50(
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2850.000000%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_response_time_p50.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_builtin_service_response_time.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_response_time_p50.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_response_time_p50.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_p50.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("svc_rt_p50", 1500.151733421778, expectedMetricsRequest),
@@ -191,9 +192,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.mem.workingSetSize%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_process_memory_avg.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.mem.workingSetSize", testDataFolder+"metrics_builtin_tech_generic_mem_workingSetSize.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_tech_generic_mem_workingsetsize_avg.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_process_memory_avg.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.mem.workingSetSize", filepath.Join(testDataFolder, "metrics_builtin_tech_generic_mem_workingSetSize.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_tech_generic_mem_workingsetsize_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("process_memory", 1472416817.5857248, expectedMetricsRequest),
@@ -208,9 +209,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessCPUAvg(t 
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.cpu.usage%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_process_cpu_avg.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.cpu.usage", testDataFolder+"metrics_builtin_tech_generic_cpu_usage.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_tech_generic_cpu_usage_avg.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_process_cpu_avg.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:tech.generic.cpu.usage", filepath.Join(testDataFolder, "metrics_builtin_tech_generic_cpu_usage.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_tech_generic_cpu_usage_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("process_cpu", 14.223367878298156, expectedMetricsRequest),
@@ -225,9 +226,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_Throughput(t *te
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.requestCount.total%3AsplitBy%28%29%3Avalue%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_throughput.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.requestCount.total", testDataFolder+"metrics_builtin_service_requestcount_total.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_requestcount_total_value.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_throughput.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.requestCount.total", filepath.Join(testDataFolder, "metrics_builtin_service_requestcount_total.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_requestcount_total_value.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("svc_tp_min", 68044716, expectedMetricsRequest),
@@ -242,9 +243,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostCPUUsageAvg(
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.cpu.usage%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_host_cpu_usage_avg.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.cpu.usage", testDataFolder+"metrics_builtin_host_cpu_usage.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_host_cpu_usage_avg.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_host_cpu_usage_avg.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.cpu.usage", filepath.Join(testDataFolder, "metrics_builtin_host_cpu_usage.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_host_cpu_usage_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("host_cpu", 20.309976061722214, expectedMetricsRequest),
@@ -259,9 +260,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostMemoryUsageA
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.mem.usage%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_host_mem_usage_avg.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.mem.usage", testDataFolder+"metrics_builtin_host_mem_usage.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_host_mem_usage_avg.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_host_mem_usage_avg.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.mem.usage", filepath.Join(testDataFolder, "metrics_builtin_host_mem_usage.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_host_mem_usage_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("host_mem", 45.443796324058994, expectedMetricsRequest),
@@ -276,9 +277,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostDiskQueueLen
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.disk.queueLength%3AsplitBy%28%29%3Amax%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_host_disk_queuelength_max.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.disk.queueLength", testDataFolder+"metrics_builtin_host_disk_queuelength.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_host_disk_queuelength_max.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_host_disk_queuelength_max.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:host.disk.queueLength", filepath.Join(testDataFolder, "metrics_builtin_host_disk_queuelength.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_host_disk_queuelength_max.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("host_disk_queue", 100, expectedMetricsRequest),
@@ -293,9 +294,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_NonDbChildCallCo
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.nonDbChildCallCount%3AsplitBy%28%29%3Avalue%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_non_db_child_call_count.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.nonDbChildCallCount", testDataFolder+"metrics_builtin_service_nondbchildcallcount.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_query_builtin_service_nondbchildcallcount.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_non_db_child_call_count.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.nonDbChildCallCount", filepath.Join(testDataFolder, "metrics_builtin_service_nondbchildcallcount.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_nondbchildcallcount.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("svc2svc_calls", 13657068, expectedMetricsRequest),
@@ -312,9 +313,9 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard_excluded_tile.json")
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", testDataFolder+"metrics_get_by_id_builtin_service_responsetime.json")
-	handler.AddExact(expectedMetricsRequest, testDataFolder+"metrics_get_by_query_builtin_service_responsetime.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_excluded_tile.json"))
+	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_get_by_id_builtin_service_responsetime.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query_builtin_service_responsetime.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29313.12208863131, expectedMetricsRequest),

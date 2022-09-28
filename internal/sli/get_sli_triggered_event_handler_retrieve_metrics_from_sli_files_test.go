@@ -3,6 +3,7 @@ package sli
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -70,7 +71,7 @@ func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 	)
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(securityProblemsRequest, testDataFolder+"security_problems_status_open.json")
+	handler.AddExact(securityProblemsRequest, filepath.Join(testDataFolder, "security_problems_status_open.json"))
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorSecurityProblemCount: "SECPV2;securityProblemSelector=status(\"open\")",
@@ -89,7 +90,7 @@ func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedProblemsRequest, testDataFolder+"problems_status_open.json")
+	handler.AddExact(expectedProblemsRequest, filepath.Join(testDataFolder, "problems_status_open.json"))
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
@@ -108,7 +109,7 @@ func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
 	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedSLORequest, testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
+	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorSLOValue: "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4",
@@ -154,7 +155,7 @@ func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith(expectedMetricsRequest, testDataFolder+"metrics_query_1result_1data_1value.json")
+	handler.AddStartsWith(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_1result_1data_1value.json"))
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
@@ -170,7 +171,7 @@ func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWithError(expectedMetricsRequest, 400, testDataFolder+"metrics_query_constraints_violated.json")
+	handler.AddStartsWithError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_query_constraints_violated.json"))
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
@@ -192,57 +193,57 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 		// this case may not occur in reality, but check it here for completeness
 		{
 			name:                         "Zero metric series collections 1 - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_0results_fake3.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_0results_fake3.json"),
 			expectedErrorSubString:       "Metrics API v2 returned zero metric series collections",
 		},
 
 		{
 			name:                         "One metric series collection, no metric series - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_0data.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_1result_0data.json"),
 			expectedErrorSubString:       "Metrics API v2 returned zero metric series",
 		},
 
 		// this case may not occur in reality, but check it here for completeness
 		{
 			name:                         "One metric series collection, one metric sereis, no values, fake 1 - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_1data_0values_fake1.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_1result_1data_0values_fake1.json"),
 			expectedErrorSubString:       "Metrics API v2 returned zero values",
 		},
 
 		// this case may not occur in reality, but check it here for completeness
 		{
 			name:                         "One metric series collection, one metric series, no values, fake 2 - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_1data_0values_fake2.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_1result_1data_0values_fake2.json"),
 			expectedErrorSubString:       "Metrics API v2 returned zero values",
 		},
 
 		{
 			name:                         "One metric series collection, one metric series, null value - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_1data_null_value.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_1result_1data_null_value.json"),
 			expectedErrorSubString:       "Metrics API v2 returned 'null' as value",
 		},
 
 		{
 			name:                         "One metric series collection, one metric series, two values - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_1data_2values.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_1result_1data_2values.json"),
 			expectedErrorSubString:       "Metrics API v2 returned 2 values",
 		},
 
 		{
 			name:                         "One metric series collection, two metric series - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_1result_2data.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_1result_2data.json"),
 			expectedErrorSubString:       "Metrics API v2 returned 2 metric series",
 		},
 
 		{
 			name:                         "Two metric series collections, one metric series - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_2results_1data.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_2results_1data.json"),
 			expectedErrorSubString:       "Metrics API v2 returned 2 metric series collections",
 		},
 
 		{
 			name:                         "Two metric series collections, two metric series - want failure",
-			metricsQueryResponseFilename: testDataFolder + "metrics_query_2results_2data.json",
+			metricsQueryResponseFilename: filepath.Join(testDataFolder, "metrics_query_2results_2data.json"),
 			expectedErrorSubString:       "Metrics API v2 returned 2 metric series collections",
 		},
 	}
@@ -270,7 +271,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith(expectedMetricsRequest, testDataFolder+"metrics_query.json")
+	handler.AddStartsWith(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
@@ -286,7 +287,7 @@ func TestGetSLISleep(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith(expectedMetricsRequest, testDataFolder+"metrics_query.json")
+	handler.AddStartsWith(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
 
 	rClient := newResourceClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
@@ -307,7 +308,7 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22env_tag%3Asome_tag%22%29", "builtin%3Aservice.response.time")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith(expectedMetricsRequest, testDataFolder+"metrics_query_result.json")
+	handler.AddStartsWith(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_result.json"))
 
 	indicator := "response_time_env"
 
@@ -338,7 +339,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			indicator:        "response_time",
 			query:            "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),tag(\"keptn_project:$PROJECT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
 			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29%2Ctag%28%22keptn_project%3Amyproject%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29", "builtin%3Aservice.response.time"),
-			responseFilename: testDataFolder + "metrics_query_result.json",
+			responseFilename: filepath.Join(testDataFolder, "metrics_query_result.json"),
 			expectedSLIValue: 0.29,
 		},
 
@@ -347,7 +348,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			indicator:        "response_time2",
 			query:            "entitySelector=type(SERVICE),tag(\"keptn_deployment:$DEPLOYMENT\"),tag(\"context:$CONTEXT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
 			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_deployment%3Amydeployment%22%29%2Ctag%28%22context%3Amycontext%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29", "builtin%3Aservice.response.time"),
-			responseFilename: testDataFolder + "metrics_query_result.json",
+			responseFilename: filepath.Join(testDataFolder, "metrics_query_result.json"),
 			expectedSLIValue: 290,
 		},
 
@@ -356,7 +357,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			indicator:        "problems",
 			query:            "PV2;problemSelector=status($LABEL.problem_status)",
 			expectedRequest:  buildProblemsV2Request("status%28open%29"),
-			responseFilename: testDataFolder + "problems_query_result.json",
+			responseFilename: filepath.Join(testDataFolder, "problems_query_result.json"),
 			expectedSLIValue: 1,
 		},
 		{
@@ -364,7 +365,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			indicator:        "security_problems",
 			query:            "SECPV2;securityProblemSelector=status($LABEL.problem_status)",
 			expectedRequest:  buildSecurityProblemsRequest("status%28open%29"),
-			responseFilename: testDataFolder + "security_problems_query_result.json",
+			responseFilename: filepath.Join(testDataFolder, "security_problems_query_result.json"),
 			expectedSLIValue: 4,
 		},
 
@@ -373,7 +374,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			indicator:        "RT_faster_500ms",
 			query:            "SLO;$LABEL.slo_id",
 			expectedRequest:  buildSLORequest("524ca177-849b-3e8c-8175-42b93fbc33c5"),
-			responseFilename: testDataFolder + "slo_query_result.json",
+			responseFilename: filepath.Join(testDataFolder, "slo_query_result.json"),
 			expectedSLIValue: 96,
 		},
 
@@ -382,7 +383,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			indicator:        "User_session_time",
 			query:            "USQL;COLUMN_CHART;iOS 12.1.4;SELECT osVersion, AVG(duration) FROM usersession WHERE country IN('$LABEL.country') GROUP BY osVersion",
 			expectedRequest:  buildUSQLRequest("SELECT+osVersion%2C+AVG%28duration%29+FROM+usersession+WHERE+country+IN%28%27Austria%27%29+GROUP+BY+osVersion"),
-			responseFilename: testDataFolder + "usql_query_result.json",
+			responseFilename: filepath.Join(testDataFolder, "usql_query_result.json"),
 			expectedSLIValue: 21478,
 		},
 	}

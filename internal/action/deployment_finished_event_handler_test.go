@@ -3,6 +3,7 @@ package action
 import (
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -25,8 +26,8 @@ type deploymentFinishedTestSetup struct {
 // no deployment.started event was found, so time is reset, but no PGIs found and no custom attach rules will result in default attach rules
 func TestDeploymentFinishedEventHandler_HandleEvent_NoEventFoundAndNoCustomAttachRules(t *testing.T) {
 	handler := test.NewFileBasedURLHandlerWithSink(t)
-	handler.AddExact(getDefaultPGIQuery(), testdataFolder+"no_entity.json")
-	handler.AddExact("/api/v1/events", testdataFolder+"events_response_single_200.json")
+	handler.AddExact(getDefaultPGIQuery(), filepath.Join(testdataFolder, "no_entity.json"))
+	handler.AddExact("/api/v1/events", filepath.Join(testdataFolder, "events_response_single_200.json"))
 
 	eClient := &eventClientFake{
 		t:           t,
