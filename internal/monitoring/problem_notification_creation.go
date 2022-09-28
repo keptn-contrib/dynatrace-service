@@ -11,12 +11,14 @@ import (
 )
 
 type problemNotificationCreation struct {
-	client dynatrace.ClientInterface
+	client                   dynatrace.ClientInterface
+	keptnCredentialsProvider credentials.KeptnCredentialsProvider
 }
 
-func newProblemNotificationCreation(client dynatrace.ClientInterface) *problemNotificationCreation {
+func newProblemNotificationCreation(client dynatrace.ClientInterface, keptnCredentialsProvider credentials.KeptnCredentialsProvider) *problemNotificationCreation {
 	return &problemNotificationCreation{
-		client: client,
+		client:                   client,
+		keptnCredentialsProvider: keptnCredentialsProvider,
 	}
 }
 
@@ -39,7 +41,7 @@ func (pn *problemNotificationCreation) create(ctx context.Context, project strin
 		log.WithError(err).Error("Failed to delete existing notifications")
 	}
 
-	keptnCredentials, err := credentials.GetKeptnCredentials(ctx)
+	keptnCredentials, err := pn.keptnCredentialsProvider.GetKeptnCredentials(ctx)
 	if err != nil {
 		log.WithError(err).Error("Failed to retrieve Keptn API credentials")
 		return &configResult{

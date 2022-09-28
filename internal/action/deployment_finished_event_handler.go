@@ -14,19 +14,21 @@ import (
 
 // DeploymentFinishedEventHandler handles a deployment finished event.
 type DeploymentFinishedEventHandler struct {
-	event       DeploymentFinishedAdapterInterface
-	dtClient    dynatrace.ClientInterface
-	eClient     keptn.EventClientInterface
-	attachRules *dynatrace.AttachRules
+	event            DeploymentFinishedAdapterInterface
+	dtClient         dynatrace.ClientInterface
+	eClient          keptn.EventClientInterface
+	bridgeURLCreator keptn.BridgeURLCreatorInterface
+	attachRules      *dynatrace.AttachRules
 }
 
 // NewDeploymentFinishedEventHandler creates a new DeploymentFinishedEventHandler.
-func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *DeploymentFinishedEventHandler {
+func NewDeploymentFinishedEventHandler(event DeploymentFinishedAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, bridgeURLCreator keptn.BridgeURLCreatorInterface, attachRules *dynatrace.AttachRules) *DeploymentFinishedEventHandler {
 	return &DeploymentFinishedEventHandler{
-		event:       event,
-		dtClient:    dtClient,
-		eClient:     eClient,
-		attachRules: attachRules,
+		event:            event,
+		dtClient:         dtClient,
+		eClient:          eClient,
+		bridgeURLCreator: bridgeURLCreator,
+		attachRules:      attachRules,
 	}
 }
 
@@ -43,7 +45,7 @@ func (eh *DeploymentFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		DeploymentVersion: getValueFromLabels(eh.event, "deploymentVersion", imageAndTag.Tag()),
 		CiBackLink:        getValueFromLabels(eh.event, "ciBackLink", ""),
 		RemediationAction: getValueFromLabels(eh.event, "remediationAction", ""),
-		CustomProperties:  newCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		CustomProperties:  newCustomProperties(eh.event, imageAndTag, eh.bridgeURLCreator.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:       attachRules,
 	}
 

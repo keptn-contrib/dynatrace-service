@@ -19,25 +19,27 @@ type keptnCredentialsCheckResult struct {
 }
 
 type ConfigureMonitoringEventHandler struct {
-	event              ConfigureMonitoringAdapterInterface
-	dtClient           dynatrace.ClientInterface
-	eventSenderClient  keptn.EventSenderClientInterface
-	shipyardReader     keptn.ShipyardReaderInterface
-	sliAndSLOReader    keptn.SLIAndSLOReaderInterface
-	serviceClient      keptn.ServiceClientInterface
-	credentialsChecker keptn.CredentialsCheckerInterface
+	event                    ConfigureMonitoringAdapterInterface
+	dtClient                 dynatrace.ClientInterface
+	eventSenderClient        keptn.EventSenderClientInterface
+	shipyardReader           keptn.ShipyardReaderInterface
+	sliAndSLOReader          keptn.SLIAndSLOReaderInterface
+	serviceClient            keptn.ServiceClientInterface
+	keptnCredentialsProvider credentials.KeptnCredentialsProvider
+	credentialsChecker       keptn.CredentialsCheckerInterface
 }
 
 // NewConfigureMonitoringEventHandler returns a new ConfigureMonitoringEventHandler
-func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, shipyardReader keptn.ShipyardReaderInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
+func NewConfigureMonitoringEventHandler(event ConfigureMonitoringAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, shipyardReader keptn.ShipyardReaderInterface, sliAndSLOReader keptn.SLIAndSLOReaderInterface, serviceClient keptn.ServiceClientInterface, keptnCredentialsProvider credentials.KeptnCredentialsProvider, credentialsChecker keptn.CredentialsCheckerInterface) ConfigureMonitoringEventHandler {
 	return ConfigureMonitoringEventHandler{
-		event:              event,
-		dtClient:           dtClient,
-		eventSenderClient:  eventSenderClient,
-		shipyardReader:     shipyardReader,
-		sliAndSLOReader:    sliAndSLOReader,
-		serviceClient:      serviceClient,
-		credentialsChecker: credentialsChecker,
+		event:                    event,
+		dtClient:                 dtClient,
+		eventSenderClient:        eventSenderClient,
+		shipyardReader:           shipyardReader,
+		sliAndSLOReader:          sliAndSLOReader,
+		serviceClient:            serviceClient,
+		keptnCredentialsProvider: keptnCredentialsProvider,
+		credentialsChecker:       credentialsChecker,
 	}
 }
 
@@ -64,7 +66,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 		return eh.handleError(err)
 	}
 
-	cfg := newConfiguration(eh.dtClient, eh.eventSenderClient, eh.sliAndSLOReader, eh.serviceClient)
+	cfg := newConfiguration(eh.dtClient, eh.eventSenderClient, eh.serviceClient, eh.keptnCredentialsProvider, eh.sliAndSLOReader)
 
 	configuredEntities, err := cfg.configureMonitoring(ctx, eh.event.GetProject(), *shipyard)
 	if err != nil {
@@ -76,7 +78,7 @@ func (eh *ConfigureMonitoringEventHandler) configureMonitoring(ctx context.Conte
 }
 
 func (eh *ConfigureMonitoringEventHandler) checkKeptnCredentials(ctx context.Context) keptnCredentialsCheckResult {
-	keptnCredentials, err := credentials.GetKeptnCredentials(ctx)
+	keptnCredentials, err := eh.keptnCredentialsProvider.GetKeptnCredentials(ctx)
 	if err != nil {
 		return keptnCredentialsCheckResult{
 			Success: false,

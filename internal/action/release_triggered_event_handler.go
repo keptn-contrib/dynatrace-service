@@ -13,19 +13,21 @@ import (
 )
 
 type ReleaseTriggeredEventHandler struct {
-	event       ReleaseTriggeredAdapterInterface
-	dtClient    dynatrace.ClientInterface
-	eClient     keptn.EventClientInterface
-	attachRules *dynatrace.AttachRules
+	event            ReleaseTriggeredAdapterInterface
+	dtClient         dynatrace.ClientInterface
+	eClient          keptn.EventClientInterface
+	bridgeURLCreator keptn.BridgeURLCreatorInterface
+	attachRules      *dynatrace.AttachRules
 }
 
 // NewReleaseTriggeredEventHandler creates a new ReleaseTriggeredEventHandler
-func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *ReleaseTriggeredEventHandler {
+func NewReleaseTriggeredEventHandler(event ReleaseTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, bridgeURLCreator keptn.BridgeURLCreatorInterface, attachRules *dynatrace.AttachRules) *ReleaseTriggeredEventHandler {
 	return &ReleaseTriggeredEventHandler{
-		event:       event,
-		dtClient:    dtClient,
-		eClient:     eClient,
-		attachRules: attachRules,
+		event:            event,
+		dtClient:         dtClient,
+		eClient:          eClient,
+		bridgeURLCreator: bridgeURLCreator,
+		attachRules:      attachRules,
 	}
 }
 
@@ -44,7 +46,7 @@ func (eh *ReleaseTriggeredEventHandler) HandleEvent(workCtx context.Context, _ c
 		Source:           eventSource,
 		Title:            eh.getTitle(strategy, eh.event.GetLabels()["title"]),
 		Description:      eh.getTitle(strategy, eh.event.GetLabels()["description"]),
-		CustomProperties: newCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		CustomProperties: newCustomProperties(eh.event, imageAndTag, eh.bridgeURLCreator.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:      attachRules,
 	}
 

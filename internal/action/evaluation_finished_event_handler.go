@@ -16,19 +16,21 @@ const evaluationURLKey = "evaluationHeatmapURL"
 
 // EvaluationFinishedEventHandler handles an evaluation finished event.
 type EvaluationFinishedEventHandler struct {
-	event       EvaluationFinishedAdapterInterface
-	dtClient    dynatrace.ClientInterface
-	eClient     keptn.EventClientInterface
-	attachRules *dynatrace.AttachRules
+	event            EvaluationFinishedAdapterInterface
+	dtClient         dynatrace.ClientInterface
+	eClient          keptn.EventClientInterface
+	bridgeURLCreator keptn.BridgeURLCreatorInterface
+	attachRules      *dynatrace.AttachRules
 }
 
 // NewEvaluationFinishedEventHandler creates a new EvaluationFinishedEventHandler.
-func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface, client dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *EvaluationFinishedEventHandler {
+func NewEvaluationFinishedEventHandler(event EvaluationFinishedAdapterInterface, client dynatrace.ClientInterface, eClient keptn.EventClientInterface, bridgeURLCreator keptn.BridgeURLCreatorInterface, attachRules *dynatrace.AttachRules) *EvaluationFinishedEventHandler {
 	return &EvaluationFinishedEventHandler{
-		event:       event,
-		dtClient:    client,
-		eClient:     eClient,
-		attachRules: attachRules,
+		event:            event,
+		dtClient:         client,
+		eClient:          eClient,
+		bridgeURLCreator: bridgeURLCreator,
+		attachRules:      attachRules,
 	}
 }
 
@@ -40,7 +42,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 		log.WithError(err).Error("Could not check for remediation status of event")
 	}
 
-	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
+	bridgeURL := eh.bridgeURLCreator.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
 
 	if isPartOfRemediation {
 		pid, err := eh.eClient.FindProblemID(workCtx, eh.event)
@@ -54,7 +56,7 @@ func (eh *EvaluationFinishedEventHandler) HandleEvent(workCtx context.Context, _
 	attachRules := eh.createAttachRules(workCtx, imageAndTag)
 
 	customProperties := newCustomProperties(eh.event, imageAndTag, bridgeURL)
-	customProperties.addIfNonEmpty(evaluationURLKey, keptn.TryGetBridgeURLForEvaluation(workCtx, eh.event))
+	customProperties.addIfNonEmpty(evaluationURLKey, eh.bridgeURLCreator.TryGetBridgeURLForEvaluation(workCtx, eh.event))
 
 	infoEvent := dynatrace.InfoEvent{
 		EventType:        dynatrace.InfoEventType,
