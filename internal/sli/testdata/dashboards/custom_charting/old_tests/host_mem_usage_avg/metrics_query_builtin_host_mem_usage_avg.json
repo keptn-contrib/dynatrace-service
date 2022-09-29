@@ -1,22 +1,24 @@
 {
-  "totalCount": 1,
-  "nextPageKey": null,
-  "resolution": "Inf",
-  "result": [
-    {
-      "metricId": "builtin:host.mem.usage:splitBy():avg:names",
-      "data": [
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
         {
-          "dimensions": [],
-          "dimensionMap": {},
-          "timestamps": [
-            1631865600000
-          ],
-          "values": [
-            45.443796324058994
-          ]
+            "metricId": "builtin:host.mem.usage:splitBy():avg:names",
+            "dataPointCountRatio": 8.84E-5,
+            "dimensionCountRatio": 0.01768,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        45.433269610961815
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }

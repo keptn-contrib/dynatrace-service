@@ -265,7 +265,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostMemoryUsageA
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_host_mem_usage_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("host_mem", 45.443796324058994, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("host_mem", 45.433269610961815, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
