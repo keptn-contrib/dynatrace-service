@@ -5,15 +5,17 @@
     "result": [
         {
             "metricId": "builtin:service.response.time:splitBy():avg:names",
+            "dataPointCountRatio": 2.515E-4,
+            "dimensionCountRatio": 0.0503,
             "data": [
                 {
                     "dimensions": [],
                     "dimensionMap": {},
                     "timestamps": [
-                        1631865600000
+                        1664409600000
                     ],
                     "values": [
-                        29313.12208863131
+                        54896.44626158664
                     ]
                 }
             ]
