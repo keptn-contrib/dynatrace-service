@@ -21,10 +21,10 @@
     "filter": "type(\"SERVICE\")",
     "relatedOpenProblems": 0,
     "relatedTotalProblems": 76,
-    "metricNumerator": "",
     "denominatorValue": 0.0,
     "useRateMetric": true,
-    "metricDenominator": "",
     "metricRate": "",
-    "numeratorValue": 0.0
+    "numeratorValue": 0.0,
+    "metricNumerator": "",
+    "metricDenominator": ""
 }
