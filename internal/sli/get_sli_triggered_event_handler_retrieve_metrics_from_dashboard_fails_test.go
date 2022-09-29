@@ -88,9 +88,6 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddExactError(dynatrace.DashboardsPath+"/"+tc.def.dashboardID, tc.def.errorCode, tc.def.payload)
 
-			// sli and slo upload works
-			rClient := &uploadErrorResourceClientMock{t: t}
-
 			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 				assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 				assert.Contains(t, actual.Message, tc.def.dashboardID)
@@ -98,7 +95,7 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 				assert.Contains(t, actual.Message, tc.def.errorMessage)
 			}
 
-			runGetSLIsFromDashboardTestWithResourceClientAndDashboardParameterAndCheckSLIs(t, handler, rClient, testGetSLIEventData, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
+			runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, newConfigClientMockThatAllowsUploadSLOs(t), testGetSLIEventData, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
 		})
 	}
 }

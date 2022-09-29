@@ -54,17 +54,12 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
 
-	resourceClientMock := &uploadErrorResourceClientMock{
-		t:              t,
-		uploadSLOError: errors.New("SLO upload failed"),
-	}
-
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 		assert.Contains(t, actual.Message, "upload failed")
 	}
 
-	runGetSLIsFromDashboardTestWithResourceClientAndCheckSLIs(t, handler, testGetSLIEventData, resourceClientMock, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, newConfigClientMockThatErrorsUploadSLOs(t, errors.New("SLO upload failed")), getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
 }
 
 // TestThatThereIsNoFallbackToSLIsFromDashboard tests that retrieving a dashboard by ID works, and we ignore the outdated parse behaviour.
@@ -89,25 +84,6 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
-}
-
-type uploadWillFailResourceClientMock struct {
-	t *testing.T
-}
-
-func (m *uploadWillFailResourceClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
-	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
-	return nil, nil
-}
-
-func (m *uploadWillFailResourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
-	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
-	return nil, nil
-}
-
-func (m *uploadWillFailResourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
-	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
-	return nil
 }
 
 // TestDashboardThatProducesNoDataProducesError tests retrieving (a single) SLI from a dashboard that returns no data.
@@ -146,14 +122,14 @@ func TestDashboardThatProducesNoResultsProducesError(t *testing.T) {
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_without_matching_tile_name.json"))
 
 	// no SLOs should be uploaded
-	rClient := &uploadWillFailResourceClientMock{t: t}
+	configClient := &uploadSLOsWillFailConfigClientMock{t: t}
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 		assert.Contains(t, actual.Message, "any SLI results")
 	}
 
-	runGetSLIsFromDashboardTestWithResourceClientAndCheckSLIs(t, handler, testGetSLIEventData, rClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, configClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
 }
 
 // TestQueryDynatraceDashboardForSLIs tests that querying for a dashboard (i.e. dashboard=query) works as expected.
@@ -233,4 +209,23 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	}
 
 	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+}
+
+type uploadSLOsWillFailConfigClientMock struct {
+	t *testing.T
+}
+
+func (m *uploadSLOsWillFailConfigClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
+	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
+	return nil, nil
+}
+
+func (m *uploadSLOsWillFailConfigClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
+	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
+	return nil, nil
+}
+
+func (m *uploadSLOsWillFailConfigClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
+	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
+	return nil
 }

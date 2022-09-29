@@ -22,11 +22,11 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_0_result_warning_entity-selector.json")
 
 	// error here as well: merge("dt.entity.services")
-	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "zero metric series", "Warning"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "zero metric series", "Warning"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -43,7 +43,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_0_result_wrong-tag.json")
 
 	// error here as well: tag(keptn_project:stagin)
-	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)",
 	})
 
@@ -52,7 +52,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -69,7 +69,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_3_results.json")
 
 	// error here as well: missing merge("dt.entity.service) transformation
-	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
@@ -78,7 +78,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 		assert.NotContains(t, actual.Message, "Warning")
 	}
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, sliResultAssertionsFunc)
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -121,11 +121,11 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 			handler := test.NewFileBasedURLHandler(t)
 
 			// error here: in value of tc.mv2Prefix
-			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+			configClient := newConfigClientMockWithSLIs(t, map[string]string{
 				testIndicatorResponseTimeP95: tc.mv2Prefix + "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 			})
 
-			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing MV2 query"))
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing MV2 query"))
 		})
 	}
 }
@@ -146,9 +146,9 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	// no custom queries defined here
 	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
 	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
-	rClient := newResourceClientMock(t)
+	configClient := newConfigClientMockWithNoSLIsOrError(t)
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -161,9 +161,9 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, "./testdata/response_time_p95_200_1_result.json")
 
-	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, rClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
 }
