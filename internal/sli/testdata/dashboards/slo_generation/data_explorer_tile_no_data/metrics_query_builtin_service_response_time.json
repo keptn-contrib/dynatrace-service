@@ -1,11 +1,13 @@
 {
-  "totalCount": 0,
-  "nextPageKey": null,
-  "resolution": "Inf",
-  "result": [
-    {
-      "metricId": "builtin:service.response.time:splitBy():avg:names",
-      "data": []
-    }
-  ]
+    "totalCount": 0,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C33B8A4C73748469~\")\"))))):splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names",
+            "dataPointCountRatio": 0.0,
+            "dimensionCountRatio": 0.0,
+            "data": []
+        }
+    ]
 }
