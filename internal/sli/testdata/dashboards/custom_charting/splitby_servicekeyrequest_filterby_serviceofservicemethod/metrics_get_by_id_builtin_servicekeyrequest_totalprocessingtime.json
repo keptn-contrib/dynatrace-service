@@ -5,7 +5,7 @@
     "unit": "MicroSecond",
     "dduBillable": false,
     "created": 0,
-    "lastWritten": 1635320019079,
+    "lastWritten": 1664452703750,
     "entityType": [
         "SERVICE_METHOD"
     ],
@@ -30,7 +30,8 @@
         "sort",
         "last",
         "splitBy",
-        "lastReal"
+        "lastReal",
+        "setUnit"
     ],
     "defaultAggregation": {
         "type": "avg"
