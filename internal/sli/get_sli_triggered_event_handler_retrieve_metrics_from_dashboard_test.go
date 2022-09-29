@@ -35,7 +35,7 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 		assert.EqualValues(t, keptnv2.ResultPass, actual.Result)
 		assert.Empty(t, actual.Message)
 	}
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.59603729026, expectedMetricsRequest))
 }
 
 // TestErrorIsReturnedWhenSLOFileWritingFails tests that an error is returned if retrieving (a single) SLI from a dashboard works but the upload of the SLO file fails.
