@@ -182,7 +182,7 @@ func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
 
 // TestGetSLIValueMetricsQuery_Warnings tests processing of Metrics API v2 results for warnings.
 func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
-	const testDataFolder = "./testdata/sli_files/basic/warnings/"
+	const testDataFolder = "./testdata/sli_files/metrics/warnings/"
 
 	// TODO 2021-10-13: add rich error types as described in #358, including warnings
 	tests := []struct {
