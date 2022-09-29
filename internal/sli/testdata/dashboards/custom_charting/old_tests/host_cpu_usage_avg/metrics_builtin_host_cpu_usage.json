@@ -1,56 +1,50 @@
 {
-  "metricId": "builtin:host.cpu.usage",
-  "displayName": "CPU usage %",
-  "description": "Multi\nLine\nText",
-  "unit": "Percent",
-  "dduBillable": false,
-  "created": 0,
-  "lastWritten": 1636721071280,
-  "entityType": [
-    "HOST"
-  ],
-  "aggregationTypes": [
-    "auto",
-    "avg",
-    "max",
-    "min"
-  ],
-  "transformations": [
-    "filter",
-    "fold",
-    "limit",
-    "merge",
-    "names",
-    "parents",
-    "timeshift",
-    "sort",
-    "last",
-    "splitBy",
-    "lastReal"
-  ],
-  "defaultAggregation": {
-    "type": "avg"
-  },
-  "dimensionDefinitions": [
-    {
-      "key": "dt.entity.host",
-      "name": "Host",
-      "displayName": "Host",
-      "index": 0,
-      "type": "ENTITY"
-    }
-  ],
-  "tags": [
-    "Core Metric",
-    "Featured"
-  ],
-  "metricValueType": {
-    "type": "unknown"
-  },
-  "rootCauseRelevant": false,
-  "impactRelevant": false,
-  "minimumValue": 0,
-  "maximumValue": 100,
-  "scalar": false,
-  "resolutionInfSupported": true
+    "metricId": "builtin:host.cpu.usage",
+    "displayName": "CPU usage %",
+    "description": "Percentage of CPU time currently utilized.",
+    "unit": "Percent",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1664455944306,
+    "entityType": [
+        "HOST"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "avg",
+        "max",
+        "min"
+    ],
+    "transformations": [
+        "filter",
+        "fold",
+        "limit",
+        "merge",
+        "names",
+        "parents",
+        "timeshift",
+        "sort",
+        "last",
+        "splitBy",
+        "lastReal",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "avg"
+    },
+    "dimensionDefinitions": [
+        {
+            "key": "dt.entity.host",
+            "name": "Host",
+            "displayName": "Host",
+            "index": 0,
+            "type": "ENTITY"
+        }
+    ],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true
 }
