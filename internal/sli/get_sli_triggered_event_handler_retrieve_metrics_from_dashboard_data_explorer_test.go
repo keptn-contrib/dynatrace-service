@@ -56,7 +56,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions(t *testi
 	expectedMultipleResultMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	singleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedSingleResultMetricsRequest)}
+		createSuccessfulSLIResultAssertionsFunc("srt", 54896.44626158664, expectedSingleResultMetricsRequest)}
 	multipleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("srt_service_a", 31676.5399830501183, expectedMultipleResultMetricsRequest),
 		createSuccessfulSLIResultAssertionsFunc("srt_service_b", 11285.1679389312976, expectedMultipleResultMetricsRequest)}
