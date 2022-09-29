@@ -197,7 +197,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_tech_generic_mem_workingsetsize_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("process_memory", 1472416817.5857248, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("process_memory", 1.4800280435645182e+09, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
