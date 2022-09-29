@@ -83,7 +83,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 		assert.NotNil(t, actual)
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12439.619479902443, expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.59603729026, expectedMetricsRequest))
 }
 
 // TestDashboardThatProducesNoDataProducesError tests retrieving (a single) SLI from a dashboard that returns no data.
