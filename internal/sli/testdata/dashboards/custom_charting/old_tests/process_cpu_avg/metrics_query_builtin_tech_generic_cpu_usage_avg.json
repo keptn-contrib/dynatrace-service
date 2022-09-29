@@ -1,22 +1,24 @@
 {
-  "totalCount": 1,
-  "nextPageKey": null,
-  "resolution": "Inf",
-  "result": [
-    {
-      "metricId": "builtin:tech.generic.cpu.usage:splitBy():avg:names",
-      "data": [
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
         {
-          "dimensions": [],
-          "dimensionMap": {},
-          "timestamps": [
-            1631865600000
-          ],
-          "values": [
-            14.223367878298156
-          ]
+            "metricId": "builtin:tech.generic.cpu.usage:splitBy():avg:names",
+            "dataPointCountRatio": 0.0013517,
+            "dimensionCountRatio": 0.27034,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        14.292816721458612
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }

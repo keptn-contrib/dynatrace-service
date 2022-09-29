@@ -1,49 +1,50 @@
 {
-  "metricId": "builtin:tech.generic.cpu.usage",
-  "displayName": "Process CPU usage",
-  "description": "Percent of host CPU time used by processes in PGI",
-  "unit": "Percent",
-  "dduBillable": false,
-  "created": 0,
-  "lastWritten": 1636715958038,
-  "entityType": [
-    "PROCESS_GROUP_INSTANCE"
-  ],
-  "aggregationTypes": [
-    "auto",
-    "avg",
-    "max",
-    "min"
-  ],
-  "transformations": [
-    "filter",
-    "fold",
-    "limit",
-    "merge",
-    "names",
-    "parents",
-    "timeshift",
-    "sort",
-    "last",
-    "splitBy",
-    "lastReal"
-  ],
-  "defaultAggregation": {
-    "type": "avg"
-  },
-  "dimensionDefinitions": [
-    {
-      "key": "dt.entity.process_group_instance",
-      "name": "Process",
-      "displayName": "Process",
-      "index": 0,
-      "type": "ENTITY"
-    }
-  ],
-  "tags": [],
-  "metricValueType": {
-    "type": "unknown"
-  },
-  "scalar": false,
-  "resolutionInfSupported": true
+    "metricId": "builtin:tech.generic.cpu.usage",
+    "displayName": "Process CPU usage",
+    "description": "Percent of host CPU time used by processes in PGI",
+    "unit": "Percent",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1664455523753,
+    "entityType": [
+        "PROCESS_GROUP_INSTANCE"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "avg",
+        "max",
+        "min"
+    ],
+    "transformations": [
+        "filter",
+        "fold",
+        "limit",
+        "merge",
+        "names",
+        "parents",
+        "timeshift",
+        "sort",
+        "last",
+        "splitBy",
+        "lastReal",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "avg"
+    },
+    "dimensionDefinitions": [
+        {
+            "key": "dt.entity.process_group_instance",
+            "name": "Process",
+            "displayName": "Process",
+            "index": 0,
+            "type": "ENTITY"
+        }
+    ],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true
 }

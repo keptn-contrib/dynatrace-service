@@ -214,7 +214,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessCPUAvg(t 
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_tech_generic_cpu_usage_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("process_cpu", 14.223367878298156, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("process_cpu", 14.292816721458612, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
