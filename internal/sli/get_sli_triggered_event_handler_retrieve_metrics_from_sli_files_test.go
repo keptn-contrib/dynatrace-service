@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -155,7 +154,7 @@ func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_1result_1data_1value.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_1result_1data_1value.json"))
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
@@ -171,7 +170,7 @@ func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWithError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_query_constraints_violated.json"))
+	handler.AddExactError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_query_constraints_violated.json"))
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
@@ -253,7 +252,7 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 			expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
 
 			handler := test.NewFileBasedURLHandler(t)
-			handler.AddStartsWith(dynatrace.MetricsQueryPath, tt.metricsQueryResponseFilename)
+			handler.AddExact(expectedMetricsRequest, tt.metricsQueryResponseFilename)
 
 			configClient := newConfigClientMockWithSLIs(t, map[string]string{
 				testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
@@ -271,7 +270,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
@@ -287,7 +286,7 @@ func TestGetSLISleep(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
@@ -308,7 +307,7 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22env_tag%3Asome_tag%22%29", "builtin%3Aservice.response.time")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddStartsWith(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_result.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_result.json"))
 
 	indicator := "response_time_env"
 

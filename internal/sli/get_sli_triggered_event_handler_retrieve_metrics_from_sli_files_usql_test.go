@@ -344,7 +344,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			// as there is only a single SLI, matching with 'starts with' should be sufficiently 'exact'
 			handler := test.NewFileBasedURLHandler(t)
 			if tc.request != "" {
-				handler.AddStartsWith(tc.request, tc.dataReturned)
+				handler.AddExact(tc.request, tc.dataReturned)
 			}
 
 			configClient := newConfigClientMockWithSLIs(t, map[string]string{
