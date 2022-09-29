@@ -318,7 +318,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query_builtin_service_responsetime.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("service_response_time", 29313.12208863131, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("service_response_time", 54896.44626158664, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
