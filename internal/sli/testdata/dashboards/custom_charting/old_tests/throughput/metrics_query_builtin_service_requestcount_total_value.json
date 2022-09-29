@@ -3,20 +3,22 @@
     "nextPageKey": null,
     "resolution": "Inf",
     "result": [
-      {
-        "metricId": "builtin:service.requestCount.total:splitBy():value:names",
-        "data": [
-          {
-            "dimensions": [],
-            "dimensionMap": {},
-            "timestamps": [
-              1631865600000
-            ],
-            "values": [
-              68044716
+        {
+            "metricId": "builtin:service.requestCount.total:splitBy():value:names",
+            "dataPointCountRatio": 2.515E-4,
+            "dimensionCountRatio": 0.0503,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        2099461061
+                    ]
+                }
             ]
-          }
-        ]
-      }
+        }
     ]
-  }
+}
