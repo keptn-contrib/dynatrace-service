@@ -1,10 +1,11 @@
 {
-  "totalCount": 0,
-  "nextPageKey": null,
-  "result": [
-    {
-      "metricId": "builtin:service.response.time:splitBy():percentile(95.000000):names",
-      "data": []
-    }
-  ]
+    "totalCount": 0,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:service.response.time:splitBy():percentile(95.000000):names",
+            "data": []
+        }
+    ]
 }
