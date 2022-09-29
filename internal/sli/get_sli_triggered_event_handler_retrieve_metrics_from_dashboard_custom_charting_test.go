@@ -146,7 +146,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_WorkerProcessCou
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_tech_generic_processCount_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("proc_count", 48.63491666452461, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("proc_count", 48.89413206124561, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)

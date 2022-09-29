@@ -1,39 +1,50 @@
 {
     "metricId": "builtin:tech.generic.processCount",
     "displayName": "Worker processes",
-    "description": "",
+    "description": "Number of processes in PGI",
     "unit": "Count",
     "dduBillable": false,
-    "created": null,
-    "lastWritten": 1600947526832,
+    "created": 0,
+    "lastWritten": 1664454832501,
     "entityType": [
-      "PROCESS_GROUP_INSTANCE"
+        "PROCESS_GROUP_INSTANCE"
     ],
     "aggregationTypes": [
-      "auto",
-      "avg",
-      "max",
-      "min"
+        "auto",
+        "avg",
+        "max",
+        "min"
     ],
     "transformations": [
-      "filter",
-      "fold",
-      "limit",
-      "merge",
-      "names",
-      "parents",
-      "splitBy"
+        "filter",
+        "fold",
+        "limit",
+        "merge",
+        "names",
+        "parents",
+        "timeshift",
+        "sort",
+        "last",
+        "splitBy",
+        "lastReal",
+        "setUnit"
     ],
     "defaultAggregation": {
-      "type": "avg"
+        "type": "avg"
     },
     "dimensionDefinitions": [
-      {
-        "key": "dt.entity.process_group_instance",
-        "name": "Process",
-        "displayName": "Process",
-        "index": 0,
-        "type": "ENTITY"
-      }
-    ]
-  }
+        {
+            "key": "dt.entity.process_group_instance",
+            "name": "Process",
+            "displayName": "Process",
+            "index": 0,
+            "type": "ENTITY"
+        }
+    ],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true
+}
