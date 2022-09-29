@@ -22,7 +22,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 	handler.AddExact(expectedProblemsRequest, filepath.Join(testDataFolder, "problems_status_open.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("problems", 0, expectedProblemsRequest),
+		createSuccessfulSLIResultAssertionsFunc("problems", 42, expectedProblemsRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
