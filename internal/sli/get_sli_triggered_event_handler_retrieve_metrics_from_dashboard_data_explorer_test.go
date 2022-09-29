@@ -294,7 +294,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt", 29192.929640271974, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt", 54896.44626158664, expectedMetricsRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
