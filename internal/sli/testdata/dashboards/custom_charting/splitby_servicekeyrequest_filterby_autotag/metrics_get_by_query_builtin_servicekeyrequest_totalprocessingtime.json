@@ -1,10 +1,12 @@
 {
-  "totalCount": 4,
-  "nextPageKey": null,
-  "resolution": "Inf",
-  "result": [
-    {
-      "metricId": "builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names",
+    "totalCount": 8,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names",
+            "dataPointCountRatio": 3.5E-7,
+            "dimensionCountRatio": 7.0E-5,
       "data": [
         {
           "dimensions": [
@@ -16,7 +18,7 @@
             "dt.entity.service_method.name": "findLocations"
           },
           "timestamps": [
-            1631865600000
+            1664409600000
           ],
           "values": [
             18227.56816390859
@@ -32,7 +34,7 @@
             "dt.entity.service_method.name": "getJourneyById"
           },
           "timestamps": [
-            1631865600000
+            1664409600000
           ],
           "values": [
             2860.608657243816
@@ -48,7 +50,7 @@
             "dt.entity.service_method.name": "getJourneyPageByTenant"
           },
           "timestamps": [
-            1631865600000
+            1664409600000
           ],
           "values": [
             15964.052631578947
@@ -64,7 +66,7 @@
             "dt.entity.service_method.name": "findJourneys"
           },
           "timestamps": [
-            1631865600000
+            1664409600000
           ],
           "values": [
             23587.58449245339
