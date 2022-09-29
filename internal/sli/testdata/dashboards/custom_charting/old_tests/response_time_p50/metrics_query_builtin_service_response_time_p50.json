@@ -5,15 +5,17 @@
     "result": [
         {
             "metricId": "builtin:service.response.time:splitBy():percentile(50.000000):names",
+            "dataPointCountRatio": 2.515E-4,
+            "dimensionCountRatio": 0.0503,
             "data": [
                 {
                     "dimensions": [],
                     "dimensionMap": {},
                     "timestamps": [
-                        1631865600000
+                        1664409600000
                     ],
                     "values": [
-                        1500.151733421778
+                        1500.1115152382822
                     ]
                 }
             ]
