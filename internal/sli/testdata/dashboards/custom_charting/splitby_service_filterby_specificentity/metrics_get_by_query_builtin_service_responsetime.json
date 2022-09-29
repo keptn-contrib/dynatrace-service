@@ -5,21 +5,23 @@
     "result": [
         {
             "metricId": "builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:names",
+            "dataPointCountRatio": 5.0E-8,
+            "dimensionCountRatio": 1.0E-5,
             "data": [
                 {
                     "dimensions": [
-                        "JourneyService",
-                        "SERVICE-F2455557EF67362B"
+                        "easyTravel Customer Frontend",
+                        "SERVICE-C6876D601CA5DDFD"
                     ],
                     "dimensionMap": {
-                        "dt.entity.service.name": "JourneyService",
-                        "dt.entity.service": "SERVICE-F2455557EF67362B"
+                        "dt.entity.service.name": "easyTravel Customer Frontend",
+                        "dt.entity.service": "SERVICE-C6876D601CA5DDFD"
                     },
                     "timestamps": [
-                        1631865600000
+                        1664409600000
                     ],
                     "values": [
-                        20256.493055555555
+                        57974.262650996854
                     ]
                 }
             ]
