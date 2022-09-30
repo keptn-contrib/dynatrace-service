@@ -64,19 +64,20 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 // TestRetrieveMetricsFromFile_SecurityProblemsV2 tests the success case for file-based SecurityProblemsV2 SLIs.
 func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 	const (
-		securityProblemsRequest           = "/api/v2/securityProblems?from=1609459200000&securityProblemSelector=status%28%22open%22%29&to=1609545600000"
 		testDataFolder                    = "./testdata/sli_files/secpv2_success/"
 		testIndicatorSecurityProblemCount = "security_problem_count"
 	)
 
+	expectedSecurityProblemsRequest := buildSecurityProblemsRequest("status%28%22open%22%29")
+
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(securityProblemsRequest, filepath.Join(testDataFolder, "security_problems_status_open.json"))
+	handler.AddExact(expectedSecurityProblemsRequest, filepath.Join(testDataFolder, "security_problems_status_open.json"))
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorSecurityProblemCount: "SECPV2;securityProblemSelector=status(\"open\")",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorSecurityProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 103, securityProblemsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorSecurityProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 398, expectedSecurityProblemsRequest))
 }
 
 // TestRetrieveMetricsFromFile_ProblemsV2 tests the success case for file-based ProblemsV2 SLIs.
