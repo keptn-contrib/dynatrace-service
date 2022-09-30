@@ -60,7 +60,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric", 62731.12784806213, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric", 87793.1776896271, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
