@@ -1,21 +1,24 @@
 {
-  "totalCount": 1,
-  "nextPageKey": null,
-  "result": [
-    {
-      "metricId": "builtin:service.response.time:splitBy():percentile(95.000000)",
-      "data": [
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
         {
-          "dimensions": [],
-          "dimensionMap": {},
-          "timestamps": [
-            1632835320000
-          ],
-          "values": [
-            12439.619479902443
-          ]
+            "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)",
+            "dataPointCountRatio": 1.5E-7,
+            "dimensionCountRatio": 3.0E-5,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        31846.08512740705
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
