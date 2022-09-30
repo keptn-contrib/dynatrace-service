@@ -1,40 +1,42 @@
 {
-  "totalCount": 2,
-  "nextPageKey": null,
-  "result": [
-    {
-      "metricId": "builtin:service.response.time:percentile(50)",
-      "data": [
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
         {
-          "dimensions": [
-            "SERVICE-74DF4B154436358D"
-          ],
-          "dimensionMap": {
-            "dt.entity.service": "SERVICE-74DF4B154436358D"
-          },
-          "timestamps": [
-            1634115840000
-          ],
-          "values": [
-            26.00115949505504
-          ]
-        },
-        {
-          "dimensions": [
-            "SERVICE-EF0238B11A4BF364"
-          ],
-          "dimensionMap": {
-            "dt.entity.service": "SERVICE-EF0238B11A4BF364"
-          },
-          "timestamps": [
-            1634115840000
-          ],
-          "values": [
-            90.34451079823523
-          ]
+            "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)",
+            "dataPointCountRatio": 1.5E-7,
+            "dimensionCountRatio": 3.0E-5,
+            "data": [
+                {
+                    "dimensions": [
+                        "SERVICE-74DF4B154436358D"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service": "SERVICE-74DF4B154436358D"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        26.00115949505504
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "SERVICE-EF0238B11A4BF364"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service": "SERVICE-EF0238B11A4BF364"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        90.34451079823523
+                    ]
+                }
+            ]
         }
-
-      ]
-    }
-  ]
+    ]
 }

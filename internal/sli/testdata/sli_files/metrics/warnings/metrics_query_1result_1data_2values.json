@@ -1,23 +1,26 @@
 {
-  "totalCount": 1,
-  "nextPageKey": null,
-  "result": [
-    {
-      "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
-      "data": [
-        {
-          "dimensions": [],
-          "dimensionMap": {},
-          "timestamps": [            
-            1633910400000,
-            1634169600000
-          ],
-          "values": [
-            85.49162511039627,
-            105.91966209375445            
-          ]
-        }
-      ]
-    }
-  ]
-}
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "12h",
+    "result": [
+      {
+        "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)",
+        "dataPointCountRatio": 0.006036,
+        "dimensionCountRatio": 0.0503,
+        "data": [
+          {
+            "dimensions": [],
+            "dimensionMap": {},
+            "timestamps": [
+              1664366400000,
+              1664409600000
+            ],
+            "values": [
+              210513.12979023764,
+              210649.28978964634
+            ]
+          }
+        ]
+      }
+    ]
+  }
