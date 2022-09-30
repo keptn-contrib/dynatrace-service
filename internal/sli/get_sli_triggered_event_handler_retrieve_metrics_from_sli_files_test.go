@@ -295,7 +295,7 @@ func TestGetSLISleep(t *testing.T) {
 
 	// time how long getting the SLI value takes
 	timeBeforeGetSLIValue := time.Now()
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 8433.40, expectedMetricsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 620.4411764705883, expectedMetricsRequest))
 	getSLIExectutionTime := time.Since(timeBeforeGetSLIValue)
 
 	assert.InDelta(t, 5, getSLIExectutionTime.Seconds(), 5)

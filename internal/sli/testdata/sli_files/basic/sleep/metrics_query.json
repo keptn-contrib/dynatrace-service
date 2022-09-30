@@ -1,17 +1,21 @@
 {
     "totalCount": 1,
     "nextPageKey": null,
+    "resolution": "Inf",
     "result": [
         {
             "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+            "dataPointCountRatio": 5.0E-8,
+            "dimensionCountRatio": 1.0E-5,
             "data": [
                 {
                     "dimensions": [],
+                    "dimensionMap": {},
                     "timestamps": [
-                        1579097520000
+                        1664409600000
                     ],
                     "values": [
-                        8433.40
+                        620.4411764705883
                     ]
                 }
             ]
