@@ -1,11 +1,11 @@
 {
-  "extrapolationLevel": 1,
-  "columnNames": [
-    "avg(duration)"
-  ],
-  "values": [
-    [
-      62731.12784806213
+    "extrapolationLevel": 16,
+    "columnNames": [
+        "avg(duration)"
+    ],
+    "values": [
+        [
+            87793.1776896271
+        ]
     ]
-  ]
 }

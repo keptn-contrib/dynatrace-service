@@ -322,7 +322,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("average_session_duration", 62731.12784806213, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("average_session_duration", 87793.1776896271, expectedUSQLRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
