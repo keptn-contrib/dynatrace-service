@@ -116,8 +116,8 @@ func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 1, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_europe", 2, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_asia", 2, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 5, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
