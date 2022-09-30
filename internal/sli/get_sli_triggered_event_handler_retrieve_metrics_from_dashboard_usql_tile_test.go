@@ -22,9 +22,9 @@ func TestRetrieveMetricsFromDashboardUSQLTile_ColumnChart(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 492.6603364080304, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_aol_explorer", 500.2868314283638, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_acoo_browser", 500.5150319856381, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_aol_explorer", 1428.282447519664, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 1402.0759668508288, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_acoo_browser", 1427.2675735742882, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
