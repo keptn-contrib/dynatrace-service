@@ -1,53 +1,56 @@
 {
-  "totalCount": 3,
-  "nextPageKey": null,
-  "result": [
-    {
-      "metricId": "builtin:service.response.time:percentile(95)",
-      "data": [
+    "totalCount": 3,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
         {
-          "dimensions": [
-            "SERVICE-A69809D8124E143C"
-          ],
-          "dimensionMap": {
-            "dt.entity.service": "SERVICE-A69809D8124E143C"
-          },
-          "timestamps": [
-            1632835320000
-          ],
-          "values": [
-            12893.949999999999
-          ]
-        },
-        {
-          "dimensions": [
-            "SERVICE-8E7A00CE0F6807A2"
-          ],
-          "dimensionMap": {
-            "dt.entity.service": "SERVICE-8E7A00CE0F6807A2"
-          },
-          "timestamps": [
-            1632835320000
-          ],
-          "values": [
-            807
-          ]
-        },
-        {
-          "dimensions": [
-            "SERVICE-A53998DB01251FF3"
-          ],
-          "dimensionMap": {
-            "dt.entity.service": "SERVICE-A53998DB01251FF3"
-          },
-          "timestamps": [
-            1632835320000
-          ],
-          "values": [
-            1155.9500000000003
-          ]
+            "metricId": "builtin:service.response.time:percentile(95)",
+            "dataPointCountRatio": 1.5E-7,
+            "dimensionCountRatio": 3.0E-5,
+            "data": [
+                {
+                    "dimensions": [
+                        "SERVICE-7A96961077A1AED2"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service": "SERVICE-7A96961077A1AED2"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        2038121
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "SERVICE-504937D81F10F081"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service": "SERVICE-504937D81F10F081"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        857.6499999999999
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "SERVICE-583C31D9DA560E1B"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service": "SERVICE-583C31D9DA560E1B"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        1287283
+                    ]
+                }
+            ]
         }
-      ]
-    }
-  ]
+    ]
 }
