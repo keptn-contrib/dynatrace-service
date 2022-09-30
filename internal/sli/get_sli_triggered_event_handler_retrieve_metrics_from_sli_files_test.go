@@ -317,7 +317,7 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	})
 
 	os.Setenv("MY_ENV_TAG", "some_tag")
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, indicator, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 0.29, expectedMetricsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, indicator, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 1550.7739132118083, expectedMetricsRequest))
 	os.Unsetenv("MY_ENV_TAG")
 }
 
