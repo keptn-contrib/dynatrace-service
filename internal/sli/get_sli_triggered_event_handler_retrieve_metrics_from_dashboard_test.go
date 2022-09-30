@@ -136,11 +136,14 @@ func TestDashboardThatProducesNoResultsProducesError(t *testing.T) {
 func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/dashboard_query/"
 
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
+	expectedProblemsV2Request := buildProblemsV2Request("status%28%22open%22%29%2CmanagementZoneIds%287030365576649815430%29")
+
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath, filepath.Join(testDataFolder, "dashboards_query.json"))
 	handler.AddExact(dynatrace.DashboardsPath+"/12345678-1111-4444-8888-123456789012", filepath.Join(testDataFolder, "dashboard.json"))
-	handler.AddExact(buildSLORequest("524ca177-849b-3e8c-8175-42b93fbc33c5"), filepath.Join(testDataFolder, "slo_524ca177-849b-3e8c-8175-42b93fbc33c5.json"))
-	handler.AddExact(buildProblemsV2Request("status%28%22open%22%29%2CmanagementZoneIds%287030365576649815430%29"), filepath.Join(testDataFolder, "problems.json"))
+	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
+	handler.AddExact(expectedProblemsV2Request, filepath.Join(testDataFolder, "problems.json"))
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
 		if !assert.NotNil(t, actual) {
@@ -161,8 +164,8 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	}
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_faster_500ms", 95.66405076939219, "/api/v2/slo/524ca177-849b-3e8c-8175-42b93fbc33c5?from=1609459200000&timeFrame=GTF&to=1609545600000"),
-		createSuccessfulSLIResultAssertionsFunc("problems", 1, "/api/v2/problems?from=1609459200000&problemSelector=status%28%22open%22%29%2CmanagementZoneIds%287030365576649815430%29&to=1609545600000"),
+		createSuccessfulSLIResultAssertionsFunc("rt_faster_500ms", 95, expectedSLORequest),
+		createSuccessfulSLIResultAssertionsFunc("problems", 1, expectedProblemsV2Request),
 	}
 
 	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, common.DynatraceConfigDashboardQUERY, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)

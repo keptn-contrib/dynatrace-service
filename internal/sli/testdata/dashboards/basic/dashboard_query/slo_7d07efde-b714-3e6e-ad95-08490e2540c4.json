@@ -1,0 +1,30 @@
+{
+  "id": "7d07efde-b714-3e6e-ad95-08490e2540c4",
+  "enabled": true,
+  "name": "RT Faster 500ms",
+  "evaluatedPercentage": 95.0,
+  "errorBudget": 80.0,
+  "status": "SUCCESS",
+  "error": "NONE",
+  "errorBudgetBurnRate": {
+    "burnRateVisualizationEnabled": false
+  },
+  "metricKey": "func:slo.static_slo___pass",
+  "burnRateMetricKey": "func:slo.errorBudgetBurnRate.static_slo___pass",
+  "errorBudgetMetricKey": "func:slo.errorBudget.static_slo___pass",
+  "normalizedErrorBudgetMetricKey": "func:slo.normalizedErrorBudget.static_slo___pass",
+  "metricExpression": "(builtin:service.cpu.time:splitBy())*0+95",
+  "target": 75.0,
+  "warning": 90.0,
+  "evaluationType": "AGGREGATE",
+  "timeframe": "1664323200000 to 1664409600000",
+  "filter": "type(\"SERVICE\")",
+  "relatedOpenProblems": 0,
+  "relatedTotalProblems": 76,
+  "metricRate": "",
+  "metricNumerator": "",
+  "metricDenominator": "",
+  "numeratorValue": 0.0,
+  "denominatorValue": 0.0,
+  "useRateMetric": true
+}
