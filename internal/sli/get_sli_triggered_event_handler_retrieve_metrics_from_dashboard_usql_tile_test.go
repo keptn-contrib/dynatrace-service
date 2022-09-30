@@ -41,9 +41,9 @@ func TestRetrieveMetricsFromDashboardUSQLTile_PieChart(t *testing.T) {
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 60154.328623114205, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_ashburn", 53567.040172786175, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_beijing", 65199.979558462794, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 85673.22361214698, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_ashburn", 73031.44078516903, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_london", 88003.95643322475, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
