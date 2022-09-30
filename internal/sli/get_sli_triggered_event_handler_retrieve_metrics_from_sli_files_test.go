@@ -96,7 +96,7 @@ func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 		testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 0, expectedProblemsRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 30, expectedProblemsRequest))
 }
 
 // TestRetrieveMetricsFromFile_SLO tests the success case for file-based SLO SLIs.
