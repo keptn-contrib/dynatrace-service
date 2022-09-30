@@ -338,18 +338,18 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			name:             "Metrics V2 with MV2 encoding",
 			indicator:        "response_time",
 			query:            "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),tag(\"keptn_project:$PROJECT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
-			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29%2Ctag%28%22keptn_project%3Amyproject%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29", "builtin%3Aservice.response.time"),
+			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29%2Ctag%28%22keptn_project%3Asockshop%22%29%2Ctag%28%22keptn_stage%3Astaging%22%29%2Ctag%28%22keptn_service%3Acarts%22%29", "builtin%3Aservice.response.time"),
 			responseFilename: filepath.Join(testDataFolder, "metrics_query_result.json"),
-			expectedSLIValue: 0.29,
+			expectedSLIValue: 0.6458395061728395,
 		},
 
 		{
 			name:             "Metrics V2",
 			indicator:        "response_time2",
 			query:            "entitySelector=type(SERVICE),tag(\"keptn_deployment:$DEPLOYMENT\"),tag(\"context:$CONTEXT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
-			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_deployment%3Amydeployment%22%29%2Ctag%28%22context%3Amycontext%22%29%2Ctag%28%22keptn_stage%3Amystage%22%29%2Ctag%28%22keptn_service%3Amyservice%22%29", "builtin%3Aservice.response.time"),
+			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_deployment%3Amydeployment%22%29%2Ctag%28%22context%3Amycontext%22%29%2Ctag%28%22keptn_stage%3Astaging%22%29%2Ctag%28%22keptn_service%3Acarts%22%29", "builtin%3Aservice.response.time"),
 			responseFilename: filepath.Join(testDataFolder, "metrics_query_result.json"),
-			expectedSLIValue: 290,
+			expectedSLIValue: 645.8395061728395,
 		},
 
 		{
@@ -358,7 +358,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			query:            "PV2;problemSelector=status($LABEL.problem_status)",
 			expectedRequest:  buildProblemsV2Request("status%28open%29"),
 			responseFilename: filepath.Join(testDataFolder, "problems_query_result.json"),
-			expectedSLIValue: 1,
+			expectedSLIValue: 30,
 		},
 		{
 			name:             "SECPV2",
@@ -366,16 +366,16 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			query:            "SECPV2;securityProblemSelector=status($LABEL.problem_status)",
 			expectedRequest:  buildSecurityProblemsRequest("status%28open%29"),
 			responseFilename: filepath.Join(testDataFolder, "security_problems_query_result.json"),
-			expectedSLIValue: 4,
+			expectedSLIValue: 399,
 		},
 
 		{
 			name:             "SLO",
 			indicator:        "RT_faster_500ms",
 			query:            "SLO;$LABEL.slo_id",
-			expectedRequest:  buildSLORequest("524ca177-849b-3e8c-8175-42b93fbc33c5"),
+			expectedRequest:  buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4"),
 			responseFilename: filepath.Join(testDataFolder, "slo_query_result.json"),
-			expectedSLIValue: 96,
+			expectedSLIValue: 95,
 		},
 
 		{
@@ -384,7 +384,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			query:            "USQL;COLUMN_CHART;iOS 12.1.4;SELECT osVersion, AVG(duration) FROM usersession WHERE country IN('$LABEL.country') GROUP BY osVersion",
 			expectedRequest:  buildUSQLRequest("SELECT+osVersion%2C+AVG%28duration%29+FROM+usersession+WHERE+country+IN%28%27Austria%27%29+GROUP+BY+osVersion"),
 			responseFilename: filepath.Join(testDataFolder, "usql_query_result.json"),
-			expectedSLIValue: 21478,
+			expectedSLIValue: 29043,
 		},
 	}
 
@@ -396,13 +396,13 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			keptnEvent := &getSLIEventData{
 				context:      "mycontext",
 				event:        "myevent",
-				project:      "myproject",
-				stage:        "mystage",
-				service:      "myservice",
+				project:      "sockshop",
+				stage:        "staging",
+				service:      "carts",
 				deployment:   "mydeployment",
 				testStrategy: "mystrategy",
 				labels: map[string]string{
-					"slo_id":         "524ca177-849b-3e8c-8175-42b93fbc33c5",
+					"slo_id":         "7d07efde-b714-3e6e-ad95-08490e2540c4",
 					"problem_status": "open",
 					"country":        "Austria",
 				},
