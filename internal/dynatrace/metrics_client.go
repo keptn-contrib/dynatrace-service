@@ -3,6 +3,7 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -119,7 +120,7 @@ func NewMetricsClient(client ClientInterface) *MetricsClient {
 
 // GetMetricDefinitionByID calls the Dynatrace API to retrieve MetricDefinition details.
 func (mc *MetricsClient) GetMetricDefinitionByID(ctx context.Context, metricID string) (*MetricDefinition, error) {
-	body, err := mc.client.Get(ctx, MetricsPath+"/"+metricID)
+	body, err := mc.client.Get(ctx, MetricsPath+"/"+url.PathEscape(metricID))
 	if err != nil {
 		return nil, err
 	}
