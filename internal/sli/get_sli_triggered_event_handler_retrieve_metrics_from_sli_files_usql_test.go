@@ -201,8 +201,8 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/usql/incorrect_configuration"
 	usqlSingleResultRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
 	usqlMultipleResultRequest1 := buildUSQLRequest("SELECT+AVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion")
-	usqlMultipleResultRequest2 := buildUSQLRequest("SELECT+osVersion%2CosVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
-	usqlMultipleResultRequest3 := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion")
+	usqlMultipleResultRequest2 := buildUSQLRequest("SELECT+osVersion%2Ccountry%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion%2Ccountry")
+	usqlMultipleResultRequest3 := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29%2Ccountry+FROM+usersession+GROUP+BY+osVersion%2Ccountry")
 
 	testConfigs := []struct {
 		name                              string
@@ -315,7 +315,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 		{
 			name:                              "result has more than one column, but second column is not a numeric value for COLUMN_CHART",
 			request:                           usqlMultipleResultRequest2,
-			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			usqlQuery:                         "USQL;COLUMN_CHART;Windows XP;SELECT osVersion,country,AVG(duration) FROM usersession GROUP BY osVersion,country",
 			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_second_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest2, "dimension value should be a number"),
@@ -323,7 +323,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 		{
 			name:                              "result has more than one column, but second column is not a numeric value for PIE_CHART",
 			request:                           usqlMultipleResultRequest2,
-			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+			usqlQuery:                         "USQL;PIE_CHART;Windows XP;SELECT osVersion,country,AVG(duration) FROM usersession GROUP BY osVersion,country",
 			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_second_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest2, "dimension value should be a number"),
@@ -331,7 +331,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 		{
 			name:                              "result has more than one column, but last column is not a numeric value for TABLE",
 			request:                           usqlMultipleResultRequest3,
-			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT osVersion,AVG(duration),osVersion FROM usersession GROUP BY osVersion",
+			usqlQuery:                         "USQL;TABLE;Windows XP;SELECT osVersion,AVG(duration),country FROM usersession GROUP BY osVersion,country",
 			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_last_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest3, "dimension value should be a number"),
