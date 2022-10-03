@@ -124,22 +124,22 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 		{
 			name:          "column chart",
 			query:         "USQL;COLUMN_CHART;Android 6.0.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
-			expectedValue: 21862.42,
+			expectedValue: 21550.5,
 		},
 		{
 			name:          "line chart",
 			query:         "USQL;LINE_CHART;Android 7.0.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
-			expectedValue: 26304,
+			expectedValue: 30001.69230769231,
 		},
 		{
 			name:          "pie chart",
-			query:         "USQL;PIE_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
-			expectedValue: 23576,
+			query:         "USQL;PIE_CHART;iOS 14;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
+			expectedValue: 42557.1875,
 		},
 		{
 			name:          "table",
 			query:         "USQL;TABLE;iOS 12.1.4;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
-			expectedValue: 24824,
+			expectedValue: 29043,
 		},
 	}
 	for _, testConfig := range testConfigs {
