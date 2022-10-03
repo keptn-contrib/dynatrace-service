@@ -178,7 +178,6 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions(t *testi
 					MetricExpressionsString: convertToJSONStringOrEmptyIfNil(t, tt.metricExpressions),
 				},
 			)
-			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
 			handler.AddExactFile(tt.expectedMetricsRequest, tt.queryResultsFilename)
 
 			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, tt.getSLIFinishedEventAssertionsFunc, tt.sliResultsAssertionsFuncs...)
@@ -257,7 +256,6 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 					TileFilterString:      convertToJSONString(t, tt.tileFilter),
 				},
 			)
-			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
 			handler.AddExactFile(tt.expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg.json"))
 
 			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("srt", 8283.891270010905, tt.expectedMetricsRequest))
@@ -274,7 +272,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:security.securityProblem.open.managementZone", filepath.Join(testDataFolder, "metrics_builtin_security_securityProblem_open_managementZone.json"))
+
 	handler.AddExactError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_query_builtin_security_securityProblem_open_managementZone.json"))
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("vulnerabilities_high", expectedMetricsRequest))
@@ -290,7 +288,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
+
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
@@ -322,7 +320,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_excluded_tile.json"))
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
+
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
@@ -398,7 +396,6 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 					TileName:         thresholdTest.tileName,
 					ThresholdsString: convertToJSONString(t, thresholdTest.thresholds),
 				})
-			handler.AddExactFile(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metrics_builtin_service_response_time.json"))
 			handler.AddExactFile(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg.json"))
 
 			uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
