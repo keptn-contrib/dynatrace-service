@@ -170,7 +170,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 		testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 	})
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, expectedUSQLRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 87793.1776896271, expectedUSQLRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
