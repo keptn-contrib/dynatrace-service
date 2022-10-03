@@ -52,8 +52,8 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions(t *testi
 	var singleQueryResultFilename = filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg_single.json")
 	var multipleQueryResultsFilename = filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg_multiple.json")
 
-	expectedSingleResultMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
-	expectedMultipleResultMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+	expectedSingleResultMetricsRequest := buildMetricsV2QueryRequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+	expectedMultipleResultMetricsRequest := buildMetricsV2QueryRequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	singleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("srt", 54896.44626158664, expectedSingleResultMetricsRequest)}
@@ -222,25 +222,25 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 			name:                   "no dashboard filter, empty tile filter",
 			dashboardFilter:        nil,
 			tileFilter:             emptyTileFilter,
-			expectedMetricsRequest: buildMetricsV2RequestString(expectedEncodedMetricSelector),
+			expectedMetricsRequest: buildMetricsV2QueryRequestString(expectedEncodedMetricSelector),
 		},
 		{
 			name:                   "dashboard filter with mz, empty tile filter",
 			dashboardFilter:        &dashboardFilterWithManagementZone,
 			tileFilter:             emptyTileFilter,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%28-1234567890123456789%29"),
+			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%28-1234567890123456789%29"),
 		},
 		{
 			name:                   "no dashboard filter, tile filter with mz",
 			dashboardFilter:        nil,
 			tileFilter:             tileFilterWithManagementZone,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%282311420533206603714%29"),
+			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%282311420533206603714%29"),
 		},
 		{
 			name:                   "dashboard filter with mz, tile filter with mz",
 			dashboardFilter:        &dashboardFilterWithManagementZone,
 			tileFilter:             tileFilterWithManagementZone,
-			expectedMetricsRequest: buildMetricsV2RequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%282311420533206603714%29"),
+			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelector(expectedEncodedMetricSelector, "mzId%282311420533206603714%29"),
 		},
 	}
 
@@ -270,7 +270,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/no_entity_type/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithMZSelector("%28builtin%3Asecurity.securityProblem.open.managementZone%3Afilter%28and%28or%28eq%28%22Risk+Level%22%2CHIGH%29%29%29%29%3AsplitBy%28%22Risk+Level%22%29%3Asum%3Aauto%3Asort%28value%28sum%2Cdescending%29%29%3Alimit%28100%29%29%3Alimit%28100%29%3Anames", "mzId%28-1234567890123456789%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithMZSelector("%28builtin%3Asecurity.securityProblem.open.managementZone%3Afilter%28and%28or%28eq%28%22Risk+Level%22%2CHIGH%29%29%29%29%3AsplitBy%28%22Risk+Level%22%29%3Asum%3Aauto%3Asort%28value%28sum%2Cdescending%29%29%3Alimit%28100%29%29%3Alimit%28100%29%3Anames", "mzId%28-1234567890123456789%29")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -286,7 +286,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/custom_slo/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -318,7 +318,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/excluded_tile/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3Afilter%28and%28or%28in%28%22dt.entity.service%22%2CentitySelector%28%22type%28service%29%2CentityId%28~%22SERVICE-C6876D601CA5DDFD~%22%29%22%29%29%29%29%29%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestString("%28builtin%3Aservice.response.time%3Afilter%28and%28or%28in%28%22dt.entity.service%22%2CentitySelector%28%22type%28service%29%2CentityId%28~%22SERVICE-C6876D601CA5DDFD~%22%29%22%29%29%29%29%29%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_excluded_tile.json"))
@@ -336,7 +336,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_success/"
 
-	expectedMetricsRequest := buildMetricsV2RequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestString("%28builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Aauto%3Asort%28value%28avg%2Cdescending%29%29%3Alimit%2810%29%29%3Alimit%28100%29%3Anames")
 
 	successfulSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 54896.44626158664, expectedMetricsRequest)
 

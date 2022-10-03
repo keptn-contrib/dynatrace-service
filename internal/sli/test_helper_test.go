@@ -65,18 +65,18 @@ func convertTimeStringToUnixMillisecondsString(timeString string) string {
 	return common.TimestampToUnixMillisecondsString(*time)
 }
 
-// buildMetricsV2RequestString builds a Metrics v2 request string with the specified encoded metric selector for use in testing.
-func buildMetricsV2RequestString(encodedMetricSelector string) string {
+// buildMetricsV2QueryRequestString builds a Metrics v2 request string with the specified encoded metric selector for use in testing.
+func buildMetricsV2QueryRequestString(encodedMetricSelector string) string {
 	return fmt.Sprintf("%s?from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
-// buildMetricsV2RequestStringWithEntitySelector builds a Metrics v2 request string with the specified encoded entity and metric selectors for use in testing.
-func buildMetricsV2RequestStringWithEntitySelector(encodedEntitySelector string, encodedMetricSelector string) string {
+// buildMetricsV2QueryRequestStringWithEntitySelector builds a Metrics v2 request string with the specified encoded entity and metric selectors for use in testing.
+func buildMetricsV2QueryRequestStringWithEntitySelector(encodedEntitySelector string, encodedMetricSelector string) string {
 	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, encodedEntitySelector, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
-// buildMetricsV2RequestStringWithMZSelector builds a Metrics v2 request string with the specified metric and management zone selectors for use in testing.
-func buildMetricsV2RequestStringWithMZSelector(encodedMetricSelector string, encodedMZSelector string) string {
+// buildMetricsV2QueryRequestStringWithMZSelector builds a Metrics v2 request string with the specified metric and management zone selectors for use in testing.
+func buildMetricsV2QueryRequestStringWithMZSelector(encodedMetricSelector string, encodedMZSelector string) string {
 	return fmt.Sprintf("%s?from=%s&metricSelector=%s&mzSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, encodedMZSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 

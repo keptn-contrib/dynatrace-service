@@ -152,7 +152,7 @@ func TestErrorMessageWhenNoSLIsAreRequested(t *testing.T) {
 func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/success/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_1result_1data_1value.json"))
@@ -168,7 +168,7 @@ func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/constraints_violated/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExactError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_query_constraints_violated.json"))
@@ -250,7 +250,7 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+			expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
 
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddExact(expectedMetricsRequest, tt.metricsQueryResponseFilename)
@@ -268,7 +268,7 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/old_metrics_format/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
@@ -284,7 +284,7 @@ func TestGetSLIValueWithOldAndNewCustomQueryFormat(t *testing.T) {
 func TestGetSLISleep(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/sleep/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("tag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29%2Ctype%28SERVICE%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2850%29")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
@@ -305,7 +305,7 @@ func TestGetSLISleep(t *testing.T) {
 func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/env_placeholders/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22env_tag%3Asome_tag%22%29", "builtin%3Aservice.response.time")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22env_tag%3Asome_tag%22%29", "builtin%3Aservice.response.time")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_result.json"))
@@ -338,7 +338,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			name:             "Metrics V2 with MV2 encoding",
 			indicator:        "response_time",
 			query:            "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),tag(\"keptn_project:$PROJECT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
-			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29%2Ctag%28%22keptn_project%3Asockshop%22%29%2Ctag%28%22keptn_stage%3Astaging%22%29%2Ctag%28%22keptn_service%3Acarts%22%29", "builtin%3Aservice.response.time"),
+			expectedRequest:  buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29%2Ctag%28%22keptn_project%3Asockshop%22%29%2Ctag%28%22keptn_stage%3Astaging%22%29%2Ctag%28%22keptn_service%3Acarts%22%29", "builtin%3Aservice.response.time"),
 			responseFilename: filepath.Join(testDataFolder, "metrics_query_result.json"),
 			expectedSLIValue: 0.6458395061728395,
 		},
@@ -347,7 +347,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			name:             "Metrics V2",
 			indicator:        "response_time2",
 			query:            "entitySelector=type(SERVICE),tag(\"keptn_deployment:$DEPLOYMENT\"),tag(\"context:$CONTEXT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time",
-			expectedRequest:  buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_deployment%3Amydeployment%22%29%2Ctag%28%22context%3Amycontext%22%29%2Ctag%28%22keptn_stage%3Astaging%22%29%2Ctag%28%22keptn_service%3Acarts%22%29", "builtin%3Aservice.response.time"),
+			expectedRequest:  buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_deployment%3Amydeployment%22%29%2Ctag%28%22context%3Amycontext%22%29%2Ctag%28%22keptn_stage%3Astaging%22%29%2Ctag%28%22keptn_service%3Acarts%22%29", "builtin%3Aservice.response.time"),
 			responseFilename: filepath.Join(testDataFolder, "metrics_query_result.json"),
 			expectedSLIValue: 645.8395061728395,
 		},

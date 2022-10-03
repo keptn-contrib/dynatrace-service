@@ -13,7 +13,7 @@ import (
 func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequestFilterByAutoTag(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/splitby_servicekeyrequest_filterby_autotag/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE_METHOD%29%2CfromRelationships.isServiceMethodOfService%28type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29%29", "builtin%3Aservice.keyRequest.totalProcessingTime%3AsplitBy%28%22dt.entity.service_method%22%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE_METHOD%29%2CfromRelationships.isServiceMethodOfService%28type%28SERVICE%29%2Ctag%28%22keptnmanager%22%29%29", "builtin%3Aservice.keyRequest.totalProcessingTime%3AsplitBy%28%22dt.entity.service_method%22%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_splitby_servicekeyrequest_filterby_autotag.json"))
@@ -58,7 +58,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_WithSLIAndTwoSeries(t *t
 func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByNoFilterBy(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/no_splitby_no_filterby/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_no_splitby_no_filterby.json"))
@@ -89,7 +89,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceKeyRequest
 func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAutoTag(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/splitby_service_filterby_autotag/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28%22keptn_managed%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_splitby_service_filterby_autotag.json"))
@@ -109,7 +109,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterByAu
 func TestRetrieveMetricsFromDashboardCustomChartingTile_SplitByServiceFilterBySpecificEntity(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/splitby_service_filterby_specificentity/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29%2CentityId%28%22SERVICE-C6876D601CA5DDFD%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2CentityId%28%22SERVICE-C6876D601CA5DDFD%22%29", "builtin%3Aservice.response.time%3AsplitBy%28%22dt.entity.service%22%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_splitby_service_filterby_specificentity.json"))
@@ -138,7 +138,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_NoSplitByFilterByService
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_WorkerProcessCount(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/worker_process_count_avg/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.processCount%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.processCount%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_worker_process_count_avg.json"))
@@ -155,7 +155,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_WorkerProcessCou
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP90(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/response_time_p90/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890.000000%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2890.000000%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_response_time_p90.json"))
@@ -172,7 +172,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP90(
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP50(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/response_time_p50/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2850.000000%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2850.000000%29%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_response_time_p50.json"))
@@ -189,7 +189,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ResponseTimeP50(
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/process_memory_avg/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.mem.workingSetSize%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.mem.workingSetSize%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_process_memory_avg.json"))
@@ -206,7 +206,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessCPUAvg(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/process_cpu_avg/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.cpu.usage%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28PROCESS_GROUP_INSTANCE%29", "builtin%3Atech.generic.cpu.usage%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_process_cpu_avg.json"))
@@ -223,7 +223,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessCPUAvg(t 
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_Throughput(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/throughput/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.requestCount.total%3AsplitBy%28%29%3Avalue%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.requestCount.total%3AsplitBy%28%29%3Avalue%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_throughput.json"))
@@ -240,7 +240,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_Throughput(t *te
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostCPUUsageAvg(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/host_cpu_usage_avg/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.cpu.usage%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.cpu.usage%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_host_cpu_usage_avg.json"))
@@ -257,7 +257,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostCPUUsageAvg(
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostMemoryUsageAvg(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/host_mem_usage_avg/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.mem.usage%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.mem.usage%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_host_mem_usage_avg.json"))
@@ -274,7 +274,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostMemoryUsageA
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostDiskQueueLengthMax(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/host_disk_queuelength_max/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.disk.queueLength%3AsplitBy%28%29%3Amax%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28HOST%29", "builtin%3Ahost.disk.queueLength%3AsplitBy%28%29%3Amax%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_host_disk_queuelength_max.json"))
@@ -291,7 +291,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_HostDiskQueueLen
 func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_NonDbChildCallCount(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/old_tests/non_db_child_call_count/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.nonDbChildCallCount%3AsplitBy%28%29%3Avalue%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.nonDbChildCallCount%3AsplitBy%28%29%3Avalue%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_non_db_child_call_count.json"))
@@ -310,7 +310,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_NonDbChildCallCo
 func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/excluded_tile/"
 
-	expectedMetricsRequest := buildMetricsV2RequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Aavg%3Anames")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_excluded_tile.json"))
