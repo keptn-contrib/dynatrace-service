@@ -56,7 +56,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 //   - a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 //   - the defined SLI is valid YAML and the USQL prefix is used correctly, but the fields are used incorrectly.
 //     So we return an error for that
-func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
+func TestCustomSLIWithUSQLQueryProcessingErrors(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/usql/processing_errors"
 
 	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
