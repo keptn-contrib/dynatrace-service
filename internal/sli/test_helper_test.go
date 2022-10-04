@@ -19,6 +19,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
@@ -71,19 +72,49 @@ func buildMetricsV2DefinitionRequestString(metricID string) string {
 	return fmt.Sprintf("%s/%s", dynatrace.MetricsPath, url.PathEscape(metricID))
 }
 
+// buildMetricsV2QueryRequestStringWithResolutionInf builds a Metrics v2 request string with the specified metric selector and resolution inf for use in testing.
+func buildMetricsV2QueryRequestStringWithResolutionInf(metricSelector string) string {
+	return buildMetricsV2QueryRequestStringWithResolution(metricSelector, metrics.ResolutionInf)
+}
+
+// buildMetricsV2QueryRequestStringWithResolution builds a Metrics v2 request string with the specified metric selector and resolution for use in testing.
+func buildMetricsV2QueryRequestStringWithResolution(metricSelector string, resolution string) string {
+	return fmt.Sprintf("%s?from=%s&metricSelector=%s&resolution=%s&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), resolution, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+}
+
 // buildMetricsV2QueryRequestString builds a Metrics v2 request string with the specified metric selector for use in testing.
 func buildMetricsV2QueryRequestString(metricSelector string) string {
-	return fmt.Sprintf("%s?from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
+	return fmt.Sprintf("%s?from=%s&metricSelector=%s&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
+}
+
+// buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf builds a Metrics v2 request string with the specified entity and metric selectors and resolution inf for use in testing.
+func buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf(entitySelector string, metricSelector string) string {
+	return buildMetricsV2QueryRequestStringWithEntitySelectorAndResolution(entitySelector, metricSelector, metrics.ResolutionInf)
+}
+
+// buildMetricsV2QueryRequestStringWithEntitySelectorAndResolution builds a Metrics v2 request string with the specified entity and metric selectors and resolution for use in testing.
+func buildMetricsV2QueryRequestStringWithEntitySelectorAndResolution(entitySelector string, metricSelector string, resolution string) string {
+	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=%s&to=%s", dynatrace.MetricsQueryPath, url.QueryEscape(entitySelector), convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), resolution, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
 // buildMetricsV2QueryRequestStringWithEntitySelector builds a Metrics v2 request string with the specified entity and metric selectors for use in testing.
 func buildMetricsV2QueryRequestStringWithEntitySelector(entitySelector string, metricSelector string) string {
-	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, url.QueryEscape(entitySelector), convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
+	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&to=%s", dynatrace.MetricsQueryPath, url.QueryEscape(entitySelector), convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
+}
+
+// buildMetricsV2QueryRequestStringWithMZSelectorAndResolutionInf builds a Metrics v2 request string with the specified metric and management zone selectors and resolution inf for use in testing.
+func buildMetricsV2QueryRequestStringWithMZSelectorAndResolutionInf(metricSelector string, mzSelector string) string {
+	return buildMetricsV2QueryRequestStringWithMZSelectorAndResolution(metricSelector, mzSelector, metrics.ResolutionInf)
+}
+
+// buildMetricsV2QueryRequestStringWithMZSelectorAndResolution builds a Metrics v2 request string with the specified metric and management zone selectors and resolution for use in testing.
+func buildMetricsV2QueryRequestStringWithMZSelectorAndResolution(metricSelector string, mzSelector string, resolution string) string {
+	return fmt.Sprintf("%s?from=%s&metricSelector=%s&mzSelector=%s&resolution=%s&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), url.QueryEscape(mzSelector), resolution, convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
 // buildMetricsV2QueryRequestStringWithMZSelector builds a Metrics v2 request string with the specified metric and management zone selectors for use in testing.
 func buildMetricsV2QueryRequestStringWithMZSelector(metricSelector string, mzSelector string) string {
-	return fmt.Sprintf("%s?from=%s&metricSelector=%s&mzSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), url.QueryEscape(mzSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
+	return fmt.Sprintf("%s?from=%s&metricSelector=%s&mzSelector=%s&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), url.QueryEscape(mzSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
 // buildProblemsV2Request builds a Problems V2 request string with the specified problem selector for use in testing.

@@ -52,8 +52,8 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions(t *testi
 	var singleQueryResultFilename = filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg_single.json")
 	var multipleQueryResultsFilename = filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time_avg_multiple.json")
 
-	expectedSingleResultMetricsRequest := buildMetricsV2QueryRequestString("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
-	expectedMultipleResultMetricsRequest := buildMetricsV2QueryRequestString("(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+	expectedSingleResultMetricsRequest := buildMetricsV2QueryRequestStringWithResolutionInf("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+	expectedMultipleResultMetricsRequest := buildMetricsV2QueryRequestStringWithResolutionInf("(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
 
 	singleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("srt", 54896.44626158664, expectedSingleResultMetricsRequest)}
@@ -221,25 +221,25 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 			name:                   "no dashboard filter, empty tile filter",
 			dashboardFilter:        nil,
 			tileFilter:             emptyTileFilter,
-			expectedMetricsRequest: buildMetricsV2QueryRequestString(expectedMetricSelector),
+			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithResolutionInf(expectedMetricSelector),
 		},
 		{
 			name:                   "dashboard filter with mz, empty tile filter",
 			dashboardFilter:        &dashboardFilterWithManagementZone,
 			tileFilter:             emptyTileFilter,
-			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelector(expectedMetricSelector, "mzId(-1234567890123456789)"),
+			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelectorAndResolutionInf(expectedMetricSelector, "mzId(-1234567890123456789)"),
 		},
 		{
 			name:                   "no dashboard filter, tile filter with mz",
 			dashboardFilter:        nil,
 			tileFilter:             tileFilterWithManagementZone,
-			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelector(expectedMetricSelector, "mzId(2311420533206603714)"),
+			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelectorAndResolutionInf(expectedMetricSelector, "mzId(2311420533206603714)"),
 		},
 		{
 			name:                   "dashboard filter with mz, tile filter with mz",
 			dashboardFilter:        &dashboardFilterWithManagementZone,
 			tileFilter:             tileFilterWithManagementZone,
-			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelector(expectedMetricSelector, "mzId(2311420533206603714)"),
+			expectedMetricsRequest: buildMetricsV2QueryRequestStringWithMZSelectorAndResolutionInf(expectedMetricSelector, "mzId(2311420533206603714)"),
 		},
 	}
 
@@ -268,7 +268,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/no_entity_type/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithMZSelector("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names", "mzId(-1234567890123456789)")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithMZSelectorAndResolutionInf("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names", "mzId(-1234567890123456789)")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -284,7 +284,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/custom_slo/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestString("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithResolutionInf("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -316,7 +316,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/excluded_tile/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestString("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C6876D601CA5DDFD~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithResolutionInf("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C6876D601CA5DDFD~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_excluded_tile.json"))
@@ -334,7 +334,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T)
 func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_success/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestString("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithResolutionInf("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
 
 	successfulSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc("srt", 54896.44626158664, expectedMetricsRequest)
 
