@@ -66,6 +66,11 @@ func convertTimeStringToUnixMillisecondsString(timeString string) string {
 	return common.TimestampToUnixMillisecondsString(*time)
 }
 
+// buildMetricsV2DefinitionRequestString builds a Metrics v2 definition request string with the specified metric ID for use in testing.
+func buildMetricsV2DefinitionRequestString(metricID string) string {
+	return fmt.Sprintf("%s/%s", dynatrace.MetricsPath, url.PathEscape(metricID))
+}
+
 // buildMetricsV2QueryRequestString builds a Metrics v2 request string with the specified metric selector for use in testing.
 func buildMetricsV2QueryRequestString(metricSelector string) string {
 	return fmt.Sprintf("%s?from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))

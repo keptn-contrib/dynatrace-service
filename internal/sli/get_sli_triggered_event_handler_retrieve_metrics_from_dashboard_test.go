@@ -28,7 +28,7 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
+	handler.AddExact(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
@@ -51,7 +51,7 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
+	handler.AddExact(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
@@ -76,7 +76,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	// we need metrics definition, because we will be retrieving metrics from dashboard
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli_parse_only_on_change.json"))
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
+	handler.AddExact(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -98,7 +98,7 @@ func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
-	handler.AddExact(dynatrace.MetricsPath+"/builtin:service.response.time", filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
+	handler.AddExact(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_results.json"))
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
