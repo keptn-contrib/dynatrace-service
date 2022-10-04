@@ -59,7 +59,7 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 func TestCustomSLIWithUSQLQueryProcessingErrors(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/usql/processing_errors"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
+	expectedUSQLRequest := buildUSQLRequest("SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion")
 	testConfigs := []struct {
 		name                              string
 		usqlPrefix                        string
@@ -111,7 +111,7 @@ func TestCustomSLIWithUSQLQueryProcessingErrors(t *testing.T) {
 func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/usql/multiple_result_processing"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion")
+	expectedUSQLRequest := buildUSQLRequest("SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_multiple_results.json"))
@@ -161,7 +161,7 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/usql/single_result_processing"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_single_result.json"))
@@ -180,7 +180,7 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/usql/no_results"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
+	expectedUSQLRequest := buildUSQLRequest("SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_0_results.json"))
@@ -199,10 +199,10 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 // * the defined SLI is valid YAML, but the fields of the USQL prefix are used incorrectly together, so we return errors for that
 func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/usql/incorrect_configuration"
-	usqlSingleResultRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
-	usqlMultipleResultRequest1 := buildUSQLRequest("SELECT+AVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion")
-	usqlMultipleResultRequest2 := buildUSQLRequest("SELECT+osVersion%2Ccountry%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion%2Ccountry")
-	usqlMultipleResultRequest3 := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29%2Ccountry+FROM+usersession+GROUP+BY+osVersion%2Ccountry")
+	usqlSingleResultRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
+	usqlMultipleResultRequest1 := buildUSQLRequest("SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion")
+	usqlMultipleResultRequest2 := buildUSQLRequest("SELECT osVersion,country,AVG(duration) FROM usersession GROUP BY osVersion,country")
+	usqlMultipleResultRequest3 := buildUSQLRequest("SELECT osVersion,AVG(duration),country FROM usersession GROUP BY osVersion,country")
 
 	testConfigs := []struct {
 		name                              string

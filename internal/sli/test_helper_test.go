@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -65,39 +66,39 @@ func convertTimeStringToUnixMillisecondsString(timeString string) string {
 	return common.TimestampToUnixMillisecondsString(*time)
 }
 
-// buildMetricsV2QueryRequestString builds a Metrics v2 request string with the specified encoded metric selector for use in testing.
-func buildMetricsV2QueryRequestString(encodedMetricSelector string) string {
-	return fmt.Sprintf("%s?from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+// buildMetricsV2QueryRequestString builds a Metrics v2 request string with the specified metric selector for use in testing.
+func buildMetricsV2QueryRequestString(metricSelector string) string {
+	return fmt.Sprintf("%s?from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
-// buildMetricsV2QueryRequestStringWithEntitySelector builds a Metrics v2 request string with the specified encoded entity and metric selectors for use in testing.
-func buildMetricsV2QueryRequestStringWithEntitySelector(encodedEntitySelector string, encodedMetricSelector string) string {
-	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, encodedEntitySelector, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+// buildMetricsV2QueryRequestStringWithEntitySelector builds a Metrics v2 request string with the specified entity and metric selectors for use in testing.
+func buildMetricsV2QueryRequestStringWithEntitySelector(entitySelector string, metricSelector string) string {
+	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, url.QueryEscape(entitySelector), convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
 // buildMetricsV2QueryRequestStringWithMZSelector builds a Metrics v2 request string with the specified metric and management zone selectors for use in testing.
-func buildMetricsV2QueryRequestStringWithMZSelector(encodedMetricSelector string, encodedMZSelector string) string {
-	return fmt.Sprintf("%s?from=%s&metricSelector=%s&mzSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, encodedMZSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+func buildMetricsV2QueryRequestStringWithMZSelector(metricSelector string, mzSelector string) string {
+	return fmt.Sprintf("%s?from=%s&metricSelector=%s&mzSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(metricSelector), url.QueryEscape(mzSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
-// buildProblemsV2Request builds a Problems V2 request string with the specified encoded problem selector for use in testing.
-func buildProblemsV2Request(encodedProblemSelector string) string {
-	return fmt.Sprintf("%s?from=%s&problemSelector=%s&to=%s", dynatrace.ProblemsV2Path, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedProblemSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+// buildProblemsV2Request builds a Problems V2 request string with the specified problem selector for use in testing.
+func buildProblemsV2Request(problemSelector string) string {
+	return fmt.Sprintf("%s?from=%s&problemSelector=%s&to=%s", dynatrace.ProblemsV2Path, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(problemSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
-// buildSecurityProblemsRequest builds a Security Problems request string with the specified encoded security problem selector for use in testing.
-func buildSecurityProblemsRequest(encodedSecurityProblemSelector string) string {
-	return fmt.Sprintf("%s?from=%s&securityProblemSelector=%s&to=%s", dynatrace.SecurityProblemsPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedSecurityProblemSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+// buildSecurityProblemsRequest builds a Security Problems request string with the specified security problem selector for use in testing.
+func buildSecurityProblemsRequest(securityProblemSelector string) string {
+	return fmt.Sprintf("%s?from=%s&securityProblemSelector=%s&to=%s", dynatrace.SecurityProblemsPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(securityProblemSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
 // buildSLORequest builds a SLO request string with the specified SLO ID for use in testing.
 func buildSLORequest(sloID string) string {
-	return fmt.Sprintf("%s/%s?from=%s&timeFrame=GTF&to=%s", dynatrace.SLOPath, sloID, convertTimeStringToUnixMillisecondsString(testSLIStart), convertTimeStringToUnixMillisecondsString(testSLIEnd))
+	return fmt.Sprintf("%s/%s?from=%s&timeFrame=GTF&to=%s", dynatrace.SLOPath, url.PathEscape(sloID), convertTimeStringToUnixMillisecondsString(testSLIStart), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
-// buildUSQLRequest builds a USQL request string with the specified encoded query for use in testing.
-func buildUSQLRequest(encodedQuery string) string {
-	return fmt.Sprintf("%s?addDeepLinkFields=false&endTimestamp=%s&explain=false&query=%s&startTimestamp=%s", dynatrace.USQLPath, convertTimeStringToUnixMillisecondsString(testSLIEnd), encodedQuery, convertTimeStringToUnixMillisecondsString(testSLIStart))
+// buildUSQLRequest builds a USQL request string with the specified query for use in testing.
+func buildUSQLRequest(query string) string {
+	return fmt.Sprintf("%s?addDeepLinkFields=false&endTimestamp=%s&explain=false&query=%s&startTimestamp=%s", dynatrace.USQLPath, convertTimeStringToUnixMillisecondsString(testSLIEnd), url.QueryEscape(query), convertTimeStringToUnixMillisecondsString(testSLIStart))
 }
 
 func runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {

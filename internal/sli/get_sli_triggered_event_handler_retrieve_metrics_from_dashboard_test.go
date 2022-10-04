@@ -24,7 +24,7 @@ import (
 func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/success/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE)", "builtin:service.response.time:splitBy():percentile(95.000000):names")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
@@ -47,7 +47,7 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/slo_writing_fails/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE)", "builtin:service.response.time:splitBy():percentile(95.000000):names")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
@@ -71,7 +71,7 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_fallback_to_slis/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE)", "builtin:service.response.time:splitBy():percentile(95.000000):names")
 
 	// we need metrics definition, because we will be retrieving metrics from dashboard
 	handler := test.NewFileBasedURLHandler(t)
@@ -94,7 +94,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_data/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29", "builtin%3Aservice.response.time%3AsplitBy%28%29%3Apercentile%2895.000000%29%3Anames")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE)", "builtin:service.response.time:splitBy():percentile(95.000000):names")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
@@ -137,7 +137,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/dashboard_query/"
 
 	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
-	expectedProblemsV2Request := buildProblemsV2Request("status%28%22open%22%29%2CmanagementZoneIds%287030365576649815430%29")
+	expectedProblemsV2Request := buildProblemsV2Request("status(\"open\"),managementZoneIds(7030365576649815430)")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath, filepath.Join(testDataFolder, "dashboards_query.json"))

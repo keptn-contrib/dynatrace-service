@@ -15,7 +15,7 @@ import (
 func TestRetrieveMetricsFromDashboardUSQLTile_ColumnChart(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/column_chart_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+browserFamily%2C+AVG%28useraction.visuallyCompleteTime%29%2C+AVG%28useraction.domCompleteTime%29%2C+AVG%28totalErrorCount%29+FROM+usersession+GROUP+BY+browserFamily+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -34,7 +34,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_ColumnChart(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_PieChart(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/pie_chart_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city%2C+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -53,7 +53,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_PieChart(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -70,7 +70,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+continent%2C+totalErrorCount%2C+totalLicenseCreditCount%2C+userActionCount+FROM+usersession+limit+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT continent, totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession limit 2")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -109,7 +109,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/line_chart_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+continent%2C+userActionCount+FROM+usersession+limit+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT continent, userActionCount FROM usersession limit 2")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -127,7 +127,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_Funnel(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/funnel_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+FUNNEL%28useraction.name%3D%22AppStart+%28easyTravel%29%22+AS+%22Open+easytravel%22%2C+useraction.name+%3D+%22searchJourney%22+AS+%22Search+journey%22%2C+useraction.name+%3D+%22bookJourney%22+AS+%22Book+journey%22%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT FUNNEL(useraction.name=\"AppStart (easyTravel)\" AS \"Open easytravel\", useraction.name = \"searchJourney\" AS \"Search journey\", useraction.name = \"bookJourney\" AS \"Book journey\") FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -158,7 +158,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_NoQuery(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_MissingScopes(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/missing_scopes/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -175,7 +175,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_MissingScopes(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiColumns(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_multi_columns/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city%2C+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -192,7 +192,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiColumns(t *testin
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiRows(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_multi_rows/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession GROUP BY city LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -209,7 +209,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiRows(t *testing.T
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_invalid_result_type/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+1")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city FROM usersession GROUP BY city LIMIT 1")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -226,7 +226,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType(t *t
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_no_values/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+1")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city FROM usersession GROUP BY city LIMIT 1")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -243,7 +243,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues(t *testing.T)
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_not_enough_columns/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city FROM usersession GROUP BY city LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -260,7 +260,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns(t *testing.
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_invalid_dimension_name/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+totalErrorCount%2C+totalLicenseCreditCount%2C+userActionCount+FROM+usersession+LIMIT+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession LIMIT 2")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -278,7 +278,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName(t *test
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_invalid_dimension_value/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+totalErrorCount%2C+city+FROM+usersession+LIMIT+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT totalErrorCount, city FROM usersession LIMIT 2")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -296,7 +296,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *tes
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_no_values/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+totalErrorCount%2C+city+FROM+usersession+LIMIT+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT totalErrorCount, city FROM usersession LIMIT 2")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -315,7 +315,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/custom_slo/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -346,7 +346,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_ExcludedTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/excluded_tile/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))

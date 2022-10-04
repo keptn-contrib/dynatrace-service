@@ -15,7 +15,7 @@ import (
 func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/problem_tile_success/"
 
-	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
+	expectedProblemsRequest := buildProblemsV2Request("status(\"open\")")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -49,7 +49,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/custom_management_zone/"
 
-	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29%2CmanagementZoneIds%289130632296508575249%29")
+	expectedProblemsRequest := buildProblemsV2Request("status(\"open\"),managementZoneIds(9130632296508575249)")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -84,7 +84,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing
 func TestRetrieveMetricsFromDashboardProblemTile_MissingScopes(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/missing_scopes/"
 
-	expectedProblemsRequest := buildProblemsV2Request("status%28%22open%22%29")
+	expectedProblemsRequest := buildProblemsV2Request("status(\"open\")")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))

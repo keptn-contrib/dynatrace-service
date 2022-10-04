@@ -18,7 +18,7 @@ import (
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsAndWarning(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_entity_selector"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.services%22%29%3Apercentile%2895%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)", "builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)")
 
 	// error here: merge(dt.entity.services)
 	handler := test.NewFileBasedURLHandler(t)
@@ -41,7 +41,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_tag"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astagin%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)", "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)")
 
 	// error here: tag(keptn_project:stagin)
 	handler := test.NewFileBasedURLHandler(t)
@@ -69,7 +69,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/multiple_results"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Apercentile%2895%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)", "builtin:service.response.time:percentile(95)")
 
 	// error here: missing merge("dt.entity.service) transformation
 	handler := test.NewFileBasedURLHandler(t)
@@ -146,7 +146,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/fallback_to_defaults"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29%2Ctag%28keptn_service%3Acarts%29%2Ctag%28keptn_deployment%3A%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:)", "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)")
 
 	// fallback: mind the default SLI definitions in the URL below
 	handler := test.NewFileBasedURLHandler(t)
@@ -167,7 +167,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/used_if_defined"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type%28SERVICE%29%2Ctag%28keptn_project%3Asockshop%29%2Ctag%28keptn_stage%3Astaging%29", "builtin%3Aservice.response.time%3Amerge%28%22dt.entity.service%22%29%3Apercentile%2895%29")
+	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)", "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
