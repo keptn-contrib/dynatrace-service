@@ -337,8 +337,8 @@ func (p *RetryForSingleValueMetricsProcessingDecorator) ProcessRequest(ctx conte
 // Other cases will produce an error, which should be bubbled up to the user to instruct them to fix their tile or query.
 func (p *RetryForSingleValueMetricsProcessingDecorator) modifyQuery(ctx context.Context, existingQuery metrics.Query) (*metrics.Query, error) {
 	// resolution Inf returning multiple values would indicate a broken API (so unlikely), but check for completeness
-	if existingQuery.GetResolution() == metrics.ResolutionInf {
-		return nil, errors.New("not possible to modify query with resolution inf")
+	if strings.EqualFold(existingQuery.GetResolution(), metrics.ResolutionInf) {
+		return nil, errors.New("not possible to modify query with resolution Inf")
 	}
 
 	metricSelector := existingQuery.GetMetricSelector()

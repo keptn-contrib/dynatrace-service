@@ -34,11 +34,30 @@ func TestNewQueryWithResolutionAndMZSelector(t *testing.T) {
 			expectedMZSelector:     "mzId(123,456)",
 		},
 		{
+			name:                   "with just metric selector and entity selector",
+			metricSelector:         "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			entitySelector:         "type(SERVICE),tag(keptn_managed),tag(keptn_service:my-service)",
+			expectedMetricSelector: "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			expectedEntitySelector: "type(SERVICE),tag(keptn_managed),tag(keptn_service:my-service)",
+		},
+		{
 			name:                   "with just metric selector and resolution",
 			metricSelector:         "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
 			resolution:             "5m",
 			expectedMetricSelector: "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
 			expectedResolution:     "5m",
+		},
+		{
+			name:                   "with just metric selector and mzSelector",
+			metricSelector:         "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			mzSelector:             "mzId(123,456)",
+			expectedMetricSelector: "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			expectedMZSelector:     "mzId(123,456)",
+		},
+		{
+			name:                   "with just metric selector",
+			metricSelector:         "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			expectedMetricSelector: "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
 		},
 		// Error cases below:
 		{
@@ -54,10 +73,16 @@ func TestNewQueryWithResolutionAndMZSelector(t *testing.T) {
 			expectedErrorMessage: "metrics query must include a metric selector",
 		},
 		{
-			name:                 "with just entity selector",
-			metricSelector:       "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg",
+			name:                 "with just resolution",
+			resolution:           "5m",
 			expectError:          true,
-			expectedErrorMessage: "metrics query must include a resolution",
+			expectedErrorMessage: "metrics query must include a metric selector",
+		},
+		{
+			name:                 "with just mzSelector",
+			mzSelector:           "mzId(123,456)",
+			expectError:          true,
+			expectedErrorMessage: "metrics query must include a metric selector",
 		},
 	}
 	for _, tc := range tests {

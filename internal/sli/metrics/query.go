@@ -22,9 +22,6 @@ func NewQueryWithResolutionAndMZSelector(metricSelector string, entitySelector s
 	if metricSelector == "" {
 		return nil, errors.New("metrics query must include a metric selector")
 	}
-	if resolution == "" {
-		return nil, errors.New("metrics query must include a resolution")
-	}
 	return &Query{
 		metricSelector: metricSelector,
 		entitySelector: entitySelector,

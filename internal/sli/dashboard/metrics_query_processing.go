@@ -15,14 +15,16 @@ type MetricsQueryProcessing struct {
 }
 
 func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryProcessing {
+	metricsClient := dynatrace.NewMetricsClient(client)
 	return &MetricsQueryProcessing{
-		metricsProcessing: dynatrace.NewMetricsProcessing(dynatrace.NewMetricsClient(client)),
+		metricsProcessing: dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(metricsClient, dynatrace.NewMetricsProcessing(metricsClient)),
 	}
 }
 
 func NewMetricsQueryProcessingThatAllowsOnlyOneResult(client dynatrace.ClientInterface) *MetricsQueryProcessing {
+	metricsClient := dynatrace.NewMetricsClient(client)
 	return &MetricsQueryProcessing{
-		metricsProcessing: dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(dynatrace.NewMetricsClient(client)),
+		metricsProcessing: dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(metricsClient, dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient)),
 	}
 }
 

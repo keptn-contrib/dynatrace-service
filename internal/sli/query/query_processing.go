@@ -220,7 +220,8 @@ func (p *Processing) executeMetricsQuery(ctx context.Context, name string, query
 
 func (p *Processing) processMetricsQueryAndMakeSLIResult(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
 	request := dynatrace.NewMetricsClientQueryRequest(query, p.timeframe)
-	results, err := dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(dynatrace.NewMetricsClient(p.client)).ProcessRequest(ctx, request)
+	metricsClient := dynatrace.NewMetricsClient(p.client)
+	results, err := dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(metricsClient, dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient)).ProcessRequest(ctx, request)
 	if err != nil {
 		return createSLIResultFromErrorFromMetricsProcessing(err, name, request)
 	}

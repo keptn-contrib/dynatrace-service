@@ -146,13 +146,10 @@ func (p *DataExplorerTileProcessing) createMetricsQueryForMetricExpression(metri
 		return nil, fmt.Errorf("could not parse resolution metric expression component: %w", err)
 	}
 
-	if resolution != metrics.ResolutionInf {
-		return nil, fmt.Errorf("resolution must be set to 'Auto' rather than '%s'", resolution)
-	}
-
 	return metrics.NewQueryWithResolutionAndMZSelector(pieces[1], "", resolution, managementZoneFilter.ForMZSelector())
 }
 
+// parseResolutionKeyValuePair parses the resolution key value pair, returning resolution or error. In the case that no resolution is set in UI, i.e. resolution=null, an empty string is returned.
 func parseResolutionKeyValuePair(keyValuePair string) (string, error) {
 	const resolutionPrefix = "resolution="
 	if !strings.HasPrefix(keyValuePair, resolutionPrefix) {
@@ -165,7 +162,7 @@ func parseResolutionKeyValuePair(keyValuePair string) (string, error) {
 	}
 
 	if resolution == "null" {
-		return metrics.ResolutionInf, nil
+		return "", nil
 	}
 
 	return resolution, nil

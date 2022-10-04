@@ -10,6 +10,8 @@ import (
 const (
 	metricSelectorKey = "metricSelector"
 	entitySelectorKey = "entitySelector"
+	resolutionKey     = "resolution"
+	mzSelectorKey     = "mzSelector"
 )
 
 // QueryParser will parse an un-encoded metrics query string (usually found in sli.yaml files) into a Query
@@ -31,7 +33,7 @@ func (p *QueryParser) Parse() (*metrics.Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return metrics.NewQuery(keyValuePairs.GetValue(metricSelectorKey), keyValuePairs.GetValue(entitySelectorKey))
+	return metrics.NewQueryWithResolutionAndMZSelector(keyValuePairs.GetValue(metricSelectorKey), keyValuePairs.GetValue(entitySelectorKey), keyValuePairs.GetValue(resolutionKey), keyValuePairs.GetValue(mzSelectorKey))
 }
 
 type metricsQueryKeyValidator struct{}
@@ -39,7 +41,7 @@ type metricsQueryKeyValidator struct{}
 // ValidateKey returns true if the specified key is part of a metrics query.
 func (p *metricsQueryKeyValidator) ValidateKey(key string) bool {
 	switch key {
-	case metricSelectorKey, entitySelectorKey:
+	case metricSelectorKey, entitySelectorKey, resolutionKey, mzSelectorKey:
 		return true
 	default:
 		return false

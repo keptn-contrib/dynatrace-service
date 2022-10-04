@@ -51,7 +51,9 @@ func (q *MetricsClientQueryRequest) RequestString() string {
 	queryParameters.add(metricSelectorKey, q.query.GetMetricSelector())
 	queryParameters.add(fromKey, common.TimestampToUnixMillisecondsString(q.timeframe.Start()))
 	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
-	queryParameters.add(resolutionKey, q.query.GetResolution())
+	if q.query.GetResolution() != "" {
+		queryParameters.add(resolutionKey, q.query.GetResolution())
+	}
 	if q.query.GetEntitySelector() != "" {
 		queryParameters.add(entitySelectorKey, q.query.GetEntitySelector())
 	}
