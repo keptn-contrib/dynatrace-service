@@ -20,9 +20,9 @@ func GetShipyardController() string {
 	return os.Getenv("SHIPYARD_CONTROLLER")
 }
 
-// GetConfigurationService gets the CONFIGURATION_SERVICE environment variable.
-func GetConfigurationService() string {
-	return os.Getenv("CONFIGURATION_SERVICE")
+// GetResourceService gets the RESOURCE_SERVICE environment variable.
+func GetResourceService() string {
+	return os.Getenv("RESOURCE_SERVICE")
 }
 
 // GetDatastore gets the DATASTORE environment variable.

@@ -54,9 +54,9 @@ func GetV1InClusterAPIMappings() api.InClusterAPIMappings {
 		mappings[api.ShipyardController] = shipyardController
 	}
 
-	configurationService := env.GetConfigurationService()
-	if configurationService != "" {
-		mappings[api.ConfigurationService] = configurationService
+	resourceService := env.GetResourceService()
+	if resourceService != "" {
+		mappings[api.ConfigurationService] = resourceService
 	}
 
 	datastore := env.GetDatastore()
@@ -84,9 +84,9 @@ func GetV2InClusterAPIMappings() v2.InClusterAPIMappings {
 		mappings[v2.ShipyardController] = shipyardController
 	}
 
-	configurationService := env.GetConfigurationService()
-	if configurationService != "" {
-		mappings[v2.ConfigurationService] = configurationService
+	resourceService := env.GetResourceService()
+	if resourceService != "" {
+		mappings[v2.ConfigurationService] = resourceService
 	}
 
 	datastore := env.GetDatastore()
