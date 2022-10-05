@@ -8,11 +8,13 @@ on:
     branches:
       - "master"
       - "release-*"
+      - "release/0.23.*"
   # in addition, execute for pull requests to those branches
   pull_request:
     branches:
       - "master"
       - "release-*"
+      - "release/0.23.*"
 defaults:
   run:
     shell: bash
