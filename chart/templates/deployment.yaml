@@ -42,7 +42,7 @@ spec:
           env:
             - name: DATASTORE
               value: ''
-            - name: CONFIGURATION_SERVICE
+            - name: RESOURCE_SERVICE
               value: ''
             - name: SHIPYARD_CONTROLLER
               value: ''
