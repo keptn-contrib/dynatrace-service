@@ -104,8 +104,8 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MetricExpressions(t *testi
 			metricExpressions:                 &[]string{resolutionIsNullKeyValuePair + multipleResultMetricExpression, multipleResultMetricExpression},
 			queryResultsFilename:              multipleQueryResultsFilename,
 			expectedMetricsRequest:            expectedMultipleResultMetricsRequest,
-			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings(expectedMultipleResultMetricsRequest, "tile is configured for single value"),
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
+			sliResultsAssertionsFuncs:         createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings(expectedMultipleResultMetricsRequest, "Metrics API v2 returned 2 metric series but only one is supported"),
 		},
 		{
 			name:                              "graph chart visualization with no metric expressions produces error",

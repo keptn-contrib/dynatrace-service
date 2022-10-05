@@ -220,29 +220,24 @@ func (p *Processing) executeMetricsQuery(ctx context.Context, name string, query
 
 func (p *Processing) processMetricsQueryAndMakeSLIResult(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
 	request := dynatrace.NewMetricsClientQueryRequest(query, p.timeframe)
-	value, err := p.processMetricsQuery(ctx, request, metricUnit)
+	results, err := dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(dynatrace.NewMetricsClient(p.client)).ProcessRequest(ctx, request)
 	if err != nil {
-		var qpErrorType *dynatrace.MetricsQueryProcessingError
-		var qrmvErrorType *dynatrace.MetricsQueryReturnedMultipleValuesError
-		if errors.As(err, &qpErrorType) || errors.As(err, &qrmvErrorType) {
-			return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
-		}
-		return result.NewFailedSLIResultWithQuery(name, err.Error(), request.RequestString())
+		return createSLIResultFromErrorFromMetricsProcessing(err, name, request)
 	}
-	return result.NewSuccessfulSLIResultWithQuery(name, value, request.RequestString())
+
+	r, err := results.FirstResultOrError()
+	if err != nil {
+		return createSLIResultFromErrorFromMetricsProcessing(err, name, request)
+	}
+
+	resultsRequest := results.Request()
+	return result.NewSuccessfulSLIResultWithQuery(name, unit.ScaleData(metricUnit, r.Value()), resultsRequest.RequestString())
 }
 
-func (p *Processing) processMetricsQuery(ctx context.Context, request dynatrace.MetricsClientQueryRequest, metricUnit string) (float64, error) {
-	processingResultsSet, err := dynatrace.NewMetricsProcessing(p.client).ProcessRequest(ctx, request)
-	if err != nil {
-		return 0, err
+func createSLIResultFromErrorFromMetricsProcessing(err error, name string, request dynatrace.MetricsClientQueryRequest) result.SLIResult {
+	var qpErrorType *dynatrace.MetricsQueryProcessingError
+	if errors.As(err, &qpErrorType) {
+		return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 	}
-
-	results := processingResultsSet.Results()
-
-	if len(results) != 1 {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d metric series", len(results)), Warnings: processingResultsSet.Warnings()}
-	}
-
-	return unit.ScaleData(metricUnit, results[0].Value()), nil
+	return result.NewFailedSLIResultWithQuery(name, err.Error(), request.RequestString())
 }

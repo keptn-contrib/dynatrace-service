@@ -76,7 +76,7 @@ func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDef
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}
 	}
 
-	return NewMetricsQueryProcessing(dynatrace.NewMetricsProcessing(p.client)).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
+	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
 }
 
 func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx context.Context, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) (*metrics.Query, error) {

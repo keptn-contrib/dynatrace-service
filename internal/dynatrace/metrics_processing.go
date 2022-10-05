@@ -16,7 +16,7 @@ type MetricsQueryFailedError struct {
 	cause error
 }
 
-// Error returns a string representation of this error.
+// Error returns a string representation of the MetricsQueryFailedError.
 func (e *MetricsQueryFailedError) Error() string {
 	return fmt.Sprintf("error querying Metrics API v2: %v", e.cause)
 }
@@ -28,24 +28,83 @@ func (e *MetricsQueryFailedError) Unwrap() error {
 
 // MetricsQueryProcessingError represents an error that occurred while processing metrics query results.
 type MetricsQueryProcessingError struct {
-	Message  string
+	cause error
+}
+
+// Unwrap returns the cause of the MetricsQueryProcessingError.
+func (e *MetricsQueryProcessingError) Unwrap() error {
+	return e.cause
+}
+
+// Error returns a string representation of the MetricsQueryProcessingError.
+func (e *MetricsQueryProcessingError) Error() string {
+	return fmt.Sprintf("could not process metrics query: %v", e.cause)
+}
+
+// MetricsQueryReturnedWrongNumberOfMetricSeriesCollectionsError represents the specific error that a metrics query returned the wrong number of (not exactly one) metric series collection.
+type MetricsQueryReturnedWrongNumberOfMetricSeriesCollectionsError struct {
+	metricSeriesCollectionCount int
+}
+
+// Error returns a string representation of the MetricsQueryReturnedWrongNumberOfMetricSeriesCollectionsError.
+func (e *MetricsQueryReturnedWrongNumberOfMetricSeriesCollectionsError) Error() string {
+	if e.metricSeriesCollectionCount == 0 {
+		return "Metrics API v2 returned zero metric series collections"
+	}
+
+	return fmt.Sprintf("Metrics API v2 returned %d metric series collections", e.metricSeriesCollectionCount)
+}
+
+// MetricsQueryReturnedZeroMetricSeriesError represents the specific error that a metrics query returned zero metric series.
+type MetricsQueryReturnedZeroMetricSeriesError struct {
+	Warnings []string
+}
+
+// Error returns a string representation of the MetricsQueryReturnedZeroMetricSeriesError.
+func (e *MetricsQueryReturnedZeroMetricSeriesError) Error() string {
+	return appendOptionalWarningsToMessage("Metrics API v2 returned zero metric series", e.Warnings)
+}
+
+// MetricsQueryReturnedMultipleMetricSeriesError represents the specific error that a metrics query returned multiple metric series when only one was allowed.
+type MetricsQueryReturnedMultipleMetricSeriesError struct {
+	SeriesCount int
+	Warnings    []string
+}
+
+// Error returns a string representation of the MetricsQueryReturnedMultipleMetricSeriesError.
+func (e *MetricsQueryReturnedMultipleMetricSeriesError) Error() string {
+	return appendOptionalWarningsToMessage(fmt.Sprintf("Metrics API v2 returned %d metric series but only one is supported", e.SeriesCount), e.Warnings)
+}
+
+// MetricsQueryReturnedZeroValuesError represents the specific error that a metrics query returned zero values.
+type MetricsQueryReturnedZeroValuesError struct {
 	Warnings []string
 }
 
 // Error returns a string representation of this error.
-func (e *MetricsQueryProcessingError) Error() string {
-	return appendOptionalWarningsToMessage(e.Message, e.Warnings)
+func (e *MetricsQueryReturnedZeroValuesError) Error() string {
+	return appendOptionalWarningsToMessage("Metrics API v2 returned zero values", e.Warnings)
 }
 
-// MetricsQueryProcessingError represents the specific error that a metrics query returned multiple values.
+// MetricsQueryReturnedMultipleValuesError represents the specific error that a metrics query returned multiple values.
 type MetricsQueryReturnedMultipleValuesError struct {
 	ValueCount int
 	Warnings   []string
 }
 
-// Error returns a string representation of this error.
+// Error returns a string representation of the MetricsQueryReturnedMultipleValuesError.
 func (e *MetricsQueryReturnedMultipleValuesError) Error() string {
-	return appendOptionalWarningsToMessage(fmt.Sprintf("Metrics API v2 returned %d values", e.ValueCount), e.Warnings)
+	return appendOptionalWarningsToMessage(fmt.Sprintf("Metrics API v2 returned %d values but only one is supported", e.ValueCount), e.Warnings)
+}
+
+// MetricsQueryReturnedNullValueError represents the specific error that a metrics query returned null values.
+type MetricsQueryReturnedNullValueError struct {
+	Warnings []string
+}
+
+// Error returns a string representation of the MetricsQueryReturnedNullValueError.
+func (e *MetricsQueryReturnedNullValueError) Error() string {
+	return appendOptionalWarningsToMessage("Metrics API v2 returned 'null' as value", e.Warnings)
 }
 
 func appendOptionalWarningsToMessage(message string, warnings []string) string {
@@ -55,27 +114,42 @@ func appendOptionalWarningsToMessage(message string, warnings []string) string {
 	return message
 }
 
-// MetricsProcessingResultSet groups processing results with warning that occurred.
-type MetricsProcessingResultSet struct {
+// MetricsProcessingResults associates processing results with any warnings that occurred.
+type MetricsProcessingResults struct {
+	request  MetricsClientQueryRequest
 	results  []MetricsProcessingResult
 	warnings []string
 }
 
-func newMetricsProcessingResultsSet(results []MetricsProcessingResult, warnings []string) *MetricsProcessingResultSet {
-	return &MetricsProcessingResultSet{
+func newMetricsProcessingResults(request MetricsClientQueryRequest, results []MetricsProcessingResult, warnings []string) *MetricsProcessingResults {
+	return &MetricsProcessingResults{
+		request:  request,
 		results:  results,
 		warnings: warnings,
 	}
 }
 
-// Results gets the results of the MetricsProcessingResultSet.
-func (s *MetricsProcessingResultSet) Results() []MetricsProcessingResult {
-	return s.results
+func (r *MetricsProcessingResults) Request() MetricsClientQueryRequest {
+	return r.request
 }
 
-// Warnings gets the warnings of the MetricsProcessingResultSet.
-func (s *MetricsProcessingResultSet) Warnings() []string {
-	return s.warnings
+// Results gets the results of the MetricsProcessingResult.
+func (r *MetricsProcessingResults) Results() []MetricsProcessingResult {
+	return r.results
+}
+
+// FirstResultOrError returns the first result or an error if there are no results.
+func (r *MetricsProcessingResults) FirstResultOrError() (*MetricsProcessingResult, error) {
+	if len(r.results) == 0 {
+		return nil, errors.New("metrics processing yields no result")
+	}
+
+	return &r.results[0], nil
+}
+
+// Warnings gets any warnings associated with the MetricsProcessingResults.
+func (r *MetricsProcessingResults) Warnings() []string {
+	return r.warnings
 }
 
 // MetricsProcessingResult associates a value with a name derived from a specific set of dimension values.
@@ -100,44 +174,63 @@ func (r *MetricsProcessingResult) Value() float64 {
 
 // MetricsProcessingInterface defines processing of a request into results.
 type MetricsProcessingInterface interface {
-	// ProcessRequest gets a MetricsProcessingResultSet by query or returns an error.
-	ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResultSet, error)
+	// ProcessRequest processes a request into results or returns an error.
+	ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResults, error)
 }
 
-// MetricsProcessing offers basic retrieval and processing of metrics.
+// MetricsProcessing is an implementation of MetricsProcessingInterface offers basic retrieval and processing of metrics.
 type MetricsProcessing struct {
-	client ClientInterface
+	client             MetricsClientInterface
+	allowOnlyOneResult bool
 }
 
 // NewMetricsProcessing creates a new MetricsProcessing using the specified client interface.
-func NewMetricsProcessing(client ClientInterface) *MetricsProcessing {
+func NewMetricsProcessing(client MetricsClientInterface) *MetricsProcessing {
 	return &MetricsProcessing{
-		client: client,
+		client:             client,
+		allowOnlyOneResult: false,
+	}
+}
+
+// NewMetricsProcessing creates a new MetricsProcessing that only returns a single result using the specified client interface.
+// If the query processed returns more than one metric series, i.e. results, an error is returned.
+func NewMetricsProcessingThatAllowsOnlyOneResult(client MetricsClientInterface) *MetricsProcessing {
+	return &MetricsProcessing{
+		client:             client,
+		allowOnlyOneResult: true,
 	}
 }
 
 // ProcessRequest queries and processes metrics using the specified request. It checks for a single metric series collection, and transforms each metric series into a result with a name derived from its dimension values. Each metric series must have exactly one value.
-func (p *MetricsProcessing) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResultSet, error) {
-	mc := NewMetricsClient(p.client)
-	metricData, err := mc.GetMetricDataByQuery(ctx, request)
+func (p *MetricsProcessing) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResults, error) {
+	metricData, err := p.client.GetMetricDataByQuery(ctx, request)
 	if err != nil {
 		return nil, &MetricsQueryFailedError{cause: err}
 	}
 
-	if len(metricData.Result) == 0 {
-		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero metric series collections"}
+	results, err := p.processMetricSeriesCollections(request, metricData.Result)
+	if err != nil {
+		return nil, &MetricsQueryProcessingError{cause: err}
 	}
 
-	if len(metricData.Result) > 1 {
-		return nil, &MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d metric series collections", len(metricData.Result))}
-	}
-
-	return processMetricSeriesCollection(metricData.Result[0])
+	return results, nil
 }
 
-func processMetricSeriesCollection(metricSeriesCollection MetricSeriesCollection) (*MetricsProcessingResultSet, error) {
+func (p *MetricsProcessing) processMetricSeriesCollections(request MetricsClientQueryRequest, collections []MetricSeriesCollection) (*MetricsProcessingResults, error) {
+	if len(collections) != 1 {
+		return nil, &MetricsQueryReturnedWrongNumberOfMetricSeriesCollectionsError{metricSeriesCollectionCount: len(collections)}
+	}
+
+	return p.processMetricSeriesCollection(request, collections[0])
+}
+
+func (p *MetricsProcessing) processMetricSeriesCollection(request MetricsClientQueryRequest, metricSeriesCollection MetricSeriesCollection) (*MetricsProcessingResults, error) {
 	if len(metricSeriesCollection.Data) == 0 {
-		return nil, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero metric series", Warnings: metricSeriesCollection.Warnings}
+		return nil, &MetricsQueryReturnedZeroMetricSeriesError{Warnings: metricSeriesCollection.Warnings}
+	}
+
+	if p.allowOnlyOneResult && len(metricSeriesCollection.Data) > 1 {
+		return nil, &MetricsQueryReturnedMultipleMetricSeriesError{SeriesCount: len(metricSeriesCollection.Data), Warnings: metricSeriesCollection.Warnings}
 	}
 
 	results := make([]MetricsProcessingResult, 0, len(metricSeriesCollection.Data))
@@ -148,13 +241,12 @@ func processMetricSeriesCollection(metricSeriesCollection MetricSeriesCollection
 		}
 		results = append(results, newMetricsProcessingResult(generateResultName(metricSeries.DimensionMap), value))
 	}
-	return newMetricsProcessingResultsSet(results, metricSeriesCollection.Warnings), nil
-
+	return newMetricsProcessingResults(request, results, metricSeriesCollection.Warnings), nil
 }
 
 func processValues(values []*float64, warnings []string) (float64, error) {
 	if len(values) == 0 {
-		return 0, &MetricsQueryProcessingError{Message: "Metrics API v2 returned zero values", Warnings: warnings}
+		return 0, &MetricsQueryReturnedZeroValuesError{Warnings: warnings}
 	}
 
 	if len(values) > 1 {
@@ -165,14 +257,14 @@ func processValues(values []*float64, warnings []string) (float64, error) {
 	}
 
 	if values[0] == nil {
-		return 0, &MetricsQueryProcessingError{Message: "Metrics API v2 returned 'null' as value", Warnings: warnings}
+		return 0, &MetricsQueryReturnedNullValueError{Warnings: warnings}
 	}
 
 	return *values[0], nil
 }
 
 // generateResultName generates a result name based on all dimensions.
-// As this is used for both indicator and display names, it must then be cleaned before use in indicator names.
+// No cleaning is performed here, so it must be cleaned before use e.g. in indicator names.
 func generateResultName(dimensionMap map[string]string) string {
 	const nameSuffix = ".name"
 
@@ -206,22 +298,23 @@ func generateResultName(dimensionMap map[string]string) string {
 	return strings.Join(sortedSuffixComponentValues, " ")
 }
 
-// SmartMetricsProcessing builds on MetricsProcessing by modifying the request in cases where multiple values are returned.
-type SmartMetricsProcessing struct {
-	client ClientInterface
+// RetryForSingleValueMetricsProcessingDecorator decorates MetricsProcessing by modifying the request in cases where multiple values are returned.
+type RetryForSingleValueMetricsProcessingDecorator struct {
+	client            MetricsClientInterface
+	metricsProcessing MetricsProcessingInterface
 }
 
-// NewSmartMetricsProcessing creates a new SmartMetricsProcessing using the specified client interface.
-func NewSmartMetricsProcessing(client ClientInterface) *SmartMetricsProcessing {
-	return &SmartMetricsProcessing{
-		client: client,
+// NewRetryForSingleValueMetricsProcessingDecorator creates a new RetryForSingleValueMetricsProcessingDecorator using the specified client interface and underlying metrics processing interface.
+func NewRetryForSingleValueMetricsProcessingDecorator(client MetricsClientInterface, metricsProcessing MetricsProcessingInterface) *RetryForSingleValueMetricsProcessingDecorator {
+	return &RetryForSingleValueMetricsProcessingDecorator{
+		client:            client,
+		metricsProcessing: metricsProcessing,
 	}
 }
 
 // ProcessRequest queries and processes metrics using the specified request.
-func (p *SmartMetricsProcessing) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResultSet, error) {
-	metricsProcessing := NewMetricsProcessing(p.client)
-	resultSet, err := metricsProcessing.ProcessRequest(ctx, request)
+func (p *RetryForSingleValueMetricsProcessingDecorator) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResults, error) {
+	resultSet, err := p.metricsProcessing.ProcessRequest(ctx, request)
 	if err == nil {
 		return resultSet, nil
 	}
@@ -233,25 +326,25 @@ func (p *SmartMetricsProcessing) ProcessRequest(ctx context.Context, request Met
 
 	modifiedQuery, err := p.modifyQuery(ctx, request.query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not modify query to produce single value: %w", err)
 	}
 
-	return metricsProcessing.ProcessRequest(ctx, NewMetricsClientQueryRequest(*modifiedQuery, request.timeframe))
+	return p.metricsProcessing.ProcessRequest(ctx, NewMetricsClientQueryRequest(*modifiedQuery, request.timeframe))
 }
 
 // modifyQuery modifies the supplied metrics query such that it should return a single value for each set of dimension values.
 // First, it tries to set resolution to Inf if resolution hasn't already been set and it is supported. Otherwise, it tries to do an auto fold if this wouldn't use value.
 // Other cases will produce an error, which should be bubbled up to the user to instruct them to fix their tile or query.
-func (p *SmartMetricsProcessing) modifyQuery(ctx context.Context, existingQuery metrics.Query) (*metrics.Query, error) {
+func (p *RetryForSingleValueMetricsProcessingDecorator) modifyQuery(ctx context.Context, existingQuery metrics.Query) (*metrics.Query, error) {
 	// resolution Inf returning multiple values would indicate a broken API (so unlikely), but check for completeness
 	if existingQuery.GetResolution() == metrics.ResolutionInf {
-		return nil, errors.New("Metrics query returned multiple values but resolution is already set to Inf")
+		return nil, errors.New("not possible to modify query with resolution inf")
 	}
 
 	metricSelector := existingQuery.GetMetricSelector()
-	metricDefinition, err := NewMetricsClient(p.client).GetMetricDefinitionByID(ctx, metricSelector)
+	metricDefinition, err := p.client.GetMetricDefinitionByID(ctx, metricSelector)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get definition for metric: %s", metricSelector)
+		return nil, fmt.Errorf("failed to get definition for metric: %s", metricSelector)
 	}
 
 	if metricDefinition.ResolutionInfSupported && (existingQuery.GetResolution() == "") {
@@ -259,8 +352,8 @@ func (p *SmartMetricsProcessing) modifyQuery(ctx context.Context, existingQuery 
 	}
 
 	if metricDefinition.DefaultAggregation.Type == AggregationTypeValue {
-		return nil, errors.New("Unable to apply ':fold()' to the metric selector as the default aggregation type is 'value'")
+		return nil, errors.New("unable to apply ':fold()' to the metric selector as the default aggregation type is 'value'")
 	}
 
-	return metrics.NewQueryWithResolutionAndMZSelector(metricSelector+":fold()", existingQuery.GetEntitySelector(), existingQuery.GetResolution(), existingQuery.GetMZSelector())
+	return metrics.NewQueryWithResolutionAndMZSelector("("+metricSelector+"):fold()", existingQuery.GetEntitySelector(), existingQuery.GetResolution(), existingQuery.GetMZSelector())
 }

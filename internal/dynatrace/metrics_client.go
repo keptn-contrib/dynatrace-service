@@ -106,7 +106,13 @@ type MetricSeries struct {
 	Values       []*float64        `json:"values"`
 }
 
-// MetricsClient is a client for interacting with the Dynatrace problems endpoints
+// MetricsClientInterface defines functions for interacting with Dynatrace Metrics V2 endpoints.
+type MetricsClientInterface interface {
+	GetMetricDefinitionByID(ctx context.Context, metricID string) (*MetricDefinition, error)
+	GetMetricDataByQuery(ctx context.Context, request MetricsClientQueryRequest) (*MetricData, error)
+}
+
+// MetricsClient is a client for interacting with Dynatrace Metrics V2 endpoints.
 type MetricsClient struct {
 	client ClientInterface
 }

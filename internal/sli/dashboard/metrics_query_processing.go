@@ -14,33 +14,41 @@ type MetricsQueryProcessing struct {
 	metricsProcessing dynatrace.MetricsProcessingInterface
 }
 
-func NewMetricsQueryProcessing(processing dynatrace.MetricsProcessingInterface) *MetricsQueryProcessing {
+func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryProcessing {
 	return &MetricsQueryProcessing{
-		metricsProcessing: processing,
+		metricsProcessing: dynatrace.NewMetricsProcessing(dynatrace.NewMetricsClient(client)),
+	}
+}
+
+func NewMetricsQueryProcessingThatAllowsOnlyOneResult(client dynatrace.ClientInterface) *MetricsQueryProcessing {
+	return &MetricsQueryProcessing{
+		metricsProcessing: dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(dynatrace.NewMetricsClient(client)),
 	}
 }
 
 // Process generates SLI & SLO definitions based on the metric query and the number of dimensions in the chart definition.
 func (r *MetricsQueryProcessing) Process(ctx context.Context, sloDefinition keptncommon.SLO, metricsQuery metrics.Query, timeframe common.Timeframe) []TileResult {
 	request := dynatrace.NewMetricsClientQueryRequest(metricsQuery, timeframe)
-
-	processingResultsSet, err := r.metricsProcessing.ProcessRequest(ctx, request)
+	processingResults, err := r.metricsProcessing.ProcessRequest(ctx, request)
 	if err != nil {
-		var qpErrorType *dynatrace.MetricsQueryProcessingError
-		var qrmvErrorType *dynatrace.MetricsQueryReturnedMultipleValuesError
-		if errors.As(err, &qpErrorType) || errors.As(err, &qrmvErrorType) {
-			return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())}
-		}
-		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())}
+		return r.createTileResultsForError(sloDefinition, request, err)
 	}
-	return processResults(sloDefinition, request, processingResultsSet.Results())
+	return r.processResults(sloDefinition, processingResults)
 }
 
-func processResults(sloDefinition keptncommon.SLO, request dynatrace.MetricsClientQueryRequest, results []dynatrace.MetricsProcessingResult) []TileResult {
-	if len(results) == 0 {
-		return []TileResult{}
+func (r *MetricsQueryProcessing) createTileResultsForError(sloDefinition keptncommon.SLO, request dynatrace.MetricsClientQueryRequest, err error) []TileResult {
+	messagePrefix := "Could not process tile: "
+	var qpErrorType *dynatrace.MetricsQueryProcessingError
+	if errors.As(err, &qpErrorType) {
+		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), messagePrefix+err.Error())}
 	}
+	return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), messagePrefix+err.Error())}
 
+}
+
+func (r *MetricsQueryProcessing) processResults(sloDefinition keptncommon.SLO, processingResults *dynatrace.MetricsProcessingResults) []TileResult {
+	request := processingResults.Request()
+	results := processingResults.Results()
 	if len(results) == 1 {
 		return []TileResult{newSuccessfulTileResult(sloDefinition, results[0].Value(), request.RequestString())}
 	}
