@@ -17,16 +17,18 @@ type errConfigForFile struct {
 }
 
 type FileBasedURLHandler struct {
-	exactURLs      map[string]string
-	exactErrorURLs map[string]errConfigForFile
-	t              *testing.T
+	testFileUpdater *dynatraceTestFileUpdater
+	exactURLs       map[string]string
+	exactErrorURLs  map[string]errConfigForFile
+	t               *testing.T
 }
 
 func NewFileBasedURLHandler(t *testing.T) *FileBasedURLHandler {
 	return &FileBasedURLHandler{
-		exactURLs:      make(map[string]string),
-		exactErrorURLs: make(map[string]errConfigForFile),
-		t:              t,
+		testFileUpdater: tryCreateDynatraceTestFileUpdater(t),
+		exactURLs:       make(map[string]string),
+		exactErrorURLs:  make(map[string]errConfigForFile),
+		t:               t,
 	}
 }
 
@@ -65,7 +67,7 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	for url, fileName := range h.exactURLs {
 		if url == requestedURL {
 			log.WithFields(log.Fields{urlFieldName: url, "fileName": fileName}).Debug("Found mock for exact URL")
-
+			h.tryUpdateTestFileUsingGet(url, fileName)
 			writeFileToResponseWriter(w, http.StatusOK, fileName)
 			return
 		}
@@ -74,7 +76,6 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	for url, config := range h.exactErrorURLs {
 		if url == requestedURL {
 			log.WithFields(log.Fields{urlFieldName: url, "fileName": config.FileName}).Debug("Found mock for exact error URL")
-
 			writeFileToResponseWriter(w, config.Status, config.FileName)
 			return
 		}
@@ -83,7 +84,14 @@ func (h *FileBasedURLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	h.t.Fatalf("no path defined for: %s", requestedURL)
 }
 
+func (h *FileBasedURLHandler) tryUpdateTestFileUsingGet(url string, filename string) {
+	if h.testFileUpdater != nil {
+		h.testFileUpdater.tryUpdateTestFileUsingGet(url, filename)
+	}
+}
+
 func writeFileToResponseWriter(w http.ResponseWriter, statusCode int, fileName string) {
+
 	localFileContent, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -93,6 +101,6 @@ func writeFileToResponseWriter(w http.ResponseWriter, statusCode int, fileName s
 	w.WriteHeader(statusCode)
 	_, err = w.Write(localFileContent)
 	if err != nil {
-		panic("could not write to mock http handler")
+		panic("could not write to mock HTTP handler")
 	}
 }
