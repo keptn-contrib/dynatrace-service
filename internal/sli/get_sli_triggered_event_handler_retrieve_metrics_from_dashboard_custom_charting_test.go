@@ -197,7 +197,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_ProcessMemoryAvg
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_tech_generic_mem_workingsetsize_avg.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("process_memory", 1.4800280435645182e+09, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("process_memory", 1480028043.5645182, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -231,7 +231,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_Throughput(t *te
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_requestcount_total_value.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("svc_tp_min", 2.099461061e+09, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("svc_tp_min", 2099461061, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -299,7 +299,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_OldTest_NonDbChildCallCo
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_nondbchildcallcount.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("svc2svc_calls", 3.41746808e+08, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("svc2svc_calls", 341746808, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
