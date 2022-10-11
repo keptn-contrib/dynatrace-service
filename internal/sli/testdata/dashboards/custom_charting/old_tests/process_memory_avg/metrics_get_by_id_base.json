@@ -1,0 +1,51 @@
+{
+    "metricId": "builtin:tech.generic.mem.workingSetSize",
+    "displayName": "Process memory",
+    "description": "Memory allocated for all processes in PGI including shared memory",
+    "unit": "Byte",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1665490363818,
+    "entityType": [
+        "PROCESS_GROUP_INSTANCE"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "avg",
+        "max",
+        "min"
+    ],
+    "transformations": [
+        "filter",
+        "fold",
+        "limit",
+        "merge",
+        "names",
+        "parents",
+        "timeshift",
+        "sort",
+        "last",
+        "splitBy",
+        "lastReal",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "avg"
+    },
+    "dimensionDefinitions": [
+        {
+            "key": "dt.entity.process_group_instance",
+            "name": "Process",
+            "displayName": "Process",
+            "index": 0,
+            "type": "ENTITY"
+        }
+    ],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true,
+    "unitDisplayFormat": "binary"
+}

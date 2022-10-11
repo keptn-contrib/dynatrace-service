@@ -1,0 +1,47 @@
+{
+    "metricId": "builtin:tech.generic.mem.workingSetSize:splitBy():avg:names",
+    "displayName": "Process memory",
+    "description": "Memory allocated for all processes in PGI including shared memory",
+    "unit": "Byte",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1665490363818,
+    "entityType": [
+        "PROCESS_GROUP_INSTANCE"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "value"
+    ],
+    "transformations": [
+        "fold",
+        "limit",
+        "timeshift",
+        "rate",
+        "sort",
+        "last",
+        "splitBy",
+        "default",
+        "delta",
+        "lastReal",
+        "smooth",
+        "rollup",
+        "partition",
+        "toUnit",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "value"
+    },
+    "dimensionDefinitions": [],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true,
+    "unitDisplayFormat": "binary",
+    "warnings": [
+        "The field dimensionCardinalities is only supported for untransformed single metric keys and was ignored."
+    ]
+}

@@ -1,0 +1,53 @@
+{
+    "metricId": "builtin:service.nonDbChildCallCount:splitBy():value:names",
+    "displayName": "Number of calls to other services",
+    "description": "",
+    "unit": "Count",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1665490433574,
+    "entityType": [
+        "SERVICE"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "avg",
+        "count",
+        "max",
+        "median",
+        "min",
+        "percentile",
+        "sum",
+        "value"
+    ],
+    "transformations": [
+        "fold",
+        "limit",
+        "timeshift",
+        "rate",
+        "sort",
+        "last",
+        "splitBy",
+        "default",
+        "delta",
+        "lastReal",
+        "smooth",
+        "rollup",
+        "partition",
+        "toUnit",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "value"
+    },
+    "dimensionDefinitions": [],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true,
+    "warnings": [
+        "The field dimensionCardinalities is only supported for untransformed single metric keys and was ignored."
+    ]
+}

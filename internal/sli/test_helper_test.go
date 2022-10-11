@@ -29,6 +29,8 @@ const testDashboardID = "12345678-1111-4444-8888-123456789012"
 const testSLIStart = "2022-09-28T00:00:00.000Z"
 const testSLIEnd = "2022-09-29T00:00:00.000Z"
 
+const resolutionInf = "Inf"
+
 var testGetSLIEventData = createTestGetSLIEventDataWithIndicators([]string{testIndicatorResponseTimeP95})
 
 var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *getSLIFinishedEventData) {
@@ -485,4 +487,48 @@ func (m *uploadSLOsConfigClientMock) UploadSLOs(_ context.Context, _ string, _ s
 	m.uploadedSLOs = slos
 	m.slosUploaded = true
 	return nil
+}
+
+type metricsV2QueryRequestBuilder struct {
+	values url.Values
+}
+
+func newMetricsV2QueryRequestBuilder(metricSelector string) *metricsV2QueryRequestBuilder {
+	values := url.Values{}
+	values.Add("metricSelector", metricSelector)
+	values.Add("from", convertTimeStringToUnixMillisecondsString(testSLIStart))
+	values.Add("to", convertTimeStringToUnixMillisecondsString(testSLIEnd))
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) withEntitySelector(entitySelector string) *metricsV2QueryRequestBuilder {
+	values := cloneURLValues(b.values)
+	values.Add("entitySelector", entitySelector)
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) withResolution(resolution string) *metricsV2QueryRequestBuilder {
+	values := cloneURLValues(b.values)
+	values.Add("resolution", resolution)
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) withMZSelector(mzSelector string) *metricsV2QueryRequestBuilder {
+	values := cloneURLValues(b.values)
+	values.Add("mzSelector", mzSelector)
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) encode() string {
+	return fmt.Sprintf("%s?%s", dynatrace.MetricsQueryPath, b.values.Encode())
+}
+
+func cloneURLValues(values url.Values) url.Values {
+	clone := url.Values{}
+	for k, v := range values {
+		for _, vv := range v {
+			clone.Add(k, vv)
+		}
+	}
+	return clone
 }
