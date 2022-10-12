@@ -30,6 +30,9 @@ const testSLIStart = "2022-09-28T00:00:00.000Z"
 const testSLIEnd = "2022-09-29T00:00:00.000Z"
 
 const resolutionInf = "Inf"
+const resolutionIsNullKeyValuePair = "resolution=null&"
+const singleValueVisualConfigType = "SINGLE_VALUE"
+const graphChartVisualConfigType = "GRAPH_CHART"
 
 var testGetSLIEventData = createTestGetSLIEventDataWithIndicators([]string{testIndicatorResponseTimeP95})
 
@@ -507,6 +510,13 @@ func (b *metricsV2QueryRequestBuilder) withEntitySelector(entitySelector string)
 	return &metricsV2QueryRequestBuilder{values: values}
 }
 
+func (b *metricsV2QueryRequestBuilder) withFold() *metricsV2QueryRequestBuilder {
+	existingMetricSelector := b.metricSelector()
+	values := cloneURLValues(b.values)
+	values.Set("metricSelector", "("+existingMetricSelector+"):fold()")
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
 func (b *metricsV2QueryRequestBuilder) withResolution(resolution string) *metricsV2QueryRequestBuilder {
 	values := cloneURLValues(b.values)
 	values.Add("resolution", resolution)
@@ -521,6 +531,10 @@ func (b *metricsV2QueryRequestBuilder) withMZSelector(mzSelector string) *metric
 
 func (b *metricsV2QueryRequestBuilder) encode() string {
 	return fmt.Sprintf("%s?%s", dynatrace.MetricsQueryPath, b.values.Encode())
+}
+
+func (b *metricsV2QueryRequestBuilder) metricSelector() string {
+	return b.values.Get("metricSelector")
 }
 
 func cloneURLValues(values url.Values) url.Values {
