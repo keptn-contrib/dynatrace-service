@@ -56,7 +56,13 @@
           ],
           "resultMetadata": {}
         },
-        "filtersPerEntityType": {}
+        "filtersPerEntityType": {
+          "SERVICE": {
+            "SPECIFIC_ENTITIES": [
+              "SERVICE-F6B97183A8968C3A"
+            ]
+          }
+        }
       }
     }
   ]

@@ -1,10 +1,12 @@
 {
     "totalCount": 0,
     "nextPageKey": null,
-    "resolution": "Inf",
+    "resolution": "10m",
     "result": [
         {
-            "metricId": "builtin:service.response.time:splitBy():percentile(95.000000):names",
+            "metricId": "builtin:service.response.time:splitBy():percentile(95.0):names",
+            "dataPointCountRatio": 0.0,
+            "dimensionCountRatio": 0.0,
             "data": []
         }
     ]

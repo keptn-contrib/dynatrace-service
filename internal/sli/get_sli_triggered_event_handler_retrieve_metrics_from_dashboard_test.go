@@ -22,20 +22,15 @@ import (
 //   - we use a valid dashboard ID
 //   - all processing and SLI result retrieval works
 func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/basic/success/"
+	handler, expectedMetricsRequest := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
+		testDataFolder:     "./testdata/dashboards/basic/success/",
+		baseMetricSelector: "builtin:service.response.time",
+		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
+		entitySelector:     "type(SERVICE)",
+	},
+	)
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE)", "builtin:service.response.time:splitBy():percentile(95.000000):names")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
-	handler.AddExact(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
-
-	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultPass, actual.Result)
-		assert.Empty(t, actual.Message)
-	}
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.59603729026, expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210598.1424830455, expectedMetricsRequest))
 }
 
 // TestErrorIsReturnedWhenSLOFileWritingFails tests that an error is returned if retrieving (a single) SLI from a dashboard works but the upload of the SLO file fails.
@@ -45,14 +40,13 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 //   - all processing and SLI result retrieval works
 //   - if an upload of the SLO file fails, then the test must fail
 func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/basic/slo_writing_fails/"
-
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE)", "builtin:service.response.time:splitBy():percentile(95.000000):names")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
-	handler.AddExact(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
+	handler, _ := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
+		testDataFolder:     "./testdata/dashboards/basic/slo_writing_fails/",
+		baseMetricSelector: "builtin:service.response.time",
+		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
+		entitySelector:     "type(SERVICE)",
+	},
+	)
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
@@ -69,21 +63,19 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 //   - The dashboard has 'KQG.QueryBehavior=ParseOnChange' set to only reparse the dashboard if it changed  (we do no longer consider this behaviour)
 //   - we will not fallback to processing SLI files, but process the dashboard again
 func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/basic/no_fallback_to_slis/"
-
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE)", "builtin:service.response.time:splitBy():percentile(95.000000):names")
-
-	// we need metrics definition, because we will be retrieving metrics from dashboard
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli_parse_only_on_change.json"))
-	handler.AddExact(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
+	handler, expectedMetricsRequest := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
+		testDataFolder:     "./testdata/dashboards/basic/no_fallback_to_slis/",
+		baseMetricSelector: "builtin:service.response.time",
+		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
+		entitySelector:     "type(SERVICE)",
+	},
+	)
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
 		assert.NotNil(t, actual)
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.59603729026, expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210598.14198018494, expectedMetricsRequest))
 }
 
 // TestDashboardThatProducesNoDataProducesError tests retrieving (a single) SLI from a dashboard that returns no data.
@@ -94,10 +86,10 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_data/"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE)", "builtin:service.response.time:splitBy():percentile(95.000000):names")
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():percentile(95.000000):names").withEntitySelector("type(SERVICE),entityId(\"SERVICE-F6B97183A8968C3A\")").encode()
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_single_sli.json"))
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
 	handler.AddExact(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testDataFolder, "metric_definition_service-response-time.json"))
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_results.json"))
 
@@ -119,7 +111,7 @@ func TestDashboardThatProducesNoResultsProducesError(t *testing.T) {
 
 	// we do not need metrics definition and metrics query, because we will should not be looking into the tile
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard_custom_charting_without_matching_tile_name.json"))
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
 
 	// no SLOs should be uploaded
 	configClient := &uploadSLOsWillFailConfigClientMock{t: t}
@@ -164,8 +156,8 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	}
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("rt_faster_500ms", 95, expectedSLORequest),
-		createSuccessfulSLIResultAssertionsFunc("problems", 1, expectedProblemsV2Request),
+		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+		createSuccessfulSLIResultAssertionsFunc("problems", 0, expectedProblemsV2Request),
 	}
 
 	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, common.DynatraceConfigDashboardQUERY, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
