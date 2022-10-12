@@ -1,7 +1,7 @@
 {
     "totalCount": 0,
     "nextPageKey": null,
-    "resolution": "Inf",
+    "resolution": "10m",
     "result": [
         {
             "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)",

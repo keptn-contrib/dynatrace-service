@@ -18,9 +18,9 @@ import (
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsAndWarning(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_entity_selector"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)", "builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)")
+	expectedMetricsRequest := // error here: merge(dt.entity.services)
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").encode()
 
-	// error here: merge(dt.entity.services)
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_result_warning_entity-selector.json"))
 
@@ -41,7 +41,8 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_tag"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)", "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)")
+	expectedMetricsRequest := // error here: merge(dt.entity.services)
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)").encode()
 
 	// error here: tag(keptn_project:stagin)
 	handler := test.NewFileBasedURLHandler(t)
@@ -69,9 +70,8 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/multiple_results"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)", "builtin:service.response.time:percentile(95)")
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").encode()
 
-	// error here: missing merge("dt.entity.service) transformation
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_3_results.json"))
 
@@ -146,11 +146,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/fallback_to_defaults"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:)", "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)")
-
 	// fallback: mind the default SLI definitions in the URL below
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result_defaults.json"))
+	handler := test.NewCombinedURLHandler(t)
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:)"),
+	)
 
 	// no custom queries defined here
 	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
@@ -167,10 +168,11 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/used_if_defined"
 
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithEntitySelectorAndResolutionInf("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)", "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_1_result.json"))
+	handler := test.NewCombinedURLHandler(t)
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
+	)
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
