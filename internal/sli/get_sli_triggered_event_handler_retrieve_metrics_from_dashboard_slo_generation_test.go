@@ -12,17 +12,12 @@ import (
 
 // TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile tests that an SLO objective is created for a supported data explorer tile.
 func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/slo_generation/supported_data_explorer_tile/"
-
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithResolutionInf("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
-
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time.json"))
+	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+		"./testdata/dashboards/slo_generation/supported_data_explorer_tile/",
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt", 54896.44626158664, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt", 54896.50447404383, expectedMetricsRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -80,18 +75,11 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 
 // TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile tests that an SLO objective is created for a data explorer tile which results in a metrics query that returns no data.
 func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/slo_generation/data_explorer_tile_no_data/"
-
-	expectedMetricsRequest := buildMetricsV2QueryRequestStringWithResolutionInf("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C33B8A4C73748469~\")\"))))):splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
-
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query_builtin_service_response_time.json"))
-
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createFailedSLIResultWithQueryAssertionsFunc("srt_service", expectedMetricsRequest),
-	}
+	requestBuilder := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C33B8A4C73748469~\")\"))))):splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+	handler, _ := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+		"./testdata/dashboards/slo_generation/data_explorer_tile_no_data/",
+		requestBuilder,
+	)
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
 		if !assert.NotNil(t, actual) {
@@ -110,5 +98,5 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 		}, actual.Objectives[0])
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, uploadedSLOsAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("srt_service", requestBuilder.encode()))
 }

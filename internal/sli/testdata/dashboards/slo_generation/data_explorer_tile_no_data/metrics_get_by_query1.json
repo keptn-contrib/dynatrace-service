@@ -1,7 +1,7 @@
 {
     "totalCount": 0,
     "nextPageKey": null,
-    "resolution": "Inf",
+    "resolution": "10m",
     "result": [
         {
             "metricId": "(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C33B8A4C73748469~\")\"))))):splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names",
