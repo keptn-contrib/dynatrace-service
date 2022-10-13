@@ -12,8 +12,10 @@ import (
 
 // TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile tests that an SLO objective is created for a supported data explorer tile.
 func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/slo_generation/supported_data_explorer_tile/"
+
 	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
-		"./testdata/dashboards/slo_generation/supported_data_explorer_tile/",
+		testDataFolder,
 		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
@@ -42,9 +44,10 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *t
 
 // TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile tests that an SLO objective is also created for an unsupported data explorer tile.
 func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/slo_generation/unsupported_data_explorer_tile/"
+
 	// TODO: 25-08-2022: Check if this test is still needed
 	t.Skip("Investigate if this test is still needed")
-	const testDataFolder = "./testdata/dashboards/slo_generation/unsupported_data_explorer_tile/"
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
@@ -75,9 +78,11 @@ func TestRetrieveMetrics_SLOObjectiveNotGeneratedFromUnsupportedDataExplorerTile
 
 // TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile tests that an SLO objective is created for a data explorer tile which results in a metrics query that returns no data.
 func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/slo_generation/data_explorer_tile_no_data/"
+
 	requestBuilder := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C33B8A4C73748469~\")\"))))):splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
 	handler, _ := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
-		"./testdata/dashboards/slo_generation/data_explorer_tile_no_data/",
+		testDataFolder,
 		requestBuilder,
 	)
 

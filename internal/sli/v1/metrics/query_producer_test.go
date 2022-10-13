@@ -47,7 +47,7 @@ func TestQueryProducer_Produce(t *testing.T) {
 }
 
 func newQuery(t *testing.T, meticSelector string, entitySelector string, resolution string, mzSelector string) metrics.Query {
-	query, err := metrics.NewQueryWithResolutionAndMZSelector(meticSelector, entitySelector, resolution, mzSelector)
+	query, err := metrics.NewQuery(meticSelector, entitySelector, resolution, mzSelector)
 	assert.NoError(t, err)
 	assert.NotNil(t, query)
 	return *query

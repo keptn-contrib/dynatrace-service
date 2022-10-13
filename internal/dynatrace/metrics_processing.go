@@ -348,12 +348,12 @@ func (p *RetryForSingleValueMetricsProcessingDecorator) modifyQuery(ctx context.
 	}
 
 	if metricDefinition.ResolutionInfSupported && (existingQuery.GetResolution() == "") {
-		return metrics.NewQueryWithResolutionAndMZSelector(metricSelector, existingQuery.GetEntitySelector(), metrics.ResolutionInf, existingQuery.GetMZSelector())
+		return metrics.NewQuery(metricSelector, existingQuery.GetEntitySelector(), metrics.ResolutionInf, existingQuery.GetMZSelector())
 	}
 
 	if metricDefinition.DefaultAggregation.Type == AggregationTypeValue {
 		return nil, errors.New("unable to apply ':fold()' to the metric selector as the default aggregation type is 'value'")
 	}
 
-	return metrics.NewQueryWithResolutionAndMZSelector("("+metricSelector+"):fold()", existingQuery.GetEntitySelector(), existingQuery.GetResolution(), existingQuery.GetMZSelector())
+	return metrics.NewQuery("("+metricSelector+"):fold()", existingQuery.GetEntitySelector(), existingQuery.GetResolution(), existingQuery.GetMZSelector())
 }

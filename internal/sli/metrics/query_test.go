@@ -87,7 +87,7 @@ func TestNewQueryWithResolutionAndMZSelector(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			query, err := NewQueryWithResolutionAndMZSelector(tc.metricSelector, tc.entitySelector, tc.resolution, tc.mzSelector)
+			query, err := NewQuery(tc.metricSelector, tc.entitySelector, tc.resolution, tc.mzSelector)
 			if tc.expectError {
 				assert.Nil(t, query)
 				if assert.Error(t, err) {
@@ -103,17 +103,5 @@ func TestNewQueryWithResolutionAndMZSelector(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestNewQuery(t *testing.T) {
-	metricSelector := "builtin:service.errors.total.rate:merge(\"dt.entity.service\"):avg"
-	query, err := NewQuery(metricSelector, "")
-
-	if assert.NoError(t, err) {
-		assert.EqualValues(t, metricSelector, query.GetMetricSelector())
-		assert.Empty(t, query.GetEntitySelector())
-		assert.EqualValues(t, "Inf", query.GetResolution())
-		assert.Empty(t, query.GetMZSelector())
 	}
 }

@@ -36,7 +36,7 @@ func TestQueryProducer_Produce(t *testing.T) {
 
 func newQuery(t *testing.T, unit string, meticSelector string, entitySelector string) Query {
 
-	metricsQuery, err := metrics.NewQuery(meticSelector, entitySelector)
+	metricsQuery, err := metrics.NewQuery(meticSelector, entitySelector, "", "")
 	assert.NoError(t, err)
 	assert.NotNil(t, metricsQuery)
 

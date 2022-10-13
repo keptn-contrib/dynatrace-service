@@ -22,8 +22,10 @@ import (
 //   - we use a valid dashboard ID
 //   - all processing and SLI result retrieval works
 func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/success/"
+
 	handler, expectedMetricsRequest := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
-		testDataFolder:     "./testdata/dashboards/basic/success/",
+		testDataFolder:     testDataFolder,
 		baseMetricSelector: "builtin:service.response.time",
 		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
 		entitySelector:     "type(SERVICE)",
@@ -40,8 +42,10 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 //   - all processing and SLI result retrieval works
 //   - if an upload of the SLO file fails, then the test must fail
 func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/slo_writing_fails/"
+
 	handler, _ := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
-		testDataFolder:     "./testdata/dashboards/basic/slo_writing_fails/",
+		testDataFolder:     testDataFolder,
 		baseMetricSelector: "builtin:service.response.time",
 		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
 		entitySelector:     "type(SERVICE)",
@@ -63,8 +67,10 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 //   - The dashboard has 'KQG.QueryBehavior=ParseOnChange' set to only reparse the dashboard if it changed  (we do no longer consider this behaviour)
 //   - we will not fallback to processing SLI files, but process the dashboard again
 func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/no_fallback_to_slis/"
+
 	handler, expectedMetricsRequest := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
-		testDataFolder:     "./testdata/dashboards/basic/no_fallback_to_slis/",
+		testDataFolder:     testDataFolder,
 		baseMetricSelector: "builtin:service.response.time",
 		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
 		entitySelector:     "type(SERVICE)",

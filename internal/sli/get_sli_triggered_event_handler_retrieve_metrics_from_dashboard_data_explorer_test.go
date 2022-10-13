@@ -17,14 +17,18 @@ import (
 // TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIButNoQuery tests a data explorer tile with an SLI name defined, i.e. in the title, but no query.
 // This is will result in a SLIResult with failure, as this is not allowed.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIButNoQuery(t *testing.T) {
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, "./testdata/dashboards/data_explorer/sli_name_no_query/")
+	const testDataFolder = "./testdata/dashboards/data_explorer/sli_name_no_query/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("new"))
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIAndTwoQueries tests a data explorer tile with an SLI name defined and two series.
 // This is will result in a SLIResult with failure, as this is not allowed.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIAndTwoQueries(t *testing.T) {
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, "./testdata/dashboards/data_explorer/sli_name_two_queries/")
+	const testDataFolder = "./testdata/dashboards/data_explorer/sli_name_two_queries/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("two"))
 }
 
@@ -46,6 +50,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_SingleVal
 func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_GraphChartVisualizationSingleResult(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/metric_expressions/"
 	testVariantDataFolder := filepath.Join(testDataFolder, "graph_chart_visualization_single_result")
+
 	const metricSelector = "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
 	requestBuilder := newMetricsV2QueryRequestBuilder(metricSelector)
 
@@ -59,6 +64,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_GraphChar
 func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_GraphChartVisualizationMultipleResults(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/metric_expressions/"
 	testVariantDataFolder := filepath.Join(testDataFolder, "graph_chart_visualization_multiple_results")
+
 	const metricSelector = "(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
 	requestBuilder := newMetricsV2QueryRequestBuilder(metricSelector)
 
@@ -85,6 +91,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_GraphChar
 func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_SingleValueVisualizationMultipleResults(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/metric_expressions/"
 	testVariantDataFolder := filepath.Join(testDataFolder, "single_value_visualization_multiple_results")
+
 	const metricSelector = "(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
 	requestBuilder := newMetricsV2QueryRequestBuilder(metricSelector)
 
@@ -206,6 +213,7 @@ func createSRTFailedSLIResultsAssertionsFuncsWithErrorSubstrings(expectedQuery s
 // TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork tests applying management zones to the dashboard and tile work as expected.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/management_zones_work/"
+
 	dashboardFilterWithManagementZone := dynatrace.DashboardFilter{
 		ManagementZone: &dynatrace.ManagementZoneEntry{
 			ID:   "2311420533206603714",
@@ -287,9 +295,11 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 // TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType tests that data explorer tiles with a management zone and no obvious entity type work.
 // TODO: 12-10-2022: Update this test once test files are available, as in theory this functionality should work
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/no_entity_type/"
+
 	t.Skip()
 	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
-		"./testdata/dashboards/data_explorer/no_entity_type/",
+		testDataFolder,
 		newMetricsV2QueryRequestBuilder("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names").withMZSelector("mzId(2311420533206603714)"),
 	)
 
@@ -300,8 +310,10 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 // This is will result in a SLIResult with success, as this is supported.
 // Here also the SLO is checked, including the display name, weight and key SLI.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/custom_slo/"
+
 	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
-		"./testdata/dashboards/data_explorer/custom_slo/",
+		testDataFolder,
 		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
 	)
 
@@ -328,8 +340,10 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile tests that an excluded tile is skipped.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/excluded_tile/"
+
 	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
-		"./testdata/dashboards/data_explorer/excluded_tile/",
+		testDataFolder,
 		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C6876D601CA5DDFD~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
 	)
 
@@ -396,7 +410,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 		t.Run(thresholdTest.name, func(t *testing.T) {
 
 			handler := createHandlerWithTemplatedDashboard(t,
-				"./testdata/dashboards/data_explorer/tile_thresholds_success/dashboard.template.json",
+				filepath.Join(testDataFolder, "dashboard.template.json"),
 				struct {
 					TileName         string
 					ThresholdsString string

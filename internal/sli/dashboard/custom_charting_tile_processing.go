@@ -150,7 +150,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 		series.Metric, filterAggregator, splitBy, strings.ToLower(metricAggregation))
 	entitySelector := fmt.Sprintf("type(%s)%s%s",
 		entityType, entityTileFilter, tileManagementZoneFilter.ForEntitySelector())
-	metricsQuery, err := metrics.NewQueryWithResolutionAndMZSelector(metricSelector, entitySelector, "", "")
+	metricsQuery, err := metrics.NewQuery(metricSelector, entitySelector, "", "")
 	if err != nil {
 		return nil, err
 	}

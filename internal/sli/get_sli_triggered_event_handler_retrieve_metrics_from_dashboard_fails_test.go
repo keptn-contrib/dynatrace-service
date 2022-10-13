@@ -22,7 +22,6 @@ import (
 //
 // We do not want to see the error attached to any indicator coming from SLO files, but attached to a "no metric" indicator
 func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfThereAreIndicators(t *testing.T) {
-
 	const testDataFolder = "./testdata/dashboards/basic/no_metric_errors/"
 
 	type definition struct {

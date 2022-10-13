@@ -16,13 +16,13 @@ import (
 // * the defined SLI is valid YAML, Dynatrace can process the query correctly (200), but returns 0 results and a warning
 //   - e.g. misspelled dimension key in merge transformation
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsAndWarning(t *testing.T) {
-	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_entity_selector"
+	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_entity_type"
 
 	expectedMetricsRequest := // error here: merge(dt.entity.services)
 		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").encode()
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_result_warning_entity-selector.json"))
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_result_warning_entity-type.json"))
 
 	// error here as well: merge("dt.entity.services")
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
@@ -41,8 +41,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_tag"
 
-	expectedMetricsRequest := // error here: merge(dt.entity.services)
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)").encode()
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)").encode()
 
 	// error here: tag(keptn_project:stagin)
 	handler := test.NewFileBasedURLHandler(t)

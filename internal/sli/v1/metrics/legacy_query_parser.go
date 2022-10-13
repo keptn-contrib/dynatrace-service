@@ -62,7 +62,7 @@ func (p *LegacyQueryParser) Parse() (*metrics.Query, error) {
 
 // createMetricsQueryAndLog creates a metrics query and logs a compatibility warning or returns an error.
 func (p *LegacyQueryParser) createMetricsQueryAndLog(metricSelector string, entitySelector string) (*metrics.Query, error) {
-	query, err := metrics.NewQuery(metricSelector, entitySelector)
+	query, err := metrics.NewQuery(metricSelector, entitySelector, metrics.ResolutionInf, "")
 	if err != nil {
 		return nil, err
 	}

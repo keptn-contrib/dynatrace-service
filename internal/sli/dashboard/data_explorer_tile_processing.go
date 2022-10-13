@@ -146,7 +146,7 @@ func (p *DataExplorerTileProcessing) createMetricsQueryForMetricExpression(metri
 		return nil, fmt.Errorf("could not parse resolution metric expression component: %w", err)
 	}
 
-	return metrics.NewQueryWithResolutionAndMZSelector(pieces[1], "", resolution, managementZoneFilter.ForMZSelector())
+	return metrics.NewQuery(pieces[1], "", resolution, managementZoneFilter.ForMZSelector())
 }
 
 // parseResolutionKeyValuePair parses the resolution key value pair, returning resolution or error. In the case that no resolution is set in UI, i.e. resolution=null, an empty string is returned.

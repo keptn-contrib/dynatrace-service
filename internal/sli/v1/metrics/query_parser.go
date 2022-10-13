@@ -33,7 +33,7 @@ func (p *QueryParser) Parse() (*metrics.Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return metrics.NewQueryWithResolutionAndMZSelector(keyValuePairs.GetValue(metricSelectorKey), keyValuePairs.GetValue(entitySelectorKey), keyValuePairs.GetValue(resolutionKey), keyValuePairs.GetValue(mzSelectorKey))
+	return metrics.NewQuery(keyValuePairs.GetValue(metricSelectorKey), keyValuePairs.GetValue(entitySelectorKey), keyValuePairs.GetValue(resolutionKey), keyValuePairs.GetValue(mzSelectorKey))
 }
 
 type metricsQueryKeyValidator struct{}
