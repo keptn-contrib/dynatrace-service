@@ -546,25 +546,3 @@ func createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t *testing.T, t
 
 	return handler, expectedMetricsRequest2
 }
-
-func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
-	expectedMetricsRequest1 := requestBuilder.encode()
-	expectedMetricsRequest2 := requestBuilder.withResolution(resolutionInf).encode()
-
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
-	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
-	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, "metrics_get_by_query2.json"))
-
-	return expectedMetricsRequest2
-}
-
-func addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
-	expectedMetricsRequest1 := requestBuilder.encode()
-	expectedMetricsRequest2 := requestBuilder.withFold().encode()
-
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
-	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
-	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, "metrics_get_by_query2.json"))
-
-	return expectedMetricsRequest2
-}
