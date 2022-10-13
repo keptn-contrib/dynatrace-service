@@ -452,3 +452,133 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 		})
 	}
 }
+
+// TestGetSLIValueMetricsQuery_SuccessWithFold tests processing of Metrics API v2 results success case using a fold rather than resolution Inf.
+func TestGetSLIValueMetricsQuery_SuccessWithFold(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/metrics/success_with_fold/"
+
+	const testIndicatorAvailability = "availability"
+
+	handler := test.NewCombinedURLHandler(t)
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("builtin:pgi.availability:splitBy()"),
+	)
+
+	configClient := newConfigClientMockWithSLIs(t, map[string]string{
+		testIndicatorAvailability: "metricSelector=builtin:pgi.availability:splitBy()",
+	})
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorAvailability, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorAvailability, 97.46884534911891, expectedMetricsRequest))
+}
+
+// TestGetSLIValueMetricsQuery_NoFoldPossible tests processing of Metrics API v2 results where a fold is not possible.
+func TestGetSLIValueMetricsQuery_NoFoldPossible(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/metrics/no_fold_possible/"
+
+	const testIndicatorAvailability = "availability"
+
+	requestBuilder := newMetricsV2QueryRequestBuilder("builtin:pgi.availability:splitBy():avg")
+	expectedMetricsRequest := requestBuilder.encode()
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
+	handler.AddExact(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_id.json"))
+
+	configClient := newConfigClientMockWithSLIs(t, map[string]string{
+		testIndicatorAvailability: "metricSelector=builtin:pgi.availability:splitBy():avg",
+	})
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorAvailability, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorAvailability, expectedMetricsRequest, "unable to apply ':fold()'"))
+}
+
+// TestGetSLIValueMetricsQuery_SuccessWithResolutionInfProvided tests processing of Metrics API v2 results where resolution is explicitly set to Inf in different forms.
+func TestGetSLIValueMetricsQuery_SuccessWithResolutionInfProvided(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/metrics/explicit_resolution_inf/"
+
+	const testIndicatorResponseTime = "response_time"
+
+	tests := []struct {
+		name                 string
+		resolutionInfVariant string
+	}{
+		{
+			name:                 "all_lower_case",
+			resolutionInfVariant: "inf",
+		},
+		{
+			name:                 "all_upper_case",
+			resolutionInfVariant: "INF",
+		},
+		{
+			name:                 "just_capital_i",
+			resolutionInfVariant: "Inf",
+		},
+		{
+			name:                 "just_lower_case__i",
+			resolutionInfVariant: "iNF",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
+
+			requestBuilder := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy()").withResolution(tt.resolutionInfVariant)
+			expectedMetricsRequest := requestBuilder.encode()
+
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddExact(expectedMetricsRequest, filepath.Join(testVariantDataFolder, "metrics_get_by_query1.json"))
+
+			configClient := newConfigClientMockWithSLIs(t, map[string]string{
+				testIndicatorResponseTime: "metricSelector=builtin:service.response.time:splitBy()&resolution=" + tt.resolutionInfVariant,
+			})
+
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTime, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTime, 54896.50418867919, expectedMetricsRequest))
+		})
+	}
+}
+
+// TestGetSLIValueMetricsQuery_SuccessWithOtherResolution tests processing of Metrics API v2 results success case using a fold due to an explicit resolution being set.
+func TestGetSLIValueMetricsQuery_SuccessWithOtherResolution(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/metrics/success_with_other_resolution/"
+
+	tests := []struct {
+		name             string
+		metricSelector   string
+		expectedSLIValue float64
+	}{
+		{
+			name:             "response_time",
+			metricSelector:   "builtin:service.response.time:splitBy()",
+			expectedSLIValue: 54896.504858650806,
+		},
+		{
+			name:             "availability",
+			metricSelector:   "builtin:pgi.availability:splitBy()",
+			expectedSLIValue: 97.47250403469201,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
+			testIndicator := tt.name
+
+			handler := test.NewCombinedURLHandler(t)
+			expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler,
+				testVariantDataFolder,
+				newMetricsV2QueryRequestBuilder(tt.metricSelector).withResolution("30m"),
+			)
+
+			configClient := newConfigClientMockWithSLIs(t, map[string]string{
+				testIndicator: "metricSelector=" + tt.metricSelector + "&resolution=30m",
+			})
+
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicator, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicator, tt.expectedSLIValue, expectedMetricsRequest))
+		})
+	}
+
+}
