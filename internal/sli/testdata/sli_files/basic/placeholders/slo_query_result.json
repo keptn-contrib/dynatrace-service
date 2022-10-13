@@ -20,11 +20,11 @@
     "timeframe": "1664323200000 to 1664409600000",
     "filter": "type(\"SERVICE\")",
     "relatedOpenProblems": 0,
-    "relatedTotalProblems": 76,
-    "numeratorValue": 0.0,
-    "metricDenominator": "",
+    "relatedTotalProblems": 73,
     "metricRate": "",
     "metricNumerator": "",
+    "metricDenominator": "",
+    "numeratorValue": 0.0,
     "denominatorValue": 0.0,
     "useRateMetric": true
 }

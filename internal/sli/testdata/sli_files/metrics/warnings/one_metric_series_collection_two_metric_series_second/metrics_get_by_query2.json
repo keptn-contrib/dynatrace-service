@@ -9,31 +9,23 @@
             "dimensionCountRatio": 3.0E-5,
             "data": [
                 {
-                    "dimensions": [
-                        "SERVICE-74DF4B154436358D"
-                    ],
-                    "dimensionMap": {
-                        "dt.entity.service": "SERVICE-74DF4B154436358D"
-                    },
+                    "dimensions": [],
+                    "dimensionMap": {},
                     "timestamps": [
                         1664409600000
                     ],
                     "values": [
-                        26.00115949505504
+                        31846.08512740705
                     ]
                 },
                 {
-                    "dimensions": [
-                        "SERVICE-EF0238B11A4BF364"
-                    ],
-                    "dimensionMap": {
-                        "dt.entity.service": "SERVICE-EF0238B11A4BF364"
-                    },
+                    "dimensions": [],
+                    "dimensionMap": {},
                     "timestamps": [
                         1664409600000
                     ],
                     "values": [
-                        90.34451079823523
+                        31846.08512740705
                     ]
                 }
             ]

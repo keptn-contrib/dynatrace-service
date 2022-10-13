@@ -1,10 +1,12 @@
 {
-    "totalCount": 0,
+    "totalCount": 1,
     "nextPageKey": null,
-    "resolution": "Inf",
+    "resolution": "10m",
     "result": [
         {
             "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)",
+            "dataPointCountRatio": 4.32E-5,
+            "dimensionCountRatio": 3.0E-5,
             "data": []
         }
     ]

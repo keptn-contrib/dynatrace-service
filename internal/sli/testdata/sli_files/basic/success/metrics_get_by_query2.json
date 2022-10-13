@@ -4,9 +4,9 @@
     "resolution": "Inf",
     "result": [
         {
-            "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
-            "dataPointCountRatio": 5.0E-8,
-            "dimensionCountRatio": 1.0E-5,
+            "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)",
+            "dataPointCountRatio": 1.5E-7,
+            "dimensionCountRatio": 3.0E-5,
             "data": [
                 {
                     "dimensions": [],
@@ -15,7 +15,7 @@
                         1664409600000
                     ],
                     "values": [
-                        620.4411764705883
+                        31846.08512740705
                     ]
                 }
             ]
