@@ -13,7 +13,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/rest"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // testDynatraceCredentialsFilenameEnvironmentVariable is an environment variable specifying the name of a file containing credentials (tenant and API token) for requesting test data.
