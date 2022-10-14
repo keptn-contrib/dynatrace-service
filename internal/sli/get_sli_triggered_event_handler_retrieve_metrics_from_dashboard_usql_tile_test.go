@@ -87,15 +87,15 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 		}
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:         "usql_metric_north_america",
-			DisplayName: "User sessions query results (North America)",
+			SLI:         "usql_metric_asia",
+			DisplayName: "User sessions query results (Asia)",
 			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<=100"}}},
 			Weight:      1,
 		}, actual.Objectives[0])
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:         "usql_metric_europe",
-			DisplayName: "User sessions query results (Europe)",
+			SLI:         "usql_metric_north_america",
+			DisplayName: "User sessions query results (North America)",
 			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<=100"}}},
 			Weight:      1,
 		}, actual.Objectives[1])
