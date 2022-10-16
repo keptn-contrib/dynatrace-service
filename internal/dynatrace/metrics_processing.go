@@ -357,3 +357,55 @@ func (p *RetryForSingleValueMetricsProcessingDecorator) modifyQuery(ctx context.
 
 	return metrics.NewQuery("("+metricSelector+"):fold()", existingQuery.GetEntitySelector(), existingQuery.GetResolution(), existingQuery.GetMZSelector())
 }
+
+// ConvertUnitMetricsProcessingDecorator decorates MetricsProcessing by converting the unit of the results.
+type ConvertUnitMetricsProcessingDecorator struct {
+	metricsClient     MetricsClientInterface
+	unitsClient       MetricsUnitsClientInterface
+	targetUnitID      string
+	metricsProcessing MetricsProcessingInterface
+}
+
+// NewConvertUnitMetricsProcessingDecorator creates a new ConvertUnitMetricsProcessingDecorator using the specified client interfaces, target unit ID and underlying metrics processing interface.
+func NewConvertUnitMetricsProcessingDecorator(metricsClient MetricsClientInterface,
+	unitsClient MetricsUnitsClientInterface,
+	targetUnitID string,
+	metricsProcessing MetricsProcessingInterface) *ConvertUnitMetricsProcessingDecorator {
+	return &ConvertUnitMetricsProcessingDecorator{
+		metricsClient:     metricsClient,
+		unitsClient:       unitsClient,
+		targetUnitID:      targetUnitID,
+		metricsProcessing: metricsProcessing,
+	}
+}
+
+// ProcessRequest queries and processes metrics using the specified request.
+func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResults, error) {
+	result, err := p.metricsProcessing.ProcessRequest(ctx, request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if p.targetUnitID == "" {
+		return result, nil
+	}
+
+	metricSelector := result.request.query.GetMetricSelector()
+	metricDefinition, err := p.metricsClient.GetMetricDefinitionByID(ctx, metricSelector)
+	if err != nil {
+		return nil, err
+	}
+
+	sourceUnitID := metricDefinition.Unit
+	convertedResults := make([]MetricsProcessingResult, len(result.Results()))
+	for i, r := range result.results {
+		v, err := p.unitsClient.Convert(ctx, NewMetricsUnitsClientConvertRequest(sourceUnitID, r.value, p.targetUnitID))
+		if err != nil {
+			return nil, err
+		}
+
+		convertedResults[i] = newMetricsProcessingResult(r.Name(), v)
+	}
+	return newMetricsProcessingResults(result.Request(), convertedResults, result.Warnings()), nil
+}
