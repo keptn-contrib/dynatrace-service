@@ -99,7 +99,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_SingleVal
 	addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, requestBuilder)
 
 	multipleSuccessfulSLIResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createFailedSLIResultWithQueryAssertionsFunc("srt", requestBuilder.encode(), "metric series but only one is supported"),
+		createFailedSLIResultWithQueryAssertionsFunc("srt", requestBuilder.build(), "metric series but only one is supported"),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, multipleSuccessfulSLIResultAssertionsFuncs...)
@@ -111,7 +111,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_OtherReso
 	testVariantDataFolder := filepath.Join(testDataFolder, "other_resolution")
 
 	const metricSelector = "(builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(100)):limit(100):names"
-	requestBuilder := newMetricsV2QueryRequestBuilder(metricSelector).withResolution("30m")
+	requestBuilder := newMetricsV2QueryRequestBuilder(metricSelector).copyWithResolution("30m")
 
 	handler := createHandlerForWithDashboardForMetricExpressionsTest(t, testDataFolder, graphChartVisualConfigType, &[]string{"resolution=30m&" + metricSelector})
 	metricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler, testVariantDataFolder, requestBuilder)
@@ -125,12 +125,12 @@ func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_FoldValue
 	testVariantDataFolder := filepath.Join(testDataFolder, "fold_value")
 
 	const metricSelector = "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
-	requestBuilder := newMetricsV2QueryRequestBuilder(metricSelector).withResolution("30m")
+	requestBuilder := newMetricsV2QueryRequestBuilder(metricSelector).copyWithResolution("30m")
 
 	handler := createHandlerForWithDashboardForMetricExpressionsTest(t, testDataFolder, graphChartVisualConfigType, &[]string{"resolution=30m&" + metricSelector})
 	addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler, testVariantDataFolder, requestBuilder)
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("srt", requestBuilder.encode(), "unable to apply ':fold()'"))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("srt", requestBuilder.build(), "unable to apply ':fold()'"))
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_Errors tests that invalid metric expressions configurations generate errors as expected.
@@ -231,8 +231,8 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 	}
 
 	requestBuilderWithNoManagementZone := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(10)):limit(100):names")
-	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.withMZSelector("mzId(2311420533206603714)")
-	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.withMZSelector("mzId(-6219736993013608218)")
+	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzId(2311420533206603714)")
+	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzId(-6219736993013608218)")
 
 	tests := []struct {
 		name             string
@@ -300,7 +300,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 	t.Skip()
 	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names").withMZSelector("mzId(2311420533206603714)"),
+		newMetricsV2QueryRequestBuilder("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names").copyWithMZSelector("mzId(2311420533206603714)"),
 	)
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("vulnerabilities_high", expectedMetricsRequest))
@@ -537,8 +537,8 @@ func createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t *testing.T, t
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
 
-	expectedMetricsRequest1 := requestBuilder.encode()
-	expectedMetricsRequest2 := requestBuilder.withResolution(resolutionInf).encode()
+	expectedMetricsRequest1 := requestBuilder.build()
+	expectedMetricsRequest2 := requestBuilder.copyWithResolution(resolutionInf).build()
 
 	handler.AddExact(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
 	handler.AddExact(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))

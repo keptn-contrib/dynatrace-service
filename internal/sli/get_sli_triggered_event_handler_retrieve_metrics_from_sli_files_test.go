@@ -155,7 +155,7 @@ func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 	handler := test.NewCombinedURLHandler(t)
 	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
 	)
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
@@ -169,7 +169,7 @@ func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/constraints_violated/"
 
-	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").encode()
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").build()
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExactError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_query_constraints_violated.json"))
@@ -186,8 +186,8 @@ func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
 func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/warnings/"
 
-	requestBuilder := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)")
-	expectedMetricsRequest := requestBuilder.encode()
+	requestBuilder := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)")
+	expectedMetricsRequest := requestBuilder.build()
 
 	tests := []struct {
 		name                   string
@@ -299,7 +299,7 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 func TestGetSLIValueWithOldCustomQueryFormat(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/old_metrics_format/"
 
-	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)").withEntitySelector("tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:),type(SERVICE)").withResolution(resolutionInf).encode()
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)").copyWithEntitySelector("tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:),type(SERVICE)").copyWithResolution(resolutionInf).build()
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
@@ -318,7 +318,7 @@ func TestGetSLISleep(t *testing.T) {
 	handler := test.NewCombinedURLHandler(t)
 	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
 	)
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
@@ -340,7 +340,7 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 	handler := test.NewCombinedURLHandler(t)
 	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time").withEntitySelector("type(SERVICE),tag(\"env_tag:some_tag\")"),
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time").copyWithEntitySelector("type(SERVICE),tag(\"env_tag:some_tag\")"),
 	)
 
 	indicator := "response_time_env"
@@ -370,7 +370,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			name:             "Metrics V2 with MV2 encoding",
 			indicator:        "response_time",
 			query:            "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"keptn_managed\"),tag(\"keptn_project:$PROJECT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time&resolution=Inf",
-			expectedRequest:  newMetricsV2QueryRequestBuilder("builtin:service.response.time").withEntitySelector("type(SERVICE),tag(\"keptn_managed\"),tag(\"keptn_project:sockshop\"),tag(\"keptn_stage:staging\"),tag(\"keptn_service:carts\")").withResolution(resolutionInf).encode(),
+			expectedRequest:  newMetricsV2QueryRequestBuilder("builtin:service.response.time").copyWithEntitySelector("type(SERVICE),tag(\"keptn_managed\"),tag(\"keptn_project:sockshop\"),tag(\"keptn_stage:staging\"),tag(\"keptn_service:carts\")").copyWithResolution(resolutionInf).build(),
 			responseFilename: filepath.Join(testDataFolder, "metrics_query_result.json"),
 			expectedSLIValue: 0.6458395061728395,
 		},
@@ -379,7 +379,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 			name:             "Metrics V2",
 			indicator:        "response_time2",
 			query:            "entitySelector=type(SERVICE),tag(\"keptn_deployment:$DEPLOYMENT\"),tag(\"context:$CONTEXT\"),tag(\"keptn_stage:$STAGE\"),tag(\"keptn_service:$SERVICE\")&metricSelector=builtin:service.response.time&resolution=Inf",
-			expectedRequest:  newMetricsV2QueryRequestBuilder("builtin:service.response.time").withEntitySelector("type(SERVICE),tag(\"keptn_deployment:mydeployment\"),tag(\"context:mycontext\"),tag(\"keptn_stage:staging\"),tag(\"keptn_service:carts\")").withResolution(resolutionInf).encode(),
+			expectedRequest:  newMetricsV2QueryRequestBuilder("builtin:service.response.time").copyWithEntitySelector("type(SERVICE),tag(\"keptn_deployment:mydeployment\"),tag(\"context:mycontext\"),tag(\"keptn_stage:staging\"),tag(\"keptn_service:carts\")").copyWithResolution(resolutionInf).build(),
 			responseFilename: filepath.Join(testDataFolder, "metrics_query_result.json"),
 			expectedSLIValue: 645.8395061728395,
 		},
@@ -479,7 +479,7 @@ func TestGetSLIValueMetricsQuery_NoFoldPossible(t *testing.T) {
 	const testIndicatorAvailability = "availability"
 
 	requestBuilder := newMetricsV2QueryRequestBuilder("builtin:pgi.availability:splitBy():avg")
-	expectedMetricsRequest := requestBuilder.encode()
+	expectedMetricsRequest := requestBuilder.build()
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
@@ -525,8 +525,8 @@ func TestGetSLIValueMetricsQuery_SuccessWithResolutionInfProvided(t *testing.T) 
 
 			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
 
-			requestBuilder := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy()").withResolution(tt.resolutionInfVariant)
-			expectedMetricsRequest := requestBuilder.encode()
+			requestBuilder := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy()").copyWithResolution(tt.resolutionInfVariant)
+			expectedMetricsRequest := requestBuilder.build()
 
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddExact(expectedMetricsRequest, filepath.Join(testVariantDataFolder, "metrics_get_by_query1.json"))
@@ -570,7 +570,7 @@ func TestGetSLIValueMetricsQuery_SuccessWithOtherResolution(t *testing.T) {
 			handler := test.NewCombinedURLHandler(t)
 			expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler,
 				testVariantDataFolder,
-				newMetricsV2QueryRequestBuilder(tt.metricSelector).withResolution("30m"),
+				newMetricsV2QueryRequestBuilder(tt.metricSelector).copyWithResolution("30m"),
 			)
 
 			configClient := newConfigClientMockWithSLIs(t, map[string]string{

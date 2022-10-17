@@ -319,10 +319,10 @@ type successfulCustomChartingTestHandlerConfiguration struct {
 func createHandlerForSuccessfulCustomChartingTest(t *testing.T, config successfulCustomChartingTestHandlerConfiguration) (*test.FileBasedURLHandler, string) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(config.testDataFolder, "dashboard.json"))
-	queryBuilder := newMetricsV2QueryRequestBuilder(config.fullMetricSelector).withEntitySelector(config.entitySelector)
+	queryBuilder := newMetricsV2QueryRequestBuilder(config.fullMetricSelector).copyWithEntitySelector(config.entitySelector)
 
-	expectedFirstMetricsRequest := queryBuilder.encode()
-	expectedSecondMetricsRequest := queryBuilder.withResolution(resolutionInf).encode()
+	expectedFirstMetricsRequest := queryBuilder.build()
+	expectedSecondMetricsRequest := queryBuilder.copyWithResolution(resolutionInf).build()
 
 	handler.AddExact(buildMetricsV2DefinitionRequestString(config.baseMetricSelector), filepath.Join(config.testDataFolder, "metrics_get_by_id_base.json"))
 	handler.AddExact(buildMetricsV2DefinitionRequestString(config.fullMetricSelector), filepath.Join(config.testDataFolder, "metrics_get_by_id_full.json"))

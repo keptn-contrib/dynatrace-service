@@ -459,32 +459,32 @@ func newMetricsV2QueryRequestBuilder(metricSelector string) *metricsV2QueryReque
 	return &metricsV2QueryRequestBuilder{values: values}
 }
 
-func (b *metricsV2QueryRequestBuilder) withEntitySelector(entitySelector string) *metricsV2QueryRequestBuilder {
+func (b *metricsV2QueryRequestBuilder) copyWithEntitySelector(entitySelector string) *metricsV2QueryRequestBuilder {
 	values := cloneURLValues(b.values)
 	values.Add("entitySelector", entitySelector)
 	return &metricsV2QueryRequestBuilder{values: values}
 }
 
-func (b *metricsV2QueryRequestBuilder) withFold() *metricsV2QueryRequestBuilder {
+func (b *metricsV2QueryRequestBuilder) copyWithFold() *metricsV2QueryRequestBuilder {
 	existingMetricSelector := b.metricSelector()
 	values := cloneURLValues(b.values)
 	values.Set("metricSelector", "("+existingMetricSelector+"):fold()")
 	return &metricsV2QueryRequestBuilder{values: values}
 }
 
-func (b *metricsV2QueryRequestBuilder) withResolution(resolution string) *metricsV2QueryRequestBuilder {
+func (b *metricsV2QueryRequestBuilder) copyWithResolution(resolution string) *metricsV2QueryRequestBuilder {
 	values := cloneURLValues(b.values)
 	values.Add("resolution", resolution)
 	return &metricsV2QueryRequestBuilder{values: values}
 }
 
-func (b *metricsV2QueryRequestBuilder) withMZSelector(mzSelector string) *metricsV2QueryRequestBuilder {
+func (b *metricsV2QueryRequestBuilder) copyWithMZSelector(mzSelector string) *metricsV2QueryRequestBuilder {
 	values := cloneURLValues(b.values)
 	values.Add("mzSelector", mzSelector)
 	return &metricsV2QueryRequestBuilder{values: values}
 }
 
-func (b *metricsV2QueryRequestBuilder) encode() string {
+func (b *metricsV2QueryRequestBuilder) build() string {
 	return fmt.Sprintf("%s?%s", dynatrace.MetricsQueryPath, b.values.Encode())
 }
 
@@ -503,8 +503,8 @@ func cloneURLValues(values url.Values) url.Values {
 }
 
 func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
-	expectedMetricsRequest1 := requestBuilder.encode()
-	expectedMetricsRequest2 := requestBuilder.withResolution(resolutionInf).encode()
+	expectedMetricsRequest1 := requestBuilder.build()
+	expectedMetricsRequest2 := requestBuilder.copyWithResolution(resolutionInf).build()
 
 	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
 	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
@@ -514,8 +514,8 @@ func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler *tes
 }
 
 func addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
-	expectedMetricsRequest1 := requestBuilder.encode()
-	expectedMetricsRequest2 := requestBuilder.withFold().encode()
+	expectedMetricsRequest1 := requestBuilder.build()
+	expectedMetricsRequest2 := requestBuilder.copyWithFold().build()
 
 	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
 	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))

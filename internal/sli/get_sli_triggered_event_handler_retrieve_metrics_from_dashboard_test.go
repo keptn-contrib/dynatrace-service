@@ -92,7 +92,7 @@ func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_data/"
 
-	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():percentile(95.000000):names").withEntitySelector("type(SERVICE),entityId(\"SERVICE-F6B97183A8968C3A\")").encode()
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():percentile(95.000000):names").copyWithEntitySelector("type(SERVICE),entityId(\"SERVICE-F6B97183A8968C3A\")").build()
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))

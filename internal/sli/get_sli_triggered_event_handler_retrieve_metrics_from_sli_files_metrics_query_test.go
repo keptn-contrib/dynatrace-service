@@ -19,7 +19,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_entity_type"
 
 	expectedMetricsRequest := // error here: merge(dt.entity.services)
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").encode()
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").build()
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_result_warning_entity-type.json"))
@@ -41,7 +41,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/no_results_due_to_tag"
 
-	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)").encode()
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)").build()
 
 	// error here: tag(keptn_project:stagin)
 	handler := test.NewFileBasedURLHandler(t)
@@ -69,7 +69,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleResults(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/metrics/multiple_results"
 
-	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").encode()
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)").build()
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_3_results.json"))
@@ -149,7 +149,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	handler := test.NewCombinedURLHandler(t)
 	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:)"),
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:)"),
 	)
 
 	// no custom queries defined here
@@ -170,7 +170,7 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 	handler := test.NewCombinedURLHandler(t)
 	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").withEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
 	)
 
 	configClient := newConfigClientMockWithSLIs(t, map[string]string{
