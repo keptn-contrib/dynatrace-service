@@ -1,18 +1,17 @@
 {
-  "extrapolationLevel": 1,
-  "columnNames": [
-    "totalErrorCount",
-    "totalLicenseCreditCount",
-    "userActionCount"
-  ],
-  "values": [
-    [
-      0,
-      "Beijing"      
+    "extrapolationLevel": 16,
+    "columnNames": [
+        "totalErrorCount",
+        "city"
     ],
-    [
-      1,
-      "London"
+    "values": [
+        [
+            0,
+            "Beijing"
+        ],
+        [
+            1,
+            "London"
+        ]
     ]
-  ]
 }

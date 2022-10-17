@@ -1,0 +1,28 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:service.response.time",
+            "dataPointCountRatio": 5.0E-8,
+            "dimensionCountRatio": 1.0E-5,
+            "data": [
+                {
+                    "dimensions": [
+                        "SERVICE-504937D81F10F081"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service": "SERVICE-504937D81F10F081"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        645.8395061728395
+                    ]
+                }
+            ]
+        }
+    ]
+}

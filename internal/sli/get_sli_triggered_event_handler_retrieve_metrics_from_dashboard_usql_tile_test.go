@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -14,16 +15,16 @@ import (
 func TestRetrieveMetricsFromDashboardUSQLTile_ColumnChart(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/column_chart_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+browserFamily%2C+AVG%28useraction.visuallyCompleteTime%29%2C+AVG%28useraction.domCompleteTime%29%2C+AVG%28totalErrorCount%29+FROM+usersession+GROUP+BY+browserFamily+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT browserFamily, AVG(useraction.visuallyCompleteTime), AVG(useraction.domCompleteTime), AVG(totalErrorCount) FROM usersession GROUP BY browserFamily LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 492.6603364080304, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_aol_explorer", 500.2868314283638, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_acoo_browser", 500.5150319856381, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_aol_explorer", 1428.282447519664, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 1402.0759668508288, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_acoo_browser", 1427.2675735742882, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -33,16 +34,16 @@ func TestRetrieveMetricsFromDashboardUSQLTile_ColumnChart(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_PieChart(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/pie_chart_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city%2C+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 60154.328623114205, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_ashburn", 53567.040172786175, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_beijing", 65199.979558462794, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_null", 85673.22361214698, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_ashburn", 73031.44078516903, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_london", 88003.95643322475, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -52,14 +53,14 @@ func TestRetrieveMetricsFromDashboardUSQLTile_PieChart(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric", 62731.12784806213, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric", 87793.1776896271, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -69,15 +70,15 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+continent%2C+totalErrorCount%2C+totalLicenseCreditCount%2C+userActionCount+FROM+usersession+limit+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT continent, totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession limit 2")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 1, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_europe", 2, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_asia", 2, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 5, expectedUSQLRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
@@ -86,15 +87,15 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 		}
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:         "usql_metric_north_america",
-			DisplayName: "User sessions query results (North America)",
+			SLI:         "usql_metric_asia",
+			DisplayName: "User sessions query results (Asia)",
 			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<=100"}}},
 			Weight:      1,
 		}, actual.Objectives[0])
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:         "usql_metric_europe",
-			DisplayName: "User sessions query results (Europe)",
+			SLI:         "usql_metric_north_america",
+			DisplayName: "User sessions query results (North America)",
 			Pass:        []*keptnapi.SLOCriteria{{Criteria: []string{"<=100"}}},
 			Weight:      1,
 		}, actual.Objectives[1])
@@ -108,15 +109,15 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/line_chart_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+continent%2C+userActionCount+FROM+usersession+limit+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT continent, userActionCount FROM usersession limit 2")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 1, expectedUSQLRequest),
-		createSuccessfulSLIResultAssertionsFunc("usql_metric_europe", 2, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_asia", 2, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric_north_america", 5, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -126,11 +127,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_LineChart(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_Funnel(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/funnel_visualization/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+FUNNEL%28useraction.name%3D%22AppStart+%28easyTravel%29%22+AS+%22Open+easytravel%22%2C+useraction.name+%3D+%22searchJourney%22+AS+%22Search+journey%22%2C+useraction.name+%3D+%22bookJourney%22+AS+%22Book+journey%22%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT FUNNEL(useraction.name=\"AppStart (easyTravel)\" AS \"Open easytravel\", useraction.name = \"searchJourney\" AS \"Search journey\", useraction.name = \"bookJourney\" AS \"Book journey\") FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -144,7 +145,7 @@ func TestRetrieveMetricsFromDashboardUSQLTile_NoQuery(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/tile_with_no_query/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("usql_metric"),
@@ -157,11 +158,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_NoQuery(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_MissingScopes(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/missing_scopes/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExactError(expectedUSQLRequest, 403, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExactError(expectedUSQLRequest, 403, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -174,11 +175,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_MissingScopes(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiColumns(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_multi_columns/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city%2C+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city, AVG(duration) FROM usersession GROUP BY city LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -191,11 +192,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiColumns(t *testin
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiRows(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_multi_rows/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession+GROUP+BY+city+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession GROUP BY city LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -208,11 +209,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_MultiRows(t *testing.T
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_invalid_result_type/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+1")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city FROM usersession GROUP BY city LIMIT 1")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -225,11 +226,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_InvalidResultType(t *t
 func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/single_value_visualization_no_values/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+1")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city FROM usersession GROUP BY city LIMIT 1")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -242,11 +243,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_SingleValue_NoValues(t *testing.T)
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_not_enough_columns/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+city+FROM+usersession+GROUP+BY+city+LIMIT+3")
+	expectedUSQLRequest := buildUSQLRequest("SELECT city FROM usersession GROUP BY city LIMIT 3")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -259,11 +260,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NotEnoughColumns(t *testing.
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_invalid_dimension_name/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+totalErrorCount%2C+totalLicenseCreditCount%2C+userActionCount+FROM+usersession+LIMIT+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT totalErrorCount, totalLicenseCreditCount, userActionCount FROM usersession LIMIT 2")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -277,11 +278,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName(t *test
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_invalid_dimension_value/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+totalErrorCount%2C+city+FROM+usersession+LIMIT+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT totalErrorCount, city FROM usersession LIMIT 2")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -295,11 +296,11 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *tes
 func TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/table_visualization_no_values/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+totalErrorCount%2C+city+FROM+usersession+LIMIT+2")
+	expectedUSQLRequest := buildUSQLRequest("SELECT totalErrorCount, city FROM usersession LIMIT 2")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
@@ -314,14 +315,14 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_NoValues(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/custom_slo/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("average_session_duration", 62731.12784806213, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("average_session_duration", 87793.1776896271, expectedUSQLRequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
@@ -345,14 +346,14 @@ func TestRetrieveMetricsFromDashboardUSQLTile_CustomSLO(t *testing.T) {
 func TestRetrieveMetricsFromDashboardUSQLTile_ExcludedTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/usql_tiles/excluded_tile/"
 
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedUSQLRequest, testDataFolder+"usql_result_table.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("usql_metric", 62731.12784806213, expectedUSQLRequest),
+		createSuccessfulSLIResultAssertionsFunc("usql_metric", 87793.1776896271, expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)

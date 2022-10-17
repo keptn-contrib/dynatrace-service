@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -15,8 +16,8 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(expectedSLORequest, testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
@@ -47,7 +48,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_TileWithNoIDs(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/slo_tiles/tile_no_slo_ids/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("slo_tile_without_slo"),
@@ -65,7 +66,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_TileWithEmptyID(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/slo_tiles/tile_empty_slo_id/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("slo_without_id"),
@@ -83,8 +84,8 @@ func TestRetrieveMetricsFromDashboardSLOTile_TileWithUnknownID(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/slo_tiles/unknown_slo_id/"
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, testDataFolder+"dashboard.json")
-	handler.AddExact(buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c5"), testDataFolder+"slo_7d07efde-b714-3e6e-ad95-08490e2540c5.json")
+	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExact(buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c5"), filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c5.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultAssertionsFunc("slo_7d07efde-b714-3e6e-ad95-08490e2540c5"),

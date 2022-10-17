@@ -150,7 +150,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 		series.Metric, filterAggregator, splitBy, strings.ToLower(metricAggregation))
 	entitySelector := fmt.Sprintf("type(%s)%s%s",
 		entityType, entityTileFilter, tileManagementZoneFilter.ForEntitySelector())
-	metricsQuery, err := metrics.NewQuery(metricSelector, entitySelector)
+	metricsQuery, err := metrics.NewQuery(metricSelector, entitySelector, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +159,7 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 }
 
 // getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -
-// the return value always starts with a , (comma)
-//   return example: ,entityId("ABAD-222121321321")
+// the return value always starts with a , (comma), e.g.: ,entityId("ABAD-222121321321")
 func getEntitySelectorFromEntityFilter(filtersPerEntityType map[string]dynatrace.FilterMap, entityType string) (string, error) {
 	filterMap, containsEntityType := filtersPerEntityType[entityType]
 	if !containsEntityType {

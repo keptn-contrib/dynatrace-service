@@ -1,0 +1,260 @@
+{
+    "extrapolationLevel": 16,
+    "columnNames": [
+        "osVersion",
+        "country",
+        "avg(duration)"
+    ],
+    "values": [
+        [
+            "Windows XP",
+            "United States",
+            98851.20744376151
+        ],
+        [
+            "Windows XP",
+            "China",
+            91072.85043254451
+        ],
+        [
+            "Windows XP",
+            "Japan",
+            98167.20119189512
+        ],
+        [
+            "Windows XP",
+            "null",
+            6482.972883027241
+        ],
+        [
+            "Windows XP",
+            "Germany",
+            96270.19128965646
+        ],
+        [
+            "Windows XP",
+            "United Kingdom",
+            94193.92342166796
+        ],
+        [
+            "Windows XP",
+            "South Korea",
+            89734.83109365309
+        ],
+        [
+            "Windows XP",
+            "Brazil",
+            78525.54911209767
+        ],
+        [
+            "Windows XP",
+            "France",
+            93798.9627311522
+        ],
+        [
+            "Windows XP",
+            "Canada",
+            93353.19345138657
+        ],
+        [
+            "Windows XP",
+            "Italy",
+            94808.38048572646
+        ],
+        [
+            "Windows XP",
+            "Netherlands",
+            88020.3862718708
+        ],
+        [
+            "Windows XP",
+            "Australia",
+            95403.8949030221
+        ],
+        [
+            "Windows XP",
+            "India",
+            86016.33493589744
+        ],
+        [
+            "Windows XP",
+            "Russia",
+            86063.28515406162
+        ],
+        [
+            "Windows XP",
+            "Taiwan",
+            101279.01093247588
+        ],
+        [
+            "Windows XP",
+            "Spain",
+            99224.51034975018
+        ],
+        [
+            "Windows XP",
+            "Mexico",
+            102515.3981264637
+        ],
+        [
+            "Windows XP",
+            "Sweden",
+            100365.9318001586
+        ],
+        [
+            "Windows XP",
+            "Switzerland",
+            96768.83245614036
+        ],
+        [
+            "Windows XP",
+            "South Africa",
+            80660.89387008235
+        ],
+        [
+            "Windows XP",
+            "Singapore",
+            89725.52583025831
+        ],
+        [
+            "Windows XP",
+            "Egypt",
+            85954.05943691345
+        ],
+        [
+            "Windows XP",
+            "Poland",
+            108701.41794310723
+        ],
+        [
+            "Windows XP",
+            "Indonesia",
+            89185.25552825553
+        ],
+        [
+            "Windows XP",
+            "Argentina",
+            86331.69731800766
+        ],
+        [
+            "Windows XP",
+            "Hong Kong",
+            92164.91790040377
+        ],
+        [
+            "Windows XP",
+            "Colombia",
+            78938.75305291724
+        ],
+        [
+            "Windows XP",
+            "Ireland",
+            98770.73822714681
+        ],
+        [
+            "Windows XP",
+            "Turkey",
+            97452.34051724138
+        ],
+        [
+            "Windows XP",
+            "Vietnam",
+            74287.19797687861
+        ],
+        [
+            "Windows XP",
+            "Austria",
+            81368.28703703704
+        ],
+        [
+            "Windows XP",
+            "Norway",
+            98742.75562700964
+        ],
+        [
+            "Windows XP",
+            "Belgium",
+            113074.69966442953
+        ],
+        [
+            "Windows XP",
+            "Finland",
+            87589.09949409781
+        ],
+        [
+            "Windows XP",
+            "Iran",
+            82136.64705882352
+        ],
+        [
+            "Windows XP",
+            "Morocco",
+            68375.16984732824
+        ],
+        [
+            "Windows XP",
+            "Denmark",
+            93067.73673870334
+        ],
+        [
+            "Windows XP",
+            "Ukraine",
+            78982.30188679245
+        ],
+        [
+            "Windows XP",
+            "Saudi Arabia",
+            91689.84729064039
+        ],
+        [
+            "Windows XP",
+            "Thailand",
+            109915.18041237113
+        ],
+        [
+            "Windows XP",
+            "Chile",
+            77508.03100775194
+        ],
+        [
+            "Windows XP",
+            "Czechia",
+            97297.1914893617
+        ],
+        [
+            "Windows XP",
+            "Israel",
+            122990.87394957984
+        ],
+        [
+            "Windows XP",
+            "Romania",
+            103755.10619469026
+        ],
+        [
+            "Windows XP",
+            "Malaysia",
+            116939.76923076923
+        ],
+        [
+            "Windows XP",
+            "New Zealand",
+            82028.05387205388
+        ],
+        [
+            "Windows XP",
+            "Tunisia",
+            65578.74237288136
+        ],
+        [
+            "Windows XP",
+            "Hungary",
+            179024.06944444444
+        ],
+        [
+            "Windows XP",
+            "Portugal",
+            103553.40942028986
+        ]
+    ]
+}

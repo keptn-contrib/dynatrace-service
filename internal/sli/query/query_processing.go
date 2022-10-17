@@ -220,42 +220,25 @@ func (p *Processing) executeMetricsQuery(ctx context.Context, name string, query
 
 func (p *Processing) processMetricsQueryAndMakeSLIResult(ctx context.Context, name string, query metrics.Query, metricUnit string) result.SLIResult {
 	request := dynatrace.NewMetricsClientQueryRequest(query, p.timeframe)
-	value, err := p.processMetricsQuery(ctx, request, metricUnit)
+	metricsClient := dynatrace.NewMetricsClient(p.client)
+	results, err := dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(metricsClient, dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient)).ProcessRequest(ctx, request)
 	if err != nil {
-		var qpErrorType *dynatrace.MetricsQueryProcessingError
-		if errors.As(err, &qpErrorType) {
-			return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
-		}
-		return result.NewFailedSLIResultWithQuery(name, err.Error(), request.RequestString())
+		return createSLIResultFromErrorFromMetricsProcessing(err, name, request)
 	}
-	return result.NewSuccessfulSLIResultWithQuery(name, value, request.RequestString())
+
+	r, err := results.FirstResultOrError()
+	if err != nil {
+		return createSLIResultFromErrorFromMetricsProcessing(err, name, request)
+	}
+
+	resultsRequest := results.Request()
+	return result.NewSuccessfulSLIResultWithQuery(name, unit.ScaleData(metricUnit, r.Value()), resultsRequest.RequestString())
 }
 
-func (p *Processing) processMetricsQuery(ctx context.Context, request dynatrace.MetricsClientQueryRequest, metricUnit string) (float64, error) {
-	metricSeriesCollection, err := dynatrace.NewMetricsClient(p.client).GetSingleMetricSeriesCollectionByQuery(ctx, request)
-	if err != nil {
-		return 0, err
+func createSLIResultFromErrorFromMetricsProcessing(err error, name string, request dynatrace.MetricsClientQueryRequest) result.SLIResult {
+	var qpErrorType *dynatrace.MetricsQueryProcessingError
+	if errors.As(err, &qpErrorType) {
+		return result.NewWarningSLIResultWithQuery(name, err.Error(), request.RequestString())
 	}
-
-	if len(metricSeriesCollection.Data) > 1 {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d metric series", len(metricSeriesCollection.Data)), Warnings: metricSeriesCollection.Warnings}
-	}
-
-	metricSeries := metricSeriesCollection.Data[0]
-
-	// TODO 2021-10-13: Check if having a metric series with zero values is even plausible
-	if len(metricSeries.Values) == 0 {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: "Metrics API v2 returned zero values", Warnings: metricSeriesCollection.Warnings}
-	}
-
-	if len(metricSeries.Values) > 1 {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: fmt.Sprintf("Metrics API v2 returned %d values", len(metricSeries.Values)), Warnings: metricSeriesCollection.Warnings}
-	}
-
-	value := metricSeries.Values[0]
-	if value == nil {
-		return 0, &dynatrace.MetricsQueryProcessingError{Message: "Metrics API v2 returned 'null' as value", Warnings: metricSeriesCollection.Warnings}
-	}
-
-	return unit.ScaleData(metricUnit, *value), nil
+	return result.NewFailedSLIResultWithQuery(name, err.Error(), request.RequestString())
 }

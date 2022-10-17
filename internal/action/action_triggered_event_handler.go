@@ -12,19 +12,21 @@ import (
 )
 
 type ActionTriggeredEventHandler struct {
-	event       ActionTriggeredAdapterInterface
-	dtClient    dynatrace.ClientInterface
-	eClient     keptn.EventClientInterface
-	attachRules *dynatrace.AttachRules
+	event            ActionTriggeredAdapterInterface
+	dtClient         dynatrace.ClientInterface
+	eClient          keptn.EventClientInterface
+	bridgeURLCreator keptn.BridgeURLCreatorInterface
+	attachRules      *dynatrace.AttachRules
 }
 
 // NewActionTriggeredEventHandler creates a new ActionTriggeredEventHandler
-func NewActionTriggeredEventHandler(event ActionTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *ActionTriggeredEventHandler {
+func NewActionTriggeredEventHandler(event ActionTriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eClient keptn.EventClientInterface, bridgeURLCreator keptn.BridgeURLCreatorInterface, attachRules *dynatrace.AttachRules) *ActionTriggeredEventHandler {
 	return &ActionTriggeredEventHandler{
-		event:       event,
-		dtClient:    dtClient,
-		eClient:     eClient,
-		attachRules: attachRules,
+		event:            event,
+		dtClient:         dtClient,
+		eClient:          eClient,
+		bridgeURLCreator: bridgeURLCreator,
+		attachRules:      attachRules,
 	}
 }
 
@@ -41,7 +43,7 @@ func (eh *ActionTriggeredEventHandler) HandleEvent(workCtx context.Context, _ co
 		return errors.New("cannot send DT problem comment: no problem ID is included in the event")
 	}
 
-	bridgeURL := keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
+	bridgeURL := eh.bridgeURLCreator.TryGetBridgeURLForKeptnContext(workCtx, eh.event)
 
 	comment := fmt.Sprintf("[Keptn triggered action](%s) %s", bridgeURL, eh.event.GetAction())
 	if eh.event.GetActionDescription() != "" {

@@ -21,15 +21,15 @@ func TestRetrieveMetricsFromDashboard_TileTitleParsingErrors(t *testing.T) {
 		// TODO 2022-05-06: add SLO tile template below as soon as SLO titles are supported
 		{
 			name:         "data-explorer",
-			templateFile: "./testdata/dashboards/data_explorer/tile_title_errors/data-explorer-tile-title-parsing-errors-template.json",
+			templateFile: "./testdata/dashboards/data_explorer/tile_title_errors/dashboard.template.json",
 		},
 		{
 			name:         "custom-charting",
-			templateFile: "./testdata/dashboards/custom_charting/tile_title_errors/custom-charting-tile-title-parsing-errors-template.json",
+			templateFile: "./testdata/dashboards/custom_charting/tile_title_errors/dashboard.template.json",
 		},
 		{
 			name:         "user-sessions-query",
-			templateFile: "./testdata/dashboards/usql_tiles/tile_title_errors/usql-tile-title-parsing-errors-template.json",
+			templateFile: "./testdata/dashboards/usql_tiles/tile_title_errors/dashboard.template.json",
 		},
 	}
 

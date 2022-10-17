@@ -1,0 +1,30 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C6876D601CA5DDFD~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names",
+            "dataPointCountRatio": 5.0E-8,
+            "dimensionCountRatio": 1.0E-5,
+            "data": [
+                {
+                    "dimensions": [
+                        "easyTravel Customer Frontend",
+                        "SERVICE-C6876D601CA5DDFD"
+                    ],
+                    "dimensionMap": {
+                        "dt.entity.service.name": "easyTravel Customer Frontend",
+                        "dt.entity.service": "SERVICE-C6876D601CA5DDFD"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        57974.262650996854
+                    ]
+                }
+            ]
+        }
+    ]
+}

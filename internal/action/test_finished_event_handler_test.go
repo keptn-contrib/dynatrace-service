@@ -1,9 +1,11 @@
 package action
 
 import (
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"net/http"
 	"testing"
+
+	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 )
 
 type testFinishedTestSetup struct {
@@ -17,18 +19,18 @@ type testFinishedTestSetup struct {
 
 func (s testFinishedTestSetup) createHandlerAndTeardown() (eventHandler, func()) {
 	event := baseEventData{
-		context: "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
+		context: testKeptnShContext,
 		source:  "jmeter-service",
 		event:   "sh.keptn.event.test.finished",
-		project: "pod-tato-head",
-		stage:   "hardening",
-		service: "helloservice",
+		project: testProject,
+		stage:   testStage,
+		service: testService,
 		labels:  s.labels,
 	}
 
 	client, _, teardown := createDynatraceClient(s.t, s.handler)
 
-	return NewTestFinishedEventHandler(&event, client, s.eClient, s.customAttachRules), teardown
+	return NewTestFinishedEventHandler(&event, client, s.eClient, keptn.NewBridgeURLCreator(newKeptnCredentialsProviderMock()), s.customAttachRules), teardown
 }
 
 func (s testFinishedTestSetup) createExpectedDynatraceEvent() dynatrace.AnnotationEvent {
@@ -36,10 +38,11 @@ func (s testFinishedTestSetup) createExpectedDynatraceEvent() dynatrace.Annotati
 	properties := customProperties{
 		"Image":         s.eClient.imageAndTag.Image(),
 		"Keptn Service": "jmeter-service",
-		"KeptnContext":  "7c2c890f-b3ac-4caa-8922-f44d2aa54ec9",
-		"Project":       "pod-tato-head",
-		"Service":       "helloservice",
-		"Stage":         "hardening",
+		"KeptnContext":  testKeptnShContext,
+		"Keptns Bridge": testKeptnsBridge,
+		"Project":       testProject,
+		"Service":       testService,
+		"Stage":         testStage,
 		"Tag":           tag,
 		"TestStrategy":  "",
 	}

@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
@@ -40,11 +41,11 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 			handler := test.NewFileBasedURLHandler(t)
 
 			// error here: in value of tc.usqlPrefix
-			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+			configClient := newConfigClientMockWithSLIs(t, map[string]string{
 				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "incorrect prefix"))
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "incorrect prefix"))
 		})
 	}
 }
@@ -52,11 +53,13 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
-// * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
-// * the defined SLI is valid YAML and the USQL prefix is used correctly, but the fields are used incorrectly.
-//   So we return an error for that
-func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
-	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
+//   - a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
+//   - the defined SLI is valid YAML and the USQL prefix is used correctly, but the fields are used incorrectly.
+//     So we return an error for that
+func TestCustomSLIWithUSQLQueryProcessingErrors(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/usql/processing_errors"
+
+	expectedUSQLRequest := buildUSQLRequest("SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion")
 	testConfigs := []struct {
 		name                              string
 		usqlPrefix                        string
@@ -89,14 +92,14 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 
 			// handler with 200 result needed
 			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact(expectedUSQLRequest, "./testdata/usql_200_multiple_results.json")
+			handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_multiple_results.json"))
 
 			// errors here: in value of tc.usqlPrefix
-			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+			configClient := newConfigClientMockWithSLIs(t, map[string]string{
 				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }
@@ -106,11 +109,12 @@ func TestCustomSLIWithCorrectUSQLQueryPrefixMappings(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
-	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29%2CMAX%28duration%29+FROM+usersession+GROUP+BY+osVersion")
+	const testDataFolder = "./testdata/sli_files/usql/multiple_result_processing"
+
+	expectedUSQLRequest := buildUSQLRequest("SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedUSQLRequest,
-		"./testdata/usql_200_multiple_results.json")
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_multiple_results.json"))
 
 	testConfigs := []struct {
 		name          string
@@ -120,32 +124,32 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 		{
 			name:          "column chart",
 			query:         "USQL;COLUMN_CHART;Android 6.0.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
-			expectedValue: 21862.42,
+			expectedValue: 21550.5,
 		},
 		{
 			name:          "line chart",
 			query:         "USQL;LINE_CHART;Android 7.0.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
-			expectedValue: 26304,
+			expectedValue: 30001.69230769231,
 		},
 		{
 			name:          "pie chart",
-			query:         "USQL;PIE_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
-			expectedValue: 23576,
+			query:         "USQL;PIE_CHART;iOS 14;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
+			expectedValue: 42557.1875,
 		},
 		{
 			name:          "table",
 			query:         "USQL;TABLE;iOS 12.1.4;SELECT osVersion,AVG(duration),MAX(duration) FROM usersession GROUP BY osVersion",
-			expectedValue: 24824,
+			expectedValue: 29043,
 		},
 	}
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+			configClient := newConfigClientMockWithSLIs(t, map[string]string{
 				testIndicatorUSQL: tc.query,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, expectedUSQLRequest))
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, expectedUSQLRequest))
 		})
 	}
 }
@@ -155,16 +159,18 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
-	expectedUSQLRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
+	const testDataFolder = "./testdata/sli_files/usql/single_result_processing"
+
+	expectedUSQLRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedUSQLRequest, "./testdata/usql_200_single_result.json")
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_single_result.json"))
 
-	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 62737.44360695537, expectedUSQLRequest))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 87793.1776896271, expectedUSQLRequest))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -172,16 +178,18 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 // prerequisites:
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
-	expectedUSQLRequest := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
+	const testDataFolder = "./testdata/sli_files/usql/no_results"
+
+	expectedUSQLRequest := buildUSQLRequest("SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion")
 
 	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedUSQLRequest, "./testdata/usql_200_0_results.json")
+	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_0_results.json"))
 
-	rClient := newResourceClientMockWithSLIs(t, map[string]string{
+	configClient := newConfigClientMockWithSLIs(t, map[string]string{
 		testIndicatorUSQL: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
 	})
 
-	assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name"))
 }
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
@@ -190,10 +198,11 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 // * a file called 'dynatrace/sli.yaml' exists and a SLI that we would want to evaluate (as defined in the slo.yaml) is defined
 // * the defined SLI is valid YAML, but the fields of the USQL prefix are used incorrectly together, so we return errors for that
 func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
-	usqlSingleResultRequest := buildUSQLRequest("SELECT+AVG%28duration%29+FROM+usersession")
-	usqlMultipleResultRequest1 := buildUSQLRequest("SELECT+AVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion")
-	usqlMultipleResultRequest2 := buildUSQLRequest("SELECT+osVersion%2CosVersion%2CAVG%28duration%29+FROM+usersession+GROUP+BY+osVersion")
-	usqlMultipleResultRequest3 := buildUSQLRequest("SELECT+osVersion%2CAVG%28duration%29%2CosVersion+FROM+usersession+GROUP+BY+osVersion")
+	const testDataFolder = "./testdata/sli_files/usql/incorrect_configuration"
+	usqlSingleResultRequest := buildUSQLRequest("SELECT AVG(duration) FROM usersession")
+	usqlMultipleResultRequest1 := buildUSQLRequest("SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion")
+	usqlMultipleResultRequest2 := buildUSQLRequest("SELECT osVersion,country,AVG(duration) FROM usersession GROUP BY osVersion,country")
+	usqlMultipleResultRequest3 := buildUSQLRequest("SELECT osVersion,AVG(duration),country FROM usersession GROUP BY osVersion,country")
 
 	testConfigs := []struct {
 		name                              string
@@ -207,49 +216,49 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 		{
 			name:                              "dimension name is not allowed for single value result type",
 			usqlQuery:                         "USQL;SINGLE_VALUE;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for COLUMN_CHART result types",
 			usqlQuery:                         "USQL;COLUMN_CHART;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for PIE_CHART result types",
 			usqlQuery:                         "USQL;PIE_CHART;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for TABLE result types",
 			usqlQuery:                         "USQL;TABLE;;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for COLUMN_CHART result types even if result only has single value",
 			usqlQuery:                         "USQL;COLUMN_CHART;;SELECT AVG(duration) FROM usersession",
-			dataReturned:                      "./testdata/usql_200_single_result.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_single_result.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for PIE_CHART result types even if result only has single value",
 			usqlQuery:                         "USQL;PIE_CHART;;SELECT AVG(duration) FROM usersession",
-			dataReturned:                      "./testdata/usql_200_single_result.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_single_result.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
 		{
 			name:                              "dimension name should not be empty for TABLE result types even if result only has single value",
 			usqlQuery:                         "USQL;TABLE;;SELECT AVG(duration) FROM usersession",
-			dataReturned:                      "./testdata/usql_200_single_result.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_single_result.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "dimension should not be empty"),
 		},
@@ -257,7 +266,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			name:                              "COLUMN_CHART should have at least two columns",
 			request:                           usqlSingleResultRequest,
 			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
-			dataReturned:                      "./testdata/usql_200_single_result.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_single_result.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlSingleResultRequest, "should at least have two columns"),
 		},
@@ -265,7 +274,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			name:                              "PIE_CHART should have at least two columns",
 			request:                           usqlSingleResultRequest,
 			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
-			dataReturned:                      "./testdata/usql_200_single_result.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_single_result.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlSingleResultRequest, "should at least have two columns"),
 		},
@@ -273,7 +282,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			name:                              "TABLE should have at least two columns",
 			request:                           usqlSingleResultRequest,
 			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT AVG(duration) FROM usersession",
-			dataReturned:                      "./testdata/usql_200_single_result.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_single_result.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlSingleResultRequest, "should at least have two columns"),
 		},
@@ -281,7 +290,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			name:                              "result has more than one column, but first column is not a string value for COLUMN_CHART",
 			request:                           usqlMultipleResultRequest1,
 			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_first_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest1, "dimension name should be a string"),
 		},
@@ -290,7 +299,7 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			name:                              "result has more than one column, but first column is not a string value for PIE_CHART",
 			request:                           usqlMultipleResultRequest1,
 			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_first_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest1, "dimension name should be a string"),
 		},
@@ -299,31 +308,31 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			name:                              "result has more than one column, but first column is not a string value for TABLE",
 			request:                           usqlMultipleResultRequest1,
 			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT AVG(duration),osVersion FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_first_column_type.json",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_first_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest1, "dimension name should be a string"),
 		},
 		{
 			name:                              "result has more than one column, but second column is not a numeric value for COLUMN_CHART",
 			request:                           usqlMultipleResultRequest2,
-			usqlQuery:                         "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_second_column_type.json",
+			usqlQuery:                         "USQL;COLUMN_CHART;Windows XP;SELECT osVersion,country,AVG(duration) FROM usersession GROUP BY osVersion,country",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_second_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest2, "dimension value should be a number"),
 		},
 		{
 			name:                              "result has more than one column, but second column is not a numeric value for PIE_CHART",
 			request:                           usqlMultipleResultRequest2,
-			usqlQuery:                         "USQL;PIE_CHART;iOS 11.4.1;SELECT osVersion,osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_second_column_type.json",
+			usqlQuery:                         "USQL;PIE_CHART;Windows XP;SELECT osVersion,country,AVG(duration) FROM usersession GROUP BY osVersion,country",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_second_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest2, "dimension value should be a number"),
 		},
 		{
 			name:                              "result has more than one column, but last column is not a numeric value for TABLE",
 			request:                           usqlMultipleResultRequest3,
-			usqlQuery:                         "USQL;TABLE;iOS 11.4.1;SELECT osVersion,AVG(duration),osVersion FROM usersession GROUP BY osVersion",
-			dataReturned:                      "./testdata/usql_200_multiple_results_wrong_last_column_type.json",
+			usqlQuery:                         "USQL;TABLE;Windows XP;SELECT osVersion,AVG(duration),country FROM usersession GROUP BY osVersion,country",
+			dataReturned:                      filepath.Join(testDataFolder, "usql_200_multiple_results_wrong_last_column_type.json"),
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventWarningAssertionsFunc,
 			sliResultAssertionsFunc:           createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, usqlMultipleResultRequest3, "dimension value should be a number"),
 		},
@@ -335,14 +344,14 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 			// as there is only a single SLI, matching with 'starts with' should be sufficiently 'exact'
 			handler := test.NewFileBasedURLHandler(t)
 			if tc.request != "" {
-				handler.AddStartsWith(tc.request, tc.dataReturned)
+				handler.AddExact(tc.request, tc.dataReturned)
 			}
 
-			rClient := newResourceClientMockWithSLIs(t, map[string]string{
+			configClient := newConfigClientMockWithSLIs(t, map[string]string{
 				testIndicatorUSQL: tc.usqlQuery,
 			})
 
-			assertThatCustomSLITestIsCorrect(t, handler, testIndicatorUSQL, rClient, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
 	}
 }

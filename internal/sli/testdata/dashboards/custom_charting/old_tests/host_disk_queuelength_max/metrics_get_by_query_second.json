@@ -1,0 +1,24 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:host.disk.queueLength:splitBy():max:names",
+            "dataPointCountRatio": 1.7725E-4,
+            "dimensionCountRatio": 0.03545,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        100
+                    ]
+                }
+            ]
+        }
+    ]
+}

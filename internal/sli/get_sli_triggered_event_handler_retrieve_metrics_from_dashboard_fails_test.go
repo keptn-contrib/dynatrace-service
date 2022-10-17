@@ -1,6 +1,7 @@
 package sli
 
 import (
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -14,13 +15,14 @@ import (
 // Retrieving a dashboard by an invalid ID returns an error
 //
 // prerequisites:
-//   * we use
-//  	* an invalid dashboard ID and Dynatrace API returns a 400 error, or
-//      * a valid, but not found dashboard ID and Dynatrace API returns a 404
-//   * the event can have multiple indicators or none. (There is an SLO file in Keptn and the SLO files may contain indicators)
+//   - we use
+//   - an invalid dashboard ID and Dynatrace API returns a 400 error, or
+//   - a valid, but not found dashboard ID and Dynatrace API returns a 404
+//   - the event can have multiple indicators or none. (There is an SLO file in Keptn and the SLO files may contain indicators)
 //
 // We do not want to see the error attached to any indicator coming from SLO files, but attached to a "no metric" indicator
 func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfThereAreIndicators(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/no_metric_errors/"
 
 	type definition struct {
 		errorCode    int
@@ -33,13 +35,13 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 		errorCode:    400,
 		errorMessage: "Constraints violated",
 		dashboardID:  "some-invalid-dashboard-id",
-		payload:      "./testdata/sli_via_dashboard_test/dashboard_invalid_uuid_400.json",
+		payload:      filepath.Join(testDataFolder, "dashboard_invalid_uuid_400.json"),
 	}
 	idNotFound := definition{
 		errorCode:    404,
 		errorMessage: "not found",
 		dashboardID:  testDashboardID,
-		payload:      "./testdata/sli_via_dashboard_test/dashboard_id_not_found_404.json",
+		payload:      filepath.Join(testDataFolder, "dashboard_id_not_found_404.json"),
 	}
 
 	testConfigs := []struct {
@@ -85,9 +87,6 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddExactError(dynatrace.DashboardsPath+"/"+tc.def.dashboardID, tc.def.errorCode, tc.def.payload)
 
-			// sli and slo upload works
-			rClient := &uploadErrorResourceClientMock{t: t}
-
 			getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 				assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 				assert.Contains(t, actual.Message, tc.def.dashboardID)
@@ -95,7 +94,7 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 				assert.Contains(t, actual.Message, tc.def.errorMessage)
 			}
 
-			runAndAssertDashboardTest(t, testGetSLIEventData, handler, rClient, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
+			runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, newConfigClientMockThatAllowsUploadSLOs(t), testGetSLIEventData, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
 		})
 	}
 }

@@ -16,7 +16,7 @@ const keptnBridgeURLKey = "KEPTN_BRIDGE_URL"
 // KeptnCredentialsProvider allows Keptn credentials to be read.
 type KeptnCredentialsProvider interface {
 	// GetKeptnCredentials gets Keptn credentials or returns an error.
-	GetKeptnCredentials() (*KeptnCredentials, error)
+	GetKeptnCredentials(ctx context.Context) (*KeptnCredentials, error)
 }
 
 // KeptnCredentialsReader is an implementation of KeptnCredentialsProvider that reads from a K8s secret or environment variables.
@@ -75,13 +75,4 @@ func (cr *KeptnCredentialsReader) readSecretWithEnvironmentVariableFallback(ctx 
 	}
 
 	return "", fmt.Errorf("key \"%s\" was not found in secret \"%s\" or environment variables: %w", key, dynatraceSecretName, err)
-}
-
-// GetKeptnCredentials gets Keptn credentials or returns an error.
-func GetKeptnCredentials(ctx context.Context) (*KeptnCredentials, error) {
-	cr, err := NewDefaultKeptnCredentialsReader()
-	if err != nil {
-		return nil, err
-	}
-	return cr.GetKeptnCredentials(ctx)
 }

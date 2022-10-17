@@ -1,0 +1,65 @@
+{
+    "metricId": "builtin:service.keyRequest.totalProcessingTime:splitBy(\"dt.entity.service_method\"):avg:names",
+    "displayName": "Total processing time",
+    "description": "",
+    "unit": "MicroSecond",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1665490313574,
+    "entityType": [
+        "SERVICE_METHOD"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "value"
+    ],
+    "transformations": [
+        "filter",
+        "fold",
+        "limit",
+        "merge",
+        "names",
+        "parents",
+        "timeshift",
+        "rate",
+        "sort",
+        "last",
+        "splitBy",
+        "default",
+        "delta",
+        "lastReal",
+        "smooth",
+        "rollup",
+        "partition",
+        "toUnit",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "value"
+    },
+    "dimensionDefinitions": [
+        {
+            "key": "dt.entity.service_method.name",
+            "name": "dt.entity.service_method.name",
+            "displayName": "dt.entity.service_method.name",
+            "index": 0,
+            "type": "STRING"
+        },
+        {
+            "key": "dt.entity.service_method",
+            "name": "Service key request",
+            "displayName": "Request",
+            "index": 1,
+            "type": "ENTITY"
+        }
+    ],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true,
+    "warnings": [
+        "The field dimensionCardinalities is only supported for untransformed single metric keys and was ignored."
+    ]
+}

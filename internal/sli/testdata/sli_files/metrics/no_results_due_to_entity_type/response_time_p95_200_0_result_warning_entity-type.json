@@ -1,0 +1,21 @@
+{
+    "totalCount": 0,
+    "nextPageKey": null,
+    "resolution": "10m",
+    "warnings": [
+        "The dimension key `dt.entity.services` has been referenced, but `services` is not a known entity type.",
+        "The dimension key `dt.entity.services` has been referenced, but the metric has no such key."
+    ],
+    "result": [
+        {
+            "metricId": "builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)",
+            "dataPointCountRatio": 0.0,
+            "dimensionCountRatio": 0.0,
+            "data": [],
+            "warnings": [
+                "The dimension key `dt.entity.services` has been referenced, but `services` is not a known entity type.",
+                "The dimension key `dt.entity.services` has been referenced, but the metric has no such key."
+            ]
+        }
+    ]
+}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io/ioutil"
+	"path/filepath"
 	"testing"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -107,23 +108,23 @@ func TestConfigClient_GetSLIsNoIndicatorsCausesError(t *testing.T) {
 const testDataFolder = "./testdata/config_client/get_slis"
 
 func getNoIndicatorsResource(t *testing.T) *mockResource {
-	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_no_indicators.yaml")}
+	return &mockResource{resource: loadResource(t, filepath.Join(testDataFolder, "sli_no_indicators.yaml"))}
 }
 
 func getInvalidYAMLResource(t *testing.T) *mockResource {
-	return &mockResource{resource: loadResource(t, testDataFolder+"/sli.invalid_yaml")}
+	return &mockResource{resource: loadResource(t, filepath.Join(testDataFolder, "sli.invalid_yaml"))}
 }
 
 func getServiceResource(t *testing.T) *mockResource {
-	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_service.yaml")}
+	return &mockResource{resource: loadResource(t, filepath.Join(testDataFolder, "sli_service.yaml"))}
 }
 
 func getStageResource(t *testing.T) *mockResource {
-	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_stage.yaml")}
+	return &mockResource{resource: loadResource(t, filepath.Join(testDataFolder, "sli_stage.yaml"))}
 }
 
 func getProjectResource(t *testing.T) *mockResource {
-	return &mockResource{resource: loadResource(t, testDataFolder+"/sli_project.yaml")}
+	return &mockResource{resource: loadResource(t, filepath.Join(testDataFolder, "sli_project.yaml"))}
 }
 
 func loadResource(t *testing.T, filename string) string {

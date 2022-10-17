@@ -8,19 +8,21 @@ import (
 )
 
 type TestFinishedEventHandler struct {
-	event       TestFinishedAdapterInterface
-	dtClient    dynatrace.ClientInterface
-	eClient     keptn.EventClientInterface
-	attachRules *dynatrace.AttachRules
+	event            TestFinishedAdapterInterface
+	dtClient         dynatrace.ClientInterface
+	eClient          keptn.EventClientInterface
+	bridgeURLCreator keptn.BridgeURLCreatorInterface
+	attachRules      *dynatrace.AttachRules
 }
 
 // NewTestFinishedEventHandler creates a new TestFinishedEventHandler
-func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dynatrace.ClientInterface, eClient keptn.EventClientInterface, attachRules *dynatrace.AttachRules) *TestFinishedEventHandler {
+func NewTestFinishedEventHandler(event TestFinishedAdapterInterface, client dynatrace.ClientInterface, eClient keptn.EventClientInterface, bridgeURLCreator keptn.BridgeURLCreatorInterface, attachRules *dynatrace.AttachRules) *TestFinishedEventHandler {
 	return &TestFinishedEventHandler{
-		event:       event,
-		dtClient:    client,
-		eClient:     eClient,
-		attachRules: attachRules,
+		event:            event,
+		dtClient:         client,
+		eClient:          eClient,
+		bridgeURLCreator: bridgeURLCreator,
+		attachRules:      attachRules,
 	}
 }
 
@@ -34,7 +36,7 @@ func (eh *TestFinishedEventHandler) HandleEvent(workCtx context.Context, _ conte
 		Source:                eventSource,
 		AnnotationType:        getValueFromLabels(eh.event, "type", "Stop Tests"),
 		AnnotationDescription: getValueFromLabels(eh.event, "description", "Stop running tests: against "+eh.event.GetService()),
-		CustomProperties:      newCustomProperties(eh.event, imageAndTag, keptn.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
+		CustomProperties:      newCustomProperties(eh.event, imageAndTag, eh.bridgeURLCreator.TryGetBridgeURLForKeptnContext(workCtx, eh.event)),
 		AttachRules:           attachRules,
 	}
 

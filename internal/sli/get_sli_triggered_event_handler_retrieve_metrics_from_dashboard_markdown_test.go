@@ -23,7 +23,7 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 
 	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
 
-	assertionFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95, expectedSLORequest)
+	expectedSLIResultsAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95, expectedSLORequest)
 
 	expectedSLO := &keptnapi.SLO{
 		SLI:     sliName,
@@ -141,10 +141,11 @@ func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 			)
 			handler.AddExactFile(expectedSLORequest, "./testdata/dashboards/slo_tiles/passing_slo/slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json")
 
-			rClient := &uploadErrorResourceClientMock{t: t}
-			runAndAssertThatDashboardTestIsCorrect(t, testGetSLIEventData, handler, rClient, getSLIFinishedEventSuccessAssertionsFunc, assertionFunc)
+			uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+				assert.EqualValues(t, actual, markdownTest.expectedSLO)
+			}
 
-			assert.EqualValues(t, rClient.uploadedSLOs, markdownTest.expectedSLO)
+			runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, expectedSLIResultsAssertionsFunc)
 		})
 	}
 }

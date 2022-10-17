@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"path/filepath"
 	"testing"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -24,10 +26,15 @@ import (
 const testIndicatorResponseTimeP95 = "response_time_p95"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 const testDashboardID = "12345678-1111-4444-8888-123456789012"
-const testSLIStart = "2021-01-01T00:00:00.000Z"
-const testSLIEnd = "2021-01-02T00:00:00.000Z"
+const testSLIStart = "2022-09-28T00:00:00.000Z"
+const testSLIEnd = "2022-09-29T00:00:00.000Z"
 
-var testGetSLIEventData = createTestGetSLIEventDataWithIndicator(testIndicatorResponseTimeP95)
+const resolutionInf = "Inf"
+const resolutionIsNullKeyValuePair = "resolution=null&"
+const singleValueVisualConfigType = "SINGLE_VALUE"
+const graphChartVisualConfigType = "GRAPH_CHART"
+
+var testGetSLIEventData = createTestGetSLIEventDataWithIndicators([]string{testIndicatorResponseTimeP95})
 
 var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *getSLIFinishedEventData) {
 	assert.EqualValues(t, keptnv2.ResultPass, data.Result)
@@ -44,23 +51,12 @@ var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *getSLIFi
 	assert.NotEmpty(t, data.Message)
 }
 
-func createTestGetSLIEventDataWithIndicator(indicator string) *getSLIEventData {
+func createTestGetSLIEventDataWithIndicators(indicators []string) *getSLIEventData {
 	return &getSLIEventData{
 		project:    "sockshop",
 		stage:      "staging",
 		service:    "carts",
-		indicators: []string{indicator}, // we need this to check later on in the custom queries
-		sliStart:   testSLIStart,
-		sliEnd:     testSLIEnd,
-	}
-}
-
-func createTestGetSLIEventDataWithNoIndicators() *getSLIEventData {
-	return &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
-		indicators: []string{},
+		indicators: indicators, // we need this to check later on in the custom queries
 		sliStart:   testSLIStart,
 		sliEnd:     testSLIEnd,
 	}
@@ -76,68 +72,84 @@ func convertTimeStringToUnixMillisecondsString(timeString string) string {
 	return common.TimestampToUnixMillisecondsString(*time)
 }
 
-// buildMetricsV2RequestString builds a Metrics v2 request string with the specified encoded metric selector for use in testing.
-func buildMetricsV2RequestString(encodedMetricSelector string) string {
-	return fmt.Sprintf("%s?from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+// buildMetricsV2DefinitionRequestString builds a Metrics v2 definition request string with the specified metric ID for use in testing.
+func buildMetricsV2DefinitionRequestString(metricID string) string {
+	return fmt.Sprintf("%s/%s", dynatrace.MetricsPath, url.PathEscape(metricID))
 }
 
-// buildMetricsV2RequestStringWithEntitySelector builds a Metrics v2 request string with the specified encoded entity and metric selectors for use in testing.
-func buildMetricsV2RequestStringWithEntitySelector(encodedEntitySelector string, encodedMetricSelector string) string {
-	return fmt.Sprintf("%s?entitySelector=%s&from=%s&metricSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, encodedEntitySelector, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+// buildProblemsV2Request builds a Problems V2 request string with the specified problem selector for use in testing.
+func buildProblemsV2Request(problemSelector string) string {
+	return fmt.Sprintf("%s?from=%s&problemSelector=%s&to=%s", dynatrace.ProblemsV2Path, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(problemSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
-// buildMetricsV2RequestStringWithMZSelector builds a Metrics v2 request string with the specified metric and management zone selectors for use in testing.
-func buildMetricsV2RequestStringWithMZSelector(encodedMetricSelector string, encodedMZSelector string) string {
-	return fmt.Sprintf("%s?from=%s&metricSelector=%s&mzSelector=%s&resolution=Inf&to=%s", dynatrace.MetricsQueryPath, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedMetricSelector, encodedMZSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
-}
-
-// buildProblemsV2Request builds a Problems V2 request string with the specified encoded problem selector for use in testing.
-func buildProblemsV2Request(encodedProblemSelector string) string {
-	return fmt.Sprintf("%s?from=%s&problemSelector=%s&to=%s", dynatrace.ProblemsV2Path, convertTimeStringToUnixMillisecondsString(testSLIStart), encodedProblemSelector, convertTimeStringToUnixMillisecondsString(testSLIEnd))
+// buildSecurityProblemsRequest builds a Security Problems request string with the specified security problem selector for use in testing.
+func buildSecurityProblemsRequest(securityProblemSelector string) string {
+	return fmt.Sprintf("%s?from=%s&securityProblemSelector=%s&to=%s", dynatrace.SecurityProblemsPath, convertTimeStringToUnixMillisecondsString(testSLIStart), url.QueryEscape(securityProblemSelector), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
 // buildSLORequest builds a SLO request string with the specified SLO ID for use in testing.
 func buildSLORequest(sloID string) string {
-	return fmt.Sprintf("%s/%s?from=%s&timeFrame=GTF&to=%s", dynatrace.SLOPath, sloID, convertTimeStringToUnixMillisecondsString(testSLIStart), convertTimeStringToUnixMillisecondsString(testSLIEnd))
+	return fmt.Sprintf("%s/%s?from=%s&timeFrame=GTF&to=%s", dynatrace.SLOPath, url.PathEscape(sloID), convertTimeStringToUnixMillisecondsString(testSLIStart), convertTimeStringToUnixMillisecondsString(testSLIEnd))
 }
 
-// buildUSQLRequest builds a USQL request string with the specified encoded query for use in testing.
-func buildUSQLRequest(encodedQuery string) string {
-	return fmt.Sprintf("%s?addDeepLinkFields=false&endTimestamp=%s&explain=false&query=%s&startTimestamp=%s", dynatrace.USQLPath, convertTimeStringToUnixMillisecondsString(testSLIEnd), encodedQuery, convertTimeStringToUnixMillisecondsString(testSLIStart))
+// buildUSQLRequest builds a USQL request string with the specified query for use in testing.
+func buildUSQLRequest(query string) string {
+	return fmt.Sprintf("%s?addDeepLinkFields=false&endTimestamp=%s&explain=false&query=%s&startTimestamp=%s", dynatrace.USQLPath, convertTimeStringToUnixMillisecondsString(testSLIEnd), url.QueryEscape(query), convertTimeStringToUnixMillisecondsString(testSLIStart))
 }
 
-func runAndAssertDashboardTest(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, dashboardID string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, &uploadSLOsConfigClientMock{t: t}, getSLIEventData, dashboard, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+}
+
+func runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	configClient := &uploadSLOsConfigClientMock{t: t}
+	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, configClient, getSLIEventData, dashboard, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+	uploadedSLOsAssertionsFunc(t, configClient.uploadedSLOs)
+}
+
+func runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
-	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, rClient, dashboardID)
+	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, configClient, dashboard)
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
-func runAndAssertThatDashboardTestIsCorrect(t *testing.T, getSLIEventData *getSLIEventData, handler http.Handler, rClient resourceClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
-	runAndAssertDashboardTest(t, getSLIEventData, handler, rClient, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+func runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, configClient configClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, configClient, getSLIEventData, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
 func runGetSLIsFromDashboardTestAndCheckSLIs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultsAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
-	runAndAssertDashboardTest(t, getSLIEventData, handler, &uploadErrorResourceClientMock{t: t}, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, &uploadSLOsConfigClientMock{t: t}, getSLIEventData, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
 func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultsAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
-	rClient := &uploadErrorResourceClientMock{t: t}
-	runAndAssertDashboardTest(t, getSLIEventData, handler, rClient, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
-	uploadedSLOsAssertionsFunc(t, rClient.uploadedSLOs)
+	configClient := &uploadSLOsConfigClientMock{t: t}
+	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, configClient, getSLIEventData, testDashboardID, getSLIFinishedEventAssertionsFunc, sliResultsAssertionsFuncs...)
+	uploadedSLOsAssertionsFunc(t, configClient.uploadedSLOs)
 }
 
-func assertThatCustomSLITestIsCorrect(t *testing.T, handler http.Handler, requestedIndicator string, rClient *resourceClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t *testing.T, handler http.Handler, configClient *getSLIsConfigClientMock, requestedIndicator string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{requestedIndicator}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+}
+
+func runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t *testing.T, handler http.Handler, configClient *getSLIsConfigClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+}
+
+func runGetSLIsFromFilesTestAndCheckSLIs(t *testing.T, handler http.Handler, configClient *getSLIsConfigClientMock, requestedIndicators []string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromFilesTestWithEventAndCheckSLIs(t, handler, configClient, createTestGetSLIEventDataWithIndicators(requestedIndicators), getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+}
+
+func runGetSLIsFromFilesTestWithEventAndCheckSLIs(t *testing.T, handler http.Handler, configClient *getSLIsConfigClientMock, ev *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 
-	// we use the special mock for the resource client
 	// we do not want to query a dashboard, so we leave it empty
-	runTestAndAssertNoError(t, createTestGetSLIEventDataWithIndicator(requestedIndicator), handler, eventSenderClient, rClient, "")
+	runTestAndAssertNoError(t, ev, handler, eventSenderClient, configClient, "")
 
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, rClient resourceClientInterface, dashboard string) {
-	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, eventSenderClient, rClient, dashboard)
+func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, configClient configClientInterface, dashboard string) {
+	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, eventSenderClient, configClient, dashboard)
 	defer teardown()
 
 	assert.NoError(t, eh.HandleEvent(context.Background(), context.Background()))
@@ -213,7 +225,7 @@ func createFailedSLIResultWithQueryAssertionsFunc(expectedMetric string, expecte
 	}
 }
 
-func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, rClient resourceClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
+func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
@@ -223,7 +235,7 @@ func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInt
 		event:             keptnEvent,
 		dtClient:          dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
 		eventSenderClient: eventSenderClient,
-		resourceClient:    rClient,
+		configClient:      configClient,
 		dashboard:         dashboard,
 		secretName:        "dynatrace", // we do not need this string
 	}
@@ -332,33 +344,33 @@ func (e *getSLIEventData) AddLabel(name string, value string) {
 	e.labels[name] = value
 }
 
-type resourceClientMock struct {
+type getSLIsConfigClientMock struct {
 	t            *testing.T
 	slis         map[string]string
 	getSLIsError error
 }
 
-func newResourceClientMock(t *testing.T) *resourceClientMock {
-	return &resourceClientMock{
+func newConfigClientMockWithNoSLIsOrError(t *testing.T) *getSLIsConfigClientMock {
+	return &getSLIsConfigClientMock{
 		t: t,
 	}
 }
 
-func newResourceClientMockWithSLIs(t *testing.T, slis map[string]string) *resourceClientMock {
-	return &resourceClientMock{
+func newConfigClientMockWithSLIs(t *testing.T, slis map[string]string) *getSLIsConfigClientMock {
+	return &getSLIsConfigClientMock{
 		t:    t,
 		slis: slis,
 	}
 }
 
-func newResourceClientMockWithGetSLIsError(t *testing.T, getSLIsError error) *resourceClientMock {
-	return &resourceClientMock{
+func newConfigClientMockThatErrorsGetSLIs(t *testing.T, getSLIsError error) *getSLIsConfigClientMock {
+	return &getSLIsConfigClientMock{
 		t:            t,
 		getSLIsError: getSLIsError,
 	}
 }
 
-func (m *resourceClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
+func (m *getSLIsConfigClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
 	if m.getSLIsError != nil {
 		return nil, m.getSLIsError
 	}
@@ -366,12 +378,12 @@ func (m *resourceClientMock) GetSLIs(_ context.Context, _ string, _ string, _ st
 	return m.slis, nil
 }
 
-func (m *resourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
+func (m *getSLIsConfigClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 	return nil, nil
 }
 
-func (m *resourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
+func (m *getSLIsConfigClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
 	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
 	return nil
 }
@@ -396,29 +408,118 @@ func (m *eventSenderClientMock) SendCloudEvent(factory adapter.CloudEventFactory
 	return nil
 }
 
-type uploadErrorResourceClientMock struct {
-	t              *testing.T
-	uploadSLOError error
-	slosUploaded   bool
-	uploadedSLOs   *keptnapi.ServiceLevelObjectives
+// uploadSLOsConfigClientMock is a mock implementation of configClientInterface which provides a mock implementation of UploadSLOs which optionally returns an error.
+type uploadSLOsConfigClientMock struct {
+	t               *testing.T
+	uploadSLOsError error
+	slosUploaded    bool
+	uploadedSLOs    *keptnapi.ServiceLevelObjectives
 }
 
-func (m *uploadErrorResourceClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
+func newConfigClientMockThatAllowsUploadSLOs(t *testing.T) *uploadSLOsConfigClientMock {
+	return &uploadSLOsConfigClientMock{t: t}
+}
+
+func newConfigClientMockThatErrorsUploadSLOs(t *testing.T, uploadSLOsError error) *uploadSLOsConfigClientMock {
+	return &uploadSLOsConfigClientMock{
+		t:               t,
+		uploadSLOsError: uploadSLOsError,
+	}
+}
+
+func (m *uploadSLOsConfigClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
 	m.t.Fatalf("GetSLIs() should not be needed in this mock!")
 	return nil, nil
 }
 
-func (m *uploadErrorResourceClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
+func (m *uploadSLOsConfigClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
 	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
 	return nil, nil
 }
 
-func (m *uploadErrorResourceClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, slos *keptnapi.ServiceLevelObjectives) error {
-	if m.uploadSLOError != nil {
-		return m.uploadSLOError
+func (m *uploadSLOsConfigClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, slos *keptnapi.ServiceLevelObjectives) error {
+	if m.uploadSLOsError != nil {
+		return m.uploadSLOsError
 	}
 
 	m.uploadedSLOs = slos
 	m.slosUploaded = true
 	return nil
+}
+
+type metricsV2QueryRequestBuilder struct {
+	values url.Values
+}
+
+func newMetricsV2QueryRequestBuilder(metricSelector string) *metricsV2QueryRequestBuilder {
+	values := url.Values{}
+	values.Add("metricSelector", metricSelector)
+	values.Add("from", convertTimeStringToUnixMillisecondsString(testSLIStart))
+	values.Add("to", convertTimeStringToUnixMillisecondsString(testSLIEnd))
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) copyWithEntitySelector(entitySelector string) *metricsV2QueryRequestBuilder {
+	values := cloneURLValues(b.values)
+	values.Add("entitySelector", entitySelector)
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) copyWithFold() *metricsV2QueryRequestBuilder {
+	existingMetricSelector := b.metricSelector()
+	values := cloneURLValues(b.values)
+	values.Set("metricSelector", "("+existingMetricSelector+"):fold()")
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) copyWithResolution(resolution string) *metricsV2QueryRequestBuilder {
+	values := cloneURLValues(b.values)
+	values.Add("resolution", resolution)
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) copyWithMZSelector(mzSelector string) *metricsV2QueryRequestBuilder {
+	values := cloneURLValues(b.values)
+	values.Add("mzSelector", mzSelector)
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
+func (b *metricsV2QueryRequestBuilder) build() string {
+	return fmt.Sprintf("%s?%s", dynatrace.MetricsQueryPath, b.values.Encode())
+}
+
+func (b *metricsV2QueryRequestBuilder) metricSelector() string {
+	return b.values.Get("metricSelector")
+}
+
+func cloneURLValues(values url.Values) url.Values {
+	clone := url.Values{}
+	for k, v := range values {
+		for _, vv := range v {
+			clone.Add(k, vv)
+		}
+	}
+	return clone
+}
+
+func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
+	expectedMetricsRequest1 := requestBuilder.build()
+	expectedMetricsRequest2 := requestBuilder.copyWithResolution(resolutionInf).build()
+
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
+	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
+	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, "metrics_get_by_query2.json"))
+
+	return expectedMetricsRequest2
+}
+
+func addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
+	expectedMetricsRequest1 := requestBuilder.build()
+	expectedMetricsRequest2 := requestBuilder.copyWithFold().build()
+
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
+	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
+	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, "metrics_get_by_query2.json"))
+
+	return expectedMetricsRequest2
 }

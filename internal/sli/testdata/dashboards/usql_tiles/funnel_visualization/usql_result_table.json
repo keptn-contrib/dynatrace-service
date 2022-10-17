@@ -1,15 +1,15 @@
 {
-  "extrapolationLevel": 1,
-  "columnNames": [
-    "Open easytravel",
-    "Search journey",
-    "Book journey"
-  ],
-  "values": [
-    [
-      86,
-      86,
-      16
+    "extrapolationLevel": 16,
+    "columnNames": [
+        "Open easytravel",
+        "Search journey",
+        "Book journey"
+    ],
+    "values": [
+        [
+            976,
+            976,
+            336
+        ]
     ]
-  ]
 }

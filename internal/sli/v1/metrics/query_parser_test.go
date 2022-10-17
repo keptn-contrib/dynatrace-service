@@ -12,9 +12,38 @@ func TestQueryParser_Parse(t *testing.T) {
 		input                  string
 		expectedMetricSelector string
 		expectedEntitySelector string
+		expectedResolution     string
+		expectedMZSelector     string
 		expectError            bool
 		expectedErrorMessage   string
 	}{
+		{
+			name:                   "just metricSelector",
+			input:                  "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedMetricSelector: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+		},
+		{
+			name:                   "metricSelector and resolution",
+			input:                  "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&resolution=30m",
+			expectedMetricSelector: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedResolution:     "30m",
+		},
+		{
+			name:                   "metricSelector, resolution and mzSelector",
+			input:                  "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&resolution=30m&mzSelector=mzId(123)",
+			expectedMetricSelector: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedResolution:     "30m",
+			expectedMZSelector:     "mzId(123)",
+		},
+		{
+			name:                   "metricSelector, entitySelector, resolution and mzSelector",
+			input:                  "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed)&resolution=30m&mzSelector=mzId(123)",
+			expectedMetricSelector: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+			expectedResolution:     "30m",
+			expectedMZSelector:     "mzId(123)",
+			expectedEntitySelector: "type(SERVICE),tag(keptn_managed)",
+		},
+
 		{
 			name:                   "standard service response time",
 			input:                  "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:my-service)",
@@ -77,6 +106,8 @@ func TestQueryParser_Parse(t *testing.T) {
 				assert.NotNil(t, metricsQuery)
 				assert.EqualValues(t, tc.expectedMetricSelector, metricsQuery.GetMetricSelector())
 				assert.EqualValues(t, tc.expectedEntitySelector, metricsQuery.GetEntitySelector())
+				assert.EqualValues(t, tc.expectedResolution, metricsQuery.GetResolution())
+				assert.EqualValues(t, tc.expectedMZSelector, metricsQuery.GetMZSelector())
 				assert.Empty(t, tc.expectedErrorMessage, "fix test setup")
 			}
 		})

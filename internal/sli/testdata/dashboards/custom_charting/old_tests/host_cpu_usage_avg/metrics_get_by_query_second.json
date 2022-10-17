@@ -1,0 +1,24 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:host.cpu.usage:splitBy():avg:names",
+            "dataPointCountRatio": 8.84E-5,
+            "dimensionCountRatio": 0.01768,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        20.41917825744766
+                    ]
+                }
+            ]
+        }
+    ]
+}

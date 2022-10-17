@@ -1,0 +1,54 @@
+{
+    "metricId": "builtin:service.keyRequest.totalProcessingTime",
+    "displayName": "Total processing time",
+    "description": "",
+    "unit": "MicroSecond",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1665490320715,
+    "entityType": [
+        "SERVICE_METHOD"
+    ],
+    "aggregationTypes": [
+        "auto",
+        "avg",
+        "count",
+        "max",
+        "median",
+        "min",
+        "percentile",
+        "sum"
+    ],
+    "transformations": [
+        "filter",
+        "fold",
+        "limit",
+        "merge",
+        "names",
+        "parents",
+        "timeshift",
+        "sort",
+        "last",
+        "splitBy",
+        "lastReal",
+        "setUnit"
+    ],
+    "defaultAggregation": {
+        "type": "avg"
+    },
+    "dimensionDefinitions": [
+        {
+            "key": "dt.entity.service_method",
+            "name": "Service key request",
+            "displayName": "Request",
+            "index": 0,
+            "type": "ENTITY"
+        }
+    ],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "scalar": false,
+    "resolutionInfSupported": true
+}
