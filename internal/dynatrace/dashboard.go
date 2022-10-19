@@ -133,26 +133,7 @@ type TileFilter struct {
 
 // DataExplorerQuery Query Definition for DATA_EXPLORER dashboard tile
 type DataExplorerQuery struct {
-	ID               string              `json:"id"`
-	Metric           string              `json:"metric"`
-	SpaceAggregation string              `json:"spaceAggregation,omitempty"`
-	TimeAggregation  string              `json:"timeAggregation"`
-	SplitBy          []string            `json:"splitBy"`
-	FilterBy         *DataExplorerFilter `json:"filterBy,omitempty"`
-}
-
-type DataExplorerFilter struct {
-	Filter          string                  `json:"filter,omitempty"`
-	FilterType      string                  `json:"filterType,omitempty"`
-	FilterOperator  string                  `json:"filterOperator,omitempty"`
-	EntityAttribute string                  `json:"entityAttribute,omitempty"`
-	NestedFilters   []DataExplorerFilter    `json:"nestedFilters"`
-	Criteria        []DataExplorerCriterion `json:"criteria"`
-}
-
-type DataExplorerCriterion struct {
-	Value     string `json:"value"`
-	Evaluator string `json:"evaluator"`
+	ID string `json:"id"`
 }
 
 type FilterConfig struct {
