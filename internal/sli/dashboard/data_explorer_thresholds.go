@@ -176,7 +176,7 @@ func tryGetThresholdPassAndWarningCriteria(tile *dynatrace.Tile) (*passAndWarnin
 }
 
 // areThresholdsEnabled returns true if a user has set thresholds that will be displayed, i.e. if thresholds are visible and at least one value has been set.
-func areThresholdsEnabled(threshold *dynatrace.Threshold) bool {
+func areThresholdsEnabled(threshold *dynatrace.VisualizationThreshold) bool {
 	if !threshold.Visible {
 		return false
 	}
@@ -191,7 +191,7 @@ func areThresholdsEnabled(threshold *dynatrace.Threshold) bool {
 }
 
 // convertThresholdRulesToThresholdConfiguration checks that the threshold rules are complete and returns them as a threshold configuration or returns an error.
-func convertThresholdRulesToThresholdConfiguration(rules []dynatrace.ThresholdRule) (*thresholdConfiguration, error) {
+func convertThresholdRulesToThresholdConfiguration(rules []dynatrace.VisualizationThresholdRule) (*thresholdConfiguration, error) {
 	var errs []error
 
 	if len(rules) != 3 {

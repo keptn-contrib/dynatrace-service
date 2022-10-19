@@ -74,47 +74,47 @@ type ManagementZoneEntry struct {
 }
 
 type Tile struct {
-	Name                      string              `json:"name"`
-	TileType                  string              `json:"tileType"`
-	Configured                bool                `json:"configured"`
-	Query                     string              `json:"query,omitempty"`
-	Type                      string              `json:"type,omitempty"`
-	CustomName                string              `json:"customName,omitempty"`
-	Markdown                  string              `json:"markdown,omitempty"`
-	ChartVisible              bool                `json:"chartVisible,omitempty"`
-	Bounds                    Bounds              `json:"bounds"`
-	TileFilter                TileFilter          `json:"tileFilter"`
-	Queries                   []DataExplorerQuery `json:"queries,omitempty"`
-	AssignedEntities          []string            `json:"assignedEntities,omitempty"`
-	ExcludeMaintenanceWindows bool                `json:"excludeMaintenanceWindows,omitempty"`
-	FilterConfig              *FilterConfig       `json:"filterConfig,omitempty"`
-	VisualConfig              *VisualConfig       `json:"visualConfig,omitempty"`
-	MetricExpressions         []string            `json:"metricExpressions,omitempty"`
+	Name                      string                      `json:"name"`
+	TileType                  string                      `json:"tileType"`
+	Configured                bool                        `json:"configured"`
+	Query                     string                      `json:"query,omitempty"`
+	Type                      string                      `json:"type,omitempty"`
+	CustomName                string                      `json:"customName,omitempty"`
+	Markdown                  string                      `json:"markdown,omitempty"`
+	ChartVisible              bool                        `json:"chartVisible,omitempty"`
+	Bounds                    Bounds                      `json:"bounds"`
+	TileFilter                TileFilter                  `json:"tileFilter"`
+	Queries                   []DataExplorerQuery         `json:"queries,omitempty"`
+	AssignedEntities          []string                    `json:"assignedEntities,omitempty"`
+	ExcludeMaintenanceWindows bool                        `json:"excludeMaintenanceWindows,omitempty"`
+	FilterConfig              *FilterConfig               `json:"filterConfig,omitempty"`
+	VisualConfig              *VisualizationConfiguration `json:"visualConfig,omitempty"`
+	MetricExpressions         []string                    `json:"metricExpressions,omitempty"`
 }
 
-// VisualConfig is the visual configuration for a dashboard tile.
-type VisualConfig struct {
-	Type       string             `json:"type,omitempty"`
-	Thresholds []Threshold        `json:"thresholds,omitempty"`
-	Rules      []VisualConfigRule `json:"rules,omitempty"`
+// VisualizationConfiguration is the visual configuration for a dashboard tile.
+type VisualizationConfiguration struct {
+	Type       string                   `json:"type,omitempty"`
+	Thresholds []VisualizationThreshold `json:"thresholds,omitempty"`
+	Rules      []VisualizationRule      `json:"rules,omitempty"`
 }
 
-// SingleValueVisualConfigType is the single value visualization type for VisualConfigs
-const SingleValueVisualConfigType = "SINGLE_VALUE"
+// SingleValueVisualizationConfigurationType is the single value visualization type for VisualConfigs
+const SingleValueVisualizationConfigurationType = "SINGLE_VALUE"
 
-// VisualConfigRule is a rule for the visual configuration.
-type VisualConfigRule struct {
+// VisualizationRule is a rule for the visual configuration.
+type VisualizationRule struct {
 	UnitTransform string `json:"unitTransform,omitempty"`
 }
 
-// Threshold is a threshold configuration for a Data Explorer tile.
-type Threshold struct {
-	Visible bool            `json:"visible"`
-	Rules   []ThresholdRule `json:"rules,omitempty"`
+// VisualizationThreshold is a threshold configuration for a Data Explorer tile.
+type VisualizationThreshold struct {
+	Visible bool                         `json:"visible"`
+	Rules   []VisualizationThresholdRule `json:"rules,omitempty"`
 }
 
-// ThresholdRule is a rule for a threshold.
-type ThresholdRule struct {
+// VisualizationThresholdRule is a rule for a threshold.
+type VisualizationThresholdRule struct {
 	Value *float64 `json:"value,omitempty"`
 	Color string   `json:"color"`
 }

@@ -363,7 +363,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 	tests := []struct {
 		name        string
 		tileName    string
-		thresholds  dynatrace.Threshold
+		thresholds  dynatrace.VisualizationThreshold
 		expectedSLO *keptnapi.SLO
 	}{
 		{
@@ -434,40 +434,40 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 	}
 }
 
-func createPassThresholdRule(value float64) dynatrace.ThresholdRule {
+func createPassThresholdRule(value float64) dynatrace.VisualizationThresholdRule {
 	return createPassThresholdRuleWithPointer(&value)
 }
 
-func createPassThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
-	return dynatrace.ThresholdRule{Value: value, Color: "#7dc540"}
+func createPassThresholdRuleWithPointer(value *float64) dynatrace.VisualizationThresholdRule {
+	return dynatrace.VisualizationThresholdRule{Value: value, Color: "#7dc540"}
 }
 
-func createWarnThresholdRule(value float64) dynatrace.ThresholdRule {
+func createWarnThresholdRule(value float64) dynatrace.VisualizationThresholdRule {
 	return createWarnThresholdRuleWithPointer(&value)
 }
 
-func createWarnThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
-	return dynatrace.ThresholdRule{Value: value, Color: "#f5d30f"}
+func createWarnThresholdRuleWithPointer(value *float64) dynatrace.VisualizationThresholdRule {
+	return dynatrace.VisualizationThresholdRule{Value: value, Color: "#f5d30f"}
 }
 
-func createFailThresholdRule(value float64) dynatrace.ThresholdRule {
+func createFailThresholdRule(value float64) dynatrace.VisualizationThresholdRule {
 	return createFailThresholdRuleWithPointer(&value)
 }
 
-func createFailThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
-	return dynatrace.ThresholdRule{Value: value, Color: "#dc172a"}
+func createFailThresholdRuleWithPointer(value *float64) dynatrace.VisualizationThresholdRule {
+	return dynatrace.VisualizationThresholdRule{Value: value, Color: "#dc172a"}
 }
 
-func createVisibleThresholds(rule1 dynatrace.ThresholdRule, rule2 dynatrace.ThresholdRule, rule3 dynatrace.ThresholdRule) dynatrace.Threshold {
-	return dynatrace.Threshold{
-		Rules:   []dynatrace.ThresholdRule{rule1, rule2, rule3},
+func createVisibleThresholds(rule1 dynatrace.VisualizationThresholdRule, rule2 dynatrace.VisualizationThresholdRule, rule3 dynatrace.VisualizationThresholdRule) dynatrace.VisualizationThreshold {
+	return dynatrace.VisualizationThreshold{
+		Rules:   []dynatrace.VisualizationThresholdRule{rule1, rule2, rule3},
 		Visible: true,
 	}
 }
 
-func createNotVisibleThresholds(rule1 dynatrace.ThresholdRule, rule2 dynatrace.ThresholdRule, rule3 dynatrace.ThresholdRule) dynatrace.Threshold {
-	return dynatrace.Threshold{
-		Rules:   []dynatrace.ThresholdRule{rule1, rule2, rule3},
+func createNotVisibleThresholds(rule1 dynatrace.VisualizationThresholdRule, rule2 dynatrace.VisualizationThresholdRule, rule3 dynatrace.VisualizationThresholdRule) dynatrace.VisualizationThreshold {
+	return dynatrace.VisualizationThreshold{
+		Rules:   []dynatrace.VisualizationThresholdRule{rule1, rule2, rule3},
 		Visible: false,
 	}
 }

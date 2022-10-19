@@ -103,7 +103,7 @@ func validateDataExplorerTile(tile *dynatrace.Tile) error {
 	return validateDataExplorerVisualConfigurationRule(tile.VisualConfig.Rules[0])
 }
 
-func validateDataExplorerVisualConfigurationRule(rule dynatrace.VisualConfigRule) error {
+func validateDataExplorerVisualConfigurationRule(rule dynatrace.VisualizationRule) error {
 	if rule.UnitTransform != "" {
 		return fmt.Errorf("Data Explorer query unit must be set to 'Auto' rather than '%s'", rule.UnitTransform)
 	}
@@ -115,7 +115,7 @@ func (p *DataExplorerTileProcessing) createMetricsQueryProcessingForTile(tile *d
 		return NewMetricsQueryProcessing(p.client)
 	}
 
-	if tile.VisualConfig.Type == dynatrace.SingleValueVisualConfigType {
+	if tile.VisualConfig.Type == dynatrace.SingleValueVisualizationConfigurationType {
 		return NewMetricsQueryProcessingThatAllowsOnlyOneResult(p.client)
 	}
 
