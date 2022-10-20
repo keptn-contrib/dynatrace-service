@@ -36,27 +36,80 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 
 // Process processes the specified Data Explorer dashboard tile.
 func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []TileResult {
-	sloDefinitionParsingResult, err := parseSLODefinition(tile.Name)
-	var sloDefError *sloDefinitionError
-	if errors.As(err, &sloDefError) {
-		return []TileResult{newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Data Explorer tile title parsing error", err)}
+	validatedDataExplorerTile, err := newDataExplorerTileValidator(tile, dashboardFilter).tryValidate()
+	var validationErr *dataExplorerTileValidationError
+	if errors.As(err, &validationErr) {
+		return []TileResult{newFailedTileResultFromSLODefinition(validationErr.sloDefinition, err.Error())}
 	}
 
-	if sloDefinitionParsingResult.exclude {
-		log.WithField("tileName", tile.Name).Debug("Tile excluded as name includes exclude=true")
-		return nil
+	if validatedDataExplorerTile == nil {
+		return []TileResult{}
+	}
+
+	return p.createMetricsQueryProcessing(validatedDataExplorerTile).Process(ctx, validatedDataExplorerTile.sloDefinition, validatedDataExplorerTile.query, p.timeframe)
+}
+
+func (p *DataExplorerTileProcessing) createMetricsQueryProcessing(validatedTile *validatedDataExplorerTile) *MetricsQueryProcessing {
+	if validatedTile.singleValueVisualization {
+		return NewMetricsQueryProcessingThatAllowsOnlyOneResult(p.client)
+	}
+
+	return NewMetricsQueryProcessing(p.client)
+}
+
+type dataExplorerTileValidationError struct {
+	sloDefinition keptnapi.SLO
+	errors        []error
+}
+
+func (err *dataExplorerTileValidationError) Error() string {
+	var errStrings = make([]string, len(err.errors))
+	for i, e := range err.errors {
+		errStrings[i] = e.Error()
+	}
+	return fmt.Sprintf("error validating Data Explorer tile: %s", strings.Join(errStrings, "; "))
+}
+
+type dataExplorerTileValidator struct {
+	tile            *dynatrace.Tile
+	dashboardFilter *dynatrace.DashboardFilter
+}
+
+func newDataExplorerTileValidator(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) *dataExplorerTileValidator {
+	return &dataExplorerTileValidator{
+		tile:            tile,
+		dashboardFilter: dashboardFilter,
+	}
+}
+
+func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, error) {
+	sloDefinitionParsingResult, err := parseSLODefinition(v.tile.Name)
+	if (err == nil) && (sloDefinitionParsingResult.exclude) {
+		log.WithField("tileName", v.tile.Name).Debug("Tile excluded as name includes exclude=true")
+		return nil, nil
 	}
 
 	sloDefinition := sloDefinitionParsingResult.sloDefinition
+
 	if sloDefinition.SLI == "" {
-		log.WithField("tileName", tile.Name).Debug("Omitted Data Explorer tile as no SLI name could be derived")
-		return nil
+		log.WithField("tileName", v.tile.Name).Debug("Omitted Data Explorer tile as no SLI name could be derived")
+		return nil, nil
+	}
+
+	var errs []error
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	queryID, err := getQueryID(v.tile.Queries)
+	if err != nil {
+		errs = append(errs, err)
 	}
 
 	if (len(sloDefinition.Pass) == 0) && (len(sloDefinition.Warning) == 0) {
-		criteria, err := tryGetThresholdPassAndWarningCriteria(tile)
+		criteria, err := tryGetThresholdPassAndWarningCriteria(v.tile)
 		if err != nil {
-			return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, fmt.Sprintf("Invalid Data Explorer tile thresholds: %s", err.Error()))}
+			errs = append(errs, err)
 		}
 
 		if criteria != nil {
@@ -65,64 +118,85 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 		}
 	}
 
-	err = validateDataExplorerTile(tile)
+	query, err := createMetricsQueryForMetricExpressions(v.tile.MetricExpressions, NewManagementZoneFilter(v.dashboardFilter, v.tile.TileFilter.ManagementZone))
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, err.Error())}
+		log.WithError(err).Warn("createMetricsQueryForMetricExpressions returned an error, SLI will not be used")
+		errs = append(errs, err)
 	}
 
-	// get the tile specific management zone filter that might be needed by different tile processors
-	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
-	managementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
-
-	query, err := p.createMetricsQueryForMetricExpressions(tile.MetricExpressions, managementZoneFilter)
-	if err != nil {
-		log.WithError(err).Warn("generateMetricQueryFromMetricExpressions returned an error, SLI will not be used")
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Data Explorer tile could not be converted to a metrics query: "+err.Error())}
+	// temporarily require unit set to Auto
+	targetUnitID := getUnitTransform(v.tile.VisualConfig, queryID)
+	if targetUnitID != "" {
+		err := fmt.Errorf("Data Explorer query unit must be set to 'Auto' rather than '%s'", targetUnitID)
+		errs = append(errs, err)
 	}
 
-	return p.createMetricsQueryProcessingForTile(tile).Process(ctx, sloDefinition, *query, p.timeframe)
+	if len(errs) > 0 {
+		return nil, &dataExplorerTileValidationError{
+			sloDefinition: sloDefinition,
+			errors:        errs,
+		}
+	}
+
+	return &validatedDataExplorerTile{
+		sloDefinition:            sloDefinition,
+		targetUnitID:             targetUnitID,
+		singleValueVisualization: isSingleValueVisualizationType(v.tile.VisualConfig),
+		query:                    *query,
+	}, nil
 }
 
-func validateDataExplorerTile(tile *dynatrace.Tile) error {
-	if len(tile.Queries) != 1 {
-		return fmt.Errorf("Data Explorer tile must have exactly one query")
+// getQueryID gets the single enabled query ID or returns an error.
+func getQueryID(queries []dynatrace.DataExplorerQuery) (string, error) {
+	if len(queries) == 0 {
+		return "", errors.New("Data Explorer tile has no query")
 	}
 
-	if tile.VisualConfig == nil {
-		return nil
+	enabledQueryIDs := make([]string, 0, len(queries))
+	for _, q := range queries {
+		if q.Enabled {
+			enabledQueryIDs = append(enabledQueryIDs, q.ID)
+		}
 	}
 
-	if len(tile.VisualConfig.Rules) == 0 {
-		return nil
+	if len(enabledQueryIDs) == 0 {
+		return "", errors.New("Data Explorer tile has no query enabled")
 	}
 
-	if len(tile.VisualConfig.Rules) > 1 {
-		return fmt.Errorf("Data Explorer tile must have exactly one visual configuration rule")
+	if len(enabledQueryIDs) > 1 {
+		return "", fmt.Errorf("Data Explorer tile has %d queries enabled but only one is supported", len(enabledQueryIDs))
 	}
 
-	return validateDataExplorerVisualConfigurationRule(tile.VisualConfig.Rules[0])
+	return enabledQueryIDs[0], nil
 }
 
-func validateDataExplorerVisualConfigurationRule(rule dynatrace.VisualizationRule) error {
-	if rule.UnitTransform != "" {
-		return fmt.Errorf("Data Explorer query unit must be set to 'Auto' rather than '%s'", rule.UnitTransform)
+func getUnitTransform(visualConfig *dynatrace.VisualizationConfiguration, queryID string) string {
+	if visualConfig == nil {
+		return ""
 	}
-	return nil
+
+	queryMatcher := createQueryMatcher(queryID)
+	for _, r := range visualConfig.Rules {
+		if r.Matcher == queryMatcher {
+			return r.UnitTransform
+		}
+	}
+	return ""
 }
 
-func (p *DataExplorerTileProcessing) createMetricsQueryProcessingForTile(tile *dynatrace.Tile) *MetricsQueryProcessing {
-	if tile.VisualConfig == nil {
-		return NewMetricsQueryProcessing(p.client)
-	}
-
-	if tile.VisualConfig.Type == dynatrace.SingleValueVisualizationConfigurationType {
-		return NewMetricsQueryProcessingThatAllowsOnlyOneResult(p.client)
-	}
-
-	return NewMetricsQueryProcessing(p.client)
+func createQueryMatcher(queryID string) string {
+	return queryID + ":"
 }
 
-func (p *DataExplorerTileProcessing) createMetricsQueryForMetricExpressions(metricExpressions []string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
+func isSingleValueVisualizationType(visualConfig *dynatrace.VisualizationConfiguration) bool {
+	if visualConfig == nil {
+		return false
+	}
+
+	return visualConfig.Type == dynatrace.SingleValueVisualizationConfigurationType
+}
+
+func createMetricsQueryForMetricExpressions(metricExpressions []string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
 	if len(metricExpressions) == 0 {
 		return nil, errors.New("Data Explorer tile has no metric expressions")
 	}
@@ -131,16 +205,15 @@ func (p *DataExplorerTileProcessing) createMetricsQueryForMetricExpressions(metr
 		log.WithField("metricExpressions", metricExpressions).Warn("processMetricExpressions found more than 2 metric expressions")
 	}
 
-	return p.createMetricsQueryForMetricExpression(metricExpressions[0], managementZoneFilter)
+	return createMetricsQueryForMetricExpression(metricExpressions[0], managementZoneFilter)
 }
 
-func (p *DataExplorerTileProcessing) createMetricsQueryForMetricExpression(metricExpression string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
+func createMetricsQueryForMetricExpression(metricExpression string, managementZoneFilter *ManagementZoneFilter) (*metrics.Query, error) {
 	pieces := strings.SplitN(metricExpression, "&", 2)
 	if len(pieces) != 2 {
 		return nil, fmt.Errorf("metric expression does not contain two components: %s", metricExpression)
 	}
 
-	// TODO: 2022-08-24: support resolutions other than auto, encoded as null, assumed here to be the same as resolution inf.
 	resolution, err := parseResolutionKeyValuePair(pieces[0])
 	if err != nil {
 		return nil, fmt.Errorf("could not parse resolution metric expression component: %w", err)
@@ -166,4 +239,11 @@ func parseResolutionKeyValuePair(keyValuePair string) (string, error) {
 	}
 
 	return resolution, nil
+}
+
+type validatedDataExplorerTile struct {
+	sloDefinition            keptnapi.SLO
+	targetUnitID             string
+	singleValueVisualization bool
+	query                    metrics.Query
 }

@@ -475,8 +475,19 @@ func createNotVisibleThresholds(rule1 dynatrace.VisualizationThresholdRule, rule
 // TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto tests that unit transforms other than auto are not allowed.
 // This is will result in a SLIResult with failure, as this is not allowed.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto(t *testing.T) {
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, "./testdata/dashboards/data_explorer/unit_transform_is_not_auto/")
+	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_is_not_auto/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "must be set to 'Auto'"))
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationProblems tests that a Data Explorer tile with multiple configuration problems results in an error that includes all these problems.
+// This is will result in a SLIResult with failure, as this is not allowed.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationProblems(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/multiple_tile_configuration_problems/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "error parsing SLO definition", "tile has 2 queries enabled but only one is supported", "tile has no metric expressions"))
 }
 
 func createExpectedServiceResponseTimeSLO(passCriteria []*keptnapi.SLOCriteria, warningCriteria []*keptnapi.SLOCriteria) *keptnapi.SLO {

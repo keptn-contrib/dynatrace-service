@@ -11,7 +11,7 @@ func TestParseSLODefinition_SuccessCases(t *testing.T) {
 	tests := []struct {
 		name      string
 		sloString string
-		want      *sloDefinitionParsingResult
+		want      sloDefinitionParsingResult
 	}{
 		{
 			name:      "just some SLI - so no error",
@@ -88,132 +88,156 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 	tests := []struct {
 		name        string
 		sloString   string
+		want        sloDefinitionParsingResult
 		errMessages []string
 	}{
 		{
 			name:        "invalid pass criterion - ms suffix",
 			sloString:   "Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000,<+20%;weight=1;key=true",
+			want:        createSLODefinitionParsingResult(false, "teststep_rt", "Some description", [][]string{}, [][]string{{"<1000", "<+20%"}}, 1, true),
 			errMessages: []string{"pass", "<500ms"},
 		},
 		{
 			name:        "invalid pass and warning criteria - ms suffixes",
 			sloString:   "Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true",
+			want:        createSLODefinitionParsingResult(false, "teststep_rt", "Some description", [][]string{}, [][]string{}, 1, true),
 			errMessages: []string{"pass", "<500ms", "warning", "<1000ms"},
 		},
 		{
 			name:        "invalid pass criterion - wrong operator",
 			sloString:   "sli=some_sli_name;pass=<<500",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"pass", "<<500"},
 		},
 		{
 			name:        "invalid pass criterion - wrong decimal notation",
 			sloString:   "sli=some_sli_name;pass=<500.",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"pass", "<500."},
 		},
 		{
 			name:        "invalid pass criterion - wrong decimal notation with percent",
 			sloString:   "sli=some_sli_name;pass=<500.%",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"pass", "<500.%"},
 		},
 		{
 			name:        "invalid warning criterion - wrong decimal notation with percent and wrong type",
 			sloString:   "sli=some_sli_name;warning=<500.%,yes",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"warning", "<500.%", "yes"},
 		},
 		{
 			name:        "invalid warning criterion - some string",
 			sloString:   "sli=some_sli_name;warning=yes!",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"warning", "yes!"},
 		},
 		{
 			name:        "invalid warning criterion - wrong operator",
 			sloString:   "sli=some_sli_name;warning=<<500",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"warning", "<<500"},
 		},
 		{
 			name:        "invalid warning criterion - wrong decimal notation",
 			sloString:   "sli=some_sli_name;warning=<500.",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"warning", "<500."},
 		},
 		{
 			name:        "invalid warning criterion - wrong decimal notation with percent",
 			sloString:   "sli=some_sli_name;warning=<500.%",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"warning", "<500.%"},
 		},
 		{
 			name:        "invalid warning criterion - wrong decimal notation with percent and wrong type",
 			sloString:   "sli=some_sli_name;warning=<500.%,yes",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"warning", "<500.%", "yes"},
 		},
 		{
 			name:        "invalid warning criterion - some string",
 			sloString:   "sli=some_sli_name;warning=no!",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"warning", "no!"},
 		},
 		{
 			name:        "invalid weight - not an int",
 			sloString:   "sli=some_sli_name;weight=3.14",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"weight", "3.14"},
 		},
 		{
 			name:        "invalid keySli - not a bool",
 			sloString:   "sli=some_sli_name;key=yes",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"key", "yes"},
 		},
 		{
 			name:        "invalid exclude - not a bool",
 			sloString:   "sli=some_sli_name;exclude=enable",
+			want:        createSLODefinitionParsingResult(false, "some_sli_name", "some_sli_name", [][]string{}, [][]string{}, 1, false),
 			errMessages: []string{"exclude", "enable"},
 		},
 		{
 			name:        "sli name is empty",
 			sloString:   "sli=;pass=<600",
+			want:        createSLODefinitionParsingResult(false, "", "", [][]string{{"<600"}}, [][]string{}, 1, false),
 			errMessages: []string{"sli", "is empty"},
 		},
 		{
 			name:        "sli name is empty - only space",
 			sloString:   "sli= ;pass=<600",
+			want:        createSLODefinitionParsingResult(false, "", "", [][]string{{"<600"}}, [][]string{}, 1, false),
 			errMessages: []string{"sli", "is empty"},
 		},
 		{
 			name:        "duplicate sli name",
 			sloString:   "sli=first_name;pass=<600;sli=last_name",
+			want:        createSLODefinitionParsingResult(false, "first_name", "first_name", [][]string{{"<600"}}, [][]string{}, 1, false),
 			errMessages: []string{"'sli'", "duplicate key"},
 		},
 		{
 			name:        "duplicate key",
 			sloString:   "sli=first_name;key=true;pass=<600;key=false",
+			want:        createSLODefinitionParsingResult(false, "first_name", "first_name", [][]string{{"<600"}}, [][]string{}, 1, true),
 			errMessages: []string{"'key'", "duplicate key"},
 		},
 		{
 			name:        "duplicate weight",
 			sloString:   "sli=first_name;weight=7;pass=<600;weight=3",
+			want:        createSLODefinitionParsingResult(false, "first_name", "first_name", [][]string{{"<600"}}, [][]string{}, 7, false),
 			errMessages: []string{"'weight'", "duplicate key"},
 		},
 		{
 			name:        "duplicate exclude",
 			sloString:   "sli=first_name;exclude=true;pass=<600;exclude=false",
+			want:        createSLODefinitionParsingResult(true, "first_name", "first_name", [][]string{{"<600"}}, [][]string{}, 1, false),
 			errMessages: []string{"'exclude'", "duplicate key"},
 		},
 		{
 			name:        "duplication for sli, key, weight, exclude",
 			sloString:   "sli=first_name;weight=7;key=false;exclude=false;sli=last_name;pass=<600;weight=3;key=true;exclude=true",
+			want:        createSLODefinitionParsingResult(false, "first_name", "first_name", [][]string{{"<600"}}, [][]string{}, 7, false),
 			errMessages: []string{"'weight'", "'key'", "'sli'", "'exclude'", "duplicate key"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := parseSLODefinition(tt.sloString)
+			got, err := parseSLODefinition(tt.sloString)
 			if assert.Error(t, err) {
 				for _, errMessage := range tt.errMessages {
 					assert.Contains(t, err.Error(), errMessage)
 				}
 			}
+			assert.EqualValues(t, tt.want, got)
 		})
 	}
 }
 
-func createSLODefinitionParsingResult(exclude bool, indicatorName string, displayName string, pass [][]string, warning [][]string, weight int, isKey bool) *sloDefinitionParsingResult {
+func createSLODefinitionParsingResult(exclude bool, indicatorName string, displayName string, pass [][]string, warning [][]string, weight int, isKey bool) sloDefinitionParsingResult {
 	var passCriteria []*keptnapi.SLOCriteria
 	for _, criteria := range pass {
 		passCriteria = append(passCriteria, &keptnapi.SLOCriteria{Criteria: criteria})
@@ -224,7 +248,7 @@ func createSLODefinitionParsingResult(exclude bool, indicatorName string, displa
 		warningCriteria = append(warningCriteria, &keptnapi.SLOCriteria{Criteria: criteria})
 	}
 
-	return &sloDefinitionParsingResult{
+	return sloDefinitionParsingResult{
 		exclude: exclude,
 		sloDefinition: keptnapi.SLO{
 			SLI:         indicatorName,

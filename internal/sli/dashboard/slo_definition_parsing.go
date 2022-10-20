@@ -24,14 +24,18 @@ type sloDefinitionParsingResult struct {
 }
 
 // parseSLODefinition takes a value such as
-//   Example 1: Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true
-//   Example 2: Response time (P95);sli=svc_rt_p95;pass=<+10%,<600
-//   Example 3: Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false
+//
+//	Example 1: Some description;sli=teststep_rt;pass=<500ms,<+10%;warning=<1000ms,<+20%;weight=1;key=true
+//	Example 2: Response time (P95);sli=svc_rt_p95;pass=<+10%,<600
+//	Example 3: Host Disk Queue Length (max);sli=host_disk_queue;pass=<=0;warning=<1;key=false
+//
 // can also take a value like
-// 	 "KQG;project=myproject;pass=90%;warning=75%;"
+//
+//	"KQG;project=myproject;pass=90%;warning=75%;"
+//
 // This will return a SLO object or an error if parsing was not possible
-func parseSLODefinition(sloDefinition string) (*sloDefinitionParsingResult, error) {
-	result := &sloDefinitionParsingResult{
+func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error) {
+	result := sloDefinitionParsingResult{
 		sloDefinition: keptncommon.SLO{
 			Weight: 1,
 			KeySLI: false,
@@ -50,7 +54,6 @@ func parseSLODefinition(sloDefinition string) (*sloDefinitionParsingResult, erro
 			continue
 		}
 
-		var err error
 		switch strings.ToLower(kv.key) {
 		case sloDefSli:
 			if keyFound[sloDefSli] {
@@ -92,10 +95,12 @@ func parseSLODefinition(sloDefinition string) (*sloDefinitionParsingResult, erro
 			}
 			keyFound[sloDefKey] = true
 
-			result.sloDefinition.KeySLI, err = strconv.ParseBool(kv.value)
+			val, err := strconv.ParseBool(kv.value)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", sloDefKey, kv.value))
+				break
 			}
+			result.sloDefinition.KeySLI = val
 
 		case sloDefWeight:
 			if keyFound[sloDefWeight] {
@@ -104,10 +109,12 @@ func parseSLODefinition(sloDefinition string) (*sloDefinitionParsingResult, erro
 			}
 			keyFound[sloDefWeight] = true
 
-			result.sloDefinition.Weight, err = strconv.Atoi(kv.value)
+			val, err := strconv.Atoi(kv.value)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not an integer value: %v", sloDefWeight, kv.value))
+				break
 			}
+			result.sloDefinition.Weight = val
 
 		case sloDefExclude:
 			if keyFound[sloDefExclude] {
@@ -116,10 +123,12 @@ func parseSLODefinition(sloDefinition string) (*sloDefinitionParsingResult, erro
 			}
 			keyFound[sloDefExclude] = true
 
-			result.exclude, err = strconv.ParseBool(kv.value)
+			val, err := strconv.ParseBool(kv.value)
 			if err != nil {
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", sloDefExclude, kv.value))
+				break
 			}
+			result.exclude = val
 		}
 	}
 
@@ -128,10 +137,9 @@ func parseSLODefinition(sloDefinition string) (*sloDefinitionParsingResult, erro
 	}
 
 	if len(errs) > 0 {
-		return nil, &sloDefinitionError{
-			sliName:   result.sloDefinition.SLI,
-			tileTitle: sloDefinition,
-			errors:    errs,
+
+		return result, &sloDefinitionError{
+			errors: errs,
 		}
 	}
 
@@ -162,9 +170,7 @@ func criterionIsNotValid(criterion string) bool {
 
 // sloDefinitionError represents an error that occurred while parsing an SLO definition
 type sloDefinitionError struct {
-	tileTitle string
-	sliName   string
-	errors    []error
+	errors []error
 }
 
 func (err *sloDefinitionError) Error() string {
@@ -172,16 +178,7 @@ func (err *sloDefinitionError) Error() string {
 	for i, e := range err.errors {
 		errStrings[i] = e.Error()
 	}
-	return strings.Join(errStrings, ";")
-}
-
-// sliNameOrTileTitle returns the SLI name or the tile title, if the SLI name is empty
-func (err *sloDefinitionError) sliNameOrTileTitle() string {
-	if err.sliName != "" {
-		return err.sliName
-	}
-
-	return err.tileTitle
+	return fmt.Sprintf("error parsing SLO definition: %s", strings.Join(errStrings, "; "))
 }
 
 // cleanIndicatorName makes sure we have a valid indicator name by forcing lower case and getting rid of special characters.

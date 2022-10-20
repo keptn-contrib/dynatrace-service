@@ -105,6 +105,7 @@ const SingleValueVisualizationConfigurationType = "SINGLE_VALUE"
 // VisualizationRule is a rule for the visual configuration.
 type VisualizationRule struct {
 	UnitTransform string `json:"unitTransform,omitempty"`
+	Matcher       string `json:"matcher,omitempty"`
 }
 
 // VisualizationThreshold is a threshold configuration for a Data Explorer tile.
@@ -133,7 +134,8 @@ type TileFilter struct {
 
 // DataExplorerQuery Query Definition for DATA_EXPLORER dashboard tile
 type DataExplorerQuery struct {
-	ID string `json:"id"`
+	ID      string `json:"id"`
+	Enabled bool   `json:"enabled"`
 }
 
 type FilterConfig struct {

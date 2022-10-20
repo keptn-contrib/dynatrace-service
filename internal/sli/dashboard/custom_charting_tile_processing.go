@@ -43,12 +43,7 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	}
 
 	sloDefinitionParsingResult, err := parseSLODefinition(tile.FilterConfig.CustomName)
-	var sloDefError *sloDefinitionError
-	if errors.As(err, &sloDefError) {
-		return []TileResult{newFailedTileResultFromError(sloDefError.sliNameOrTileTitle(), "Custom charting tile title parsing error", err)}
-	}
-
-	if sloDefinitionParsingResult.exclude {
+	if (err == nil) && (sloDefinitionParsingResult.exclude) {
 		log.WithField("tile.FilterConfig.CustomName", tile.FilterConfig.CustomName).Debug("Tile excluded as name includes exclude=true")
 		return nil
 	}
@@ -57,6 +52,10 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	if sloDefinition.SLI == "" {
 		log.WithField("tile.FilterConfig.CustomName", tile.FilterConfig.CustomName).Debug("Tile not included as name doesnt include sli=SLINAME")
 		return nil
+	}
+
+	if err != nil {
+		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile title parsing error: "+err.Error())}
 	}
 
 	// get the tile specific management zone filter that might be needed by different tile processors
