@@ -14,7 +14,7 @@
     },
     "tiles": [
         {
-            "name": "Service Response Time; sli=srt",
+            "name": "Service response time; sli=srt; pass=<30; weight=4.2; key=true; key=false",
             "tileType": "DATA_EXPLORER",
             "configured": true,
             "bounds": {
@@ -37,6 +37,18 @@
                         "criteria": []
                     },
                     "enabled": true
+                },
+                {
+                    "id": "B",
+                    "metric": "builtin:service.response.time",
+                    "spaceAggregation": "AVG",
+                    "timeAggregation": "DEFAULT",
+                    "splitBy": [],
+                    "filterBy": {
+                        "nestedFilters": [],
+                        "criteria": []
+                    },
+                    "enabled": true
                 }
             ],
             "visualConfig": {
@@ -47,14 +59,11 @@
                 "rules": [
                     {
                         "matcher": "A:",
-                        "unitTransform": "MilliSecond",
-                        "valueFormat": "auto",
                         "properties": {
-                          "color": "DEFAULT",
-                          "seriesType": "LINE"
+                            "color": "DEFAULT"
                         },
                         "seriesOverrides": []
-                      }
+                    }
                 ],
                 "axes": {
                     "xAxis": {
@@ -82,22 +91,22 @@
                     {
                         "axisTarget": "LEFT",
                         "rules": [
-                            {
-                                "value": 0,
-                                "color": "#7dc540"
-                            },
-                            {
-                                "value": 68000,
-                                "color": "#f5d30f"
-                            },
-                            {
-                                "value": 69000,
-                                "color": "#dc172a"
-                            }
+                          {
+                            "value": 0,
+                            "color": "#14a8f5"
+                          },
+                          {
+                            "value": 4100000,
+                            "color": "#ffe11c"
+                          },
+                          {
+                            "value": 5000000,
+                            "color": "#048855"
+                          }
                         ],
                         "queryId": "",
                         "visible": true
-                    }
+                      }
                 ],
                 "tableSettings": {
                     "isThresholdBackgroundAppliedToCell": false
@@ -114,8 +123,7 @@
             "queriesSettings": {
                 "resolution": ""
             },
-            "metricExpressions": [
-                "resolution=null&(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
+            "metricExpressions": [                
             ]
         }
     ]

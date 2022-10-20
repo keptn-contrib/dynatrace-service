@@ -1,7 +1,6 @@
 package dashboard
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -90,16 +89,16 @@ type threshold struct {
 	value     float64
 }
 
-type thresholdParsingErrors struct {
+type thresholdParsingError struct {
 	errors []error
 }
 
-func (err *thresholdParsingErrors) Error() string {
+func (err *thresholdParsingError) Error() string {
 	var errStrings = make([]string, len(err.errors))
 	for i, e := range err.errors {
 		errStrings[i] = e.Error()
 	}
-	return strings.Join(errStrings, "; ")
+	return fmt.Sprintf("error parsing thresholds: %s", strings.Join(errStrings, "; "))
 }
 
 type incorrectThresholdRuleCountError struct {
@@ -116,7 +115,7 @@ type invalidThresholdColorError struct {
 }
 
 func (err *invalidThresholdColorError) Error() string {
-	return fmt.Sprintf("invalid color %s at position %d ", err.color, err.position)
+	return fmt.Sprintf("invalid color %s at position %d", err.color, err.position)
 }
 
 type missingThresholdValueError struct {
@@ -124,7 +123,7 @@ type missingThresholdValueError struct {
 }
 
 func (err *missingThresholdValueError) Error() string {
-	return fmt.Sprintf("missing value at position %d ", err.position)
+	return fmt.Sprintf("missing value at position %d", err.position)
 }
 
 type strictlyMonotonicallyIncreasingConstraintError struct {
@@ -149,25 +148,16 @@ func (err *invalidThresholdColorSequenceError) Error() string {
 // tryGetThresholdPassAndWarningCriteria tries to get pass and warning criteria defined using the thresholds placed on a Data Explorer tile.
 // It returns either the criteria and no error (conversion succeeded), nil for the criteria and no error (no threshold set), or nil for the criteria and an error (conversion failed).
 func tryGetThresholdPassAndWarningCriteria(tile *dynatrace.Tile) (*passAndWarningCriteria, error) {
-	if tile.VisualConfig == nil {
+	thresholdRules, err := getThresholdRulesFromTile(tile)
+	if err != nil {
+		return nil, err
+	}
+
+	if thresholdRules == nil {
 		return nil, nil
 	}
 
-	visualConfig := tile.VisualConfig
-	if len(visualConfig.Thresholds) == 0 {
-		return nil, nil
-	}
-
-	if len(visualConfig.Thresholds) > 1 {
-		return nil, errors.New("too many threshold configurations")
-	}
-
-	t := &visualConfig.Thresholds[0]
-	if !areThresholdsEnabled(t) {
-		return nil, nil
-	}
-
-	thresholdConfiguration, err := convertThresholdRulesToThresholdConfiguration(t.Rules)
+	thresholdConfiguration, err := convertThresholdRulesToThresholdConfiguration(thresholdRules)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +165,31 @@ func tryGetThresholdPassAndWarningCriteria(tile *dynatrace.Tile) (*passAndWarnin
 	return convertThresholdConfigurationToPassAndWarningCriteria(*thresholdConfiguration)
 }
 
-// areThresholdsEnabled returns true if a user has set thresholds that will be displayed, i.e. if thresholds are visible and at least one value has been set.
-func areThresholdsEnabled(threshold *dynatrace.Threshold) bool {
+func getThresholdRulesFromTile(tile *dynatrace.Tile) ([]dynatrace.VisualizationThresholdRule, error) {
+	if tile.VisualConfig == nil {
+		return nil, nil
+	}
+
+	visibleThresholdRules := make([][]dynatrace.VisualizationThresholdRule, 0, len(tile.VisualConfig.Thresholds))
+	for _, t := range tile.VisualConfig.Thresholds {
+		if areThresholdsVisible(t) {
+			visibleThresholdRules = append(visibleThresholdRules, t.Rules)
+		}
+	}
+
+	if len(visibleThresholdRules) == 0 {
+		return nil, nil
+	}
+
+	if len(visibleThresholdRules) > 1 {
+		return nil, fmt.Errorf("Data Explorer tile has %d visible thresholds but only one is supported", len(visibleThresholdRules))
+	}
+
+	return visibleThresholdRules[0], nil
+}
+
+// areThresholdsVisible returns true if a user has set thresholds that will be displayed, i.e. if thresholds are visible and at least one value has been set.
+func areThresholdsVisible(threshold dynatrace.VisualizationThreshold) bool {
 	if !threshold.Visible {
 		return false
 	}
@@ -191,7 +204,7 @@ func areThresholdsEnabled(threshold *dynatrace.Threshold) bool {
 }
 
 // convertThresholdRulesToThresholdConfiguration checks that the threshold rules are complete and returns them as a threshold configuration or returns an error.
-func convertThresholdRulesToThresholdConfiguration(rules []dynatrace.ThresholdRule) (*thresholdConfiguration, error) {
+func convertThresholdRulesToThresholdConfiguration(rules []dynatrace.VisualizationThresholdRule) (*thresholdConfiguration, error) {
 	var errs []error
 
 	if len(rules) != 3 {
@@ -212,7 +225,7 @@ func convertThresholdRulesToThresholdConfiguration(rules []dynatrace.ThresholdRu
 	}
 
 	if len(errs) > 0 {
-		return nil, &thresholdParsingErrors{errors: errs}
+		return nil, &thresholdParsingError{errors: errs}
 	}
 
 	return &thresholdConfiguration{
@@ -243,7 +256,7 @@ func convertThresholdConfigurationToPassAndWarningCriteria(t thresholdConfigurat
 	}
 
 	if len(errs) > 0 {
-		return nil, &thresholdParsingErrors{errors: errs}
+		return nil, &thresholdParsingError{errors: errs}
 	}
 
 	return sloCriteria, nil

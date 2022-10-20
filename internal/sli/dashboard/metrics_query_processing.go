@@ -14,17 +14,35 @@ type MetricsQueryProcessing struct {
 	metricsProcessing dynatrace.MetricsProcessingInterface
 }
 
-func NewMetricsQueryProcessing(client dynatrace.ClientInterface) *MetricsQueryProcessing {
+func NewMetricsQueryProcessing(client dynatrace.ClientInterface, targetUnitID string) *MetricsQueryProcessing {
 	metricsClient := dynatrace.NewMetricsClient(client)
+	unitsClient := dynatrace.NewMetricsUnitsClient(client)
 	return &MetricsQueryProcessing{
-		metricsProcessing: dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(metricsClient, dynatrace.NewMetricsProcessing(metricsClient)),
+		metricsProcessing: dynatrace.NewConvertUnitMetricsProcessingDecorator(
+			metricsClient,
+			unitsClient,
+			targetUnitID,
+			dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(
+				metricsClient,
+				dynatrace.NewMetricsProcessing(metricsClient),
+			),
+		),
 	}
 }
 
-func NewMetricsQueryProcessingThatAllowsOnlyOneResult(client dynatrace.ClientInterface) *MetricsQueryProcessing {
+func NewMetricsQueryProcessingThatAllowsOnlyOneResult(client dynatrace.ClientInterface, targetUnitID string) *MetricsQueryProcessing {
 	metricsClient := dynatrace.NewMetricsClient(client)
+	unitsClient := dynatrace.NewMetricsUnitsClient(client)
 	return &MetricsQueryProcessing{
-		metricsProcessing: dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(metricsClient, dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient)),
+		metricsProcessing: dynatrace.NewConvertUnitMetricsProcessingDecorator(
+			metricsClient,
+			unitsClient,
+			targetUnitID,
+			dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(
+				metricsClient,
+				dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient),
+			),
+		),
 	}
 }
 

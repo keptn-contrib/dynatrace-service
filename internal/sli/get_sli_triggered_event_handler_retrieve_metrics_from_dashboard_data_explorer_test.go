@@ -363,7 +363,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 	tests := []struct {
 		name        string
 		tileName    string
-		thresholds  dynatrace.Threshold
+		thresholds  dynatrace.VisualizationThreshold
 		expectedSLO *keptnapi.SLO
 	}{
 		{
@@ -434,49 +434,104 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 	}
 }
 
-func createPassThresholdRule(value float64) dynatrace.ThresholdRule {
+func createPassThresholdRule(value float64) dynatrace.VisualizationThresholdRule {
 	return createPassThresholdRuleWithPointer(&value)
 }
 
-func createPassThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
-	return dynatrace.ThresholdRule{Value: value, Color: "#7dc540"}
+func createPassThresholdRuleWithPointer(value *float64) dynatrace.VisualizationThresholdRule {
+	return dynatrace.VisualizationThresholdRule{Value: value, Color: "#7dc540"}
 }
 
-func createWarnThresholdRule(value float64) dynatrace.ThresholdRule {
+func createWarnThresholdRule(value float64) dynatrace.VisualizationThresholdRule {
 	return createWarnThresholdRuleWithPointer(&value)
 }
 
-func createWarnThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
-	return dynatrace.ThresholdRule{Value: value, Color: "#f5d30f"}
+func createWarnThresholdRuleWithPointer(value *float64) dynatrace.VisualizationThresholdRule {
+	return dynatrace.VisualizationThresholdRule{Value: value, Color: "#f5d30f"}
 }
 
-func createFailThresholdRule(value float64) dynatrace.ThresholdRule {
+func createFailThresholdRule(value float64) dynatrace.VisualizationThresholdRule {
 	return createFailThresholdRuleWithPointer(&value)
 }
 
-func createFailThresholdRuleWithPointer(value *float64) dynatrace.ThresholdRule {
-	return dynatrace.ThresholdRule{Value: value, Color: "#dc172a"}
+func createFailThresholdRuleWithPointer(value *float64) dynatrace.VisualizationThresholdRule {
+	return dynatrace.VisualizationThresholdRule{Value: value, Color: "#dc172a"}
 }
 
-func createVisibleThresholds(rule1 dynatrace.ThresholdRule, rule2 dynatrace.ThresholdRule, rule3 dynatrace.ThresholdRule) dynatrace.Threshold {
-	return dynatrace.Threshold{
-		Rules:   []dynatrace.ThresholdRule{rule1, rule2, rule3},
+func createVisibleThresholds(rule1 dynatrace.VisualizationThresholdRule, rule2 dynatrace.VisualizationThresholdRule, rule3 dynatrace.VisualizationThresholdRule) dynatrace.VisualizationThreshold {
+	return dynatrace.VisualizationThreshold{
+		Rules:   []dynatrace.VisualizationThresholdRule{rule1, rule2, rule3},
 		Visible: true,
 	}
 }
 
-func createNotVisibleThresholds(rule1 dynatrace.ThresholdRule, rule2 dynatrace.ThresholdRule, rule3 dynatrace.ThresholdRule) dynatrace.Threshold {
-	return dynatrace.Threshold{
-		Rules:   []dynatrace.ThresholdRule{rule1, rule2, rule3},
+func createNotVisibleThresholds(rule1 dynatrace.VisualizationThresholdRule, rule2 dynatrace.VisualizationThresholdRule, rule3 dynatrace.VisualizationThresholdRule) dynatrace.VisualizationThreshold {
+	return dynatrace.VisualizationThreshold{
+		Rules:   []dynatrace.VisualizationThresholdRule{rule1, rule2, rule3},
 		Visible: false,
 	}
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto tests that unit transforms other than auto are not allowed.
+// TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationProblems tests that a Data Explorer tile with multiple configuration problems results in an error that includes all these problems.
 // This is will result in a SLIResult with failure, as this is not allowed.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto(t *testing.T) {
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, "./testdata/dashboards/data_explorer/unit_transform_is_not_auto/")
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "must be set to 'Auto'"))
+func TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationProblems(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/multiple_tile_configuration_problems/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "error parsing SLO definition", "tile has 2 queries enabled but only one is supported", "tile has no metric expressions"))
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformMilliseconds tests that unit transform works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformMilliseconds(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_milliseconds/"
+
+	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
+	)
+	handler.AddExact(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.89648858596068, expectedMetricsRequest),
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformError tests that a unit transform with an invalid unit generates the expected error.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformError(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_error/"
+
+	requestBuilder := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+	handler, _ := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t, testDataFolder, requestBuilder)
+	handler.AddExactError(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "Byte"), 400, filepath.Join(testDataFolder, "metrics_units_convert_error.json"))
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("srt_bytes", requestBuilder.build(), "Cannot convert MicroSecond to Byte"))
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_PickCorrectVisualConfigRule tests that the visual config rule corresponding to the query is used and others are ignored.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_PickCorrectVisualConfigRule(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/pick_correct_visual_config_rule/"
+
+	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
+	)
+	handler.AddExact(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.89648858596068, expectedMetricsRequest),
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_TwoMatchingVisualConfigRulesProducesError tests that two matchings visual config rules result in the expected error
+func TestRetrieveMetricsFromDashboardDataExplorerTile_TwoMatchingVisualConfigRulesProducesError(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/error_two_matching_visual_config_rules/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "expected one visualization rule for query", "found 2"))
 }
 
 func createExpectedServiceResponseTimeSLO(passCriteria []*keptnapi.SLOCriteria, warningCriteria []*keptnapi.SLOCriteria) *keptnapi.SLO {

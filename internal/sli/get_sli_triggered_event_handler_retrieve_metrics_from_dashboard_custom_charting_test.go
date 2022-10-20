@@ -309,6 +309,44 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ExcludedTile(t *testing.
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
+// TestRetrieveMetricsFromDashboardCustomChartingTile_UnitTransformMilliseconds tests a custom charting tile with units set to milliseconds.
+// This is will result in a SLIResult with success, as this is supported.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_UnitTransformMilliseconds(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/custom_charting/unit_transform_milliseconds/"
+
+	handler, expectedMetricsRequest := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
+		testDataFolder:     testDataFolder,
+		baseMetricSelector: "builtin:service.response.time",
+		fullMetricSelector: "builtin:service.response.time:splitBy():avg:names",
+		entitySelector:     "type(SERVICE)",
+	})
+
+	handler.AddExact(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("service_response_time", 54.89648858596068, expectedMetricsRequest),
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardCustomChartingTile_UnitTransformError tests a custom charting tile with invalid units generates the expected error.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_UnitTransformError(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/custom_charting/unit_transform_error/"
+
+	requestBuilder := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():avg:names").copyWithEntitySelector("type(SERVICE)")
+
+	handler, _ := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
+		testDataFolder:     testDataFolder,
+		baseMetricSelector: "builtin:service.response.time",
+		fullMetricSelector: requestBuilder.metricSelector(),
+		entitySelector:     "type(SERVICE)",
+	})
+
+	handler.AddExactError(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "Byte"), 400, filepath.Join(testDataFolder, "metrics_units_convert_error.json"))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("service_response_time", requestBuilder.build()))
+}
+
 type successfulCustomChartingTestHandlerConfiguration struct {
 	testDataFolder     string
 	baseMetricSelector string
