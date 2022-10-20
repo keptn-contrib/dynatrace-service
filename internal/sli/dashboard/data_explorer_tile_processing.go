@@ -124,6 +124,11 @@ func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, e
 		errs = append(errs, err)
 	}
 
+	targetUnitID, err := getUnitTransform(v.tile.VisualConfig, queryID)
+	if err != nil {
+		errs = append(errs, err)
+	}
+
 	if len(errs) > 0 {
 		return nil, &dataExplorerTileValidationError{
 			sloDefinition: sloDefinition,
@@ -133,7 +138,7 @@ func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, e
 
 	return &validatedDataExplorerTile{
 		sloDefinition:            sloDefinition,
-		targetUnitID:             getUnitTransform(v.tile.VisualConfig, queryID),
+		targetUnitID:             targetUnitID,
 		singleValueVisualization: isSingleValueVisualizationType(v.tile.VisualConfig),
 		query:                    *query,
 	}, nil
@@ -163,18 +168,45 @@ func getQueryID(queries []dynatrace.DataExplorerQuery) (string, error) {
 	return enabledQueryIDs[0], nil
 }
 
-func getUnitTransform(visualConfig *dynatrace.VisualizationConfiguration, queryID string) string {
+func getUnitTransform(visualConfig *dynatrace.VisualizationConfiguration, queryID string) (string, error) {
 	if visualConfig == nil {
-		return ""
+		return "", nil
 	}
 
+	if queryID == "" {
+		return "", nil
+	}
+
+	matchingRule, err := tryGetMatchingVisualizationRule(visualConfig.Rules, queryID)
+	if err != nil {
+		return "", fmt.Errorf("could not get unit transform: %w", err)
+	}
+
+	if matchingRule == nil {
+		return "", nil
+	}
+
+	return matchingRule.UnitTransform, nil
+}
+
+func tryGetMatchingVisualizationRule(rules []dynatrace.VisualizationRule, queryID string) (*dynatrace.VisualizationRule, error) {
 	queryMatcher := createQueryMatcher(queryID)
-	for _, r := range visualConfig.Rules {
+	var matchingRules []dynatrace.VisualizationRule
+	for _, r := range rules {
 		if r.Matcher == queryMatcher {
-			return r.UnitTransform
+			matchingRules = append(matchingRules, r)
 		}
 	}
-	return ""
+
+	if len(matchingRules) == 0 {
+		return nil, nil
+	}
+
+	if len(matchingRules) > 1 {
+		return nil, fmt.Errorf("expected one visualization rule for query '%s' but found %d", queryID, len(matchingRules))
+	}
+
+	return &matchingRules[0], nil
 }
 
 func createQueryMatcher(queryID string) string {

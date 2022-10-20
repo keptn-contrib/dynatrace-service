@@ -509,6 +509,31 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformError(t *test
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("srt_bytes", requestBuilder.build(), "Cannot convert MicroSecond to Byte"))
 }
 
+// TestRetrieveMetricsFromDashboardDataExplorerTile_PickCorrectVisualConfigRule tests that the visual config rule corresponding to the query is used and others are ignored.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_PickCorrectVisualConfigRule(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/pick_correct_visual_config_rule/"
+
+	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
+	)
+	handler.AddExact(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.89648858596068, expectedMetricsRequest),
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_TwoMatchingVisualConfigRulesProducesError tests that two matchings visual config rules result in the expected error
+func TestRetrieveMetricsFromDashboardDataExplorerTile_TwoMatchingVisualConfigRulesProducesError(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/error_two_matching_visual_config_rules/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "expected one visualization rule for query", "found 2"))
+}
+
 func createExpectedServiceResponseTimeSLO(passCriteria []*keptnapi.SLOCriteria, warningCriteria []*keptnapi.SLOCriteria) *keptnapi.SLO {
 	return &keptnapi.SLO{
 		SLI:         "srt",
