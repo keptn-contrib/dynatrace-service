@@ -90,15 +90,13 @@ func (h *dynatraceTestFileUpdater) tryUpdateTestFileUsingGet(url string, filenam
 }
 
 func shouldUpdateFileForURL(url string) bool {
-	if strings.HasPrefix(url, "/api/v2/metrics") ||
+	return strings.HasPrefix(url, "/api/v2/metrics") ||
+		strings.HasPrefix(url, "/api/v2/units") ||
 		strings.HasPrefix(url, "/api/v2/slo") ||
 		strings.HasPrefix(url, "/api/v2/problems") ||
 		strings.HasPrefix(url, "/api/v1/userSessionQueryLanguage/table") ||
-		strings.HasPrefix(url, "/api/v2/securityProblems") {
-		return true
-	}
+		strings.HasPrefix(url, "/api/v2/securityProblems")
 
-	return false
 }
 
 func createClient() *http.Client {

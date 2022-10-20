@@ -1,0 +1,52 @@
+{
+    "metadata": {
+        "configurationVersions": [
+            5
+        ],
+        "clusterVersion": "1.231.0.20211103-072326"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+        "name": "Test-369",
+        "shared": true,
+        "owner": ""
+    },
+    "tiles": [
+        {
+            "name": "",
+            "tileType": "CUSTOM_CHARTING",
+            "configured": true,
+            "bounds": {
+                "top": 608,
+                "left": 38,
+                "width": 532,
+                "height": 190
+            },
+            "tileFilter": {},
+            "filterConfig": {
+                "type": "MIXED",
+                "customName": "Valid chart with SLI with pass;SLI=service_response_time;pass=<30",
+                "defaultName": "Custom chart",
+                "chartConfig": {
+                    "legendShown": true,
+                    "type": "TIMESERIES",
+                    "series": [
+                        {
+                            "metric": "builtin:service.response.time",
+                            "aggregation": "AVG",
+                            "type": "LINE",
+                            "entityType": "SERVICE",
+                            "dimensions": [],
+                            "sortAscending": false,
+                            "sortColumn": true,
+                            "aggregationRate": "TOTAL"
+                        }
+                    ],
+                    "resultMetadata": {},
+                    "leftAxisCustomUnit": "Byte"
+                },
+                "filtersPerEntityType": {}
+            }
+        }
+    ]
+}

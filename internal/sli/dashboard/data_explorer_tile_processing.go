@@ -51,10 +51,10 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 
 func (p *DataExplorerTileProcessing) createMetricsQueryProcessing(validatedTile *validatedDataExplorerTile) *MetricsQueryProcessing {
 	if validatedTile.singleValueVisualization {
-		return NewMetricsQueryProcessingThatAllowsOnlyOneResult(p.client)
+		return NewMetricsQueryProcessingThatAllowsOnlyOneResult(p.client, validatedTile.targetUnitID)
 	}
 
-	return NewMetricsQueryProcessing(p.client)
+	return NewMetricsQueryProcessing(p.client, validatedTile.targetUnitID)
 }
 
 type dataExplorerTileValidationError struct {
@@ -124,13 +124,6 @@ func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, e
 		errs = append(errs, err)
 	}
 
-	// temporarily require unit set to Auto
-	targetUnitID := getUnitTransform(v.tile.VisualConfig, queryID)
-	if targetUnitID != "" {
-		err := fmt.Errorf("Data Explorer query unit must be set to 'Auto' rather than '%s'", targetUnitID)
-		errs = append(errs, err)
-	}
-
 	if len(errs) > 0 {
 		return nil, &dataExplorerTileValidationError{
 			sloDefinition: sloDefinition,
@@ -140,7 +133,7 @@ func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, e
 
 	return &validatedDataExplorerTile{
 		sloDefinition:            sloDefinition,
-		targetUnitID:             targetUnitID,
+		targetUnitID:             getUnitTransform(v.tile.VisualConfig, queryID),
 		singleValueVisualization: isSingleValueVisualizationType(v.tile.VisualConfig),
 		query:                    *query,
 	}, nil

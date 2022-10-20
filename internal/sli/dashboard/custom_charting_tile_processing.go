@@ -62,20 +62,22 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
-	if len(tile.FilterConfig.ChartConfig.Series) != 1 {
+	chartConfig := tile.FilterConfig.ChartConfig
+	targetUnitID := chartConfig.LeftAxisCustomUnit
+	if len(chartConfig.Series) != 1 {
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile must have exactly one series")}
 	}
 
-	return p.processSeries(ctx, sloDefinition, &tile.FilterConfig.ChartConfig.Series[0], tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
+	return p.processSeries(ctx, sloDefinition, &chartConfig.Series[0], targetUnitID, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
 }
 
-func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []TileResult {
+func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, targetUnitID string, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []TileResult {
 	metricsQuery, err := p.generateMetricQueryFromChartSeries(ctx, series, tileManagementZoneFilter, filtersPerEntityType)
 	if err != nil {
 		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}
 	}
 
-	return NewMetricsQueryProcessing(p.client).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
+	return NewMetricsQueryProcessing(p.client, targetUnitID).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
 }
 
 func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx context.Context, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) (*metrics.Query, error) {

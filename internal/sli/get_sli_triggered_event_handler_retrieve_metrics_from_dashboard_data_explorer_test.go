@@ -472,15 +472,6 @@ func createNotVisibleThresholds(rule1 dynatrace.VisualizationThresholdRule, rule
 	}
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto tests that unit transforms other than auto are not allowed.
-// This is will result in a SLIResult with failure, as this is not allowed.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformIsNotAuto(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_is_not_auto/"
-
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "must be set to 'Auto'"))
-}
-
 // TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationProblems tests that a Data Explorer tile with multiple configuration problems results in an error that includes all these problems.
 // This is will result in a SLIResult with failure, as this is not allowed.
 func TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationProblems(t *testing.T) {
@@ -488,6 +479,34 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationP
 
 	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "error parsing SLO definition", "tile has 2 queries enabled but only one is supported", "tile has no metric expressions"))
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformMilliseconds tests that unit transform works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformMilliseconds(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_milliseconds/"
+
+	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
+	)
+	handler.AddExact(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.89648858596068, expectedMetricsRequest),
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformError tests that a unit transform with an invalid unit generates the expected error.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformError(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_error/"
+
+	requestBuilder := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+	handler, _ := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t, testDataFolder, requestBuilder)
+	handler.AddExactError(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "Byte"), 400, filepath.Join(testDataFolder, "metrics_units_convert_error.json"))
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("srt_bytes", requestBuilder.build(), "Cannot convert MicroSecond to Byte"))
 }
 
 func createExpectedServiceResponseTimeSLO(passCriteria []*keptnapi.SLOCriteria, warningCriteria []*keptnapi.SLOCriteria) *keptnapi.SLO {

@@ -193,10 +193,11 @@ FiltersPerEntityType struct {
 */
 
 type ChartConfig struct {
-	LegendShown    bool           `json:"legendShown"`
-	Type           string         `json:"type"`
-	Series         []Series       `json:"series"`
-	ResultMetadata ResultMetadata `json:"resultMetadata"`
+	LegendShown        bool           `json:"legendShown"`
+	Type               string         `json:"type"`
+	Series             []Series       `json:"series"`
+	ResultMetadata     ResultMetadata `json:"resultMetadata"`
+	LeftAxisCustomUnit string         `json:"leftAxisCustomUnit,omitempty"`
 }
 
 type Series struct {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"testing"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -75,6 +76,12 @@ func convertTimeStringToUnixMillisecondsString(timeString string) string {
 // buildMetricsV2DefinitionRequestString builds a Metrics v2 definition request string with the specified metric ID for use in testing.
 func buildMetricsV2DefinitionRequestString(metricID string) string {
 	return fmt.Sprintf("%s/%s", dynatrace.MetricsPath, url.PathEscape(metricID))
+}
+
+// buildMetricsUnitsConvertRequest builds a Metrics Units convert request string with the specified source unit ID, value and target unit ID for use in testing.
+func buildMetricsUnitsConvertRequest(sourceUnitID string, value float64, targetUnitID string) string {
+	vs := strconv.FormatFloat(value, 'f', -1, 64)
+	return fmt.Sprintf("%s/%s/convert?targetUnit=%s&value=%s", dynatrace.MetricsUnitsPath, url.PathEscape(sourceUnitID), targetUnitID, vs)
 }
 
 // buildProblemsV2Request builds a Problems V2 request string with the specified problem selector for use in testing.
