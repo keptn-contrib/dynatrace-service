@@ -211,6 +211,8 @@ To create SLOs with an alternate unit, select it in the visualization configurat
 
 The resolution of the data queried from the Metrics v2 API may be set using the Resolution setting of the tile. In all cases, the dynatrace-service will attempt to obtain a single value by setting `resolution=Inf` if possible or applying a `:fold()` transformation. An error is produced if multiple values are still returned, in this instance please modify the query, e.g. using the Code tab of the Data Explorer.
 
+![Data Explorer resolution - builtin:service.response.time 1 hour resolution](images/data-explorer-resolution-service-response-time.png "Data Explorer resolution - builtin:service.response.time 1 hour resolution")
+
 ### Custom chart tiles
 
 Each custom chart tile may only contain a single series. Furthermore, the series may only contain zero or one *dimensions* and optionally a single *filter*.
