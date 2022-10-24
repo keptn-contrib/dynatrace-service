@@ -82,9 +82,14 @@ indicators:
 ```
 
 
-## Other sorts of SLI definitions
+## Supported SLI definition types
 
-By default, the dynatrace-service queries metrics using the [Metrics API v2](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/). However, by prefixing the SLI definition, other Dynatrace endpoints may be targeted. These SLI definitions have the form `<PREFIX>;<QUERY>` where `<QUERY>` is the set of parameters that should be passed to the endpoint,
+By default, the dynatrace-service queries metrics using the [Metrics v2 API](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/). However, by prefixing the SLI definition, other Dynatrace endpoints may be targeted. These SLI definitions have the form `<PREFIX>;<QUERY>` where `<QUERY>` is the set of parameters that should be passed to the endpoint.
+
+
+### Dynatrace Metrics v2
+
+Metrics v2 queries must specify a [`metricSelector`](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/metric-selector) which can also include transformations. In addition, `entitySelector`, `resolution` and `mzSelector` parameters are supported. If a query returns multiple values, the dynatrace-service will attempt to set `resolution=Inf` or apply a `:fold()` transformation to obtain a single value.
 
 
 ### Dynatrace SLO definitions (prefix: `SLO`)
