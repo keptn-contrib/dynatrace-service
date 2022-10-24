@@ -23,6 +23,10 @@ The dynatrace-service allows you to integrate Dynatrace monitoring in your Keptn
 
 - [**Automatic onboarding of monitored service entities**](documentation/auto-service-onboarding.md): The dynatrace-service can be configured to periodically check for new service entities detected by Dynatrace and automatically import these into Keptn.
 
+### Compatibility
+
+The dynatrace-service version `0.24.0` requires Keptn version `0.19.0` or newer.
+
 ### Upgrading to 0.18.0 or newer
 
 If you are planning to upgrade to dynatrace-service version `0.18.0` or newer from version `0.17.1` or older, then please make sure to read and follow [these instructions on patching your secrets](documentation/patching-dynatrace-secrets.md) before doing the upgrade.
