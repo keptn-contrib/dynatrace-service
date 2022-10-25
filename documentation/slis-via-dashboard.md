@@ -155,11 +155,15 @@ As dashboards currently do not offer a tile for *security problems*, the only wa
 The following dashboard tile types are supported:
 
 
-### Data explorer tiles
+### Data Explorer tiles
 
-Data explorer tiles must only include a single query (i.e., one metric) with the unit and resolution set to `auto` (the default setting). Furthermore, queries are limited to a maximum of 100 results.
+Data Explorer tiles may be configured using either the Build or Code tab. In both cases tiles must only include a single query, i.e., one metric, which is limited to a maximum of 100 metric series results. If a tile does produce more than one metric series, a separate SLO is created for each with the dimension values being appended to the SLO name.
 
-To make it easy to define SLOs using Data Explorer tiles, pass and warning criteria may be specified by adding visual thresholds directly to the tile rather than using pass and warn criteria in the tile's title. If thresholds and pass and warn criteria have been specified, the thresholds will be ignored.
+To make it easy to define SLOs using Data Explorer tiles, pass and warning criteria as well as units and resolution may be specified directly in the UI using the tile properties.
+
+#### Pass warning criteria
+
+Pass and warn criteria can be specified by adding visual thresholds directly to the tile rather than using pass and warn criteria in the tile's title. If thresholds and pass and warn criteria have been specified, the thresholds will be ignored.
 
 Pass-warn-fail and fail-warn-pass configurations are supported. In both cases, three thresholds must be added using strictly monotonically increasing values and colors from the pre-defined color palette:
 
@@ -196,6 +200,18 @@ warning:
   - criteria:
     - ">=274877906944"    
 ```
+
+#### Customizing units
+
+To create SLOs with an alternate unit, select it in the visualization configuration of the query in the tile. The thresholds or pass and warning criteria must be defined in the same units. For example, to create a SLO for service response time in milliseconds, configure the tile as follows:
+
+![Data Explorer units - builtin:service.response.time in milliseconds](images/data-explorer-units-service-response-time.png "Data Explorer units - builtin:service.response.time in milliseconds")
+
+#### Specifying resolution
+
+The resolution of the data queried from the Metrics v2 API may be set using the Resolution setting of the tile. In all cases, the dynatrace-service will attempt to obtain a single value by setting `resolution=Inf` if possible or applying a `:fold()` transformation. An error is produced if multiple values are still returned, in this instance please modify the query, e.g. using the Code tab of the Data Explorer.
+
+![Data Explorer resolution - builtin:service.response.time 1 hour resolution](images/data-explorer-resolution-service-response-time.png "Data Explorer resolution - builtin:service.response.time 1 hour resolution")
 
 ### Custom chart tiles
 
