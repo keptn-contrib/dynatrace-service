@@ -2,6 +2,55 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.24.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.23.0...0.24.0) (2022-10-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* Support resolution parameter (#916)
+* add support for keptn 0.19 (#914)
+* Use data explorer metric expressions (#883)
+* Generate SLO pass and warning criteria from Data Explorer thresholds (#846)
+* Remove automatic conversion of `builtin:service.response.time` as well as microsecond and byte units (#867)
+* Do not create `dynatrace/sli.yaml` when retrieving SLIs from a dashboard (#866)
+* Change dashboard tile title parsing logic (#844)
+
+### Features
+
+* Add dimension name to display name for USQL tiles ([#904](https://github.com/keptn-contrib/dynatrace-service/issues/904)) ([6cfa146](https://github.com/keptn-contrib/dynatrace-service/commit/6cfa1460bb380887deb1163d97f12509dfe3ac9f))
+* add support for keptn 0.19 ([#914](https://github.com/keptn-contrib/dynatrace-service/issues/914)) ([d4a1f1a](https://github.com/keptn-contrib/dynatrace-service/commit/d4a1f1a103d26cb2535fc23820bccd773369fe3d))
+* Change dashboard tile title parsing logic ([#844](https://github.com/keptn-contrib/dynatrace-service/issues/844)) ([48721ea](https://github.com/keptn-contrib/dynatrace-service/commit/48721ea51354b7fa172d620d8a46644887937c79))
+* Do not create `dynatrace/sli.yaml` when retrieving SLIs from a dashboard ([#866](https://github.com/keptn-contrib/dynatrace-service/issues/866)) ([c90efc2](https://github.com/keptn-contrib/dynatrace-service/commit/c90efc27904f5b6ddb28cb935946b458d754c3d0))
+* Generate SLO pass and warning criteria from Data Explorer thresholds ([#846](https://github.com/keptn-contrib/dynatrace-service/issues/846)) ([68f95ee](https://github.com/keptn-contrib/dynatrace-service/commit/68f95eed77f440bc35e56e7fbab389a3ed2a36ae))
+* Remove automatic conversion of `builtin:service.response.time` as well as microsecond and byte units ([#867](https://github.com/keptn-contrib/dynatrace-service/issues/867)) ([9c17484](https://github.com/keptn-contrib/dynatrace-service/commit/9c17484d9ff47fd32b5548f5a845f990c5aeeaa8))
+* Support resolution parameter ([#916](https://github.com/keptn-contrib/dynatrace-service/issues/916)) ([1c1e07d](https://github.com/keptn-contrib/dynatrace-service/commit/1c1e07dbf26a32cd1b4c0e35428a8727808f2b7b))
+* Support units in Data Explorer and Custom Charting tiles ([#939](https://github.com/keptn-contrib/dynatrace-service/issues/939)) ([e32dd8a](https://github.com/keptn-contrib/dynatrace-service/commit/e32dd8a3134f9e9d085d21a5d4922692eb437cc4))
+* Use data explorer metric expressions ([#883](https://github.com/keptn-contrib/dynatrace-service/issues/883)) ([9012758](https://github.com/keptn-contrib/dynatrace-service/commit/9012758156f4906d7e6edbe2a5ad1551699992fc))
+
+
+### Bug Fixes
+
+* Explicitly ignore `sh.keptn.event.get-sli.triggered` events not for Dynatrace ([#863](https://github.com/keptn-contrib/dynatrace-service/issues/863)) ([5f10284](https://github.com/keptn-contrib/dynatrace-service/commit/5f10284bfef1d5d09704e4a5d60d490257d52328))
+* Generate specific error message if no SLIs are requested when using file-based SLIs ([#901](https://github.com/keptn-contrib/dynatrace-service/issues/901)) ([8722c36](https://github.com/keptn-contrib/dynatrace-service/commit/8722c368c07830bfacf3bf9e6b42c522a072340b))
+* Support auto space aggregation ([#875](https://github.com/keptn-contrib/dynatrace-service/issues/875)) ([ddfadcf](https://github.com/keptn-contrib/dynatrace-service/commit/ddfadcff9a656974fe4e0d81c54c94602de3fce8))
+* Update links to point to Keptn 0.16.x docs ([#865](https://github.com/keptn-contrib/dynatrace-service/issues/865)) ([173a66d](https://github.com/keptn-contrib/dynatrace-service/commit/173a66d0843f06724bf3309ec7748dbd8b91d33d))
+
+
+### Docs
+
+* fix broken link in README.md ([#860](https://github.com/keptn-contrib/dynatrace-service/issues/860)) ([93922de](https://github.com/keptn-contrib/dynatrace-service/commit/93922de9cfeb0d35b80f33d62e8d59fc1a96f1a3))
+* removes duplicate sections ([#861](https://github.com/keptn-contrib/dynatrace-service/issues/861)) ([5f9b1ed](https://github.com/keptn-contrib/dynatrace-service/commit/5f9b1ed9a9552942542b7784a827d2abdc2b5d44))
+* Update documentation for 0.24.0 release ([#941](https://github.com/keptn-contrib/dynatrace-service/issues/941)) ([fc3e1f3](https://github.com/keptn-contrib/dynatrace-service/commit/fc3e1f346e984a42d61fb7f58dcc9733180e5428))
+
+
+### Other
+
+* Add keptn contrib bot to codeowners ([#943](https://github.com/keptn-contrib/dynatrace-service/issues/943)) ([f730ad1](https://github.com/keptn-contrib/dynatrace-service/commit/f730ad190422b3116bd66a4278012aa27c619ad3))
+* Add tests for handling of whitespace in key-value pairs in dashboard markdown tiles ([#871](https://github.com/keptn-contrib/dynatrace-service/issues/871)) ([ca2680d](https://github.com/keptn-contrib/dynatrace-service/commit/ca2680d47efb53256ce325aa74166b67543bdc45))
+* **deps:** add renovate.json ([9c1716b](https://github.com/keptn-contrib/dynatrace-service/commit/9c1716b04df3860b57e25934f46276364d11b982))
+* Update CODEOWNERS ([#872](https://github.com/keptn-contrib/dynatrace-service/issues/872)) ([e29e896](https://github.com/keptn-contrib/dynatrace-service/commit/e29e8966fed391cc434f368fcf43bd595882a009))
+* Update codeowners ([#927](https://github.com/keptn-contrib/dynatrace-service/issues/927)) ([8ddbd6e](https://github.com/keptn-contrib/dynatrace-service/commit/8ddbd6e4af73b04ec82fcf77e5464167dc65b663))
+
 ## [0.23.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.22.0...0.23.0) (2022-07-13)
 
 ### Release validated with
