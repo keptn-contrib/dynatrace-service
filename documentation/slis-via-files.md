@@ -91,6 +91,14 @@ By default, the dynatrace-service queries metrics using the [Metrics v2 API](htt
 
 Metrics v2 queries must specify a [`metricSelector`](https://www.dynatrace.com/support/help/dynatrace-api/environment-api/metric-v2/metric-selector) which can also include transformations. In addition, `entitySelector`, `resolution` and `mzSelector` parameters are supported. If a query returns multiple values, the dynatrace-service will attempt to set `resolution=Inf` or apply a `:fold()` transformation to obtain a single value.
 
+SLIs targeting the Metrics v2 API are returned in their original unit. To convert to a different unit, apply a `:toUnit(...,...)` transformation. For example, the SLI definition:
+
+```
+service_response_time: metricSelector=builtin:service.response.time:splitBy():avg:toUnit(microSecond,milliSecond)
+```
+
+will retrieve a `service_response_time` SLI in milliseconds rather than  microseconds (the default for the metric).
+
 
 ### Dynatrace SLO definitions (prefix: `SLO`)
 

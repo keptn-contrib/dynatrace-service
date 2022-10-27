@@ -161,7 +161,7 @@ Data Explorer tiles may be configured using either the Build or Code tab. In bot
 
 To make it easy to define SLOs using Data Explorer tiles, pass and warning criteria as well as units and resolution may be specified directly in the UI using the tile properties.
 
-#### Pass warning criteria
+#### Pass and warning criteria
 
 Pass and warn criteria can be specified by adding visual thresholds directly to the tile rather than using pass and warn criteria in the tile's title. If thresholds and pass and warn criteria have been specified, the thresholds will be ignored.
 
@@ -203,7 +203,7 @@ warning:
 
 #### Customizing units
 
-To create SLOs with an alternate unit, select it in the visualization configuration of the query in the tile. The thresholds or pass and warning criteria must be defined in the same units. For example, to create a SLO for service response time in milliseconds, configure the tile as follows:
+By default SLIs are returned in the unit of the underlying metric selector. To create an SLO with an alternate unit, select it in the visualization configuration of the query in the tile. The thresholds or pass and warning criteria must be defined in the same units. For example, to create an SLO for service response time in milliseconds, configure the tile as follows:
 
 ![Data Explorer units - builtin:service.response.time in milliseconds](images/data-explorer-units-service-response-time.png "Data Explorer units - builtin:service.response.time in milliseconds")
 
