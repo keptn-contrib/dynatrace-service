@@ -59,7 +59,8 @@ func (ec *EntitiesClient) GetKeptnManagedServices(ctx context.Context) ([]Entity
 		var err error
 
 		if nextPageKey == "" {
-			response, err = ec.Client.Get(ctx, entitiesPath+"?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize="+strconv.FormatInt(int64(pageSize), 10))
+			mangedClientQueryParam := ec.buildManageServiceQueryParams(pageSize)
+			response, err = ec.Client.Get(ctx, entitiesPath+"?"+mangedClientQueryParam)
 		} else {
 			response, err = ec.Client.Get(ctx, entitiesPath+"?nextPageKey="+nextPageKey)
 		}
@@ -89,6 +90,17 @@ type PGIQueryConfig struct {
 	Version string
 	From    time.Time
 	To      time.Time
+}
+
+// buildManageServiceQueryParams generates url encoded query parameters for fetching/retreiving managed services of dynatrace
+func (ec *EntitiesClient) buildManageServiceQueryParams(pageSize int) string {
+	query := newQueryParameters()
+
+	query.add("entitySelector", "type(\"SERVICE\") AND tag(\"keptn_managed\",\"[Environment]keptn_managed\") AND tag(\"keptn_service\",\"[Environment]keptn_service\")")
+	query.add("fields", "+tags")
+	query.add("pageSize", strconv.FormatInt(int64(pageSize), 10))
+
+	return query.encode()
 }
 
 // GetAllPGIsForKeptnServices returns all PGIs that belong to a SERVICE entity with tags for `keptn_project`, `keptn_stage` and `keptn_service`
