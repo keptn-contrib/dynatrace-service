@@ -21,13 +21,6 @@ func NewManagementZoneFilter(
 	}
 }
 
-// ForEntitySelector returns the ID of the ManagementZone in a valid representation for the entitySelector.
-// If a ManagementZone for a Dashboard tile is given, then it will take precedence over the ManagementZone of the DashboardFilter
-// If none of both are given it will return an empty string
-func (filter *ManagementZoneFilter) ForEntitySelector() string {
-	return filter.forSelector(createFilterQueryForEntitySelector)
-}
-
 // ForProblemSelector returns the ID of the ManagementZone in a valid representation for the problemSelector.
 // If a ManagementZone for a Dashboard tile is given, then it will take precedence over the ManagementZone of the DashboardFilter
 // If none of both are given it will return an empty string
@@ -52,10 +45,6 @@ func (filter *ManagementZoneFilter) forSelector(mapper func(string) string) stri
 	}
 
 	return ""
-}
-
-func createFilterQueryForEntitySelector(managementZoneID string) string {
-	return fmt.Sprintf(",mzId(%s)", managementZoneID)
 }
 
 func createFilterQueryForProblemSelector(managementZoneID string) string {

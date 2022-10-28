@@ -1,0 +1,53 @@
+{
+  "metadata": {
+    "configurationVersions": [
+      5
+    ],
+    "clusterVersion": "1.232.0.20211118-204216"
+  },
+  "id": "12345678-1111-4444-8888-123456789012",
+  "dashboardMetadata": {
+    "name": "Management Zone Test",
+    "shared": false,
+    "owner": "",
+    "popularity": 1{{if .DashboardFilterString}},
+    "dashboardFilter": {{.DashboardFilterString}}{{end}}
+  },
+  "tiles": [
+    {
+      "name": "",
+      "tileType": "CUSTOM_CHARTING",
+      "configured": true,
+      "bounds": {
+        "top": 0,
+        "left": 0,
+        "width": 760,
+        "height": 304
+      },
+      "tileFilter": {{.TileFilterString}},
+      "filterConfig": {
+        "type": "MIXED",
+        "customName": "Service response time",
+        "defaultName": "Custom chart",
+        "chartConfig": {
+          "legendShown": true,
+          "type": "TIMESERIES",
+          "series": [
+            {
+              "metric": "builtin:service.response.time",
+              "aggregation": "AVG",
+              "type": "LINE",
+              "entityType": "SERVICE",
+              "dimensions": [],
+              "sortAscending": false,
+              "sortColumn": true,
+              "aggregationRate": "TOTAL"
+            }
+          ],
+          "resultMetadata": {}
+        },
+        "filtersPerEntityType": {}
+      }
+    }
+  ]
+}
