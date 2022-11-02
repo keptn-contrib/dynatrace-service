@@ -301,7 +301,7 @@ func (s *ServiceSynchronizer) createSLIResource(ctx context.Context, serviceName
 	indicators["response_time_p90"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(90)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
 	indicators["response_time_p95"] = fmt.Sprintf("metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", serviceName)
 
-	defaultSLIs := &dynatrace.SLI{
+	defaultSLIs := &keptn.SLI{
 		SpecVersion: "1.0",
 		Indicators:  indicators,
 	}

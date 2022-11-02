@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 
@@ -58,7 +59,7 @@ type uploadedSLIs struct {
 	project string
 	stage   string
 	service string
-	slis    *dynatrace.SLI
+	slis    *keptn.SLI
 }
 
 type uploadedSLOs struct {
@@ -73,7 +74,7 @@ type mockSLIAndSLOResourceWriter struct {
 	uploadedSLOs []uploadedSLOs
 }
 
-func (w *mockSLIAndSLOResourceWriter) UploadSLIs(_ context.Context, project string, stage string, service string, slis *dynatrace.SLI) error {
+func (w *mockSLIAndSLOResourceWriter) UploadSLIs(_ context.Context, project string, stage string, service string, slis *keptn.SLI) error {
 	w.uploadedSLIs = append(w.uploadedSLIs, uploadedSLIs{project: project, stage: stage, service: service, slis: slis})
 	return nil
 }
@@ -268,7 +269,7 @@ func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
 				project: mockSynchronizedProject,
 				stage:   mockSynchronizedStage,
 				service: onboardedService1,
-				slis: &dynatrace.SLI{
+				slis: &keptn.SLI{
 					SpecVersion: "1.0",
 					Indicators: map[string]string{
 						"throughput":        fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService1),
@@ -283,7 +284,7 @@ func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
 				project: mockSynchronizedProject,
 				stage:   mockSynchronizedStage,
 				service: onboardedService2,
-				slis: &dynatrace.SLI{
+				slis: &keptn.SLI{
 					SpecVersion: "1.0",
 					Indicators: map[string]string{
 						"throughput":        fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService2),
