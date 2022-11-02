@@ -3,6 +3,7 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -102,7 +103,7 @@ func (pc *ProblemsV2Client) GetTotalCountByQuery(ctx context.Context, request Pr
 
 // GetStatusByID calls the Dynatrace API to retrieve the status of a given problemID.
 func (pc *ProblemsV2Client) GetStatusByID(ctx context.Context, problemID string) (string, error) {
-	body, err := pc.client.Get(ctx, ProblemsV2Path+"/"+problemID)
+	body, err := pc.client.Get(ctx, ProblemsV2Path+"/"+url.PathEscape(problemID))
 	if err != nil {
 		return "", err
 	}

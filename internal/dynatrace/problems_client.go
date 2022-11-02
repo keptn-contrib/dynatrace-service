@@ -3,6 +3,7 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -29,7 +30,7 @@ func (pc *ProblemsClient) addProblemComment(ctx context.Context, problemID strin
 		return nil, err
 	}
 
-	return pc.client.Post(ctx, problemDetailsPath+"/"+problemID+"/comments", jsonPayload)
+	return pc.client.Post(ctx, problemDetailsPath+"/"+url.PathEscape(problemID)+"/comments", jsonPayload)
 }
 
 // AddProblemComment sends a comment on a DT problem and logs errors if necessary.

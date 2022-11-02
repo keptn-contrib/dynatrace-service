@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -29,6 +30,7 @@ type MetricEvent struct {
 	AlertingScope     []MEAlertingScope `json:"alertingScope"`
 	Unit              string            `json:"unit,omitempty"`
 }
+
 type MEMetadata struct {
 	ConfigurationVersions []int  `json:"configurationVersions"`
 	ClusterVersion        string `json:"clusterVersion"`
@@ -39,6 +41,7 @@ type METagFilter struct {
 	Key     string `json:"key"`
 	Value   string `json:"value"`
 }
+
 type MEAlertingScope struct {
 	FilterType       string       `json:"filterType"`
 	TagFilter        *METagFilter `json:"tagFilter"`
@@ -71,7 +74,7 @@ func (mec *MetricEventsClient) getAll(ctx context.Context) (*listResponse, error
 }
 
 func (mec *MetricEventsClient) getByID(ctx context.Context, metricEventID string) (*MetricEvent, error) {
-	res, err := mec.client.Get(ctx, metricEventsPath+"/"+metricEventID)
+	res, err := mec.client.Get(ctx, metricEventsPath+"/"+url.PathEscape(metricEventID))
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve metric event with ID: %s, %v", metricEventID, err)
 	}
@@ -116,7 +119,7 @@ func (mec *MetricEventsClient) Update(ctx context.Context, metricEvent *MetricEv
 }
 
 func (mec *MetricEventsClient) deleteByID(ctx context.Context, metricEventID string) error {
-	_, err := mec.client.Delete(ctx, metricEventsPath+"/"+metricEventID)
+	_, err := mec.client.Delete(ctx, metricEventsPath+"/"+url.PathEscape(metricEventID))
 	if err != nil {
 		return fmt.Errorf("could not delete metric event with ID: %s, %v", metricEventID, err)
 	}
