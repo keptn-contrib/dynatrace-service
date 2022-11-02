@@ -59,7 +59,7 @@ func (ec *EntitiesClient) GetKeptnManagedServices(ctx context.Context) ([]Entity
 		var err error
 
 		if nextPageKey == "" {
-			response, err = ec.Client.Get(ctx, entitiesPath+"?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize="+strconv.FormatInt(int64(pageSize), 10))
+			response, err = ec.Client.Get(ctx, entitiesPath+"?"+buildKeptnManagedServicesQueryParams(pageSize))
 		} else {
 			response, err = ec.Client.Get(ctx, entitiesPath+"?nextPageKey="+nextPageKey)
 		}
@@ -80,6 +80,17 @@ func (ec *EntitiesClient) GetKeptnManagedServices(ctx context.Context) ([]Entity
 		nextPageKey = entitiesResponse.NextPageKey
 	}
 	return entities, nil
+}
+
+// buildKeptnManagedServicesQueryParams generates url encoded query parameters for retrieving services tagged with "keptn_managed" and "keptn_service".
+func buildKeptnManagedServicesQueryParams(pageSize int) string {
+	query := newQueryParameters()
+
+	query.add("entitySelector", "type(\"SERVICE\") AND tag(\"keptn_managed\",\"[Environment]keptn_managed\") AND tag(\"keptn_service\",\"[Environment]keptn_service\")")
+	query.add("fields", "+tags")
+	query.add("pageSize", strconv.FormatInt(int64(pageSize), 10))
+
+	return query.encode()
 }
 
 type PGIQueryConfig struct {

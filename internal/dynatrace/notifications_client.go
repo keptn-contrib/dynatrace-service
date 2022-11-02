@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/credentials"
@@ -117,7 +118,7 @@ func (nc *NotificationsClient) Create(ctx context.Context, credentials *credenti
 }
 
 func (nc *NotificationsClient) deleteBy(ctx context.Context, id string) error {
-	_, err := nc.client.Delete(ctx, notificationsPath+"/"+id)
+	_, err := nc.client.Delete(ctx, notificationsPath+"/"+url.PathEscape(id))
 	if err != nil {
 		return nil
 	}

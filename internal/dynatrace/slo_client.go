@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
@@ -42,7 +43,7 @@ func (q *SLOClientGetRequest) RequestString() string {
 	queryParameters.add(toKey, common.TimestampToUnixMillisecondsString(q.timeframe.End()))
 	queryParameters.add(timeFrameKey, "GTF")
 
-	return SLOPath + "/" + q.sloID + "?" + queryParameters.encode()
+	return SLOPath + "/" + url.PathEscape(q.sloID) + "?" + queryParameters.encode()
 }
 
 type SLOResult struct {
