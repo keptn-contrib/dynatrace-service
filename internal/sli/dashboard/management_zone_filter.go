@@ -6,6 +6,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
+const allManagementZonesID = "all"
+
 type ManagementZoneFilter struct {
 	dashboardFilter    *dynatrace.DashboardFilter
 	tileManagementZone *dynatrace.ManagementZoneEntry
@@ -48,9 +50,15 @@ func (filter *ManagementZoneFilter) forSelector(mapper func(dynatrace.Management
 }
 
 func createFilterQueryForProblemSelector(mz dynatrace.ManagementZoneEntry) string {
+	if mz.ID == allManagementZonesID {
+		return ""
+	}
 	return fmt.Sprintf(",managementZones(%q)", mz.Name)
 }
 
 func createFilterQueryForMZSelector(mz dynatrace.ManagementZoneEntry) string {
+	if mz.ID == allManagementZonesID {
+		return ""
+	}
 	return fmt.Sprintf("mzName(%q)", mz.Name)
 }
