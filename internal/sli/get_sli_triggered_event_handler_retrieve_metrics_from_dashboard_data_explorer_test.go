@@ -231,8 +231,8 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 	}
 
 	requestBuilderWithNoManagementZone := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(10)):limit(100):names")
-	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzId(2311420533206603714)")
-	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzId(-6219736993013608218)")
+	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzName(\"ap_mz_1\")")
+	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzName(\"ap_mz_2\")")
 
 	tests := []struct {
 		name             string

@@ -49,7 +49,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_Success(t *testing.T) {
 func TestRetrieveMetricsFromDashboardProblemTile_CustomManagementZone(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/problem_tile/custom_management_zone/"
 
-	expectedProblemsRequest := buildProblemsV2Request("status(\"open\"),managementZoneIds(9130632296508575249)")
+	expectedProblemsRequest := buildProblemsV2Request("status(\"open\"),managementZones(\"Easytravel\")")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))

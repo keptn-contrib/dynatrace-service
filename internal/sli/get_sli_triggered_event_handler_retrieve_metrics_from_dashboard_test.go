@@ -135,7 +135,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/dashboard_query/"
 
 	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
-	expectedProblemsV2Request := buildProblemsV2Request("status(\"open\"),managementZoneIds(7030365576649815430)")
+	expectedProblemsV2Request := buildProblemsV2Request("status(\"open\"),managementZones(\"Keptn: keptn07project\")")
 
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath, filepath.Join(testDataFolder, "dashboards_query.json"))

@@ -35,22 +35,22 @@ func (filter *ManagementZoneFilter) ForMZSelector() string {
 	return filter.forSelector(createFilterQueryForMZSelector)
 }
 
-func (filter *ManagementZoneFilter) forSelector(mapper func(string) string) string {
+func (filter *ManagementZoneFilter) forSelector(mapper func(dynatrace.ManagementZoneEntry) string) string {
 	if filter.tileManagementZone != nil {
-		return mapper(filter.tileManagementZone.ID)
+		return mapper(*filter.tileManagementZone)
 	}
 
 	if filter.dashboardFilter != nil && filter.dashboardFilter.ManagementZone != nil {
-		return mapper(filter.dashboardFilter.ManagementZone.ID)
+		return mapper(*filter.dashboardFilter.ManagementZone)
 	}
 
 	return ""
 }
 
-func createFilterQueryForProblemSelector(managementZoneID string) string {
-	return fmt.Sprintf(",managementZoneIds(%s)", managementZoneID)
+func createFilterQueryForProblemSelector(mz dynatrace.ManagementZoneEntry) string {
+	return fmt.Sprintf(",managementZones(%q)", mz.Name)
 }
 
-func createFilterQueryForMZSelector(managementZoneID string) string {
-	return fmt.Sprintf("mzId(%s)", managementZoneID)
+func createFilterQueryForMZSelector(mz dynatrace.ManagementZoneEntry) string {
+	return fmt.Sprintf("mzName(%q)", mz.Name)
 }
