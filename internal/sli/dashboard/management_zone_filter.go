@@ -6,6 +6,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
+const allManagementZonesID = "all"
+
 type ManagementZoneFilter struct {
 	dashboardFilter    *dynatrace.DashboardFilter
 	tileManagementZone *dynatrace.ManagementZoneEntry
@@ -19,13 +21,6 @@ func NewManagementZoneFilter(
 		dashboardFilter:    dashboardManagementZone,
 		tileManagementZone: tileManagementZone,
 	}
-}
-
-// ForEntitySelector returns the ID of the ManagementZone in a valid representation for the entitySelector.
-// If a ManagementZone for a Dashboard tile is given, then it will take precedence over the ManagementZone of the DashboardFilter
-// If none of both are given it will return an empty string
-func (filter *ManagementZoneFilter) ForEntitySelector() string {
-	return filter.forSelector(createFilterQueryForEntitySelector)
 }
 
 // ForProblemSelector returns the ID of the ManagementZone in a valid representation for the problemSelector.
@@ -42,26 +37,28 @@ func (filter *ManagementZoneFilter) ForMZSelector() string {
 	return filter.forSelector(createFilterQueryForMZSelector)
 }
 
-func (filter *ManagementZoneFilter) forSelector(mapper func(string) string) string {
+func (filter *ManagementZoneFilter) forSelector(mapper func(dynatrace.ManagementZoneEntry) string) string {
 	if filter.tileManagementZone != nil {
-		return mapper(filter.tileManagementZone.ID)
+		return mapper(*filter.tileManagementZone)
 	}
 
 	if filter.dashboardFilter != nil && filter.dashboardFilter.ManagementZone != nil {
-		return mapper(filter.dashboardFilter.ManagementZone.ID)
+		return mapper(*filter.dashboardFilter.ManagementZone)
 	}
 
 	return ""
 }
 
-func createFilterQueryForEntitySelector(managementZoneID string) string {
-	return fmt.Sprintf(",mzId(%s)", managementZoneID)
+func createFilterQueryForProblemSelector(mz dynatrace.ManagementZoneEntry) string {
+	if mz.ID == allManagementZonesID {
+		return ""
+	}
+	return fmt.Sprintf(",managementZones(%q)", mz.Name)
 }
 
-func createFilterQueryForProblemSelector(managementZoneID string) string {
-	return fmt.Sprintf(",managementZoneIds(%s)", managementZoneID)
-}
-
-func createFilterQueryForMZSelector(managementZoneID string) string {
-	return fmt.Sprintf("mzId(%s)", managementZoneID)
+func createFilterQueryForMZSelector(mz dynatrace.ManagementZoneEntry) string {
+	if mz.ID == allManagementZonesID {
+		return ""
+	}
+	return fmt.Sprintf("mzName(%q)", mz.Name)
 }

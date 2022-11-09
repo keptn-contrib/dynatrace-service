@@ -107,22 +107,8 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 		metricAggregation = "avg"
 	}
 
-	// TODO - handle aggregation rates -> probably doesnt make sense as we always evalute a short timeframe
+	// TODO - handle aggregation rates -> probably doesn't make sense as we always evaluate a short timeframe
 	// if series.AggregationRate
-
-	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entites or tags
-	// lets see if we have a FiltersPerEntityType for the tiles EntityType
-	entityTileFilter, err := getEntitySelectorFromEntityFilter(filtersPerEntityType, series.EntityType)
-	if err != nil {
-		return nil, fmt.Errorf("could not get filter for entity type %s: %w", series.EntityType, err)
-	}
-
-	// lets get the true entity type as the one in the dashboard might not be accurate, e.g: IOT might be used instead of CUSTOM_DEVICE
-	// so - if the metric definition has EntityTypes defined we take the first one
-	entityType := series.EntityType
-	if len(metricDefinition.EntityType) > 0 {
-		entityType = metricDefinition.EntityType[0]
-	}
 
 	// build split by
 	splitBy := ""
@@ -149,14 +135,38 @@ func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx co
 	// NOTE: add :names so we also get the names of the dimensions and not just the entities. This means we get two values for each dimension
 	metricSelector := fmt.Sprintf("%s%s%s:%s:names",
 		series.Metric, filterAggregator, splitBy, strings.ToLower(metricAggregation))
-	entitySelector := fmt.Sprintf("type(%s)%s%s",
-		entityType, entityTileFilter, tileManagementZoneFilter.ForEntitySelector())
-	metricsQuery, err := metrics.NewQuery(metricSelector, entitySelector, "", "")
+	entitySelector, err := makeEntitySelector(series, filtersPerEntityType, metricDefinition)
+	if err != nil {
+		return nil, fmt.Errorf("could not create entity selector: %w", err)
+	}
+
+	metricsQuery, err := metrics.NewQuery(metricSelector, entitySelector, "", tileManagementZoneFilter.ForMZSelector())
 	if err != nil {
 		return nil, err
 	}
 
 	return metricsQuery, nil
+}
+
+func makeEntitySelector(series *dynatrace.Series, filtersPerEntityType map[string]dynatrace.FilterMap, metricDefinition *dynatrace.MetricDefinition) (string, error) {
+	// Need to implement chart filters per entity type, e.g: its possible that a chart has a filter on entities or tags
+	// lets see if we have a FiltersPerEntityType for the tiles EntityType
+	entityTileFilter, err := getEntitySelectorFromEntityFilter(filtersPerEntityType, series.EntityType)
+	if err != nil {
+		return "", fmt.Errorf("could not get filter for entity type %s: %w", series.EntityType, err)
+	}
+
+	// lets get the true entity type as the one in the dashboard might not be accurate, e.g: IOT might be used instead of CUSTOM_DEVICE
+	// so - if the metric definition has EntityTypes defined we take the first one
+	entityType := series.EntityType
+	if len(metricDefinition.EntityType) > 0 {
+		entityType = metricDefinition.EntityType[0]
+	}
+	if entityType == "" {
+		return "", errors.New("could not determine entity type")
+	}
+
+	return fmt.Sprintf("type(%s)%s", entityType, entityTileFilter), nil
 }
 
 // getEntitySelectorFromEntityFilter Parses the filtersPerEntityType dashboard definition and returns the entitySelector query filter -

@@ -221,6 +221,13 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 		},
 	}
 
+	dashboardFilterWithAllManagementZones := dynatrace.DashboardFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "all",
+			Name: "All",
+		},
+	}
+
 	emptyTileFilter := dynatrace.TileFilter{}
 
 	tileFilterWithManagementZone := dynatrace.TileFilter{
@@ -230,9 +237,16 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 		},
 	}
 
+	tileFilterWithAllManagementZones := dynatrace.TileFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "all",
+			Name: "All",
+		},
+	}
+
 	requestBuilderWithNoManagementZone := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(10)):limit(100):names")
-	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzId(2311420533206603714)")
-	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzId(-6219736993013608218)")
+	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzName(\"ap_mz_1\")")
+	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzName(\"ap_mz_2\")")
 
 	tests := []struct {
 		name             string
@@ -256,6 +270,13 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 			expectedSLIValue: 115445.40697872869,
 		},
 		{
+			name:             "dashboard_filter_with_all_mz_and_empty_tile_filter",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       emptyTileFilter,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.50455400265,
+		},
+		{
 			name:             "no_dashboard_filter_and_tile_filter_with_mz",
 			dashboardFilter:  nil,
 			tileFilter:       tileFilterWithManagementZone,
@@ -268,6 +289,34 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 			tileFilter:       tileFilterWithManagementZone,
 			requestBuilder:   requestBuilderWithManagementZone2,
 			expectedSLIValue: 1519500.493859082,
+		},
+		{
+			name:             "dashboard_filter_with_all_mz_and_tile_filter_with_mz",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       tileFilterWithManagementZone,
+			requestBuilder:   requestBuilderWithManagementZone2,
+			expectedSLIValue: 1519500.493859082,
+		},
+		{
+			name:             "no_dashboard_filter_and_tile_filter_with_all_mz",
+			dashboardFilter:  nil,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.50455400265,
+		},
+		{
+			name:             "dashboard_filter_with_mz_and_tile_filter_with_all_mz",
+			dashboardFilter:  &dashboardFilterWithManagementZone,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.50455400265,
+		},
+		{
+			name:             "dashboard_filter_with_all_mz_and_tile_filter_with_all_mz",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.50455400265,
 		},
 	}
 
