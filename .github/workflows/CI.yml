@@ -11,7 +11,7 @@ on:
   pull_request:
     branches:
       - "master"
-      - "release-*"
+
 defaults:
   run:
     shell: bash
