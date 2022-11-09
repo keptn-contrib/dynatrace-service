@@ -52,7 +52,7 @@ jobs:
         id: current_branch
         run: |
           branch=${GITHUB_REF#refs/heads/}
-          echo "::set-output name=branch::${branch}"
+          echo "branch=${branch}" >> $GITHUB_OUTPUT
 
   ############################################################################
   # Create Release-PR and special version updates
