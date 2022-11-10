@@ -5,8 +5,8 @@
     "result": [
         {
             "metricId": "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names",
-            "dataPointCountRatio": 2.4285E-4,
-            "dimensionCountRatio": 0.04857,
+            "dataPointCountRatio": 2.435E-4,
+            "dimensionCountRatio": 0.0487,
             "data": [
                 {
                     "dimensions": [],
@@ -15,7 +15,7 @@
                         1664409600000
                     ],
                     "values": [
-                        54896.48858596068
+                        54896.48640187603
                     ]
                 }
             ]

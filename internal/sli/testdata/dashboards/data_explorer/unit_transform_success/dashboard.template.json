@@ -14,7 +14,7 @@
   },
   "tiles": [
     {
-      "name": "SRT Milliseconds",
+      "name": "SRT",
       "tileType": "DATA_EXPLORER",
       "configured": true,
       "bounds": {
@@ -47,7 +47,7 @@
         "rules": [
           {
             "matcher": "A:",
-            "unitTransform": "MilliSecond",
+            "unitTransform": "{{.Unit}}",
             "valueFormat": "auto",
             "properties": {
               "color": "DEFAULT",

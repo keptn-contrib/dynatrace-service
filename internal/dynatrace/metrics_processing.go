@@ -387,7 +387,7 @@ func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Conte
 		return nil, err
 	}
 
-	if p.targetUnitID == "" {
+	if !doesTargetUnitRequireConversion(p.targetUnitID) {
 		return result, nil
 	}
 
@@ -398,6 +398,10 @@ func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Conte
 	}
 
 	sourceUnitID := metricDefinition.Unit
+	if sourceUnitID == p.targetUnitID {
+		return result, nil
+	}
+
 	convertedResults := make([]MetricsProcessingResult, len(result.Results()))
 	for i, r := range result.results {
 		v, err := p.unitsClient.Convert(ctx, NewMetricsUnitsClientConvertRequest(sourceUnitID, r.value, p.targetUnitID))
@@ -408,4 +412,19 @@ func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Conte
 		convertedResults[i] = newMetricsProcessingResult(r.Name(), v)
 	}
 	return newMetricsProcessingResults(result.Request(), convertedResults, result.Warnings()), nil
+}
+
+const autoUnitID = ""
+const noneUnitID = "none"
+
+// doesTargetUnitRequireConversion checks if the target unit ID requires conversion or not. Currently, "Auto" and "None" require no conversion.
+func doesTargetUnitRequireConversion(targetUnitID string) bool {
+	switch targetUnitID {
+	case autoUnitID:
+		return false
+	case noneUnitID:
+		return false
+	default:
+		return true
+	}
 }
