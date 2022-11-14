@@ -414,15 +414,14 @@ func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Conte
 	return newMetricsProcessingResults(result.Request(), convertedResults, result.Warnings()), nil
 }
 
-const autoUnitID = ""
+const emptyUnitID = ""
+const autoUnitID = "auto"
 const noneUnitID = "none"
 
-// doesTargetUnitRequireConversion checks if the target unit ID requires conversion or not. Currently, "Auto" and "None" require no conversion.
+// doesTargetUnitRequireConversion checks if the target unit ID requires conversion or not. Currently, "Auto" (default empty value and explicit `auto` value) and "None" require no conversion.
 func doesTargetUnitRequireConversion(targetUnitID string) bool {
 	switch targetUnitID {
-	case autoUnitID:
-		return false
-	case noneUnitID:
+	case emptyUnitID, autoUnitID, noneUnitID:
 		return false
 	default:
 		return true

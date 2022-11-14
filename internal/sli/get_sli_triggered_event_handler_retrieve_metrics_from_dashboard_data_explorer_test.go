@@ -543,8 +543,14 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformSuccess(t *te
 		expectedSLIValue   float64
 	}{
 		{
-			name:               "auto",
+			name:               "empty",
 			unit:               "",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "auto",
+			unit:               "auto",
 			requiresConversion: false,
 			expectedSLIValue:   54896.48640187603,
 		},
