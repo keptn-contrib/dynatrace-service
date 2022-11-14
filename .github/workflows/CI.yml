@@ -11,7 +11,7 @@ on:
   pull_request:
     branches:
       - "master"
-      - "release-*"
+
 defaults:
   run:
     shell: bash
@@ -58,9 +58,9 @@ jobs:
           if [[ "${GITHUB_HEAD_REF}" == "release-please-"* ]]; then
             # Release PR: extract version from x-release-please-version.json
             RELEASEPLEASE_VERSION=$(jq -r '."x-release-please-version"' ${{ env.VERSION_FILE }})
-            echo "::set-output name=NEXT-VERSION::${RELEASEPLEASE_VERSION}-rc"
+            echo "NEXT-VERSION=${RELEASEPLEASE_VERSION}-rc" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=NEXT-VERSION::${VERSION}"
+            echo "NEXT-VERSION=${VERSION}" >> $GITHUB_OUTPUT
           fi 
 
   ############################################################################

@@ -52,7 +52,7 @@ jobs:
         id: current_branch
         run: |
           branch=${GITHUB_REF#refs/heads/}
-          echo "::set-output name=branch::${branch}"
+          echo "branch=${branch}" >> $GITHUB_OUTPUT
 
   ############################################################################
   # Create Release-PR and special version updates
@@ -83,7 +83,7 @@ jobs:
           bump-patch-for-minor-pre-major: false
           include-v-in-tag: false
           signoff: "${{ env.KEPTN_BOT_NAME }} <${{ env.KEPTN_BOT_EMAIL }}>"
-          pull-request-title-pattern: "build: release ${version}"
+          pull-request-title-pattern: "build: release ${component} ${version}"
           extra-files: |
             ${{ env.VERSION_FILE }}
           changelog-types: |
