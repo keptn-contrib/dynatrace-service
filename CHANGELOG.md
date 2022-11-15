@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.25.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.24.0...0.25.0) (2022-11-15)
+
+### Release validated with
+ | Dynatrace-service: `0.25.0` | Keptn: `0.19.3` | Dynatrace: `1.254` |
+ |---|---|---|
+
+
+### Features
+
+* Use management zone names rather than IDs ([#957](https://github.com/keptn-contrib/dynatrace-service/issues/957)) ([418c854](https://github.com/keptn-contrib/dynatrace-service/commit/418c8540eaaa9a2ca53e693293227eb7758f55fe))
+
+
+### Bug Fixes
+
+* Correctly encode requests made by `dynatrace.EntitiesClient` ([#955](https://github.com/keptn-contrib/dynatrace-service/issues/955)) ([93a01f7](https://github.com/keptn-contrib/dynatrace-service/commit/93a01f75df6d199258be740c75b87d65167aa9d7))
+* Improve Data explorer unit support ([#959](https://github.com/keptn-contrib/dynatrace-service/issues/959)) ([6fa0e94](https://github.com/keptn-contrib/dynatrace-service/commit/6fa0e948d9cbc7c1cd6fa9e493c8377e5fae1d25))
+
+
+### Docs
+
+* Clarify unit conversion for SLIs ([#951](https://github.com/keptn-contrib/dynatrace-service/issues/951)) ([694742f](https://github.com/keptn-contrib/dynatrace-service/commit/694742f96ca363109224d097d053e885698f44f3))
+
 ## [0.24.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.23.0...0.24.0) (2022-10-25)
 
 ### Release validated with
