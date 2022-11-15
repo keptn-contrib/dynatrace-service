@@ -11,7 +11,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
-	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
 // SLIAndSLOReaderInterface provides functionality for getting SLIs and SLOs.
@@ -27,7 +26,7 @@ type SLIAndSLOReaderInterface interface {
 // SLIAndSLOWriterInterface provides functionality for uploading SLIs and SLOs.
 type SLIAndSLOWriterInterface interface {
 	// UploadSLIs uploads the SLIs for the specified project, stage and service.
-	UploadSLIs(ctx context.Context, project string, stage string, service string, slis *dynatrace.SLI) error
+	UploadSLIs(ctx context.Context, project string, stage string, service string, slis *SLI) error
 
 	// UploadSLOs uploads the SLOs for the specified project, stage and service.
 	UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error
@@ -55,6 +54,12 @@ const shipyardFilename = "shipyard.yaml"
 const sloFilename = "slo.yaml"
 const sliFilename = "dynatrace/sli.yaml"
 const configFilename = "dynatrace/dynatrace.conf.yaml"
+
+// SLI struct for SLI.yaml
+type SLI struct {
+	SpecVersion string            `yaml:"spec_version"`
+	Indicators  map[string]string `yaml:"indicators"`
+}
 
 // ConfigClient is the default implementation for ResourceClientInterface using a ConfigResourceClientInterface.
 type ConfigClient struct {
@@ -95,7 +100,7 @@ func (rc *ConfigClient) UploadSLOs(ctx context.Context, project string, stage st
 }
 
 // UploadSLIs uploads the SLIs for the specified project, stage and service.
-func (rc *ConfigClient) UploadSLIs(ctx context.Context, project string, stage string, service string, slis *dynatrace.SLI) error {
+func (rc *ConfigClient) UploadSLIs(ctx context.Context, project string, stage string, service string, slis *SLI) error {
 	yamlAsByteArray, err := yaml.Marshal(slis)
 	if err != nil {
 		return fmt.Errorf("could not convert SLIs to YAML: %s", err)

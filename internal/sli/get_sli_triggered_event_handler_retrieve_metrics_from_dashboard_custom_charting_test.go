@@ -347,6 +347,138 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_UnitTransformError(t *te
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("service_response_time", requestBuilder.build()))
 }
 
+// TestRetrieveMetricsFromDashboardCustomChartingTile_ManagementZonesWork tests applying management zones to the dashboard and tile work as expected.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_ManagementZonesWork(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/custom_charting/management_zones_work/"
+
+	dashboardFilterWithManagementZone := dynatrace.DashboardFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "2311420533206603714",
+			Name: "ap_mz_1",
+		},
+	}
+
+	dashboardFilterWithAllManagementZones := dynatrace.DashboardFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "all",
+			Name: "All",
+		},
+	}
+
+	emptyTileFilter := dynatrace.TileFilter{}
+
+	tileFilterWithManagementZone := dynatrace.TileFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "-6219736993013608218",
+			Name: "ap_mz_2",
+		},
+	}
+
+	tileFilterWithAllManagementZones := dynatrace.TileFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "all",
+			Name: "All",
+		},
+	}
+
+	requestBuilderWithNoManagementZone := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():avg:names").copyWithEntitySelector("type(SERVICE)")
+	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzName(\"ap_mz_1\")")
+	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzName(\"ap_mz_2\")")
+
+	tests := []struct {
+		name             string
+		dashboardFilter  *dynatrace.DashboardFilter
+		tileFilter       dynatrace.TileFilter
+		requestBuilder   *metricsV2QueryRequestBuilder
+		expectedSLIValue float64
+	}{
+		{
+			name:             "no_dashboard_filter_and_empty_tile_filter",
+			dashboardFilter:  nil,
+			tileFilter:       emptyTileFilter,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.48722844951,
+		},
+		{
+			name:             "dashboard_filter_with_mz_and_empty_tile_filter",
+			dashboardFilter:  &dashboardFilterWithManagementZone,
+			tileFilter:       emptyTileFilter,
+			requestBuilder:   requestBuilderWithManagementZone1,
+			expectedSLIValue: 115445.40697872869,
+		},
+		{
+			name:             "dashboard_filter_with_all_mz_and_empty_tile_filter",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       emptyTileFilter,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.48722844951,
+		},
+		{
+			name:             "no_dashboard_filter_and_tile_filter_with_mz",
+			dashboardFilter:  nil,
+			tileFilter:       tileFilterWithManagementZone,
+			requestBuilder:   requestBuilderWithManagementZone2,
+			expectedSLIValue: 1519500.493859082,
+		},
+		{
+			name:             "dashboard_filter_with_mz_and_tile_filter_with_mz",
+			dashboardFilter:  &dashboardFilterWithManagementZone,
+			tileFilter:       tileFilterWithManagementZone,
+			requestBuilder:   requestBuilderWithManagementZone2,
+			expectedSLIValue: 1519500.493859082,
+		},
+		{
+			name:             "dashboard_filter_with_all_mz_and_tile_filter_with_mz",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       tileFilterWithManagementZone,
+			requestBuilder:   requestBuilderWithManagementZone2,
+			expectedSLIValue: 1519500.493859082,
+		},
+		{
+			name:             "no_dashboard_filter_and_tile_filter_with_all_mz",
+			dashboardFilter:  nil,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.48722844951,
+		},
+		{
+			name:             "dashboard_filter_with_mz_and_tile_filter_with_all_mz",
+			dashboardFilter:  &dashboardFilterWithManagementZone,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.48722844951,
+		},
+		{
+			name:             "dashboard_filter_with_all_mz_and_tile_filter_with_all_mz",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.48722844951,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := createHandlerWithTemplatedDashboard(t,
+				filepath.Join(testDataFolder, "dashboard.template.json"),
+				struct {
+					DashboardFilterString string
+					TileFilterString      string
+				}{
+					DashboardFilterString: convertToJSONStringOrEmptyIfNil(t, tt.dashboardFilter),
+					TileFilterString:      convertToJSONString(t, tt.tileFilter),
+				},
+			)
+
+			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
+			handler.AddExactFile(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testVariantDataFolder, "metrics_get_by_id0.json"))
+			metricsQueryRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, tt.requestBuilder)
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("service_response_time", tt.expectedSLIValue, metricsQueryRequest))
+		})
+	}
+}
+
 type successfulCustomChartingTestHandlerConfiguration struct {
 	testDataFolder     string
 	baseMetricSelector string

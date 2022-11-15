@@ -3,6 +3,7 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
+	"net/url"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
@@ -41,7 +42,7 @@ func (dc *DashboardsClient) GetAll(ctx context.Context) (*DashboardList, error) 
 
 // GetByID gets a dashboard by ID or returns an error.
 func (dc *DashboardsClient) GetByID(ctx context.Context, dashboardID string) (*Dashboard, error) {
-	body, err := dc.client.Get(ctx, DashboardsPath+"/"+dashboardID)
+	body, err := dc.client.Get(ctx, DashboardsPath+"/"+url.PathEscape(dashboardID))
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func (dc *DashboardsClient) Create(ctx context.Context, dashboard *Dashboard) er
 
 // Delete deletes the dashboard referenced by the specified ID or returns an error.
 func (dc *DashboardsClient) Delete(ctx context.Context, dashboardID string) error {
-	_, err := dc.client.Delete(ctx, DashboardsPath+"/"+dashboardID)
+	_, err := dc.client.Delete(ctx, DashboardsPath+"/"+url.PathEscape(dashboardID))
 	if err != nil {
 		return err
 	}

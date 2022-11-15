@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 
@@ -58,7 +59,7 @@ type uploadedSLIs struct {
 	project string
 	stage   string
 	service string
-	slis    *dynatrace.SLI
+	slis    *keptn.SLI
 }
 
 type uploadedSLOs struct {
@@ -73,7 +74,7 @@ type mockSLIAndSLOResourceWriter struct {
 	uploadedSLOs []uploadedSLOs
 }
 
-func (w *mockSLIAndSLOResourceWriter) UploadSLIs(_ context.Context, project string, stage string, service string, slis *dynatrace.SLI) error {
+func (w *mockSLIAndSLOResourceWriter) UploadSLIs(_ context.Context, project string, stage string, service string, slis *keptn.SLI) error {
 	w.uploadedSLIs = append(w.uploadedSLIs, uploadedSLIs{project: project, stage: stage, service: service, slis: slis})
 	return nil
 }
@@ -161,7 +162,7 @@ func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
 	defer teardown()
 
 	const testDataFolder = "./testdata/test_synchronize_services_add_new/"
-	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", filepath.Join(testDataFolder, "entities_response1.json"))
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type%28%22SERVICE%22%29+AND+tag%28%22keptn_managed%22%2C%22%5BEnvironment%5Dkeptn_managed%22%29+AND+tag%28%22keptn_service%22%2C%22%5BEnvironment%5Dkeptn_service%22%29&fields=%2Btags&pageSize=50", filepath.Join(testDataFolder, "entities_response1.json"))
 	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", filepath.Join(testDataFolder, "entities_response2.json"))
 
 	s := &ServiceSynchronizer{
@@ -268,7 +269,7 @@ func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
 				project: mockSynchronizedProject,
 				stage:   mockSynchronizedStage,
 				service: onboardedService1,
-				slis: &dynatrace.SLI{
+				slis: &keptn.SLI{
 					SpecVersion: "1.0",
 					Indicators: map[string]string{
 						"throughput":        fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService1),
@@ -283,7 +284,7 @@ func Test_ServiceSynchronizer_synchronizeServices_addNew(t *testing.T) {
 				project: mockSynchronizedProject,
 				stage:   mockSynchronizedStage,
 				service: onboardedService2,
-				slis: &dynatrace.SLI{
+				slis: &keptn.SLI{
 					SpecVersion: "1.0",
 					Indicators: map[string]string{
 						"throughput":        fmt.Sprintf("metricSelector=builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum&entitySelector=type(SERVICE),tag(keptn_managed),tag(keptn_service:%s)", onboardedService2),
@@ -308,7 +309,7 @@ func Test_ServiceSynchronizer_synchronizeServices_skipExisting(t *testing.T) {
 	defer teardown()
 
 	const testDataFolder = "./testdata/test_synchronize_services_add_new/"
-	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type(\"SERVICE\")%20AND%20tag(\"keptn_managed\",\"[Environment]keptn_managed\")%20AND%20tag(\"keptn_service\",\"[Environment]keptn_service\")&fields=+tags&pageSize=50", filepath.Join(testDataFolder, "entities_response1.json"))
+	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?entitySelector=type%28%22SERVICE%22%29+AND+tag%28%22keptn_managed%22%2C%22%5BEnvironment%5Dkeptn_managed%22%29+AND+tag%28%22keptn_service%22%2C%22%5BEnvironment%5Dkeptn_service%22%29&fields=%2Btags&pageSize=50", filepath.Join(testDataFolder, "entities_response1.json"))
 	mockEntitiesClientFactory.handler.AddExact("/api/v2/entities?nextPageKey=next-page-key", filepath.Join(testDataFolder, "entities_response2.json"))
 
 	s := &ServiceSynchronizer{

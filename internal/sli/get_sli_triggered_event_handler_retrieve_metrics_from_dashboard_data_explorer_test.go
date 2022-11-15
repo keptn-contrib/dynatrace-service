@@ -221,6 +221,13 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 		},
 	}
 
+	dashboardFilterWithAllManagementZones := dynatrace.DashboardFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "all",
+			Name: "All",
+		},
+	}
+
 	emptyTileFilter := dynatrace.TileFilter{}
 
 	tileFilterWithManagementZone := dynatrace.TileFilter{
@@ -230,9 +237,16 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 		},
 	}
 
+	tileFilterWithAllManagementZones := dynatrace.TileFilter{
+		ManagementZone: &dynatrace.ManagementZoneEntry{
+			ID:   "all",
+			Name: "All",
+		},
+	}
+
 	requestBuilderWithNoManagementZone := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(10)):limit(100):names")
-	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzId(2311420533206603714)")
-	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzId(-6219736993013608218)")
+	requestBuilderWithManagementZone1 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzName(\"ap_mz_1\")")
+	requestBuilderWithManagementZone2 := requestBuilderWithNoManagementZone.copyWithMZSelector("mzName(\"ap_mz_2\")")
 
 	tests := []struct {
 		name             string
@@ -256,6 +270,13 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 			expectedSLIValue: 115445.40697872869,
 		},
 		{
+			name:             "dashboard_filter_with_all_mz_and_empty_tile_filter",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       emptyTileFilter,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.50455400265,
+		},
+		{
 			name:             "no_dashboard_filter_and_tile_filter_with_mz",
 			dashboardFilter:  nil,
 			tileFilter:       tileFilterWithManagementZone,
@@ -268,6 +289,34 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 			tileFilter:       tileFilterWithManagementZone,
 			requestBuilder:   requestBuilderWithManagementZone2,
 			expectedSLIValue: 1519500.493859082,
+		},
+		{
+			name:             "dashboard_filter_with_all_mz_and_tile_filter_with_mz",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       tileFilterWithManagementZone,
+			requestBuilder:   requestBuilderWithManagementZone2,
+			expectedSLIValue: 1519500.493859082,
+		},
+		{
+			name:             "no_dashboard_filter_and_tile_filter_with_all_mz",
+			dashboardFilter:  nil,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.50455400265,
+		},
+		{
+			name:             "dashboard_filter_with_mz_and_tile_filter_with_all_mz",
+			dashboardFilter:  &dashboardFilterWithManagementZone,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.50455400265,
+		},
+		{
+			name:             "dashboard_filter_with_all_mz_and_tile_filter_with_all_mz",
+			dashboardFilter:  &dashboardFilterWithAllManagementZones,
+			tileFilter:       tileFilterWithAllManagementZones,
+			requestBuilder:   requestBuilderWithNoManagementZone,
+			expectedSLIValue: 54896.50455400265,
 		},
 	}
 
@@ -481,21 +530,79 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationP
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "error parsing SLO definition", "tile has 2 queries enabled but only one is supported", "tile has no metric expressions"))
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformMilliseconds tests that unit transform works as expected.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformMilliseconds(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_milliseconds/"
+// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformSuccess tests that unit transform works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformSuccess(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_success/"
 
-	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
-		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
-	)
-	handler.AddExact(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+	requestBuilder := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.89648858596068, expectedMetricsRequest),
+	tests := []struct {
+		name               string
+		unit               string
+		requiresConversion bool
+		expectedSLIValue   float64
+	}{
+		{
+			name:               "empty",
+			unit:               "",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "auto",
+			unit:               "auto",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "none",
+			unit:               "none",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "millisecond",
+			unit:               "MilliSecond",
+			requiresConversion: true,
+			expectedSLIValue:   54.896486401876025,
+		},
+		{
+
+			name:               "microsecond",
+			unit:               "MicroSecond",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "day",
+			unit:               "Day",
+			requiresConversion: true,
+			expectedSLIValue:   6.353760000217132e-7,
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := createHandlerWithTemplatedDashboard(t,
+				filepath.Join(testDataFolder, "dashboard.template.json"),
+				struct {
+					Unit string
+				}{
+					Unit: tt.unit,
+				})
+
+			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
+
+			metricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, requestBuilder)
+
+			if tt.requiresConversion {
+				handler.AddExactFile(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48640187603, tt.unit), filepath.Join(testVariantDataFolder, "metrics_units_convert1.json"))
+			}
+
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("srt", tt.expectedSLIValue, metricsRequest))
+		})
+	}
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformError tests that a unit transform with an invalid unit generates the expected error.
