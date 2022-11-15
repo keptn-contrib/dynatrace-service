@@ -530,21 +530,79 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationP
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "error parsing SLO definition", "tile has 2 queries enabled but only one is supported", "tile has no metric expressions"))
 }
 
-// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformMilliseconds tests that unit transform works as expected.
-func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformMilliseconds(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_milliseconds/"
+// TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformSuccess tests that unit transform works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformSuccess(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform_success/"
 
-	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
-		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
-	)
-	handler.AddExact(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+	requestBuilder := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
 
-	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.89648858596068, expectedMetricsRequest),
+	tests := []struct {
+		name               string
+		unit               string
+		requiresConversion bool
+		expectedSLIValue   float64
+	}{
+		{
+			name:               "empty",
+			unit:               "",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "auto",
+			unit:               "auto",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "none",
+			unit:               "none",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "millisecond",
+			unit:               "MilliSecond",
+			requiresConversion: true,
+			expectedSLIValue:   54.896486401876025,
+		},
+		{
+
+			name:               "microsecond",
+			unit:               "MicroSecond",
+			requiresConversion: false,
+			expectedSLIValue:   54896.48640187603,
+		},
+		{
+			name:               "day",
+			unit:               "Day",
+			requiresConversion: true,
+			expectedSLIValue:   6.353760000217132e-7,
+		},
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := createHandlerWithTemplatedDashboard(t,
+				filepath.Join(testDataFolder, "dashboard.template.json"),
+				struct {
+					Unit string
+				}{
+					Unit: tt.unit,
+				})
+
+			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
+
+			metricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, requestBuilder)
+
+			if tt.requiresConversion {
+				handler.AddExactFile(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48640187603, tt.unit), filepath.Join(testVariantDataFolder, "metrics_units_convert1.json"))
+			}
+
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("srt", tt.expectedSLIValue, metricsRequest))
+		})
+	}
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransformError tests that a unit transform with an invalid unit generates the expected error.
