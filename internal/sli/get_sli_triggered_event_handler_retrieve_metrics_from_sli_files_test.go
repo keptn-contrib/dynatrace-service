@@ -707,3 +707,27 @@ func TestCustomSLIsGivesErrorIfNoSLOFileExistsButIndicatorRequested(t *testing.T
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "could not retrieve SLO definitions"))
 }
+
+// TestGetSLIValueMetricsQuery_NoDataForInformationalSLOFromFileProducesWarning tests that informational SLOs with no data produce an overall warning result.
+func TestGetSLIValueMetricsQuery_NoDataForInformationalSLOFromFileProducesWarning(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/no_data_informational_slo"
+
+	const testIndicatorRequestCount = "request_count"
+	responseTimeQueryBuilder := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)")
+	requestCountQueryBuilder := newMetricsV2QueryRequestBuilder("builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum")
+
+	configClient := newConfigClientMockWithSLIsAndSLOs(
+		t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=" + responseTimeQueryBuilder.metricSelector(),
+			testIndicatorRequestCount:    " metricSelector=" + requestCountQueryBuilder.metricSelector(),
+		},
+		createTestSLOs(createTestSLOWithPassCriterion(testIndicatorResponseTimeP95, "<=90"), createTestInformationalSLO(testIndicatorRequestCount)))
+
+	handler := test.NewCombinedURLHandler(t)
+	expectedResponseTimeQuery := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, filepath.Join(testDataFolder, "response_time_p95"), responseTimeQueryBuilder)
+	expectedRequestCountQuery := requestCountQueryBuilder.build()
+	handler.AddExactFile(expectedRequestCountQuery, filepath.Join(filepath.Join(testDataFolder, "request_count"), "metrics_get_by_query1.json"))
+
+	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{testIndicatorResponseTimeP95, testIndicatorRequestCount}, getSLIFinishedEventWarningAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.99693868207, expectedResponseTimeQuery), createFailedSLIResultWithQueryAssertionsFunc(testIndicatorRequestCount, expectedRequestCountQuery, testErrorSubStringZeroMetricSeries))
+}
