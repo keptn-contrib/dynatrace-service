@@ -43,7 +43,7 @@ By default, the dynatrace-service validates the SSL certificate of the Dynatrace
 
 In certain instances where the dynatrace-service is installed behind a firewall, it may need to use a proxy to access a Dynatrace tenant. This can be configured using the `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` environment variables as described in [`httpproxy.FromEnvironment()`](https://pkg.go.dev/golang.org/x/net/http/httpproxy#FromEnvironment). The environment variables are exposed through the `dynatraceService.config.httpProxy`, `dynatraceService.config.httpsProxy` and `dynatraceService.config.noProxy` Helm values.
 
-Due to the large variety of configurations, the dynatrace-service no longer provides defaults for `dynatraceService.config.noProxy`. In general, entries should be added to prevent requests to other Keptn services as well as Kubernetes services operating within the cluster. For example, this may be done by setting `dynatraceService.config.noProxy` to `"127.0.0.1,mongodb-datastore,configuration-service,shipyard-controller,kubernetes.default.svc.cluster.local"`, however the exact values depend on the specific setup.
+Due to the large variety of configurations, the dynatrace-service no longer provides defaults for `dynatraceService.config.noProxy`. In general, entries should be added to prevent requests to other Keptn services as well as Kubernetes services operating within the cluster. For example, this may be done by setting `dynatraceService.config.noProxy` to `"127.0.0.1,mongodb-datastore,resource-service,shipyard-controller,kubernetes.default.svc.cluster.local"`, however the exact values depend on the specific setup.
 
 | Value name | Description | Default |
 |---|---|---|
