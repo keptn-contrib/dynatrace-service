@@ -238,3 +238,46 @@ func (m *uploadSLOsWillFailConfigClientMock) UploadSLOs(_ context.Context, _ str
 	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
 	return nil
 }
+
+// TestDashboardWithInformationalSLOWithNoData demonstrates that an informational SLO from a dashboard with a warning (no data) produces an overall warning result.
+func TestDashboardWithInformationalSLOWithNoData(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/no_data_informational_sli/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names").build()
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
+	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createFailedSLIResultWithQueryAssertionsFunc("service_response_time", expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+	}
+
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		if !assert.NotNil(t, actual) {
+			return
+		}
+
+		if !assert.EqualValues(t, 2, len(actual.Objectives)) {
+			return
+		}
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:         "service_response_time",
+			DisplayName: "Service response time",
+			Pass:        nil,
+			Warning:     nil,
+			Weight:      1,
+		}, actual.Objectives[0])
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:     "static_slo_-_pass",
+			Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
+			Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
+			Weight:  1,
+		}, actual.Objectives[1])
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+}

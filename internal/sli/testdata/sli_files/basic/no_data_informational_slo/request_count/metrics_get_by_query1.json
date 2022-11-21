@@ -1,0 +1,13 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "1h",
+    "result": [
+        {
+            "metricId": "builtin:service.requestCount.total:merge(\"dt.entity.service\"):sum",
+            "dataPointCountRatio": 0,
+            "dimensionCountRatio": 0,
+            "data": [    ]
+        }
+    ]
+}
