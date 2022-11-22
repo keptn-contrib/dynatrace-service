@@ -641,6 +641,125 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TwoMatchingVisualConfigRul
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "expected one visualization rule for query", "found 2"))
 }
 
+// TestRetrieveMetricsFromDashboardDataExplorerTile_AllowDuplicateNames tests that unit transform works as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTile_AllowDuplicateNames(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/duplicate_names/"
+
+	requestBuilder := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
+
+	expectedMetricsRequest := requestBuilder.copyWithResolution(resolutionInf).build()
+	expectedSLIValue := 54896.486143787944
+
+	tests := []struct {
+		name                               string
+		tileName1                          string
+		tileName2                          string
+		expectedSLIResultsAssertionsFuncs  []func(t *testing.T, actual sliResult)
+		expectedUploadedSLOsAssertionsFunc func(t *testing.T, actual *keptn.ServiceLevelObjectives)
+	}{
+		{
+			name:      "no duplication of SLI or display name",
+			tileName1: "Service response time 1; sli=srt1",
+			tileName2: "Service response time 2; sli=srt2",
+			expectedSLIResultsAssertionsFuncs: []func(t *testing.T, actual sliResult){
+				createSuccessfulSLIResultAssertionsFunc("srt1", expectedSLIValue, expectedMetricsRequest),
+				createSuccessfulSLIResultAssertionsFunc("srt2", expectedSLIValue, expectedMetricsRequest),
+			},
+
+			expectedUploadedSLOsAssertionsFunc: func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+				if !assert.EqualValues(t, 2, len(actual.Objectives)) {
+					return
+				}
+
+				assert.EqualValues(t, createExpectedSLO("srt1", "Service response time 1"), actual.Objectives[0])
+				assert.EqualValues(t, createExpectedSLO("srt2", "Service response time 2"), actual.Objectives[1])
+			},
+		},
+		{
+			name:      "duplicate SLI names",
+			tileName1: "Service response time 1; sli=srt",
+			tileName2: "Service response time 2; sli=srt",
+			expectedSLIResultsAssertionsFuncs: []func(t *testing.T, actual sliResult){
+				createSuccessfulSLIResultAssertionsFunc("srt", expectedSLIValue, expectedMetricsRequest),
+				createSuccessfulSLIResultAssertionsFunc("srt", expectedSLIValue, expectedMetricsRequest),
+			},
+
+			expectedUploadedSLOsAssertionsFunc: func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+				if !assert.EqualValues(t, 2, len(actual.Objectives)) {
+					return
+				}
+
+				assert.EqualValues(t, createExpectedSLO("srt", "Service response time 1"), actual.Objectives[0])
+				assert.EqualValues(t, createExpectedSLO("srt", "Service response time 2"), actual.Objectives[1])
+			},
+		},
+		{
+			name:      "duplicate display names",
+			tileName1: "Service response time; sli=srt1",
+			tileName2: "Service response time; sli=srt2",
+			expectedSLIResultsAssertionsFuncs: []func(t *testing.T, actual sliResult){
+				createSuccessfulSLIResultAssertionsFunc("srt1", expectedSLIValue, expectedMetricsRequest),
+				createSuccessfulSLIResultAssertionsFunc("srt2", expectedSLIValue, expectedMetricsRequest),
+			},
+
+			expectedUploadedSLOsAssertionsFunc: func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+				if !assert.EqualValues(t, 2, len(actual.Objectives)) {
+					return
+				}
+
+				assert.EqualValues(t, createExpectedSLO("srt1", "Service response time"), actual.Objectives[0])
+				assert.EqualValues(t, createExpectedSLO("srt2", "Service response time"), actual.Objectives[1])
+			},
+		},
+		{
+			name:      "duplicate SLI and display names",
+			tileName1: "Service response time; sli=srt",
+			tileName2: "Service response time; sli=srt",
+			expectedSLIResultsAssertionsFuncs: []func(t *testing.T, actual sliResult){
+				createSuccessfulSLIResultAssertionsFunc("srt", expectedSLIValue, expectedMetricsRequest),
+				createSuccessfulSLIResultAssertionsFunc("srt", expectedSLIValue, expectedMetricsRequest),
+			},
+
+			expectedUploadedSLOsAssertionsFunc: func(t *testing.T, actual *keptn.ServiceLevelObjectives) {
+				if !assert.EqualValues(t, 2, len(actual.Objectives)) {
+					return
+				}
+
+				assert.EqualValues(t, createExpectedSLO("srt", "Service response time"), actual.Objectives[0])
+				assert.EqualValues(t, createExpectedSLO("srt", "Service response time"), actual.Objectives[1])
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			handler := createHandlerWithTemplatedDashboard(t,
+				filepath.Join(testDataFolder, "dashboard.template.json"),
+				struct {
+					TileName1 string
+					TileName2 string
+				}{
+					TileName1: tt.tileName1,
+					TileName2: tt.tileName2,
+				})
+
+			addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testDataFolder, requestBuilder)
+
+			runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, tt.expectedUploadedSLOsAssertionsFunc, tt.expectedSLIResultsAssertionsFuncs...)
+		})
+	}
+}
+
+func createExpectedSLO(sliName string, displayName string) *keptnapi.SLO {
+	return &keptnapi.SLO{
+		SLI:         sliName,
+		DisplayName: displayName,
+		Weight:      1,
+		KeySLI:      false,
+	}
+}
+
 func createExpectedServiceResponseTimeSLO(passCriteria []*keptnapi.SLOCriteria, warningCriteria []*keptnapi.SLOCriteria) *keptnapi.SLO {
 	return &keptnapi.SLO{
 		SLI:         "srt",
