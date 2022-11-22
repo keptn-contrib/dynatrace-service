@@ -13,9 +13,6 @@ import (
 
 const ProblemURLLabel = "Problem URL"
 
-// DynatraceConfigDashboardQUERY defines the Dynatrace Configuration File structure and supporting Constants
-const DynatraceConfigDashboardQUERY = "query"
-
 // ReplaceQueryParameters replaces query parameters based on sli filters and keptn event data
 func ReplaceQueryParameters(query string, customFilters []*keptnv2.SLIFilter, keptnEvent adapter.EventContentAdapter) string {
 	// apply custom filters

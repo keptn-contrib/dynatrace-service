@@ -31,11 +31,10 @@ func NewQuerying(eventData adapter.EventContentAdapter, customFilters []*keptnv2
 // Queries Dynatrace for the existence of a dashboard tagged with keptn_project:project, keptn_stage:stage, keptn_service:service, SLI
 // if this dashboard exists it will be parsed and a custom SLI_dashboard.yaml and an SLO_dashboard.yaml will be created
 // Returns a QueryResult or an error
-func (q *Querying) GetSLIValues(ctx context.Context, dashboardID string, timeframe common.Timeframe) (*QueryResult, error) {
-	// let's load the dashboard if needed
-	dashboard, dashboardID, err := NewRetrieval(q.dtClient, q.eventData).Retrieve(ctx, dashboardID)
+func (q *Querying) GetSLIValues(ctx context.Context, dashboardProperty string, timeframe common.Timeframe) (*QueryResult, error) {
+	dashboard, err := NewRetrieval(q.dtClient, q.eventData).Retrieve(ctx, dashboardProperty)
 	if err != nil {
-		return nil, fmt.Errorf("error while processing dashboard config '%s' - %w", dashboardID, err)
+		return nil, fmt.Errorf("error while retrieving dashboard: %w", err)
 	}
 
 	return NewProcessing(q.dtClient, q.eventData, q.customSLIFilters, timeframe).Process(ctx, dashboard)

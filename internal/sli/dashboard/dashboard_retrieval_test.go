@@ -28,13 +28,12 @@ func TestLoadDynatraceDashboardWithEmptyDashboard(t *testing.T) {
 	dh, teardown := createDashboardRetrieval(t, keptnEvent, handler)
 	defer teardown()
 
-	dashboardJSON, dashboard, err := dh.Retrieve(context.TODO(), "")
-
+	dashboard, err := dh.Retrieve(context.TODO(), "")
 	if assert.Error(t, err) {
-		assert.Contains(t, err.Error(), "invalid 'dashboard'")
+		assert.Contains(t, err.Error(), "invalid 'dashboard' property")
 	}
-	assert.Nil(t, dashboardJSON)
-	assert.Empty(t, dashboard)
+	assert.Nil(t, dashboard)
+
 }
 
 func TestCreateQueryingWithHandler(t *testing.T) {
