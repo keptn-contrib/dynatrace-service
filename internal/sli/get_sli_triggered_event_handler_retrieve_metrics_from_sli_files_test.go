@@ -1,12 +1,14 @@
 package sli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -581,4 +583,57 @@ func TestGetSLIValueMetricsQuery_SuccessWithOtherResolution(t *testing.T) {
 		})
 	}
 
+}
+
+// TestGetSLIValueMetricsQuery_DuplicateNamesAreNotAllowedInOneSLIFile tests that duplicate SLI names are not allowed within one dynatrace/sli.yaml file.
+func TestGetSLIValueMetricsQuery_DuplicateNamesAreNotAllowedInOneSLIFile(t *testing.T) {
+	resourceClient := &slisOnServiceLevelResourceClientMock{
+		t: t,
+		serviceSLIFile: `spec_version: "1.0"
+indicators:
+  response_time_p95: metricSelector=builtin:service.response.time:merge("dt.entity.service"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)
+  response_time_p95: metricSelector=builtin:service.response.time:merge("dt.entity.service"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)
+`,
+	}
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, test.NewEmptyURLHandler(t), keptn.NewConfigClient(resourceClient), testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "mapping key \"response_time_p95\" already defined"))
+}
+
+const expectedSLIResourceURI = "dynatrace/sli.yaml"
+
+// slisOnServiceLevelResourceClientMock is an implementation of keptn.ResourceClient that only provides a dynatrace/sli.yaml file on the service level.
+type slisOnServiceLevelResourceClientMock struct {
+	t              *testing.T
+	serviceSLIFile string
+}
+
+func (src *slisOnServiceLevelResourceClientMock) GetProjectResource(_ context.Context, project string, resourceURI string) (string, error) {
+	assert.EqualValues(src.t, testProject, project)
+	assert.EqualValues(src.t, expectedSLIResourceURI, resourceURI)
+	return "", keptn.NewResourceNotFoundError(resourceURI, project, "", "")
+}
+
+func (src *slisOnServiceLevelResourceClientMock) GetStageResource(_ context.Context, project string, stage string, resourceURI string) (string, error) {
+	assert.EqualValues(src.t, testProject, project)
+	assert.EqualValues(src.t, testStage, stage)
+	assert.EqualValues(src.t, expectedSLIResourceURI, resourceURI)
+	return "", keptn.NewResourceNotFoundError(resourceURI, project, stage, "")
+}
+
+func (src *slisOnServiceLevelResourceClientMock) GetServiceResource(_ context.Context, project string, stage string, service string, resourceURI string) (string, error) {
+	assert.EqualValues(src.t, testProject, project)
+	assert.EqualValues(src.t, testStage, stage)
+	assert.EqualValues(src.t, testService, service)
+	assert.EqualValues(src.t, expectedSLIResourceURI, resourceURI)
+	return src.serviceSLIFile, nil
+}
+
+func (src *slisOnServiceLevelResourceClientMock) GetResource(ctx context.Context, project string, stage string, service string, resourceURI string) (string, error) {
+	src.t.Fatal("GetResource() should not be needed in this mock!")
+	return "", nil
+}
+
+func (src *slisOnServiceLevelResourceClientMock) UploadResource(ctx context.Context, contentToUpload []byte, remoteResourceURI string, project string, stage string, service string) error {
+	src.t.Fatal("UploadResource() should not be needed in this mock!")
+	return nil
 }
