@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -11,22 +12,72 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 )
 
-func createDefaultSLOScore() keptncommon.SLOScore {
-	return keptncommon.SLOScore{
-		Pass:    "90%",
-		Warning: "75%",
+type processingResultBuilder struct {
+	slo        *keptnapi.ServiceLevelObjectives
+	sliResults []result.SLIResult
+}
+
+func newProcessingResultBuilder() *processingResultBuilder {
+	totalScore := common.CreateDefaultSLOScore()
+	comparison := common.CreateDefaultSLOComparison()
+	return &processingResultBuilder{
+		slo: &keptncommon.ServiceLevelObjectives{
+			Objectives: []*keptncommon.SLO{},
+			TotalScore: &totalScore,
+			Comparison: &comparison,
+		},
 	}
 }
 
-func createDefaultSLOComparison() keptncommon.SLOComparison {
-	return keptncommon.SLOComparison{
-		CompareWith:               "single_result",
-		IncludeResultWithScore:    "pass",
-		NumberOfComparisonResults: 1,
-		AggregateFunction:         "avg",
+func (b *processingResultBuilder) applyMarkdownParsingResult(r *markdownParsingResult) {
+	b.slo.TotalScore = &r.totalScore
+	b.slo.Comparison = &r.comparison
+}
+
+// addTileResult adds a TileResult to the processingResultBuilder
+func (b *processingResultBuilder) addTileResult(result TileResult) {
+	if result.sloDefinition != nil {
+		b.slo.Objectives = append(b.slo.Objectives, result.sloDefinition)
 	}
+
+	b.sliResults = append(b.sliResults, result.sliResult)
+}
+
+// addTileResult adds multiple TileResult to the processingResultBuilder,
+func (b *processingResultBuilder) addTileResults(results []TileResult) {
+	for _, result := range results {
+		b.addTileResult(result)
+	}
+}
+
+func (b *processingResultBuilder) build() *ProcessingResult {
+	return &ProcessingResult{
+		slo:        b.slo,
+		sliResults: b.sliResults,
+	}
+}
+
+type ProcessingResult struct {
+	slo        *keptnapi.ServiceLevelObjectives
+	sliResults []result.SLIResult
+}
+
+// SLOs gets the SLOs.
+func (r *ProcessingResult) SLOs() *keptnapi.ServiceLevelObjectives {
+	return r.slo
+}
+
+// HasSLOs checks whether any objectives are available
+func (r *ProcessingResult) HasSLOs() bool {
+	return r.slo != nil && len(r.slo.Objectives) > 0
+}
+
+// SLIResults gets the SLI results.
+func (r *ProcessingResult) SLIResults() []result.SLIResult {
+	return r.sliResults
 }
 
 // Processing will process a Dynatrace dashboard
@@ -48,24 +99,9 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 }
 
 // Process processes a dynatrace.Dashboard.
-func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard) (*QueryResult, error) {
+func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard) (*ProcessingResult, error) {
 
-	// lets also generate the dashboard link for that timeframe (gtf=c_START_END) as well as management zone (gf=MZID) to pass back as label to Keptn
-	dashboardLinkAsLabel := NewLink(p.client.Credentials().GetTenant(), p.timeframe, dashboard.ID, dashboard.GetFilter())
-
-	totalScore := createDefaultSLOScore()
-	comparison := createDefaultSLOComparison()
-
-	// generate our own SLIResult array based on the dashboard configuration
-	result := &QueryResult{
-		dashboardLink: dashboardLinkAsLabel,
-		slo: &keptncommon.ServiceLevelObjectives{
-			Objectives: []*keptncommon.SLO{},
-			TotalScore: &totalScore,
-			Comparison: &comparison,
-		},
-	}
-
+	resultBuilder := newProcessingResultBuilder()
 	log.Debug("Dashboard will be parsed!")
 
 	// now let's iterate through the dashboard to find our SLIs
@@ -73,7 +109,7 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 	for _, tile := range dashboard.Tiles {
 		switch tile.TileType {
 		case dynatrace.MarkdownTileType:
-			res, err := NewMarkdownTileProcessing().Process(&tile, createDefaultSLOScore(), createDefaultSLOComparison())
+			res, err := NewMarkdownTileProcessing().TryProcess(&tile)
 			if err != nil {
 				return nil, fmt.Errorf("markdown tile parsing error: %w", err)
 			}
@@ -81,25 +117,24 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 				if markdownAlreadyProcessed {
 					return nil, fmt.Errorf("only one markdown tile allowed for KQG configuration")
 				}
-				result.slo.TotalScore = &res.totalScore
-				result.slo.Comparison = &res.comparison
+				resultBuilder.applyMarkdownParsingResult(res)
 				markdownAlreadyProcessed = true
 			}
 		case dynatrace.SLOTileType:
-			result.addTileResults(NewSLOTileProcessing(p.client, p.timeframe).Process(ctx, &tile))
+			resultBuilder.addTileResults(NewSLOTileProcessing(p.client, p.timeframe).Process(ctx, &tile))
 		case dynatrace.OpenProblemsTileType:
-			result.addTileResults(NewProblemTileProcessing(p.client, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
+			resultBuilder.addTileResults(NewProblemTileProcessing(p.client, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
 		case dynatrace.DataExplorerTileType:
-			result.addTileResults(NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
+			resultBuilder.addTileResults(NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
 		case dynatrace.CustomChartingTileType:
-			result.addTileResults(NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
+			resultBuilder.addTileResults(NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboard.GetFilter()))
 		case dynatrace.USQLTileType:
-			result.addTileResults(NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile))
+			resultBuilder.addTileResults(NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile))
 		default:
 			// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)
 			continue
 		}
 	}
 
-	return result, nil
+	return resultBuilder.build(), nil
 }
