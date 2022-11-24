@@ -206,6 +206,7 @@ func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValu
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
 		assert.EqualValues(t, expectedQuery, actual.Query, "Indicator query should match")
+		assert.Empty(t, actual.Message)
 		assert.True(t, actual.Success, "Indicator success should be true")
 	}
 }

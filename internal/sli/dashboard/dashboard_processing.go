@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
@@ -16,53 +17,139 @@ import (
 )
 
 type processingResultBuilder struct {
-	slo        *keptnapi.ServiceLevelObjectives
-	sliResults []result.SLIResult
+	totalScore  keptncommon.SLOScore
+	comparison  keptncommon.SLOComparison
+	tileResults []TileResult
 }
 
 func newProcessingResultBuilder() *processingResultBuilder {
-	totalScore := common.CreateDefaultSLOScore()
-	comparison := common.CreateDefaultSLOComparison()
 	return &processingResultBuilder{
-		slo: &keptncommon.ServiceLevelObjectives{
-			Objectives: []*keptncommon.SLO{},
-			TotalScore: &totalScore,
-			Comparison: &comparison,
-		},
+		totalScore: common.CreateDefaultSLOScore(),
+		comparison: common.CreateDefaultSLOComparison(),
 	}
+}
+
+type duplicateSLINameChecker struct {
+	nameCounts map[string]int
+}
+
+func newDuplicateSLINameChecker(results []TileResult) duplicateSLINameChecker {
+	nameCounts := make(map[string]int, len(results))
+	for _, result := range results {
+		name := result.sliResult.Metric
+		nameCounts[name] = nameCounts[name] + 1
+	}
+
+	return duplicateSLINameChecker{
+		nameCounts: nameCounts,
+	}
+}
+
+func (c *duplicateSLINameChecker) hasDuplicateName(sliResult result.SLIResult) bool {
+	return c.nameCounts[sliResult.Metric] > 1
+}
+
+type duplicateDisplayNameChecker struct {
+	displayNameCounts map[string]int
+}
+
+func newDuplicateDisplayNameChecker(results []TileResult) duplicateDisplayNameChecker {
+	displayNameCounts := make(map[string]int, len(results))
+	for _, result := range results {
+		if result.sloDefinition == nil {
+			continue
+		}
+
+		displayName := result.sloDefinition.DisplayName
+		if displayName == "" {
+			continue
+		}
+
+		displayNameCounts[displayName] = displayNameCounts[displayName] + 1
+	}
+
+	return duplicateDisplayNameChecker{
+		displayNameCounts: displayNameCounts,
+	}
+}
+
+func (c *duplicateDisplayNameChecker) hasDuplicateDisplayName(t TileResult) bool {
+	if t.sloDefinition == nil {
+		return false
+	}
+
+	displayName := t.sloDefinition.DisplayName
+	if displayName == "" {
+		return false
+	}
+
+	return c.displayNameCounts[displayName] > 1
 }
 
 func (b *processingResultBuilder) applyMarkdownParsingResult(r *markdownParsingResult) {
-	b.slo.TotalScore = &r.totalScore
-	b.slo.Comparison = &r.comparison
-}
-
-// addTileResult adds a TileResult to the processingResultBuilder
-func (b *processingResultBuilder) addTileResult(result TileResult) {
-	if result.sloDefinition != nil {
-		b.slo.Objectives = append(b.slo.Objectives, result.sloDefinition)
-	}
-
-	b.sliResults = append(b.sliResults, result.sliResult)
+	b.totalScore = r.totalScore
+	b.comparison = r.comparison
 }
 
 // addTileResult adds multiple TileResult to the processingResultBuilder,
 func (b *processingResultBuilder) addTileResults(results []TileResult) {
 	for _, result := range results {
-		b.addTileResult(result)
+		b.tileResults = append(b.tileResults, result)
 	}
 }
 
 func (b *processingResultBuilder) build() *ProcessingResult {
-	return &ProcessingResult{
-		slo:        b.slo,
-		sliResults: b.sliResults,
+	objectives := make([]*keptncommon.SLO, 0, len(b.tileResults))
+	sliResults := make([]result.SLIResult, 0, len(b.tileResults))
+
+	sliNameChecker := newDuplicateSLINameChecker(b.tileResults)
+	displayNameChecker := newDuplicateDisplayNameChecker(b.tileResults)
+	for _, tileResult := range b.tileResults {
+		sliResult := tileResult.sliResult
+
+		if sliNameChecker.hasDuplicateName(sliResult) && displayNameChecker.hasDuplicateDisplayName(tileResult) {
+			sliResult = addErrorAndFailResult(sliResult, "duplicate SLI and display name")
+		} else if sliNameChecker.hasDuplicateName(sliResult) {
+			sliResult = addErrorAndFailResult(sliResult, "duplicate SLI name")
+		} else if displayNameChecker.hasDuplicateDisplayName(tileResult) {
+			sliResult = addErrorAndFailResult(sliResult, "duplicate display name")
+		}
+
+		if tileResult.sloDefinition != nil {
+			objectives = append(objectives, tileResult.sloDefinition)
+		}
+		sliResults = append(sliResults, sliResult)
 	}
+
+	return NewProcessingResult(
+		&keptncommon.ServiceLevelObjectives{
+			Objectives: objectives,
+			TotalScore: &b.totalScore,
+			Comparison: &b.comparison,
+		},
+		sliResults)
 }
 
+func addErrorAndFailResult(sliResult result.SLIResult, message string) result.SLIResult {
+	sliResult.Success = false
+	sliResult.IndicatorResult = result.IndicatorResultFailed
+	sliResult.Value = 0
+	sliResult.Message = strings.Join([]string{message, sliResult.Message}, "; ")
+	return sliResult
+}
+
+// ProcessingResult contains the result of processing a dashboard.
 type ProcessingResult struct {
 	slo        *keptnapi.ServiceLevelObjectives
 	sliResults []result.SLIResult
+}
+
+// NewProcessingResult creates a new ProcessingResult.
+func NewProcessingResult(slo *keptnapi.ServiceLevelObjectives, sliResults []result.SLIResult) *ProcessingResult {
+	return &ProcessingResult{
+		slo:        slo,
+		sliResults: sliResults,
+	}
 }
 
 // SLOs gets the SLOs.
@@ -100,7 +187,6 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 
 // Process processes a dynatrace.Dashboard.
 func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard) (*ProcessingResult, error) {
-
 	resultBuilder := newProcessingResultBuilder()
 	log.Debug("Dashboard will be parsed!")
 
