@@ -1,0 +1,103 @@
+{
+    "metadata": {
+        "configurationVersions": [
+            5
+        ],
+        "clusterVersion": "1.232.0.20211118-204216"
+    },
+    "id": "12345678-1111-4444-8888-123456789012",
+    "dashboardMetadata": {
+        "name": "",
+        "shared": false,
+        "owner": "",
+        "popularity": 1
+    },
+    "tiles": [
+      {
+        "name": "No. of Deployment",
+        "tileType": "DATA_EXPLORER",
+        "configured": true,
+        "bounds": {
+          "top": 76,
+          "left": 114,
+          "width": 646,
+          "height": 532
+        },
+        "tileFilter": {},
+        "customName": "Single value",
+        "queries": [
+          {
+            "id": "A",
+            "timeAggregation": "DEFAULT",
+            "splitBy": [],
+            "metricSelector": "entity.deployment.stats:filter(and(or(eq(project,\"sockshop\")))):splitBy():count:auto:sort(value(avg,descending)):limit(100)",
+            "enabled": true
+          }
+        ],
+        "visualConfig": {
+          "type": "SINGLE_VALUE",
+          "global": {
+            "hideLegend": false
+          },
+          "rules": [
+            {
+              "matcher": "A:",
+              "properties": {
+                "color": "DEFAULT"
+              },
+              "seriesOverrides": []
+            }
+          ],
+          "axes": {
+            "xAxis": {
+              "visible": true
+            },
+            "yAxes": []
+          },
+          "heatmapSettings": {
+            "yAxis": "VALUE"
+          },
+          "singleValueSettings": {
+            "showTrend": false,
+            "showSparkLine": false,
+            "linkTileColorToThreshold": false
+          },
+          "thresholds": [
+            {
+              "axisTarget": "LEFT",
+              "rules": [
+                {
+                  "color": "#7dc540"
+                },
+                {
+                  "color": "#f5d30f"
+                },
+                {
+                  "color": "#dc172a"
+                }
+              ],
+              "queryId": "",
+              "visible": true
+            }
+          ],
+          "tableSettings": {
+            "isThresholdBackgroundAppliedToCell": false
+          },
+          "graphChartSettings": {
+            "connectNulls": false
+          },
+          "honeycombSettings": {
+            "showHive": true,
+            "showLegend": true,
+            "showLabels": false
+          }
+        },
+        "queriesSettings": {
+          "resolution": ""
+        },
+        "metricExpressions": [
+          "resolution=Inf&(entity.deployment.stats:filter(and(or(eq(project,sockshop)))):splitBy():count:auto:sort(value(avg,descending)):limit(100)):limit(100):names"
+        ]
+      }
+      ]
+}

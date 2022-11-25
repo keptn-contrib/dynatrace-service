@@ -641,6 +641,23 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TwoMatchingVisualConfigRul
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "expected one visualization rule for query", "found 2"))
 }
 
+// TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_CustomMetric tests that Data explorer tiles with custom metrics work as expected.
+func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_CustomMetric(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/data_explorer/custom_metrics/"
+
+	const metricSelector = "(entity.deployment.stats:filter(and(or(eq(project,sockshop)))):splitBy():count:auto:sort(value(avg,descending)):limit(100)):limit(100):names"
+	requestBuilder := newMetricsV2QueryRequestBuilder(metricSelector)
+
+	handler, metricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t, testDataFolder, requestBuilder)
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, &getSLIEventData{project: "sockshop",
+		stage:      "staging",
+		service:    "carts",
+		indicators: []string{"blah"}, // we need this to check later on in the custom queries
+		sliStart:   testSLIStart,
+		sliEnd:     testSLIEnd}, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("no__of_deployment", 6, metricsRequest))
+}
+
 func createExpectedServiceResponseTimeSLO(passCriteria []*keptnapi.SLOCriteria, warningCriteria []*keptnapi.SLOCriteria) *keptnapi.SLO {
 	return &keptnapi.SLO{
 		SLI:         "srt",
