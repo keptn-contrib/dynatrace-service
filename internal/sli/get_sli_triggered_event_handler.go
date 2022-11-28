@@ -171,7 +171,7 @@ func createDefaultProblemSLO() *keptncommon.SLO {
 		SLI: ProblemOpenSLI,
 		Pass: []*keptncommon.SLOCriteria{
 			{
-				Criteria: []string{"pass=<=0"},
+				Criteria: []string{"<=0"},
 			},
 		},
 		Weight: 1,
