@@ -25,9 +25,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResultsA
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_result_warning_entity-type.json"))
 
 	// error here as well: merge("dt.entity.services")
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.services\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "zero metric series", "Warning"))
 }
@@ -48,9 +51,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsNoResults(
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_0_result_wrong-tag.json"))
 
 	// error here as well: tag(keptn_project:stagin)
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:stagin)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	sliResultAssertionsFunc := func(t *testing.T, actual sliResult) {
 		createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "zero metric series")(t, actual)
@@ -75,9 +81,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryReturnsMultipleRe
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "response_time_p95_200_3_results.json"))
 
 	// error here as well: missing merge("dt.entity.service) transformation
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	sliResultAssertionsFunc := func(t *testing.T, actual sliResult) {
 		createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "3 metric series")(t, actual)
@@ -127,9 +136,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 			handler := test.NewFileBasedURLHandler(t)
 
 			// error here: in value of tc.mv2Prefix
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
-				testIndicatorResponseTimeP95: tc.mv2Prefix + "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-			})
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorResponseTimeP95: tc.mv2Prefix + "metricSelector=builtin:service.response.time:percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+				},
+				testSLOsWithResponseTimeP95,
+			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing MV2 query"))
 		})
@@ -173,9 +185,12 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
 	)
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 31846.08512740705, expectedMetricsRequest))
 }
