@@ -97,7 +97,8 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.
 	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
 	problemID := keptn.TryGetProblemIDFromLabels(eh.event)
 	if problemID != "" {
-		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(ctx, problemID))
+		problemOpenSLIResult := eh.processProblemOpenFromProblemID(ctx, problemID)
+		sliResults = append(sliResults, problemOpenSLIResult)
 	}
 
 	// if no result values have been captured, return an error
@@ -166,7 +167,18 @@ func removeProblemOpenFromIndicators(indicators []string) []string {
 	return indicators
 }
 
-func createDefaultProblemSLO() *keptncommon.SLO {
+func (eh *GetSLIEventHandler) processProblemOpenFromProblemID(ctx context.Context, problemID string) result.SLIResult {
+	// Add problem_open SLO object if it is not yet in SLO.yaml so that the lighthouse will evaluate the SLI result.
+	errAddSLO := eh.addSLO(ctx, createDefaultProblemOpenSLO())
+	if errAddSLO != nil {
+		// TODO 2021-08-10: ensure this error is fails the processing!
+		log.WithError(errAddSLO).Error("problem while adding SLOs")
+	}
+
+	return eh.getProblemOpenSLIResultFromProblemID(ctx, problemID)
+}
+
+func createDefaultProblemOpenSLO() *keptncommon.SLO {
 	return &keptncommon.SLO{
 		SLI: ProblemOpenSLI,
 		Pass: []*keptncommon.SLOCriteria{
@@ -179,36 +191,10 @@ func createDefaultProblemSLO() *keptncommon.SLO {
 	}
 }
 
-func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Context, problemID string) result.SLIResult {
-	// let's add this to the SLO in case this indicator is not yet in SLO.yaml.
-	// Because if it does not get added the lighthouse will not evaluate the SLI values
-	// we default it to open_problems<=0
-	errAddSLO := eh.addSLO(ctx, createDefaultProblemSLO())
-	if errAddSLO != nil {
-		// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
-		log.WithError(errAddSLO).Error("problem while adding SLOs")
-	}
-
-	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(ctx, problemID)
-	if err != nil {
-		return result.NewFailedSLIResult(ProblemOpenSLI, err.Error())
-	}
-
-	switch status {
-	case dynatrace.ProblemStatusOpen:
-		return result.NewSuccessfulSLIResult(ProblemOpenSLI, 1.0)
-	case "":
-		return result.NewFailedSLIResult(ProblemOpenSLI, "Unexpected empty status")
-	default:
-		return result.NewSuccessfulSLIResult(ProblemOpenSLI, 0)
-	}
-}
-
 // addSLO adds an SLO Entry to the SLO.yaml
 func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO) error {
-
 	// first - lets load the SLO.yaml from the config repo
-	dashboardSLO, err := eh.configClient.GetSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+	slo, err := eh.configClient.GetSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
 		var rnfErr *keptn.ResourceNotFoundError
 		if !errors.As(err, &rnfErr) {
@@ -218,7 +204,7 @@ func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO
 		// this is the default SLO in case none has yet been uploaded
 		totalScore := common.CreateDefaultSLOScore()
 		comparison := common.CreateDefaultSLOComparison()
-		dashboardSLO = &keptncommon.ServiceLevelObjectives{
+		slo = &keptncommon.ServiceLevelObjectives{
 			Objectives: []*keptncommon.SLO{},
 			TotalScore: &totalScore,
 			Comparison: &comparison,
@@ -226,20 +212,36 @@ func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO
 	}
 
 	// now we add the SLO Definition to the objectives - but first validate if it is not already there
-	for _, objective := range dashboardSLO.Objectives {
+	for _, objective := range slo.Objectives {
 		if objective.SLI == newSLO.SLI {
 			return nil
 		}
 	}
 
 	// now - lets add our newSLO to the list
-	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
-	err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
+	slo.Objectives = append(slo.Objectives, newSLO)
+	err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), slo)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (eh *GetSLIEventHandler) getProblemOpenSLIResultFromProblemID(ctx context.Context, problemID string) result.SLIResult {
+	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(ctx, problemID)
+	if err != nil {
+		return result.NewFailedSLIResult(ProblemOpenSLI, err.Error())
+	}
+
+	switch status {
+	case dynatrace.ProblemStatusOpen:
+		return result.NewSuccessfulSLIResult(ProblemOpenSLI, 1.0)
+	case dynatrace.ProblemStatusClosed:
+		return result.NewSuccessfulSLIResult(ProblemOpenSLI, 0)
+	default:
+		return result.NewFailedSLIResult(ProblemOpenSLI, fmt.Sprintf("Unexpected status '%s'", status))
+	}
 }
 
 func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {

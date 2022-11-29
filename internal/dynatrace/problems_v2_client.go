@@ -10,8 +10,13 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
 )
 
-// ProblemStatusOpen is the status of an open problem
-const ProblemStatusOpen = "OPEN"
+const (
+	// ProblemStatusOpen is the status of an open problem
+	ProblemStatusOpen = "OPEN"
+
+	// ProblemStatusClosed is the status of an closed problem
+	ProblemStatusClosed = "CLOSED"
+)
 
 // ProblemsV2Path is the base endpoint for Problems API v2
 const ProblemsV2Path = "/api/v2/problems"
