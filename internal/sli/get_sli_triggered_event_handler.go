@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -28,8 +27,8 @@ type GetSLIEventHandler struct {
 	eventSenderClient keptn.EventSenderClientInterface
 	configClient      configClientInterface
 
-	secretName string
-	dashboard  string
+	secretName        string
+	dashboardProperty string
 }
 
 // configClientInterface is a subset of a keptn.ConfigClientInterface for processing sh.keptn.event.get-sli.triggered events.
@@ -46,14 +45,14 @@ type configClientInterface interface {
 	UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptncommon.ServiceLevelObjectives) error
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, secretName string, dashboard string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, secretName string, dashboardProperty string) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:             event,
 		dtClient:          dtClient,
 		eventSenderClient: eventSenderClient,
 		configClient:      configClient,
 		secretName:        secretName,
-		dashboard:         dashboard,
+		dashboardProperty: dashboardProperty,
 	}
 }
 
@@ -111,46 +110,41 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.
 
 func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
 	// If no dashboard specified, query the SLIs based on the SLI.yaml definition
-	if eh.dashboard == "" {
+	if eh.dashboardProperty == "" {
 		return eh.getSLIResultsFromCustomQueries(ctx, timeframe)
 	}
 
-	// See if we can get the data from a Dynatrace Dashboard
-	var dashboardLinkAsLabel *dashboard.DashboardLink
-	dashboardLinkAsLabel, sliResults, err := eh.getSLIResultsFromDynatraceDashboard(ctx, timeframe)
-	if err != nil {
-		return nil, err
-	}
-
-	// add link to dynatrace dashboard to labels
-	if dashboardLinkAsLabel != nil {
-		eh.event.AddLabel("Dashboard Link", dashboardLinkAsLabel.String())
-	}
-	return sliResults, nil
+	return eh.getSLIResultsFromDynatraceDashboard(ctx, timeframe)
 }
 
 // getSLIResultsFromDynatraceDashboard will process dynatrace dashboard (if found) and return SLIResults
-func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Context, timeframe common.Timeframe) (*dashboard.DashboardLink, []result.SLIResult, error) {
-
-	sliQuerying := dashboard.NewQuerying(eh.event, eh.event.GetCustomSLIFilters(), eh.dtClient)
-	queryResult, err := sliQuerying.GetSLIValues(ctx, eh.dashboard, timeframe)
+func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
+	d, err := dashboard.NewRetrieval(eh.dtClient, eh.event).Retrieve(ctx, eh.dashboardProperty)
 	if err != nil {
-		return nil, nil, dashboard.NewQueryError(err)
+		return nil, dashboard.NewQueryError(fmt.Errorf("error while retrieving dashboard: %w", err))
+	}
+
+	eh.event.AddLabel("Dashboard Link", dashboard.NewLink(eh.dtClient.Credentials().GetTenant(), timeframe, d.ID, d.GetFilter()).String())
+
+	queryResult, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe).Process(ctx, d)
+	if err != nil {
+		return nil, dashboard.NewQueryError(err)
 	}
 
 	// let's write the SLO to the config repo
 	if queryResult.HasSLOs() {
 		err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLOs())
 		if err != nil {
-			return nil, nil, dashboard.NewUploadFileError("SLO", err)
+			return nil, dashboard.NewUploadFileError("SLO", err)
 		}
 	}
 
-	return queryResult.DashboardLink(), queryResult.SLIResults(), nil
+	return queryResult.SLIResults(), nil
 }
 
 func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
-	if len(eh.event.GetIndicators()) == 0 {
+	indicators := eh.event.GetIndicators()
+	if len(indicators) == 0 {
 		return nil, errors.New("no SLIs were requested")
 	}
 
@@ -160,21 +154,16 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
 	}
 
-	queryProcessing := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe)
+	return query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe).Process(ctx, removeProblemOpenFromIndicators(indicators)), nil
+}
 
-	var sliResults []result.SLIResult
-
-	// query all indicators
-	for _, indicator := range eh.event.GetIndicators() {
-		if strings.Compare(indicator, ProblemOpenSLI) == 0 {
-			log.WithField("indicator", indicator).Info("Skipping indicator as it is handled later")
-			continue
+func removeProblemOpenFromIndicators(indicators []string) []string {
+	for i, indicator := range indicators {
+		if indicator == ProblemOpenSLI {
+			return append(indicators[:i], indicators[i+1:]...)
 		}
-
-		sliResults = append(sliResults, queryProcessing.GetSLIResultFromIndicator(ctx, indicator))
 	}
-
-	return sliResults, nil
+	return indicators
 }
 
 func createDefaultProblemSLO() *keptncommon.SLO {
@@ -227,16 +216,12 @@ func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO
 		}
 
 		// this is the default SLO in case none has yet been uploaded
+		totalScore := common.CreateDefaultSLOScore()
+		comparison := common.CreateDefaultSLOComparison()
 		dashboardSLO = &keptncommon.ServiceLevelObjectives{
 			Objectives: []*keptncommon.SLO{},
-			TotalScore: &keptncommon.SLOScore{
-				Pass:    "90%",
-				Warning: "75%"},
-			Comparison: &keptncommon.SLOComparison{
-				CompareWith:               "single_result",
-				IncludeResultWithScore:    "pass",
-				NumberOfComparisonResults: 1,
-				AggregateFunction:         "avg"},
+			TotalScore: &totalScore,
+			Comparison: &comparison,
 		}
 	}
 

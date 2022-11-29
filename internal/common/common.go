@@ -6,15 +6,13 @@ import (
 	"strings"
 	"time"
 
+	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 )
 
 const ProblemURLLabel = "Problem URL"
-
-// DynatraceConfigDashboardQUERY defines the Dynatrace Configuration File structure and supporting Constants
-const DynatraceConfigDashboardQUERY = "query"
 
 // ReplaceQueryParameters replaces query parameters based on sli filters and keptn event data
 func ReplaceQueryParameters(query string, customFilters []*keptnv2.SLIFilter, keptnEvent adapter.EventContentAdapter) string {
@@ -70,4 +68,22 @@ func ReplaceKeptnPlaceholders(input string, keptnEvent adapter.EventContentAdapt
 // TimestampToUnixMillisecondsString converts timestamp into a Unix milliseconds string.
 func TimestampToUnixMillisecondsString(time time.Time) string {
 	return strconv.FormatInt(time.Unix()*1000, 10)
+}
+
+// CreateDefaultSLOScore creates a keptncommon.SLOScore with default values.
+func CreateDefaultSLOScore() keptncommon.SLOScore {
+	return keptncommon.SLOScore{
+		Pass:    "90%",
+		Warning: "75%",
+	}
+}
+
+// CreateDefaultSLOComparison creates a keptncommon.SLOComparison with default values.
+func CreateDefaultSLOComparison() keptncommon.SLOComparison {
+	return keptncommon.SLOComparison{
+		CompareWith:               "single_result",
+		IncludeResultWithScore:    "pass",
+		NumberOfComparisonResults: 1,
+		AggregateFunction:         "avg",
+	}
 }

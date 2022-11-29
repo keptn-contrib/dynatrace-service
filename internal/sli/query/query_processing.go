@@ -42,9 +42,19 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 	}
 }
 
-// GetSLIResultFromIndicator queries a single SLI value ultimately from the Dynatrace API and returns an SLIResult.
+// Process queries the specified indicators and results a slice of SLIResults.
+func (p *Processing) Process(ctx context.Context, indicators []string) []result.SLIResult {
+	var sliResults []result.SLIResult
+	for _, indicator := range indicators {
+		sliResults = append(sliResults, p.getSLIResultFromIndicator(ctx, indicator))
+	}
+
+	return sliResults
+}
+
+// getSLIResultFromIndicator queries a single SLI value ultimately from the Dynatrace API and returns an SLIResult.
 // TODO: 2022-01-28: Refactoring needed: this is currently SLI v1 format processing, it should moved to the v1 package, separating it from the general logic.
-func (p *Processing) GetSLIResultFromIndicator(ctx context.Context, name string) result.SLIResult {
+func (p *Processing) getSLIResultFromIndicator(ctx context.Context, name string) result.SLIResult {
 
 	// first we get the query from the SLI configuration based on its logical name
 	// no default values here anymore if indicator could not be matched (e.g. due to a misspelling) and custom SLIs were defined

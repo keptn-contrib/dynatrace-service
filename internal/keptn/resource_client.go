@@ -45,6 +45,11 @@ type ResourceError struct {
 // ResourceNotFoundError represents an error for a resource that was not found.
 type ResourceNotFoundError ResourceError
 
+// NewResourceNotFoundError creates a new ResourceNotFoundError.
+func NewResourceNotFoundError(resourceURI string, project string, stage string, service string) *ResourceNotFoundError {
+	return &ResourceNotFoundError{uri: resourceURI, project: project, stage: stage, service: service}
+}
+
 // Error returns a string representation of this error
 func (e *ResourceNotFoundError) Error() string {
 	return fmt.Sprintf("could not find resource: '%s' %s", e.uri, getLocation(e.service, e.stage, e.project))

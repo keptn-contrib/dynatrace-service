@@ -24,6 +24,10 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
 )
 
+const testProject = "sockshop"
+const testStage = "staging"
+const testService = "carts"
+
 const testIndicatorResponseTimeP95 = "response_time_p95"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 const testDashboardID = "12345678-1111-4444-8888-123456789012"
@@ -54,9 +58,9 @@ var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *getSLIFi
 
 func createTestGetSLIEventDataWithIndicators(indicators []string) *getSLIEventData {
 	return &getSLIEventData{
-		project:    "sockshop",
-		stage:      "staging",
-		service:    "carts",
+		project:    testProject,
+		stage:      testStage,
+		service:    testService,
 		indicators: indicators, // we need this to check later on in the custom queries
 		sliStart:   testSLIStart,
 		sliEnd:     testSLIEnd,
@@ -134,19 +138,19 @@ func runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t *testing.T, handler http.H
 	uploadedSLOsAssertionsFunc(t, configClient.uploadedSLOs)
 }
 
-func runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t *testing.T, handler http.Handler, configClient *getSLIsConfigClientMock, requestedIndicator string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, requestedIndicator string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
 	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{requestedIndicator}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t *testing.T, handler http.Handler, configClient *getSLIsConfigClientMock, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
 	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func runGetSLIsFromFilesTestAndCheckSLIs(t *testing.T, handler http.Handler, configClient *getSLIsConfigClientMock, requestedIndicators []string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromFilesTestAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, requestedIndicators []string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
 	runGetSLIsFromFilesTestWithEventAndCheckSLIs(t, handler, configClient, createTestGetSLIEventDataWithIndicators(requestedIndicators), getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func runGetSLIsFromFilesTestWithEventAndCheckSLIs(t *testing.T, handler http.Handler, configClient *getSLIsConfigClientMock, ev *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromFilesTestWithEventAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, ev *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 
 	// we do not want to query a dashboard, so we leave it empty
@@ -202,6 +206,7 @@ func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValu
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.EqualValues(t, expectedValue, actual.Value, "Indicator values should match")
 		assert.EqualValues(t, expectedQuery, actual.Query, "Indicator query should match")
+		assert.Empty(t, actual.Message)
 		assert.True(t, actual.Success, "Indicator success should be true")
 	}
 }
@@ -232,7 +237,7 @@ func createFailedSLIResultWithQueryAssertionsFunc(expectedMetric string, expecte
 	}
 }
 
-func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, dashboard string) (*GetSLIEventHandler, string, func()) {
+func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, dashboardProperty string) (*GetSLIEventHandler, string, func()) {
 	httpClient, url, teardown := test.CreateHTTPSClient(handler)
 
 	dtCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
@@ -243,7 +248,7 @@ func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInt
 		dtClient:          dynatrace.NewClientWithHTTP(dtCredentials, httpClient),
 		eventSenderClient: eventSenderClient,
 		configClient:      configClient,
-		dashboard:         dashboard,
+		dashboardProperty: dashboardProperty,
 		secretName:        "dynatrace", // we do not need this string
 	}
 

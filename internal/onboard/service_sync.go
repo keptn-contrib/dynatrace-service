@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/config"
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	keptnlib "github.com/keptn/go-utils/pkg/lib"
@@ -252,15 +253,12 @@ func (s *ServiceSynchronizer) addServiceToKeptn(ctx context.Context, serviceName
 }
 
 func (s *ServiceSynchronizer) createSLOResource(ctx context.Context, serviceName string) error {
+	totalScore := common.CreateDefaultSLOScore()
+	comparison := common.CreateDefaultSLOComparison()
 	defaultSLOs := &keptnlib.ServiceLevelObjectives{
 		SpecVersion: "1.0",
 		Filter:      nil,
-		Comparison: &keptnlib.SLOComparison{
-			AggregateFunction:         "avg",
-			CompareWith:               "single_result",
-			IncludeResultWithScore:    "pass",
-			NumberOfComparisonResults: 1,
-		},
+		Comparison:  &comparison,
 		Objectives: []*keptnlib.SLO{
 			{
 				SLI:     "response_time_p95",
@@ -279,10 +277,7 @@ func (s *ServiceSynchronizer) createSLOResource(ctx context.Context, serviceName
 				SLI: "throughput",
 			},
 		},
-		TotalScore: &keptnlib.SLOScore{
-			Pass:    "90%",
-			Warning: "75%",
-		},
+		TotalScore: &totalScore,
 	}
 
 	err := s.resourcesClient.UploadSLOs(ctx, synchronizedProject, synchronizedStage, serviceName, defaultSLOs)

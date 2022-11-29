@@ -5,8 +5,8 @@
     "result": [
         {
             "metricId": "(builtin:service.response.time:splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names",
-            "dataPointCountRatio": 2.4155E-4,
-            "dimensionCountRatio": 0.04831,
+            "dataPointCountRatio": 2.4355E-4,
+            "dimensionCountRatio": 0.04871,
             "data": [
                 {
                     "dimensions": [
@@ -90,11 +90,11 @@
                 },
                 {
                     "dimensions": [
-                        "Service port: 443",
+                        "Service port A: 443",
                         "SERVICE-EDCCF8180A520736"
                     ],
                     "dimensionMap": {
-                        "dt.entity.service.name": "Service port: 443",
+                        "dt.entity.service.name": "Service port A: 443",
                         "dt.entity.service": "SERVICE-EDCCF8180A520736"
                     },
                     "timestamps": [
@@ -122,11 +122,11 @@
                 },
                 {
                     "dimensions": [
-                        "Service port: 443",
+                        "Service port B: 443",
                         "SERVICE-EF55DC20A636FC34"
                     ],
                     "dimensionMap": {
-                        "dt.entity.service.name": "Service port: 443",
+                        "dt.entity.service.name": "Service port B: 443",
                         "dt.entity.service": "SERVICE-EF55DC20A636FC34"
                     },
                     "timestamps": [
@@ -154,11 +154,11 @@
                 },
                 {
                     "dimensions": [
-                        "Service port: 443",
+                        "Service port C: 443",
                         "SERVICE-8D96B52849A3E3FC"
                     ],
                     "dimensionMap": {
-                        "dt.entity.service.name": "Service port: 443",
+                        "dt.entity.service.name": "Service port C: 443",
                         "dt.entity.service": "SERVICE-8D96B52849A3E3FC"
                     },
                     "timestamps": [

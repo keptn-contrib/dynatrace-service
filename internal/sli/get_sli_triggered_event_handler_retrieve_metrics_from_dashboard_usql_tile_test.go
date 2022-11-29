@@ -267,8 +267,8 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionName(t *test
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
-		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
+		createFailedSLIResultWithQueryAssertionsFunc("usql_metric_1", expectedUSQLRequest),
+		createFailedSLIResultWithQueryAssertionsFunc("usql_metric_2", expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)
@@ -285,8 +285,8 @@ func TestRetrieveMetricsFromDashboardUSQLTile_Table_InvalidDimensionValue(t *tes
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_result_table.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
-		createFailedSLIResultWithQueryAssertionsFunc("usql_metric", expectedUSQLRequest),
+		createFailedSLIResultWithQueryAssertionsFunc("usql_metric_1", expectedUSQLRequest),
+		createFailedSLIResultWithQueryAssertionsFunc("usql_metric_2", expectedUSQLRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventWarningAssertionsFunc, sliResultsAssertionsFuncs...)

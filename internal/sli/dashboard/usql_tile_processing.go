@@ -100,16 +100,16 @@ func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloD
 	}
 
 	var tileResults []TileResult
-	for _, rowValue := range usqlResult.Values {
+	for index, rowValue := range usqlResult.Values {
 		dimensionName, err := tryCastDimensionNameToString(rowValue[0])
 		if err != nil {
-			tileResults = append(tileResults, newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error()))
+			tileResults = append(tileResults, newWarningTileResultWithIndexFromSLODefinitionAndQuery(index, sloDefinition, request, err.Error()))
 			continue
 		}
 
 		dimensionValue, err := tryGetDimensionValueForVisualizationType(rowValue, visualizationType)
 		if err != nil {
-			tileResults = append(tileResults, newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error()))
+			tileResults = append(tileResults, newWarningTileResultWithIndexFromSLODefinitionAndQuery(index, sloDefinition, request, err.Error()))
 			continue
 		}
 
@@ -167,6 +167,21 @@ func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimen
 		},
 		dimensionValue,
 		request.RequestString(),
+	)
+}
+
+func newWarningTileResultWithIndexFromSLODefinitionAndQuery(index int, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest, message string) TileResult {
+	return newWarningTileResultFromSLODefinitionAndQuery(
+		keptncommon.SLO{
+			SLI:         cleanIndicatorName(fmt.Sprintf("%s_%d", sloDefinition.SLI, index+1)),
+			DisplayName: fmt.Sprintf("%s (%d)", sloDefinition.DisplayName, index+1),
+			Weight:      sloDefinition.Weight,
+			KeySLI:      sloDefinition.KeySLI,
+			Pass:        sloDefinition.Pass,
+			Warning:     sloDefinition.Warning,
+		},
+		request.RequestString(),
+		message,
 	)
 }
 

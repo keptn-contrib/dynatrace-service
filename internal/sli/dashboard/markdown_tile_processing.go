@@ -8,6 +8,7 @@ import (
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 
+	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 )
 
@@ -45,11 +46,10 @@ func NewMarkdownTileProcessing() *MarkdownTileProcessing {
 	return &MarkdownTileProcessing{}
 }
 
-// Process will overwrite the default values for SLOScore and SLOComparison with the contents found in the markdown
-func (p *MarkdownTileProcessing) Process(tile *dynatrace.Tile, defaultScore keptncommon.SLOScore, defaultComparison keptncommon.SLOComparison) (*markdownParsingResult, error) {
-	// we allow the user to use a markdown to specify SLI/SLO properties, e.g: KQG.Total.Pass
-	// if we find KQG. we process the markdown
-	return parseMarkdownConfiguration(tile.Markdown, defaultScore, defaultComparison)
+// TryProcess tries to process the specified markdown tile as a KQG total score and comparison configuration.
+// If it is not such a tile, i.e. does not contain "KQG.", it returns nil with nil error. Otherwise it returns the parsing result or an error, overwriting the default values for SLOScore and SLOComparison with the contents found in the markdown
+func (p *MarkdownTileProcessing) TryProcess(tile *dynatrace.Tile) (*markdownParsingResult, error) {
+	return tryParseMarkdownConfiguration(tile.Markdown)
 }
 
 const (
@@ -69,15 +69,15 @@ const (
 	CompareFunctionP95         = "p95"
 )
 
-// parseMarkdownConfiguration parses a text that can be used in a Markdown tile to specify global SLO properties
-func parseMarkdownConfiguration(markdown string, totalScore keptncommon.SLOScore, comparison keptncommon.SLOComparison) (*markdownParsingResult, error) {
+// tryParseMarkdownConfiguration tries to parse a text that can be used in a Markdown tile to specify global SLO properties.
+func tryParseMarkdownConfiguration(markdown string) (*markdownParsingResult, error) {
 	if !strings.Contains(markdown, "KQG.") {
 		return nil, nil
 	}
 
 	result := &markdownParsingResult{
-		totalScore: totalScore,
-		comparison: comparison,
+		totalScore: common.CreateDefaultSLOScore(),
+		comparison: common.CreateDefaultSLOComparison(),
 	}
 
 	var errs []error
