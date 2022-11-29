@@ -69,17 +69,17 @@ func (eh GetSLIEventHandler) HandleEvent(workCtx context.Context, replyCtx conte
 			"service": eh.event.GetService(),
 		}).Info("Processing sh.keptn.event.get-sli.triggered")
 
-	sliResults, err := eh.retrieveSLIResults(workCtx)
+	processingResult, err := eh.retrieveSLIResults(workCtx)
 	if err != nil {
 		log.WithError(err).Error("error retrieving SLIs")
 		return eh.sendGetSLIFinishedEvent(nil, err)
 	}
 
-	return eh.sendGetSLIFinishedEvent(sliResults, err)
+	return eh.sendGetSLIFinishedEvent(processingResult.SLIResults(), err)
 }
 
 // retrieveSLIResults will retrieve metrics either from a dashboard or from an SLI file.
-func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.SLIResult, error) {
+func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) (*result.ProcessingResult, error) {
 	// Adding DtCreds as a label so users know which DtCreds was used
 	eh.event.AddLabel("DtCreds", eh.secretName)
 
@@ -93,22 +93,17 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.
 		return nil, err
 	}
 
-	sliResults := processingResult.SLIResults()
-
-	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
-	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
-	problemID := keptn.TryGetProblemIDFromLabels(eh.event)
-	if problemID != "" {
-		problemOpenSLIResult := eh.processProblemOpenFromProblemID(ctx, problemID)
-		sliResults = append(sliResults, problemOpenSLIResult)
+	processingResult, err = eh.processProblemOpenIfProblemIDSet(ctx, processingResult)
+	if err != nil {
+		return nil, fmt.Errorf("could not process problem_open: %w", err)
 	}
 
 	// if no result values have been captured, return an error
-	if len(sliResults) == 0 {
+	if len(processingResult.SLIResults()) == 0 {
 		return nil, errors.New("could not retrieve any SLI results")
 	}
 
-	return sliResults, nil
+	return processingResult, nil
 }
 
 func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe common.Timeframe) (*result.ProcessingResult, error) {
@@ -178,15 +173,24 @@ func removeProblemOpenFromIndicators(indicators []string) []string {
 	return indicators
 }
 
-func (eh *GetSLIEventHandler) processProblemOpenFromProblemID(ctx context.Context, problemID string) result.SLIResult {
-	// Add problem_open SLO object if it is not yet in SLO.yaml so that the lighthouse will evaluate the SLI result.
-	errAddSLO := eh.addSLO(ctx, createDefaultProblemOpenSLO())
-	if errAddSLO != nil {
-		// TODO 2021-08-10: ensure this error is fails the processing!
-		log.WithError(errAddSLO).Error("problem while adding SLOs")
+func (eh *GetSLIEventHandler) processProblemOpenIfProblemIDSet(ctx context.Context, processingResult *result.ProcessingResult) (*result.ProcessingResult, error) {
+	// If no problem ID has been set, nothing to do.
+	problemID := keptn.TryGetProblemIDFromLabels(eh.event)
+	if problemID == "" {
+		return processingResult, nil
 	}
 
-	return eh.getProblemOpenSLIResultFromProblemID(ctx, problemID)
+	// Add problem_open SLO object if it is not yet in SLO.yaml so that the lighthouse will evaluate the SLI result.
+	updatedSLOs, err := eh.addSLO(ctx, createDefaultProblemOpenSLO())
+	if err != nil {
+		return nil, fmt.Errorf("could not add SLO: %w", err)
+	}
+
+	updatedSLIResults := make([]result.SLIResult, 0, len(processingResult.SLIResults())+1)
+	copy(updatedSLIResults, processingResult.SLIResults())
+	updatedSLIResults = append(updatedSLIResults, eh.getProblemOpenSLIResultFromProblemID(ctx, problemID))
+
+	return result.NewProcessingResult(updatedSLOs, updatedSLIResults), nil
 }
 
 func createDefaultProblemOpenSLO() *keptncommon.SLO {
@@ -203,29 +207,17 @@ func createDefaultProblemOpenSLO() *keptncommon.SLO {
 }
 
 // addSLO adds an SLO Entry to the SLO.yaml
-func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO) error {
+func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO) (*keptncommon.ServiceLevelObjectives, error) {
 	// first - lets load the SLO.yaml from the config repo
 	slo, err := eh.configClient.GetSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
 	if err != nil {
-		var rnfErr *keptn.ResourceNotFoundError
-		if !errors.As(err, &rnfErr) {
-			return err
-		}
-
-		// this is the default SLO in case none has yet been uploaded
-		totalScore := common.CreateDefaultSLOScore()
-		comparison := common.CreateDefaultSLOComparison()
-		slo = &keptncommon.ServiceLevelObjectives{
-			Objectives: []*keptncommon.SLO{},
-			TotalScore: &totalScore,
-			Comparison: &comparison,
-		}
+		return nil, err
 	}
 
 	// now we add the SLO Definition to the objectives - but first validate if it is not already there
 	for _, objective := range slo.Objectives {
 		if objective.SLI == newSLO.SLI {
-			return nil
+			return slo, nil
 		}
 	}
 
@@ -233,10 +225,10 @@ func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO
 	slo.Objectives = append(slo.Objectives, newSLO)
 	err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), slo)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return slo, nil
 }
 
 func (eh *GetSLIEventHandler) getProblemOpenSLIResultFromProblemID(ctx context.Context, problemID string) result.SLIResult {
