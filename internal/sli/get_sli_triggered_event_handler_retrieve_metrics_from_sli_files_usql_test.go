@@ -9,6 +9,8 @@ import (
 
 const testIndicatorUSQL = "usql_sli"
 
+var testSLOsWithUSQLSLI = createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorUSQL, "<=100"))
+
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
@@ -41,9 +43,12 @@ func TestCustomSLIWithIncorrectUSQLQueryPrefix(t *testing.T) {
 			handler := test.NewFileBasedURLHandler(t)
 
 			// error here: in value of tc.usqlPrefix
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
-				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			})
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+				},
+				testSLOsWithUSQLSLI,
+			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorUSQL, "incorrect prefix"))
 		})
@@ -95,9 +100,12 @@ func TestCustomSLIWithUSQLQueryProcessingErrors(t *testing.T) {
 			handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_multiple_results.json"))
 
 			// errors here: in value of tc.usqlPrefix
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
-				testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-			})
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorUSQL: tc.usqlPrefix + "SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+				},
+				testSLOsWithUSQLSLI,
+			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})
@@ -145,9 +153,12 @@ func TestCustomUSQLQueriesReturnsMultipleResults(t *testing.T) {
 	for _, testConfig := range testConfigs {
 		tc := testConfig
 		t.Run(tc.name, func(t *testing.T) {
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
-				testIndicatorUSQL: tc.query,
-			})
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorUSQL: tc.query,
+				},
+				testSLOsWithUSQLSLI,
+			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, tc.expectedValue, expectedUSQLRequest))
 		})
@@ -166,9 +177,12 @@ func TestCustomUSQLQueriesReturnsSingleResults(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_single_result.json"))
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorUSQL: "USQL;SINGLE_VALUE;;SELECT AVG(duration) FROM usersession",
+		},
+		testSLOsWithUSQLSLI,
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorUSQL, 87793.1776896271, expectedUSQLRequest))
 }
@@ -185,9 +199,12 @@ func TestCustomUSQLQueriesReturnsNoResults(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedUSQLRequest, filepath.Join(testDataFolder, "usql_200_0_results.json"))
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorUSQL: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorUSQL: "USQL;COLUMN_CHART;iOS 11.4.1;SELECT osVersion,AVG(duration) FROM usersession GROUP BY osVersion",
+		},
+		testSLOsWithUSQLSLI,
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorUSQL, expectedUSQLRequest, "could not find dimension name"))
 }
@@ -347,9 +364,12 @@ func TestCustomSLIWithIncorrectUSQLConfiguration(t *testing.T) {
 				handler.AddExact(tc.request, tc.dataReturned)
 			}
 
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
-				testIndicatorUSQL: tc.usqlQuery,
-			})
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorUSQL: tc.usqlQuery,
+				},
+				testSLOsWithUSQLSLI,
+			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorUSQL, tc.getSLIFinishedEventAssertionsFunc, tc.sliResultAssertionsFunc)
 		})

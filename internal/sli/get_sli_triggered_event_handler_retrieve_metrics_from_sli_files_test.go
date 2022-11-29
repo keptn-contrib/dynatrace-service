@@ -10,6 +10,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/keptn"
 	"github.com/keptn-contrib/dynatrace-service/internal/test"
+	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,9 +25,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 	handler := test.NewFileBasedURLHandler(t)
 
 	// error here in the misspelled indicator:
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			"response_time_p59": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "SLI definition", "not found"))
 }
@@ -41,9 +45,12 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 	handler := test.NewFileBasedURLHandler(t)
 
 	// error here as well: metric(s)Selector=
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricsSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "error parsing Metrics v2 query"))
 }
@@ -75,9 +82,12 @@ func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedSecurityProblemsRequest, filepath.Join(testDataFolder, "security_problems_status_open.json"))
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorSecurityProblemCount: "SECPV2;securityProblemSelector=status(\"open\")",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorSecurityProblemCount: "SECPV2;securityProblemSelector=status(\"open\")",
+		},
+		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorSecurityProblemCount, "<=0")),
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorSecurityProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 398, expectedSecurityProblemsRequest))
 }
@@ -94,9 +104,12 @@ func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedProblemsRequest, filepath.Join(testDataFolder, "problems_status_open.json"))
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
+		},
+		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorProblemCount, "<=0")),
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 30, expectedProblemsRequest))
 }
@@ -113,9 +126,12 @@ func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorSLOValue: "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorSLOValue: "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4",
+		},
+		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorSLOValue, "<=0")),
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorSLOValue, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, expectedSLORequest))
 }
@@ -125,15 +141,18 @@ func TestErrorMessageWhenNoSLIsAreRequested(t *testing.T) {
 	tests := []struct {
 		name string
 		slis map[string]string
+		slos *keptncommon.ServiceLevelObjectives
 	}{
 		{
 			name: "No SLIs requested and no SLIs defined",
+			slos: createTestSLOsWithObjectives([]*keptncommon.SLO{}),
 		},
 		{
 			name: "No SLIs requested and a single SLI is defined",
 			slis: map[string]string{
 				"response_time_p95": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 			},
+			slos: createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorResponseTimeP95, "<=200")),
 		},
 	}
 
@@ -141,9 +160,7 @@ func TestErrorMessageWhenNoSLIsAreRequested(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// no need to have something here, because we should not send an API request
 			handler := test.NewFileBasedURLHandler(t)
-
-			configClient := newConfigClientMockWithSLIs(t, tt.slis)
-
+			configClient := newConfigClientMockWithSLIsAndSLOs(t, tt.slis, tt.slos)
 			runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t, handler, configClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric", "no SLIs were requested"))
 		})
 	}
@@ -160,9 +177,11 @@ func TestGetSLIValueMetricsQuery_Success(t *testing.T) {
 		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
 	)
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		testSLOsWithResponseTimeP95)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 31846.08512740705, expectedMetricsRequest))
 }
@@ -176,9 +195,12 @@ func TestGetSLIValueMetricsQueryErrorHandling_RequestFails(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExactError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_query_constraints_violated.json"))
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, "error querying Metrics API v2"))
 }
@@ -288,9 +310,12 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 				requestBuilder,
 			)
 
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
-				testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-			})
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+				},
+				testSLOsWithResponseTimeP95,
+			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventWarningAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest, tt.expectedErrorSubString))
 		})
@@ -306,9 +331,12 @@ func TestGetSLIValueWithOldCustomQueryFormat(t *testing.T) {
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 620.4411764705883, expectedMetricsRequest))
 }
@@ -323,9 +351,12 @@ func TestGetSLISleep(t *testing.T) {
 		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
 	)
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		testSLOsWithResponseTimeP95,
+	)
 
 	// time how long getting the SLI value takes
 	timeBeforeGetSLIValue := time.Now()
@@ -347,9 +378,12 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 
 	indicator := "response_time_env"
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		indicator: "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			indicator: "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time",
+		},
+		createTestSLOsWithObjective(createTestSLOWithPassCriterion(indicator, "<=100")),
+	)
 
 	os.Setenv("MY_ENV_TAG", "some_tag")
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, indicator, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(indicator, 1550.7739132118083, expectedMetricsRequest))
@@ -446,9 +480,12 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 				sliEnd:     testSLIEnd,
 			}
 
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
-				tt.indicator: tt.query,
-			})
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					tt.indicator: tt.query,
+				},
+				createTestSLOsWithObjective(createTestSLOWithPassCriterion(tt.indicator, "<=100")),
+			)
 
 			runGetSLIsFromFilesTestWithEventAndCheckSLIs(t, handler, configClient, keptnEvent, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(tt.indicator, tt.expectedSLIValue, tt.expectedRequest))
 		})
@@ -467,9 +504,12 @@ func TestGetSLIValueMetricsQuery_SuccessWithFold(t *testing.T) {
 		newMetricsV2QueryRequestBuilder("builtin:pgi.availability:splitBy()"),
 	)
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorAvailability: "metricSelector=builtin:pgi.availability:splitBy()",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorAvailability: "metricSelector=builtin:pgi.availability:splitBy()",
+		},
+		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorAvailability, "<=100")),
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorAvailability, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorAvailability, 97.46884534911891, expectedMetricsRequest))
 }
@@ -487,9 +527,12 @@ func TestGetSLIValueMetricsQuery_NoFoldPossible(t *testing.T) {
 	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
 	handler.AddExact(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_id.json"))
 
-	configClient := newConfigClientMockWithSLIs(t, map[string]string{
-		testIndicatorAvailability: "metricSelector=builtin:pgi.availability:splitBy():avg",
-	})
+	configClient := newConfigClientMockWithSLIsAndSLOs(t,
+		map[string]string{
+			testIndicatorAvailability: "metricSelector=builtin:pgi.availability:splitBy():avg",
+		},
+		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorAvailability, "<=100")),
+	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorAvailability, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorAvailability, expectedMetricsRequest, "unable to apply ':fold()'"))
 }
@@ -533,9 +576,12 @@ func TestGetSLIValueMetricsQuery_SuccessWithResolutionInfProvided(t *testing.T) 
 			handler := test.NewFileBasedURLHandler(t)
 			handler.AddExact(expectedMetricsRequest, filepath.Join(testVariantDataFolder, "metrics_get_by_query1.json"))
 
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
-				testIndicatorResponseTime: "metricSelector=builtin:service.response.time:splitBy()&resolution=" + tt.resolutionInfVariant,
-			})
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorResponseTime: "metricSelector=builtin:service.response.time:splitBy()&resolution=" + tt.resolutionInfVariant,
+				},
+				createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorResponseTime, "<=100")),
+			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTime, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTime, 54896.50418867919, expectedMetricsRequest))
 		})
@@ -575,9 +621,11 @@ func TestGetSLIValueMetricsQuery_SuccessWithOtherResolution(t *testing.T) {
 				newMetricsV2QueryRequestBuilder(tt.metricSelector).copyWithResolution("30m"),
 			)
 
-			configClient := newConfigClientMockWithSLIs(t, map[string]string{
+			configClient := newConfigClientMockWithSLIsAndSLOs(t, map[string]string{
 				testIndicator: "metricSelector=" + tt.metricSelector + "&resolution=30m",
-			})
+			},
+				createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicator, "<=100")),
+			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicator, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicator, tt.expectedSLIValue, expectedMetricsRequest))
 		})
@@ -636,4 +684,26 @@ func (src *slisOnServiceLevelResourceClientMock) GetResource(ctx context.Context
 func (src *slisOnServiceLevelResourceClientMock) UploadResource(ctx context.Context, contentToUpload []byte, remoteResourceURI string, project string, stage string, service string) error {
 	src.t.Fatal("UploadResource() should not be needed in this mock!")
 	return nil
+}
+
+const expectedSLOResourceURI = "slo.yaml"
+
+// TestCustomSLIsGivesErrorIfNoSLOFileExistsButIndicatorRequested tests that an error is produced if no slo.yaml file exists for a sli.yaml-based request if even indicators are requested (unlikely but possible).
+func TestCustomSLIsGivesErrorIfNoSLOFileExistsButIndicatorRequested(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/no_slo_file"
+
+	handler := test.NewCombinedURLHandler(t)
+	_ = addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
+	)
+
+	configClient := newConfigClientMockWithSLIsThatErrorsGetSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		keptn.NewResourceNotFoundError(expectedSLOResourceURI, testProject, testStage, testService),
+	)
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "could not retrieve SLO definitions"))
 }

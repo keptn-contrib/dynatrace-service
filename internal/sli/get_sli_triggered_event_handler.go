@@ -88,10 +88,12 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.
 		return nil, err
 	}
 
-	sliResults, err := eh.getSLIResults(ctx, *timeframe)
+	processingResult, err := eh.getSLIResults(ctx, *timeframe)
 	if err != nil {
 		return nil, err
 	}
+
+	sliResults := processingResult.SLIResults()
 
 	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
 	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
@@ -109,7 +111,7 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.
 	return sliResults, nil
 }
 
-func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe common.Timeframe) (*result.ProcessingResult, error) {
 	// If no dashboard specified, query the SLIs based on the SLI.yaml definition
 	if eh.dashboardProperty == "" {
 		return eh.getSLIResultsFromCustomQueries(ctx, timeframe)
@@ -119,7 +121,7 @@ func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe commo
 }
 
 // getSLIResultsFromDynatraceDashboard will process dynatrace dashboard (if found) and return SLIResults
-func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Context, timeframe common.Timeframe) (*result.ProcessingResult, error) {
 	d, err := dashboard.NewRetrieval(eh.dtClient, eh.event).Retrieve(ctx, eh.dashboardProperty)
 	if err != nil {
 		return nil, dashboard.NewQueryError(fmt.Errorf("error while retrieving dashboard: %w", err))
@@ -127,23 +129,23 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 
 	eh.event.AddLabel("Dashboard Link", dashboard.NewLink(eh.dtClient.Credentials().GetTenant(), timeframe, d.ID, d.GetFilter()).String())
 
-	queryResult, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe).Process(ctx, d)
+	processingResult, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe).Process(ctx, d)
 	if err != nil {
 		return nil, dashboard.NewQueryError(err)
 	}
 
 	// let's write the SLO to the config repo
-	if queryResult.HasSLOs() {
-		err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLOs())
+	if processingResult.HasSLOs() {
+		err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), processingResult.SLOs())
 		if err != nil {
 			return nil, dashboard.NewUploadFileError("SLO", err)
 		}
 	}
 
-	return queryResult.SLIResults(), nil
+	return processingResult, nil
 }
 
-func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
+func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) (*result.ProcessingResult, error) {
 	indicators := eh.event.GetIndicators()
 	if len(indicators) == 0 {
 		return nil, errors.New("no SLIs were requested")
@@ -155,7 +157,16 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
 	}
 
-	return query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe).Process(ctx, removeProblemOpenFromIndicators(indicators)), nil
+	sliResults := query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe).Process(ctx, removeProblemOpenFromIndicators(indicators))
+
+	slos, err := eh.configClient.GetSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
+	if err != nil {
+		log.WithError(err).Error("could not retrieve SLO definitions")
+		return nil, fmt.Errorf("could not retrieve SLO definitions: %w", err)
+	}
+
+	return result.NewProcessingResult(slos, sliResults), nil
+
 }
 
 func removeProblemOpenFromIndicators(indicators []string) []string {

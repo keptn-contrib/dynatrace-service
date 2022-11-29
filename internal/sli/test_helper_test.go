@@ -13,6 +13,7 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn/go-utils/pkg/common/timeutils"
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
+	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 
@@ -38,6 +39,8 @@ const resolutionInf = "Inf"
 const resolutionIsNullKeyValuePair = "resolution=null&"
 const singleValueVisualConfigType = "SINGLE_VALUE"
 const graphChartVisualConfigType = "GRAPH_CHART"
+
+var testSLOsWithResponseTimeP95 = createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorResponseTimeP95, "<=200"))
 
 var testGetSLIEventData = createTestGetSLIEventDataWithIndicators([]string{testIndicatorResponseTimeP95})
 
@@ -356,33 +359,44 @@ func (e *getSLIEventData) AddLabel(name string, value string) {
 	e.labels[name] = value
 }
 
-type getSLIsConfigClientMock struct {
+type getSLIsAndGetSLOsConfigClientMock struct {
 	t            *testing.T
 	slis         map[string]string
 	getSLIsError error
+	slos         *keptnapi.ServiceLevelObjectives
+	getSLOsError error
 }
 
-func newConfigClientMockWithNoSLIsOrError(t *testing.T) *getSLIsConfigClientMock {
-	return &getSLIsConfigClientMock{
+func newConfigClientMockWithNoSLIsOrError(t *testing.T) *getSLIsAndGetSLOsConfigClientMock {
+	return &getSLIsAndGetSLOsConfigClientMock{
 		t: t,
 	}
 }
 
-func newConfigClientMockWithSLIs(t *testing.T, slis map[string]string) *getSLIsConfigClientMock {
-	return &getSLIsConfigClientMock{
+func newConfigClientMockWithSLIsAndSLOs(t *testing.T, slis map[string]string, slos *keptnapi.ServiceLevelObjectives) *getSLIsAndGetSLOsConfigClientMock {
+	return &getSLIsAndGetSLOsConfigClientMock{
 		t:    t,
 		slis: slis,
+		slos: slos,
 	}
 }
 
-func newConfigClientMockThatErrorsGetSLIs(t *testing.T, getSLIsError error) *getSLIsConfigClientMock {
-	return &getSLIsConfigClientMock{
+func newConfigClientMockThatErrorsGetSLIs(t *testing.T, getSLIsError error) *getSLIsAndGetSLOsConfigClientMock {
+	return &getSLIsAndGetSLOsConfigClientMock{
 		t:            t,
 		getSLIsError: getSLIsError,
 	}
 }
 
-func (m *getSLIsConfigClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
+func newConfigClientMockWithSLIsThatErrorsGetSLOs(t *testing.T, slis map[string]string, getSLOsError error) *getSLIsAndGetSLOsConfigClientMock {
+	return &getSLIsAndGetSLOsConfigClientMock{
+		t:            t,
+		slis:         slis,
+		getSLOsError: getSLOsError,
+	}
+}
+
+func (m *getSLIsAndGetSLOsConfigClientMock) GetSLIs(_ context.Context, _ string, _ string, _ string) (map[string]string, error) {
 	if m.getSLIsError != nil {
 		return nil, m.getSLIsError
 	}
@@ -390,14 +404,44 @@ func (m *getSLIsConfigClientMock) GetSLIs(_ context.Context, _ string, _ string,
 	return m.slis, nil
 }
 
-func (m *getSLIsConfigClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
-	m.t.Fatalf("GetSLOs() should not be needed in this mock!")
-	return nil, nil
+func (m *getSLIsAndGetSLOsConfigClientMock) GetSLOs(_ context.Context, _ string, _ string, _ string) (*keptnapi.ServiceLevelObjectives, error) {
+	if m.getSLOsError != nil {
+		return nil, m.getSLOsError
+	}
+	return m.slos, nil
 }
 
-func (m *getSLIsConfigClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
+func (m *getSLIsAndGetSLOsConfigClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
 	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
 	return nil
+}
+
+func createTestSLOsWithObjectives(objectives []*keptncommon.SLO) *keptncommon.ServiceLevelObjectives {
+	totalScore := common.CreateDefaultSLOScore()
+	comparison := common.CreateDefaultSLOComparison()
+	return &keptncommon.ServiceLevelObjectives{
+		Objectives: objectives,
+		TotalScore: &totalScore,
+		Comparison: &comparison,
+	}
+}
+
+func createTestSLOsWithObjective(objective *keptncommon.SLO) *keptncommon.ServiceLevelObjectives {
+	totalScore := common.CreateDefaultSLOScore()
+	comparison := common.CreateDefaultSLOComparison()
+	return &keptncommon.ServiceLevelObjectives{
+		Objectives: []*keptncommon.SLO{objective},
+		TotalScore: &totalScore,
+		Comparison: &comparison,
+	}
+}
+
+func createTestSLOWithPassCriterion(name string, passCriterion string) *keptncommon.SLO {
+	return &keptncommon.SLO{
+		SLI:    name,
+		Pass:   []*keptncommon.SLOCriteria{{Criteria: []string{passCriterion}}},
+		Weight: 1,
+	}
 }
 
 type eventSenderClientMock struct {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
@@ -98,7 +97,7 @@ func (b *processingResultBuilder) addTileResults(results []TileResult) {
 	}
 }
 
-func (b *processingResultBuilder) build() *ProcessingResult {
+func (b *processingResultBuilder) build() *result.ProcessingResult {
 	objectives := make([]*keptncommon.SLO, 0, len(b.tileResults))
 	sliResults := make([]result.SLIResult, 0, len(b.tileResults))
 
@@ -121,7 +120,7 @@ func (b *processingResultBuilder) build() *ProcessingResult {
 		sliResults = append(sliResults, sliResult)
 	}
 
-	return NewProcessingResult(
+	return result.NewProcessingResult(
 		&keptncommon.ServiceLevelObjectives{
 			Objectives: objectives,
 			TotalScore: &b.totalScore,
@@ -136,35 +135,6 @@ func addErrorAndFailResult(sliResult result.SLIResult, message string) result.SL
 	sliResult.Value = 0
 	sliResult.Message = strings.Join([]string{message, sliResult.Message}, "; ")
 	return sliResult
-}
-
-// ProcessingResult contains the result of processing a dashboard.
-type ProcessingResult struct {
-	slo        *keptnapi.ServiceLevelObjectives
-	sliResults []result.SLIResult
-}
-
-// NewProcessingResult creates a new ProcessingResult.
-func NewProcessingResult(slo *keptnapi.ServiceLevelObjectives, sliResults []result.SLIResult) *ProcessingResult {
-	return &ProcessingResult{
-		slo:        slo,
-		sliResults: sliResults,
-	}
-}
-
-// SLOs gets the SLOs.
-func (r *ProcessingResult) SLOs() *keptnapi.ServiceLevelObjectives {
-	return r.slo
-}
-
-// HasSLOs checks whether any objectives are available
-func (r *ProcessingResult) HasSLOs() bool {
-	return r.slo != nil && len(r.slo.Objectives) > 0
-}
-
-// SLIResults gets the SLI results.
-func (r *ProcessingResult) SLIResults() []result.SLIResult {
-	return r.sliResults
 }
 
 // Processing will process a Dynatrace dashboard
@@ -186,7 +156,7 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 }
 
 // Process processes a dynatrace.Dashboard.
-func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard) (*ProcessingResult, error) {
+func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard) (*result.ProcessingResult, error) {
 	resultBuilder := newProcessingResultBuilder()
 	log.Debug("Dashboard will be parsed!")
 
