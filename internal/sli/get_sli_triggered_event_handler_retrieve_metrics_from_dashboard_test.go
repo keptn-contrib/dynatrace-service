@@ -56,7 +56,7 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 		assert.Contains(t, actual.Message, "upload failed")
 	}
 
-	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, newConfigClientMockThatErrorsUploadSLOs(t, errors.New("SLO upload failed")), getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, newConfigClientMockThatErrorsUploadSLOs(t, errors.New("SLO upload failed")), getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric))
 }
 
 // TestThatThereIsNoFallbackToSLIsFromDashboard tests that retrieving a dashboard by ID works, and we ignore the outdated parse behaviour.
@@ -187,7 +187,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 		assert.Contains(t, actual.Message, "not found")
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric))
 }
 
 // TestRetrieveDashboardWithInvalidID tests that requesting a dashboard with an invalid ID fails as expected.
@@ -208,7 +208,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 		assert.Contains(t, actual.Message, "Not a valid UUID")
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric))
 }
 
 type uploadSLOsWillFailConfigClientMock struct {

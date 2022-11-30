@@ -20,7 +20,7 @@ import (
 //   - a valid, but not found dashboard ID and Dynatrace API returns a 404
 //   - the event can have multiple indicators or none. (There is an SLO file in Keptn and the SLO files may contain indicators)
 //
-// We do not want to see the error attached to any indicator coming from SLO files, but attached to a "no metric" indicator
+// We do not want to see the error attached to any indicator coming from SLO files, but attached to a "no_metric" indicator
 func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfThereAreIndicators(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_metric_errors/"
 
@@ -50,32 +50,32 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 		def             definition
 	}{
 		{
-			name:            "no indicators defined in event (SLO file) will produce single SLI result with name 'no metric'",
+			name:            "no indicators defined in event (SLO file) will produce single SLI result with name 'no_metric'",
 			eventIndicators: []string{},
 			def:             invalidID,
 		},
 		{
-			name:            "one indicator defined in event (SLO file) will produce single SLI result with name 'no metric'",
+			name:            "one indicator defined in event (SLO file) will produce single SLI result with name 'no_metric'",
 			eventIndicators: []string{"single-indicator-from-slo-file"},
 			def:             invalidID,
 		},
 		{
-			name:            "multiple indicators defined in event (SLO file) will produce single SLI result with name 'no metric'",
+			name:            "multiple indicators defined in event (SLO file) will produce single SLI result with name 'no_metric'",
 			eventIndicators: []string{"first-indicator-from-slo-file", "second-indicator-from-slo-file", "third-indicator-from-slo-file"},
 			def:             invalidID,
 		},
 		{
-			name:            "no indicators defined in event (SLO file) will produce single SLI result with name 'no metric'",
+			name:            "no indicators defined in event (SLO file) will produce single SLI result with name 'no_metric'",
 			eventIndicators: []string{},
 			def:             idNotFound,
 		},
 		{
-			name:            "one indicator defined in event (SLO file) will produce single SLI result with name 'no metric'",
+			name:            "one indicator defined in event (SLO file) will produce single SLI result with name 'no_metric'",
 			eventIndicators: []string{"single-indicator-from-slo-file"},
 			def:             idNotFound,
 		},
 		{
-			name:            "multiple indicators defined in event (SLO file) will produce single SLI result with name 'no metric'",
+			name:            "multiple indicators defined in event (SLO file) will produce single SLI result with name 'no_metric'",
 			eventIndicators: []string{"first-indicator-from-slo-file", "second-indicator-from-slo-file", "third-indicator-from-slo-file"},
 			def:             idNotFound,
 		},
@@ -94,7 +94,7 @@ func TestThatInvalidDashboardIDProducesErrorMessageInNoMetricIndicatorEvenIfTher
 				assert.Contains(t, actual.Message, tc.def.errorMessage)
 			}
 
-			runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, newConfigClientMockThatAllowsUploadSLOs(t), testGetSLIEventData, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(NoMetricIndicator))
+			runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t, handler, newConfigClientMockThatAllowsUploadSLOs(t), testGetSLIEventData, tc.def.dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric))
 		})
 	}
 }
