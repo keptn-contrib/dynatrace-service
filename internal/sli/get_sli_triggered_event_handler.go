@@ -62,6 +62,13 @@ func (eh GetSLIEventHandler) HandleEvent(workCtx context.Context, replyCtx conte
 		return err
 	}
 
+	getSLIFinishedEventFactory := eh.processEvent(workCtx)
+
+	log.Info("Finished retrieving SLI results, sending sh.keptn.event.get-sli.finished event now...")
+	return eh.sendEvent(getSLIFinishedEventFactory)
+}
+
+func (eh *GetSLIEventHandler) processEvent(ctx context.Context) *GetSLIFinishedEventFactory {
 	log.WithFields(
 		log.Fields{
 			"project": eh.event.GetProject(),
@@ -69,13 +76,23 @@ func (eh GetSLIEventHandler) HandleEvent(workCtx context.Context, replyCtx conte
 			"service": eh.event.GetService(),
 		}).Info("Processing sh.keptn.event.get-sli.triggered")
 
-	processingResult, err := eh.retrieveSLIResults(workCtx)
+	processingResult, err := eh.retrieveSLIResults(ctx)
 	if err != nil {
 		log.WithError(err).Error("error retrieving SLIs")
-		return eh.sendGetSLIFinishedEvent(nil, err)
+		return NewSucceededGetSLIFinishedEventFactory(eh.event, makeSLIResultsForError(err, eh.event), err)
 	}
 
-	return eh.sendGetSLIFinishedEvent(processingResult.SLIResults(), err)
+	// log SLI results
+	for _, sliResult := range processingResult.SLIResults() {
+		if sliResult.IndicatorResult == result.IndicatorResultSuccessful {
+			log.WithField("sliResult", sliResult).Debug("Retrieved SLI result")
+			continue
+		}
+
+		log.WithField("sliResult", sliResult).Warn("Failed to retrieve SLI result")
+	}
+
+	return NewSucceededGetSLIFinishedEventFactory(eh.event, processingResult.SLIResults(), err)
 }
 
 // retrieveSLIResults will retrieve metrics either from a dashboard or from an SLI file.
@@ -251,49 +268,20 @@ func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
 	return eh.sendEvent(NewGetSLIStartedEventFactory(eh.event))
 }
 
-// sendGetSLIFinishedEvent sends the SLI finished event. If err != nil it will send an error message
-func (eh *GetSLIEventHandler) sendGetSLIFinishedEvent(sliResults []result.SLIResult, err error) error {
-	for _, sliResult := range sliResults {
-		if sliResult.IndicatorResult == result.IndicatorResultSuccessful {
-			log.WithField("sliResult", sliResult).Debug("Retrieved SLI result")
-			continue
-		}
-
-		log.WithField("sliResult", sliResult).Warn("Failed to retrieve SLI result")
-	}
-
-	// if an error was set - the SLI results will be set to failed and an error message is set to each
-	sliResults = resetSLIResultsInCaseOfError(err, eh.event, sliResults)
-
-	log.Info("Finished retrieving SLI results, sending sh.keptn.event.get-sli.finished event now...")
-	return eh.sendEvent(NewSucceededGetSLIFinishedEventFactory(eh.event, sliResults, err))
-}
-
-func resetSLIResultsInCaseOfError(err error, eventData GetSLITriggeredAdapterInterface, sliResults []result.SLIResult) []result.SLIResult {
-	if err == nil {
-		return sliResults
-	}
-
+func makeSLIResultsForError(err error, eventData GetSLITriggeredAdapterInterface) []result.SLIResult {
 	indicators := eventData.GetIndicators()
-	if len(sliResults) == 0 {
-		var errType *dashboard.QueryError
-		if len(indicators) == 0 || errors.As(err, &errType) {
-			indicators = []string{NoMetricIndicator}
-		}
 
-		for _, indicatorName := range indicators {
-			sliResults = []result.SLIResult{
-				result.NewFailedSLIResult(indicatorName, ""),
-			}
-		}
+	var errType *dashboard.ProcessingError
+	if len(indicators) == 0 || errors.As(err, &errType) {
+		return []result.SLIResult{result.NewFailedSLIResult(NoMetricIndicator, err.Error())}
 	}
 
-	erroredSLIResults := make([]result.SLIResult, 0, len(sliResults))
-	for _, sliResult := range sliResults {
-		erroredSLIResults = append(erroredSLIResults, result.NewFailedSLIResult(sliResult.Metric, err.Error()))
+	sliResults := make([]result.SLIResult, len(indicators))
+	for i, indicatorName := range indicators {
+		sliResults[i] = result.NewFailedSLIResult(indicatorName, err.Error())
 	}
 
-	return erroredSLIResults
+	return sliResults
 }
 
 func (eh *GetSLIEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {
