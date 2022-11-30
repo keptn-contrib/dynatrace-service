@@ -187,7 +187,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 		assert.Contains(t, actual.Message, "not found")
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric))
 }
 
 // TestRetrieveDashboardWithInvalidID tests that requesting a dashboard with an invalid ID fails as expected.
@@ -208,7 +208,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 		assert.Contains(t, actual.Message, "Not a valid UUID")
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric))
 }
 
 type uploadSLOsWillFailConfigClientMock struct {

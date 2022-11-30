@@ -19,7 +19,7 @@ import (
 )
 
 const ProblemOpenSLI = "problem_open"
-const NoMetricIndicator = "no metric"
+const NoMetricIndicator = "no_metric"
 
 type GetSLIEventHandler struct {
 	event             GetSLITriggeredAdapterInterface
