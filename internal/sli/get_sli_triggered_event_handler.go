@@ -79,7 +79,7 @@ func (eh *GetSLIEventHandler) processEvent(ctx context.Context) *GetSLIFinishedE
 	processingResult, err := eh.retrieveSLIResults(ctx)
 	if err != nil {
 		log.WithError(err).Error("error retrieving SLIs")
-		return NewSucceededGetSLIFinishedEventFactory(eh.event, makeSLIResultsForError(err, eh.event), err)
+		return NewSuccessfulGetSLIFinishedEventFactoryFromError(eh.event, err)
 	}
 
 	// log SLI results
@@ -92,7 +92,7 @@ func (eh *GetSLIEventHandler) processEvent(ctx context.Context) *GetSLIFinishedE
 		log.WithField("sliResult", sliResult).Warn("Failed to retrieve SLI result")
 	}
 
-	return NewSucceededGetSLIFinishedEventFactory(eh.event, processingResult.SLIResults(), err)
+	return NewSuccessfulGetSLIFinishedEventFactoryFromSLIResults(eh.event, processingResult.SLIResults())
 }
 
 // retrieveSLIResults will retrieve metrics either from a dashboard or from an SLI file.
@@ -266,22 +266,6 @@ func (eh *GetSLIEventHandler) getProblemOpenSLIResultFromProblemID(ctx context.C
 
 func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
 	return eh.sendEvent(NewGetSLIStartedEventFactory(eh.event))
-}
-
-func makeSLIResultsForError(err error, eventData GetSLITriggeredAdapterInterface) []result.SLIResult {
-	indicators := eventData.GetIndicators()
-
-	var errType *dashboard.ProcessingError
-	if len(indicators) == 0 || errors.As(err, &errType) {
-		return []result.SLIResult{result.NewFailedSLIResult(NoMetricIndicator, err.Error())}
-	}
-
-	sliResults := make([]result.SLIResult, len(indicators))
-	for i, indicatorName := range indicators {
-		sliResults[i] = result.NewFailedSLIResult(indicatorName, err.Error())
-	}
-
-	return sliResults
 }
 
 func (eh *GetSLIEventHandler) sendEvent(factory adapter.CloudEventFactoryInterface) error {

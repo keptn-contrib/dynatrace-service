@@ -1,11 +1,56 @@
 package sli
 
 import (
+	"errors"
+
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/dashboard"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
+
+func NewErroredGetSLIFinishedEventFactory(incomingEvent GetSLITriggeredAdapterInterface, err error) *GetSLIFinishedEventFactory {
+	return &GetSLIFinishedEventFactory{
+		incomingEvent: incomingEvent,
+		eventData:     newGetSLIFinishedEventData(incomingEvent, keptnv2.StatusErrored, keptnv2.ResultFailed, err.Error(), nil),
+	}
+}
+
+func NewSuccessfulGetSLIFinishedEventFactoryFromError(incomingEvent GetSLITriggeredAdapterInterface, err error) *GetSLIFinishedEventFactory {
+	return &GetSLIFinishedEventFactory{
+		incomingEvent: incomingEvent,
+		eventData:     newGetSLIFinishedEventData(incomingEvent, keptnv2.StatusSucceeded, keptnv2.ResultFailed, err.Error(), makeSLIResultsForError(err, incomingEvent)),
+	}
+}
+
+func NewSuccessfulGetSLIFinishedEventFactoryFromSLIResults(incomingEvent GetSLITriggeredAdapterInterface, sliResults []result.SLIResult) *GetSLIFinishedEventFactory {
+	sliResultSummarizer := result.NewSLIResultSummarizer(sliResults)
+
+	return &GetSLIFinishedEventFactory{
+		incomingEvent: incomingEvent,
+		eventData:     newGetSLIFinishedEventData(incomingEvent, keptnv2.StatusSucceeded, sliResultSummarizer.Result(), sliResultSummarizer.SummaryMessage(), sliResults),
+	}
+}
+
+func newGetSLIFinishedEventData(incomingEvent GetSLITriggeredAdapterInterface, status keptnv2.StatusType, result keptnv2.ResultType, message string, indicatorValues []result.SLIResult) *getSLIFinishedEventData {
+	return &getSLIFinishedEventData{
+		EventData: keptnv2.EventData{
+			Project: incomingEvent.GetProject(),
+			Stage:   incomingEvent.GetStage(),
+			Service: incomingEvent.GetService(),
+			Labels:  incomingEvent.GetLabels(),
+			Status:  status,
+			Result:  result,
+			Message: message,
+		},
+		GetSLI: getSLIFinished{
+			IndicatorValues: convertIndicatorValues(indicatorValues),
+			Start:           incomingEvent.GetSLIStart(),
+			End:             incomingEvent.GetSLIEnd(),
+		},
+	}
+}
 
 // getSLIFinishedEventData is a keptnv2.GetSLIFinishedEventData using the getSLIFinished type defined here.
 type getSLIFinishedEventData struct {
@@ -56,72 +101,42 @@ func (f *GetSLIStartedEventFactory) CreateCloudEvent() (*cloudevents.Event, erro
 			Result:  keptnv2.ResultPass,
 		},
 	}
-
 	return adapter.NewCloudEventFactory(f.event, keptnv2.GetStartedEventType(keptnv2.GetSLITaskName), getSLIStartedEvent).CreateCloudEvent()
-
 }
 
 // GetSLIFinishedEventFactory is a factory for get-sli.finished cloud events.
 type GetSLIFinishedEventFactory struct {
-	event           GetSLITriggeredAdapterInterface
-	status          keptnv2.StatusType
-	indicatorValues []result.SLIResult
-	err             error
+	incomingEvent GetSLITriggeredAdapterInterface
+	eventData     *getSLIFinishedEventData
 }
 
-// NewSucceededGetSLIFinishedEventFactory creates a new GetSliFinishedEventFactory with status succeeded.
-func NewSucceededGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []result.SLIResult, err error) *GetSLIFinishedEventFactory {
+// NewGetSLIFinishedEventFactory creates a new GetSliFinishedEventFactory.
+func NewGetSLIFinishedEventFactory(incomingEvent GetSLITriggeredAdapterInterface, eventData *getSLIFinishedEventData) *GetSLIFinishedEventFactory {
 	return &GetSLIFinishedEventFactory{
-		event:           event,
-		status:          keptnv2.StatusSucceeded,
-		indicatorValues: indicatorValues,
-		err:             err,
-	}
-}
-
-// NewErroredGetSLIFinishedEventFactory creates a new GetSliFinishedEventFactory with status errored.
-func NewErroredGetSLIFinishedEventFactory(event GetSLITriggeredAdapterInterface, indicatorValues []result.SLIResult, err error) *GetSLIFinishedEventFactory {
-	return &GetSLIFinishedEventFactory{
-		event:           event,
-		status:          keptnv2.StatusErrored,
-		indicatorValues: indicatorValues,
-		err:             err,
+		incomingEvent: incomingEvent,
+		eventData:     eventData,
 	}
 }
 
 // CreateCloudEvent creates a cloud event based on the factory or returns an error if this can't be done.
 func (f *GetSLIFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, error) {
-	sliResultSummarizer := result.NewSLIResultSummarizer(f.indicatorValues)
-	result := sliResultSummarizer.Result()
-	message := sliResultSummarizer.SummaryMessage()
+	return adapter.NewCloudEventFactory(f.incomingEvent, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), f.eventData).CreateCloudEvent()
+}
 
-	if f.err != nil {
-		result = keptnv2.ResultFailed
-		message = f.err.Error()
+func makeSLIResultsForError(err error, eventData GetSLITriggeredAdapterInterface) []result.SLIResult {
+	indicators := eventData.GetIndicators()
+
+	var errType *dashboard.ProcessingError
+	if len(indicators) == 0 || errors.As(err, &errType) {
+		return []result.SLIResult{result.NewFailedSLIResult(NoMetricIndicator, err.Error())}
 	}
 
-	if f.status == keptnv2.StatusErrored {
-		result = keptnv2.ResultFailed
+	sliResults := make([]result.SLIResult, len(indicators))
+	for i, indicatorName := range indicators {
+		sliResults[i] = result.NewFailedSLIResult(indicatorName, err.Error())
 	}
 
-	getSLIFinishedEvent := getSLIFinishedEventData{
-		EventData: keptnv2.EventData{
-			Project: f.event.GetProject(),
-			Stage:   f.event.GetStage(),
-			Service: f.event.GetService(),
-			Labels:  f.event.GetLabels(),
-			Status:  f.status,
-			Result:  result,
-			Message: message,
-		},
-		GetSLI: getSLIFinished{
-			IndicatorValues: convertIndicatorValues(f.indicatorValues),
-			Start:           f.event.GetSLIStart(),
-			End:             f.event.GetSLIEnd(),
-		},
-	}
-
-	return adapter.NewCloudEventFactory(f.event, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), getSLIFinishedEvent).CreateCloudEvent()
+	return sliResults
 }
 
 // convertIndicatorValues converts the indicator values to sliResults for serialization.
