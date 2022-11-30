@@ -161,7 +161,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	}
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+		createSuccessfulSLIResultAssertionsFunc(testIndicatorStaticSLOPass, 95, expectedSLORequest),
 		createSuccessfulSLIResultAssertionsFunc("problems", 0, expectedProblemsV2Request),
 	}
 
@@ -243,7 +243,7 @@ func TestDashboardWithInformationalSLOWithNoData(t *testing.T) {
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("service_response_time", expectedMetricsRequest),
-		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+		createSuccessfulSLIResultAssertionsFunc(testIndicatorStaticSLOPass, 95, expectedSLORequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -264,7 +264,7 @@ func TestDashboardWithInformationalSLOWithNoData(t *testing.T) {
 		}, actual.Objectives[0])
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:     "static_slo_-_pass",
+			SLI:     testIndicatorStaticSLOPass,
 			Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
 			Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
 			Weight:  1,

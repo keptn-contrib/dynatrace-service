@@ -19,14 +19,13 @@ type data struct {
 // there is one SLO tile as well to have a fully working example where SLOs would be stored as well
 func TestRetrieveMetricsFromDashboard_MarkdownParsingWorks(t *testing.T) {
 	const templateFile = "./testdata/dashboards/markdown/markdown-tile-parsing-single-sli-template.json"
-	const sliName = "static_slo_-_pass"
 
 	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
 
-	expectedSLIResultsAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, 95, expectedSLORequest)
+	expectedSLIResultsAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(testIndicatorStaticSLOPass, 95, expectedSLORequest)
 
 	expectedSLO := &keptnapi.SLO{
-		SLI:     sliName,
+		SLI:     testIndicatorStaticSLOPass,
 		Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
 		Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
 		Weight:  1,

@@ -20,7 +20,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+		createSuccessfulSLIResultAssertionsFunc(testIndicatorStaticSLOPass, 95, expectedSLORequest),
 	}
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
@@ -33,7 +33,7 @@ func TestRetrieveMetricsFromDashboardSLOTile_SLOFound(t *testing.T) {
 		}
 
 		assert.EqualValues(t, &keptnapi.SLO{
-			SLI:     "static_slo_-_pass",
+			SLI:     testIndicatorStaticSLOPass,
 			Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
 			Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
 			Weight:  1,
