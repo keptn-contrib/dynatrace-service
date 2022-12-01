@@ -8,33 +8,41 @@ import (
 )
 
 func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T) {
-	const testDataFolder = "./testdata/dashboards/data_explorer/unit_transform/"
-	const sliName = "sli"
-	const metricUnitsConvertFileName = "metrics_units_convert1.json"
+	const (
+		testDataFolder             = "./testdata/dashboards/data_explorer/unit_transform/"
+		sliName                    = "sli"
+		metricUnitsConvertFileName = "metrics_units_convert1.json"
+	)
 
-	const autoUnit = "auto"
-	const noneUnit = "none"
-	const milliSecondUnit = "MilliSecond"
-	const microSecondUnit = "MicroSecond"
-	const dayUnit = "Day"
-	const thousandUnit = "Kilo"
-	const millionUnit = "Million"
-	const billionUnit = "Billion"
-	const trillionUnit = "Trillion"
-	const byteUnit = "Byte"
-	const specialUnit = "Special"
+	const (
+		autoUnit        = "auto"
+		noneUnit        = "none"
+		milliSecondUnit = "MilliSecond"
+		microSecondUnit = "MicroSecond"
+		dayUnit         = "Day"
+		thousandUnit    = "Kilo"
+		millionUnit     = "Million"
+		billionUnit     = "Billion"
+		trillionUnit    = "Trillion"
+		byteUnit        = "Byte"
+		specialUnit     = "Special"
+	)
 
-	const microSecondsPerMilliSecond = 1000
-	const microSecondsPerDay = 86400 * 1000000
+	const (
+		microSecondsPerMilliSecond = 1000
+		microSecondsPerDay         = 86400 * 1000000
 
-	const countPerThousand = 1000
-	const countPerMillion = 1000 * 1000
-	const countPerBillion = 1000 * 1000 * 1000
-	const countPerTrillion = 1000 * 1000 * 1000 * 1000
+		countPerThousand = 1000
+		countPerMillion  = 1000 * 1000
+		countPerBillion  = 1000 * 1000 * 1000
+		countPerTrillion = 1000 * 1000 * 1000 * 1000
+	)
 
-	const noUnitFoundSubstring = "No unit found"
-	const cannotConvertSubstring = "Cannot convert"
-	const unknownUnitSubstring = "unknown unit"
+	const (
+		noUnitFoundSubstring   = "No unit found"
+		cannotConvertSubstring = "Cannot convert"
+		unknownUnitSubstring   = "unknown unit"
+	)
 
 	serviceResponseTimeMetricSelector := "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
 	serviceResponseTimeRequestBuilder := newMetricsV2QueryRequestBuilder(serviceResponseTimeMetricSelector)
