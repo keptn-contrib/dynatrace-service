@@ -16,7 +16,7 @@ type MetricsQueryProcessing struct {
 
 func NewMetricsQueryProcessing(client dynatrace.ClientInterface, targetUnitID string) *MetricsQueryProcessing {
 	metricsClient := dynatrace.NewMetricsClient(client)
-	unitsClient := dynatrace.NewMetricsUnitsClient(client)
+	unitsClient := dynatrace.NewEnhancedMetricsUnitsDecorator(dynatrace.NewMetricsUnitsClient(client))
 	return &MetricsQueryProcessing{
 		metricsProcessing: dynatrace.NewConvertUnitMetricsProcessingDecorator(
 			metricsClient,

@@ -22,13 +22,22 @@ func NewCombinedURLHandler(t *testing.T) *CombinedURLHandler {
 }
 
 func (h *CombinedURLHandler) AddExactFile(url string, fileName string) {
+	h.setUseFileHandler(url)
+	h.fileHandler.AddExact(url, fileName)
+}
+
+func (h *CombinedURLHandler) AddExactError(url string, statusCode int, fileName string) {
+	h.setUseFileHandler(url)
+	h.fileHandler.AddExactError(url, statusCode, fileName)
+}
+
+func (h *CombinedURLHandler) setUseFileHandler(url string) {
 	_, alreadyThere := h.useFileHandler[url]
 	if alreadyThere {
 		h.t.Fatalf("%s has been already stored, check your test configuration", url)
 	}
 
 	h.useFileHandler[url] = true
-	h.fileHandler.AddExact(url, fileName)
 }
 
 func (h *CombinedURLHandler) AddExactTemplate(url string, templateFilename string, templatingData interface{}) {
