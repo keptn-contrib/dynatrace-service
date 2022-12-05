@@ -14,6 +14,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 )
 
 // DataExplorerTileProcessing represents the processing of a Data Explorer dashboard tile.
@@ -35,15 +36,15 @@ func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData a
 }
 
 // Process processes the specified Data Explorer dashboard tile.
-func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []TileResult {
+func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []result.SLIWithSLO {
 	validatedDataExplorerTile, err := newDataExplorerTileValidator(tile, dashboardFilter).tryValidate()
 	var validationErr *dataExplorerTileValidationError
 	if errors.As(err, &validationErr) {
-		return []TileResult{newFailedTileResultFromSLODefinition(validationErr.sloDefinition, err.Error())}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(validationErr.sloDefinition, err.Error())}
 	}
 
 	if validatedDataExplorerTile == nil {
-		return []TileResult{}
+		return []result.SLIWithSLO{}
 	}
 
 	return p.createMetricsQueryProcessing(validatedDataExplorerTile).Process(ctx, validatedDataExplorerTile.sloDefinition, validatedDataExplorerTile.query, p.timeframe)
