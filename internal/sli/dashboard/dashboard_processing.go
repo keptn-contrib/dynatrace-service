@@ -18,7 +18,7 @@ import (
 type processingResultBuilder struct {
 	totalScore  keptncommon.SLOScore
 	comparison  keptncommon.SLOComparison
-	tileResults []TileResult
+	tileResults []result.SLIWithSLO
 }
 
 func newProcessingResultBuilder() *processingResultBuilder {
@@ -32,10 +32,10 @@ type duplicateSLINameChecker struct {
 	nameCounts map[string]int
 }
 
-func newDuplicateSLINameChecker(results []TileResult) duplicateSLINameChecker {
+func newDuplicateSLINameChecker(results []result.SLIWithSLO) duplicateSLINameChecker {
 	nameCounts := make(map[string]int, len(results))
-	for _, result := range results {
-		name := result.sliResult.Metric
+	for _, r := range results {
+		name := r.SLIResult().Metric
 		nameCounts[name] = nameCounts[name] + 1
 	}
 
@@ -52,14 +52,14 @@ type duplicateDisplayNameChecker struct {
 	displayNameCounts map[string]int
 }
 
-func newDuplicateDisplayNameChecker(results []TileResult) duplicateDisplayNameChecker {
+func newDuplicateDisplayNameChecker(results []result.SLIWithSLO) duplicateDisplayNameChecker {
 	displayNameCounts := make(map[string]int, len(results))
-	for _, result := range results {
-		if result.sloDefinition == nil {
+	for _, r := range results {
+		if r.SLODefinition() == nil {
 			continue
 		}
 
-		displayName := result.sloDefinition.DisplayName
+		displayName := r.SLODefinition().DisplayName
 		if displayName == "" {
 			continue
 		}
@@ -72,12 +72,12 @@ func newDuplicateDisplayNameChecker(results []TileResult) duplicateDisplayNameCh
 	}
 }
 
-func (c *duplicateDisplayNameChecker) hasDuplicateDisplayName(t TileResult) bool {
-	if t.sloDefinition == nil {
+func (c *duplicateDisplayNameChecker) hasDuplicateDisplayName(t result.SLIWithSLO) bool {
+	if t.SLODefinition() == nil {
 		return false
 	}
 
-	displayName := t.sloDefinition.DisplayName
+	displayName := t.SLODefinition().DisplayName
 	if displayName == "" {
 		return false
 	}
@@ -91,7 +91,7 @@ func (b *processingResultBuilder) applyMarkdownParsingResult(r *markdownParsingR
 }
 
 // addTileResult adds multiple TileResult to the processingResultBuilder,
-func (b *processingResultBuilder) addTileResults(results []TileResult) {
+func (b *processingResultBuilder) addTileResults(results []result.SLIWithSLO) {
 	for _, result := range results {
 		b.tileResults = append(b.tileResults, result)
 	}
@@ -104,7 +104,7 @@ func (b *processingResultBuilder) build() *result.ProcessingResult {
 	sliNameChecker := newDuplicateSLINameChecker(b.tileResults)
 	displayNameChecker := newDuplicateDisplayNameChecker(b.tileResults)
 	for _, tileResult := range b.tileResults {
-		sliResult := tileResult.sliResult
+		sliResult := tileResult.SLIResult()
 
 		if sliNameChecker.hasDuplicateName(sliResult) && displayNameChecker.hasDuplicateDisplayName(tileResult) {
 			sliResult = addErrorAndFailResult(sliResult, "duplicate SLI and display name")
@@ -114,8 +114,8 @@ func (b *processingResultBuilder) build() *result.ProcessingResult {
 			sliResult = addErrorAndFailResult(sliResult, "duplicate display name")
 		}
 
-		if tileResult.sloDefinition != nil {
-			objectives = append(objectives, tileResult.sloDefinition)
+		if tileResult.SLODefinition() != nil {
+			objectives = append(objectives, tileResult.SLODefinition())
 		}
 		sliResults = append(sliResults, sliResult)
 	}

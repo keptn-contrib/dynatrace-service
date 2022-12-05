@@ -6,6 +6,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
@@ -27,17 +28,17 @@ func NewProblemTileProcessing(client dynatrace.ClientInterface, timeframe common
 
 // Process retrieves the open problem count and returns this as a TileResult.
 // An SLO definition with a pass criteria of <= 0 is also included as we don't allow problems.
-func (p *ProblemTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []TileResult {
+func (p *ProblemTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []result.SLIWithSLO {
 	// get the tile specific management zone filter that might be needed by different tile processors
 	// Check for tile management zone filter - this would overwrite the dashboardManagementZoneFilter
 	tileManagementZoneFilter := NewManagementZoneFilter(dashboardFilter, tile.TileFilter.ManagementZone)
 
 	// query the number of open problems based on the management zone filter of the tile
 	problemSelector := "status(\"open\")" + tileManagementZoneFilter.ForProblemSelector()
-	return []TileResult{p.processOpenProblemTile(ctx, problems.NewQuery(problemSelector, ""))}
+	return []result.SLIWithSLO{p.processOpenProblemTile(ctx, problems.NewQuery(problemSelector, ""))}
 }
 
-func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, query problems.Query) TileResult {
+func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, query problems.Query) result.SLIWithSLO {
 	// TODO: 2022-02-14: check: maybe in the future we will allow users to add additional SLO defs via the tile name, e.g. weight or KeySli.
 	sloDefinition := keptn.SLO{
 		SLI:    problemsIndicatorName,
@@ -49,8 +50,8 @@ func (p *ProblemTileProcessing) processOpenProblemTile(ctx context.Context, quer
 	request := dynatrace.NewProblemsV2ClientQueryRequest(query, p.timeframe)
 	totalProblemCount, err := dynatrace.NewProblemsV2Client(p.client).GetTotalCountByQuery(ctx, request)
 	if err != nil {
-		return newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "error querying Problems API v2: "+err.Error())
+		return result.NewFailedSLIWithSLOAndQuery(sloDefinition, request.RequestString(), "error querying Problems API v2: "+err.Error())
 	}
 
-	return newSuccessfulTileResult(sloDefinition, float64(totalProblemCount), request.RequestString())
+	return result.NewSuccessfulSLIWithSLOAndQuery(sloDefinition, float64(totalProblemCount), request.RequestString())
 }

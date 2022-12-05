@@ -15,6 +15,7 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/metrics"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 )
 
 // CustomChartingTileProcessing represents the processing of a Custom Charting dashboard tile.
@@ -36,7 +37,7 @@ func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData
 }
 
 // Process processes the specified Custom Charting dashboard tile.
-func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []TileResult {
+func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []result.SLIWithSLO {
 	if tile.FilterConfig == nil {
 		log.Debug("Skipping custom charting tile as it is missing a filterConfig element")
 		return nil
@@ -55,7 +56,7 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	}
 
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile title parsing error: "+err.Error())}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(sloDefinition, "Custom charting tile title parsing error: "+err.Error())}
 	}
 
 	// get the tile specific management zone filter that might be needed by different tile processors
@@ -65,16 +66,16 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	chartConfig := tile.FilterConfig.ChartConfig
 	targetUnitID := chartConfig.LeftAxisCustomUnit
 	if len(chartConfig.Series) != 1 {
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile must have exactly one series")}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(sloDefinition, "Custom charting tile must have exactly one series")}
 	}
 
 	return p.processSeries(ctx, sloDefinition, &chartConfig.Series[0], targetUnitID, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
 }
 
-func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, targetUnitID string, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []TileResult {
+func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, targetUnitID string, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []result.SLIWithSLO {
 	metricsQuery, err := p.generateMetricQueryFromChartSeries(ctx, series, tileManagementZoneFilter, filtersPerEntityType)
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}
 	}
 
 	return NewMetricsQueryProcessing(p.client, targetUnitID).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
