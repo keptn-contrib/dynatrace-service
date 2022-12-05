@@ -1,8 +1,6 @@
 package dashboard
 
 import (
-	"fmt"
-
 	keptnapi "github.com/keptn/go-utils/pkg/lib"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
@@ -18,18 +16,6 @@ func newSuccessfulTileResult(sloDefinition keptnapi.SLO, value float64, query st
 	return TileResult{
 		sliResult:     result.NewSuccessfulSLIResultWithQuery(sloDefinition.SLI, value, query),
 		sloDefinition: &sloDefinition,
-	}
-}
-
-func newFailedTileResult(indicatorName string, message string) TileResult {
-	return TileResult{
-		sliResult: result.NewFailedSLIResult(indicatorName, message),
-	}
-}
-
-func newFailedTileResultFromError(indicatorName string, message string, err error) TileResult {
-	return TileResult{
-		sliResult: result.NewFailedSLIResult(indicatorName, fmt.Sprintf("%s: %s", message, err)),
 	}
 }
 
@@ -58,5 +44,12 @@ func newWarningTileResultFromSLODefinitionAndQuery(sloDefinition keptnapi.SLO, s
 	return TileResult{
 		sliResult:     result.NewWarningSLIResultWithQuery(sloDefinition.SLI, message, sliQuery),
 		sloDefinition: &sloDefinition,
+	}
+}
+
+func createInformationalSLODefinition(name string) keptnapi.SLO {
+	return keptnapi.SLO{
+		SLI:    name,
+		Weight: 1,
 	}
 }

@@ -27,7 +27,7 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Tim
 // Process processes the specified SLO dashboard tile.
 func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []TileResult {
 	if len(tile.AssignedEntities) == 0 {
-		return []TileResult{newFailedTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")}
+		return []TileResult{newFailedTileResultFromSLODefinition(createInformationalSLODefinition("slo_tile_without_slo"), "SLO tile contains no SLO IDs")}
 	}
 
 	var results []TileResult
@@ -42,15 +42,14 @@ func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) [
 func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) TileResult {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
-		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
-		return newFailedTileResult("slo_without_id", err.Error())
+		return newFailedTileResultFromSLODefinition(createInformationalSLODefinition("slo_without_id"), err.Error())
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	request := dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe)
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, request)
 	if err != nil {
-		return newFailedTileResult(cleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
+		return newFailedTileResultFromSLODefinition(createInformationalSLODefinition(cleanIndicatorName("slo_"+sloID)), "error querying Service level objectives API: "+err.Error())
 	}
 
 	indicatorName := cleanIndicatorName(sloResult.Name)
