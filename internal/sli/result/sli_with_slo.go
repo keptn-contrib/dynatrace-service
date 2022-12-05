@@ -7,41 +7,41 @@ import (
 // SLIWithSLO stores the result of processing a dashboard tile and retrieving the SLIResult.
 type SLIWithSLO struct {
 	sliResult     SLIResult
-	sloDefinition *keptnapi.SLO
+	sloDefinition keptnapi.SLO
 }
 
 func NewSuccessfulSLIWithSLOAndQuery(sloDefinition keptnapi.SLO, value float64, query string) SLIWithSLO {
 	return SLIWithSLO{
 		sliResult:     NewSuccessfulSLIResultWithQuery(sloDefinition.SLI, value, query),
-		sloDefinition: &sloDefinition,
+		sloDefinition: sloDefinition,
 	}
 }
 
 func NewFailedSLIWithSLO(sloDefinition keptnapi.SLO, message string) SLIWithSLO {
 	return SLIWithSLO{
 		sliResult:     NewFailedSLIResult(sloDefinition.SLI, message),
-		sloDefinition: &sloDefinition,
+		sloDefinition: sloDefinition,
 	}
 }
 
 func NewWarningSLIWithSLO(sloDefinition keptnapi.SLO, message string) SLIWithSLO {
 	return SLIWithSLO{
 		sliResult:     NewWarningSLIResult(sloDefinition.SLI, message),
-		sloDefinition: &sloDefinition,
+		sloDefinition: sloDefinition,
 	}
 }
 
 func NewFailedSLIWithSLOAndQuery(sloDefinition keptnapi.SLO, sliQuery string, message string) SLIWithSLO {
 	return SLIWithSLO{
 		sliResult:     NewFailedSLIResultWithQuery(sloDefinition.SLI, message, sliQuery),
-		sloDefinition: &sloDefinition,
+		sloDefinition: sloDefinition,
 	}
 }
 
 func NewWarningSLIWithSLOAndQuery(sloDefinition keptnapi.SLO, sliQuery string, message string) SLIWithSLO {
 	return SLIWithSLO{
 		sliResult:     NewWarningSLIResultWithQuery(sloDefinition.SLI, message, sliQuery),
-		sloDefinition: &sloDefinition,
+		sloDefinition: sloDefinition,
 	}
 }
 
@@ -56,6 +56,6 @@ func (r *SLIWithSLO) SLIResult() SLIResult {
 	return r.sliResult
 }
 
-func (r *SLIWithSLO) SLODefinition() *keptnapi.SLO {
+func (r *SLIWithSLO) SLODefinition() keptnapi.SLO {
 	return r.sloDefinition
 }

@@ -56,10 +56,6 @@ type duplicateDisplayNameChecker struct {
 func newDuplicateDisplayNameChecker(results []result.SLIWithSLO) duplicateDisplayNameChecker {
 	displayNameCounts := make(map[string]int, len(results))
 	for _, r := range results {
-		if r.SLODefinition() == nil {
-			continue
-		}
-
 		displayName := r.SLODefinition().DisplayName
 		if displayName == "" {
 			continue
@@ -74,10 +70,6 @@ func newDuplicateDisplayNameChecker(results []result.SLIWithSLO) duplicateDispla
 }
 
 func (c *duplicateDisplayNameChecker) hasDuplicateDisplayName(t result.SLIWithSLO) bool {
-	if t.SLODefinition() == nil {
-		return false
-	}
-
 	displayName := t.SLODefinition().DisplayName
 	if displayName == "" {
 		return false
@@ -115,9 +107,9 @@ func (b *processingResultBuilder) build() *ProcessingResult {
 			sliResult = addErrorAndFailResult(sliResult, "duplicate display name")
 		}
 
-		if tileResult.SLODefinition() != nil {
-			objectives = append(objectives, tileResult.SLODefinition())
-		}
+		sloDefinition := tileResult.SLODefinition()
+		objectives = append(objectives, &sloDefinition)
+
 		sliResults = append(sliResults, sliResult)
 	}
 
