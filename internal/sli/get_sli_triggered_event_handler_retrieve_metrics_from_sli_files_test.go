@@ -86,7 +86,7 @@ func TestRetrieveMetricsFromFile_SecurityProblemsV2(t *testing.T) {
 		map[string]string{
 			testIndicatorSecurityProblemCount: "SECPV2;securityProblemSelector=status(\"open\")",
 		},
-		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorSecurityProblemCount, "<=0")),
+		createTestSLOs(createTestSLOWithPassCriterion(testIndicatorSecurityProblemCount, "<=0")),
 	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorSecurityProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSecurityProblemCount, 398, expectedSecurityProblemsRequest))
@@ -108,7 +108,7 @@ func TestRetrieveMetricsFromFile_ProblemsV2(t *testing.T) {
 		map[string]string{
 			testIndicatorProblemCount: "PV2;problemSelector=status(\"open\")",
 		},
-		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorProblemCount, "<=0")),
+		createTestSLOs(createTestSLOWithPassCriterion(testIndicatorProblemCount, "<=0")),
 	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorProblemCount, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorProblemCount, 30, expectedProblemsRequest))
@@ -130,7 +130,7 @@ func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
 		map[string]string{
 			testIndicatorSLOValue: "SLO;7d07efde-b714-3e6e-ad95-08490e2540c4",
 		},
-		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorSLOValue, "<=0")),
+		createTestSLOs(createTestSLOWithPassCriterion(testIndicatorSLOValue, "<=0")),
 	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorSLOValue, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, expectedSLORequest))
@@ -145,14 +145,14 @@ func TestErrorMessageWhenNoSLIsAreRequested(t *testing.T) {
 	}{
 		{
 			name: "No SLIs requested and no SLIs defined",
-			slos: createTestSLOsWithObjectives([]*keptncommon.SLO{}),
+			slos: createTestSLOs(),
 		},
 		{
 			name: "No SLIs requested and a single SLI is defined",
 			slis: map[string]string{
 				"response_time_p95": "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
 			},
-			slos: createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorResponseTimeP95, "<=200")),
+			slos: createTestSLOs(createTestSLOWithPassCriterion(testIndicatorResponseTimeP95, "<=200")),
 		},
 	}
 
@@ -219,83 +219,83 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 	}{
 		{
 			name:                   "zero_metric_series_collections_first",
-			expectedErrorSubString: "Metrics API v2 returned zero metric series collections",
+			expectedErrorSubString: testErrorSubStringZeroMetricSeriesCollections,
 		},
 		{
 			name:                   "zero_metric_series_collections_second",
-			expectedErrorSubString: "Metrics API v2 returned zero metric series collections",
+			expectedErrorSubString: testErrorSubStringZeroMetricSeriesCollections,
 		},
 
 		{
 			name:                   "one_metric_series_collection_zero_metric_series_first",
-			expectedErrorSubString: "Metrics API v2 returned zero metric series",
+			expectedErrorSubString: testErrorSubStringZeroMetricSeries,
 		},
 		{
 			name:                   "one_metric_series_collection_zero_metric_series_second",
-			expectedErrorSubString: "Metrics API v2 returned zero metric series",
+			expectedErrorSubString: testErrorSubStringZeroMetricSeries,
 		},
 
 		{
 			name:                   "one_metric_series_collection_one_metric_series_no_values_first",
-			expectedErrorSubString: "Metrics API v2 returned zero values",
+			expectedErrorSubString: testErrorSubStringZeroValues,
 		},
 		{
 			name:                   "one_metric_series_collection_one_metric_series_no_values_second",
-			expectedErrorSubString: "Metrics API v2 returned zero values",
+			expectedErrorSubString: testErrorSubStringZeroValues,
 		},
 
 		{
 			name:                   "one_metric_series_collection_one_metric_series_empty_values_first",
-			expectedErrorSubString: "Metrics API v2 returned zero values",
+			expectedErrorSubString: testErrorSubStringZeroValues,
 		},
 		{
 			name:                   "one_metric_series_collection_one_metric_series_empty_values_second",
-			expectedErrorSubString: "Metrics API v2 returned zero values",
+			expectedErrorSubString: testErrorSubStringZeroValues,
 		},
 
 		{
 			name:                   "one_metric_series_collection_one_metric_series_null_value_first",
-			expectedErrorSubString: "Metrics API v2 returned 'null' as value",
+			expectedErrorSubString: testErrorSubStringNullAsValue,
 		},
 		{
 			name:                   "one_metric_series_collection_one_metric_series_null_value_second",
-			expectedErrorSubString: "Metrics API v2 returned 'null' as value",
+			expectedErrorSubString: testErrorSubStringNullAsValue,
 		},
 
 		{
 			name:                   "one_metric_series_collection_one_metric_series_two_values_first_and_second",
-			expectedErrorSubString: "Metrics API v2 returned 2 values",
+			expectedErrorSubString: testErrorSubStringTwoValues,
 		},
 		{
 			name:                   "one_metric_series_collection_one_metric_series_two_values_second",
-			expectedErrorSubString: "Metrics API v2 returned 2 values",
+			expectedErrorSubString: testErrorSubStringTwoValues,
 		},
 
 		{
 			name:                   "one_metric_series_collection_two_metric_series_first",
-			expectedErrorSubString: "Metrics API v2 returned 2 metric series",
+			expectedErrorSubString: testErrorSubStringTwoMetricSeries,
 		},
 		{
 			name:                   "one_metric_series_collection_two_metric_series_second",
-			expectedErrorSubString: "Metrics API v2 returned 2 metric series",
+			expectedErrorSubString: testErrorSubStringTwoMetricSeries,
 		},
 
 		{
 			name:                   "two_metric_series_collections_one_metric_series_first",
-			expectedErrorSubString: "Metrics API v2 returned 2 metric series collections",
+			expectedErrorSubString: testErrorSubStringTwoMetricSeriesCollections,
 		},
 		{
 			name:                   "two_metric_series_collections_one_metric_series_second",
-			expectedErrorSubString: "Metrics API v2 returned 2 metric series collections",
+			expectedErrorSubString: testErrorSubStringTwoMetricSeriesCollections,
 		},
 
 		{
 			name:                   "two_metric_series_collections_two_metric_series_first",
-			expectedErrorSubString: "Metrics API v2 returned 2 metric series collections",
+			expectedErrorSubString: testErrorSubStringTwoMetricSeriesCollections,
 		},
 		{
 			name:                   "two_metric_series_collections_two_metric_series_second",
-			expectedErrorSubString: "Metrics API v2 returned 2 metric series collections",
+			expectedErrorSubString: testErrorSubStringTwoMetricSeriesCollections,
 		},
 	}
 
@@ -382,7 +382,7 @@ func TestGetSLIValueSupportsEnvPlaceholders(t *testing.T) {
 		map[string]string{
 			indicator: "MV2;MicroSecond;entitySelector=type(SERVICE),tag(\"env_tag:$ENV.MY_ENV_TAG\")&metricSelector=builtin:service.response.time",
 		},
-		createTestSLOsWithObjective(createTestSLOWithPassCriterion(indicator, "<=100")),
+		createTestSLOs(createTestSLOWithPassCriterion(indicator, "<=100")),
 	)
 
 	os.Setenv("MY_ENV_TAG", "some_tag")
@@ -484,7 +484,7 @@ func TestGetSLIValueSupportsPlaceholders(t *testing.T) {
 				map[string]string{
 					tt.indicator: tt.query,
 				},
-				createTestSLOsWithObjective(createTestSLOWithPassCriterion(tt.indicator, "<=100")),
+				createTestSLOs(createTestSLOWithPassCriterion(tt.indicator, "<=100")),
 			)
 
 			runGetSLIsFromFilesTestWithEventAndCheckSLIs(t, handler, configClient, keptnEvent, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(tt.indicator, tt.expectedSLIValue, tt.expectedRequest))
@@ -508,7 +508,7 @@ func TestGetSLIValueMetricsQuery_SuccessWithFold(t *testing.T) {
 		map[string]string{
 			testIndicatorAvailability: "metricSelector=builtin:pgi.availability:splitBy()",
 		},
-		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorAvailability, "<=100")),
+		createTestSLOs(createTestSLOWithPassCriterion(testIndicatorAvailability, "<=100")),
 	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorAvailability, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorAvailability, 97.46884534911891, expectedMetricsRequest))
@@ -531,7 +531,7 @@ func TestGetSLIValueMetricsQuery_NoFoldPossible(t *testing.T) {
 		map[string]string{
 			testIndicatorAvailability: "metricSelector=builtin:pgi.availability:splitBy():avg",
 		},
-		createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorAvailability, "<=100")),
+		createTestSLOs(createTestSLOWithPassCriterion(testIndicatorAvailability, "<=100")),
 	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorAvailability, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorAvailability, expectedMetricsRequest, "unable to apply ':fold()'"))
@@ -580,7 +580,7 @@ func TestGetSLIValueMetricsQuery_SuccessWithResolutionInfProvided(t *testing.T) 
 				map[string]string{
 					testIndicatorResponseTime: "metricSelector=builtin:service.response.time:splitBy()&resolution=" + tt.resolutionInfVariant,
 				},
-				createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorResponseTime, "<=100")),
+				createTestSLOs(createTestSLOWithPassCriterion(testIndicatorResponseTime, "<=100")),
 			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTime, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTime, 54896.50418867919, expectedMetricsRequest))
@@ -624,7 +624,7 @@ func TestGetSLIValueMetricsQuery_SuccessWithOtherResolution(t *testing.T) {
 			configClient := newConfigClientMockWithSLIsAndSLOs(t, map[string]string{
 				testIndicator: "metricSelector=" + tt.metricSelector + "&resolution=30m",
 			},
-				createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicator, "<=100")),
+				createTestSLOs(createTestSLOWithPassCriterion(testIndicator, "<=100")),
 			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicator, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicator, tt.expectedSLIValue, expectedMetricsRequest))

@@ -30,6 +30,7 @@ const testStage = "staging"
 const testService = "carts"
 
 const testIndicatorResponseTimeP95 = "response_time_p95"
+const testIndicatorStaticSLOPass = "static_slo_-_pass"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 const testDashboardID = "12345678-1111-4444-8888-123456789012"
 const testSLIStart = "2022-09-28T00:00:00.000Z"
@@ -40,7 +41,17 @@ const resolutionIsNullKeyValuePair = "resolution=null&"
 const singleValueVisualConfigType = "SINGLE_VALUE"
 const graphChartVisualConfigType = "GRAPH_CHART"
 
-var testSLOsWithResponseTimeP95 = createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorResponseTimeP95, "<=200"))
+const (
+	testErrorSubStringZeroMetricSeriesCollections = "Metrics API v2 returned zero metric series collections"
+	testErrorSubStringZeroMetricSeries            = "Metrics API v2 returned zero metric series"
+	testErrorSubStringZeroValues                  = "Metrics API v2 returned zero values"
+	testErrorSubStringNullAsValue                 = "Metrics API v2 returned 'null' as value"
+	testErrorSubStringTwoMetricSeriesCollections  = "Metrics API v2 returned 2 metric series collections"
+	testErrorSubStringTwoMetricSeries             = "Metrics API v2 returned 2 metric series"
+	testErrorSubStringTwoValues                   = "Metrics API v2 returned 2 values"
+)
+
+var testSLOsWithResponseTimeP95 = createTestSLOs(createTestSLOWithPassCriterion(testIndicatorResponseTimeP95, "<=200"))
 
 var testGetSLIEventData = createTestGetSLIEventDataWithIndicators([]string{testIndicatorResponseTimeP95})
 
@@ -149,17 +160,17 @@ func runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t *testing.T, 
 	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func runGetSLIsFromFilesTestAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, requestedIndicators []string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
-	runGetSLIsFromFilesTestWithEventAndCheckSLIs(t, handler, configClient, createTestGetSLIEventDataWithIndicators(requestedIndicators), getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+func runGetSLIsFromFilesTestAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, requestedIndicators []string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromFilesTestWithEventAndCheckSLIs(t, handler, configClient, createTestGetSLIEventDataWithIndicators(requestedIndicators), getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
-func runGetSLIsFromFilesTestWithEventAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, ev *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
+func runGetSLIsFromFilesTestWithEventAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, ev *getSLIEventData, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
 
 	// we do not want to query a dashboard, so we leave it empty
 	runTestAndAssertNoError(t, ev, handler, eventSenderClient, configClient, "")
 
-	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
 func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, configClient configClientInterface, dashboard string) {
@@ -416,7 +427,7 @@ func (m *getSLIsAndGetSLOsConfigClientMock) UploadSLOs(_ context.Context, _ stri
 	return nil
 }
 
-func createTestSLOsWithObjectives(objectives []*keptncommon.SLO) *keptncommon.ServiceLevelObjectives {
+func createTestSLOs(objectives ...*keptncommon.SLO) *keptncommon.ServiceLevelObjectives {
 	totalScore := common.CreateDefaultSLOScore()
 	comparison := common.CreateDefaultSLOComparison()
 	return &keptncommon.ServiceLevelObjectives{
@@ -426,20 +437,17 @@ func createTestSLOsWithObjectives(objectives []*keptncommon.SLO) *keptncommon.Se
 	}
 }
 
-func createTestSLOsWithObjective(objective *keptncommon.SLO) *keptncommon.ServiceLevelObjectives {
-	totalScore := common.CreateDefaultSLOScore()
-	comparison := common.CreateDefaultSLOComparison()
-	return &keptncommon.ServiceLevelObjectives{
-		Objectives: []*keptncommon.SLO{objective},
-		TotalScore: &totalScore,
-		Comparison: &comparison,
-	}
-}
-
 func createTestSLOWithPassCriterion(name string, passCriterion string) *keptncommon.SLO {
 	return &keptncommon.SLO{
 		SLI:    name,
 		Pass:   []*keptncommon.SLOCriteria{{Criteria: []string{passCriterion}}},
+		Weight: 1,
+	}
+}
+
+func createTestInformationalSLO(name string) *keptncommon.SLO {
+	return &keptncommon.SLO{
+		SLI:    name,
 		Weight: 1,
 	}
 }

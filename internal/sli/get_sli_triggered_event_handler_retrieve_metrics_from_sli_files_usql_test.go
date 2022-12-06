@@ -9,7 +9,7 @@ import (
 
 const testIndicatorUSQL = "usql_sli"
 
-var testSLOsWithUSQLSLI = createTestSLOsWithObjective(createTestSLOWithPassCriterion(testIndicatorUSQL, "<=100"))
+var testSLOsWithUSQLSLI = createTestSLOs(createTestSLOWithPassCriterion(testIndicatorUSQL, "<=100"))
 
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //

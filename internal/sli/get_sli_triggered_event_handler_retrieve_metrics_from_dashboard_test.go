@@ -100,7 +100,7 @@ func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultWarning, actual.Result)
-		assert.Contains(t, actual.Message, "Metrics API v2 returned zero metric series")
+		assert.Contains(t, actual.Message, testErrorSubStringZeroMetricSeries)
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest))
@@ -161,7 +161,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	}
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+		createSuccessfulSLIResultAssertionsFunc(testIndicatorStaticSLOPass, 95, expectedSLORequest),
 		createSuccessfulSLIResultAssertionsFunc("problems", 0, expectedProblemsV2Request),
 	}
 

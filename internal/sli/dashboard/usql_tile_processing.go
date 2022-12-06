@@ -15,6 +15,8 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 )
 
+const zeroValuesMessage = "User sessions API returned zero values"
+
 // USQLTileProcessing represents the processing of a USQL dashboard tile.
 type USQLTileProcessing struct {
 	client        dynatrace.ClientInterface
@@ -76,7 +78,7 @@ func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) 
 
 func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest) TileResult {
 	if len(usqlResult.Values) == 0 {
-		return newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "User sessions API returned zero values")
+		return newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), zeroValuesMessage)
 	}
 
 	if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
@@ -92,7 +94,7 @@ func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefi
 
 func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) []TileResult {
 	if len(usqlResult.Values) == 0 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "User sessions API returned zero values")}
+		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), zeroValuesMessage)}
 	}
 
 	if len(usqlResult.ColumnNames) < 2 {
