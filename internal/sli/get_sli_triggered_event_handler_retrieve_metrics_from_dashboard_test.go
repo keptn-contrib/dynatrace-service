@@ -106,12 +106,12 @@ func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest))
 }
 
-// TestDashboardThatProducesNoResultsProducesError tests that processing a dashboard which produce no results produces an error.
+// TestDashboardThatProducesNoSLIResultsProducesResultPass tests that processing a dashboard which produce no results produces an error.
 //
 // prerequisites:
 //   - we use a valid dashboard ID and it is returned by Dynatrace API
-//   - the dashboard does have a CustomCharting tile, but not the correct tile name, that would qualify it as SLI/SLO source
-func TestDashboardThatProducesNoResultsProducesError(t *testing.T) {
+//   - the dashboard does have a CustomCharting tile, but it has an empty name and so is not included as an SLI/SLO source
+func TestDashboardThatProducesNoSLIResultsProducesResultPass(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_results/"
 
 	// we do not need metrics definition and metrics query, because we will should not be looking into the tile
@@ -121,12 +121,7 @@ func TestDashboardThatProducesNoResultsProducesError(t *testing.T) {
 	// no SLOs should be uploaded
 	configClient := &uploadSLOsWillFailConfigClientMock{t: t}
 
-	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "any SLI results")
-	}
-
-	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, configClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, configClient, getSLIFinishedEventSuccessAssertionsFunc)
 }
 
 // TestQueryDynatraceDashboardForSLIs tests that querying for a dashboard (i.e. dashboard=query) works as expected.

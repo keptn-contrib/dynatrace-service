@@ -157,8 +157,8 @@ func runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t *testing.T, 
 	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{requestedIndicator}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
 }
 
-func runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFunc func(t *testing.T, actual sliResult)) {
-	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFunc)
+func runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
 func runGetSLIsFromFilesTestAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, requestedIndicators []string, getSLIFinishedEventAssertionsFunc func(t *testing.T, data *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {

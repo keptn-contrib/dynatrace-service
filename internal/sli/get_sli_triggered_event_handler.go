@@ -2,7 +2,6 @@ package sli
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -104,17 +103,7 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) (*result.P
 		return nil, err
 	}
 
-	processingResult, err := eh.getSLIResults(ctx, *timeframe)
-	if err != nil {
-		return nil, err
-	}
-
-	// if no result values have been captured, return an error
-	if len(processingResult.SLIResults()) == 0 {
-		return nil, errors.New("could not retrieve any SLI results")
-	}
-
-	return processingResult, nil
+	return eh.getSLIResults(ctx, *timeframe)
 }
 
 func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe common.Timeframe) (*result.ProcessingResult, error) {
@@ -154,7 +143,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) (*result.ProcessingResult, error) {
 	indicators := eh.event.GetIndicators()
 	if len(indicators) == 0 {
-		return nil, errors.New("no SLIs were requested")
+		return result.NewProcessingResult(&keptncommon.ServiceLevelObjectives{}, []result.SLIResult{}), nil
 	}
 
 	slis, err := eh.configClient.GetSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
