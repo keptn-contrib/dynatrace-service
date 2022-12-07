@@ -2,7 +2,6 @@ package sli
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -104,17 +103,7 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.
 		return nil, err
 	}
 
-	sliResults, err := eh.getSLIResults(ctx, *timeframe)
-	if err != nil {
-		return nil, err
-	}
-
-	// if no result values have been captured, return an error
-	if len(sliResults) == 0 {
-		return nil, errors.New("could not retrieve any SLI results")
-	}
-
-	return sliResults, nil
+	return eh.getSLIResults(ctx, *timeframe)
 }
 
 func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
@@ -135,26 +124,23 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 
 	eh.event.AddLabel("Dashboard Link", dashboard.NewLink(eh.dtClient.Credentials().GetTenant(), timeframe, d.ID, d.GetFilter()).String())
 
-	processingResult, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe).Process(ctx, d)
+	slisWithSLOs, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe, eh.configClient).Process(ctx, d)
 	if err != nil {
 		return nil, dashboard.NewDashboardError(err)
 	}
 
-	// let's write the SLO to the config repo
-	if processingResult.HasSLOs() {
-		err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), processingResult.SLOs())
-		if err != nil {
-			return nil, dashboard.NewDashboardError(dashboard.NewUploadSLOsError(err))
-		}
+	results := make([]result.SLIResult, 0, len(slisWithSLOs))
+	for _, r := range slisWithSLOs {
+		results = append(results, r.SLIResult())
 	}
 
-	return processingResult.SLIResults(), nil
+	return results, nil
 }
 
 func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
 	indicators := eh.event.GetIndicators()
 	if len(indicators) == 0 {
-		return nil, errors.New("no SLIs were requested")
+		return []result.SLIResult{}, nil
 	}
 
 	slis, err := eh.configClient.GetSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())

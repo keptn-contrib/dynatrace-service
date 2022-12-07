@@ -136,8 +136,8 @@ func TestRetrieveMetricsFromFile_SLO(t *testing.T) {
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorSLOValue, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorSLOValue, 95, expectedSLORequest))
 }
 
-// TestErrorMessageWhenNoSLIsAreRequested tests that the correct error message is generated when no SLIs are requested.
-func TestErrorMessageWhenNoSLIsAreRequested(t *testing.T) {
+// TestResultPassWhenNoSLIsAreRequested tests that no SLIs requested leads to a overall pass result with no SLI results.
+func TestResultPassWhenNoSLIsAreRequested(t *testing.T) {
 	tests := []struct {
 		name string
 		slis map[string]string
@@ -161,7 +161,7 @@ func TestErrorMessageWhenNoSLIsAreRequested(t *testing.T) {
 			// no need to have something here, because we should not send an API request
 			handler := test.NewFileBasedURLHandler(t)
 			configClient := newConfigClientMockWithSLIsAndSLOs(t, tt.slis, tt.slos)
-			runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t, handler, configClient, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric, "no SLIs were requested"))
+			runGetSLIsFromFilesTestWithNoIndicatorsRequestedAndCheckSLIs(t, handler, configClient, getSLIFinishedEventSuccessAssertionsFunc)
 		})
 	}
 }

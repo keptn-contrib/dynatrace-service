@@ -10,9 +10,16 @@ type SLIWithSLO struct {
 	sloDefinition keptnapi.SLO
 }
 
-func NewSuccessfulSLIWithSLOAndQuery(sloDefinition keptnapi.SLO, value float64, query string) SLIWithSLO {
+func NewSLIWithSLO(sliResult SLIResult, sloDefinition keptnapi.SLO) SLIWithSLO {
 	return SLIWithSLO{
-		sliResult:     NewSuccessfulSLIResultWithQuery(sloDefinition.SLI, value, query),
+		sliResult:     sliResult,
+		sloDefinition: sloDefinition,
+	}
+}
+
+func NewSuccessfulSLIWithSLO(sloDefinition keptnapi.SLO, value float64) SLIWithSLO {
+	return SLIWithSLO{
+		sliResult:     NewSuccessfulSLIResult(sloDefinition.SLI, value),
 		sloDefinition: sloDefinition,
 	}
 }
@@ -27,6 +34,13 @@ func NewFailedSLIWithSLO(sloDefinition keptnapi.SLO, message string) SLIWithSLO 
 func NewWarningSLIWithSLO(sloDefinition keptnapi.SLO, message string) SLIWithSLO {
 	return SLIWithSLO{
 		sliResult:     NewWarningSLIResult(sloDefinition.SLI, message),
+		sloDefinition: sloDefinition,
+	}
+}
+
+func NewSuccessfulSLIWithSLOAndQuery(sloDefinition keptnapi.SLO, value float64, query string) SLIWithSLO {
+	return SLIWithSLO{
+		sliResult:     NewSuccessfulSLIResultWithQuery(sloDefinition.SLI, value, query),
 		sloDefinition: sloDefinition,
 	}
 }

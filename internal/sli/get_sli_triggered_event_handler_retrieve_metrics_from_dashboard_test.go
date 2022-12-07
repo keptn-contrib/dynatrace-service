@@ -108,27 +108,32 @@ func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest))
 }
 
-// TestDashboardThatProducesNoResultsProducesError tests that processing a dashboard which produce no results produces an error.
-//
-// prerequisites:
-//   - we use a valid dashboard ID and it is returned by Dynatrace API
-//   - the dashboard does have a CustomCharting tile, but not the correct tile name, that would qualify it as SLI/SLO source
-func TestDashboardThatProducesNoResultsProducesError(t *testing.T) {
+// TestDashboardThatProducesNoResultsUploadsSLOs tests that processing a dashboard which produce no results uploads an SLO file with no objectives.
+func TestDashboardThatProducesNoResultsUploadsSLOs(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_results/"
 
-	// we do not need metrics definition and metrics query, because we will should not be looking into the tile
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
 
-	// no SLOs should be uploaded
-	configClient := &uploadSLOsWillFailConfigClientMock{t: t}
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		if !assert.NotNil(t, actual) {
+			return
+		}
 
-	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "any SLI results")
+		assert.Equal(t, 0, len(actual.Objectives))
+		assert.EqualValues(t, &keptnapi.SLOScore{Pass: "90%", Warning: "75%"}, actual.TotalScore)
+		assert.EqualValues(
+			t,
+			&keptnapi.SLOComparison{
+				CompareWith:               "single_result",
+				IncludeResultWithScore:    "pass",
+				NumberOfComparisonResults: 1,
+				AggregateFunction:         "avg",
+			},
+			actual.Comparison)
 	}
 
-	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, configClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc)
 }
 
 // TestQueryDynatraceDashboardForSLIs tests that querying for a dashboard (i.e. dashboard=query) works as expected.
