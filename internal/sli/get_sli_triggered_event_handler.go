@@ -18,7 +18,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 )
 
-const ProblemOpenSLI = "problem_open"
 const NoMetricIndicator = "no metric"
 
 type GetSLIEventHandler struct {
@@ -93,13 +92,6 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.
 		return nil, err
 	}
 
-	// ARE WE CALLED IN CONTEXT OF A PROBLEM REMEDIATION??
-	// If so - we should try to query the status of the Dynatrace Problem that triggered this evaluation
-	problemID := keptn.TryGetProblemIDFromLabels(eh.event)
-	if problemID != "" {
-		sliResults = append(sliResults, eh.getSLIResultsFromProblemContext(ctx, problemID))
-	}
-
 	// if no result values have been captured, return an error
 	if len(sliResults) == 0 {
 		return nil, errors.New("could not retrieve any SLI results")
@@ -154,92 +146,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
 	}
 
-	return query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe).Process(ctx, removeProblemOpenFromIndicators(indicators)), nil
-}
-
-func removeProblemOpenFromIndicators(indicators []string) []string {
-	for i, indicator := range indicators {
-		if indicator == ProblemOpenSLI {
-			return append(indicators[:i], indicators[i+1:]...)
-		}
-	}
-	return indicators
-}
-
-func createDefaultProblemSLO() *keptncommon.SLO {
-	return &keptncommon.SLO{
-		SLI: ProblemOpenSLI,
-		Pass: []*keptncommon.SLOCriteria{
-			{
-				Criteria: []string{"pass=<=0"},
-			},
-		},
-		Weight: 1,
-		KeySLI: true,
-	}
-}
-
-func (eh *GetSLIEventHandler) getSLIResultsFromProblemContext(ctx context.Context, problemID string) result.SLIResult {
-	// let's add this to the SLO in case this indicator is not yet in SLO.yaml.
-	// Because if it does not get added the lighthouse will not evaluate the SLI values
-	// we default it to open_problems<=0
-	errAddSLO := eh.addSLO(ctx, createDefaultProblemSLO())
-	if errAddSLO != nil {
-		// TODO 2021-08-10: should this be added to the error object for sendGetSLIFinishedEvent below?
-		log.WithError(errAddSLO).Error("problem while adding SLOs")
-	}
-
-	status, err := dynatrace.NewProblemsV2Client(eh.dtClient).GetStatusByID(ctx, problemID)
-	if err != nil {
-		return result.NewFailedSLIResult(ProblemOpenSLI, err.Error())
-	}
-
-	switch status {
-	case dynatrace.ProblemStatusOpen:
-		return result.NewSuccessfulSLIResult(ProblemOpenSLI, 1.0)
-	case "":
-		return result.NewFailedSLIResult(ProblemOpenSLI, "Unexpected empty status")
-	default:
-		return result.NewSuccessfulSLIResult(ProblemOpenSLI, 0)
-	}
-}
-
-// addSLO adds an SLO Entry to the SLO.yaml
-func (eh GetSLIEventHandler) addSLO(ctx context.Context, newSLO *keptncommon.SLO) error {
-
-	// first - lets load the SLO.yaml from the config repo
-	dashboardSLO, err := eh.configClient.GetSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
-	if err != nil {
-		var rnfErr *keptn.ResourceNotFoundError
-		if !errors.As(err, &rnfErr) {
-			return err
-		}
-
-		// this is the default SLO in case none has yet been uploaded
-		totalScore := common.CreateDefaultSLOScore()
-		comparison := common.CreateDefaultSLOComparison()
-		dashboardSLO = &keptncommon.ServiceLevelObjectives{
-			Objectives: []*keptncommon.SLO{},
-			TotalScore: &totalScore,
-			Comparison: &comparison,
-		}
-	}
-
-	// now we add the SLO Definition to the objectives - but first validate if it is not already there
-	for _, objective := range dashboardSLO.Objectives {
-		if objective.SLI == newSLO.SLI {
-			return nil
-		}
-	}
-
-	// now - lets add our newSLO to the list
-	dashboardSLO.Objectives = append(dashboardSLO.Objectives, newSLO)
-	err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), dashboardSLO)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe).Process(ctx, indicators), nil
 }
 
 func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
