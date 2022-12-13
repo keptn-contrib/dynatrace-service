@@ -187,6 +187,15 @@ func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventCont
 
 // Process processes a dynatrace.Dashboard.
 func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard) (*ProcessingResult, error) {
+	processingResult, err := p.process(ctx, dashboard)
+	if err != nil {
+		return nil, NewProcessingError(err)
+	}
+
+	return processingResult, nil
+}
+
+func (p *Processing) process(ctx context.Context, dashboard *dynatrace.Dashboard) (*ProcessingResult, error) {
 	resultBuilder := newProcessingResultBuilder()
 	log.Debug("Dashboard will be parsed!")
 

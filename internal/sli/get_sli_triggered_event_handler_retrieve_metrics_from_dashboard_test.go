@@ -43,6 +43,8 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/slo_writing_fails/"
 
+	const uploadFailsErrorMessage = "SLO upload failed"
+
 	handler, _ := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
 		testDataFolder:     testDataFolder,
 		baseMetricSelector: "builtin:service.response.time",
@@ -53,10 +55,10 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "upload failed")
+		assert.Contains(t, actual.Message, uploadFailsErrorMessage)
 	}
 
-	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, newConfigClientMockThatErrorsUploadSLOs(t, errors.New("SLO upload failed")), getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, newConfigClientMockThatErrorsUploadSLOs(t, errors.New(uploadFailsErrorMessage)), getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric, uploadFailsErrorMessage))
 }
 
 // TestThatThereIsNoFallbackToSLIsFromDashboard tests that retrieving a dashboard by ID works, and we ignore the outdated parse behaviour.
@@ -176,6 +178,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/valid_but_unknown_id/"
 
 	const dashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9c"
+	const notFoundMessageSubstring = "not found"
 
 	// we add a handler to simulate a very concrete 404 Dashboards API request/response in this case.
 	handler := test.NewFileBasedURLHandler(t)
@@ -184,10 +187,10 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 		assert.Contains(t, actual.Message, dashboardID)
-		assert.Contains(t, actual.Message, "not found")
+		assert.Contains(t, actual.Message, notFoundMessageSubstring)
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric, notFoundMessageSubstring))
 }
 
 // TestRetrieveDashboardWithInvalidID tests that requesting a dashboard with an invalid ID fails as expected.
@@ -198,6 +201,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/invalid_id/"
 
 	const dashboardID = "definitely-invalid-uuid"
+	const invalidUUIDMessageSubstring = "Not a valid UUID"
 
 	// we add a handler to simulate a very concrete 400 Dashboards API request/response in this case.
 	handler := test.NewFileBasedURLHandler(t)
@@ -205,10 +209,10 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "Not a valid UUID")
+		assert.Contains(t, actual.Message, invalidUUIDMessageSubstring)
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric, invalidUUIDMessageSubstring))
 }
 
 type uploadSLOsWillFailConfigClientMock struct {

@@ -2,60 +2,82 @@ package dashboard
 
 import "fmt"
 
-// ProcessingError represents a base error that happened while processing a dashboard
+// DashboardError represents a base error that happened while getting SLIs and SLOs from a dashboard.
+type DashboardError struct {
+	cause error
+}
+
+// NewDashboardError will create a new DashboardError.
+func NewDashboardError(cause error) *DashboardError {
+	return &DashboardError{
+		cause: cause,
+	}
+}
+
+func (e *DashboardError) Error() string {
+	return fmt.Sprintf("could not get SLIs from dashboard: %v", e.cause)
+}
+
+func (e *DashboardError) Unwrap() error {
+	return e.cause
+}
+
+// ProcessingError represents an error that happened while processing a dashboard.
 type ProcessingError struct {
 	cause error
 }
 
-func (pe *ProcessingError) Error() string {
-	return pe.cause.Error()
-}
-
-func (pe *ProcessingError) Unwrap() error {
-	return pe.cause
-}
-
-// QueryError represents an error that happened while querying a dashboard
-type QueryError struct {
-	err *ProcessingError
-}
-
-// NewQueryError will create a new QueryError
-func NewQueryError(cause error) *QueryError {
-	return &QueryError{
-		err: &ProcessingError{
-			cause: cause,
-		},
+// NewProcessingError will create a new ProcessingError.
+func NewProcessingError(cause error) *ProcessingError {
+	return &ProcessingError{
+		cause: cause,
 	}
 }
 
-func (e *QueryError) Error() string {
-	return fmt.Sprintf("could not query Dynatrace dashboard for SLIs: %v", e.err.Error())
+func (e *ProcessingError) Error() string {
+	return fmt.Sprintf("could not process dashboard: %v", e.cause)
 }
 
-func (e *QueryError) Unwrap() error {
-	return e.err
+func (e *ProcessingError) Unwrap() error {
+	return e.cause
 }
 
-type UploadFileError struct {
-	context string
-	err     *ProcessingError
+// RetrievalError represents an error that happened while retrieving a dashboard.
+type RetrievalError struct {
+	cause error
 }
 
-// NewUploadFileError will create a new UploadFileError
-func NewUploadFileError(context string, cause error) *UploadFileError {
-	return &UploadFileError{
-		context: context,
-		err: &ProcessingError{
-			cause: cause,
-		},
+// NewRetrievalError will create a new RetrievalError.
+func NewRetrievalError(cause error) *RetrievalError {
+	return &RetrievalError{
+		cause: cause,
 	}
 }
 
-func (e *UploadFileError) Error() string {
-	return fmt.Sprintf("could not upload %s file: %v", e.context, e.err.Error())
+func (e *RetrievalError) Error() string {
+	return fmt.Sprintf("could not retrieve dashboard: %v", e.cause)
 }
 
-func (e *UploadFileError) Unwrap() error {
-	return e.err
+func (e *RetrievalError) Unwrap() error {
+	return e.cause
+}
+
+// UploadSLOsError respresents an error that happened while uploading the SLO file.
+type UploadSLOsError struct {
+	cause error
+}
+
+// NewUploadSLOsError will create a new UploadSLOsError.
+func NewUploadSLOsError(cause error) *UploadSLOsError {
+	return &UploadSLOsError{
+		cause: cause,
+	}
+}
+
+func (e *UploadSLOsError) Error() string {
+	return fmt.Sprintf("could not upload SLO file: %v", e.cause)
+}
+
+func (e *UploadSLOsError) Unwrap() error {
+	return e.cause
 }
