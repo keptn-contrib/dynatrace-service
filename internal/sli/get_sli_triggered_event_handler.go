@@ -118,20 +118,20 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 
 	eh.event.AddLabel("Dashboard Link", dashboard.NewLink(eh.dtClient.Credentials().GetTenant(), timeframe, d.ID, d.GetFilter()).String())
 
-	queryResult, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe).Process(ctx, d)
+	processingResult, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe).Process(ctx, d)
 	if err != nil {
 		return nil, dashboard.NewQueryError(err)
 	}
 
 	// let's write the SLO to the config repo
-	if queryResult.HasSLOs() {
-		err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), queryResult.SLOs())
+	if processingResult.HasSLOs() {
+		err = eh.configClient.UploadSLOs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService(), processingResult.SLOs())
 		if err != nil {
 			return nil, dashboard.NewUploadFileError("SLO", err)
 		}
 	}
 
-	return queryResult.SLIResults(), nil
+	return processingResult.SLIResults(), nil
 }
 
 func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
