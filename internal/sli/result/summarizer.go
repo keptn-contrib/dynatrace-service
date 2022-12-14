@@ -7,32 +7,33 @@ import (
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
-// SLIResultSummarizer determines an overall result and summary message for a slice of SLI results.
-type SLIResultSummarizer struct {
-	indicatorValues []SLIResult
+// Summarizer determines an overall result and summary message for a slice of SLI results.
+type Summarizer struct {
+	results []SLIWithSLO
 }
 
-// NewSLIResultSummarizer creates a new SLIResultSummarizer with the specified indicator values.
-func NewSLIResultSummarizer(indicatorValues []SLIResult) SLIResultSummarizer {
-	return SLIResultSummarizer{indicatorValues: indicatorValues}
+// NewSummarizer creates a new Summarizer with the specified indicator values.
+func NewSummarizer(indicatorValues []SLIWithSLO) Summarizer {
+	return Summarizer{results: indicatorValues}
 }
 
 // SummaryMessage gets a summarized message for all indicators in the form "indicator_A, indicator_B: error_1; indicator_C: error_2..."
-func (s SLIResultSummarizer) SummaryMessage() string {
-	return strings.Join(getSummaryMessages(sortMessageIndicators(groupIndicatorMessages(s.indicatorValues))), "; ")
+func (s Summarizer) SummaryMessage() string {
+	return strings.Join(getSummaryMessages(sortMessageIndicators(groupIndicatorMessages(s.results))), "; ")
 }
 
 // groupIndicatorMessages groups the indicators by their messages.
-func groupIndicatorMessages(indicatorValues []SLIResult) map[string]messageIndicatorSet {
+func groupIndicatorMessages(results []SLIWithSLO) map[string]messageIndicatorSet {
 	messageSetMap := make(map[string]messageIndicatorSet)
-	for ordering, indicator := range indicatorValues {
-		if indicator.Success == false {
-			ms, ok := messageSetMap[indicator.Message]
+	for ordering, r := range results {
+		sliResult := r.SLIResult()
+		if sliResult.Success == false {
+			ms, ok := messageSetMap[sliResult.Message]
 			if !ok {
-				ms = newMessageIndicatorSet(indicator.Message, ordering)
+				ms = newMessageIndicatorSet(sliResult.Message, ordering)
 			}
-			ms.addIndicator(indicator.Metric)
-			messageSetMap[indicator.Message] = ms
+			ms.addIndicator(sliResult.Metric)
+			messageSetMap[sliResult.Message] = ms
 		}
 	}
 	return messageSetMap
@@ -58,12 +59,13 @@ func getSummaryMessages(messageIndicatorSets []messageIndicatorSet) []string {
 	return messagePieces
 }
 
-// Result gets the overall result for the indicator values.
-func (s SLIResultSummarizer) Result() keptnv2.ResultType {
+// OverallResult gets the overall result for the indicator values.
+func (s Summarizer) OverallResult() keptnv2.ResultType {
 
 	seenWarning := false
-	for _, indicator := range s.indicatorValues {
-		switch indicator.IndicatorResult {
+	for _, r := range s.results {
+		sliResult := r.SLIResult()
+		switch sliResult.IndicatorResult {
 		case IndicatorResultSuccessful:
 			// this is fine, do nothing
 		case IndicatorResultWarning:

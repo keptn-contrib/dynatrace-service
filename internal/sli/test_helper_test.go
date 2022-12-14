@@ -379,12 +379,6 @@ type getSLIsAndGetSLOsConfigClientMock struct {
 	getSLOsError error
 }
 
-func newConfigClientMockWithNoSLIsOrError(t *testing.T) *getSLIsAndGetSLOsConfigClientMock {
-	return &getSLIsAndGetSLOsConfigClientMock{
-		t: t,
-	}
-}
-
 func newConfigClientMockWithSLIsAndSLOs(t *testing.T, slis map[string]string, slos *keptnapi.ServiceLevelObjectives) *getSLIsAndGetSLOsConfigClientMock {
 	return &getSLIsAndGetSLOsConfigClientMock{
 		t:    t,

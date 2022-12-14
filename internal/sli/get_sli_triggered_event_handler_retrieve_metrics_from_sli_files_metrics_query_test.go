@@ -167,7 +167,11 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreDefinedButEmpty(t *testing.T) {
 	// no custom queries defined here
 	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
 	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
-	configClient := newConfigClientMockWithNoSLIsOrError(t)
+	configClient := &getSLIsAndGetSLOsConfigClientMock{
+		t:    t,
+		slis: nil, // no SLIs are defined
+		slos: createTestSLOs(createTestSLOWithPassCriterion(testIndicatorResponseTimeP95, "<600")),
+	}
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 857.6499999999999, expectedMetricsRequest))
 }

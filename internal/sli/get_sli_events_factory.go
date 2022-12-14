@@ -24,16 +24,16 @@ func NewSuccessfulGetSLIFinishedEventFactoryFromError(incomingEvent GetSLITrigge
 	}
 }
 
-func NewSuccessfulGetSLIFinishedEventFactoryFromSLIResults(incomingEvent GetSLITriggeredAdapterInterface, sliResults []result.SLIResult) *GetSLIFinishedEventFactory {
-	sliResultSummarizer := result.NewSLIResultSummarizer(sliResults)
+func NewSuccessfulGetSLIFinishedEventFactoryFromResults(incomingEvent GetSLITriggeredAdapterInterface, results []result.SLIWithSLO) *GetSLIFinishedEventFactory {
+	resultSummarizer := result.NewSummarizer(results)
 
 	return &GetSLIFinishedEventFactory{
 		incomingEvent: incomingEvent,
-		eventData:     newGetSLIFinishedEventData(incomingEvent, keptnv2.StatusSucceeded, sliResultSummarizer.Result(), sliResultSummarizer.SummaryMessage(), sliResults),
+		eventData:     newGetSLIFinishedEventData(incomingEvent, keptnv2.StatusSucceeded, resultSummarizer.OverallResult(), resultSummarizer.SummaryMessage(), convertResults(results)),
 	}
 }
 
-func newGetSLIFinishedEventData(incomingEvent GetSLITriggeredAdapterInterface, status keptnv2.StatusType, result keptnv2.ResultType, message string, indicatorValues []result.SLIResult) *getSLIFinishedEventData {
+func newGetSLIFinishedEventData(incomingEvent GetSLITriggeredAdapterInterface, status keptnv2.StatusType, result keptnv2.ResultType, message string, results []sliResult) *getSLIFinishedEventData {
 	return &getSLIFinishedEventData{
 		EventData: keptnv2.EventData{
 			Project: incomingEvent.GetProject(),
@@ -45,7 +45,7 @@ func newGetSLIFinishedEventData(incomingEvent GetSLITriggeredAdapterInterface, s
 			Message: message,
 		},
 		GetSLI: getSLIFinished{
-			IndicatorValues: convertIndicatorValues(indicatorValues),
+			IndicatorValues: results,
 			Start:           incomingEvent.GetSLIStart(),
 			End:             incomingEvent.GetSLIEnd(),
 		},
@@ -123,33 +123,38 @@ func (f *GetSLIFinishedEventFactory) CreateCloudEvent() (*cloudevents.Event, err
 	return adapter.NewCloudEventFactory(f.incomingEvent, keptnv2.GetFinishedEventType(keptnv2.GetSLITaskName), f.eventData).CreateCloudEvent()
 }
 
-func makeSLIResultsForError(err error, eventData GetSLITriggeredAdapterInterface) []result.SLIResult {
+func makeSLIResultsForError(err error, eventData GetSLITriggeredAdapterInterface) []sliResult {
 	indicators := eventData.GetIndicators()
 
 	var errType *dashboard.DashboardError
 	if len(indicators) == 0 || errors.As(err, &errType) {
-		return []result.SLIResult{result.NewFailedSLIResult(NoMetricIndicator, err.Error())}
+		return []sliResult{makeFailedResult(NoMetricIndicator, err)}
 	}
 
-	sliResults := make([]result.SLIResult, len(indicators))
+	sliResults := make([]sliResult, len(indicators))
 	for i, indicatorName := range indicators {
-		sliResults[i] = result.NewFailedSLIResult(indicatorName, err.Error())
+		sliResults[i] = makeFailedResult(indicatorName, err)
 	}
 
 	return sliResults
 }
 
-// convertIndicatorValues converts the indicator values to sliResults for serialization.
-func convertIndicatorValues(indicatorValues []result.SLIResult) []sliResult {
-	var convertedIndicatorValues []sliResult
-	for _, indicator := range indicatorValues {
-		convertedIndicatorValues = append(convertedIndicatorValues,
+func makeFailedResult(indicatorName string, err error) sliResult {
+	return sliResult{Metric: indicatorName, Success: false, Message: err.Error()}
+}
+
+// convertResults converts the indicator values to sliResults for serialization.
+func convertResults(results []result.SLIWithSLO) []sliResult {
+	convertedIndicatorValues := make([]sliResult, len(results))
+	for i, r := range results {
+		sr := r.SLIResult()
+		convertedIndicatorValues[i] =
 			sliResult{
-				Metric:  indicator.Metric,
-				Value:   indicator.Value,
-				Success: indicator.Success,
-				Message: indicator.Message,
-				Query:   indicator.Query})
+				Metric:  sr.Metric,
+				Value:   sr.Value,
+				Success: sr.Success,
+				Message: sr.Message,
+				Query:   sr.Query}
 	}
 	return convertedIndicatorValues
 }

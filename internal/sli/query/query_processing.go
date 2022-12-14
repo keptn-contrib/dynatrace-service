@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
@@ -22,6 +23,12 @@ import (
 	v1usql "github.com/keptn-contrib/dynatrace-service/internal/sli/v1/usql"
 )
 
+// sloGetterInterface can get SLOs.
+type sloGetterInterface interface {
+	// GetSLOs gets the SLOs stored for exactly the specified project, stage and service.
+	GetSLOs(ctx context.Context, project string, stage string, service string) (*keptncommon.ServiceLevelObjectives, error)
+}
+
 // Processing representing the processing of custom SLI queries.
 type Processing struct {
 	client        dynatrace.ClientInterface
@@ -29,27 +36,59 @@ type Processing struct {
 	customFilters []*keptnv2.SLIFilter
 	customQueries *CustomQueries
 	timeframe     common.Timeframe
+	sloGetter     sloGetterInterface
 }
 
 // NewProcessing creates a new Processing.
-func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, customQueries *CustomQueries, timeframe common.Timeframe) *Processing {
+func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, customQueries *CustomQueries, timeframe common.Timeframe, sloGetter sloGetterInterface) *Processing {
 	return &Processing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
 		customQueries: customQueries,
 		timeframe:     timeframe,
+		sloGetter:     sloGetter,
 	}
 }
 
-// Process queries the specified indicators and results a slice of SLIResults.
-func (p *Processing) Process(ctx context.Context, indicators []string) []result.SLIResult {
-	var sliResults []result.SLIResult
-	for _, indicator := range indicators {
-		sliResults = append(sliResults, p.getSLIResultFromIndicator(ctx, indicator))
+// Process queries the specified indicators and results a slice of SLIWithSLOs.
+func (p *Processing) Process(ctx context.Context, indicators []string) ([]result.SLIWithSLO, error) {
+	objectives, err := p.getSLOObjectives(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	return sliResults
+	results := make([]result.SLIWithSLO, len(indicators))
+	var slo *keptncommon.SLO
+	for i, indicator := range indicators {
+		slo, objectives = getAndRemoveFirstObjectiveWithName(objectives, indicator)
+		if slo == nil {
+			results[i] = result.NewFailedSLIWithSLO(result.CreateInformationalSLODefinition(indicator), "missing SLO objective")
+			continue
+		}
+
+		results[i] = result.NewSLIWithSLO(p.getSLIResultFromIndicator(ctx, indicator), *slo)
+	}
+
+	return results, nil
+}
+
+func (p *Processing) getSLOObjectives(ctx context.Context) ([]*keptncommon.SLO, error) {
+	slos, err := p.sloGetter.GetSLOs(ctx, p.eventData.GetProject(), p.eventData.GetStage(), p.eventData.GetService())
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve SLO definitions: %w", err)
+	}
+
+	return slos.Objectives, nil
+}
+
+func getAndRemoveFirstObjectiveWithName(objectives []*keptncommon.SLO, name string) (*keptncommon.SLO, []*keptncommon.SLO) {
+	for i, o := range objectives {
+		if o.SLI == name {
+			return o, append(objectives[:i], objectives[i+1:]...)
+		}
+	}
+	return nil, objectives
 }
 
 // getSLIResultFromIndicator queries a single SLI value ultimately from the Dynatrace API and returns an SLIResult.

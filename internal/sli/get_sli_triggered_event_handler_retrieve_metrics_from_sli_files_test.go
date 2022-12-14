@@ -685,3 +685,45 @@ func (src *slisOnServiceLevelResourceClientMock) UploadResource(ctx context.Cont
 	src.t.Fatal("UploadResource() should not be needed in this mock!")
 	return nil
 }
+
+const expectedSLOResourceURI = "slo.yaml"
+
+// TestCustomSLIsGivesErrorIfNoSLOFileExistsButIndicatorRequested tests that an error is produced if no slo.yaml file exists for a sli.yaml-based request if even indicators are requested (unlikely but possible).
+func TestCustomSLIsGivesErrorIfNoSLOFileExistsButIndicatorRequested(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/basic/no_slo_file"
+
+	handler := test.NewCombinedURLHandler(t)
+	_ = addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
+	)
+
+	configClient := newConfigClientMockWithSLIsThatErrorsGetSLOs(t,
+		map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
+		},
+		keptn.NewResourceNotFoundError(expectedSLOResourceURI, testProject, testStage, testService),
+	)
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "could not retrieve SLO definitions"))
+}
+
+// TestCustomSLIsGivesErrorIfWrongIndicatorRequested tests that no query is performed and an error is returned if an indicator is requested that has an SLI defined but not SLO objective.
+func TestCustomSLIsGivesErrorIfWrongIndicatorRequested(t *testing.T) {
+
+	// fallback: mind the default SLI definitions in the URL below
+	handler := test.NewCombinedURLHandler(t)
+
+	// no custom queries defined here
+	// currently this could have 2 reasons: EITHER no sli.yaml file available OR no indicators defined in such a file)
+	// TODO 2021-09-29: we should be able to differentiate between 'not there' and 'no SLIs defined' - the latter could be intentional
+	configClient := &getSLIsAndGetSLOsConfigClientMock{
+		t: t,
+		slis: map[string]string{
+			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time", // won't actually be used
+		},
+		slos: createTestSLOs(createTestSLOWithPassCriterion(testIndicatorStaticSLOPass, ">=95")),
+	}
+
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "missing SLO objective"))
+}

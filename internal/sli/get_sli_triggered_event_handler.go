@@ -74,27 +74,27 @@ func (eh *GetSLIEventHandler) processEvent(ctx context.Context) *GetSLIFinishedE
 			"service": eh.event.GetService(),
 		}).Info("Processing sh.keptn.event.get-sli.triggered")
 
-	sliResults, err := eh.retrieveSLIResults(ctx)
+	results, err := eh.retrieveResults(ctx)
 	if err != nil {
 		log.WithError(err).Error("error retrieving SLIs")
 		return NewSuccessfulGetSLIFinishedEventFactoryFromError(eh.event, err)
 	}
 
 	// log SLI results
-	for _, sliResult := range sliResults {
-		if sliResult.IndicatorResult == result.IndicatorResultSuccessful {
-			log.WithField("sliResult", sliResult).Debug("Retrieved SLI result")
+	for _, r := range results {
+		if r.SLIResult().IndicatorResult == result.IndicatorResultSuccessful {
+			log.WithField("sliWithSLO", r).Debug("Retrieved SLI result")
 			continue
 		}
 
-		log.WithField("sliResult", sliResult).Warn("Failed to retrieve SLI result")
+		log.WithField("sliWithSLO", r).Warn("Failed to retrieve SLI result")
 	}
 
-	return NewSuccessfulGetSLIFinishedEventFactoryFromSLIResults(eh.event, sliResults)
+	return NewSuccessfulGetSLIFinishedEventFactoryFromResults(eh.event, results)
 }
 
-// retrieveSLIResults will retrieve metrics either from a dashboard or from an SLI file.
-func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.SLIResult, error) {
+// retrieveResults will retrieve metrics either from a dashboard or from an SLI file.
+func (eh *GetSLIEventHandler) retrieveResults(ctx context.Context) ([]result.SLIWithSLO, error) {
 	// Adding DtCreds as a label so users know which DtCreds was used
 	eh.event.AddLabel("DtCreds", eh.secretName)
 
@@ -103,20 +103,20 @@ func (eh *GetSLIEventHandler) retrieveSLIResults(ctx context.Context) ([]result.
 		return nil, err
 	}
 
-	return eh.getSLIResults(ctx, *timeframe)
+	return eh.getResults(ctx, *timeframe)
 }
 
-func (eh *GetSLIEventHandler) getSLIResults(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
+func (eh *GetSLIEventHandler) getResults(ctx context.Context, timeframe common.Timeframe) ([]result.SLIWithSLO, error) {
 	// If no dashboard specified, query the SLIs based on the SLI.yaml definition
 	if eh.dashboardProperty == "" {
-		return eh.getSLIResultsFromCustomQueries(ctx, timeframe)
+		return eh.getResultsFromCustomQueries(ctx, timeframe)
 	}
 
-	return eh.getSLIResultsFromDynatraceDashboard(ctx, timeframe)
+	return eh.getResultsFromDynatraceDashboard(ctx, timeframe)
 }
 
-// getSLIResultsFromDynatraceDashboard will process dynatrace dashboard (if found) and return SLIResults
-func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
+// getResultsFromDynatraceDashboard will process dynatrace dashboard (if found) and return SLIWithSLO
+func (eh *GetSLIEventHandler) getResultsFromDynatraceDashboard(ctx context.Context, timeframe common.Timeframe) ([]result.SLIWithSLO, error) {
 	d, err := dashboard.NewRetrieval(eh.dtClient, eh.event).Retrieve(ctx, eh.dashboardProperty)
 	if err != nil {
 		return nil, dashboard.NewDashboardError(err)
@@ -124,23 +124,18 @@ func (eh *GetSLIEventHandler) getSLIResultsFromDynatraceDashboard(ctx context.Co
 
 	eh.event.AddLabel("Dashboard Link", dashboard.NewLink(eh.dtClient.Credentials().GetTenant(), timeframe, d.ID, d.GetFilter()).String())
 
-	slisWithSLOs, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe, eh.configClient).Process(ctx, d)
+	results, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe, eh.configClient).Process(ctx, d)
 	if err != nil {
 		return nil, dashboard.NewDashboardError(err)
-	}
-
-	results := make([]result.SLIResult, 0, len(slisWithSLOs))
-	for _, r := range slisWithSLOs {
-		results = append(results, r.SLIResult())
 	}
 
 	return results, nil
 }
 
-func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIResult, error) {
+func (eh *GetSLIEventHandler) getResultsFromCustomQueries(ctx context.Context, timeframe common.Timeframe) ([]result.SLIWithSLO, error) {
 	indicators := eh.event.GetIndicators()
 	if len(indicators) == 0 {
-		return []result.SLIResult{}, nil
+		return []result.SLIWithSLO{}, nil
 	}
 
 	slis, err := eh.configClient.GetSLIs(ctx, eh.event.GetProject(), eh.event.GetStage(), eh.event.GetService())
@@ -149,7 +144,7 @@ func (eh *GetSLIEventHandler) getSLIResultsFromCustomQueries(ctx context.Context
 		return nil, fmt.Errorf("could not retrieve custom SLI definitions: %w", err)
 	}
 
-	return query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe).Process(ctx, indicators), nil
+	return query.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), query.NewCustomQueries(slis), timeframe, eh.configClient).Process(ctx, indicators)
 }
 
 func (eh *GetSLIEventHandler) sendGetSLIStartedEvent() error {
