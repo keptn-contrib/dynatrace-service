@@ -4,6 +4,7 @@ import (
 	"sort"
 	"strings"
 
+	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -62,14 +63,16 @@ func getSummaryMessages(messageIndicatorSets []messageIndicatorSet) []string {
 // OverallResult gets the overall result for the indicator values.
 func (s Summarizer) OverallResult() keptnv2.ResultType {
 
-	seenWarning := false
+	seenNonInformationalWarning := false
 	for _, r := range s.results {
 		sliResult := r.SLIResult()
 		switch sliResult.IndicatorResult {
 		case IndicatorResultSuccessful:
 			// this is fine, do nothing
 		case IndicatorResultWarning:
-			seenWarning = true
+			if isSLONotInformational(r.SLODefinition()) {
+				seenNonInformationalWarning = true
+			}
 		case IndicatorResultFailed:
 			// if one indicator fails, the overall result is failed immediately
 			return keptnv2.ResultFailed
@@ -79,10 +82,27 @@ func (s Summarizer) OverallResult() keptnv2.ResultType {
 		}
 	}
 
-	if seenWarning {
+	if seenNonInformationalWarning {
 		return keptnv2.ResultWarning
 	}
 
 	// remaining case is pass, i.e. no failure or warning occurred
 	return keptnv2.ResultPass
+}
+
+func isSLONotInformational(slo keptnapi.SLO) bool {
+	return hasActualSLOCriteria(slo.Pass) || hasActualSLOCriteria(slo.Warning)
+}
+
+func hasActualSLOCriteria(sloCriteria []*keptnapi.SLOCriteria) bool {
+	for _, c := range sloCriteria {
+		if c == nil {
+			continue
+		}
+
+		if len(c.Criteria) > 0 {
+			return true
+		}
+	}
+	return false
 }

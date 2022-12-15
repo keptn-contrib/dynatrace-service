@@ -61,9 +61,23 @@ var getSLIFinishedEventSuccessAssertionsFunc = func(t *testing.T, data *getSLIFi
 	assert.Empty(t, data.Message)
 }
 
+func createGetSLIFinishedEventSuccessAssertionsFuncWithMessageSubstrings(expectedMessageSubstrings ...string) func(*testing.T, *getSLIFinishedEventData) {
+	return func(t *testing.T, data *getSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultPass, data.Result)
+		assertMessageContainsSubstrings(t, data.Message, expectedMessageSubstrings...)
+	}
+}
+
 var getSLIFinishedEventWarningAssertionsFunc = func(t *testing.T, data *getSLIFinishedEventData) {
 	assert.EqualValues(t, keptnv2.ResultWarning, data.Result)
 	assert.NotEmpty(t, data.Message)
+}
+
+func createGetSLIFinishedEventFailureAssertionsFuncWithMessageSubstrings(expectedMessageSubstrings ...string) func(*testing.T, *getSLIFinishedEventData) {
+	return func(t *testing.T, data *getSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultFailed, data.Result)
+		assertMessageContainsSubstrings(t, data.Message, expectedMessageSubstrings...)
+	}
 }
 
 var getSLIFinishedEventFailureAssertionsFunc = func(t *testing.T, data *getSLIFinishedEventData) {
@@ -90,6 +104,15 @@ func convertTimeStringToUnixMillisecondsString(timeString string) string {
 	}
 
 	return common.TimestampToUnixMillisecondsString(*time)
+}
+
+func assertMessageContainsSubstrings(t *testing.T, message string, expectedSubstrings ...string) bool {
+	for _, expectedSubstring := range expectedSubstrings {
+		if !assert.Contains(t, message, expectedSubstring, "all substrings should be contained in message") {
+			return false
+		}
+	}
+	return true
 }
 
 // buildMetricsV2DefinitionRequestString builds a Metrics v2 definition request string with the specified metric ID for use in testing.
@@ -232,10 +255,7 @@ func createFailedSLIResultAssertionsFunc(expectedMetric string, expectedMessageS
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.Zero(t, actual.Value, "Indicator value should be zero")
 		assert.Empty(t, actual.Query, "Indicator query should be empty")
-
-		for _, expectedSubstring := range expectedMessageSubstrings {
-			assert.Contains(t, actual.Message, expectedSubstring, "all substrings should be contained in message")
-		}
+		assertMessageContainsSubstrings(t, actual.Message, expectedMessageSubstrings...)
 	}
 }
 
@@ -245,10 +265,7 @@ func createFailedSLIResultWithQueryAssertionsFunc(expectedMetric string, expecte
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
 		assert.Zero(t, actual.Value, "Indicator value should be zero")
 		assert.EqualValues(t, expectedQuery, actual.Query, "Indicator query should match")
-
-		for _, expectedSubstring := range expectedMessageSubstrings {
-			assert.Contains(t, actual.Message, expectedSubstring, "all substrings should be contained in message")
-		}
+		assertMessageContainsSubstrings(t, actual.Message, expectedMessageSubstrings...)
 	}
 }
 

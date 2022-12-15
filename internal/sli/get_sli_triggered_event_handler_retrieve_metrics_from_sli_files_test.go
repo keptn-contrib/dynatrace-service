@@ -728,7 +728,7 @@ func TestCustomSLIsGivesErrorIfWrongIndicatorRequested(t *testing.T) {
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "missing SLO objective"))
 }
 
-// TestGetSLIValueMetricsQuery_NoDataForInformationalSLOFromFileProducesWarning tests that informational SLOs with no data produce an overall warning result.
+// TestGetSLIValueMetricsQuery_NoDataForInformationalSLOFromFileProducesWarning tests that an informational SLO with no data does not affect the  overall result.
 func TestGetSLIValueMetricsQuery_NoDataForInformationalSLOFromFileProducesWarning(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/no_data_informational_slo"
 
@@ -749,5 +749,5 @@ func TestGetSLIValueMetricsQuery_NoDataForInformationalSLOFromFileProducesWarnin
 	expectedRequestCountQuery := requestCountQueryBuilder.build()
 	handler.AddExactFile(expectedRequestCountQuery, filepath.Join(filepath.Join(testDataFolder, "request_count"), "metrics_get_by_query1.json"))
 
-	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{testIndicatorResponseTimeP95, testIndicatorRequestCount}, getSLIFinishedEventWarningAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.99693868207, expectedResponseTimeQuery), createFailedSLIResultWithQueryAssertionsFunc(testIndicatorRequestCount, expectedRequestCountQuery, testErrorSubStringZeroMetricSeries))
+	runGetSLIsFromFilesTestAndCheckSLIs(t, handler, configClient, []string{testIndicatorResponseTimeP95, testIndicatorRequestCount}, createGetSLIFinishedEventSuccessAssertionsFuncWithMessageSubstrings(testErrorSubStringZeroMetricSeries), createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.99693868207, expectedResponseTimeQuery), createFailedSLIResultWithQueryAssertionsFunc(testIndicatorRequestCount, expectedRequestCountQuery, testErrorSubStringZeroMetricSeries))
 }
