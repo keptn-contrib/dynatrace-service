@@ -58,12 +58,11 @@ func (r *MetricsQueryProcessing) Process(ctx context.Context, sloDefinition kept
 }
 
 func (r *MetricsQueryProcessing) createTileResultsForError(sloDefinition keptncommon.SLO, request dynatrace.MetricsClientQueryRequest, err error) []result.SLIWithSLO {
-	messagePrefix := "Could not process tile: "
 	var qpErrorType *dynatrace.MetricsQueryProcessingError
 	if errors.As(err, &qpErrorType) {
-		return []result.SLIWithSLO{result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), messagePrefix+err.Error())}
+		return []result.SLIWithSLO{result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), err.Error())}
 	}
-	return []result.SLIWithSLO{result.NewFailedSLIWithSLOAndQuery(sloDefinition, request.RequestString(), messagePrefix+err.Error())}
+	return []result.SLIWithSLO{result.NewFailedSLIWithSLOAndQuery(sloDefinition, request.RequestString(), err.Error())}
 
 }
 
