@@ -22,6 +22,48 @@ type sloUploaderInterface interface {
 	UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptncommon.ServiceLevelObjectives) error
 }
 
+// dashboardProcessingResult collects the results of dashboard processing.
+type dashboardProcessingResult struct {
+	totalScore keptncommon.SLOScore
+	comparison keptncommon.SLOComparison
+	results    []result.SLIWithSLO
+}
+
+func newDashboardProcessingResult() *dashboardProcessingResult {
+	return &dashboardProcessingResult{
+		totalScore: common.CreateDefaultSLOScore(),
+		comparison: common.CreateDefaultSLOComparison(),
+		results:    []result.SLIWithSLO{},
+	}
+}
+
+func (pr *dashboardProcessingResult) applyMarkdownResult(markdownParsingResult markdownParsingResult) {
+	pr.totalScore = markdownParsingResult.totalScore
+	pr.comparison = markdownParsingResult.comparison
+}
+
+func (pr *dashboardProcessingResult) addSLIWithSLOs(results []result.SLIWithSLO) {
+	pr.results = append(pr.results, results...)
+}
+
+func (pr *dashboardProcessingResult) getResults() []result.SLIWithSLO {
+	return pr.results
+}
+
+func (pr *dashboardProcessingResult) getSLOs() *keptncommon.ServiceLevelObjectives {
+	objectives := make([]*keptncommon.SLO, 0, len(pr.results))
+	for _, r := range pr.results {
+		sloDefinition := r.SLODefinition()
+		objectives = append(objectives, &sloDefinition)
+	}
+
+	return &keptncommon.ServiceLevelObjectives{
+		Objectives: objectives,
+		TotalScore: &pr.totalScore,
+		Comparison: &pr.comparison,
+	}
+}
+
 type duplicateSLINameChecker struct {
 	nameCounts map[string]int
 }
@@ -98,21 +140,21 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 		return nil, NewProcessingError(err)
 	}
 
-	return processingResult, nil
+	err = p.sloUploader.UploadSLOs(ctx, p.eventData.GetProject(), p.eventData.GetStage(), p.eventData.GetService(), processingResult.getSLOs())
+	if err != nil {
+		return nil, NewUploadSLOsError(err)
+	}
+
+	return checkForDuplicatesInResults(processingResult.getResults()), nil
 }
 
-func (p *Processing) process(ctx context.Context, dashboard *dynatrace.Dashboard) ([]result.SLIWithSLO, error) {
+func (p *Processing) process(ctx context.Context, dashboard *dynatrace.Dashboard) (*dashboardProcessingResult, error) {
 	log.Debug("Dashboard will be parsed!")
 
-	totalScore := common.CreateDefaultSLOScore()
-	comparison := common.CreateDefaultSLOComparison()
-	results := []result.SLIWithSLO{}
-
-	// now let's iterate through the dashboard to find our SLIs
+	pr := newDashboardProcessingResult()
 	markdownAlreadyProcessed := false
 	for _, tile := range dashboard.Tiles {
-		switch tile.TileType {
-		case dynatrace.MarkdownTileType:
+		if tile.TileType == dynatrace.MarkdownTileType {
 			res, err := NewMarkdownTileProcessing().TryProcess(&tile)
 			if err != nil {
 				return nil, fmt.Errorf("markdown tile parsing error: %w", err)
@@ -122,22 +164,15 @@ func (p *Processing) process(ctx context.Context, dashboard *dynatrace.Dashboard
 					return nil, fmt.Errorf("only one markdown tile allowed for KQG configuration")
 				}
 
-				totalScore = res.totalScore
-				comparison = res.comparison
+				pr.applyMarkdownResult(*res)
 				markdownAlreadyProcessed = true
 			}
-
-		default:
-			results = append(results, p.processTile(ctx, tile, dashboard.GetFilter())...)
+			continue
 		}
+		pr.addSLIWithSLOs(p.processTile(ctx, tile, dashboard.GetFilter()))
 	}
 
-	err := p.createAndUploadSLOs(ctx, results, totalScore, comparison)
-	if err != nil {
-		return nil, NewUploadSLOsError(err)
-	}
-
-	return checkForDuplicatesInResults(results), nil
+	return pr, nil
 }
 
 func (p *Processing) processTile(ctx context.Context, tile dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []result.SLIWithSLO {
@@ -156,22 +191,6 @@ func (p *Processing) processTile(ctx context.Context, tile dynatrace.Tile, dashb
 		// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)
 		return nil
 	}
-}
-
-func (p *Processing) createAndUploadSLOs(ctx context.Context, results []result.SLIWithSLO, totalScore keptncommon.SLOScore, comparison keptncommon.SLOComparison) error {
-	objectives := make([]*keptncommon.SLO, 0, len(results))
-	for _, r := range results {
-		sloDefinition := r.SLODefinition()
-		objectives = append(objectives, &sloDefinition)
-	}
-
-	slos := keptncommon.ServiceLevelObjectives{
-		Objectives: objectives,
-		TotalScore: &totalScore,
-		Comparison: &comparison,
-	}
-
-	return p.sloUploader.UploadSLOs(ctx, p.eventData.GetProject(), p.eventData.GetStage(), p.eventData.GetService(), &slos)
 }
 
 func checkForDuplicatesInResults(results []result.SLIWithSLO) []result.SLIWithSLO {
