@@ -30,6 +30,5 @@
       "matchManagers": ["dockerfile"],
       "addLabels": ["docker"]
     }
-  ],
-  "commitMessageSuffix": "[skip ci]"
+  ]
 }
