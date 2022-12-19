@@ -10,7 +10,7 @@ defaults:
     shell: bash
 jobs:
   validate:
-    uses: keptn/gh-automation/.github/workflows/validate-semantic-pr.yml@v1.4.0
+    uses: keptn/gh-automation/.github/workflows/validate-semantic-pr.yml@v1.4.1
     with:
       # Configure which scopes are allowed.
       scopes: |
