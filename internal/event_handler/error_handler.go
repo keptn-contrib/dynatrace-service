@@ -57,7 +57,7 @@ func (eh ErrorHandler) sendErroredGetSLIFinishedEvent(ctx context.Context, event
 	if err != nil {
 		return eh.sendErrorEvent(ctx, eventSenderClient)
 	}
-	return eventSenderClient.SendCloudEvent(sli.NewErroredGetSLIFinishedEventFactory(adapter, nil, eh.err))
+	return eventSenderClient.SendCloudEvent(sli.NewErroredGetSLIFinishedEventFactory(adapter, eh.err))
 }
 
 func (eh ErrorHandler) sendErrorEvent(ctx context.Context, eventSenderClient keptn.EventSenderClientInterface) error {

@@ -28,6 +28,15 @@ func NewRetrieval(client dynatrace.ClientInterface, eventData adapter.EventConte
 //
 // It returns a parsed Dynatrace Dashboard and the actual dashboard ID in case we queried a dashboard.
 func (r *Retrieval) Retrieve(ctx context.Context, dashboardProperty string) (*dynatrace.Dashboard, error) {
+	dashboard, err := r.retrieve(ctx, dashboardProperty)
+	if err != nil {
+		return nil, NewRetrievalError(err)
+	}
+
+	return dashboard, nil
+}
+
+func (r *Retrieval) retrieve(ctx context.Context, dashboardProperty string) (*dynatrace.Dashboard, error) {
 	dashboardID, err := r.convertDashboardPropertyToID(ctx, dashboardProperty)
 	if err != nil {
 		return nil, err

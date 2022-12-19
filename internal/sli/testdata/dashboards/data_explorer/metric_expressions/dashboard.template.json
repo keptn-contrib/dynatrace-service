@@ -14,7 +14,7 @@
     },
     "tiles": [
         {
-          "name": "Service response time; sli=srt",
+          "name": "Service response time; sli=srt; pass=<=600",
           "tileType": "DATA_EXPLORER",
           "configured": true,
           "bounds": {

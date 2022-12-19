@@ -6,6 +6,7 @@ import (
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
 	keptn "github.com/keptn/go-utils/pkg/lib"
 )
@@ -25,12 +26,12 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Tim
 }
 
 // Process processes the specified SLO dashboard tile.
-func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []TileResult {
+func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []result.SLIWithSLO {
 	if len(tile.AssignedEntities) == 0 {
-		return []TileResult{newFailedTileResult("slo_tile_without_slo", "SLO tile contains no SLO IDs")}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(result.CreateInformationalSLODefinition("slo_tile_without_slo"), "SLO tile contains no SLO IDs")}
 	}
 
-	var results []TileResult
+	var results []result.SLIWithSLO
 	for _, sloID := range tile.AssignedEntities {
 		results = append(results, p.processSLO(ctx, sloID))
 	}
@@ -39,18 +40,17 @@ func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) [
 
 // processSLO processes an SLO by querying the data from the Dynatrace API.
 // Returns a TileResult with sliResult, sliIndicatorName, sliQuery & sloDefinition
-func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) TileResult {
+func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) result.SLIWithSLO {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
-		// TODO: 2021-02-14: Check that this indicator name still aligns with all possible errors.
-		return newFailedTileResult("slo_without_id", err.Error())
+		return result.NewFailedSLIWithSLO(result.CreateInformationalSLODefinition("slo_without_id"), err.Error())
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	request := dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe)
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, request)
 	if err != nil {
-		return newFailedTileResult(cleanIndicatorName("slo_"+sloID), "error querying Service level objectives API: "+err.Error())
+		return result.NewFailedSLIWithSLO(result.CreateInformationalSLODefinition(cleanIndicatorName("slo_"+sloID)), "error querying Service level objectives API: "+err.Error())
 	}
 
 	indicatorName := cleanIndicatorName(sloResult.Name)
@@ -61,7 +61,7 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) TileRe
 	passCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Warning)}}
 	warningCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Target)}}
 
-	return newSuccessfulTileResult(
+	return result.NewSuccessfulSLIWithSLOAndQuery(
 		keptn.SLO{
 			SLI:     indicatorName,
 			Pass:    []*keptn.SLOCriteria{&passCriterion},

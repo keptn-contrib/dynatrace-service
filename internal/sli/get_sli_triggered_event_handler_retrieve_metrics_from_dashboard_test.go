@@ -43,6 +43,8 @@ func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/slo_writing_fails/"
 
+	const uploadFailsErrorMessage = "SLO upload failed"
+
 	handler, _ := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
 		testDataFolder:     testDataFolder,
 		baseMetricSelector: "builtin:service.response.time",
@@ -53,10 +55,10 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "upload failed")
+		assert.Contains(t, actual.Message, uploadFailsErrorMessage)
 	}
 
-	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, newConfigClientMockThatErrorsUploadSLOs(t, errors.New("SLO upload failed")), getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, newConfigClientMockThatErrorsUploadSLOs(t, errors.New(uploadFailsErrorMessage)), getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric, uploadFailsErrorMessage))
 }
 
 // TestThatThereIsNoFallbackToSLIsFromDashboard tests that retrieving a dashboard by ID works, and we ignore the outdated parse behaviour.
@@ -100,33 +102,38 @@ func TestDashboardThatProducesNoDataProducesError(t *testing.T) {
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultWarning, actual.Result)
-		assert.Contains(t, actual.Message, "Metrics API v2 returned zero metric series")
+		assert.Contains(t, actual.Message, testErrorSubStringZeroMetricSeries)
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorResponseTimeP95, expectedMetricsRequest))
 }
 
-// TestDashboardThatProducesNoResultsProducesError tests that processing a dashboard which produce no results produces an error.
-//
-// prerequisites:
-//   - we use a valid dashboard ID and it is returned by Dynatrace API
-//   - the dashboard does have a CustomCharting tile, but not the correct tile name, that would qualify it as SLI/SLO source
-func TestDashboardThatProducesNoResultsProducesError(t *testing.T) {
+// TestDashboardThatProducesNoResultsUploadsSLOs tests that processing a dashboard which produce no results uploads an SLO file with no objectives.
+func TestDashboardThatProducesNoResultsUploadsSLOs(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_results/"
 
-	// we do not need metrics definition and metrics query, because we will should not be looking into the tile
 	handler := test.NewFileBasedURLHandler(t)
 	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
 
-	// no SLOs should be uploaded
-	configClient := &uploadSLOsWillFailConfigClientMock{t: t}
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		if !assert.NotNil(t, actual) {
+			return
+		}
 
-	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
-		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "any SLI results")
+		assert.Equal(t, 0, len(actual.Objectives))
+		assert.EqualValues(t, &keptnapi.SLOScore{Pass: "90%", Warning: "75%"}, actual.TotalScore)
+		assert.EqualValues(
+			t,
+			&keptnapi.SLOComparison{
+				CompareWith:               "single_result",
+				IncludeResultWithScore:    "pass",
+				NumberOfComparisonResults: 1,
+				AggregateFunction:         "avg",
+			},
+			actual.Comparison)
 	}
 
-	runGetSLIsFromDashboardTestWithConfigClientAndCheckSLIs(t, handler, testGetSLIEventData, configClient, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95))
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc)
 }
 
 // TestQueryDynatraceDashboardForSLIs tests that querying for a dashboard (i.e. dashboard=query) works as expected.
@@ -161,7 +168,7 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 	}
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+		createSuccessfulSLIResultAssertionsFunc(testIndicatorStaticSLOPass, 95, expectedSLORequest),
 		createSuccessfulSLIResultAssertionsFunc("problems", 0, expectedProblemsV2Request),
 	}
 
@@ -176,6 +183,7 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/valid_but_unknown_id/"
 
 	const dashboardID = "e03f4be0-4712-4f12-96ee-8c486d001e9c"
+	const notFoundMessageSubstring = "not found"
 
 	// we add a handler to simulate a very concrete 404 Dashboards API request/response in this case.
 	handler := test.NewFileBasedURLHandler(t)
@@ -184,10 +192,10 @@ func TestRetrieveDashboardWithUnknownButValidID(t *testing.T) {
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
 		assert.Contains(t, actual.Message, dashboardID)
-		assert.Contains(t, actual.Message, "not found")
+		assert.Contains(t, actual.Message, notFoundMessageSubstring)
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric, notFoundMessageSubstring))
 }
 
 // TestRetrieveDashboardWithInvalidID tests that requesting a dashboard with an invalid ID fails as expected.
@@ -198,6 +206,7 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/invalid_id/"
 
 	const dashboardID = "definitely-invalid-uuid"
+	const invalidUUIDMessageSubstring = "Not a valid UUID"
 
 	// we add a handler to simulate a very concrete 400 Dashboards API request/response in this case.
 	handler := test.NewFileBasedURLHandler(t)
@@ -205,10 +214,10 @@ func TestRetrieveDashboardWithInvalidID(t *testing.T) {
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
-		assert.Contains(t, actual.Message, "Not a valid UUID")
+		assert.Contains(t, actual.Message, invalidUUIDMessageSubstring)
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc("no metric"))
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, dashboardID, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric, invalidUUIDMessageSubstring))
 }
 
 type uploadSLOsWillFailConfigClientMock struct {
@@ -228,4 +237,90 @@ func (m *uploadSLOsWillFailConfigClientMock) GetSLOs(_ context.Context, _ string
 func (m *uploadSLOsWillFailConfigClientMock) UploadSLOs(_ context.Context, _ string, _ string, _ string, _ *keptnapi.ServiceLevelObjectives) error {
 	m.t.Fatalf("UploadSLOs() should not be needed in this mock!")
 	return nil
+}
+
+// TestDashboardWithInformationalSLOWithNoData demonstrates that an informational SLO from a dashboard with a warning (no data) does not affect the overall result.
+func TestDashboardWithInformationalSLOWithNoData(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/no_data_informational_sli/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names").build()
+	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
+	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createFailedSLIResultWithQueryAssertionsFunc("service_response_time", expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+	}
+
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		if !assert.NotNil(t, actual) {
+			return
+		}
+
+		if !assert.EqualValues(t, 2, len(actual.Objectives)) {
+			return
+		}
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:         "service_response_time",
+			DisplayName: "Service response time",
+			Pass:        nil,
+			Warning:     nil,
+			Weight:      1,
+		}, actual.Objectives[0])
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:     "static_slo_-_pass",
+			Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
+			Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
+			Weight:  1,
+		}, actual.Objectives[1])
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, createGetSLIFinishedEventSuccessAssertionsFuncWithMessageSubstrings(testErrorSubStringZeroMetricSeries), uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestDashboardWithInformationalSLOWithError demonstrates that an informational SLO from a dashboard that returns an error causes the overall result to fail.
+func TestDashboardWithInformationalSLOWithError(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/error_informational_sli/"
+
+	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names").build()
+	handler.AddExactError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_get_by_query1_error.json"))
+	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
+	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
+
+	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createFailedSLIResultWithQueryAssertionsFunc("service_response_time", expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("static_slo_-_pass", 95, expectedSLORequest),
+	}
+
+	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
+		if !assert.NotNil(t, actual) {
+			return
+		}
+
+		if !assert.EqualValues(t, 2, len(actual.Objectives)) {
+			return
+		}
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:         "service_response_time",
+			DisplayName: "Service response time",
+			Pass:        nil,
+			Warning:     nil,
+			Weight:      1,
+		}, actual.Objectives[0])
+
+		assert.EqualValues(t, &keptnapi.SLO{
+			SLI:     "static_slo_-_pass",
+			Pass:    []*keptnapi.SLOCriteria{{Criteria: []string{">=90.000000"}}},
+			Warning: []*keptnapi.SLOCriteria{{Criteria: []string{">=75.000000"}}},
+			Weight:  1,
+		}, actual.Objectives[1])
+	}
+
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, createGetSLIFinishedEventFailureAssertionsFuncWithMessageSubstrings("error querying Metrics API v2"), uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
 }

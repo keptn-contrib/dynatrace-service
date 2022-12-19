@@ -12,8 +12,11 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/usql"
 )
+
+const zeroValuesMessage = "User sessions API returned zero values"
 
 // USQLTileProcessing represents the processing of a USQL dashboard tile.
 type USQLTileProcessing struct {
@@ -35,7 +38,7 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 
 // Process processes the specified USQL dashboard tile.
 // TODO: 2022-03-07: Investigate if all error and warning cases are covered. E.g. what happens if a query returns no results?
-func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []TileResult {
+func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []result.SLIWithSLO {
 	sloDefinitionParsingResult, err := parseSLODefinition(tile.CustomName)
 	if (err == nil) && (sloDefinitionParsingResult.exclude) {
 		log.WithField("tile.CustomName", tile.Name).Debug("Tile excluded as name includes exclude=true")
@@ -49,57 +52,57 @@ func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) 
 	}
 
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "User Sessions Query tile title parsing error: "+err.Error())}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(sloDefinition, "User Sessions Query tile title parsing error: "+err.Error())}
 	}
 
 	query, err := usql.NewQuery(tile.Query)
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinition(sloDefinition, "error creating USQL query: "+err.Error())}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(sloDefinition, "error creating USQL query: "+err.Error())}
 	}
 
 	request := dynatrace.NewUSQLClientQueryRequest(*query, p.timeframe)
 	usqlResult, err := dynatrace.NewUSQLClient(p.client).GetByQuery(ctx, request)
 	if err != nil {
-		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "error querying User sessions API: "+err.Error())}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLOAndQuery(sloDefinition, request.RequestString(), "error querying User sessions API: "+err.Error())}
 	}
 
 	switch tile.Type {
 	case dynatrace.SingleValueVisualizationType:
-		return []TileResult{processQueryResultForSingleValue(*usqlResult, sloDefinition, request)}
+		return []result.SLIWithSLO{processQueryResultForSingleValue(*usqlResult, sloDefinition, request)}
 	case dynatrace.ColumnChartVisualizationType, dynatrace.LineChartVisualizationType, dynatrace.PieChartVisualizationType, dynatrace.TableVisualizationType:
 		return processQueryResultForMultipleValues(*usqlResult, sloDefinition, tile.Type, request)
 	default:
 		// generate failed tile result specifically because it is unsupported
-		return []TileResult{newFailedTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "unsupported USQL visualization type: "+tile.Type)}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLOAndQuery(sloDefinition, request.RequestString(), "unsupported USQL visualization type: "+tile.Type)}
 	}
 }
 
-func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest) TileResult {
+func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
 	if len(usqlResult.Values) == 0 {
-		return newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "User sessions API returned zero values")
+		return result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), zeroValuesMessage)
 	}
 
 	if len(usqlResult.ColumnNames) != 1 || len(usqlResult.Values) != 1 {
-		return newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), fmt.Sprintf("USQL visualization type %s should only return a single result", dynatrace.SingleValueVisualizationType))
+		return result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), fmt.Sprintf("USQL visualization type %s should only return a single result", dynatrace.SingleValueVisualizationType))
 	}
 	dimensionValue, err := tryCastDimensionValueToNumeric(usqlResult.Values[0][0])
 	if err != nil {
-		return newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), err.Error())
+		return result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), err.Error())
 	}
 
-	return newSuccessfulTileResult(sloDefinition, dimensionValue, request.RequestString())
+	return result.NewSuccessfulSLIWithSLOAndQuery(sloDefinition, dimensionValue, request.RequestString())
 }
 
-func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) []TileResult {
+func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) []result.SLIWithSLO {
 	if len(usqlResult.Values) == 0 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), "User sessions API returned zero values")}
+		return []result.SLIWithSLO{result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), zeroValuesMessage)}
 	}
 
 	if len(usqlResult.ColumnNames) < 2 {
-		return []TileResult{newWarningTileResultFromSLODefinitionAndQuery(sloDefinition, request.RequestString(), fmt.Sprintf("USQL result type %s should have at least two columns", visualizationType))}
+		return []result.SLIWithSLO{result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), fmt.Sprintf("USQL result type %s should have at least two columns", visualizationType))}
 	}
 
-	var tileResults []TileResult
+	var tileResults []result.SLIWithSLO
 	for index, rowValue := range usqlResult.Values {
 		dimensionName, err := tryCastDimensionNameToString(rowValue[0])
 		if err != nil {
@@ -155,8 +158,8 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 	return "", errors.New("dimension name should be a string")
 }
 
-func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) TileResult {
-	return newSuccessfulTileResult(
+func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
+	return result.NewSuccessfulSLIWithSLOAndQuery(
 		keptncommon.SLO{
 			SLI:         buildIndicatorNameWithDimensionName(sloDefinition.SLI, dimensionName),
 			DisplayName: buildDisplayNameWithDimensionName(sloDefinition.DisplayName, dimensionName),
@@ -170,8 +173,8 @@ func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimen
 	)
 }
 
-func newWarningTileResultWithIndexFromSLODefinitionAndQuery(index int, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest, message string) TileResult {
-	return newWarningTileResultFromSLODefinitionAndQuery(
+func newWarningTileResultWithIndexFromSLODefinitionAndQuery(index int, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest, message string) result.SLIWithSLO {
+	return result.NewWarningSLIWithSLOAndQuery(
 		keptncommon.SLO{
 			SLI:         cleanIndicatorName(fmt.Sprintf("%s_%d", sloDefinition.SLI, index+1)),
 			DisplayName: fmt.Sprintf("%s (%d)", sloDefinition.DisplayName, index+1),

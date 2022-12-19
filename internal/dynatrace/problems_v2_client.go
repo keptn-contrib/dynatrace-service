@@ -3,15 +3,11 @@ package dynatrace
 import (
 	"context"
 	"encoding/json"
-	"net/url"
 	"time"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/problems"
 )
-
-// ProblemStatusOpen is the status of an open problem
-const ProblemStatusOpen = "OPEN"
 
 // ProblemsV2Path is the base endpoint for Problems API v2
 const ProblemsV2Path = "/api/v2/problems"
@@ -99,21 +95,4 @@ func (pc *ProblemsV2Client) GetTotalCountByQuery(ctx context.Context, request Pr
 	}
 
 	return result.TotalCount, nil
-}
-
-// GetStatusByID calls the Dynatrace API to retrieve the status of a given problemID.
-func (pc *ProblemsV2Client) GetStatusByID(ctx context.Context, problemID string) (string, error) {
-	body, err := pc.client.Get(ctx, ProblemsV2Path+"/"+url.PathEscape(problemID))
-	if err != nil {
-		return "", err
-	}
-
-	// parse response json
-	var result problem
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return "", err
-	}
-
-	return result.Status, nil
 }

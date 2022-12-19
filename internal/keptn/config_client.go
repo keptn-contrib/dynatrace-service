@@ -3,7 +3,6 @@ package keptn
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	keptn "github.com/keptn/go-utils/pkg/lib"
 	keptnapi "github.com/keptn/go-utils/pkg/lib/keptn"
@@ -54,6 +53,9 @@ const shipyardFilename = "shipyard.yaml"
 const sloFilename = "slo.yaml"
 const sliFilename = "dynatrace/sli.yaml"
 const configFilename = "dynatrace/dynatrace.conf.yaml"
+const shipyardContext = "shipyard"
+const slosContext = "SLOs"
+const slisContext = "SLIs"
 
 // SLI struct for SLI.yaml
 type SLI struct {
@@ -83,7 +85,7 @@ func (rc *ConfigClient) GetSLOs(ctx context.Context, project string, stage strin
 	slos := &keptn.ServiceLevelObjectives{}
 	err = yaml.Unmarshal([]byte(resource), slos)
 	if err != nil {
-		return nil, errors.New("invalid SLO file format")
+		return nil, common.NewUnmarshalYAMLError(slosContext, err)
 	}
 
 	return slos, nil
@@ -93,7 +95,7 @@ func (rc *ConfigClient) GetSLOs(ctx context.Context, project string, stage strin
 func (rc *ConfigClient) UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptn.ServiceLevelObjectives) error {
 	yamlAsByteArray, err := yaml.Marshal(slos)
 	if err != nil {
-		return fmt.Errorf("could not convert SLOs to YAML: %s", err)
+		return common.NewMarshalYAMLError(slosContext, err)
 	}
 
 	return rc.client.UploadResource(ctx, yamlAsByteArray, sloFilename, project, stage, service)
@@ -103,7 +105,7 @@ func (rc *ConfigClient) UploadSLOs(ctx context.Context, project string, stage st
 func (rc *ConfigClient) UploadSLIs(ctx context.Context, project string, stage string, service string, slis *SLI) error {
 	yamlAsByteArray, err := yaml.Marshal(slis)
 	if err != nil {
-		return fmt.Errorf("could not convert SLIs to YAML: %s", err)
+		return common.NewMarshalYAMLError(slisContext, err)
 	}
 
 	return rc.client.UploadResource(ctx, yamlAsByteArray, sliFilename, project, stage, service)
@@ -124,7 +126,7 @@ func (rc *ConfigClient) GetShipyard(ctx context.Context, project string) (*keptn
 	shipyard := keptnv2.Shipyard{}
 	err = yaml.Unmarshal([]byte(shipyardResource), &shipyard)
 	if err != nil {
-		return nil, common.NewUnmarshalYAMLError("shipyard", err)
+		return nil, common.NewUnmarshalYAMLError(shipyardContext, err)
 	}
 
 	return &shipyard, nil
@@ -200,7 +202,7 @@ func readSLIsFromResource(resource string) (map[string]string, error) {
 	sliConfig := keptnapi.SLIConfig{}
 	err := yaml.Unmarshal([]byte(resource), &sliConfig)
 	if err != nil {
-		return nil, common.NewUnmarshalYAMLError("SLIs", err)
+		return nil, common.NewUnmarshalYAMLError(slisContext, err)
 	}
 
 	if len(sliConfig.Indicators) == 0 {
