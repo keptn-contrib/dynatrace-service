@@ -22,35 +22,35 @@ type sloUploaderInterface interface {
 	UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptncommon.ServiceLevelObjectives) error
 }
 
-// dashboardProcessingResult collects the results of dashboard processing.
-type dashboardProcessingResult struct {
+// processingResult collects the results of dashboard processing.
+type processingResult struct {
 	totalScore keptncommon.SLOScore
 	comparison keptncommon.SLOComparison
 	results    []result.SLIWithSLO
 }
 
-func newDashboardProcessingResult() *dashboardProcessingResult {
-	return &dashboardProcessingResult{
+func newProcessingResult() *processingResult {
+	return &processingResult{
 		totalScore: common.CreateDefaultSLOScore(),
 		comparison: common.CreateDefaultSLOComparison(),
 		results:    []result.SLIWithSLO{},
 	}
 }
 
-func (pr *dashboardProcessingResult) applyMarkdownResult(markdownParsingResult markdownParsingResult) {
+func (pr *processingResult) applyMarkdownResult(markdownParsingResult markdownParsingResult) {
 	pr.totalScore = markdownParsingResult.totalScore
 	pr.comparison = markdownParsingResult.comparison
 }
 
-func (pr *dashboardProcessingResult) addSLIWithSLOs(results []result.SLIWithSLO) {
+func (pr *processingResult) addSLIWithSLOs(results []result.SLIWithSLO) {
 	pr.results = append(pr.results, results...)
 }
 
-func (pr *dashboardProcessingResult) getResults() []result.SLIWithSLO {
+func (pr *processingResult) getResults() []result.SLIWithSLO {
 	return pr.results
 }
 
-func (pr *dashboardProcessingResult) getSLOs() *keptncommon.ServiceLevelObjectives {
+func (pr *processingResult) getSLOs() *keptncommon.ServiceLevelObjectives {
 	objectives := make([]*keptncommon.SLO, 0, len(pr.results))
 	for _, r := range pr.results {
 		sloDefinition := r.SLODefinition()
@@ -148,10 +148,10 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 	return checkForDuplicatesInResults(processingResult.getResults()), nil
 }
 
-func (p *Processing) process(ctx context.Context, dashboard *dynatrace.Dashboard) (*dashboardProcessingResult, error) {
+func (p *Processing) process(ctx context.Context, dashboard *dynatrace.Dashboard) (*processingResult, error) {
 	log.Debug("Dashboard will be parsed!")
 
-	pr := newDashboardProcessingResult()
+	pr := newProcessingResult()
 	markdownAlreadyProcessed := false
 	for _, tile := range dashboard.Tiles {
 		if tile.TileType == dynatrace.MarkdownTileType {
