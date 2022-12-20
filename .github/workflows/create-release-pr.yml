@@ -31,7 +31,7 @@ jobs:
       branch: ${{ steps.current_branch.outputs.branch }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.2.0
         with:
           fetch-depth: 0
           token: ${{ secrets.KEPTN_BOT_TOKEN }}
@@ -101,7 +101,7 @@ jobs:
 
       - name: Checkout repo
         if: ${{ !needs.release-please.outputs.release_created }}
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.2.0
         with:
           ref: release-please--branches--${{ needs.prepare.outputs.branch }}--components--dynatrace-service
           fetch-depth: 0
