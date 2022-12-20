@@ -19,7 +19,7 @@ jobs:
       branch: ${{ steps.current_branch.outputs.branch }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.2.0
         with:
           fetch-depth: 0
           token: ${{ secrets.KEPTN_BOT_TOKEN }}
@@ -92,7 +92,7 @@ jobs:
       VERSION: ${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.2.0
 
       # load DOCKER_ORGANIZATION & IMAGE variable from .ci_env
       - name: Load CI Environment from .ci_env
