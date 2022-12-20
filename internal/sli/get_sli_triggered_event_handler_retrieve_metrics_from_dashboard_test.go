@@ -172,7 +172,24 @@ func TestQueryDynatraceDashboardForSLIs(t *testing.T) {
 		createSuccessfulSLIResultAssertionsFunc("problems", 0, expectedProblemsV2Request),
 	}
 
-	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, "query", getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, testDashboardQuery, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, sliResultsAssertionsFuncs...)
+}
+
+// TestErrorWhenNothingMatchesQueryForDynatraceDashboard tests that an appropriate error is return when querying for a dashboard (i.e. dashboard=query) does not find anything.
+func TestErrorWhenNothingMatchesQueryForDynatraceDashboard(t *testing.T) {
+	const testDataFolder = "./testdata/dashboards/basic/dashboard_query_error/"
+
+	const noDashboardNameMatches = "no dashboard name matches"
+
+	handler := test.NewFileBasedURLHandler(t)
+	handler.AddExact(dynatrace.DashboardsPath, filepath.Join(testDataFolder, "dashboards_query.json"))
+
+	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
+		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
+		assert.Contains(t, actual.Message, noDashboardNameMatches)
+	}
+
+	runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIs(t, handler, testGetSLIEventData, testDashboardQuery, getSLIFinishedEventAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorNoMetric, noDashboardNameMatches))
 }
 
 // TestRetrieveDashboardWithUnknownButValidID tests requesting a dashboard with a valid but unknown ID fails as expected.

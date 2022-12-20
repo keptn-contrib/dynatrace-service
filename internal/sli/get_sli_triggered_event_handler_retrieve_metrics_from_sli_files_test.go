@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const testCouldNotRetrieveSLODefinitionsSubstring = "could not retrieve SLO definitions"
+
 // In case we do not use the dashboard for defining SLIs we can use the file 'dynatrace/sli.yaml'.
 //
 // prerequisites:
@@ -690,14 +692,6 @@ const expectedSLOResourceURI = "slo.yaml"
 
 // TestCustomSLIsGivesErrorIfNoSLOFileExistsButIndicatorRequested tests that an error is produced if no slo.yaml file exists for a sli.yaml-based request if even indicators are requested (unlikely but possible).
 func TestCustomSLIsGivesErrorIfNoSLOFileExistsButIndicatorRequested(t *testing.T) {
-	const testDataFolder = "./testdata/sli_files/basic/no_slo_file"
-
-	handler := test.NewCombinedURLHandler(t)
-	_ = addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
-		testDataFolder,
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)").copyWithEntitySelector("type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)"),
-	)
-
 	configClient := newConfigClientMockWithSLIsThatErrorsGetSLOs(t,
 		map[string]string{
 			testIndicatorResponseTimeP95: "metricSelector=builtin:service.response.time:merge(\"dt.entity.service\"):percentile(95)&entitySelector=type(SERVICE),tag(keptn_project:sockshop),tag(keptn_stage:staging)",
@@ -705,7 +699,22 @@ func TestCustomSLIsGivesErrorIfNoSLOFileExistsButIndicatorRequested(t *testing.T
 		keptn.NewResourceNotFoundError(expectedSLOResourceURI, testProject, testStage, testService),
 	)
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, "could not retrieve SLO definitions"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, test.NewEmptyURLHandler(t), configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, testCouldNotRetrieveSLODefinitionsSubstring))
+}
+
+// TestCustomSLIsGivesMultipleErrorsIfMultipleIndicatorsRequested tests that an error is produced if no slo.yaml file exists for a sli.yaml-based request if even indicators are requested (unlikely but possible).
+func TestCustomSLIsGivesMultipleErrorsIfMultipleIndicatorsRequested(t *testing.T) {
+	configClient := newConfigClientMockWithSLIsThatErrorsGetSLOs(t,
+		map[string]string{},
+		keptn.NewResourceNotFoundError(expectedSLOResourceURI, testProject, testStage, testService),
+	)
+
+	sliResultAssertionsFuncs := []func(t *testing.T, actual sliResult){
+		createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, testCouldNotRetrieveSLODefinitionsSubstring),
+		createFailedSLIResultAssertionsFunc(testIndicatorStaticSLOPass, testCouldNotRetrieveSLODefinitionsSubstring),
+	}
+
+	runGetSLIsFromFilesTestAndCheckSLIs(t, test.NewEmptyURLHandler(t), configClient, []string{testIndicatorResponseTimeP95, testIndicatorStaticSLOPass}, getSLIFinishedEventFailureAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
 // TestCustomSLIsGivesErrorIfWrongIndicatorRequested tests that no query is performed and an error is returned if an indicator is requested that has an SLI defined but not SLO objective.

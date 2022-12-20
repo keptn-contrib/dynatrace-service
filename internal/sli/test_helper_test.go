@@ -34,6 +34,7 @@ const testIndicatorStaticSLOPass = "static_slo_-_pass"
 const testIndicatorNoMetric = "no_metric"
 const testDynatraceAPIToken = "dtOc01.ST2EY72KQINMH574WMNVI7YN.G3DFPBEJYMODIDAEX454M7YWBUVEFOWKPRVMWFASS64NFH52PX6BNDVFFM572RZM"
 const testDashboardID = "12345678-1111-4444-8888-123456789012"
+const testDashboardQuery = "query"
 const testSLIStart = "2022-09-28T00:00:00.000Z"
 const testSLIEnd = "2022-09-29T00:00:00.000Z"
 

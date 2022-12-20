@@ -1,0 +1,14 @@
+{
+    "dashboards": [
+      {
+        "id": "12345678-1111-4444-8888-123456789012",
+        "name": "some dashboard",
+        "owner": "anybody"
+      },
+      {
+        "id": "04993649-4a93-457f-991c-cc076d9fafef",
+        "name": "some other dashboard",
+        "owner": "somebodyelse"
+      } 
+   ] 
+}
