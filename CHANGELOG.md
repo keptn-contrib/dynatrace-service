@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [0.26.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.25.0...0.26.0) (2022-12-21)
 
+### Release validated with
+ | Dynatrace-service: `0.26.0` | Keptn: `0.19.3` | Dynatrace: `1.256` |
+ |---|---|---|
+
 
 ### Bug Fixes
 
