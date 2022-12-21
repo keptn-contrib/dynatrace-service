@@ -8,7 +8,7 @@
 
 ||||
 |---|---|---|
-| Dynatrace-service: `0.25.0` | Keptn: `0.19.3` | Dynatrace: `1.254` |
+| Dynatrace-service: `0.26.0` | Keptn: `0.19.3` | Dynatrace: `1.256` |
 
 
 ## Overview

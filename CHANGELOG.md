@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.26.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.25.0...0.26.0) (2022-12-21)
+
+### Release validated with
+ | Dynatrace-service: `0.26.0` | Keptn: `0.19.3` | Dynatrace: `1.256` |
+ |---|---|---|
+
+
+### Bug Fixes
+
+* Disallow duplicate SLI names and display names for dashboard SLIs ([#969](https://github.com/keptn-contrib/dynatrace-service/issues/969)) ([ec26fb8](https://github.com/keptn-contrib/dynatrace-service/commit/ec26fb8e674f1c4c00b1f4249cf5a35d7d77c081))
+* Support display units for metrics with `Count` and `Unspecified` units ([#971](https://github.com/keptn-contrib/dynatrace-service/issues/971)) ([6da09cc](https://github.com/keptn-contrib/dynatrace-service/commit/6da09cc27797b44675d6429224526329e0f42666))
+* Warnings from informational SLOs should not affect overall result of `get-sli.finished` events ([#974](https://github.com/keptn-contrib/dynatrace-service/issues/974)) ([dc9b415](https://github.com/keptn-contrib/dynatrace-service/commit/dc9b41542fe670471e5a23911045913bb2a13e45))
+
+
+### Other
+
+* release 0.26.0 ([#983](https://github.com/keptn-contrib/dynatrace-service/issues/983)) ([4d5991f](https://github.com/keptn-contrib/dynatrace-service/commit/4d5991f87889a9f0cd64818baf3f0603d3acb80c))
+* Remove automatic problem remediation SLI and SLO from `get-sli.triggered` handler ([#973](https://github.com/keptn-contrib/dynatrace-service/issues/973)) ([3d9f666](https://github.com/keptn-contrib/dynatrace-service/commit/3d9f6660bfabdcdd15585e10d054404deca6aec2))
+* Update tests for errors in get-sli.triggered handling ([#980](https://github.com/keptn-contrib/dynatrace-service/issues/980)) ([9dc318b](https://github.com/keptn-contrib/dynatrace-service/commit/9dc318b8676b9ee63a18d179f5871c26b8b5aa2e))
+
 ## [0.25.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.24.0...0.25.0) (2022-11-15)
 
 ### Release validated with
