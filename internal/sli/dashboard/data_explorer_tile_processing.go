@@ -108,7 +108,7 @@ func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, e
 	}
 
 	if (len(sloDefinition.Pass) == 0) && (len(sloDefinition.Warning) == 0) {
-		passAndWarningProvider, err := tryGetThresholdPassAndWarning(v.tile)
+		passAndWarningProvider, err := tryGetThresholdPassAndWarningProvider(v.tile)
 		if err != nil {
 			errs = append(errs, err)
 		}

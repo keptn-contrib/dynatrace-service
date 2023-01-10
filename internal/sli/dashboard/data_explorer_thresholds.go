@@ -15,23 +15,22 @@ type passAndWarningProvider interface {
 	getWarning() []*keptnapi.SLOCriteria
 }
 
-type monotonicityType int
+type strictMonotonicityType int
 
 const (
-	unknownMonotonicity      monotonicityType = 0
-	strictlyIncreasingValues monotonicityType = 1
-	strictlyDecreasingValues monotonicityType = 2
-	constantValues           monotonicityType = 3
+	notStrictlyMonotonic strictMonotonicityType = iota
+	strictlyIncreasingValues
+	strictlyDecreasingValues
 )
 
 type thresholdType int
 
 const (
-	noThresholdType      thresholdType = 0
-	passThresholdType    thresholdType = 1
-	warnThresholdType    thresholdType = 2
-	failThresholdType    thresholdType = 3
-	unknownThresholdType thresholdType = 4
+	noThresholdType thresholdType = iota
+	passThresholdType
+	warnThresholdType
+	failThresholdType
+	unknownThresholdType
 )
 
 var thresholdColors = map[string]thresholdType{
@@ -99,8 +98,48 @@ func (t thresholdType) String() string {
 	}
 }
 
+type thresholdTypeConfiguration struct {
+	thresholdTypes [3]thresholdType
+}
+
 type thresholdConfiguration struct {
 	thresholds [3]threshold
+}
+
+func (tc *thresholdConfiguration) thresholdTypeConfiguration() thresholdTypeConfiguration {
+	return thresholdTypeConfiguration{
+		thresholdTypes: [3]thresholdType{
+			tc.thresholds[0].thresholdType,
+			tc.thresholds[1].thresholdType,
+			tc.thresholds[2].thresholdType,
+		},
+	}
+}
+
+func (tc *thresholdConfiguration) reverse() {
+	t := tc.thresholds[2]
+	tc.thresholds[2] = tc.thresholds[0]
+	tc.thresholds[0] = t
+}
+
+func (tc *thresholdConfiguration) createPassAndWarningProvider() (passAndWarningProvider, error) {
+	if (tc.thresholds[0].thresholdType == passThresholdType) && (tc.thresholds[1].thresholdType == warnThresholdType) && (tc.thresholds[2].thresholdType == failThresholdType) {
+		return &passWarnFailThresholdConfiguration{passValue: tc.thresholds[0].value, warnValue: tc.thresholds[1].value, failValue: tc.thresholds[2].value}, nil
+	}
+
+	if (tc.thresholds[0].thresholdType == passThresholdType) && (tc.thresholds[1].thresholdType == noThresholdType) && (tc.thresholds[2].thresholdType == failThresholdType) {
+		return &passFailThresholdConfiguration{passValue: tc.thresholds[0].value, failValue: tc.thresholds[2].value}, nil
+	}
+
+	if (tc.thresholds[0].thresholdType == failThresholdType) && (tc.thresholds[1].thresholdType == warnThresholdType) && (tc.thresholds[2].thresholdType == passThresholdType) {
+		return &failWarnPassThresholdConfiguration{failValue: tc.thresholds[0].value, warnValue: tc.thresholds[1].value, passValue: tc.thresholds[2].value}, nil
+	}
+
+	if (tc.thresholds[0].thresholdType == failThresholdType) && (tc.thresholds[1].thresholdType == noThresholdType) && (tc.thresholds[2].thresholdType == passThresholdType) {
+		return &failPassThresholdConfiguration{failValue: tc.thresholds[0].value, passValue: tc.thresholds[2].value}, nil
+	}
+
+	return nil, &invalidThresholdTypeSequenceError{thresholdTypes: tc.thresholdTypeConfiguration()}
 }
 
 type threshold struct {
@@ -151,18 +190,16 @@ func (err *missingThresholdValueError) Error() string {
 }
 
 type invalidThresholdTypeSequenceError struct {
-	thresholdType1 thresholdType
-	thresholdType2 thresholdType
-	thresholdType3 thresholdType
+	thresholdTypes thresholdTypeConfiguration
 }
 
 func (err *invalidThresholdTypeSequenceError) Error() string {
-	return fmt.Sprintf("invalid sequence: %s %s %s", err.thresholdType1, err.thresholdType2, err.thresholdType3)
+	return fmt.Sprintf("invalid sequence: %s %s %s", err.thresholdTypes.thresholdTypes[0], err.thresholdTypes.thresholdTypes[1], err.thresholdTypes.thresholdTypes[2])
 }
 
-// tryGetThresholdPassAndWarning tries to get pass and warning criteria defined using the thresholds placed on a Data Explorer tile.
-// It returns either the criteria and no error (conversion succeeded), nil for the criteria and no error (no threshold set), or nil for the criteria and an error (conversion failed).
-func tryGetThresholdPassAndWarning(tile *dynatrace.Tile) (passAndWarningProvider, error) {
+// tryGetThresholdPassAndWarningProvider tries to get pass and warning criteria defined using the thresholds placed on a Data Explorer tile.
+// It returns either a pass and warning provider and no error (conversion succeeded), nil for the provider and no error (no thresholds set), or nil for the provider and an error (conversion failed).
+func tryGetThresholdPassAndWarningProvider(tile *dynatrace.Tile) (passAndWarningProvider, error) {
 	thresholdRules, err := getThresholdRulesFromTile(tile)
 	if err != nil {
 		return nil, err
@@ -177,7 +214,7 @@ func tryGetThresholdPassAndWarning(tile *dynatrace.Tile) (passAndWarningProvider
 		return nil, err
 	}
 
-	return matchThresholdColorSequenceAndConvertToPassAndWarningCriteria(*thresholdConfiguration)
+	return thresholdConfiguration.createPassAndWarningProvider()
 }
 
 func getThresholdRulesFromTile(tile *dynatrace.Tile) ([]dynatrace.VisualizationThresholdRule, error) {
@@ -218,47 +255,70 @@ func areThresholdsVisible(threshold dynatrace.VisualizationThreshold) bool {
 	return false
 }
 
-// convertThresholdRulesToThresholdConfiguration checks that the threshold rules are complete and returns them as a threshold configuration or returns an error.
+// convertThresholdRulesToThresholdConfiguration checks that the threshold rules are complete and returns them as a monotonically increasing threshold configuration or returns an error.
 func convertThresholdRulesToThresholdConfiguration(rules []dynatrace.VisualizationThresholdRule) (*thresholdConfiguration, error) {
-	tc := thresholdConfiguration{}
-	errs := checkThresholdColorsAndWriteThemToConfiguration(rules, &tc)
-	monotonicity, vErrs := checkThresholdValuesAndWriteThemToConfiguration(rules, &tc)
-	errs = append(errs, vErrs...)
+	var tc thresholdConfiguration
+	thresholdTypes, errs := getThresholdTypeConfigurationFromRules(rules)
+
+	v0 := tryGetValueFromThresholdRules(rules, 0)
+	if v0 == nil {
+		errs = append(errs, &missingThresholdValueError{index: 0})
+	} else {
+		tc.thresholds[0] = threshold{thresholdType: thresholdTypes.thresholdTypes[0], value: *v0}
+	}
+
+	v1 := tryGetValueFromThresholdRules(rules, 1)
+	if v1 == nil {
+		tc.thresholds[1] = threshold{thresholdType: noThresholdType}
+	} else {
+		tc.thresholds[1] = threshold{thresholdType: thresholdTypes.thresholdTypes[1], value: *v1}
+	}
+
+	v2 := tryGetValueFromThresholdRules(rules, 2)
+	if v2 == nil {
+		errs = append(errs, &missingThresholdValueError{index: 2})
+	} else {
+		tc.thresholds[2] = threshold{thresholdType: thresholdTypes.thresholdTypes[2], value: *v2}
+	}
+
+	monotonicity := getStrictMonotonicityOfThreeOptionalValues(v0, v1, v2)
+	if monotonicity == notStrictlyMonotonic {
+		errs = append(errs, &valueSequenceError{})
+	}
 
 	if len(errs) > 0 {
 		return nil, &thresholdParsingError{errors: errs}
 	}
 
 	if monotonicity == strictlyDecreasingValues {
-		return &thresholdConfiguration{
-			thresholds: [3]threshold{tc.thresholds[2], tc.thresholds[1], tc.thresholds[0]},
-		}, nil
+		tc.reverse()
 	}
 
 	return &tc, nil
 }
 
-func checkThresholdColorsAndWriteThemToConfiguration(rules []dynatrace.VisualizationThresholdRule, tc *thresholdConfiguration) []error {
+func getThresholdTypeConfigurationFromRules(rules []dynatrace.VisualizationThresholdRule) (thresholdTypeConfiguration, []error) {
 	var errs []error
+	var thresholdTypes thresholdTypeConfiguration
 
 	// check that colors are set correctly
 	for i, rule := range rules {
-		switch i {
-		case 0, 2:
+		if (i == 0) || (i == 2) {
 			tt := getThresholdTypeByColor(rule.Color)
 			if (tt != passThresholdType) && (tt != failThresholdType) {
 				errs = append(errs, &invalidThresholdColorError{index: i})
 				continue
 			}
-			tc.thresholds[i].thresholdType = tt
+			thresholdTypes.thresholdTypes[i] = tt
+		}
 
-		case 1:
+		if i == 1 {
 			tt := getThresholdTypeByColor(rule.Color)
 			if tt != warnThresholdType {
 				errs = append(errs, &invalidThresholdColorError{index: i})
 				continue
 			}
-			tc.thresholds[i].thresholdType = tt
+			thresholdTypes.thresholdTypes[i] = tt
 		}
 	}
 
@@ -268,43 +328,11 @@ func checkThresholdColorsAndWriteThemToConfiguration(rules []dynatrace.Visualiza
 		errs = append(errs, &incorrectThresholdRuleCountError{count: len(rules)})
 	}
 
-	if (len(rules) >= 3) && (tc.thresholds[0].thresholdType == tc.thresholds[2].thresholdType) {
-		errs = append(errs, &invalidThresholdTypeSequenceError{thresholdType1: tc.thresholds[0].thresholdType, thresholdType2: tc.thresholds[1].thresholdType, thresholdType3: tc.thresholds[2].thresholdType})
+	if (len(rules) >= 3) && (thresholdTypes.thresholdTypes[0] == thresholdTypes.thresholdTypes[2]) {
+		errs = append(errs, &invalidThresholdTypeSequenceError{thresholdTypes: thresholdTypes})
 	}
 
-	return errs
-}
-
-func checkThresholdValuesAndWriteThemToConfiguration(rules []dynatrace.VisualizationThresholdRule, tc *thresholdConfiguration) (monotonicityType, []error) {
-	var errs []error
-
-	v0 := tryGetValueFromThresholdRules(rules, 0)
-	if v0 == nil {
-		errs = append(errs, &missingThresholdValueError{index: 0})
-	} else {
-		tc.thresholds[0].value = *v0
-	}
-
-	v1 := tryGetValueFromThresholdRules(rules, 1)
-	if v1 == nil {
-		tc.thresholds[1].thresholdType = noThresholdType
-	} else {
-		tc.thresholds[1].value = *v1
-	}
-
-	v2 := tryGetValueFromThresholdRules(rules, 2)
-	if v2 == nil {
-		errs = append(errs, &missingThresholdValueError{index: 2})
-	} else {
-		tc.thresholds[2].value = *v2
-	}
-
-	monotonicity := getMonotonicityOfThreeOptionalValues(v0, v1, v2)
-	if monotonicity == constantValues || monotonicity == unknownMonotonicity {
-		errs = append(errs, &valueSequenceError{})
-	}
-
-	return monotonicity, errs
+	return thresholdTypes, errs
 }
 
 func tryGetValueFromThresholdRules(rules []dynatrace.VisualizationThresholdRule, index int) *float64 {
@@ -315,32 +343,32 @@ func tryGetValueFromThresholdRules(rules []dynatrace.VisualizationThresholdRule,
 	return rules[index].Value
 }
 
-func getMonotonicityOfThreeOptionalValues(v0, v1, v2 *float64) monotonicityType {
+func getStrictMonotonicityOfThreeOptionalValues(v0, v1, v2 *float64) strictMonotonicityType {
 	if (v0 != nil) && (v2 != nil) {
-		monotonicity := getMonotonicity(*v0, *v2)
+		monotonicity := getStrictMonotonicity(*v0, *v2)
 
 		if v1 != nil {
-			if (getMonotonicity(*v0, *v1) != monotonicity) || (getMonotonicity(*v1, *v2) != monotonicity) {
-				return unknownMonotonicity
+			if (getStrictMonotonicity(*v0, *v1) != monotonicity) || (getStrictMonotonicity(*v1, *v2) != monotonicity) {
+				return notStrictlyMonotonic
 			}
 		}
 		return monotonicity
 	}
 
 	if (v0 != nil) && (v1 != nil) {
-		return getMonotonicity(*v0, *v1)
+		return getStrictMonotonicity(*v0, *v1)
 	}
 
 	if (v1 != nil) && (v2 != nil) {
-		return getMonotonicity(*v1, *v2)
+		return getStrictMonotonicity(*v1, *v2)
 	}
 
-	return unknownMonotonicity
+	return notStrictlyMonotonic
 }
 
-func getMonotonicity(v1 float64, v2 float64) monotonicityType {
+func getStrictMonotonicity(v1 float64, v2 float64) strictMonotonicityType {
 	if v1 == v2 {
-		return constantValues
+		return notStrictlyMonotonic
 	}
 
 	if v1 < v2 {
@@ -348,26 +376,6 @@ func getMonotonicity(v1 float64, v2 float64) monotonicityType {
 	}
 
 	return strictlyDecreasingValues
-}
-
-func matchThresholdColorSequenceAndConvertToPassAndWarningCriteria(t thresholdConfiguration) (passAndWarningProvider, error) {
-	if (t.thresholds[0].thresholdType == passThresholdType) && (t.thresholds[1].thresholdType == warnThresholdType) && (t.thresholds[2].thresholdType == failThresholdType) {
-		return &passWarnFailThresholdConfiguration{passValue: t.thresholds[0].value, warnValue: t.thresholds[1].value, failValue: t.thresholds[2].value}, nil
-	}
-
-	if (t.thresholds[0].thresholdType == passThresholdType) && (t.thresholds[1].thresholdType == noThresholdType) && (t.thresholds[2].thresholdType == failThresholdType) {
-		return &passFailThresholdConfiguration{passValue: t.thresholds[0].value, failValue: t.thresholds[2].value}, nil
-	}
-
-	if (t.thresholds[0].thresholdType == failThresholdType) && (t.thresholds[1].thresholdType == warnThresholdType) && (t.thresholds[2].thresholdType == passThresholdType) {
-		return &failWarnPassThresholdConfiguration{failValue: t.thresholds[0].value, warnValue: t.thresholds[1].value, passValue: t.thresholds[2].value}, nil
-	}
-
-	if (t.thresholds[0].thresholdType == failThresholdType) && (t.thresholds[1].thresholdType == noThresholdType) && (t.thresholds[2].thresholdType == passThresholdType) {
-		return &failPassThresholdConfiguration{failValue: t.thresholds[0].value, passValue: t.thresholds[2].value}, nil
-	}
-
-	return nil, &invalidThresholdTypeSequenceError{thresholdType1: t.thresholds[0].thresholdType, thresholdType2: t.thresholds[1].thresholdType, thresholdType3: t.thresholds[2].thresholdType}
 }
 
 type passWarnFailThresholdConfiguration struct {
