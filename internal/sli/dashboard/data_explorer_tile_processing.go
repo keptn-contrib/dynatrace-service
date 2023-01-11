@@ -108,14 +108,14 @@ func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, e
 	}
 
 	if (len(sloDefinition.Pass) == 0) && (len(sloDefinition.Warning) == 0) {
-		criteria, err := tryGetThresholdPassAndWarningCriteria(v.tile)
+		passAndWarningProvider, err := tryGetThresholdPassAndWarningProvider(v.tile)
 		if err != nil {
 			errs = append(errs, err)
 		}
 
-		if criteria != nil {
-			sloDefinition.Pass = []*keptnapi.SLOCriteria{&criteria.pass}
-			sloDefinition.Warning = []*keptnapi.SLOCriteria{&criteria.warning}
+		if passAndWarningProvider != nil {
+			sloDefinition.Pass = passAndWarningProvider.getPass()
+			sloDefinition.Warning = passAndWarningProvider.getWarning()
 		}
 	}
 

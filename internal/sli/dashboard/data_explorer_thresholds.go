@@ -9,84 +9,142 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type passAndWarningCriteria struct {
-	pass    keptnapi.SLOCriteria
-	warning keptnapi.SLOCriteria
+// passAndWarningProvider provides pass and warning criteria.
+type passAndWarningProvider interface {
+	getPass() []*keptnapi.SLOCriteria
+	getWarning() []*keptnapi.SLOCriteria
 }
 
-type thresholdColorType int
+type strictMonotonicityType int
 
 const (
-	unknownThresholdColorType thresholdColorType = 0
-	passThresholdColorType    thresholdColorType = 1
-	warnThresholdColorType    thresholdColorType = 2
-	failThresholdColorType    thresholdColorType = 3
+	notStrictlyMonotonic strictMonotonicityType = iota
+	strictlyIncreasingValues
+	strictlyDecreasingValues
 )
 
-var thresholdColors = map[string]thresholdColorType{
+type thresholdType int
+
+const (
+	noThresholdType thresholdType = iota
+	passThresholdType
+	warnThresholdType
+	failThresholdType
+	unknownThresholdType
+)
+
+var thresholdColors = map[string]thresholdType{
 	// pass colors
-	"#006613": passThresholdColorType,
-	"#1f7e1e": passThresholdColorType,
-	"#5ead35": passThresholdColorType,
-	"#7dc540": passThresholdColorType,
-	"#9cd575": passThresholdColorType,
-	"#e8f9dc": passThresholdColorType,
-	"#048855": passThresholdColorType,
-	"#009e60": passThresholdColorType,
-	"#2ab06f": passThresholdColorType,
-	"#54c27d": passThresholdColorType,
-	"#99dea8": passThresholdColorType,
-	"#e1f7dc": passThresholdColorType,
+	"#006613": passThresholdType,
+	"#1f7e1e": passThresholdType,
+	"#5ead35": passThresholdType,
+	"#7dc540": passThresholdType,
+	"#9cd575": passThresholdType,
+	"#e8f9dc": passThresholdType,
+	"#048855": passThresholdType,
+	"#009e60": passThresholdType,
+	"#2ab06f": passThresholdType,
+	"#54c27d": passThresholdType,
+	"#99dea8": passThresholdType,
+	"#e1f7dc": passThresholdType,
 
 	// warn colors
-	"#ef651f": warnThresholdColorType,
-	"#fd8232": warnThresholdColorType,
-	"#ffa86c": warnThresholdColorType,
-	"#ffd0ab": warnThresholdColorType,
-	"#c9a000": warnThresholdColorType,
-	"#e6be00": warnThresholdColorType,
-	"#f5d30f": warnThresholdColorType,
-	"#ffe11c": warnThresholdColorType,
-	"#ffee7c": warnThresholdColorType,
-	"#fff9d5": warnThresholdColorType,
+	"#ef651f": warnThresholdType,
+	"#fd8232": warnThresholdType,
+	"#ffa86c": warnThresholdType,
+	"#ffd0ab": warnThresholdType,
+	"#c9a000": warnThresholdType,
+	"#e6be00": warnThresholdType,
+	"#f5d30f": warnThresholdType,
+	"#ffe11c": warnThresholdType,
+	"#ffee7c": warnThresholdType,
+	"#fff9d5": warnThresholdType,
 
 	// fail colors
-	"#93060e": failThresholdColorType,
-	"#ab0c17": failThresholdColorType,
-	"#c41425": failThresholdColorType,
-	"#dc172a": failThresholdColorType,
-	"#f28289": failThresholdColorType,
-	"#ffeaea": failThresholdColorType,
+	"#93060e": failThresholdType,
+	"#ab0c17": failThresholdType,
+	"#c41425": failThresholdType,
+	"#dc172a": failThresholdType,
+	"#f28289": failThresholdType,
+	"#ffeaea": failThresholdType,
 }
 
-func getColorType(c string) thresholdColorType {
+func getThresholdTypeByColor(c string) thresholdType {
 	v, ok := thresholdColors[c]
 	if !ok {
-		return unknownThresholdColorType
+		return unknownThresholdType
 	}
 
 	return v
 }
 
-func (colorType thresholdColorType) String() string {
-	switch colorType {
-	case passThresholdColorType:
+// GetThresholdTypeNameForColor returns a string with the threshold type name for the specified color. Convienence function for use in tests.
+func GetThresholdTypeNameForColor(color string) string {
+	return getThresholdTypeByColor(color).String()
+}
+
+func (t thresholdType) String() string {
+	switch t {
+	case noThresholdType:
+		return "none"
+	case passThresholdType:
 		return "pass"
-	case warnThresholdColorType:
+	case warnThresholdType:
 		return "warn"
-	case failThresholdColorType:
+	case failThresholdType:
 		return "fail"
+	default:
+		return "unknown"
 	}
-	return "unknown"
+}
+
+type thresholdTypeConfiguration struct {
+	thresholdTypes [3]thresholdType
 }
 
 type thresholdConfiguration struct {
 	thresholds [3]threshold
 }
 
+func (tc *thresholdConfiguration) thresholdTypeConfiguration() thresholdTypeConfiguration {
+	return thresholdTypeConfiguration{
+		thresholdTypes: [3]thresholdType{
+			tc.thresholds[0].thresholdType,
+			tc.thresholds[1].thresholdType,
+			tc.thresholds[2].thresholdType,
+		},
+	}
+}
+
+func (tc *thresholdConfiguration) reverse() {
+	t := tc.thresholds[2]
+	tc.thresholds[2] = tc.thresholds[0]
+	tc.thresholds[0] = t
+}
+
+func (tc *thresholdConfiguration) createPassAndWarningProvider() (passAndWarningProvider, error) {
+	if (tc.thresholds[0].thresholdType == passThresholdType) && (tc.thresholds[1].thresholdType == warnThresholdType) && (tc.thresholds[2].thresholdType == failThresholdType) {
+		return &passWarnFailThresholdConfiguration{passValue: tc.thresholds[0].value, warnValue: tc.thresholds[1].value, failValue: tc.thresholds[2].value}, nil
+	}
+
+	if (tc.thresholds[0].thresholdType == passThresholdType) && (tc.thresholds[1].thresholdType == noThresholdType) && (tc.thresholds[2].thresholdType == failThresholdType) {
+		return &passFailThresholdConfiguration{passValue: tc.thresholds[0].value, failValue: tc.thresholds[2].value}, nil
+	}
+
+	if (tc.thresholds[0].thresholdType == failThresholdType) && (tc.thresholds[1].thresholdType == warnThresholdType) && (tc.thresholds[2].thresholdType == passThresholdType) {
+		return &failWarnPassThresholdConfiguration{failValue: tc.thresholds[0].value, warnValue: tc.thresholds[1].value, passValue: tc.thresholds[2].value}, nil
+	}
+
+	if (tc.thresholds[0].thresholdType == failThresholdType) && (tc.thresholds[1].thresholdType == noThresholdType) && (tc.thresholds[2].thresholdType == passThresholdType) {
+		return &failPassThresholdConfiguration{failValue: tc.thresholds[0].value, passValue: tc.thresholds[2].value}, nil
+	}
+
+	return nil, &invalidThresholdTypeSequenceError{thresholdTypes: tc.thresholdTypeConfiguration()}
+}
+
 type threshold struct {
-	colorType thresholdColorType
-	value     float64
+	thresholdType thresholdType
+	value         float64
 }
 
 type thresholdParsingError struct {
@@ -109,45 +167,39 @@ func (err *incorrectThresholdRuleCountError) Error() string {
 	return fmt.Sprintf("expected 3 rules rather than %d rules", err.count)
 }
 
+type valueSequenceError struct{}
+
+func (err *valueSequenceError) Error() string {
+	return "values must increase or decrease strictly monotonically"
+}
+
 type invalidThresholdColorError struct {
-	position int
-	color    string
+	index int
 }
 
 func (err *invalidThresholdColorError) Error() string {
-	return fmt.Sprintf("invalid color %s at position %d", err.color, err.position)
+	return fmt.Sprintf("invalid color at position %d", err.index+1)
 }
 
 type missingThresholdValueError struct {
-	position int
+	index int
 }
 
 func (err *missingThresholdValueError) Error() string {
-	return fmt.Sprintf("missing value at position %d", err.position)
+	return fmt.Sprintf("missing value at position %d", err.index+1)
 }
 
-type strictlyMonotonicallyIncreasingConstraintError struct {
-	value1 float64
-	value2 float64
+type invalidThresholdTypeSequenceError struct {
+	thresholdTypes thresholdTypeConfiguration
 }
 
-func (err *strictlyMonotonicallyIncreasingConstraintError) Error() string {
-	return fmt.Sprintf("values (%f %f) must increase strictly monotonically", err.value1, err.value2)
+func (err *invalidThresholdTypeSequenceError) Error() string {
+	return fmt.Sprintf("invalid sequence: %s %s %s", err.thresholdTypes.thresholdTypes[0], err.thresholdTypes.thresholdTypes[1], err.thresholdTypes.thresholdTypes[2])
 }
 
-type invalidThresholdColorSequenceError struct {
-	colorType1 thresholdColorType
-	colorType2 thresholdColorType
-	colorType3 thresholdColorType
-}
-
-func (err *invalidThresholdColorSequenceError) Error() string {
-	return fmt.Sprintf("invalid color sequence: %s %s %s", err.colorType1, err.colorType2, err.colorType3)
-}
-
-// tryGetThresholdPassAndWarningCriteria tries to get pass and warning criteria defined using the thresholds placed on a Data Explorer tile.
-// It returns either the criteria and no error (conversion succeeded), nil for the criteria and no error (no threshold set), or nil for the criteria and an error (conversion failed).
-func tryGetThresholdPassAndWarningCriteria(tile *dynatrace.Tile) (*passAndWarningCriteria, error) {
+// tryGetThresholdPassAndWarningProvider tries to get pass and warning criteria defined using the thresholds placed on a Data Explorer tile.
+// It returns either a pass and warning provider and no error (conversion succeeded), nil for the provider and no error (no thresholds set), or nil for the provider and an error (conversion failed).
+func tryGetThresholdPassAndWarningProvider(tile *dynatrace.Tile) (passAndWarningProvider, error) {
 	thresholdRules, err := getThresholdRulesFromTile(tile)
 	if err != nil {
 		return nil, err
@@ -162,7 +214,7 @@ func tryGetThresholdPassAndWarningCriteria(tile *dynatrace.Tile) (*passAndWarnin
 		return nil, err
 	}
 
-	return convertThresholdConfigurationToPassAndWarningCriteria(*thresholdConfiguration)
+	return thresholdConfiguration.createPassAndWarningProvider()
 }
 
 func getThresholdRulesFromTile(tile *dynatrace.Tile) ([]dynatrace.VisualizationThresholdRule, error) {
@@ -182,7 +234,7 @@ func getThresholdRulesFromTile(tile *dynatrace.Tile) ([]dynatrace.VisualizationT
 	}
 
 	if len(visibleThresholdRules) > 1 {
-		return nil, fmt.Errorf("Data Explorer tile has %d visible thresholds but only one is supported", len(visibleThresholdRules))
+		return nil, fmt.Errorf("Data explorer tile has %d visible thresholds but only one is supported", len(visibleThresholdRules))
 	}
 
 	return visibleThresholdRules[0], nil
@@ -203,116 +255,218 @@ func areThresholdsVisible(threshold dynatrace.VisualizationThreshold) bool {
 	return false
 }
 
-// convertThresholdRulesToThresholdConfiguration checks that the threshold rules are complete and returns them as a threshold configuration or returns an error.
+// convertThresholdRulesToThresholdConfiguration checks that the threshold rules are complete and returns them as a monotonically increasing threshold configuration or returns an error.
 func convertThresholdRulesToThresholdConfiguration(rules []dynatrace.VisualizationThresholdRule) (*thresholdConfiguration, error) {
+	var tc thresholdConfiguration
+	thresholdTypes, errs := getThresholdTypeConfigurationFromRules(rules)
+
+	v0 := tryGetValueFromThresholdRules(rules, 0)
+	if v0 == nil {
+		errs = append(errs, &missingThresholdValueError{index: 0})
+	} else {
+		tc.thresholds[0] = threshold{thresholdType: thresholdTypes.thresholdTypes[0], value: *v0}
+	}
+
+	v1 := tryGetValueFromThresholdRules(rules, 1)
+	if v1 == nil {
+		tc.thresholds[1] = threshold{thresholdType: noThresholdType}
+	} else {
+		tc.thresholds[1] = threshold{thresholdType: thresholdTypes.thresholdTypes[1], value: *v1}
+	}
+
+	v2 := tryGetValueFromThresholdRules(rules, 2)
+	if v2 == nil {
+		errs = append(errs, &missingThresholdValueError{index: 2})
+	} else {
+		tc.thresholds[2] = threshold{thresholdType: thresholdTypes.thresholdTypes[2], value: *v2}
+	}
+
+	monotonicity := getStrictMonotonicityOfThreeOptionalValues(v0, v1, v2)
+	if monotonicity == notStrictlyMonotonic {
+		errs = append(errs, &valueSequenceError{})
+	}
+
+	if len(errs) > 0 {
+		return nil, &thresholdParsingError{errors: errs}
+	}
+
+	if monotonicity == strictlyDecreasingValues {
+		tc.reverse()
+	}
+
+	return &tc, nil
+}
+
+func getThresholdTypeConfigurationFromRules(rules []dynatrace.VisualizationThresholdRule) (thresholdTypeConfiguration, []error) {
 	var errs []error
+	var thresholdTypes thresholdTypeConfiguration
+
+	// check that colors are set correctly
+	for i, rule := range rules {
+		if (i == 0) || (i == 2) {
+			tt := getThresholdTypeByColor(rule.Color)
+			if (tt != passThresholdType) && (tt != failThresholdType) {
+				errs = append(errs, &invalidThresholdColorError{index: i})
+				continue
+			}
+			thresholdTypes.thresholdTypes[i] = tt
+		}
+
+		if i == 1 {
+			tt := getThresholdTypeByColor(rule.Color)
+			if tt != warnThresholdType {
+				errs = append(errs, &invalidThresholdColorError{index: i})
+				continue
+			}
+			thresholdTypes.thresholdTypes[i] = tt
+		}
+	}
 
 	if len(rules) != 3 {
 		// log this error as it may mean something has changed on the Data Explorer side
 		log.WithField("ruleCount", len(rules)).Error("Encountered unexpected number of threshold rules")
-
 		errs = append(errs, &incorrectThresholdRuleCountError{count: len(rules)})
 	}
 
-	for i, rule := range rules {
-		if rule.Value == nil {
-			errs = append(errs, &missingThresholdValueError{position: i + 1})
+	if (len(rules) >= 3) && (thresholdTypes.thresholdTypes[0] == thresholdTypes.thresholdTypes[2]) {
+		errs = append(errs, &invalidThresholdTypeSequenceError{thresholdTypes: thresholdTypes})
+	}
+
+	return thresholdTypes, errs
+}
+
+func tryGetValueFromThresholdRules(rules []dynatrace.VisualizationThresholdRule, index int) *float64 {
+	if index >= len(rules) {
+		return nil
+	}
+
+	return rules[index].Value
+}
+
+func getStrictMonotonicityOfThreeOptionalValues(v0, v1, v2 *float64) strictMonotonicityType {
+	if (v0 != nil) && (v2 != nil) {
+		monotonicity := getStrictMonotonicity(*v0, *v2)
+
+		if v1 != nil {
+			if (getStrictMonotonicity(*v0, *v1) != monotonicity) || (getStrictMonotonicity(*v1, *v2) != monotonicity) {
+				return notStrictlyMonotonic
+			}
 		}
-
-		if getColorType(rule.Color) == unknownThresholdColorType {
-			errs = append(errs, &invalidThresholdColorError{color: rule.Color, position: i + 1})
-		}
+		return monotonicity
 	}
 
-	if len(errs) > 0 {
-		return nil, &thresholdParsingError{errors: errs}
+	if (v0 != nil) && (v1 != nil) {
+		return getStrictMonotonicity(*v0, *v1)
 	}
 
-	return &thresholdConfiguration{
-		thresholds: [3]threshold{
-			{colorType: getColorType(rules[0].Color), value: *rules[0].Value},
-			{colorType: getColorType(rules[1].Color), value: *rules[1].Value},
-			{colorType: getColorType(rules[2].Color), value: *rules[2].Value}}}, nil
+	if (v1 != nil) && (v2 != nil) {
+		return getStrictMonotonicity(*v1, *v2)
+	}
+
+	return notStrictlyMonotonic
 }
 
-func convertThresholdConfigurationToPassAndWarningCriteria(t thresholdConfiguration) (*passAndWarningCriteria, error) {
-	var errs []error
-
-	v1 := t.thresholds[0].value
-	v2 := t.thresholds[1].value
-	v3 := t.thresholds[2].value
-
-	if v1 >= v2 {
-		errs = append(errs, &strictlyMonotonicallyIncreasingConstraintError{value1: v1, value2: v2})
+func getStrictMonotonicity(v1 float64, v2 float64) strictMonotonicityType {
+	if v1 == v2 {
+		return notStrictlyMonotonic
 	}
 
-	if v2 >= v3 {
-		errs = append(errs, &strictlyMonotonicallyIncreasingConstraintError{value1: v2, value2: v3})
+	if v1 < v2 {
+		return strictlyIncreasingValues
 	}
 
-	sloCriteria, err := matchThresholdColorSequenceAndConvertToPassAndWarningCriteria(t)
-	if err != nil {
-		errs = append(errs, err)
-	}
-
-	if len(errs) > 0 {
-		return nil, &thresholdParsingError{errors: errs}
-	}
-
-	return sloCriteria, nil
+	return strictlyDecreasingValues
 }
 
-func matchThresholdColorSequenceAndConvertToPassAndWarningCriteria(t thresholdConfiguration) (*passAndWarningCriteria, error) {
-	colorType1 := t.thresholds[0].colorType
-	colorType2 := t.thresholds[1].colorType
-	colorType3 := t.thresholds[2].colorType
-
-	if (colorType1 == passThresholdColorType) && (colorType2 == warnThresholdColorType) && (colorType3 == failThresholdColorType) {
-		return convertPassWarnFailThresholdsToPassAndWarningCriteria(t), nil
-	}
-
-	if (colorType1 == failThresholdColorType) && (colorType2 == warnThresholdColorType) && (colorType3 == passThresholdColorType) {
-		return convertFailWarnPassThresholdsToPassAndWarningCriteria(t), nil
-	}
-
-	return nil, &invalidThresholdColorSequenceError{colorType1: colorType1, colorType2: colorType2, colorType3: colorType3}
+type passWarnFailThresholdConfiguration struct {
+	passValue float64
+	warnValue float64
+	failValue float64
 }
 
-func convertPassWarnFailThresholdsToPassAndWarningCriteria(t thresholdConfiguration) *passAndWarningCriteria {
-	passThreshold := t.thresholds[0].value
-	warnThreshold := t.thresholds[1].value
-	failThreshold := t.thresholds[2].value
-
-	return &passAndWarningCriteria{
-		pass: keptnapi.SLOCriteria{
+func (c *passWarnFailThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{
+		{
 			Criteria: []string{
-				fmt.Sprintf(">=%f", passThreshold),
-				fmt.Sprintf("<%f", warnThreshold),
-			},
-		},
-		warning: keptnapi.SLOCriteria{
-			Criteria: []string{
-				fmt.Sprintf(">=%f", passThreshold),
-				fmt.Sprintf("<%f", failThreshold),
+				fmt.Sprintf(">=%f", c.passValue),
+				fmt.Sprintf("<%f", c.warnValue),
 			},
 		},
 	}
 }
 
-func convertFailWarnPassThresholdsToPassAndWarningCriteria(t thresholdConfiguration) *passAndWarningCriteria {
-	warnThreshold := t.thresholds[1].value
-	passThreshold := t.thresholds[2].value
-
-	return &passAndWarningCriteria{
-		pass: keptnapi.SLOCriteria{
+func (c *passWarnFailThresholdConfiguration) getWarning() []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{
+		{
 			Criteria: []string{
-				fmt.Sprintf(">=%f", passThreshold),
-			},
-		},
-		warning: keptnapi.SLOCriteria{
-			Criteria: []string{
-				fmt.Sprintf(">=%f", warnThreshold),
+				fmt.Sprintf(">=%f", c.passValue),
+				fmt.Sprintf("<%f", c.failValue),
 			},
 		},
 	}
+}
+
+type passFailThresholdConfiguration struct {
+	passValue float64
+	failValue float64
+}
+
+func (c *passFailThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{
+		{
+			Criteria: []string{
+				fmt.Sprintf(">=%f", c.passValue),
+				fmt.Sprintf("<%f", c.failValue),
+			},
+		},
+	}
+}
+
+func (c *passFailThresholdConfiguration) getWarning() []*keptnapi.SLOCriteria {
+	return nil
+}
+
+type failWarnPassThresholdConfiguration struct {
+	failValue float64
+	warnValue float64
+	passValue float64
+}
+
+func (c *failWarnPassThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{
+		{
+			Criteria: []string{
+				fmt.Sprintf(">=%f", c.passValue),
+			},
+		},
+	}
+}
+
+func (c *failWarnPassThresholdConfiguration) getWarning() []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{
+		{
+			Criteria: []string{
+				fmt.Sprintf(">=%f", c.warnValue),
+			},
+		},
+	}
+}
+
+type failPassThresholdConfiguration struct {
+	failValue float64
+	passValue float64
+}
+
+func (c *failPassThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
+	return []*keptnapi.SLOCriteria{
+		{
+			Criteria: []string{
+				fmt.Sprintf(">=%f", c.passValue),
+			},
+		},
+	}
+}
+
+func (c *failPassThresholdConfiguration) getWarning() []*keptnapi.SLOCriteria {
+	return nil
 }

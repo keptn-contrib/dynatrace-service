@@ -416,17 +416,55 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 		expectedSLO *keptnapi.SLO
 	}{
 		{
-			name:        "Valid pass-warn-fail thresholds and no pass or warning defined in title",
+			name:        "Valid pass-warn-fail increasing thresholds and no pass or warning defined in title",
 			tileName:    "Service Response Time; sli=srt",
 			thresholds:  createVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRule(68000), createFailThresholdRule(69000)),
 			expectedSLO: createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 68000), createBandSLOCriteria(0, 69000)),
 		},
 		{
-			name:        "Valid fail-warn-pass thresholds and no pass or warning defined in title",
+			name:        "Valid fail-warn-pass increasing thresholds and no pass or warning defined in title",
 			tileName:    "Service Response Time; sli=srt",
 			thresholds:  createVisibleThresholds(createFailThresholdRule(0), createWarnThresholdRule(68000), createPassThresholdRule(69000)),
 			expectedSLO: createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), createLowerBoundSLOCriteria(68000)),
 		},
+		{
+			name:        "Valid pass-none-fail increasing thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createPassThresholdRule(0), createWarnThresholdRuleWithPointer(nil), createFailThresholdRule(69000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 69000), nil),
+		},
+		{
+			name:        "Valid fail-none-pass increasing thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createFailThresholdRule(0), createWarnThresholdRuleWithPointer(nil), createPassThresholdRule(69000)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), nil),
+		},
+
+		{
+			name:        "Valid pass-warn-fail decreasing thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createPassThresholdRule(69000), createWarnThresholdRule(68000), createFailThresholdRule(0)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), createLowerBoundSLOCriteria(68000)),
+		},
+		{
+			name:        "Valid fail-warn-pass decreasing thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createFailThresholdRule(69000), createWarnThresholdRule(68000), createPassThresholdRule(0)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 68000), createBandSLOCriteria(0, 69000)),
+		},
+		{
+			name:        "Valid pass-none-fail decreasing thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createPassThresholdRule(69000), createWarnThresholdRuleWithPointer(nil), createFailThresholdRule(0)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createLowerBoundSLOCriteria(69000), nil),
+		},
+		{
+			name:        "Valid fail-none-pass decreasing thresholds and no pass or warning defined in title",
+			tileName:    "Service Response Time; sli=srt",
+			thresholds:  createVisibleThresholds(createFailThresholdRule(69000), createWarnThresholdRuleWithPointer(nil), createPassThresholdRule(0)),
+			expectedSLO: createExpectedServiceResponseTimeSLO(createBandSLOCriteria(0, 69000), nil),
+		},
+
 		{
 			name:       "Pass or warning defined in title take precedence over valid thresholds",
 			tileName:   "Service Response Time; sli=srt; pass=<70000; warning=<71000",

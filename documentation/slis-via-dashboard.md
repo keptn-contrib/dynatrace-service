@@ -163,15 +163,22 @@ To make it easy to define SLOs using Data Explorer tiles, pass and warning crite
 
 #### Pass and warning criteria
 
-Pass and warn criteria can be specified by adding visual thresholds directly to the tile rather than using pass and warn criteria in the tile's title. If thresholds and pass and warn criteria have been specified, the thresholds will be ignored.
+Pass and warning criteria can be specified by adding visual thresholds directly to the tile rather than using pass and warning criteria in the tile's title. If thresholds and pass and warning criteria have been specified in the title, the thresholds will be ignored.
 
-Pass-warn-fail and fail-warn-pass configurations are supported. In both cases, three thresholds must be added using strictly monotonically increasing values and colors from the pre-defined color palette:
+Four configurations are supported:
+- Pass-warning-fail thresholds: color sequence is set to pass-warning-fail and pass, warning and fail threshold values must be provided
+- Fail-warning-pass thresholds: color sequence is set to fail-warning-pass and fail, warning and pass threshold values must be provided
+- Pass-fail thresholds: color sequence is set to pass-warning-fail and pass and fail threshold values must be provided. A warning threshold value is omitted.
+- Fail-pass thresholds: color sequence is set to fail-warning-pass and pass and fail threshold values must be provided. A warning threshold value is omitted.
 
-![Threshold colors in Data Explorer color palette](images/data-explorer-color-palette.png "Threshold colors in Data Explorer color palette")
+In all cases, the threshold values must be strictly monotonically increasing or decreasing and colors must be selected from the pre-defined color palette.
 
-**Example: pass-warn-fail thresholds applied to the `builtin:service.response.time` metric**
 
-![Data Explorer thresholds - builtin:service.response.time](images/data-explorer-service-response-time-thresholds.png "Data Explorer thresholds - builtin:service.response.time")
+![Threshold colors in Data explorer color palette](images/data-explorer-color-palette.png "Threshold colors in Data explorer color palette")
+
+**Example: increasing pass-warning-fail thresholds applied to the `builtin:service.response.time` metric**
+
+![Increasing pass-warning-fail thresholds - builtin:service.response.time](images/data-explorer-pass-lt-warning-lt-fail-thresholds.png "Increasing pass-warning-fail thresholds - builtin:service.response.time")
 
 This configuration produces the following SLO criteria:
 
@@ -179,27 +186,114 @@ This configuration produces the following SLO criteria:
 pass:
   - criteria:
     - ">=0"
-    - "<650000"
+    - "<60"
 warning:
   - criteria:
     - ">=0"
-    - "<70000"
+    - "<80"
 ```
 
-**Example: fail-warn-pass thresholds applied to the `builtin:host.disk.avail` metric**
+**Example: increasing pass-fail thresholds applied to the `builtin:service.response.time` metric**
 
-![Data Explorer thresholds - builtin:host.disk.avail](images/data-explorer-disk-avail-thresholds.png "Data Explorer thresholds - builtin:host.disk.avail")
+![Increasing pass-fail thresholds - builtin:service.response.time](images/data-explorer-pass-lt-fail-thresholds.png "Increasing pass-fail thresholds - builtin:service.response.time")
 
 This configuration produces the following SLO criteria:
 
 ```{yaml}
 pass:
   - criteria:
-    - ">=549755813888"    
+    - ">=0"
+    - "<60"
+```
+
+These thresholds may also be reordered while still yielding the same pass and warning criteria:
+
+**Example: decreasing fail-warning-pass thresholds applied to the `builtin:service.response.time` metric**
+
+![Decreasing fail-warning-pass thresholds - builtin:service.response.time](images/data-explorer-fail-gt-warning-gt-pass-thresholds.png "Decreasing fail-warning-pass thresholds - builtin:service.response.time")
+
+This configuration produces the following SLO criteria:
+
+```{yaml}
+pass:
+  - criteria:
+    - ">=0"
+    - "<60"
 warning:
   - criteria:
-    - ">=274877906944"    
+    - ">=0"
+    - "<80"
 ```
+
+**Example: decreasing fail-pass thresholds applied to the `builtin:service.response.time` metric**
+
+![Decreasing fail-pass thresholds - builtin:service.response.time](images/data-explorer-fail-gt-pass-thresholds.png "Decreasing fail-pass thresholds - builtin:service.response.time")
+
+This configuration produces the following SLO criteria:
+
+```{yaml}
+pass:
+  - criteria:
+    - ">=0"
+    - "<60"
+```
+
+**Example: increasing fail-warning-pass thresholds applied to the `builtin:host.mem.avail.pct` metric**
+
+![Increasing fail-warning-pass thresholds - builtin:host.mem.avail.pct](images/data-explorer-fail-lt-warning-lt-pass-thresholds.png "Increasing fail-warning-pass thresholds - builtin:host.mem.avail.pc")
+
+This configuration produces the following SLO criteria:
+
+```{yaml}
+pass:
+  - criteria:
+    - ">=50"
+warning:
+  - criteria:
+    - ">=40"    
+```
+
+**Example: increasing fail-pass thresholds applied to the `builtin:host.mem.avail.pct` metric**
+
+![Increasing fail-pass thresholds - builtin:host.mem.avail.pct](images/data-explorer-fail-lt-pass-thresholds.png "Increasing fail-pass thresholds - builtin:host.mem.avail.pc")
+
+This configuration produces the following SLO criteria:
+
+```{yaml}
+pass:
+  - criteria:
+    - ">=50"
+```
+
+These thresholds may also be reordered while still yielding the same pass and warning criteria:
+
+**Example: decreasing pass-warning-fail thresholds applied to the `builtin:host.mem.avail.pct` metric**
+
+![Decreasing pass-warning-fail thresholds - builtin:host.mem.avail.pct](images/data-explorer-pass-gt-warning-gt-fail-thresholds.png "Decreasing pass-warning-fail thresholds - builtin:host.mem.avail.pc")
+
+This configuration produces the following SLO criteria:
+
+```{yaml}
+pass:
+  - criteria:
+    - ">=50"
+warning:
+  - criteria:
+    - ">=40"    
+```
+
+**Example: decreasing pass-fail thresholds applied to the `builtin:host.mem.avail.pct` metric**
+
+![Decreasing pass-fail thresholds - builtin:host.mem.avail.pct](images/data-explorer-pass-gt-fail-thresholds.png "Decreasing pass-fail thresholds - builtin:host.mem.avail.pc")
+
+This configuration produces the following SLO criteria:
+
+```{yaml}
+pass:
+  - criteria:
+    - ">=50"
+```
+
 
 #### Customizing units
 
