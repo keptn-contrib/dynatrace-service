@@ -168,8 +168,8 @@ Pass and warning criteria can be specified by adding visual thresholds directly 
 Four configurations are supported:
 - Pass-warning-fail thresholds: color sequence is set to pass-warning-fail and pass, warning and fail threshold values must be provided
 - Fail-warning-pass thresholds: color sequence is set to fail-warning-pass and fail, warning and pass threshold values must be provided
-- Pass-fail theholds: color sequence is set to pass-warning-fail and pass and fail threshold values must be provided. A warning threshold value is omitted.
-- Fail-pass thesholds: color sequence is set to fail-warning-pass and pass and fail threshold values must be provided. A warning threshold value is omitted.
+- Pass-fail thresholds: color sequence is set to pass-warning-fail and pass and fail threshold values must be provided. A warning threshold value is omitted.
+- Fail-pass thresholds: color sequence is set to fail-warning-pass and pass and fail threshold values must be provided. A warning threshold value is omitted.
 
 In all cases, the threshold values must be strictly monotonically increasing or decreasing and colors must be selected from the pre-defined color palette.
 
