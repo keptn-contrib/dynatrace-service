@@ -14,7 +14,9 @@ import (
 func TestRetrieveMetrics_SLOObjectiveGeneratedFromSupportedDataExplorerTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/slo_generation/supported_data_explorer_tile/"
 
-	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+		handler,
 		testDataFolder,
 		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"))
 
@@ -81,10 +83,9 @@ func TestRetrieveMetrics_SLOObjectiveGeneratedForNoDataFromDataExplorerTile(t *t
 	const testDataFolder = "./testdata/dashboards/slo_generation/data_explorer_tile_no_data/"
 
 	requestBuilder := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C33B8A4C73748469~\")\"))))):splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names")
-	handler, _ := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
-		testDataFolder,
-		requestBuilder,
-	)
+
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	_ = addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testDataFolder, requestBuilder)
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
 		if !assert.NotNil(t, actual) {

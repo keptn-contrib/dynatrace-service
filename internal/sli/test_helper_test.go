@@ -579,6 +579,18 @@ func cloneURLValues(values url.Values) url.Values {
 	return clone
 }
 
+func createHandlerWithDashboard(t *testing.T, testDataFolder string) *test.CombinedURLHandler {
+	handler := test.NewCombinedURLHandler(t)
+	handler.AddExactFile(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	return handler
+}
+
+func createHandlerWithTemplatedDashboard(t *testing.T, templateFilename string, templatingData interface{}) *test.CombinedURLHandler {
+	handler := test.NewCombinedURLHandler(t)
+	handler.AddExactTemplate(dynatrace.DashboardsPath+"/"+testDashboardID, templateFilename, templatingData)
+	return handler
+}
+
 func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
 	expectedMetricsRequest1 := requestBuilder.build()
 	expectedMetricsRequest2 := requestBuilder.copyWithResolution(resolutionInf).build()
@@ -599,4 +611,8 @@ func addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler *test.Combine
 	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, "metrics_get_by_query2.json"))
 
 	return expectedMetricsRequest2
+}
+
+func addRequestToHandlerForBaseMetricDefinition(handler *test.CombinedURLHandler, testDataFolder string, baseMetricSelector string) {
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(baseMetricSelector), filepath.Join(testDataFolder, "metrics_get_by_id_base.json"))
 }

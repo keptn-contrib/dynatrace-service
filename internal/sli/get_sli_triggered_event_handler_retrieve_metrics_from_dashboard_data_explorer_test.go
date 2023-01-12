@@ -19,7 +19,7 @@ import (
 func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIButNoQuery(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/sli_name_no_query/"
 
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	handler := createHandlerWithDashboard(t, testDataFolder)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("new"))
 }
 
@@ -28,7 +28,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIButNoQuery(t *testi
 func TestRetrieveMetricsFromDashboardDataExplorerTile_WithSLIAndTwoQueries(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/sli_name_two_queries/"
 
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	handler := createHandlerWithDashboard(t, testDataFolder)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("two"))
 }
 
@@ -347,10 +347,12 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 	const testDataFolder = "./testdata/dashboards/data_explorer/no_entity_type/"
 
 	t.Skip()
-	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+		handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names").copyWithMZSelector("mzId(2311420533206603714)"),
-	)
+		newMetricsV2QueryRequestBuilder("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names").copyWithMZSelector("mzId(2311420533206603714)"))
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("vulnerabilities_high", expectedMetricsRequest))
 }
@@ -361,10 +363,11 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntity
 func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/custom_slo/"
 
-	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+		handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
-	)
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("srt", 54896.50455400265, expectedMetricsRequest),
@@ -391,10 +394,11 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO(t *testing.T) {
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ExcludedTile(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/excluded_tile/"
 
-	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+		handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C6876D601CA5DDFD~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
-	)
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C6876D601CA5DDFD~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("rt_jid", 57974.262650996854, expectedMetricsRequest),
@@ -564,7 +568,7 @@ func createNotVisibleThresholds(rule1 dynatrace.VisualizationThresholdRule, rule
 func TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationProblems(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/multiple_tile_configuration_problems/"
 
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	handler := createHandlerWithDashboard(t, testDataFolder)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "error parsing SLO definition", "tile has 2 queries enabled but only one is supported", "tile has no metric expressions"))
 }
 
@@ -572,11 +576,13 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_MultipleTileConfigurationP
 func TestRetrieveMetricsFromDashboardDataExplorerTile_PickCorrectVisualConfigRule(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/pick_correct_visual_config_rule/"
 
-	handler, expectedMetricsRequest := createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t,
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+		handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
-	)
-	handler.AddExact(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"))
+
+	handler.AddExactFile(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.89648858596068, expectedMetricsRequest),
@@ -589,7 +595,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_PickCorrectVisualConfigRul
 func TestRetrieveMetricsFromDashboardDataExplorerTile_TwoMatchingVisualConfigRulesProducesError(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/error_two_matching_visual_config_rules/"
 
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	handler := createHandlerWithDashboard(t, testDataFolder)
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc("srt", "expected one visualization rule for query", "found 2"))
 }
 
@@ -773,30 +779,4 @@ func convertToJSONString[T any](t *testing.T, o T) string {
 		t.Fatal("could not marshal object to JSON")
 	}
 	return string(bytes)
-}
-
-func createHandlerWithTemplatedDashboard(t *testing.T, templateFilename string, templatingData interface{}) *test.CombinedURLHandler {
-	handler := test.NewCombinedURLHandler(t)
-	handler.AddExactTemplate(dynatrace.DashboardsPath+"/"+testDashboardID, templateFilename, templatingData)
-	return handler
-}
-
-func createHandlerForEarlyFailureDataExplorerTest(t *testing.T, testDataFolder string) *test.FileBasedURLHandler {
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
-	return handler
-}
-
-func createHandlerForSuccessfulDataExplorerTestWithResolutionInf(t *testing.T, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) (*test.FileBasedURLHandler, string) {
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
-
-	expectedMetricsRequest1 := requestBuilder.build()
-	expectedMetricsRequest2 := requestBuilder.copyWithResolution(resolutionInf).build()
-
-	handler.AddExact(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
-	handler.AddExact(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
-	handler.AddExact(expectedMetricsRequest2, filepath.Join(testDataFolder, "metrics_get_by_query2.json"))
-
-	return handler, expectedMetricsRequest2
 }
