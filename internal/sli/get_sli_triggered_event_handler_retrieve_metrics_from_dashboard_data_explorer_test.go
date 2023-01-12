@@ -342,19 +342,14 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType tests that data explorer tiles with a management zone and no obvious entity type work.
-// TODO: 12-10-2022: Update this test once test files are available, as in theory this functionality should work
 func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZoneWithNoEntityType(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/data_explorer/no_entity_type/"
 
-	t.Skip()
-
 	handler := createHandlerWithDashboard(t, testDataFolder)
-	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
-		handler,
-		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names").copyWithMZSelector("mzId(2311420533206603714)"))
+	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:sort(value(sum,descending)):fold(avg)):limit(100):names:fold(auto)").copyWithMZSelector("mzName(\"mz-1\")").build()
+	handler.AddExactFile(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("vulnerabilities_high", expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("vulnerabilities_high", 536.4052024482108, expectedMetricsRequest))
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTile_CustomSLO tests propagation of a customized SLO.
