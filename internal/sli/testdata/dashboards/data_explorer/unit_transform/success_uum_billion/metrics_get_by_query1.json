@@ -4,9 +4,9 @@
     "resolution": "1h",
     "result": [
         {
-            "metricId": "builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy()",
-            "dataPointCountRatio": 0.0116928,
-            "dimensionCountRatio": 0.09744,
+            "metricId": "(builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy())/1000000000",
+            "dataPointCountRatio": 0.0116952,
+            "dimensionCountRatio": 0.09746,
             "data": [
                 {
                     "dimensions": [],
@@ -38,30 +38,30 @@
                         1664409600000
                     ],
                     "values": [
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9,
+                        1.0E-9
                     ]
                 }
             ]

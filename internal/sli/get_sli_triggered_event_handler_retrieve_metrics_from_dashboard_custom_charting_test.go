@@ -319,32 +319,32 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_UnitTransformMillisecond
 
 	handler := createHandlerWithDashboard(t, testDataFolder)
 	addRequestToHandlerForBaseMetricDefinition(handler, testDataFolder, "builtin:service.response.time")
-	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(
 		handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():avg:names").copyWithEntitySelector("type(SERVICE)"))
-
-	handler.AddExactFile(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():avg:names").copyWithEntitySelector("type(SERVICE)"),
+		createToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("service_response_time", 54.89648858596068, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("service_response_time", 54.896485186544574, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)
 }
 
-// TestRetrieveMetricsFromDashboardCustomChartingTile_UnitTransformError tests a custom charting tile with invalid units generates the expected error.
-func TestRetrieveMetricsFromDashboardCustomChartingTile_UnitTransformError(t *testing.T) {
+// TestRetrieveMetricsFromDashboardCustomChartingTile_IncompatibleUnitTransformIsIgnored tests a custom charting tile that performs and incompatible unit transform performs no conversion and still succeeds due to the underlying API.
+// This is would require a misconfigured Custom charting tile to occur.
+func TestRetrieveMetricsFromDashboardCustomChartingTile_IncompatibleUnitTransformIsIgnored(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/custom_charting/unit_transform_error/"
 
 	requestBuilder := newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():avg:names").copyWithEntitySelector("type(SERVICE)")
 
 	handler := createHandlerWithDashboard(t, testDataFolder)
 	addRequestToHandlerForBaseMetricDefinition(handler, testDataFolder, "builtin:service.response.time")
-	_ = addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testDataFolder, requestBuilder)
 
-	handler.AddExactError(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "Byte"), 400, filepath.Join(testDataFolder, "metrics_units_convert_error.json"))
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("service_response_time", requestBuilder.build()))
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testDataFolder, requestBuilder, createToUnitConversionSnippet(microSecondUnitID, byteUnitID))
+
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("service_response_time", 54896.485186544574, expectedMetricsRequest))
 }
 
 // TestRetrieveMetricsFromDashboardCustomChartingTile_ManagementZonesWork tests applying management zones to the dashboard and tile work as expected.

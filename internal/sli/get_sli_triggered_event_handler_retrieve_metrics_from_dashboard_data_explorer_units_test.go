@@ -15,17 +15,15 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 	)
 
 	const (
-		autoUnit        = "auto"
-		noneUnit        = "none"
-		milliSecondUnit = "MilliSecond"
-		microSecondUnit = "MicroSecond"
-		dayUnit         = "Day"
-		thousandUnit    = "Kilo"
-		millionUnit     = "Million"
-		billionUnit     = "Billion"
-		trillionUnit    = "Trillion"
-		byteUnit        = "Byte"
-		specialUnit     = "Special"
+		autoUnit     = "auto"
+		noneUnit     = "none"
+		dayUnit      = "Day"
+		thousandUnit = "Kilo"
+		millionUnit  = "Million"
+		billionUnit  = "Billion"
+		trillionUnit = "Trillion"
+		specialUnit  = "Special"
+		countUnit    = "Count"
 	)
 
 	const (
@@ -50,11 +48,10 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder)
 	}
 
-	const unconvertedServiceResponseTimeValue = 54896.485383423984
+	const unconvertedServiceResponseTimeValue = 54896.485186544574
 
 	serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).build())
 	serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc := createFailedSLIResultWithQueryAssertionsFunc(sliName, serviceResponseTimeRequestBuilder.build(), noUnitFoundSubstring)
-	serviceResponseTimeFailedCannotConvertSLIResultAssertionsFunc := createFailedSLIResultWithQueryAssertionsFunc(sliName, serviceResponseTimeRequestBuilder.build(), cannotConvertSubstring)
 
 	const unconvertedNonDbChildCallCountValue = 341746808.0
 
@@ -62,6 +59,10 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 	nonDbChildCallCountRequestBuilder := newMetricsV2QueryRequestBuilder(nonDbChildCallCountMetricSelector)
 	nonDbChildCallCountHandlerSetupFunc := func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 		addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder)
+	}
+
+	nonDbChildCallCountUnknownUnitHandlerSetupFunc := func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+		addRequestsToHandlerForInitialMetricsDefinition(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder)
 	}
 
 	nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).build())
@@ -77,6 +78,13 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 
 	unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).build())
 	unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc := createFailedSLIResultWithQueryAssertionsFunc(sliName, unspecifiedUnitRequestBuilder.build(), unknownUnitSubstring)
+
+	const (
+		divideByThousandConversionSnippet = "/1000"
+		divideByMillionConversionSnippet  = "/1000000"
+		divideByBillionConversionSnippet  = "/1000000000"
+		divideByTrillionConversionSnippet = "/1000000000000"
+	)
 
 	tests := []struct {
 		name                              string
@@ -116,7 +124,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		},
 		{
 			name:                              "success_srt_microsecond",
-			unit:                              microSecondUnit,
+			unit:                              microSecondUnitID,
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -127,47 +135,45 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 
 		{
 			name:           "success_srt_millisecond",
-			unit:           milliSecondUnit,
+			unit:           milliSecondUnitID,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder)
-				handler.AddExactFile(buildMetricsUnitsConvertRequest(microSecondUnit, unconvertedServiceResponseTimeValue, milliSecondUnit), filepath.Join(testVariantDataFolder, metricUnitsConvertFileName))
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder,
+					createToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue/microSecondsPerMilliSecond, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue/microSecondsPerMilliSecond, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID)).build()),
 		},
 		{
 			name:           "success_srt_day",
 			unit:           dayUnit,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder)
-				handler.AddExactFile(buildMetricsUnitsConvertRequest(microSecondUnit, unconvertedServiceResponseTimeValue, dayUnit), filepath.Join(testVariantDataFolder, metricUnitsConvertFileName))
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, dayUnit))
+
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue/microSecondsPerDay, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, 6.353759859553769e-7, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, dayUnit)).build()),
 		},
 
 		// error cases
+
 		{
 			name:           "error_srt_byte",
-			unit:           byteUnit,
+			unit:           byteUnitID,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder)
-				handler.AddExactError(buildMetricsUnitsConvertRequest(microSecondUnit, unconvertedServiceResponseTimeValue, byteUnit), 400, filepath.Join(testVariantDataFolder, metricUnitsConvertFileName))
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, byteUnitID))
 			},
-			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           serviceResponseTimeFailedCannotConvertSLIResultAssertionsFunc,
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, byteUnitID)).build()),
 		},
 		{
 			name:           "error_srt_thousand",
 			unit:           thousandUnit,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder)
-				handler.AddExactError(buildMetricsUnitsConvertRequest(microSecondUnit, unconvertedServiceResponseTimeValue, thousandUnit), 400, filepath.Join(testVariantDataFolder, metricUnitsConvertFileName))
-
+				addRequestsToHandlerForFailedMetricsQueryWithUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, thousandUnit))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc,
@@ -177,9 +183,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			unit:           specialUnit,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder)
-				handler.AddExactError(buildMetricsUnitsConvertRequest(microSecondUnit, unconvertedServiceResponseTimeValue, specialUnit), 400, filepath.Join(testVariantDataFolder, metricUnitsConvertFileName))
-
+				addRequestsToHandlerForFailedMetricsQueryWithUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, specialUnit))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc,
@@ -217,53 +221,61 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		// success cases where conversion is done by dynatrace-service
 
 		{
-			name:                              "success_ndbccc_thousand",
-			unit:                              thousandUnit,
-			metricSelector:                    nonDbChildCallCountMetricSelector,
-			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
+			name:           "success_ndbccc_thousand",
+			unit:           thousandUnit,
+			metricSelector: nonDbChildCallCountMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByThousandConversionSnippet)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerThousand, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerThousand, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build()),
 		},
 		{
-			name:                              "success_ndbccc_million",
-			unit:                              millionUnit,
-			metricSelector:                    nonDbChildCallCountMetricSelector,
-			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
+			name:           "success_ndbccc_million",
+			unit:           millionUnit,
+			metricSelector: nonDbChildCallCountMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByMillionConversionSnippet)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerMillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerMillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByMillionConversionSnippet).build()),
 		},
 		{
-			name:                              "success_ndbccc_billion",
-			unit:                              billionUnit,
-			metricSelector:                    nonDbChildCallCountMetricSelector,
-			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
+			name:           "success_ndbccc_billion",
+			unit:           billionUnit,
+			metricSelector: nonDbChildCallCountMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByBillionConversionSnippet)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerBillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerBillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByBillionConversionSnippet).build()),
 		},
 		{
-			name:                              "success_ndbccc_trillion",
-			unit:                              trillionUnit,
-			metricSelector:                    nonDbChildCallCountMetricSelector,
-			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
+			name:           "success_ndbccc_trillion",
+			unit:           trillionUnit,
+			metricSelector: nonDbChildCallCountMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByTrillionConversionSnippet)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerTrillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerTrillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByTrillionConversionSnippet).build()),
 		},
 
 		// error cases where no conversion is possible
 
 		{
 			name:                              "error_ndbccc_byte",
-			unit:                              byteUnit,
+			unit:                              byteUnitID,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
-			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
+			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc,
+			sliResultAssertionsFunc:           nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc, //createFailedSLIResultWithQueryAssertionsFunc(sliName, nonDbChildCallCountRequestBuilder.build()),
 		},
 		{
 			name:                              "error_ndbccc_millisecond",
-			unit:                              milliSecondUnit,
+			unit:                              milliSecondUnitID,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
-			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
+			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc,
 		},
@@ -271,7 +283,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			name:                              "error_ndbccc_special",
 			unit:                              specialUnit,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
-			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
+			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc,
 		},
@@ -308,61 +320,75 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		// success cases where conversion is done by dynatrace-service
 
 		{
-			name:                              "success_uum_thousand",
-			unit:                              thousandUnit,
-			metricSelector:                    unspecifiedUnitMetricSelector,
-			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
+			name:           "success_uum_thousand",
+			unit:           thousandUnit,
+			metricSelector: unspecifiedUnitMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByThousandConversionSnippet)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerThousand, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerThousand, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build()),
 		},
 		{
-			name:                              "success_uum_million",
-			unit:                              millionUnit,
-			metricSelector:                    unspecifiedUnitMetricSelector,
-			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
+			name:           "success_uum_million",
+			unit:           millionUnit,
+			metricSelector: unspecifiedUnitMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByMillionConversionSnippet)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerMillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerMillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByMillionConversionSnippet).build()),
 		},
 		{
-			name:                              "success_uum_billion",
-			unit:                              billionUnit,
-			metricSelector:                    unspecifiedUnitMetricSelector,
-			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
+			name:           "success_uum_billion",
+			unit:           billionUnit,
+			metricSelector: unspecifiedUnitMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByBillionConversionSnippet)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerBillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerBillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByBillionConversionSnippet).build()),
 		},
 		{
-			name:                              "success_uum_trillion",
-			unit:                              trillionUnit,
-			metricSelector:                    unspecifiedUnitMetricSelector,
-			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
+			name:           "success_uum_trillion",
+			unit:           trillionUnit,
+			metricSelector: unspecifiedUnitMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByTrillionConversionSnippet)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerTrillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).build()),
+			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerTrillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByTrillionConversionSnippet).build()),
 		},
 
 		// error cases where no conversion is possible
 
 		{
-			name:                              "error_uum_byte",
-			unit:                              byteUnit,
-			metricSelector:                    unspecifiedUnitMetricSelector,
-			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
+			name:           "error_uum_byte",
+			unit:           byteUnitID,
+			metricSelector: unspecifiedUnitMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForInitialMetricsDefinition(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
 		},
 		{
-			name:                              "error_uum_millisecond",
-			unit:                              milliSecondUnit,
-			metricSelector:                    unspecifiedUnitMetricSelector,
-			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
+			name:           "error_uum_millisecond",
+			unit:           milliSecondUnitID,
+			metricSelector: unspecifiedUnitMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForInitialMetricsDefinition(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
 		},
 		{
-			name:                              "error_uum_special",
-			unit:                              specialUnit,
-			metricSelector:                    unspecifiedUnitMetricSelector,
-			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
+			name:           "error_uum_special",
+			unit:           specialUnit,
+			metricSelector: unspecifiedUnitMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForInitialMetricsDefinition(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
+			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
 		},

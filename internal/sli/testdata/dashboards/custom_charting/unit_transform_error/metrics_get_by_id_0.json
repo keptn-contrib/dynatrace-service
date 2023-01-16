@@ -1,8 +1,11 @@
 {
-    "metricId": "((builtin:service.nonDbChildCallCount:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names)/1000000",
-    "unit": "Unspecified",
-    "created": null,
-    "lastWritten": null,
+    "metricId": "builtin:service.response.time:splitBy():avg:names",
+    "displayName": "Response time",
+    "description": "",
+    "unit": "MicroSecond",
+    "dduBillable": false,
+    "created": 0,
+    "lastWritten": 1673591989451,
     "entityType": [
         "SERVICE"
     ],
@@ -11,12 +14,8 @@
         "value"
     ],
     "transformations": [
-        "filter",
         "fold",
         "limit",
-        "merge",
-        "names",
-        "parents",
         "timeshift",
         "rate",
         "sort",
@@ -35,6 +34,11 @@
         "type": "value"
     },
     "dimensionDefinitions": [],
+    "tags": [],
+    "metricValueType": {
+        "type": "unknown"
+    },
+    "minimumValue": 0.0,
     "scalar": false,
     "resolutionInfSupported": true,
     "warnings": [

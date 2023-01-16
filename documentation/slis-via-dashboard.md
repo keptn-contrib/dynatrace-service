@@ -301,6 +301,12 @@ By default SLIs are returned in the unit of the underlying metric selector. To c
 
 ![Data Explorer units - builtin:service.response.time in milliseconds](images/data-explorer-units-service-response-time.png "Data Explorer units - builtin:service.response.time in milliseconds")
 
+The dynatrace-service will modify the metric selector to include conversion to the selected unit. In this example the reported `query` would be:
+
+```
+((builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names):toUnit(MicroSecond, MilliSecond)
+```
+
 #### Specifying resolution
 
 The resolution of the data queried from the Metrics v2 API may be set using the Resolution setting of the tile. In all cases, the dynatrace-service will attempt to obtain a single value by setting `resolution=Inf` if possible or applying a `:fold()` transformation. An error is produced if multiple values are still returned, in this instance please modify the query, e.g. using the Code tab of the Data Explorer.

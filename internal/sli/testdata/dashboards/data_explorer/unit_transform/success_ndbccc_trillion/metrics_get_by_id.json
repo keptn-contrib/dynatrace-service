@@ -1,28 +1,22 @@
 {
-    "metricId": "(builtin:service.nonDbChildCallCount:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names",
-    "displayName": "Number of calls to other services",
-    "description": "",
-    "unit": "Count",
-    "dduBillable": false,
-    "created": 0,
+    "metricId": "((builtin:service.nonDbChildCallCount:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names)/1000000000000",
+    "unit": "Unspecified",
+    "created": null,
     "lastWritten": null,
     "entityType": [
         "SERVICE"
     ],
     "aggregationTypes": [
         "auto",
-        "avg",
-        "count",
-        "max",
-        "median",
-        "min",
-        "percentile",
-        "sum",
         "value"
     ],
     "transformations": [
+        "filter",
         "fold",
         "limit",
+        "merge",
+        "names",
+        "parents",
         "timeshift",
         "rate",
         "sort",
@@ -41,10 +35,6 @@
         "type": "value"
     },
     "dimensionDefinitions": [],
-    "tags": [],
-    "metricValueType": {
-        "type": "unknown"
-    },
     "scalar": false,
     "resolutionInfSupported": true,
     "warnings": [

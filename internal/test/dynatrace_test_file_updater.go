@@ -91,7 +91,6 @@ func (h *dynatraceTestFileUpdater) tryUpdateTestFileUsingGet(url string, filenam
 
 func shouldUpdateFileForURL(url string) bool {
 	return strings.HasPrefix(url, "/api/v2/metrics") ||
-		strings.HasPrefix(url, "/api/v2/units") ||
 		strings.HasPrefix(url, "/api/v2/slo") ||
 		strings.HasPrefix(url, "/api/v2/problems") ||
 		strings.HasPrefix(url, "/api/v1/userSessionQueryLanguage/table") ||

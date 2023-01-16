@@ -5,8 +5,8 @@
     "result": [
         {
             "metricId": "builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy()",
-            "dataPointCountRatio": 0.0116928,
-            "dimensionCountRatio": 0.09744,
+            "dataPointCountRatio": 0.0116952,
+            "dimensionCountRatio": 0.09746,
             "data": [
                 {
                     "dimensions": [],

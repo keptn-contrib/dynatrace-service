@@ -572,15 +572,14 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_PickCorrectVisualConfigRul
 	const testDataFolder = "./testdata/dashboards/data_explorer/pick_correct_visual_config_rule/"
 
 	handler := createHandlerWithDashboard(t, testDataFolder)
-	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(
 		handler,
 		testDataFolder,
-		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"))
-
-	handler.AddExactFile(buildMetricsUnitsConvertRequest("MicroSecond", 54896.48858596068, "MilliSecond"), filepath.Join(testDataFolder, "metrics_units_convert1.json"))
+		newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"),
+		createToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
-		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.89648858596068, expectedMetricsRequest),
+		createSuccessfulSLIResultAssertionsFunc("srt_milliseconds", 54.896485186544574, expectedMetricsRequest),
 	}
 
 	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, sliResultsAssertionsFuncs...)

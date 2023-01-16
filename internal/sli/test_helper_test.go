@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"path/filepath"
-	"strconv"
 	"testing"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
@@ -42,6 +41,10 @@ const resolutionInf = "Inf"
 const resolutionIsNullKeyValuePair = "resolution=null&"
 const singleValueVisualConfigType = "SINGLE_VALUE"
 const graphChartVisualConfigType = "GRAPH_CHART"
+
+const microSecondUnitID = "MicroSecond"
+const byteUnitID = "Byte"
+const milliSecondUnitID = "MilliSecond"
 
 const (
 	testErrorSubStringZeroMetricSeriesCollections = "Metrics API v2 returned zero metric series collections"
@@ -119,12 +122,6 @@ func assertMessageContainsSubstrings(t *testing.T, message string, expectedSubst
 // buildMetricsV2DefinitionRequestString builds a Metrics v2 definition request string with the specified metric ID for use in testing.
 func buildMetricsV2DefinitionRequestString(metricID string) string {
 	return fmt.Sprintf("%s/%s", dynatrace.MetricsPath, url.PathEscape(metricID))
-}
-
-// buildMetricsUnitsConvertRequest builds a Metrics Units convert request string with the specified source unit ID, value and target unit ID for use in testing.
-func buildMetricsUnitsConvertRequest(sourceUnitID string, value float64, targetUnitID string) string {
-	vs := strconv.FormatFloat(value, 'f', -1, 64)
-	return fmt.Sprintf("%s/%s/convert?targetUnit=%s&value=%s", dynatrace.MetricsUnitsPath, url.PathEscape(sourceUnitID), targetUnitID, vs)
 }
 
 // buildProblemsV2Request builds a Problems V2 request string with the specified problem selector for use in testing.
@@ -549,6 +546,16 @@ func (b *metricsV2QueryRequestBuilder) copyWithFold() *metricsV2QueryRequestBuil
 	return &metricsV2QueryRequestBuilder{values: values}
 }
 
+// if the conversion snippet is empty the copy's metric selector is left unchanged.
+func (b *metricsV2QueryRequestBuilder) copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet string) *metricsV2QueryRequestBuilder {
+	existingMetricSelector := b.metricSelector()
+	values := cloneURLValues(b.values)
+	if metricSelectorConversionSnippet != "" {
+		values.Set("metricSelector", fmt.Sprintf("(%s)%s", existingMetricSelector, metricSelectorConversionSnippet))
+	}
+	return &metricsV2QueryRequestBuilder{values: values}
+}
+
 func (b *metricsV2QueryRequestBuilder) copyWithResolution(resolution string) *metricsV2QueryRequestBuilder {
 	values := cloneURLValues(b.values)
 	values.Add("resolution", resolution)
@@ -602,6 +609,11 @@ func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler *tes
 	return expectedMetricsRequest2
 }
 
+func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id_0.json"))
+	return addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testDataFolder, requestBuilder.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet))
+}
+
 func addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
 	expectedMetricsRequest1 := requestBuilder.build()
 	expectedMetricsRequest2 := requestBuilder.copyWithFold().build()
@@ -615,4 +627,23 @@ func addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler *test.Combine
 
 func addRequestToHandlerForBaseMetricDefinition(handler *test.CombinedURLHandler, testDataFolder string, baseMetricSelector string) {
 	handler.AddExactFile(buildMetricsV2DefinitionRequestString(baseMetricSelector), filepath.Join(testDataFolder, "metrics_get_by_id_base.json"))
+}
+
+func addRequestsToHandlerForSuccessfulMetricsQueryWithFoldAndUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id_0.json"))
+	return addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler, testDataFolder, requestBuilder.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet))
+}
+
+func addRequestsToHandlerForFailedMetricsQueryWithUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id_0.json"))
+	handler.AddExactError(requestBuilder.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet).build(), 400, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
+	return requestBuilder.build()
+}
+
+func addRequestsToHandlerForInitialMetricsDefinition(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) {
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id_0.json"))
+}
+
+func createToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {
+	return fmt.Sprintf(":toUnit(%s,%s)", sourceUnitID, targetUnitID)
 }

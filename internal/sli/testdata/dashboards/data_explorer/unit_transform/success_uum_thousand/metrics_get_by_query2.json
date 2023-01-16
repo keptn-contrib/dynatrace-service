@@ -4,9 +4,9 @@
     "resolution": "Inf",
     "result": [
         {
-            "metricId": "builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy()",
-            "dataPointCountRatio": 4.872E-4,
-            "dimensionCountRatio": 0.09744,
+            "metricId": "(builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy())/1000",
+            "dataPointCountRatio": 4.873E-4,
+            "dimensionCountRatio": 0.09746,
             "data": [
                 {
                     "dimensions": [],
@@ -15,7 +15,7 @@
                         1664409600000
                     ],
                     "values": [
-                        1
+                        0.001
                     ]
                 }
             ]

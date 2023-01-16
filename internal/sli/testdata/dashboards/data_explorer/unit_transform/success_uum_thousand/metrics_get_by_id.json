@@ -1,5 +1,5 @@
 {
-    "metricId": "builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy()",
+    "metricId": "(builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy())/1000",
     "unit": "Unspecified",
     "created": null,
     "lastWritten": null,
