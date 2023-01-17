@@ -379,7 +379,7 @@ func NewConvertUnitMetricsProcessingDecorator(metricsClient MetricsClientInterfa
 // ProcessRequest queries and processes metrics using the specified request.
 func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResults, error) {
 
-	request, err := p.magicallyFixRequest(ctx, request)
+	request, err := p.getRequestWithConversion(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -387,7 +387,7 @@ func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Conte
 	return p.metricsProcessing.ProcessRequest(ctx, request)
 }
 
-func (p *ConvertUnitMetricsProcessingDecorator) magicallyFixRequest(ctx context.Context, request MetricsClientQueryRequest) (MetricsClientQueryRequest, error) {
+func (p *ConvertUnitMetricsProcessingDecorator) getRequestWithConversion(ctx context.Context, request MetricsClientQueryRequest) (MetricsClientQueryRequest, error) {
 	if !doesTargetUnitRequireConversion(p.targetUnitID) {
 		return request, nil
 	}
