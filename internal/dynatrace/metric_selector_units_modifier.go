@@ -22,7 +22,6 @@ type UnknownUnitlessConversionError struct {
 }
 
 func (e *UnknownUnitlessConversionError) Error() string {
-
 	return fmt.Sprintf("unknown unit '%s'", e.unitID)
 }
 
@@ -46,16 +45,22 @@ var unitlessConversionSnippetsMap map[string]string = map[string]string{
 
 // applyUnit modifies the metric selector to return results in the specified unit.
 func (u *metricSelectorUnitsModifier) applyUnit(ctx context.Context, metricSelector string, targetUnitID string) (string, error) {
-	sourceUnitID, err := u.getSourceUnitID(ctx, metricSelector)
+	metricDefinition, err := u.metricsClient.GetMetricDefinitionByID(ctx, metricSelector)
 	if err != nil {
 		return "", err
 	}
 
+	sourceUnitID := metricDefinition.Unit
 	if sourceUnitID == targetUnitID {
 		return metricSelector, nil
 	}
 
-	snippet, err := u.getConversionSnippet(metricSelector, sourceUnitID, targetUnitID)
+	snippet, err := u.getConversionSnippet(
+		metricSelector,
+		doesMetricDefinitionSupportToUnitTransformation(metricDefinition),
+		sourceUnitID,
+		targetUnitID,
+	)
 	if err != nil {
 		return "", err
 	}
@@ -63,21 +68,27 @@ func (u *metricSelectorUnitsModifier) applyUnit(ctx context.Context, metricSelec
 	return "(" + metricSelector + ")" + snippet, nil
 }
 
-func (u *metricSelectorUnitsModifier) getSourceUnitID(ctx context.Context, metricSelector string) (string, error) {
-	metricDefinition, err := u.metricsClient.GetMetricDefinitionByID(ctx, metricSelector)
-	if err != nil {
-		return "", err
-	}
+func doesMetricDefinitionSupportToUnitTransformation(metricDefinition *MetricDefinition) bool {
+	const toUnitTransformation = "toUnit"
 
-	return metricDefinition.Unit, nil
+	for _, t := range metricDefinition.Transformations {
+		if t == toUnitTransformation {
+			return true
+		}
+	}
+	return false
 }
 
-func (u *metricSelectorUnitsModifier) getConversionSnippet(metricSelector string, sourceUnitID string, targetUnitID string) (string, error) {
+func (u *metricSelectorUnitsModifier) getConversionSnippet(metricSelector string, supportsToUnitTransformation bool, sourceUnitID string, targetUnitID string) (string, error) {
 	if shouldDoUnitlessConversion(sourceUnitID) {
 		return getUnitlessConversionSnippet(targetUnitID)
 	}
 
-	return getToUnitConversionSnippet(sourceUnitID, targetUnitID), nil
+	if supportsToUnitTransformation {
+		return getToUnitConversionSnippet(sourceUnitID, targetUnitID), nil
+	} else {
+		return getAutoToUnitConversionSnippet(sourceUnitID, targetUnitID), nil
+	}
 }
 
 func shouldDoUnitlessConversion(sourceUnitID string) bool {
@@ -97,6 +108,10 @@ func getUnitlessConversionSnippet(targetUnitID string) (string, error) {
 	}
 
 	return snippet, nil
+}
+
+func getAutoToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {
+	return fmt.Sprintf(":auto%s", getToUnitConversionSnippet(sourceUnitID, targetUnitID))
 }
 
 func getToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {

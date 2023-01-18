@@ -1,11 +1,11 @@
 {
-    "metricId": "(builtin:service.response.time:splitBy():avg:names):toUnit(MicroSecond,Byte)",
+    "metricId": "builtin:service.response.time:splitBy():avg:names",
     "displayName": "Response time",
     "description": "",
-    "unit": "Unspecified",
+    "unit": "MicroSecond",
     "dduBillable": false,
     "created": 0,
-    "lastWritten": null,
+    "lastWritten": 1674054365044,
     "entityType": [
         "SERVICE"
     ],

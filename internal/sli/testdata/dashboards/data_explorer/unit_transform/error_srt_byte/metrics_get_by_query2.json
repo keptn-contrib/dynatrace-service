@@ -2,12 +2,9 @@
     "totalCount": 1,
     "nextPageKey": null,
     "resolution": "Inf",
-    "warnings": [
-        "SourceUnit 'MicroSecond' cannot be converted to targetUnit 'Byte'."
-    ],
     "result": [
         {
-            "metricId": "((builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names):toUnit(MicroSecond,Byte)",
+            "metricId": "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names",
             "dataPointCountRatio": 2.4365E-4,
             "dimensionCountRatio": 0.04873,
             "data": [
@@ -21,9 +18,6 @@
                         54896.485186544574
                     ]
                 }
-            ],
-            "warnings": [
-                "SourceUnit 'MicroSecond' cannot be converted to targetUnit 'Byte'."
             ]
         }
     ]

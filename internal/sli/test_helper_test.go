@@ -586,9 +586,19 @@ func cloneURLValues(values url.Values) url.Values {
 	return clone
 }
 
+const (
+	dashboardFilename             = "dashboard.json"
+	baseMetricsDefinitionFilename = "metrics_get_by_id_base.json"
+	metricsDefinitionFilename1    = "metrics_get_by_id.json"
+	metricsDefinitionFilename2    = "metrics_get_by_id2.json"
+	metricsQueryFilename1         = "metrics_get_by_query1.json"
+	metricsQueryFilename2         = "metrics_get_by_query2.json"
+	metricsQueryFilename3         = "metrics_get_by_query3.json"
+)
+
 func createHandlerWithDashboard(t *testing.T, testDataFolder string) *test.CombinedURLHandler {
 	handler := test.NewCombinedURLHandler(t)
-	handler.AddExactFile(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, "dashboard.json"))
+	handler.AddExactFile(dynatrace.DashboardsPath+"/"+testDashboardID, filepath.Join(testDataFolder, dashboardFilename))
 	return handler
 }
 
@@ -602,46 +612,49 @@ func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler *tes
 	expectedMetricsRequest1 := requestBuilder.build()
 	expectedMetricsRequest2 := requestBuilder.copyWithResolution(resolutionInf).build()
 
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
-	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
-	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, "metrics_get_by_query2.json"))
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename1))
+	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, metricsQueryFilename1))
+	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, metricsQueryFilename2))
 
 	return expectedMetricsRequest2
 }
 
 func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id_0.json"))
-	return addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testDataFolder, requestBuilder.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet))
+	addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testDataFolder, requestBuilder)
+
+	// note: no additional metrics definition needs to be added as the metric selector is the same
+	finalExpectedMetricsRequest := requestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet).build()
+	handler.AddExactFile(finalExpectedMetricsRequest, filepath.Join(testDataFolder, metricsQueryFilename3))
+
+	return finalExpectedMetricsRequest
 }
 
 func addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
 	expectedMetricsRequest1 := requestBuilder.build()
 	expectedMetricsRequest2 := requestBuilder.copyWithFold().build()
 
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id.json"))
-	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
-	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, "metrics_get_by_query2.json"))
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename1))
+	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, metricsQueryFilename1))
+	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, metricsQueryFilename2))
 
 	return expectedMetricsRequest2
 }
 
 func addRequestToHandlerForBaseMetricDefinition(handler *test.CombinedURLHandler, testDataFolder string, baseMetricSelector string) {
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(baseMetricSelector), filepath.Join(testDataFolder, "metrics_get_by_id_base.json"))
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(baseMetricSelector), filepath.Join(testDataFolder, baseMetricsDefinitionFilename))
 }
 
 func addRequestsToHandlerForSuccessfulMetricsQueryWithFoldAndUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id_0.json"))
-	return addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler, testDataFolder, requestBuilder.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet))
-}
+	addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler, testDataFolder, requestBuilder)
+	requestBuilderWithFold := requestBuilder.copyWithFold()
 
-func addRequestsToHandlerForFailedMetricsQueryWithUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id_0.json"))
-	handler.AddExactError(requestBuilder.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet).build(), 400, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
-	return requestBuilder.build()
-}
+	// add additional metrics definition including fold
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilderWithFold.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename2))
 
-func addRequestsToHandlerForInitialMetricsDefinition(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) {
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, "metrics_get_by_id_0.json"))
+	finalExpectedMetricsRequest := requestBuilderWithFold.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet).build()
+	handler.AddExactFile(finalExpectedMetricsRequest, filepath.Join(testDataFolder, metricsQueryFilename3))
+
+	return finalExpectedMetricsRequest
 }
 
 func createToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {

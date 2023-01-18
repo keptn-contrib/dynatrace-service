@@ -378,35 +378,33 @@ func NewConvertUnitMetricsProcessingDecorator(metricsClient MetricsClientInterfa
 
 // ProcessRequest queries and processes metrics using the specified request.
 func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResults, error) {
-
-	request, err := p.getRequestWithConversion(ctx, request)
+	result, err := p.metricsProcessing.ProcessRequest(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 
-	return p.metricsProcessing.ProcessRequest(ctx, request)
-}
-
-func (p *ConvertUnitMetricsProcessingDecorator) getRequestWithConversion(ctx context.Context, request MetricsClientQueryRequest) (MetricsClientQueryRequest, error) {
 	if !doesTargetUnitRequireConversion(p.targetUnitID) {
-		return request, nil
+		return result, nil
 	}
 
-	fixedQuery, err := p.modifyQueryForTargetUnit(ctx, request.query)
-	if err != nil {
-		return request, err
-	}
-
-	return NewMetricsClientQueryRequest(*fixedQuery, request.timeframe), nil
-}
-
-func (p *ConvertUnitMetricsProcessingDecorator) modifyQueryForTargetUnit(ctx context.Context, query metrics.Query) (*metrics.Query, error) {
-	modifiedMetricSelector, err := p.metricSelectorUnitsModifier.applyUnit(ctx, query.GetMetricSelector(), p.targetUnitID)
+	query := result.request.query
+	resultMetricSelector := result.request.query.GetMetricSelector()
+	modifiedMetricSelector, err := p.metricSelectorUnitsModifier.applyUnit(ctx, resultMetricSelector, p.targetUnitID)
 	if err != nil {
 		return nil, err
 	}
 
-	return metrics.NewQuery(modifiedMetricSelector, query.GetEntitySelector(), query.GetResolution(), query.GetMZSelector())
+	if modifiedMetricSelector == resultMetricSelector {
+		return result, nil
+	}
+
+	modifiedQuery, err := metrics.NewQuery(modifiedMetricSelector, query.GetEntitySelector(), query.GetResolution(), query.GetMZSelector())
+	if err != nil {
+		return nil, err
+	}
+	modifiedRequest := NewMetricsClientQueryRequest(*modifiedQuery, result.request.timeframe)
+
+	return p.metricsProcessing.ProcessRequest(ctx, modifiedRequest)
 }
 
 const (

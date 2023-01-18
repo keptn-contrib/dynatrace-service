@@ -62,7 +62,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 	}
 
 	nonDbChildCallCountUnknownUnitHandlerSetupFunc := func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-		addRequestsToHandlerForInitialMetricsDefinition(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder)
+		addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder)
 	}
 
 	nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).build())
@@ -173,7 +173,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			unit:           thousandUnit,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForFailedMetricsQueryWithUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, thousandUnit))
+				addRequestsToHandlerForFailedMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, thousandUnit))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc,
@@ -183,7 +183,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			unit:           specialUnit,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForFailedMetricsQueryWithUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, specialUnit))
+				addRequestsToHandlerForFailedMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, specialUnit))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc,
@@ -367,7 +367,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			unit:           byteUnitID,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForInitialMetricsDefinition(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
@@ -377,7 +377,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			unit:           milliSecondUnitID,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForInitialMetricsDefinition(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
@@ -387,7 +387,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			unit:           specialUnit,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
-				addRequestsToHandlerForInitialMetricsDefinition(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
+				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
 			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
@@ -413,4 +413,14 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 
 		})
 	}
+}
+
+func addRequestsToHandlerForFailedMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
+	addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testDataFolder, requestBuilder)
+
+	// note: no additional metrics definition needs to be added as the metric selector is the same
+	finalExpectedMetricsRequest := requestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet).build()
+	handler.AddExactError(finalExpectedMetricsRequest, 400, filepath.Join(testDataFolder, metricsQueryFilename3))
+
+	return finalExpectedMetricsRequest
 }
