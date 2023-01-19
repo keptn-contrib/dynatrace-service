@@ -86,10 +86,13 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		divideByTrillionConversionSnippet = "/1000000000000"
 	)
 
+	const resolutionNull = "null"
+
 	tests := []struct {
 		name                              string
 		unit                              string
 		metricSelector                    string
+		resolution                        string
 		handlerAdditionalSetupFunc        func(handler *test.CombinedURLHandler, testVariantDataFolder string)
 		getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData)
 		sliResultAssertionsFunc           func(t *testing.T, actual sliResult)
@@ -101,6 +104,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_srt_empty",
 			unit:                              "",
+			resolution:                        resolutionNull,
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -109,6 +113,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_srt_auto",
 			unit:                              autoUnit,
+			resolution:                        resolutionNull,
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -117,6 +122,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_srt_none",
 			unit:                              noneUnit,
+			resolution:                        resolutionNull,
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -125,6 +131,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_srt_microsecond",
 			unit:                              microSecondUnitID,
+			resolution:                        resolutionNull,
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -136,6 +143,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_srt_millisecond",
 			unit:           milliSecondUnitID,
+			resolution:     resolutionNull,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder,
@@ -147,6 +155,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_srt_day",
 			unit:           dayUnit,
+			resolution:     resolutionNull,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, dayUnit))
@@ -161,6 +170,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "error_srt_byte",
 			unit:           byteUnitID,
+			resolution:     resolutionNull,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, byteUnitID))
@@ -171,6 +181,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "error_srt_thousand",
 			unit:           thousandUnit,
+			resolution:     resolutionNull,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForFailedMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, thousandUnit))
@@ -181,6 +192,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "error_srt_special",
 			unit:           specialUnit,
+			resolution:     resolutionNull,
 			metricSelector: serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForFailedMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, specialUnit))
@@ -196,6 +208,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_ndbccc_empty",
 			unit:                              "",
+			resolution:                        resolutionNull,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -204,6 +217,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_ndbccc_auto",
 			unit:                              autoUnit,
+			resolution:                        resolutionNull,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -212,6 +226,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_ndbccc_none",
 			unit:                              noneUnit,
+			resolution:                        resolutionNull,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -223,6 +238,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_ndbccc_thousand",
 			unit:           thousandUnit,
+			resolution:     resolutionNull,
 			metricSelector: nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByThousandConversionSnippet)
@@ -233,6 +249,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_ndbccc_million",
 			unit:           millionUnit,
+			resolution:     resolutionNull,
 			metricSelector: nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByMillionConversionSnippet)
@@ -243,6 +260,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_ndbccc_billion",
 			unit:           billionUnit,
+			resolution:     resolutionNull,
 			metricSelector: nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByBillionConversionSnippet)
@@ -253,6 +271,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_ndbccc_trillion",
 			unit:           trillionUnit,
+			resolution:     resolutionNull,
 			metricSelector: nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByTrillionConversionSnippet)
@@ -266,6 +285,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "error_ndbccc_byte",
 			unit:                              byteUnitID,
+			resolution:                        resolutionNull,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
@@ -274,6 +294,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "error_ndbccc_millisecond",
 			unit:                              milliSecondUnitID,
+			resolution:                        resolutionNull,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
@@ -282,6 +303,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "error_ndbccc_special",
 			unit:                              specialUnit,
+			resolution:                        resolutionNull,
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
@@ -295,6 +317,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_uum_empty",
 			unit:                              "",
+			resolution:                        resolutionNull,
 			metricSelector:                    unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -303,6 +326,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_uum_auto",
 			unit:                              autoUnit,
+			resolution:                        resolutionNull,
 			metricSelector:                    unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -311,6 +335,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:                              "success_uum_none",
 			unit:                              noneUnit,
+			resolution:                        resolutionNull,
 			metricSelector:                    unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
@@ -322,6 +347,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_uum_thousand",
 			unit:           thousandUnit,
+			resolution:     resolutionNull,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByThousandConversionSnippet)
@@ -332,6 +358,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_uum_million",
 			unit:           millionUnit,
+			resolution:     resolutionNull,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByMillionConversionSnippet)
@@ -342,6 +369,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_uum_billion",
 			unit:           billionUnit,
+			resolution:     resolutionNull,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByBillionConversionSnippet)
@@ -352,6 +380,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "success_uum_trillion",
 			unit:           trillionUnit,
+			resolution:     resolutionNull,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByTrillionConversionSnippet)
@@ -365,6 +394,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "error_uum_byte",
 			unit:           byteUnitID,
+			resolution:     resolutionNull,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
@@ -375,6 +405,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "error_uum_millisecond",
 			unit:           milliSecondUnitID,
+			resolution:     resolutionNull,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
@@ -385,6 +416,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		{
 			name:           "error_uum_special",
 			unit:           specialUnit,
+			resolution:     resolutionNull,
 			metricSelector: unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
@@ -402,9 +434,11 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				struct {
 					Unit           string
 					MetricSelector string
+					Resolution     string
 				}{
 					Unit:           tt.unit,
 					MetricSelector: tt.metricSelector,
+					Resolution:     tt.resolution,
 				})
 
 			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
