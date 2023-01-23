@@ -387,24 +387,25 @@ func (p *ConvertUnitMetricsProcessingDecorator) ProcessRequest(ctx context.Conte
 		return result, nil
 	}
 
-	query := result.request.query
-	resultMetricSelector := result.request.query.GetMetricSelector()
-	modifiedMetricSelector, err := p.metricSelectorUnitsModifier.applyUnit(ctx, resultMetricSelector, p.targetUnitID)
+	modifiedMetricSelector, err := p.metricSelectorUnitsModifier.applyUnit(ctx, result.request.query.GetMetricSelector(), p.targetUnitID)
 	if err != nil {
 		return nil, err
 	}
 
-	if modifiedMetricSelector == resultMetricSelector {
+	if modifiedMetricSelector == result.request.query.GetMetricSelector() {
 		return result, nil
 	}
 
-	modifiedQuery, err := metrics.NewQuery(modifiedMetricSelector, query.GetEntitySelector(), query.GetResolution(), query.GetMZSelector())
+	return p.processRequestWithAlternateMetricSelector(ctx, result.request, modifiedMetricSelector)
+}
+
+func (p *ConvertUnitMetricsProcessingDecorator) processRequestWithAlternateMetricSelector(ctx context.Context, request MetricsClientQueryRequest, modifiedMetricSelector string) (*MetricsProcessingResults, error) {
+	modifiedQuery, err := metrics.NewQuery(modifiedMetricSelector, request.query.GetEntitySelector(), request.query.GetResolution(), request.query.GetMZSelector())
 	if err != nil {
 		return nil, err
 	}
-	modifiedRequest := NewMetricsClientQueryRequest(*modifiedQuery, result.request.timeframe)
 
-	return p.metricsProcessing.ProcessRequest(ctx, modifiedRequest)
+	return p.metricsProcessing.ProcessRequest(ctx, NewMetricsClientQueryRequest(*modifiedQuery, request.timeframe))
 }
 
 const (
