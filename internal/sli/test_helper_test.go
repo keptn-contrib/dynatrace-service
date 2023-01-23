@@ -660,3 +660,7 @@ func addRequestsToHandlerForSuccessfulMetricsQueryWithFoldAndUnitsConversionSnip
 func createToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {
 	return fmt.Sprintf(":toUnit(%s,%s)", sourceUnitID, targetUnitID)
 }
+
+func createAutoToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {
+	return fmt.Sprintf(":auto%s", createToUnitConversionSnippet(sourceUnitID, targetUnitID))
+}

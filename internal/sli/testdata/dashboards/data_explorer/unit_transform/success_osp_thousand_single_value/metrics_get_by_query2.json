@@ -1,0 +1,24 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "1h",
+    "result": [
+        {
+            "metricId": "((builtin:security.securityProblem.open.global:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names):fold",
+            "dataPointCountRatio": 6.0E-6,
+            "dimensionCountRatio": 5.0E-5,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        76.57418459403192
+                    ]
+                }
+            ]
+        }
+    ]
+}

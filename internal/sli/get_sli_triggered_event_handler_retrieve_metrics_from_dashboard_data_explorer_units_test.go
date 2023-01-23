@@ -42,6 +42,11 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		unknownUnitSubstring   = "unknown unit"
 	)
 
+	const (
+		resolutionNull      = "null"
+		resolution10Minutes = "10m"
+	)
+
 	serviceResponseTimeMetricSelector := "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names"
 	serviceResponseTimeRequestBuilder := newMetricsV2QueryRequestBuilder(serviceResponseTimeMetricSelector)
 	serviceResponseTimeWithNoConversionHandlerSetupFunc := func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
@@ -50,8 +55,8 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 
 	const unconvertedServiceResponseTimeValue = 54896.485186544574
 
-	serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).build())
-	serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc := createFailedSLIResultWithQueryAssertionsFunc(sliName, serviceResponseTimeRequestBuilder.build(), noUnitFoundSubstring)
+	serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc := toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).build()))
+	serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc := toSlice(createFailedSLIResultWithQueryAssertionsFunc(sliName, serviceResponseTimeRequestBuilder.build(), noUnitFoundSubstring))
 
 	const unconvertedNonDbChildCallCountValue = 341746808.0
 
@@ -65,8 +70,8 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder)
 	}
 
-	nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).build())
-	nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc := createFailedSLIResultWithQueryAssertionsFunc(sliName, nonDbChildCallCountRequestBuilder.build(), unknownUnitSubstring)
+	nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc := toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).build()))
+	nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc := toSlice(createFailedSLIResultWithQueryAssertionsFunc(sliName, nonDbChildCallCountRequestBuilder.build(), unknownUnitSubstring))
 
 	const unconvertedUnspecifiedUnitValue = 1.0
 
@@ -76,8 +81,17 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
 	}
 
-	unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc := createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).build())
-	unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc := createFailedSLIResultWithQueryAssertionsFunc(sliName, unspecifiedUnitRequestBuilder.build(), unknownUnitSubstring)
+	unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc := toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).build()))
+	unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc := toSlice(createFailedSLIResultWithQueryAssertionsFunc(sliName, unspecifiedUnitRequestBuilder.build(), unknownUnitSubstring))
+
+	const serviceResponseTimeNoAggregationMetricSelector = "(builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names"
+	serviceResponseTimeNoAggregationResolution10MinutesRequestBuilder := newMetricsV2QueryRequestBuilder(serviceResponseTimeNoAggregationMetricSelector).copyWithResolution(resolution10Minutes)
+
+	const openSecurityProblemsMetricSelector = "(builtin:security.securityProblem.open.global:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names"
+	openSecurityProblemsRequestBuilder := newMetricsV2QueryRequestBuilder(openSecurityProblemsMetricSelector)
+
+	const openSecurityProblemsByTypeMetricSelector = "(builtin:security.securityProblem.open.global:splitBy(Type):sort(value(auto,descending)):limit(20)):limit(100):names"
+	openSecurityProblemsByTypeRequestBuilder := newMetricsV2QueryRequestBuilder(openSecurityProblemsByTypeMetricSelector)
 
 	const (
 		divideByThousandConversionSnippet = "/1000"
@@ -86,8 +100,6 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		divideByTrillionConversionSnippet = "/1000000000000"
 	)
 
-	const resolutionNull = "null"
-
 	tests := []struct {
 		name                              string
 		unit                              string
@@ -95,7 +107,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 		resolution                        string
 		handlerAdditionalSetupFunc        func(handler *test.CombinedURLHandler, testVariantDataFolder string)
 		getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData)
-		sliResultAssertionsFunc           func(t *testing.T, actual sliResult)
+		sliResultAssertionsFuncs          []func(t *testing.T, actual sliResult)
 	}{
 		// service response time (sourceUnitID = MicroSecond)
 
@@ -108,7 +120,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc,
 		},
 		{
 			name:                              "success_srt_auto",
@@ -117,7 +129,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc,
 		},
 		{
 			name:                              "success_srt_none",
@@ -126,7 +138,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc,
 		},
 		{
 			name:                              "success_srt_microsecond",
@@ -135,7 +147,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    serviceResponseTimeMetricSelector,
 			handlerAdditionalSetupFunc:        serviceResponseTimeWithNoConversionHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          serviceResponseTimeNoConversionRequiredSLIResultAssertionsFunc,
 		},
 
 		// success cases that require conversion
@@ -150,7 +162,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 					createToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue/microSecondsPerMilliSecond, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID)).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue/microSecondsPerMilliSecond, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID)).build())),
 		},
 		{
 			name:           "success_srt_day",
@@ -162,7 +174,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, 6.353759859553769e-7, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, dayUnit)).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, 6.353759859553769e-7, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, dayUnit)).build())),
 		},
 
 		// error cases
@@ -176,7 +188,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, byteUnitID))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, byteUnitID)).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedServiceResponseTimeValue, serviceResponseTimeRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(createToUnitConversionSnippet(microSecondUnitID, byteUnitID)).build())),
 		},
 		{
 			name:           "error_srt_thousand",
@@ -187,7 +199,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForFailedMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, thousandUnit))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc,
 		},
 		{
 			name:           "error_srt_special",
@@ -198,7 +210,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForFailedMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeRequestBuilder, createToUnitConversionSnippet(microSecondUnitID, specialUnit))
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          serviceResponseTimeFailedNoUnitSLIResultAssertionsFunc,
 		},
 
 		// builtin:service.nonDbChildCallCount (sourceUnitID = Count)
@@ -212,7 +224,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc,
 		},
 		{
 			name:                              "success_ndbccc_auto",
@@ -221,7 +233,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc,
 		},
 		{
 			name:                              "success_ndbccc_none",
@@ -230,7 +242,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          nonDbChildCallCountNoConversionRequiredSLIResultAssertionsFunc,
 		},
 
 		// success cases where conversion is done by dynatrace-service
@@ -244,7 +256,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByThousandConversionSnippet)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerThousand, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerThousand, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build())),
 		},
 		{
 			name:           "success_ndbccc_million",
@@ -255,7 +267,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByMillionConversionSnippet)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerMillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByMillionConversionSnippet).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerMillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByMillionConversionSnippet).build())),
 		},
 		{
 			name:           "success_ndbccc_billion",
@@ -266,7 +278,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByBillionConversionSnippet)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerBillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByBillionConversionSnippet).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerBillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByBillionConversionSnippet).build())),
 		},
 		{
 			name:           "success_ndbccc_trillion",
@@ -277,7 +289,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, nonDbChildCallCountRequestBuilder, divideByTrillionConversionSnippet)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerTrillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByTrillionConversionSnippet).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedNonDbChildCallCountValue/countPerTrillion, nonDbChildCallCountRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByTrillionConversionSnippet).build())),
 		},
 
 		// error cases where no conversion is possible
@@ -289,7 +301,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc, //createFailedSLIResultWithQueryAssertionsFunc(sliName, nonDbChildCallCountRequestBuilder.build()),
+			sliResultAssertionsFuncs:          nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc, //createFailedSLIResultWithQueryAssertionsFunc(sliName, nonDbChildCallCountRequestBuilder.build()),
 		},
 		{
 			name:                              "error_ndbccc_millisecond",
@@ -298,7 +310,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc,
 		},
 		{
 			name:                              "error_ndbccc_special",
@@ -307,7 +319,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    nonDbChildCallCountMetricSelector,
 			handlerAdditionalSetupFunc:        nonDbChildCallCountUnknownUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          nonDbChildCallCountFailedUnknownUnitSLIResultAssertionsFunc,
 		},
 
 		// builtin:service.response.time:splitBy() / builtin:service.response.time:splitBy() (sourceUnitID = Unspecified)
@@ -321,7 +333,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc,
 		},
 		{
 			name:                              "success_uum_auto",
@@ -330,7 +342,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc,
 		},
 		{
 			name:                              "success_uum_none",
@@ -339,7 +351,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 			metricSelector:                    unspecifiedUnitMetricSelector,
 			handlerAdditionalSetupFunc:        unspecifiedUnitHandlerSetupFunc,
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          unspecifiedUnitNoConversionRequiredSLIResultAssertionsFunc,
 		},
 
 		// success cases where conversion is done by dynatrace-service
@@ -353,7 +365,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByThousandConversionSnippet)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerThousand, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerThousand, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build())),
 		},
 		{
 			name:           "success_uum_million",
@@ -364,7 +376,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByMillionConversionSnippet)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerMillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByMillionConversionSnippet).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerMillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByMillionConversionSnippet).build())),
 		},
 		{
 			name:           "success_uum_billion",
@@ -375,7 +387,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByBillionConversionSnippet)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerBillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByBillionConversionSnippet).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerBillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByBillionConversionSnippet).build())),
 		},
 		{
 			name:           "success_uum_trillion",
@@ -386,7 +398,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder, divideByTrillionConversionSnippet)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
-			sliResultAssertionsFunc:           createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerTrillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByTrillionConversionSnippet).build()),
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, unconvertedUnspecifiedUnitValue/countPerTrillion, unspecifiedUnitRequestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(divideByTrillionConversionSnippet).build())),
 		},
 
 		// error cases where no conversion is possible
@@ -400,7 +412,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
 		},
 		{
 			name:           "error_uum_millisecond",
@@ -411,7 +423,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
 		},
 		{
 			name:           "error_uum_special",
@@ -422,7 +434,51 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 				addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, unspecifiedUnitRequestBuilder)
 			},
 			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventFailureAssertionsFunc,
-			sliResultAssertionsFunc:           unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
+			sliResultAssertionsFuncs:          unspecifiedUnitFailedUnknownUnitSLIResultAssertionsFunc,
+		},
+
+		// additional test cases
+
+		// fold with toUnit and no aggregation specified
+		{
+			name:           "success_srt_resolution_10m_millisecond",
+			unit:           milliSecondUnitID,
+			resolution:     resolution10Minutes,
+			metricSelector: serviceResponseTimeNoAggregationMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithFoldAndUnitsConversionSnippet(handler, testVariantDataFolder, serviceResponseTimeNoAggregationResolution10MinutesRequestBuilder,
+					createAutoToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID))
+			},
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, 54.89648587772039, serviceResponseTimeNoAggregationResolution10MinutesRequestBuilder.copyWithFold().copyWithMetricSelectorConversionSnippet(createAutoToUnitConversionSnippet(microSecondUnitID, milliSecondUnitID)).build())),
+		},
+
+		// fold with scaling producing a single value
+		{
+			name:           "success_osp_thousand_single_value",
+			unit:           thousandUnit,
+			resolution:     resolutionNull,
+			metricSelector: openSecurityProblemsMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithFoldAndUnitsConversionSnippet(handler, testVariantDataFolder, openSecurityProblemsRequestBuilder, divideByThousandConversionSnippet)
+			},
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultAssertionsFuncs:          toSlice(createSuccessfulSLIResultAssertionsFunc(sliName, 0.07657418459403192, openSecurityProblemsRequestBuilder.copyWithFold().copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build())),
+		},
+
+		// fold with scaling producing multiple values
+		{
+			name:           "success_osp_thousand_multiple_values",
+			unit:           thousandUnit,
+			resolution:     resolutionNull,
+			metricSelector: openSecurityProblemsByTypeMetricSelector,
+			handlerAdditionalSetupFunc: func(handler *test.CombinedURLHandler, testVariantDataFolder string) {
+				addRequestsToHandlerForSuccessfulMetricsQueryWithFoldAndUnitsConversionSnippet(handler, testVariantDataFolder, openSecurityProblemsByTypeRequestBuilder, divideByThousandConversionSnippet)
+			},
+			getSLIFinishedEventAssertionsFunc: getSLIFinishedEventSuccessAssertionsFunc,
+			sliResultAssertionsFuncs: toSlice(
+				createSuccessfulSLIResultAssertionsFunc(sliName+"_third-party_vulnerability", 0.0917177307425399, openSecurityProblemsByTypeRequestBuilder.copyWithFold().copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build()),
+				createSuccessfulSLIResultAssertionsFunc(sliName+"_code-level_vulnerability", 0.016, openSecurityProblemsByTypeRequestBuilder.copyWithFold().copyWithMetricSelectorConversionSnippet(divideByThousandConversionSnippet).build())),
 		},
 	}
 
@@ -443,7 +499,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_UnitTransform(t *testing.T
 
 			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
 			tt.handlerAdditionalSetupFunc(handler, testVariantDataFolder)
-			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, tt.getSLIFinishedEventAssertionsFunc, tt.sliResultAssertionsFunc)
+			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, tt.getSLIFinishedEventAssertionsFunc, tt.sliResultAssertionsFuncs...)
 
 		})
 	}
@@ -457,4 +513,8 @@ func addRequestsToHandlerForFailedMetricsQueryWithResolutionInfAndUnitsConversio
 	handler.AddExactError(finalExpectedMetricsRequest, 400, filepath.Join(testDataFolder, metricsQueryFilename3))
 
 	return finalExpectedMetricsRequest
+}
+
+func toSlice[V any](v ...V) []V {
+	return v
 }
