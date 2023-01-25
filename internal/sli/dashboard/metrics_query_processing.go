@@ -19,13 +19,10 @@ func NewMetricsQueryProcessing(client dynatrace.ClientInterface, targetUnitID st
 	metricsClient := dynatrace.NewMetricsClient(client)
 
 	return &MetricsQueryProcessing{
-		metricsProcessing: dynatrace.NewConvertUnitMetricsProcessingDecorator(
+		metricsProcessing: dynatrace.NewConvertUnitsAndRetryForSingleValueMetricsProcessingDecorator(
 			metricsClient,
 			targetUnitID,
-			dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(
-				metricsClient,
-				dynatrace.NewMetricsProcessing(metricsClient),
-			),
+			dynatrace.NewMetricsProcessingThatAllowsMultipleResults(metricsClient),
 		),
 	}
 }
@@ -34,13 +31,10 @@ func NewMetricsQueryProcessingThatAllowsOnlyOneResult(client dynatrace.ClientInt
 	metricsClient := dynatrace.NewMetricsClient(client)
 
 	return &MetricsQueryProcessing{
-		metricsProcessing: dynatrace.NewConvertUnitMetricsProcessingDecorator(
+		metricsProcessing: dynatrace.NewConvertUnitsAndRetryForSingleValueMetricsProcessingDecorator(
 			metricsClient,
 			targetUnitID,
-			dynatrace.NewRetryForSingleValueMetricsProcessingDecorator(
-				metricsClient,
-				dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient),
-			),
+			dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient),
 		),
 	}
 }

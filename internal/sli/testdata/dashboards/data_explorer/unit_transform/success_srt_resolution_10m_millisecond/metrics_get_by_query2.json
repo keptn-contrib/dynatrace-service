@@ -4,7 +4,7 @@
     "resolution": "1h",
     "result": [
         {
-            "metricId": "((builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names):fold",
+            "metricId": "(((builtin:service.response.time:splitBy():sort(value(auto,descending)):limit(20)):limit(100):names):fold):auto:toUnit(MicroSecond,MilliSecond)",
             "dataPointCountRatio": 0.0058476,
             "dimensionCountRatio": 0.04873,
             "data": [
@@ -15,7 +15,7 @@
                         1664409600000
                     ],
                     "values": [
-                        54896.485877720384
+                        54.89648587772039
                     ]
                 }
             ]

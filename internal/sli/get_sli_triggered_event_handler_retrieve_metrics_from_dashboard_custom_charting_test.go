@@ -461,7 +461,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ManagementZonesWork(t *t
 		t.Run(tt.name, func(t *testing.T) {
 
 			handler := createHandlerWithTemplatedDashboard(t,
-				filepath.Join(testDataFolder, "dashboard.template.json"),
+				filepath.Join(testDataFolder, dashboardTemplateFilename),
 				struct {
 					DashboardFilterString string
 					TileFilterString      string
@@ -472,7 +472,7 @@ func TestRetrieveMetricsFromDashboardCustomChartingTile_ManagementZonesWork(t *t
 			)
 
 			testVariantDataFolder := filepath.Join(testDataFolder, tt.name)
-			handler.AddExactFile(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testVariantDataFolder, "metrics_get_by_id0.json"))
+			handler.AddExactFile(buildMetricsV2DefinitionRequestString("builtin:service.response.time"), filepath.Join(testVariantDataFolder, baseMetricsDefinitionFilename))
 			metricsQueryRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testVariantDataFolder, tt.requestBuilder)
 			runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc("service_response_time", tt.expectedSLIValue, metricsQueryRequest))
 		})

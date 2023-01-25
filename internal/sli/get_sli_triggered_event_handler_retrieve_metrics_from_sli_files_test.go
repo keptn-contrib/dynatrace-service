@@ -24,7 +24,7 @@ const testCouldNotRetrieveSLODefinitionsSubstring = "could not retrieve SLO defi
 //   - this would have lead to a fallback to default SLIs, but should return an error now.
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatched(t *testing.T) {
 	// no need to have something here, because we should not send an API request
-	handler := test.NewFileBasedURLHandler(t)
+	handler := test.NewEmptyURLHandler(t)
 
 	// error here in the misspelled indicator:
 	configClient := newConfigClientMockWithSLIsAndSLOs(t,
@@ -44,7 +44,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButIndicatorCannotBeMatch
 // * the defined SLI is valid YAML, but Dynatrace cannot process the query correctly and returns a 400 error
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *testing.T) {
 	// error here: metric(s)Selector=
-	handler := test.NewFileBasedURLHandler(t)
+	handler := test.NewEmptyURLHandler(t)
 
 	// error here as well: metric(s)Selector=
 	configClient := newConfigClientMockWithSLIsAndSLOs(t,
@@ -64,7 +64,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsNotValid(t *tes
 // * the defined SLI has errors, so parsing the YAML file would not be possible
 func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreInvalidYAML(t *testing.T) {
 	// make sure we would not be able to query any metric due to a parsing error
-	handler := test.NewFileBasedURLHandler(t)
+	handler := test.NewEmptyURLHandler(t)
 
 	const errorMessage = "invalid YAML file - some parsing issue"
 	configClient := newConfigClientMockThatErrorsGetSLIs(t, fmt.Errorf(errorMessage))
@@ -536,7 +536,7 @@ func TestGetSLIValueMetricsQuery_NoFoldPossible(t *testing.T) {
 		createTestSLOs(createTestSLOWithPassCriterion(testIndicatorAvailability, "<=100")),
 	)
 
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorAvailability, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorAvailability, expectedMetricsRequest, "unable to apply ':fold()'"))
+	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorAvailability, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc(testIndicatorAvailability, expectedMetricsRequest, "unable to apply ':fold'"))
 }
 
 // TestGetSLIValueMetricsQuery_SuccessWithResolutionInfProvided tests processing of Metrics API v2 results where resolution is explicitly set to Inf in different forms.
@@ -623,9 +623,10 @@ func TestGetSLIValueMetricsQuery_SuccessWithOtherResolution(t *testing.T) {
 				newMetricsV2QueryRequestBuilder(tt.metricSelector).copyWithResolution("30m"),
 			)
 
-			configClient := newConfigClientMockWithSLIsAndSLOs(t, map[string]string{
-				testIndicator: "metricSelector=" + tt.metricSelector + "&resolution=30m",
-			},
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicator: "metricSelector=" + tt.metricSelector + "&resolution=30m",
+				},
 				createTestSLOs(createTestSLOWithPassCriterion(testIndicator, "<=100")),
 			)
 

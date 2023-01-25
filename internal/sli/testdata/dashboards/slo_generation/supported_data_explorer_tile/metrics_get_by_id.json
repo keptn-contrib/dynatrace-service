@@ -38,6 +38,7 @@
     "metricValueType": {
         "type": "unknown"
     },
+    "minimumValue": 0.0,
     "scalar": false,
     "resolutionInfSupported": true,
     "warnings": [

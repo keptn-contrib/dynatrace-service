@@ -357,7 +357,7 @@ func runTileThresholdRuleParsingTestAndExpectSuccess(t *testing.T, colorTestComp
 	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_parsing/success"
 
 	handler := createHandlerWithTemplatedDashboard(t,
-		filepath.Join(testDataFolder, "dashboard.template.json"),
+		filepath.Join(testDataFolder, dashboardTemplateFilename),
 		struct {
 			ThresholdValues []*float64
 			ThresholdColors []string
@@ -375,7 +375,7 @@ func runTileThresholdRuleParsingTestAndExpectError(t *testing.T, colorTestCompon
 	const testDataFolder = "./testdata/dashboards/data_explorer/tile_thresholds_parsing/error"
 
 	handler := createHandlerWithTemplatedDashboard(t,
-		filepath.Join(testDataFolder, "dashboard.template.json"),
+		filepath.Join(testDataFolder, dashboardTemplateFilename),
 		struct {
 			ThresholdValues []*float64
 			ThresholdColors []string

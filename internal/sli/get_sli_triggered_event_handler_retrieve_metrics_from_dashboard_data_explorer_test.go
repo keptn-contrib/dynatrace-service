@@ -130,7 +130,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_FoldValue
 	handler := createHandlerForWithDashboardForMetricExpressionsTest(t, testDataFolder, graphChartVisualConfigType, &[]string{"resolution=30m&" + metricSelector})
 	addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler, testVariantDataFolder, requestBuilder)
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("srt", requestBuilder.build(), "unable to apply ':fold()'"))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultWithQueryAssertionsFunc("srt", requestBuilder.build(), "unable to apply ':fold'"))
 }
 
 // TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_Errors tests that invalid metric expressions configurations generate errors as expected.
@@ -194,7 +194,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTileMetricExpressions_Errors(t 
 
 func createHandlerForWithDashboardForMetricExpressionsTest(t *testing.T, testDataFolder string, visualConfigType string, metricExpressions *[]string) *test.CombinedURLHandler {
 	return createHandlerWithTemplatedDashboard(t,
-		filepath.Join(testDataFolder, "dashboard.template.json"),
+		filepath.Join(testDataFolder, dashboardTemplateFilename),
 		struct {
 			VisualConfigType        string
 			MetricExpressionsString string
@@ -324,7 +324,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_ManagementZonesWork(t *tes
 		t.Run(tt.name, func(t *testing.T) {
 
 			handler := createHandlerWithTemplatedDashboard(t,
-				filepath.Join(testDataFolder, "dashboard.template.json"),
+				filepath.Join(testDataFolder, dashboardTemplateFilename),
 				struct {
 					DashboardFilterString string
 					TileFilterString      string
@@ -496,7 +496,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_TileThresholdsWork(t *test
 		t.Run(thresholdTest.name, func(t *testing.T) {
 
 			handler := createHandlerWithTemplatedDashboard(t,
-				filepath.Join(testDataFolder, "dashboard.template.json"),
+				filepath.Join(testDataFolder, dashboardTemplateFilename),
 				struct {
 					TileName         string
 					ThresholdsString string
@@ -704,7 +704,7 @@ func TestRetrieveMetricsFromDashboardDataExplorerTile_AllowDuplicateNames(t *tes
 		t.Run(tt.name, func(t *testing.T) {
 
 			handler := createHandlerWithTemplatedDashboard(t,
-				filepath.Join(testDataFolder, "dashboard.template.json"),
+				filepath.Join(testDataFolder, dashboardTemplateFilename),
 				struct {
 					TileName1 string
 					TileName2 string

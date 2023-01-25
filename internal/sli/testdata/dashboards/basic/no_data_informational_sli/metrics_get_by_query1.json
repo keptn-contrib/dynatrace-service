@@ -7,7 +7,7 @@
             "metricId": "(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names",
             "dataPointCountRatio": 0.0,
             "dimensionCountRatio": 0.0,
-            "data": [ ]
+            "data": []
         }
     ]
 }

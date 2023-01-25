@@ -4,7 +4,7 @@
     "resolution": "1h",
     "result": [
         {
-            "metricId": "builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy()",
+            "metricId": "(builtin:service.response.time:splitBy()/builtin:service.response.time:splitBy())/1000000",
             "dataPointCountRatio": 0.0116952,
             "dimensionCountRatio": 0.09746,
             "data": [
@@ -38,30 +38,30 @@
                         1664409600000
                     ],
                     "values": [
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1,
-                        1
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6,
+                        1.0E-6
                     ]
                 }
             ]

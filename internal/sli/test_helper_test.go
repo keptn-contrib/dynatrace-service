@@ -542,7 +542,7 @@ func (b *metricsV2QueryRequestBuilder) copyWithEntitySelector(entitySelector str
 func (b *metricsV2QueryRequestBuilder) copyWithFold() *metricsV2QueryRequestBuilder {
 	existingMetricSelector := b.metricSelector()
 	values := cloneURLValues(b.values)
-	values.Set("metricSelector", "("+existingMetricSelector+"):fold()")
+	values.Set("metricSelector", "("+existingMetricSelector+"):fold")
 	return &metricsV2QueryRequestBuilder{values: values}
 }
 
@@ -588,12 +588,11 @@ func cloneURLValues(values url.Values) url.Values {
 
 const (
 	dashboardFilename             = "dashboard.json"
+	dashboardTemplateFilename     = "dashboard.template.json"
 	baseMetricsDefinitionFilename = "metrics_get_by_id_base.json"
-	metricsDefinitionFilename1    = "metrics_get_by_id.json"
-	metricsDefinitionFilename2    = "metrics_get_by_id2.json"
+	metricsDefinitionFilename     = "metrics_get_by_id.json"
 	metricsQueryFilename1         = "metrics_get_by_query1.json"
 	metricsQueryFilename2         = "metrics_get_by_query2.json"
-	metricsQueryFilename3         = "metrics_get_by_query3.json"
 )
 
 func createHandlerWithDashboard(t *testing.T, testDataFolder string) *test.CombinedURLHandler {
@@ -608,36 +607,42 @@ func createHandlerWithTemplatedDashboard(t *testing.T, templateFilename string, 
 	return handler
 }
 
+func addRequestToHandlerForMetricDefinition(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) {
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename))
+}
+
 func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
-	expectedMetricsRequest1 := requestBuilder.build()
-	expectedMetricsRequest2 := requestBuilder.copyWithResolution(resolutionInf).build()
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename))
 
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename1))
-	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, metricsQueryFilename1))
-	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, metricsQueryFilename2))
+	handler.AddExactFile(requestBuilder.build(), filepath.Join(testDataFolder, metricsQueryFilename1))
 
-	return expectedMetricsRequest2
+	requestBuilderWithResolutionInf := requestBuilder.copyWithResolution(resolutionInf)
+	handler.AddExactFile(requestBuilderWithResolutionInf.build(), filepath.Join(testDataFolder, metricsQueryFilename2))
+
+	return requestBuilderWithResolutionInf.build()
 }
 
 func addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInfAndUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
-	addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler, testDataFolder, requestBuilder)
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename))
 
-	// note: no additional metrics definition needs to be added as the metric selector is the same
-	finalExpectedMetricsRequest := requestBuilder.copyWithResolution(resolutionInf).copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet).build()
-	handler.AddExactFile(finalExpectedMetricsRequest, filepath.Join(testDataFolder, metricsQueryFilename3))
+	requestBuilderWithConversionSnippet := requestBuilder.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet)
+	handler.AddExactFile(requestBuilderWithConversionSnippet.build(), filepath.Join(testDataFolder, metricsQueryFilename1))
 
-	return finalExpectedMetricsRequest
+	requestBuilderWithConversionSnippetAndResolutionInf := requestBuilderWithConversionSnippet.copyWithResolution(resolutionInf)
+	handler.AddExactFile(requestBuilderWithConversionSnippetAndResolutionInf.build(), filepath.Join(testDataFolder, metricsQueryFilename2))
+
+	return requestBuilderWithConversionSnippetAndResolutionInf.build()
 }
 
 func addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder) string {
-	expectedMetricsRequest1 := requestBuilder.build()
-	expectedMetricsRequest2 := requestBuilder.copyWithFold().build()
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename))
 
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename1))
-	handler.AddExactFile(expectedMetricsRequest1, filepath.Join(testDataFolder, metricsQueryFilename1))
-	handler.AddExactFile(expectedMetricsRequest2, filepath.Join(testDataFolder, metricsQueryFilename2))
+	handler.AddExactFile(requestBuilder.build(), filepath.Join(testDataFolder, metricsQueryFilename1))
 
-	return expectedMetricsRequest2
+	requestBuilderWithFold := requestBuilder.copyWithFold()
+	handler.AddExactFile(requestBuilderWithFold.build(), filepath.Join(testDataFolder, metricsQueryFilename2))
+
+	return requestBuilderWithFold.build()
 }
 
 func addRequestToHandlerForBaseMetricDefinition(handler *test.CombinedURLHandler, testDataFolder string, baseMetricSelector string) {
@@ -645,16 +650,15 @@ func addRequestToHandlerForBaseMetricDefinition(handler *test.CombinedURLHandler
 }
 
 func addRequestsToHandlerForSuccessfulMetricsQueryWithFoldAndUnitsConversionSnippet(handler *test.CombinedURLHandler, testDataFolder string, requestBuilder *metricsV2QueryRequestBuilder, metricSelectorConversionSnippet string) string {
-	addRequestsToHandlerForSuccessfulMetricsQueryWithFold(handler, testDataFolder, requestBuilder)
-	requestBuilderWithFold := requestBuilder.copyWithFold()
+	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilder.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename))
 
-	// add additional metrics definition including fold
-	handler.AddExactFile(buildMetricsV2DefinitionRequestString(requestBuilderWithFold.metricSelector()), filepath.Join(testDataFolder, metricsDefinitionFilename2))
+	requestBuilderWithConversionSnippet := requestBuilder.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet)
+	handler.AddExactFile(requestBuilderWithConversionSnippet.build(), filepath.Join(testDataFolder, metricsQueryFilename1))
 
-	finalExpectedMetricsRequest := requestBuilderWithFold.copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet).build()
-	handler.AddExactFile(finalExpectedMetricsRequest, filepath.Join(testDataFolder, metricsQueryFilename3))
+	requestBuilderWithConversionSnippetAndFold := requestBuilder.copyWithFold().copyWithMetricSelectorConversionSnippet(metricSelectorConversionSnippet)
+	handler.AddExactFile(requestBuilderWithConversionSnippetAndFold.build(), filepath.Join(testDataFolder, metricsQueryFilename2))
 
-	return finalExpectedMetricsRequest
+	return requestBuilderWithConversionSnippetAndFold.build()
 }
 
 func createToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {

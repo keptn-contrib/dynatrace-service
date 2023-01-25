@@ -1,7 +1,7 @@
 {
     "totalCount": 0,
     "nextPageKey": null,
-    "resolution": "10m",
+    "resolution": "1h",
     "result": [
         {
             "metricId": "builtin:service.response.time:splitBy():percentile(95.0):names",

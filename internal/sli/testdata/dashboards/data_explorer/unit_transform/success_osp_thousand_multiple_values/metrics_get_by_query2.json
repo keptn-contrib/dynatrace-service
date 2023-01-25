@@ -1,10 +1,10 @@
 {
     "totalCount": 2,
     "nextPageKey": null,
-    "resolution": "1h",
+    "resolution": "Inf",
     "result": [
         {
-            "metricId": "((builtin:security.securityProblem.open.global:splitBy(Type):sort(value(auto,descending)):limit(20)):limit(100):names):fold",
+            "metricId": "(((builtin:security.securityProblem.open.global:splitBy(Type):sort(value(auto,descending)):limit(20)):limit(100):names):fold)/1000",
             "dataPointCountRatio": 6.0E-6,
             "dimensionCountRatio": 5.0E-5,
             "data": [
@@ -19,7 +19,7 @@
                         1664409600000
                     ],
                     "values": [
-                        91.7177307425399
+                        0.0917177307425399
                     ]
                 },
                 {
@@ -33,7 +33,7 @@
                         1664409600000
                     ],
                     "values": [
-                        16
+                        0.016
                     ]
                 }
             ]
