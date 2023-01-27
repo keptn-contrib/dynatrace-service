@@ -1,6 +1,8 @@
 package sli
 
 import (
+	"fmt"
+	"path"
 	"path/filepath"
 	"testing"
 
@@ -128,8 +130,7 @@ func TestNoDefaultSLIsAreUsedWhenCustomSLIsAreValidYAMLButQueryIsUsingWrongMetri
 			mv2Prefix: "MV2;;",
 		},
 	}
-	for _, testConfig := range testConfigs {
-		tc := testConfig
+	for _, tc := range testConfigs {
 		t.Run(tc.name, func(t *testing.T) {
 
 			// no handler needed
@@ -197,4 +198,52 @@ func TestCustomSLIsAreUsedWhenSpecified(t *testing.T) {
 	)
 
 	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 31846.08512740705, expectedMetricsRequest))
+}
+
+// TestCustomSLIMetricsV1Parsing tests that Metrics queries with '=' in either entity or metric selectors are parsed as expected.
+func TestCustomSLIMetricsV1Parsing(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/metrics/query_parsing/"
+
+	tests := []struct {
+		name           string
+		metricSelector string
+		entitySelector string
+	}{
+		{
+			name:           "equals_in_metric_selector",
+			metricSelector: "builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),tag(~\"specialTag:key=value~\")\"))))):splitBy():percentile(95.0)",
+			entitySelector: "type(service)",
+		},
+		{
+			name:           "equals_in_entity_selector",
+			metricSelector: "builtin:service.response.time:splitBy():percentile(95.0)",
+			entitySelector: "type(service),tag(\"specialTag:key=value\")",
+		},
+		{
+			name:           "equals_in_metric_and_entity_selectors",
+			metricSelector: "builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),tag(~\"specialTag:key=value~\")\"))))):splitBy():percentile(95.0)",
+			entitySelector: "type(service),tag(\"specialTag:key=value\")",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			testVariantDataFolder := path.Join(testDataFolder, tt.name)
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorResponseTimeP95: fmt.Sprintf("metricSelector=%s&entitySelector=%s", tt.metricSelector, tt.entitySelector),
+				},
+				testSLOsWithResponseTimeP95,
+			)
+
+			handler := test.NewCombinedURLHandler(t)
+			expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(handler,
+				testVariantDataFolder,
+				newMetricsV2QueryRequestBuilder(tt.metricSelector).copyWithEntitySelector(tt.entitySelector),
+			)
+
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12910.279946732833, expectedMetricsRequest))
+		})
+	}
 }
