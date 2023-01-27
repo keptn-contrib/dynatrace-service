@@ -20,8 +20,8 @@ const (
 	trillionUnitID = "Trillion"
 )
 
-// unitlessConversionSnippetsMap lists all support conversions from Count or Unspecified to target via the map'S key-
-var unitlessConversionSnippetsMap map[string]string = map[string]string{
+// unitlessConversions lists all support conversions from Count or Unspecified to target via the map's key.
+var unitlessConversions = map[string]string{
 	kiloUnitID:     "/1000",
 	millionUnitID:  "/1000000",
 	billionUnitID:  "/1000000000",
@@ -47,12 +47,12 @@ func (e *UnableToApplyFoldToValueDefaultAggregationError) Error() string {
 // metricQueryModifier modifies a metrics query to return a single result and / or to convert the unit of values returned.
 // It assumes that the metric definition obtained from the original metric selector is valid also for the modified ones and thus that it can be cached.
 type metricsQueryModifier struct {
-	metricsClient          MetricsClientInterface
-	query                  metrics.Query
-	includeFold            bool
-	unitsConversionSnippet string
-	setResolutionToInf     bool
-	cachedMetricDefinition *MetricDefinition
+	metricsClient                       MetricsClientInterface
+	query                               metrics.Query
+	includeFold                         bool
+	unitsConversionMetricSelectorSuffix string
+	setResolutionToInf                  bool
+	metricDefinition                    *MetricDefinition
 }
 
 func newMetricsQueryModifier(metricsClient MetricsClientInterface, query metrics.Query) *metricsQueryModifier {
@@ -62,28 +62,28 @@ func newMetricsQueryModifier(metricsClient MetricsClientInterface, query metrics
 	}
 }
 
-// applyUnitConversion modifies the metric selector such that the result has the specified unit.
-func (u *metricsQueryModifier) applyUnitConversion(ctx context.Context, targetUnitID string) error {
+// applyUnitConversion modifies the metric selector such that the result has the specified unit and returns the current modified query or an error.
+func (u *metricsQueryModifier) applyUnitConversion(ctx context.Context, targetUnitID string) (*metrics.Query, error) {
 	if !doesTargetUnitRequireConversion(targetUnitID) {
-		return nil
+		return u.getModifiedQuery()
 	}
 
-	metricDefinition, err := u.getCachedMetricDefinition(ctx)
+	metricDefinition, err := u.getMetricDefinition(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if metricDefinition.Unit == targetUnitID {
-		return nil
+		return u.getModifiedQuery()
 	}
 
-	unitsConversionSnippet, err := getConversionSnippet(metricDefinition, targetUnitID)
+	unitsConversionSnippet, err := getConversionMetricSelectorSuffix(metricDefinition, targetUnitID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	u.unitsConversionSnippet = unitsConversionSnippet
-	return nil
+	u.unitsConversionMetricSelectorSuffix = unitsConversionSnippet
+	return u.getModifiedQuery()
 }
 
 // doesTargetUnitRequireConversion checks if the target unit ID requires conversion or not. Currently, "Auto" (default empty value and explicit `auto` value) and "None" require no conversion.
@@ -96,24 +96,24 @@ func doesTargetUnitRequireConversion(targetUnitID string) bool {
 	}
 }
 
-// applyFoldOrResolutionInf modifies the query to use resolution Inf or a fold such that each metric series returns a single value.
-func (u *metricsQueryModifier) applyFoldOrResolutionInf(ctx context.Context) error {
-	metricDefinition, err := u.getCachedMetricDefinition(ctx)
+// applyFoldOrResolutionInf modifies the query to use resolution Inf or a fold such that each metric series returns a single value and returns the current modified query or an error.
+func (u *metricsQueryModifier) applyFoldOrResolutionInf(ctx context.Context) (*metrics.Query, error) {
+	metricDefinition, err := u.getMetricDefinition(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if (u.query.GetResolution() == "") && metricDefinition.ResolutionInfSupported {
 		u.setResolutionToInf = true
-		return nil
+		return u.getModifiedQuery()
 	}
 
 	if metricDefinition.DefaultAggregation.Type == AggregationTypeValue {
-		return &UnableToApplyFoldToValueDefaultAggregationError{}
+		return nil, &UnableToApplyFoldToValueDefaultAggregationError{}
 	}
 
 	u.includeFold = true
-	return nil
+	return u.getModifiedQuery()
 }
 
 // getModifiedQuery gets the modified query with any resolution change, or fold or units conversion.
@@ -127,8 +127,8 @@ func (u *metricsQueryModifier) getModifiedMetricSelector() string {
 		modifiedMetricSelector = "(" + modifiedMetricSelector + "):fold"
 	}
 
-	if u.unitsConversionSnippet != "" {
-		modifiedMetricSelector = "(" + modifiedMetricSelector + ")" + u.unitsConversionSnippet
+	if u.unitsConversionMetricSelectorSuffix != "" {
+		modifiedMetricSelector = "(" + modifiedMetricSelector + ")" + u.unitsConversionMetricSelectorSuffix
 	}
 	return modifiedMetricSelector
 }
@@ -140,9 +140,9 @@ func (u *metricsQueryModifier) getModifiedResolution() string {
 	return u.query.GetResolution()
 }
 
-func (u *metricsQueryModifier) getCachedMetricDefinition(ctx context.Context) (*MetricDefinition, error) {
-	if u.cachedMetricDefinition != nil {
-		return u.cachedMetricDefinition, nil
+func (u *metricsQueryModifier) getMetricDefinition(ctx context.Context) (*MetricDefinition, error) {
+	if u.metricDefinition != nil {
+		return u.metricDefinition, nil
 	}
 
 	metricDefinition, err := u.metricsClient.GetMetricDefinitionByID(ctx, u.query.GetMetricSelector())
@@ -150,11 +150,11 @@ func (u *metricsQueryModifier) getCachedMetricDefinition(ctx context.Context) (*
 		return nil, err
 	}
 
-	u.cachedMetricDefinition = metricDefinition
-	return u.cachedMetricDefinition, nil
+	u.metricDefinition = metricDefinition
+	return u.metricDefinition, nil
 }
 
-func doesMetricDefinitionSupportToUnitTransformation(metricDefinition *MetricDefinition) bool {
+func doesMetricKeySupportToUnitTransformation(metricDefinition *MetricDefinition) bool {
 	const toUnitTransformation = "toUnit"
 
 	for _, t := range metricDefinition.Transformations {
@@ -165,18 +165,18 @@ func doesMetricDefinitionSupportToUnitTransformation(metricDefinition *MetricDef
 	return false
 }
 
-func getConversionSnippet(metricDefinition *MetricDefinition, targetUnitID string) (string, error) {
+func getConversionMetricSelectorSuffix(metricDefinition *MetricDefinition, targetUnitID string) (string, error) {
 	sourceUnitID := metricDefinition.Unit
 
 	if shouldDoUnitlessConversion(sourceUnitID) {
-		return getUnitlessConversionSnippet(targetUnitID)
+		return getUnitlessConversionMetricSelectorSuffix(targetUnitID)
 	}
 
-	if doesMetricDefinitionSupportToUnitTransformation(metricDefinition) {
-		return getToUnitConversionSnippet(sourceUnitID, targetUnitID), nil
-	} else {
-		return getAutoToUnitConversionSnippet(sourceUnitID, targetUnitID), nil
+	if doesMetricKeySupportToUnitTransformation(metricDefinition) {
+		return getToUnitConversionMetricSelectorSuffix(sourceUnitID, targetUnitID), nil
 	}
+
+	return getAutoToUnitConversionMetricSelectorSuffix(sourceUnitID, targetUnitID), nil
 }
 
 func shouldDoUnitlessConversion(sourceUnitID string) bool {
@@ -189,8 +189,8 @@ func shouldDoUnitlessConversion(sourceUnitID string) bool {
 	}
 }
 
-func getUnitlessConversionSnippet(targetUnitID string) (string, error) {
-	snippet, ok := unitlessConversionSnippetsMap[targetUnitID]
+func getUnitlessConversionMetricSelectorSuffix(targetUnitID string) (string, error) {
+	snippet, ok := unitlessConversions[targetUnitID]
 	if !ok {
 		return "", &UnknownUnitlessConversionError{unitID: targetUnitID}
 	}
@@ -198,10 +198,10 @@ func getUnitlessConversionSnippet(targetUnitID string) (string, error) {
 	return snippet, nil
 }
 
-func getAutoToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {
-	return fmt.Sprintf(":auto%s", getToUnitConversionSnippet(sourceUnitID, targetUnitID))
+func getAutoToUnitConversionMetricSelectorSuffix(sourceUnitID, targetUnitID string) string {
+	return fmt.Sprintf(":auto%s", getToUnitConversionMetricSelectorSuffix(sourceUnitID, targetUnitID))
 }
 
-func getToUnitConversionSnippet(sourceUnitID, targetUnitID string) string {
+func getToUnitConversionMetricSelectorSuffix(sourceUnitID, targetUnitID string) string {
 	return fmt.Sprintf(":toUnit(%s,%s)", sourceUnitID, targetUnitID)
 }

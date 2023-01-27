@@ -326,12 +326,7 @@ func NewConvertUnitsAndRetryForSingleValueMetricsProcessingDecorator(metricsClie
 func (p *MetricsProcessingDecorator) ProcessRequest(ctx context.Context, request MetricsClientQueryRequest) (*MetricsProcessingResults, error) {
 	metricsQueryModifier := newMetricsQueryModifier(p.metricsClient, request.query)
 
-	err := metricsQueryModifier.applyUnitConversion(ctx, p.targetUnitID)
-	if err != nil {
-		return nil, err
-	}
-
-	modifiedQuery, err := metricsQueryModifier.getModifiedQuery()
+	modifiedQuery, err := metricsQueryModifier.applyUnitConversion(ctx, p.targetUnitID)
 	if err != nil {
 		return nil, err
 	}
@@ -346,12 +341,7 @@ func (p *MetricsProcessingDecorator) ProcessRequest(ctx context.Context, request
 		return nil, err
 	}
 
-	err = metricsQueryModifier.applyFoldOrResolutionInf(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	modifiedQuery, err = metricsQueryModifier.getModifiedQuery()
+	modifiedQuery, err = metricsQueryModifier.applyFoldOrResolutionInf(ctx)
 	if err != nil {
 		return nil, err
 	}
