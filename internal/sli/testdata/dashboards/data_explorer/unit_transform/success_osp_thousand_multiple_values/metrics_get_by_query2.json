@@ -1,0 +1,42 @@
+{
+    "totalCount": 2,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "(((builtin:security.securityProblem.open.global:splitBy(Type):sort(value(auto,descending)):limit(20)):limit(100):names):fold)/1000",
+            "dataPointCountRatio": 6.0E-6,
+            "dimensionCountRatio": 5.0E-5,
+            "data": [
+                {
+                    "dimensions": [
+                        "Third-party vulnerability"
+                    ],
+                    "dimensionMap": {
+                        "Type": "Third-party vulnerability"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        0.0917177307425399
+                    ]
+                },
+                {
+                    "dimensions": [
+                        "Code-level vulnerability"
+                    ],
+                    "dimensionMap": {
+                        "Type": "Code-level vulnerability"
+                    },
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        0.016
+                    ]
+                }
+            ]
+        }
+    ]
+}

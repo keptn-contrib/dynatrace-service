@@ -1,13 +1,28 @@
 {
-    "totalCount": 0,
-    "nextPageKey": null,
-    "resolution": "10m",
-    "result": [
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "1h",
+  "result": [
+    {
+      "metricId": "(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:sort(value(sum,descending)):fold(avg)):limit(100):names:fold(auto)",
+      "dataPointCountRatio": 0.0000144,
+      "dimensionCountRatio": 0.00012,
+      "data": [
         {
-            "metricId": "(builtin:security.securityProblem.open.managementZone:filter(and(or(eq(\"Risk Level\",HIGH)))):splitBy(\"Risk Level\"):sum:auto:sort(value(sum,descending)):limit(100)):limit(100):names",
-            "dataPointCountRatio": 0.0,
-            "dimensionCountRatio": 0.0,
-            "data": []
+          "dimensions": [
+            "HIGH"
+          ],
+          "dimensionMap": {
+            "Risk Level": "HIGH"
+          },
+          "timestamps": [
+            1664409600000
+          ],
+          "values": [
+            536.4052024482108
+          ]
         }
-    ]
+      ]
+    }
+  ]
 }

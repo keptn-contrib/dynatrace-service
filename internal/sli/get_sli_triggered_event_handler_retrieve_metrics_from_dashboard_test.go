@@ -23,15 +23,14 @@ import (
 func TestNoErrorIsReturnedWhenSLOFileWritingSucceeds(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/success/"
 
-	handler, expectedMetricsRequest := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
-		testDataFolder:     testDataFolder,
-		baseMetricSelector: "builtin:service.response.time",
-		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
-		entitySelector:     "type(SERVICE)",
-	},
-	)
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	addRequestToHandlerForBaseMetricDefinition(handler, testDataFolder, "builtin:service.response.time")
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+		handler,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():percentile(95.000000):names").copyWithEntitySelector("type(SERVICE)"))
 
-	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210598.1424830455, expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.99593297063, expectedMetricsRequest))
 }
 
 // TestErrorIsReturnedWhenSLOFileWritingFails tests that an error is returned if retrieving (a single) SLI from a dashboard works but the upload of the SLO file fails.
@@ -45,13 +44,12 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 
 	const uploadFailsErrorMessage = "SLO upload failed"
 
-	handler, _ := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
-		testDataFolder:     testDataFolder,
-		baseMetricSelector: "builtin:service.response.time",
-		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
-		entitySelector:     "type(SERVICE)",
-	},
-	)
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	addRequestToHandlerForBaseMetricDefinition(handler, testDataFolder, "builtin:service.response.time")
+	_ = addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+		handler,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():percentile(95.000000):names").copyWithEntitySelector("type(SERVICE)"))
 
 	getSLIFinishedEventAssertionsFunc := func(t *testing.T, actual *getSLIFinishedEventData) {
 		assert.EqualValues(t, keptnv2.ResultFailed, actual.Result)
@@ -70,19 +68,18 @@ func TestErrorIsReturnedWhenSLOFileWritingFails(t *testing.T) {
 func TestThatThereIsNoFallbackToSLIsFromDashboard(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_fallback_to_slis/"
 
-	handler, expectedMetricsRequest := createHandlerForSuccessfulCustomChartingTest(t, successfulCustomChartingTestHandlerConfiguration{
-		testDataFolder:     testDataFolder,
-		baseMetricSelector: "builtin:service.response.time",
-		fullMetricSelector: "builtin:service.response.time:splitBy():percentile(95.000000):names",
-		entitySelector:     "type(SERVICE)",
-	},
-	)
+	handler := createHandlerWithDashboard(t, testDataFolder)
+	addRequestToHandlerForBaseMetricDefinition(handler, testDataFolder, "builtin:service.response.time")
+	expectedMetricsRequest := addRequestsToHandlerForSuccessfulMetricsQueryWithResolutionInf(
+		handler,
+		testDataFolder,
+		newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():percentile(95.000000):names").copyWithEntitySelector("type(SERVICE)"))
 
 	uploadedSLOsAssertionsFunc := func(t *testing.T, actual *keptnapi.ServiceLevelObjectives) {
 		assert.NotNil(t, actual)
 	}
 
-	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210598.14198018494, expectedMetricsRequest))
+	runGetSLIsFromDashboardTestAndCheckSLIsAndSLOs(t, handler, testGetSLIEventData, getSLIFinishedEventSuccessAssertionsFunc, uploadedSLOsAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 210597.99593297063, expectedMetricsRequest))
 }
 
 // TestDashboardThatProducesNoDataProducesError tests retrieving (a single) SLI from a dashboard that returns no data.
@@ -260,11 +257,11 @@ func (m *uploadSLOsWillFailConfigClientMock) UploadSLOs(_ context.Context, _ str
 func TestDashboardWithInformationalSLOWithNoData(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/no_data_informational_sli/"
 
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	handler := createHandlerWithDashboard(t, testDataFolder)
 	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names").build()
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
+	handler.AddExactFile(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_get_by_query1.json"))
 	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
-	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
+	handler.AddExactFile(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("service_response_time", expectedMetricsRequest),
@@ -303,11 +300,11 @@ func TestDashboardWithInformationalSLOWithNoData(t *testing.T) {
 func TestDashboardWithInformationalSLOWithError(t *testing.T) {
 	const testDataFolder = "./testdata/dashboards/basic/error_informational_sli/"
 
-	handler := createHandlerForEarlyFailureDataExplorerTest(t, testDataFolder)
+	handler := createHandlerWithDashboard(t, testDataFolder)
 	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("(builtin:service.response.time:splitBy():avg:auto:sort(value(avg,descending)):limit(10)):limit(100):names").build()
 	handler.AddExactError(expectedMetricsRequest, 400, filepath.Join(testDataFolder, "metrics_get_by_query1_error.json"))
 	expectedSLORequest := buildSLORequest("7d07efde-b714-3e6e-ad95-08490e2540c4")
-	handler.AddExact(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
+	handler.AddExactFile(expectedSLORequest, filepath.Join(testDataFolder, "slo_7d07efde-b714-3e6e-ad95-08490e2540c4.json"))
 
 	sliResultsAssertionsFuncs := []func(t *testing.T, actual sliResult){
 		createFailedSLIResultWithQueryAssertionsFunc("service_response_time", expectedMetricsRequest),

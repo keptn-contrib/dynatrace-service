@@ -101,7 +101,7 @@
         }
       },
       "metricExpressions": [
-        "resolution=null&{{.MetricSelector}}"
+        "resolution={{.Resolution}}&{{.MetricSelector}}"
       ]
     }
   ]

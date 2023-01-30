@@ -82,21 +82,20 @@ func (h *dynatraceTestFileUpdater) tryUpdateTestFileUsingGet(url string, filenam
 
 	response, status, _, err := h.client.Get(context.TODO(), url)
 	if !assert.NoError(h.t, err, "REST client get should not produce an error") ||
-		!assert.EqualValues(h.t, 200, status, "HTTP response status code should be 200") {
+		!assert.EqualValues(h.t, 200, status, fmt.Sprintf("HTTP response status code should be 200 but was %d with: %s", status, string(response))) {
 		return
 	}
 
-	os.WriteFile(filename, response, 0666)
+	err = os.WriteFile(filename, response, 0666)
+	assert.NoError(h.t, err)
 }
 
 func shouldUpdateFileForURL(url string) bool {
 	return strings.HasPrefix(url, "/api/v2/metrics") ||
-		strings.HasPrefix(url, "/api/v2/units") ||
 		strings.HasPrefix(url, "/api/v2/slo") ||
 		strings.HasPrefix(url, "/api/v2/problems") ||
 		strings.HasPrefix(url, "/api/v1/userSessionQueryLanguage/table") ||
 		strings.HasPrefix(url, "/api/v2/securityProblems")
-
 }
 
 func createClient() *http.Client {

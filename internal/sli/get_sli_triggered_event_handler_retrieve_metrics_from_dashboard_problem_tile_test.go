@@ -159,7 +159,7 @@ func TestRetrieveMetricsFromDashboardProblemTile_ManagementZonesWork(t *testing.
 		t.Run(tt.name, func(t *testing.T) {
 
 			handler := createHandlerWithTemplatedDashboard(t,
-				filepath.Join(testDataFolder, "dashboard.template.json"),
+				filepath.Join(testDataFolder, dashboardTemplateFilename),
 				struct {
 					DashboardFilterString string
 					TileFilterString      string

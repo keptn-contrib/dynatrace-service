@@ -5,7 +5,7 @@
     "unit": "MicroSecond",
     "dduBillable": false,
     "created": 0,
-    "lastWritten": 1666265323048,
+    "lastWritten": 1674739638950,
     "entityType": [
         "SERVICE"
     ],
@@ -49,6 +49,7 @@
     "metricValueType": {
         "type": "unknown"
     },
+    "minimumValue": 0.0,
     "scalar": false,
     "resolutionInfSupported": true
 }
