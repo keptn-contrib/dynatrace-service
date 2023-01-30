@@ -4,7 +4,7 @@
     "resolution": "Inf",
     "result": [
         {
-            "metricId": "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)",
+            "metricId": "builtin:service.requestCount.total:splitBy():percentile(95.0)",
             "dataPointCountRatio": 5.0E-8,
             "dimensionCountRatio": 1.0E-5,
             "data": [
@@ -15,7 +15,7 @@
                         1664409600000
                     ],
                     "values": [
-                        620.4411764705883
+                        324
                     ]
                 }
             ]

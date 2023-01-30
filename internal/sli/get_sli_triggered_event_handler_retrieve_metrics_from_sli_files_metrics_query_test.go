@@ -230,6 +230,7 @@ func TestCustomSLIMetricsV1Parsing(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			testVariantDataFolder := path.Join(testDataFolder, tt.name)
+
 			configClient := newConfigClientMockWithSLIsAndSLOs(t,
 				map[string]string{
 					testIndicatorResponseTimeP95: fmt.Sprintf("metricSelector=%s&entitySelector=%s", tt.metricSelector, tt.entitySelector),
@@ -244,6 +245,101 @@ func TestCustomSLIMetricsV1Parsing(t *testing.T) {
 			)
 
 			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 12910.279946732833, expectedMetricsRequest))
+		})
+	}
+}
+
+// TestGetSLIValueFromCustomQueriesWithLegacyQueryFormatWorkAsExpected tests that valid queries using the legacy query format work as expected.
+func TestGetSLIValueFromCustomQueriesWithLegacyQueryFormatWorkAsExpected(t *testing.T) {
+	const testDataFolder = "./testdata/sli_files/metrics/legacy_format_success/"
+
+	tests := []struct {
+		name                   string
+		query                  string
+		expectedMetricsRequest string
+		expectedSLIResultValue float64
+	}{
+		{
+			name:                   "with_scope_key",
+			query:                  "builtin:service.requestCount.total:splitBy():percentile(95.0)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
+			expectedMetricsRequest: newMetricsV2QueryRequestBuilder("builtin:service.requestCount.total:splitBy():percentile(95.0)").copyWithEntitySelector("tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:),type(SERVICE)").copyWithResolution(resolutionInf).build(),
+			expectedSLIResultValue: 324,
+		},
+		{
+			name:                   "finishing_with_question_mark",
+			query:                  "builtin:service.response.time:splitBy():percentile(95.0)?",
+			expectedMetricsRequest: newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():percentile(95.0)").copyWithResolution(resolutionInf).build(),
+			expectedSLIResultValue: 210597.99593297063,
+		},
+		{
+			name:                   "just_metric_selector",
+			query:                  "builtin:service.response.time:splitBy():percentile(95.0)",
+			expectedMetricsRequest: newMetricsV2QueryRequestBuilder("builtin:service.response.time:splitBy():percentile(95.0)").copyWithResolution(resolutionInf).build(),
+			expectedSLIResultValue: 210597.99593297063,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			testVariantDataFolder := path.Join(testDataFolder, tt.name)
+
+			handler := test.NewFileBasedURLHandler(t)
+			handler.AddExact(tt.expectedMetricsRequest, path.Join(testVariantDataFolder, "metrics_get_by_query1.json"))
+
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorResponseTimeP95: tt.query,
+				},
+				testSLOsWithResponseTimeP95,
+			)
+
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, tt.expectedSLIResultValue, tt.expectedMetricsRequest))
+		})
+	}
+}
+
+// TestGetSLIValueFromInvalidCustomQueriesWithLegacyQueryFormatFailAsExpected tests that invalid legacy queries fail as expected.
+func TestGetSLIValueFromInvalidCustomQueriesWithLegacyQueryFormatFailAsExpected(t *testing.T) {
+	const metricV2ParsingErrorSubstring = "error parsing Metrics v2 query"
+	const keyValuePairErrorSubstring = "could not parse 'key=value' pair"
+	const unknownKeyErrorSubstring = "unknown key"
+
+	tests := []struct {
+		name                    string
+		query                   string
+		expectedErrorSubstrings []string
+	}{
+		{
+			name:                    "missing_scope_value",
+			query:                   "builtin:service.requestCount.total:splitBy():percentile(95.0)?scope=",
+			expectedErrorSubstrings: []string{metricV2ParsingErrorSubstring, keyValuePairErrorSubstring},
+		},
+		{
+			name:                    "missing_scope_value_and_equals",
+			query:                   "builtin:service.requestCount.total:splitBy():percentile(95.0)?scope",
+			expectedErrorSubstrings: []string{metricV2ParsingErrorSubstring, keyValuePairErrorSubstring},
+		},
+
+		// this will fail as it is considered ambiguous: it technically has a key-value pair, but it is unknown
+		{
+			name:                    "equals_in_metric",
+			query:                   "builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),tag(~\"specialTag:key=value~\")\"))))):splitBy():percentile(95.0)",
+			expectedErrorSubstrings: []string{metricV2ParsingErrorSubstring, unknownKeyErrorSubstring},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			configClient := newConfigClientMockWithSLIsAndSLOs(t,
+				map[string]string{
+					testIndicatorResponseTimeP95: tt.query,
+				},
+				testSLOsWithResponseTimeP95,
+			)
+
+			runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, test.NewEmptyURLHandler(t), configClient, testIndicatorResponseTimeP95, getSLIFinishedEventFailureAssertionsFunc, createFailedSLIResultAssertionsFunc(testIndicatorResponseTimeP95, tt.expectedErrorSubstrings...))
 		})
 	}
 }
