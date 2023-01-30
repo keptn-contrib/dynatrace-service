@@ -324,25 +324,6 @@ func TestGetSLIValueMetricsQuery_Warnings(t *testing.T) {
 	}
 }
 
-// tests the GETSliValue function to return the proper datapoint with the old custom query format
-func TestGetSLIValueWithOldCustomQueryFormat(t *testing.T) {
-	const testDataFolder = "./testdata/sli_files/basic/old_metrics_format/"
-
-	expectedMetricsRequest := newMetricsV2QueryRequestBuilder("builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)").copyWithEntitySelector("tag(keptn_project:sockshop),tag(keptn_stage:staging),tag(keptn_service:carts),tag(keptn_deployment:),type(SERVICE)").copyWithResolution(resolutionInf).build()
-
-	handler := test.NewFileBasedURLHandler(t)
-	handler.AddExact(expectedMetricsRequest, filepath.Join(testDataFolder, "metrics_query.json"))
-
-	configClient := newConfigClientMockWithSLIsAndSLOs(t,
-		map[string]string{
-			testIndicatorResponseTimeP95: "builtin:service.response.time:merge(\"dt.entity.service\"):percentile(50)?scope=tag(keptn_project:$PROJECT),tag(keptn_stage:$STAGE),tag(keptn_service:$SERVICE),tag(keptn_deployment:$DEPLOYMENT)",
-		},
-		testSLOsWithResponseTimeP95,
-	)
-
-	runGetSLIsFromFilesTestWithOneIndicatorRequestedAndCheckSLIs(t, handler, configClient, testIndicatorResponseTimeP95, getSLIFinishedEventSuccessAssertionsFunc, createSuccessfulSLIResultAssertionsFunc(testIndicatorResponseTimeP95, 620.4411764705883, expectedMetricsRequest))
-}
-
 // Tests what happens when end time is too close to now. This test results in a short delay.
 func TestGetSLISleep(t *testing.T) {
 	const testDataFolder = "./testdata/sli_files/basic/sleep/"

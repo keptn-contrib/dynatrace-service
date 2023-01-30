@@ -81,7 +81,7 @@ func splitKeyValuePair(keyValue string) (string, string, error) {
 		return "", "", fmt.Errorf("empty 'key=value' pair")
 	}
 
-	chunks := strings.Split(keyValue, keyValueDelimiter)
+	chunks := strings.SplitN(keyValue, keyValueDelimiter, 2)
 	if len(chunks) != 2 || chunks[0] == "" || chunks[1] == "" {
 		return "", "", fmt.Errorf("could not parse 'key=value' pair correctly: %s", keyValue)
 	}
