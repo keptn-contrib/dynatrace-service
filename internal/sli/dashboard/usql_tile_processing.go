@@ -119,7 +119,7 @@ func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloD
 			continue
 		}
 
-		tileResults = append(tileResults, newSuccessfulTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, visualizationType, request))
+		tileResults = append(tileResults, newSuccessfulTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, request))
 	}
 	return tileResults
 }
@@ -161,7 +161,7 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 	return "", errors.New("dimension name should be a string")
 }
 
-func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
+func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
 	return result.NewSuccessfulSLIWithSLOAndQuery(
 		keptncommon.SLO{
 			SLI:         buildIndicatorNameWithDimensionName(sloDefinition.SLI, dimensionName),

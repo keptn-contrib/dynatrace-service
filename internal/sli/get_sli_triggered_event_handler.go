@@ -57,7 +57,7 @@ func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient d
 }
 
 // HandleEvent handles a get-SLI triggered event.
-func (eh GetSLIEventHandler) HandleEvent(workCtx context.Context, replyCtx context.Context) error {
+func (eh GetSLIEventHandler) HandleEvent(workCtx context.Context, _ context.Context) error {
 	if err := eh.sendGetSLIStartedEvent(); err != nil {
 		return err
 	}
