@@ -285,7 +285,7 @@ func TestGetSLIValueFromCustomQueriesWithLegacyQueryFormatWorkAsExpected(t *test
 			testVariantDataFolder := path.Join(testDataFolder, tt.name)
 
 			handler := test.NewFileBasedURLHandler(t)
-			handler.AddExact(tt.expectedMetricsRequest, path.Join(testVariantDataFolder, "metrics_get_by_query1.json"))
+			handler.AddExact(tt.expectedMetricsRequest, path.Join(testVariantDataFolder, metricsQueryFilename1))
 
 			configClient := newConfigClientMockWithSLIsAndSLOs(t,
 				map[string]string{
