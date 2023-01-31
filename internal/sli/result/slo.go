@@ -49,7 +49,7 @@ func sloCriteriaListFromKeptnDomain(criteria []*keptn.SLOCriteria) SLOCriteriaLi
 	for _, c := range criteria {
 		criteria := sloCriteriaFromKeptnDomain(c)
 		if criteria != nil {
-			sloCriteria = append(sloCriteria)
+			sloCriteria = append(sloCriteria, criteria)
 		}
 	}
 
