@@ -1,0 +1,24 @@
+{
+    "totalCount": 1,
+    "nextPageKey": null,
+    "resolution": "Inf",
+    "result": [
+        {
+            "metricId": "builtin:service.response.time:splitBy():percentile(95.0)",
+            "dataPointCountRatio": 2.4365E-4,
+            "dimensionCountRatio": 0.04873,
+            "data": [
+                {
+                    "dimensions": [],
+                    "dimensionMap": {},
+                    "timestamps": [
+                        1664409600000
+                    ],
+                    "values": [
+                        210597.99593297063
+                    ]
+                }
+            ]
+        }
+    ]
+}
