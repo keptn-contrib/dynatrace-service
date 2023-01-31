@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	keptnevents "github.com/keptn/go-utils/pkg/lib"
@@ -110,7 +111,7 @@ func getEventHandler(ctx context.Context, eventSenderClient keptn.EventSenderCli
 	case *action.ActionFinishedAdapter:
 		return action.NewActionFinishedEventHandler(keptnEvent.(*action.ActionFinishedAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	case *sli.GetSLITriggeredAdapter:
-		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, eventSenderClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard), nil
+		return sli.NewGetSLITriggeredHandler(keptnEvent.(*sli.GetSLITriggeredAdapter), dtClient, eventSenderClient, keptn.NewConfigClient(clientFactory.CreateResourceClient()), dynatraceConfig.DtCreds, dynatraceConfig.Dashboard, ff.LoadGetSLIFeatureFlags()), nil
 	case *action.DeploymentFinishedAdapter:
 		return action.NewDeploymentFinishedEventHandler(keptnEvent.(*action.DeploymentFinishedAdapter), dtClient, clientFactory.CreateEventClient(), keptn.NewBridgeURLCreator(keptnCredentialsProvider), dynatraceConfig.AttachRules), nil
 	case *action.TestTriggeredAdapter:

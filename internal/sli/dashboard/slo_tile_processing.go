@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -13,15 +14,17 @@ import (
 
 // SLOTileProcessing represents the processing of a SLO dashboard tile.
 type SLOTileProcessing struct {
-	client    dynatrace.ClientInterface
-	timeframe common.Timeframe
+	client       dynatrace.ClientInterface
+	timeframe    common.Timeframe
+	featureFlags ff.GetSLIFeatureFlags
 }
 
 // NewSLOTileProcessing creates a new SLOTileProcessing.
-func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Timeframe) *SLOTileProcessing {
+func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Timeframe, flags ff.GetSLIFeatureFlags) *SLOTileProcessing {
 	return &SLOTileProcessing{
-		client:    client,
-		timeframe: timeframe,
+		client:       client,
+		timeframe:    timeframe,
+		featureFlags: flags,
 	}
 }
 

@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"errors"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/common"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -13,29 +14,35 @@ import (
 
 type MetricsQueryProcessing struct {
 	metricsProcessing dynatrace.MetricsProcessingInterface
+	featureFlags      ff.GetSLIFeatureFlags
 }
 
-func NewMetricsQueryProcessing(client dynatrace.ClientInterface, targetUnitID string) *MetricsQueryProcessing {
+func NewMetricsQueryProcessing(client dynatrace.ClientInterface, targetUnitID string, flags ff.GetSLIFeatureFlags) *MetricsQueryProcessing {
 	metricsClient := dynatrace.NewMetricsClient(client)
 
-	return &MetricsQueryProcessing{
-		metricsProcessing: dynatrace.NewConvertUnitsAndRetryForSingleValueMetricsProcessingDecorator(
+	return newMetricsQueryProcessing(
+		dynatrace.NewConvertUnitsAndRetryForSingleValueMetricsProcessingDecorator(
 			metricsClient,
 			targetUnitID,
-			dynatrace.NewMetricsProcessingThatAllowsMultipleResults(metricsClient),
-		),
-	}
+			dynatrace.NewMetricsProcessingThatAllowsMultipleResults(metricsClient)),
+		flags)
 }
 
-func NewMetricsQueryProcessingThatAllowsOnlyOneResult(client dynatrace.ClientInterface, targetUnitID string) *MetricsQueryProcessing {
+func NewMetricsQueryProcessingThatAllowsOnlyOneResult(client dynatrace.ClientInterface, targetUnitID string, flags ff.GetSLIFeatureFlags) *MetricsQueryProcessing {
 	metricsClient := dynatrace.NewMetricsClient(client)
 
-	return &MetricsQueryProcessing{
-		metricsProcessing: dynatrace.NewConvertUnitsAndRetryForSingleValueMetricsProcessingDecorator(
+	return newMetricsQueryProcessing(
+		dynatrace.NewConvertUnitsAndRetryForSingleValueMetricsProcessingDecorator(
 			metricsClient,
 			targetUnitID,
-			dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient),
-		),
+			dynatrace.NewMetricsProcessingThatAllowsOnlyOneResult(metricsClient)),
+		flags)
+}
+
+func newMetricsQueryProcessing(metricsProcessing dynatrace.MetricsProcessingInterface, flags ff.GetSLIFeatureFlags) *MetricsQueryProcessing {
+	return &MetricsQueryProcessing{
+		metricsProcessing: metricsProcessing,
+		featureFlags:      flags,
 	}
 }
 

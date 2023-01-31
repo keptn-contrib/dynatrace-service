@@ -3,6 +3,7 @@ package sli
 import (
 	"context"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/adapter"
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
@@ -24,9 +25,9 @@ type GetSLIEventHandler struct {
 	dtClient          dynatrace.ClientInterface
 	eventSenderClient keptn.EventSenderClientInterface
 	configClient      configClientInterface
-
 	secretName        string
 	dashboardProperty string
+	featureFlags      ff.GetSLIFeatureFlags
 }
 
 // configClientInterface is a subset of a keptn.ConfigClientInterface for processing sh.keptn.event.get-sli.triggered events.
@@ -43,7 +44,7 @@ type configClientInterface interface {
 	UploadSLOs(ctx context.Context, project string, stage string, service string, slos *keptncommon.ServiceLevelObjectives) error
 }
 
-func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, secretName string, dashboardProperty string) GetSLIEventHandler {
+func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient dynatrace.ClientInterface, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, secretName string, dashboardProperty string, flags ff.GetSLIFeatureFlags) GetSLIEventHandler {
 	return GetSLIEventHandler{
 		event:             event,
 		dtClient:          dtClient,
@@ -51,6 +52,7 @@ func NewGetSLITriggeredHandler(event GetSLITriggeredAdapterInterface, dtClient d
 		configClient:      configClient,
 		secretName:        secretName,
 		dashboardProperty: dashboardProperty,
+		featureFlags:      flags,
 	}
 }
 
@@ -124,7 +126,7 @@ func (eh *GetSLIEventHandler) getResultsFromDynatraceDashboard(ctx context.Conte
 
 	eh.event.AddLabel("Dashboard Link", dashboard.NewLink(eh.dtClient.Credentials().GetTenant(), timeframe, d.ID, d.GetFilter()).String())
 
-	results, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe, eh.configClient).Process(ctx, d)
+	results, err := dashboard.NewProcessing(eh.dtClient, eh.event, eh.event.GetCustomSLIFilters(), timeframe, eh.configClient, eh.featureFlags).Process(ctx, d)
 	if err != nil {
 		return nil, dashboard.NewDashboardError(err)
 	}

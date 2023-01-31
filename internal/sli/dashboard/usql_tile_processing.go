@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
@@ -24,15 +25,17 @@ type USQLTileProcessing struct {
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
 	timeframe     common.Timeframe
+	featureFlags  ff.GetSLIFeatureFlags
 }
 
 // NewUSQLTileProcessing creates a new USQLTileProcessing.
-func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *USQLTileProcessing {
+func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe, flags ff.GetSLIFeatureFlags) *USQLTileProcessing {
 	return &USQLTileProcessing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
 		timeframe:     timeframe,
+		featureFlags:  flags,
 	}
 }
 

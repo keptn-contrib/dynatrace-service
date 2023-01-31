@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 	"sort"
 	"strings"
 
@@ -24,15 +25,17 @@ type CustomChartingTileProcessing struct {
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
 	timeframe     common.Timeframe
+	featureFlags  ff.GetSLIFeatureFlags
 }
 
 // NewCustomChartingTileProcessing creates a new CustomChartingTileProcessing.
-func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *CustomChartingTileProcessing {
+func NewCustomChartingTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe, flags ff.GetSLIFeatureFlags) *CustomChartingTileProcessing {
 	return &CustomChartingTileProcessing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
 		timeframe:     timeframe,
+		featureFlags:  flags,
 	}
 }
 
@@ -78,7 +81,7 @@ func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDef
 		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}
 	}
 
-	return NewMetricsQueryProcessing(p.client, targetUnitID).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
+	return NewMetricsQueryProcessing(p.client, targetUnitID, p.featureFlags).Process(ctx, sloDefinition, *metricsQuery, p.timeframe)
 }
 
 func (p *CustomChartingTileProcessing) generateMetricQueryFromChartSeries(ctx context.Context, series *dynatrace.Series, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) (*metrics.Query, error) {
