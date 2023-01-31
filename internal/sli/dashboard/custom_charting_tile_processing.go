@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
@@ -75,7 +74,7 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 	return p.processSeries(ctx, sloDefinition, &chartConfig.Series[0], targetUnitID, tileManagementZoneFilter, tile.FilterConfig.FiltersPerEntityType)
 }
 
-func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition keptnapi.SLO, series *dynatrace.Series, targetUnitID string, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []result.SLIWithSLO {
+func (p *CustomChartingTileProcessing) processSeries(ctx context.Context, sloDefinition result.SLO, series *dynatrace.Series, targetUnitID string, tileManagementZoneFilter *ManagementZoneFilter, filtersPerEntityType map[string]dynatrace.FilterMap) []result.SLIWithSLO {
 	metricsQuery, err := p.generateMetricQueryFromChartSeries(ctx, series, tileManagementZoneFilter, filtersPerEntityType)
 	if err != nil {
 		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(sloDefinition, "Custom charting tile could not be converted to a metric query: "+err.Error())}

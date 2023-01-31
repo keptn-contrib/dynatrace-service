@@ -9,7 +9,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/v1/slo"
-	keptn "github.com/keptn/go-utils/pkg/lib"
 )
 
 // SLOTileProcessing represents the processing of a SLO dashboard tile.
@@ -31,7 +30,7 @@ func NewSLOTileProcessing(client dynatrace.ClientInterface, timeframe common.Tim
 // Process processes the specified SLO dashboard tile.
 func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []result.SLIWithSLO {
 	if len(tile.AssignedEntities) == 0 {
-		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(result.CreateInformationalSLODefinition("slo_tile_without_slo"), "SLO tile contains no SLO IDs")}
+		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(result.CreateInformationalSLO("slo_tile_without_slo"), "SLO tile contains no SLO IDs")}
 	}
 
 	var results []result.SLIWithSLO
@@ -46,14 +45,14 @@ func (p *SLOTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) [
 func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) result.SLIWithSLO {
 	query, err := slo.NewQuery(sloID)
 	if err != nil {
-		return result.NewFailedSLIWithSLO(result.CreateInformationalSLODefinition("slo_without_id"), err.Error())
+		return result.NewFailedSLIWithSLO(result.CreateInformationalSLO("slo_without_id"), err.Error())
 	}
 
 	// Step 1: Query the Dynatrace API to get the actual value for this sloID
 	request := dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe)
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIWithSLO(result.CreateInformationalSLODefinition(cleanIndicatorName("slo_"+sloID)), "error querying Service level objectives API: "+err.Error())
+		return result.NewFailedSLIWithSLO(result.CreateInformationalSLO(cleanIndicatorName("slo_"+sloID)), "error querying Service level objectives API: "+err.Error())
 	}
 
 	indicatorName := cleanIndicatorName(sloResult.Name)
@@ -61,14 +60,14 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) result
 	// TODO: 2021-12-20: check: maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 
 	// see https://github.com/keptn-contrib/dynatrace-sli-service/issues/97#issuecomment-766110172 for explanation about mappings to pass and warning
-	passCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Warning)}}
-	warningCriterion := keptn.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Target)}}
+	passCriterion := result.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Warning)}}
+	warningCriterion := result.SLOCriteria{Criteria: []string{fmt.Sprintf(">=%f", sloResult.Target)}}
 
 	return result.NewSuccessfulSLIWithSLOAndQuery(
-		keptn.SLO{
+		result.SLO{
 			SLI:     indicatorName,
-			Pass:    []*keptn.SLOCriteria{&passCriterion},
-			Warning: []*keptn.SLOCriteria{&warningCriterion},
+			Pass:    result.SLOCriteriaList{&passCriterion},
+			Warning: result.SLOCriteriaList{&warningCriterion},
 			Weight:  1,
 			KeySLI:  false,
 		},

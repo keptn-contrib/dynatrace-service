@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 
-	keptncommon "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
@@ -80,7 +79,7 @@ func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) 
 	}
 }
 
-func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
+func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefinition result.SLO, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
 	if len(usqlResult.Values) == 0 {
 		return result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), zeroValuesMessage)
 	}
@@ -96,7 +95,7 @@ func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefi
 	return result.NewSuccessfulSLIWithSLOAndQuery(sloDefinition, dimensionValue, request.RequestString())
 }
 
-func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition keptncommon.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) []result.SLIWithSLO {
+func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition result.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) []result.SLIWithSLO {
 	if len(usqlResult.Values) == 0 {
 		return []result.SLIWithSLO{result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), zeroValuesMessage)}
 	}
@@ -161,9 +160,9 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 	return "", errors.New("dimension name should be a string")
 }
 
-func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
+func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition result.SLO, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
 	return result.NewSuccessfulSLIWithSLOAndQuery(
-		keptncommon.SLO{
+		result.SLO{
 			SLI:         buildIndicatorNameWithDimensionName(sloDefinition.SLI, dimensionName),
 			DisplayName: buildDisplayNameWithDimensionName(sloDefinition.DisplayName, dimensionName),
 			Weight:      sloDefinition.Weight,
@@ -176,9 +175,9 @@ func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimen
 	)
 }
 
-func newWarningTileResultWithIndexFromSLODefinitionAndQuery(index int, sloDefinition keptncommon.SLO, request dynatrace.USQLClientQueryRequest, message string) result.SLIWithSLO {
+func newWarningTileResultWithIndexFromSLODefinitionAndQuery(index int, sloDefinition result.SLO, request dynatrace.USQLClientQueryRequest, message string) result.SLIWithSLO {
 	return result.NewWarningSLIWithSLOAndQuery(
-		keptncommon.SLO{
+		result.SLO{
 			SLI:         cleanIndicatorName(fmt.Sprintf("%s_%d", sloDefinition.SLI, index+1)),
 			DisplayName: fmt.Sprintf("%s (%d)", sloDefinition.DisplayName, index+1),
 			Weight:      sloDefinition.Weight,

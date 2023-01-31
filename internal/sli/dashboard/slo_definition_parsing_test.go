@@ -1,9 +1,9 @@
 package dashboard
 
 import (
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"testing"
 
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -238,19 +238,19 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 }
 
 func createSLODefinitionParsingResult(exclude bool, indicatorName string, displayName string, pass [][]string, warning [][]string, weight int, isKey bool) sloDefinitionParsingResult {
-	var passCriteria []*keptnapi.SLOCriteria
+	var passCriteria result.SLOCriteriaList
 	for _, criteria := range pass {
-		passCriteria = append(passCriteria, &keptnapi.SLOCriteria{Criteria: criteria})
+		passCriteria = append(passCriteria, &result.SLOCriteria{Criteria: criteria})
 	}
 
-	var warningCriteria []*keptnapi.SLOCriteria
+	var warningCriteria result.SLOCriteriaList
 	for _, criteria := range warning {
-		warningCriteria = append(warningCriteria, &keptnapi.SLOCriteria{Criteria: criteria})
+		warningCriteria = append(warningCriteria, &result.SLOCriteria{Criteria: criteria})
 	}
 
 	return sloDefinitionParsingResult{
 		exclude: exclude,
-		sloDefinition: keptnapi.SLO{
+		sloDefinition: result.SLO{
 			SLI:         indicatorName,
 			DisplayName: displayName,
 			Pass:        passCriteria,

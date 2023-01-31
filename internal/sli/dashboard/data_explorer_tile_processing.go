@@ -7,7 +7,6 @@ import (
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 	"strings"
 
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
@@ -62,7 +61,7 @@ func (p *DataExplorerTileProcessing) createMetricsQueryProcessing(validatedTile 
 }
 
 type dataExplorerTileValidationError struct {
-	sloDefinition keptnapi.SLO
+	sloDefinition result.SLO
 	errors        []error
 }
 
@@ -273,7 +272,7 @@ func parseResolutionKeyValuePair(keyValuePair string) (string, error) {
 }
 
 type validatedDataExplorerTile struct {
-	sloDefinition            keptnapi.SLO
+	sloDefinition            result.SLO
 	targetUnitID             string
 	singleValueVisualization bool
 	query                    metrics.Query

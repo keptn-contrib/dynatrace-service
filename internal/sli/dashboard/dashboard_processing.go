@@ -54,8 +54,7 @@ func (pr *processingResult) getResults() []result.SLIWithSLO {
 func (pr *processingResult) getSLOs() *keptncommon.ServiceLevelObjectives {
 	objectives := make([]*keptncommon.SLO, 0, len(pr.results))
 	for _, r := range pr.results {
-		sloDefinition := r.SLODefinition()
-		objectives = append(objectives, &sloDefinition)
+		objectives = append(objectives, r.SLODefinition().ToKeptnDomain())
 	}
 
 	return &keptncommon.ServiceLevelObjectives{
@@ -189,7 +188,7 @@ func (p *Processing) processTile(ctx context.Context, tile dynatrace.Tile, dashb
 	case dynatrace.CustomChartingTileType:
 		return NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe, p.featureFlags).Process(ctx, &tile, dashboardFilter)
 	case dynatrace.USQLTileType:
-		return NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile)
+		return NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe, p.featureFlags).Process(ctx, &tile)
 	default:
 		// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)
 		return nil
