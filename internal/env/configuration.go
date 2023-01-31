@@ -116,6 +116,21 @@ func GetServiceSyncInterval() int {
 	return readEnvAsInt("SYNCHRONIZE_DYNATRACE_SERVICES_INTERVAL_SECONDS", 60)
 }
 
+// GetSkipLowercaseSLINames returns a bool indicating whether the lowercase operation on SLI names shall be skipped or not
+func GetSkipLowercaseSLINames() bool {
+	return readEnvAsBool("SKIP_LOWERCASE_SLI_NAMES", false)
+}
+
+// GetSkipIncludeSLODisplayNames returns a bool indicating whether including the SLO names shall be skipped or not
+func GetSkipIncludeSLODisplayNames() bool {
+	return readEnvAsBool("SKIP_INCLUDE_SLO_DISPLAY_NAMES", false)
+}
+
+// GetSkipCheckDuplicateSLIAndDisplayNames returns a bool indicating whether the check for duplicate SLI and display names shall be skipped or not
+func GetSkipCheckDuplicateSLIAndDisplayNames() bool {
+	return readEnvAsBool("SKIP_CHECK_DUPLICATE_SLI_AND_DISPLAY_NAMES", false)
+}
+
 func readEnvAsBool(env string, defaultValue bool) bool {
 	envValue := os.Getenv(env)
 	if envValue == "" {
