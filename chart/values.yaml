@@ -20,33 +20,36 @@ dynatraceService:
     logLevel: "info"                         # Minimum log level to log
     keptnApiUrl: ""                          # URL of keptn API
     keptnBridgeUrl: ""                       # URL of keptn bridge
+    skipLowercaseSLINames: false             # Skip to apply a lower-case operation on SLI names
+    skipIncludeSLODisplayNames: false        # Skip to include display names for SLO files produced by dynatrace-service
+    skipCheckDuplicateSLIAndDisplayNames: false   # Skip check for duplicate SLI and display names in dashboard use-case
 
-imagePullSecrets: []                         # Secrets to use for container registry credentials
+imagePullSecrets: [ ]                         # Secrets to use for container registry credentials
 
 serviceAccount:
   create: true                               # Enables the service account creation
-  annotations: {}                            # Annotations to add to the service account
+  annotations: { }                            # Annotations to add to the service account
 
-podAnnotations: {}                           # Annotations to add to the created pods
+podAnnotations: { }                           # Annotations to add to the created pods
 
-podSecurityContext:                          # Set the pod security context (e.g. fsGroups)
-   fsGroup: 65532
+podSecurityContext: # Set the pod security context (e.g. fsGroups)
+  fsGroup: 65532
 
-securityContext:                             # Set the security context (e.g. runAsUser)
+securityContext: # Set the security context (e.g. runAsUser)
   runAsNonRoot: true
   runAsUser: 65532
   readOnlyRootFilesystem: true
   allowPrivilegeEscalation: false
   privileged: false
   seccompProfile:
-      type: RuntimeDefault
+    type: RuntimeDefault
 
 distributor:
   metadata:
     hostname: ""                             # Sets the hostname sent by the distributor to the control-plane
     namespace: ""                            # Sets the namespace sent by the distributor to the control-plane
 
-resources:                                  # Set resources limits and requests
+resources: # Set resources limits and requests
   limits:
     cpu: 128m
     memory: 200Mi
@@ -54,11 +57,11 @@ resources:                                  # Set resources limits and requests
     cpu: 32m
     memory: 50Mi
 
-nodeSelector: {}                                # Node selector configuration
+nodeSelector: { }                                # Node selector configuration
 
-tolerations: []                                 # Tolerations for the pods
+tolerations: [ ]                                 # Tolerations for the pods
 
-affinity: {}                                    # Affinity rules
+affinity: { }                                    # Affinity rules
 
 terminationGracePeriodSeconds: 30               # Pod termination grace period in seconds
 workGracePeriodSeconds: 20                      # Seconds allocated to completing work in the event of a graceful shutdown
