@@ -45,7 +45,7 @@ func (p *CustomChartingTileProcessing) Process(ctx context.Context, tile *dynatr
 		return nil
 	}
 
-	sloDefinitionParsingResult, err := parseSLODefinition(tile.FilterConfig.CustomName)
+	sloDefinitionParsingResult, err := parseSLODefinition(p.featureFlags, tile.FilterConfig.CustomName)
 	if (err == nil) && (sloDefinitionParsingResult.exclude) {
 		log.WithField("tile.FilterConfig.CustomName", tile.FilterConfig.CustomName).Debug("Tile excluded as name includes exclude=true")
 		return nil

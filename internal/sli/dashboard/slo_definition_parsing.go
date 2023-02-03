@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"regexp"
 	"strconv"
@@ -33,7 +34,7 @@ type sloDefinitionParsingResult struct {
 //	"KQG;project=myproject;pass=90%;warning=75%;"
 //
 // This will return a SLO object or an error if parsing was not possible
-func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error) {
+func parseSLODefinition(flags ff.GetSLIFeatureFlags, sloDefinition string) (sloDefinitionParsingResult, error) {
 	res := sloDefinitionParsingResult{
 		sloDefinition: result.SLO{
 			Weight: 1,
@@ -69,7 +70,7 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 			if res.sloDefinition.DisplayName == "" {
 				res.sloDefinition.DisplayName = kv.value
 			}
-			res.sloDefinition.SLI = cleanIndicatorName(kv.value)
+			res.sloDefinition.SLI = cleanIndicatorName(flags.SkipLowercaseSLINames(), kv.value)
 
 		case sloDefPass:
 			passCriteria, err := parseSLOCriteriaString(kv.value)
@@ -132,7 +133,8 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 	}
 
 	if res.sloDefinition.SLI == "" && res.sloDefinition.DisplayName != "" {
-		res.sloDefinition.SLI = cleanIndicatorName(res.sloDefinition.DisplayName)
+		// do not skip lowercase operation here, as SLI was not set - so it cannot be legacy behavior
+		res.sloDefinition.SLI = cleanIndicatorName(false, res.sloDefinition.DisplayName)
 	}
 
 	if len(errs) > 0 {
@@ -181,9 +183,12 @@ func (err *sloDefinitionError) Error() string {
 }
 
 // cleanIndicatorName makes sure we have a valid indicator name by forcing lower case and getting rid of special characters.
-// All spaces, periods, forward-slashs, and percent and dollar signs are replaced with an underscore.
-func cleanIndicatorName(indicatorName string) string {
-	indicatorName = strings.ToLower(indicatorName)
+// All spaces, periods, forward-slashes, and percent and dollar signs are replaced with an underscore.
+func cleanIndicatorName(skipLowercaseSLINames bool, indicatorName string) string {
+	if !skipLowercaseSLINames {
+		indicatorName = strings.ToLower(indicatorName)
+	}
+
 	indicatorName = strings.ReplaceAll(indicatorName, " ", "_")
 	indicatorName = strings.ReplaceAll(indicatorName, "/", "_")
 	indicatorName = strings.ReplaceAll(indicatorName, "%", "_")

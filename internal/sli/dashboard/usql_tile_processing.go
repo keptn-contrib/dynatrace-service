@@ -41,7 +41,7 @@ func NewUSQLTileProcessing(client dynatrace.ClientInterface, eventData adapter.E
 // Process processes the specified USQL dashboard tile.
 // TODO: 2022-03-07: Investigate if all error and warning cases are covered. E.g. what happens if a query returns no results?
 func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) []result.SLIWithSLO {
-	sloDefinitionParsingResult, err := parseSLODefinition(tile.CustomName)
+	sloDefinitionParsingResult, err := parseSLODefinition(p.featureFlags, tile.CustomName)
 	if (err == nil) && (sloDefinitionParsingResult.exclude) {
 		log.WithField("tile.CustomName", tile.Name).Debug("Tile excluded as name includes exclude=true")
 		return nil
@@ -72,7 +72,7 @@ func (p *USQLTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile) 
 	case dynatrace.SingleValueVisualizationType:
 		return []result.SLIWithSLO{processQueryResultForSingleValue(*usqlResult, sloDefinition, request)}
 	case dynatrace.ColumnChartVisualizationType, dynatrace.LineChartVisualizationType, dynatrace.PieChartVisualizationType, dynatrace.TableVisualizationType:
-		return processQueryResultForMultipleValues(*usqlResult, sloDefinition, tile.Type, request)
+		return processQueryResultForMultipleValues(*usqlResult, sloDefinition, tile.Type, request, p.featureFlags)
 	default:
 		// generate failed tile result specifically because it is unsupported
 		return []result.SLIWithSLO{result.NewFailedSLIWithSLOAndQuery(sloDefinition, request.RequestString(), "unsupported USQL visualization type: "+tile.Type)}
@@ -95,7 +95,7 @@ func processQueryResultForSingleValue(usqlResult dynatrace.DTUSQLResult, sloDefi
 	return result.NewSuccessfulSLIWithSLOAndQuery(sloDefinition, dimensionValue, request.RequestString())
 }
 
-func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition result.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest) []result.SLIWithSLO {
+func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloDefinition result.SLO, visualizationType string, request dynatrace.USQLClientQueryRequest, flags ff.GetSLIFeatureFlags) []result.SLIWithSLO {
 	if len(usqlResult.Values) == 0 {
 		return []result.SLIWithSLO{result.NewWarningSLIWithSLOAndQuery(sloDefinition, request.RequestString(), zeroValuesMessage)}
 	}
@@ -108,17 +108,17 @@ func processQueryResultForMultipleValues(usqlResult dynatrace.DTUSQLResult, sloD
 	for index, rowValue := range usqlResult.Values {
 		dimensionName, err := tryCastDimensionNameToString(rowValue[0])
 		if err != nil {
-			tileResults = append(tileResults, newWarningTileResultWithIndexFromSLODefinitionAndQuery(index, sloDefinition, request, err.Error()))
+			tileResults = append(tileResults, newWarningTileResultWithIndexFromSLODefinitionAndQuery(index, sloDefinition, request, err.Error(), flags))
 			continue
 		}
 
 		dimensionValue, err := tryGetDimensionValueForVisualizationType(rowValue, visualizationType)
 		if err != nil {
-			tileResults = append(tileResults, newWarningTileResultWithIndexFromSLODefinitionAndQuery(index, sloDefinition, request, err.Error()))
+			tileResults = append(tileResults, newWarningTileResultWithIndexFromSLODefinitionAndQuery(index, sloDefinition, request, err.Error(), flags))
 			continue
 		}
 
-		tileResults = append(tileResults, newSuccessfulTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, request))
+		tileResults = append(tileResults, newSuccessfulTileResultForDimensionNameAndValue(dimensionName, dimensionValue, sloDefinition, request, flags))
 	}
 	return tileResults
 }
@@ -160,10 +160,10 @@ func tryCastDimensionNameToString(dimensionName interface{}) (string, error) {
 	return "", errors.New("dimension name should be a string")
 }
 
-func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition result.SLO, request dynatrace.USQLClientQueryRequest) result.SLIWithSLO {
+func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimensionValue float64, sloDefinition result.SLO, request dynatrace.USQLClientQueryRequest, flags ff.GetSLIFeatureFlags) result.SLIWithSLO {
 	return result.NewSuccessfulSLIWithSLOAndQuery(
 		result.SLO{
-			SLI:         buildIndicatorNameWithDimensionName(sloDefinition.SLI, dimensionName),
+			SLI:         buildIndicatorNameWithDimensionName(flags, sloDefinition.SLI, dimensionName),
 			DisplayName: buildDisplayNameWithDimensionName(sloDefinition.DisplayName, dimensionName),
 			Weight:      sloDefinition.Weight,
 			KeySLI:      sloDefinition.KeySLI,
@@ -175,10 +175,10 @@ func newSuccessfulTileResultForDimensionNameAndValue(dimensionName string, dimen
 	)
 }
 
-func newWarningTileResultWithIndexFromSLODefinitionAndQuery(index int, sloDefinition result.SLO, request dynatrace.USQLClientQueryRequest, message string) result.SLIWithSLO {
+func newWarningTileResultWithIndexFromSLODefinitionAndQuery(index int, sloDefinition result.SLO, request dynatrace.USQLClientQueryRequest, message string, flags ff.GetSLIFeatureFlags) result.SLIWithSLO {
 	return result.NewWarningSLIWithSLOAndQuery(
 		result.SLO{
-			SLI:         cleanIndicatorName(fmt.Sprintf("%s_%d", sloDefinition.SLI, index+1)),
+			SLI:         cleanIndicatorName(flags.SkipLowercaseSLINames(), fmt.Sprintf("%s_%d", sloDefinition.SLI, index+1)),
 			DisplayName: fmt.Sprintf("%s (%d)", sloDefinition.DisplayName, index+1),
 			Weight:      sloDefinition.Weight,
 			KeySLI:      sloDefinition.KeySLI,
@@ -190,12 +190,12 @@ func newWarningTileResultWithIndexFromSLODefinitionAndQuery(index int, sloDefini
 	)
 }
 
-func buildIndicatorNameWithDimensionName(baseIndicatorName string, dimensionName string) string {
+func buildIndicatorNameWithDimensionName(flags ff.GetSLIFeatureFlags, baseIndicatorName string, dimensionName string) string {
 	if dimensionName == "" {
 		return baseIndicatorName
 	}
 
-	return cleanIndicatorName(baseIndicatorName + "_" + dimensionName)
+	return cleanIndicatorName(flags.SkipLowercaseSLINames(), baseIndicatorName+"_"+dimensionName)
 }
 
 func buildDisplayNameWithDimensionName(baseDisplayName string, dimensionName string) string {

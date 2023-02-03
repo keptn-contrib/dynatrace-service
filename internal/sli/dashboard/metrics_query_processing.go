@@ -72,16 +72,21 @@ func (r *MetricsQueryProcessing) processResults(sloDefinition result.SLO, proces
 	}
 
 	var tileResults []result.SLIWithSLO
-	for _, r := range results {
-		tileResults = append(tileResults, result.NewSuccessfulSLIWithSLOAndQuery(createSLODefinitionForName(sloDefinition, r.Name()), r.Value(), request.RequestString()))
+	for _, res := range results {
+		tileResults = append(
+			tileResults,
+			result.NewSuccessfulSLIWithSLOAndQuery(
+				createSLODefinitionForName(r.featureFlags, sloDefinition, res.Name()),
+				res.Value(),
+				request.RequestString()))
 	}
 
 	return tileResults
 }
 
-func createSLODefinitionForName(baseSLODefinition result.SLO, name string) result.SLO {
+func createSLODefinitionForName(flags ff.GetSLIFeatureFlags, baseSLODefinition result.SLO, name string) result.SLO {
 	return result.SLO{
-		SLI:         baseSLODefinition.SLI + "_" + cleanIndicatorName(name),
+		SLI:         baseSLODefinition.SLI + "_" + cleanIndicatorName(flags.SkipLowercaseSLINames(), name),
 		DisplayName: baseSLODefinition.DisplayName + " (" + name + ")",
 		Weight:      baseSLODefinition.Weight,
 		KeySLI:      baseSLODefinition.KeySLI,

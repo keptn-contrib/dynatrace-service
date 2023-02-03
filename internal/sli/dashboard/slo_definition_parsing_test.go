@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"testing"
 
@@ -76,7 +77,7 @@ func TestParseSLODefinition_SuccessCases(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseSLODefinition(tt.sloString)
+			got, err := parseSLODefinition(ff.GetSLIFeatureFlags{}, tt.sloString)
 			if assert.NoError(t, err) {
 				assert.EqualValues(t, tt.want, got)
 			}
@@ -226,7 +227,7 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseSLODefinition(tt.sloString)
+			got, err := parseSLODefinition(ff.GetSLIFeatureFlags{}, tt.sloString)
 			if assert.Error(t, err) {
 				for _, errMessage := range tt.errMessages {
 					assert.Contains(t, err.Error(), errMessage)

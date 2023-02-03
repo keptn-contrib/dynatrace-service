@@ -88,7 +88,7 @@ func newDataExplorerTileValidator(tile *dynatrace.Tile, dashboardFilter *dynatra
 }
 
 func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, error) {
-	sloDefinitionParsingResult, err := parseSLODefinition(v.tile.Name)
+	sloDefinitionParsingResult, err := parseSLODefinition(v.featureFlags, v.tile.Name)
 	if (err == nil) && (sloDefinitionParsingResult.exclude) {
 		log.WithField("tileName", v.tile.Name).Debug("Tile excluded as name includes exclude=true")
 		return nil, nil

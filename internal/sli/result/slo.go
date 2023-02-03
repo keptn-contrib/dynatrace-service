@@ -1,6 +1,8 @@
 package result
 
-import keptn "github.com/keptn/go-utils/pkg/lib"
+import (
+	keptn "github.com/keptn/go-utils/pkg/lib"
+)
 
 type SLOCriteria struct {
 	Criteria []string
@@ -65,10 +67,15 @@ type SLO struct {
 	KeySLI      bool
 }
 
-func (s SLO) ToKeptnDomain() *keptn.SLO {
+func (s SLO) ToKeptnDomain(skipIncludeDisplayName bool) *keptn.SLO {
+	displayName := s.DisplayName
+	if skipIncludeDisplayName {
+		displayName = ""
+	}
+
 	return &keptn.SLO{
 		SLI:         s.SLI,
-		DisplayName: s.DisplayName,
+		DisplayName: displayName,
 		Pass:        s.Pass.toKeptnDomain(),
 		Warning:     s.Warning.toKeptnDomain(),
 		Weight:      s.Weight,

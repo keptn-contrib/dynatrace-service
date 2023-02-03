@@ -51,10 +51,10 @@ func (pr *processingResult) getResults() []result.SLIWithSLO {
 	return pr.results
 }
 
-func (pr *processingResult) getSLOs() *keptncommon.ServiceLevelObjectives {
+func (pr *processingResult) getSLOs(flags ff.GetSLIFeatureFlags) *keptncommon.ServiceLevelObjectives {
 	objectives := make([]*keptncommon.SLO, 0, len(pr.results))
 	for _, r := range pr.results {
-		objectives = append(objectives, r.SLODefinition().ToKeptnDomain())
+		objectives = append(objectives, r.SLODefinition().ToKeptnDomain(flags.SkipIncludeSLODisplayNames()))
 	}
 
 	return &keptncommon.ServiceLevelObjectives{
@@ -142,9 +142,13 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 		return nil, NewProcessingError(err)
 	}
 
-	err = p.sloUploader.UploadSLOs(ctx, p.eventData.GetProject(), p.eventData.GetStage(), p.eventData.GetService(), processingResult.getSLOs())
+	err = p.sloUploader.UploadSLOs(ctx, p.eventData.GetProject(), p.eventData.GetStage(), p.eventData.GetService(), processingResult.getSLOs(p.featureFlags))
 	if err != nil {
 		return nil, NewUploadSLOsError(err)
+	}
+
+	if p.featureFlags.SkipCheckDuplicateSLIAndDisplayNames() {
+		return processingResult.getResults(), nil
 	}
 
 	return checkForDuplicatesInResults(processingResult.getResults()), nil

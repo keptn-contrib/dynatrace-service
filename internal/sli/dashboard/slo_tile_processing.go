@@ -52,10 +52,13 @@ func (p *SLOTileProcessing) processSLO(ctx context.Context, sloID string) result
 	request := dynatrace.NewSLOClientGetRequest(query.GetSLOID(), p.timeframe)
 	sloResult, err := dynatrace.NewSLOClient(p.client).Get(ctx, request)
 	if err != nil {
-		return result.NewFailedSLIWithSLO(result.CreateInformationalSLO(cleanIndicatorName("slo_"+sloID)), "error querying Service level objectives API: "+err.Error())
+		return result.NewFailedSLIWithSLO(
+			result.CreateInformationalSLO(
+				cleanIndicatorName(p.featureFlags.SkipLowercaseSLINames(), "slo_"+sloID)),
+			"error querying Service level objectives API: "+err.Error())
 	}
 
-	indicatorName := cleanIndicatorName(sloResult.Name)
+	indicatorName := cleanIndicatorName(p.featureFlags.SkipLowercaseSLINames(), sloResult.Name)
 
 	// TODO: 2021-12-20: check: maybe in the future we will allow users to add additional SLO defs via the Tile Name, e.g: weight or KeySli
 
