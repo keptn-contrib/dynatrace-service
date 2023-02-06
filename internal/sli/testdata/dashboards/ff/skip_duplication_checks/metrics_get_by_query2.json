@@ -1,0 +1,46 @@
+{
+  "totalCount": 2,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityName.equals(~\"EasytravelService~\")\"))))):splitBy(\"dt.entity.service\"):avg:auto:sort(value(avg,descending)):limit(20)):limit(100):names",
+      "dataPointCountRatio": 1.0E-7,
+      "dimensionCountRatio": 2.0E-5,
+      "data": [
+        {
+          "dimensions": [
+            "EasytravelService",
+            "SERVICE-A9AD48F41E6A8034"
+          ],
+          "dimensionMap": {
+            "dt.entity.service.name": "EasytravelService",
+            "dt.entity.service": "SERVICE-A9AD48F41E6A8034"
+          },
+          "timestamps": [
+            1664409600000
+          ],
+          "values": [
+            115445.40697872869
+          ]
+        },
+        {
+          "dimensions": [
+            "EasytravelService",
+            "SERVICE-6B768BD8F0E66CAC"
+          ],
+          "dimensionMap": {
+            "dt.entity.service.name": "EasytravelService",
+            "dt.entity.service": "SERVICE-6B768BD8F0E66CAC"
+          },
+          "timestamps": [
+            1664409600000
+          ],
+          "values": [
+            110568.30653321775
+          ]
+        }
+      ]
+    }
+  ]
+}

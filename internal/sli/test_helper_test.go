@@ -155,6 +155,12 @@ func runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIsAndSLOs(t *tes
 	uploadedSLOsAssertionsFunc(t, configClient.uploadedSLOs)
 }
 
+func runGetSLIsFromDashboardTestWithDashboardParameterAndFeatureFlagsAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, dashboard string, flags ff.GetSLIFeatureFlags, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	configClient := &uploadSLOsConfigClientMock{t: t}
+	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndFeatureFlagsAndCheckSLIs(t, handler, configClient, getSLIEventData, dashboard, flags, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+	uploadedSLOsAssertionsFunc(t, configClient.uploadedSLOs)
+}
+
 func runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndFeatureFlagsAndCheckSLIs(t, handler, configClient, getSLIEventData, dashboard, ff.GetSLIFeatureFlags{}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }

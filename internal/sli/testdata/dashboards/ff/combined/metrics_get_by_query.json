@@ -1,0 +1,24 @@
+{
+  "totalCount": 1,
+  "nextPageKey": null,
+  "resolution": "Inf",
+  "result": [
+    {
+      "metricId": "(builtin:service.response.time:filter(and(or(in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-C6876D601CA5DDFD~\")\")),in(\"dt.entity.service\",entitySelector(\"type(service),entityId(~\"SERVICE-A9AD48F41E6A8034~\")\"))))):splitBy():percentile(90.0):auto:sort(value(percentile(90.0),descending)):limit(20)):limit(100):names",
+      "dataPointCountRatio": 1.0E-7,
+      "dimensionCountRatio": 2.0E-5,
+      "data": [
+        {
+          "dimensions": [],
+          "dimensionMap": {},
+          "timestamps": [
+            1664409600000
+          ],
+          "values": [
+            197588.84577351453
+          ]
+        }
+      ]
+    }
+  ]
+}
