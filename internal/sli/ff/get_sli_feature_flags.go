@@ -8,6 +8,14 @@ type GetSLIFeatureFlags struct {
 	skipCheckDuplicateSLIAndDisplayNames bool
 }
 
+func NewGetSLIFeatureFlags(skipLowercaseSLINames bool, skipIncludeSLODisplayNames bool, skipCheckDuplicateSLIAndDisplayNames bool) GetSLIFeatureFlags {
+	return GetSLIFeatureFlags{
+		skipLowercaseSLINames:                skipLowercaseSLINames,
+		skipIncludeSLODisplayNames:           skipIncludeSLODisplayNames,
+		skipCheckDuplicateSLIAndDisplayNames: skipCheckDuplicateSLIAndDisplayNames,
+	}
+}
+
 func (g GetSLIFeatureFlags) SkipLowercaseSLINames() bool {
 	return g.skipLowercaseSLINames
 }
