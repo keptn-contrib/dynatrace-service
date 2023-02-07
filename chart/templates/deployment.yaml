@@ -127,11 +127,11 @@ spec:
             - name: REPLY_GRACE_PERIOD_SECONDS
               value: '{{ .Values.replyGracePeriodSeconds }}'
             - name: SKIP_LOWERCASE_SLI_NAMES
-              value: {{ .Values.dynatraceService.config.skipLowercaseSLINames | default false }}
+              value: '{{ .Values.dynatraceService.config.skipLowercaseSLINames | default false }}'
             - name: SKIP_INCLUDE_SLO_DISPLAY_NAMES
-              value: {{ .Values.dynatraceService.config.skipIncludeSLODisplayNames | default false }}
+              value: '{{ .Values.dynatraceService.config.skipIncludeSLODisplayNames | default false }}'
             - name: SKIP_CHECK_DUPLICATE_SLI_AND_DISPLAY_NAMES
-              value: {{ .Values.dynatraceService.config.skipCheckDuplicateSLIAndDisplayNames | default false }}
+              value: '{{ .Values.dynatraceService.config.skipCheckDuplicateSLIAndDisplayNames | default false }}'
           livenessProbe:
             httpGet:
               path: /health
