@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.27.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.26.0...0.27.0) (2023-02-23)
+
+
+### Features
+
+* add feature flags for 0.23.0 legacy mode ([#997](https://github.com/keptn-contrib/dynatrace-service/issues/997)) ([6182fdf](https://github.com/keptn-contrib/dynatrace-service/commit/6182fdf031e9b0d683b05627bb7c62116e9073fc))
+* Improve Data explorer thresholds support ([#988](https://github.com/keptn-contrib/dynatrace-service/issues/988)) ([c9071de](https://github.com/keptn-contrib/dynatrace-service/commit/c9071de91a8e42046fa19817baab6b879103b4dc))
+* Improve metric selector unit conversion logic ([#991](https://github.com/keptn-contrib/dynatrace-service/issues/991)) ([e54f04a](https://github.com/keptn-contrib/dynatrace-service/commit/e54f04a76b767701ddba2570e9146a421fe7be22))
+
+
+### Bug Fixes
+
+* Allow equals symbols in metric and entity selectors ([#995](https://github.com/keptn-contrib/dynatrace-service/issues/995)) ([31a2074](https://github.com/keptn-contrib/dynatrace-service/commit/31a20744b850472022d2f6853f77198149060808))
+
+
+### Docs
+
+* release 0.26.0 ([32824c7](https://github.com/keptn-contrib/dynatrace-service/commit/32824c71d086af3ceb5ca4178a471d6bf5798e57))
+
 ## [0.26.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.25.0...0.26.0) (2022-12-21)
 
 ### Release validated with
