@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 	"net/http"
 	"net/url"
 	"path/filepath"
@@ -154,9 +155,19 @@ func runGetSLIsFromDashboardTestWithDashboardParameterAndCheckSLIsAndSLOs(t *tes
 	uploadedSLOsAssertionsFunc(t, configClient.uploadedSLOs)
 }
 
+func runGetSLIsFromDashboardTestWithDashboardParameterAndFeatureFlagsAndCheckSLIsAndSLOs(t *testing.T, handler http.Handler, getSLIEventData *getSLIEventData, dashboard string, flags ff.GetSLIFeatureFlags, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), uploadedSLOsAssertionsFunc func(t *testing.T, actual *keptnapi.ServiceLevelObjectives), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	configClient := &uploadSLOsConfigClientMock{t: t}
+	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndFeatureFlagsAndCheckSLIs(t, handler, configClient, getSLIEventData, dashboard, flags, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+	uploadedSLOsAssertionsFunc(t, configClient.uploadedSLOs)
+}
+
 func runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, getSLIEventData *getSLIEventData, dashboard string, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
+	runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndFeatureFlagsAndCheckSLIs(t, handler, configClient, getSLIEventData, dashboard, ff.GetSLIFeatureFlags{}, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
+}
+
+func runGetSLIsFromDashboardTestWithConfigClientAndDashboardParameterAndFeatureFlagsAndCheckSLIs(t *testing.T, handler http.Handler, configClient configClientInterface, getSLIEventData *getSLIEventData, dashboard string, flags ff.GetSLIFeatureFlags, getSLIFinishedEventAssertionsFunc func(t *testing.T, actual *getSLIFinishedEventData), sliResultAssertionsFuncs ...func(t *testing.T, actual sliResult)) {
 	eventSenderClient := &eventSenderClientMock{}
-	runTestAndAssertNoError(t, getSLIEventData, handler, eventSenderClient, configClient, dashboard)
+	runTestAndAssertNoErrorWithFeatureFlags(t, getSLIEventData, handler, eventSenderClient, configClient, dashboard, flags)
 	assertCorrectGetSLIEvents(t, eventSenderClient.eventSink, getSLIFinishedEventAssertionsFunc, sliResultAssertionsFuncs...)
 }
 
@@ -196,7 +207,11 @@ func runGetSLIsFromFilesTestWithEventAndCheckSLIs(t *testing.T, handler http.Han
 }
 
 func runTestAndAssertNoError(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, configClient configClientInterface, dashboard string) {
-	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, eventSenderClient, configClient, dashboard)
+	runTestAndAssertNoErrorWithFeatureFlags(t, ev, handler, eventSenderClient, configClient, dashboard, ff.GetSLIFeatureFlags{})
+}
+
+func runTestAndAssertNoErrorWithFeatureFlags(t *testing.T, ev *getSLIEventData, handler http.Handler, eventSenderClient *eventSenderClientMock, configClient configClientInterface, dashboard string, flags ff.GetSLIFeatureFlags) {
+	eh, _, teardown := createGetSLIEventHandler(t, ev, handler, eventSenderClient, configClient, dashboard, flags)
 	defer teardown()
 
 	assert.NoError(t, eh.HandleEvent(context.Background(), context.Background()))
@@ -230,13 +245,6 @@ func assertCorrectSLIResults(t *testing.T, getSLIFinishedEventData *getSLIFinish
 	}
 }
 
-func createSLIAssertionsFunc(expectedMetric string, expectedDefinition string) func(t *testing.T, actualMetric string, actualDefinition string) {
-	return func(t *testing.T, actualMetric string, actualDefinition string) {
-		assert.EqualValues(t, expectedMetric, actualMetric)
-		assert.EqualValues(t, expectedDefinition, actualDefinition)
-	}
-}
-
 func createSuccessfulSLIResultAssertionsFunc(expectedMetric string, expectedValue float64, expectedQuery string) func(t *testing.T, actual sliResult) {
 	return func(t *testing.T, actual sliResult) {
 		assert.EqualValues(t, expectedMetric, actual.Metric, "Indicator metric should match")
@@ -267,10 +275,10 @@ func createFailedSLIResultWithQueryAssertionsFunc(expectedMetric string, expecte
 	}
 }
 
-func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, dashboardProperty string) (*GetSLIEventHandler, string, func()) {
-	httpClient, url, teardown := test.CreateHTTPSClient(handler)
+func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInterface, handler http.Handler, eventSenderClient keptn.EventSenderClientInterface, configClient configClientInterface, dashboardProperty string, flags ff.GetSLIFeatureFlags) (*GetSLIEventHandler, string, func()) {
+	httpClient, serverUrl, teardown := test.CreateHTTPSClient(handler)
 
-	dtCredentials, err := credentials.NewDynatraceCredentials(url, testDynatraceAPIToken)
+	dtCredentials, err := credentials.NewDynatraceCredentials(serverUrl, testDynatraceAPIToken)
 	assert.NoError(t, err)
 
 	eh := &GetSLIEventHandler{
@@ -280,9 +288,10 @@ func createGetSLIEventHandler(t *testing.T, keptnEvent GetSLITriggeredAdapterInt
 		configClient:      configClient,
 		dashboardProperty: dashboardProperty,
 		secretName:        "dynatrace", // we do not need this string
+		featureFlags:      flags,
 	}
 
-	return eh, url, teardown
+	return eh, serverUrl, teardown
 }
 
 type getSLIEventData struct {

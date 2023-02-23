@@ -78,7 +78,7 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: spec.nodeName
-            {{- end }}            
+            {{- end }}
             - name: K8S_POD_NAME
               valueFrom:
                 fieldRef:
@@ -126,6 +126,12 @@ spec:
               value: '{{ .Values.workGracePeriodSeconds }}'
             - name: REPLY_GRACE_PERIOD_SECONDS
               value: '{{ .Values.replyGracePeriodSeconds }}'
+            - name: SKIP_LOWERCASE_SLI_NAMES
+              value: '{{ .Values.dynatraceService.config.skipLowercaseSLINames | default false }}'
+            - name: SKIP_INCLUDE_SLO_DISPLAY_NAMES
+              value: '{{ .Values.dynatraceService.config.skipIncludeSLODisplayNames | default false }}'
+            - name: SKIP_CHECK_DUPLICATE_SLI_AND_DISPLAY_NAMES
+              value: '{{ .Values.dynatraceService.config.skipCheckDuplicateSLIAndDisplayNames | default false }}'
           livenessProbe:
             httpGet:
               path: /health

@@ -2,11 +2,11 @@ package dashboard
 
 import (
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"regexp"
 	"strconv"
 	"strings"
-
-	keptncommon "github.com/keptn/go-utils/pkg/lib"
 )
 
 const (
@@ -19,7 +19,7 @@ const (
 )
 
 type sloDefinitionParsingResult struct {
-	sloDefinition keptncommon.SLO
+	sloDefinition result.SLO
 	exclude       bool
 }
 
@@ -34,9 +34,9 @@ type sloDefinitionParsingResult struct {
 //	"KQG;project=myproject;pass=90%;warning=75%;"
 //
 // This will return a SLO object or an error if parsing was not possible
-func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error) {
-	result := sloDefinitionParsingResult{
-		sloDefinition: keptncommon.SLO{
+func parseSLODefinition(flags ff.GetSLIFeatureFlags, sloDefinition string) (sloDefinitionParsingResult, error) {
+	res := sloDefinitionParsingResult{
+		sloDefinition: result.SLO{
 			Weight: 1,
 			KeySLI: false,
 		},
@@ -49,7 +49,7 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 
 		if !kv.split {
 			if i == 0 {
-				result.sloDefinition.DisplayName = kv.key
+				res.sloDefinition.DisplayName = kv.key
 			}
 			continue
 		}
@@ -67,10 +67,10 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 				break
 			}
 
-			if result.sloDefinition.DisplayName == "" {
-				result.sloDefinition.DisplayName = kv.value
+			if res.sloDefinition.DisplayName == "" {
+				res.sloDefinition.DisplayName = kv.value
 			}
-			result.sloDefinition.SLI = cleanIndicatorName(kv.value)
+			res.sloDefinition.SLI = cleanIndicatorName(flags.SkipLowercaseSLINames(), kv.value)
 
 		case sloDefPass:
 			passCriteria, err := parseSLOCriteriaString(kv.value)
@@ -78,7 +78,7 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", sloDefPass, err))
 				break
 			}
-			result.sloDefinition.Pass = append(result.sloDefinition.Pass, passCriteria)
+			res.sloDefinition.Pass = append(res.sloDefinition.Pass, passCriteria)
 
 		case sloDefWarning:
 			warningCriteria, err := parseSLOCriteriaString(kv.value)
@@ -86,7 +86,7 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': %w", sloDefWarning, err))
 				break
 			}
-			result.sloDefinition.Warning = append(result.sloDefinition.Warning, warningCriteria)
+			res.sloDefinition.Warning = append(res.sloDefinition.Warning, warningCriteria)
 
 		case sloDefKey:
 			if keyFound[sloDefKey] {
@@ -100,7 +100,7 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", sloDefKey, kv.value))
 				break
 			}
-			result.sloDefinition.KeySLI = val
+			res.sloDefinition.KeySLI = val
 
 		case sloDefWeight:
 			if keyFound[sloDefWeight] {
@@ -114,7 +114,7 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not an integer value: %v", sloDefWeight, kv.value))
 				break
 			}
-			result.sloDefinition.Weight = val
+			res.sloDefinition.Weight = val
 
 		case sloDefExclude:
 			if keyFound[sloDefExclude] {
@@ -128,25 +128,26 @@ func parseSLODefinition(sloDefinition string) (sloDefinitionParsingResult, error
 				errs = append(errs, fmt.Errorf("invalid definition for '%s': not a boolean value: %v", sloDefExclude, kv.value))
 				break
 			}
-			result.exclude = val
+			res.exclude = val
 		}
 	}
 
-	if result.sloDefinition.SLI == "" && result.sloDefinition.DisplayName != "" {
-		result.sloDefinition.SLI = cleanIndicatorName(result.sloDefinition.DisplayName)
+	if res.sloDefinition.SLI == "" && res.sloDefinition.DisplayName != "" {
+		// do not skip lowercase operation here, as SLI was not set - so it cannot be legacy behavior
+		res.sloDefinition.SLI = cleanIndicatorName(false, res.sloDefinition.DisplayName)
 	}
 
 	if len(errs) > 0 {
 
-		return result, &sloDefinitionError{
+		return res, &sloDefinitionError{
 			errors: errs,
 		}
 	}
 
-	return result, nil
+	return res, nil
 }
 
-func parseSLOCriteriaString(criteria string) (*keptncommon.SLOCriteria, error) {
+func parseSLOCriteriaString(criteria string) (*result.SLOCriteria, error) {
 	criteriaChunks := strings.Split(criteria, ",")
 	var invalidCriteria []string
 	for _, criterion := range criteriaChunks {
@@ -159,7 +160,7 @@ func parseSLOCriteriaString(criteria string) (*keptncommon.SLOCriteria, error) {
 		return nil, fmt.Errorf("invalid criteria value(s): %s", strings.Join(invalidCriteria, ","))
 	}
 
-	return &keptncommon.SLOCriteria{Criteria: criteriaChunks}, nil
+	return &result.SLOCriteria{Criteria: criteriaChunks}, nil
 }
 
 func criterionIsNotValid(criterion string) bool {
@@ -182,9 +183,12 @@ func (err *sloDefinitionError) Error() string {
 }
 
 // cleanIndicatorName makes sure we have a valid indicator name by forcing lower case and getting rid of special characters.
-// All spaces, periods, forward-slashs, and percent and dollar signs are replaced with an underscore.
-func cleanIndicatorName(indicatorName string) string {
-	indicatorName = strings.ToLower(indicatorName)
+// All spaces, periods, forward-slashes, and percent and dollar signs are replaced with an underscore.
+func cleanIndicatorName(skipLowercaseSLINames bool, indicatorName string) string {
+	if !skipLowercaseSLINames {
+		indicatorName = strings.ToLower(indicatorName)
+	}
+
 	indicatorName = strings.ReplaceAll(indicatorName, " ", "_")
 	indicatorName = strings.ReplaceAll(indicatorName, "/", "_")
 	indicatorName = strings.ReplaceAll(indicatorName, "%", "_")

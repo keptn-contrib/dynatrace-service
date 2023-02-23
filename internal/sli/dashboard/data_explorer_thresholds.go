@@ -2,17 +2,17 @@ package dashboard
 
 import (
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"strings"
 
 	"github.com/keptn-contrib/dynatrace-service/internal/dynatrace"
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	log "github.com/sirupsen/logrus"
 )
 
 // passAndWarningProvider provides pass and warning criteria.
 type passAndWarningProvider interface {
-	getPass() []*keptnapi.SLOCriteria
-	getWarning() []*keptnapi.SLOCriteria
+	getPass() result.SLOCriteriaList
+	getWarning() result.SLOCriteriaList
 }
 
 type strictMonotonicityType int
@@ -384,8 +384,8 @@ type passWarnFailThresholdConfiguration struct {
 	failValue float64
 }
 
-func (c *passWarnFailThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
-	return []*keptnapi.SLOCriteria{
+func (c *passWarnFailThresholdConfiguration) getPass() result.SLOCriteriaList {
+	return result.SLOCriteriaList{
 		{
 			Criteria: []string{
 				fmt.Sprintf(">=%f", c.passValue),
@@ -395,8 +395,8 @@ func (c *passWarnFailThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
 	}
 }
 
-func (c *passWarnFailThresholdConfiguration) getWarning() []*keptnapi.SLOCriteria {
-	return []*keptnapi.SLOCriteria{
+func (c *passWarnFailThresholdConfiguration) getWarning() result.SLOCriteriaList {
+	return result.SLOCriteriaList{
 		{
 			Criteria: []string{
 				fmt.Sprintf(">=%f", c.passValue),
@@ -411,8 +411,8 @@ type passFailThresholdConfiguration struct {
 	failValue float64
 }
 
-func (c *passFailThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
-	return []*keptnapi.SLOCriteria{
+func (c *passFailThresholdConfiguration) getPass() result.SLOCriteriaList {
+	return result.SLOCriteriaList{
 		{
 			Criteria: []string{
 				fmt.Sprintf(">=%f", c.passValue),
@@ -422,7 +422,7 @@ func (c *passFailThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
 	}
 }
 
-func (c *passFailThresholdConfiguration) getWarning() []*keptnapi.SLOCriteria {
+func (c *passFailThresholdConfiguration) getWarning() result.SLOCriteriaList {
 	return nil
 }
 
@@ -432,8 +432,8 @@ type failWarnPassThresholdConfiguration struct {
 	passValue float64
 }
 
-func (c *failWarnPassThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
-	return []*keptnapi.SLOCriteria{
+func (c *failWarnPassThresholdConfiguration) getPass() result.SLOCriteriaList {
+	return result.SLOCriteriaList{
 		{
 			Criteria: []string{
 				fmt.Sprintf(">=%f", c.passValue),
@@ -442,8 +442,8 @@ func (c *failWarnPassThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
 	}
 }
 
-func (c *failWarnPassThresholdConfiguration) getWarning() []*keptnapi.SLOCriteria {
-	return []*keptnapi.SLOCriteria{
+func (c *failWarnPassThresholdConfiguration) getWarning() result.SLOCriteriaList {
+	return result.SLOCriteriaList{
 		{
 			Criteria: []string{
 				fmt.Sprintf(">=%f", c.warnValue),
@@ -457,8 +457,8 @@ type failPassThresholdConfiguration struct {
 	passValue float64
 }
 
-func (c *failPassThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
-	return []*keptnapi.SLOCriteria{
+func (c *failPassThresholdConfiguration) getPass() result.SLOCriteriaList {
+	return result.SLOCriteriaList{
 		{
 			Criteria: []string{
 				fmt.Sprintf(">=%f", c.passValue),
@@ -467,6 +467,6 @@ func (c *failPassThresholdConfiguration) getPass() []*keptnapi.SLOCriteria {
 	}
 }
 
-func (c *failPassThresholdConfiguration) getWarning() []*keptnapi.SLOCriteria {
+func (c *failPassThresholdConfiguration) getWarning() result.SLOCriteriaList {
 	return nil
 }

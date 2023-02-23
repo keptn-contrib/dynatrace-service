@@ -24,11 +24,6 @@ type SLIResult struct {
 	IndicatorResult IndicatorResultType
 }
 
-// NewSuccessfulSLIResult creates a new SLIResult with result of success.
-func NewSuccessfulSLIResult(metric string, value float64) SLIResult {
-	return NewSuccessfulSLIResultWithQuery(metric, value, "")
-}
-
 // NewSuccessfulSLIResultWithQuery creates a new SLIResult with a query and a result of success.
 func NewSuccessfulSLIResultWithQuery(metric string, value float64, query string) SLIResult {
 	return SLIResult{
@@ -38,11 +33,6 @@ func NewSuccessfulSLIResultWithQuery(metric string, value float64, query string)
 		Query:           query,
 		IndicatorResult: IndicatorResultSuccessful,
 	}
-}
-
-// NewWarningSLIResult creates a new SLIResult with result of warning.
-func NewWarningSLIResult(metric string, message string) SLIResult {
-	return NewWarningSLIResultWithQuery(metric, message, "")
 }
 
 // NewWarningSLIResultWithQuery creates a new SLIResult with a query and a result of warning.

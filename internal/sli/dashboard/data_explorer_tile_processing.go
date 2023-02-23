@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 	"strings"
 
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	log "github.com/sirupsen/logrus"
 
@@ -23,21 +23,23 @@ type DataExplorerTileProcessing struct {
 	eventData     adapter.EventContentAdapter
 	customFilters []*keptnv2.SLIFilter
 	timeframe     common.Timeframe
+	featureFlags  ff.GetSLIFeatureFlags
 }
 
 // NewDataExplorerTileProcessing creates a new DataExplorerTileProcessing.
-func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe) *DataExplorerTileProcessing {
+func NewDataExplorerTileProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe, flags ff.GetSLIFeatureFlags) *DataExplorerTileProcessing {
 	return &DataExplorerTileProcessing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
 		timeframe:     timeframe,
+		featureFlags:  flags,
 	}
 }
 
 // Process processes the specified Data Explorer dashboard tile.
 func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []result.SLIWithSLO {
-	validatedDataExplorerTile, err := newDataExplorerTileValidator(tile, dashboardFilter).tryValidate()
+	validatedDataExplorerTile, err := newDataExplorerTileValidator(tile, dashboardFilter, p.featureFlags).tryValidate()
 	var validationErr *dataExplorerTileValidationError
 	if errors.As(err, &validationErr) {
 		return []result.SLIWithSLO{result.NewFailedSLIWithSLO(validationErr.sloDefinition, err.Error())}
@@ -52,14 +54,14 @@ func (p *DataExplorerTileProcessing) Process(ctx context.Context, tile *dynatrac
 
 func (p *DataExplorerTileProcessing) createMetricsQueryProcessing(validatedTile *validatedDataExplorerTile) *MetricsQueryProcessing {
 	if validatedTile.singleValueVisualization {
-		return NewMetricsQueryProcessingThatAllowsOnlyOneResult(p.client, validatedTile.targetUnitID)
+		return NewMetricsQueryProcessingThatAllowsOnlyOneResult(p.client, validatedTile.targetUnitID, p.featureFlags)
 	}
 
-	return NewMetricsQueryProcessing(p.client, validatedTile.targetUnitID)
+	return NewMetricsQueryProcessing(p.client, validatedTile.targetUnitID, p.featureFlags)
 }
 
 type dataExplorerTileValidationError struct {
-	sloDefinition keptnapi.SLO
+	sloDefinition result.SLO
 	errors        []error
 }
 
@@ -74,17 +76,19 @@ func (err *dataExplorerTileValidationError) Error() string {
 type dataExplorerTileValidator struct {
 	tile            *dynatrace.Tile
 	dashboardFilter *dynatrace.DashboardFilter
+	featureFlags    ff.GetSLIFeatureFlags
 }
 
-func newDataExplorerTileValidator(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) *dataExplorerTileValidator {
+func newDataExplorerTileValidator(tile *dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter, flags ff.GetSLIFeatureFlags) *dataExplorerTileValidator {
 	return &dataExplorerTileValidator{
 		tile:            tile,
 		dashboardFilter: dashboardFilter,
+		featureFlags:    flags,
 	}
 }
 
 func (v *dataExplorerTileValidator) tryValidate() (*validatedDataExplorerTile, error) {
-	sloDefinitionParsingResult, err := parseSLODefinition(v.tile.Name)
+	sloDefinitionParsingResult, err := parseSLODefinition(v.featureFlags, v.tile.Name)
 	if (err == nil) && (sloDefinitionParsingResult.exclude) {
 		log.WithField("tileName", v.tile.Name).Debug("Tile excluded as name includes exclude=true")
 		return nil, nil
@@ -268,7 +272,7 @@ func parseResolutionKeyValuePair(keyValuePair string) (string, error) {
 }
 
 type validatedDataExplorerTile struct {
-	sloDefinition            keptnapi.SLO
+	sloDefinition            result.SLO
 	targetUnitID             string
 	singleValueVisualization bool
 	query                    metrics.Query

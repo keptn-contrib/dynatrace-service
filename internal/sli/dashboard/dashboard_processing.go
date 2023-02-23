@@ -3,6 +3,7 @@ package dashboard
 import (
 	"context"
 	"fmt"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
 	"strings"
 
 	keptncommon "github.com/keptn/go-utils/pkg/lib"
@@ -50,11 +51,10 @@ func (pr *processingResult) getResults() []result.SLIWithSLO {
 	return pr.results
 }
 
-func (pr *processingResult) getSLOs() *keptncommon.ServiceLevelObjectives {
+func (pr *processingResult) getSLOs(flags ff.GetSLIFeatureFlags) *keptncommon.ServiceLevelObjectives {
 	objectives := make([]*keptncommon.SLO, 0, len(pr.results))
 	for _, r := range pr.results {
-		sloDefinition := r.SLODefinition()
-		objectives = append(objectives, &sloDefinition)
+		objectives = append(objectives, r.SLODefinition().ToKeptnDomain(flags.SkipIncludeSLODisplayNames()))
 	}
 
 	return &keptncommon.ServiceLevelObjectives{
@@ -120,16 +120,18 @@ type Processing struct {
 	customFilters []*keptnv2.SLIFilter
 	timeframe     common.Timeframe
 	sloUploader   sloUploaderInterface
+	featureFlags  ff.GetSLIFeatureFlags
 }
 
 // NewProcessing will create a new Processing
-func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe, sloUploader sloUploaderInterface) *Processing {
+func NewProcessing(client dynatrace.ClientInterface, eventData adapter.EventContentAdapter, customFilters []*keptnv2.SLIFilter, timeframe common.Timeframe, sloUploader sloUploaderInterface, flags ff.GetSLIFeatureFlags) *Processing {
 	return &Processing{
 		client:        client,
 		eventData:     eventData,
 		customFilters: customFilters,
 		timeframe:     timeframe,
 		sloUploader:   sloUploader,
+		featureFlags:  flags,
 	}
 }
 
@@ -140,9 +142,13 @@ func (p *Processing) Process(ctx context.Context, dashboard *dynatrace.Dashboard
 		return nil, NewProcessingError(err)
 	}
 
-	err = p.sloUploader.UploadSLOs(ctx, p.eventData.GetProject(), p.eventData.GetStage(), p.eventData.GetService(), processingResult.getSLOs())
+	err = p.sloUploader.UploadSLOs(ctx, p.eventData.GetProject(), p.eventData.GetStage(), p.eventData.GetService(), processingResult.getSLOs(p.featureFlags))
 	if err != nil {
 		return nil, NewUploadSLOsError(err)
+	}
+
+	if p.featureFlags.SkipCheckDuplicateSLIAndDisplayNames() {
+		return processingResult.getResults(), nil
 	}
 
 	return checkForDuplicatesInResults(processingResult.getResults()), nil
@@ -178,15 +184,15 @@ func (p *Processing) process(ctx context.Context, dashboard *dynatrace.Dashboard
 func (p *Processing) processTile(ctx context.Context, tile dynatrace.Tile, dashboardFilter *dynatrace.DashboardFilter) []result.SLIWithSLO {
 	switch tile.TileType {
 	case dynatrace.SLOTileType:
-		return NewSLOTileProcessing(p.client, p.timeframe).Process(ctx, &tile)
+		return NewSLOTileProcessing(p.client, p.timeframe, p.featureFlags).Process(ctx, &tile)
 	case dynatrace.OpenProblemsTileType:
 		return NewProblemTileProcessing(p.client, p.timeframe).Process(ctx, &tile, dashboardFilter)
 	case dynatrace.DataExplorerTileType:
-		return NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboardFilter)
+		return NewDataExplorerTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe, p.featureFlags).Process(ctx, &tile, dashboardFilter)
 	case dynatrace.CustomChartingTileType:
-		return NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile, dashboardFilter)
+		return NewCustomChartingTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe, p.featureFlags).Process(ctx, &tile, dashboardFilter)
 	case dynatrace.USQLTileType:
-		return NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe).Process(ctx, &tile)
+		return NewUSQLTileProcessing(p.client, p.eventData, p.customFilters, p.timeframe, p.featureFlags).Process(ctx, &tile)
 	default:
 		// we do not do markdowns (HEADER) or synthetic tests (SYNTHETIC_TESTS)
 		return nil

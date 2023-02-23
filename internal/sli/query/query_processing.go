@@ -59,11 +59,11 @@ func (p *Processing) Process(ctx context.Context, indicators []string) ([]result
 	}
 
 	results := make([]result.SLIWithSLO, len(indicators))
-	var slo *keptncommon.SLO
+	var slo *result.SLO
 	for i, indicator := range indicators {
-		slo, objectives = getAndRemoveFirstObjectiveWithName(objectives, indicator)
+		slo, objectives = objectives.GetAndRemoveFirstSLOWithName(indicator)
 		if slo == nil {
-			results[i] = result.NewFailedSLIWithSLO(result.CreateInformationalSLODefinition(indicator), "missing SLO objective")
+			results[i] = result.NewFailedSLIWithSLO(result.CreateInformationalSLO(indicator), "missing SLO objective")
 			continue
 		}
 
@@ -73,22 +73,13 @@ func (p *Processing) Process(ctx context.Context, indicators []string) ([]result
 	return results, nil
 }
 
-func (p *Processing) getSLOObjectives(ctx context.Context) ([]*keptncommon.SLO, error) {
+func (p *Processing) getSLOObjectives(ctx context.Context) (result.SLOs, error) {
 	slos, err := p.sloGetter.GetSLOs(ctx, p.eventData.GetProject(), p.eventData.GetStage(), p.eventData.GetService())
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve SLO definitions: %w", err)
 	}
 
-	return slos.Objectives, nil
-}
-
-func getAndRemoveFirstObjectiveWithName(objectives []*keptncommon.SLO, name string) (*keptncommon.SLO, []*keptncommon.SLO) {
-	for i, o := range objectives {
-		if o.SLI == name {
-			return o, append(objectives[:i], objectives[i+1:]...)
-		}
-	}
-	return nil, objectives
+	return result.SLOsFromKeptnDomain(slos.Objectives), nil
 }
 
 // getSLIResultFromIndicator queries a single SLI value ultimately from the Dynatrace API and returns an SLIResult.

@@ -1,9 +1,10 @@
 package dashboard
 
 import (
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/ff"
+	"github.com/keptn-contrib/dynatrace-service/internal/sli/result"
 	"testing"
 
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -76,7 +77,7 @@ func TestParseSLODefinition_SuccessCases(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseSLODefinition(tt.sloString)
+			got, err := parseSLODefinition(ff.GetSLIFeatureFlags{}, tt.sloString)
 			if assert.NoError(t, err) {
 				assert.EqualValues(t, tt.want, got)
 			}
@@ -226,7 +227,7 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseSLODefinition(tt.sloString)
+			got, err := parseSLODefinition(ff.GetSLIFeatureFlags{}, tt.sloString)
 			if assert.Error(t, err) {
 				for _, errMessage := range tt.errMessages {
 					assert.Contains(t, err.Error(), errMessage)
@@ -238,19 +239,19 @@ func TestParseSLODefinition_ErrorCases(t *testing.T) {
 }
 
 func createSLODefinitionParsingResult(exclude bool, indicatorName string, displayName string, pass [][]string, warning [][]string, weight int, isKey bool) sloDefinitionParsingResult {
-	var passCriteria []*keptnapi.SLOCriteria
+	var passCriteria result.SLOCriteriaList
 	for _, criteria := range pass {
-		passCriteria = append(passCriteria, &keptnapi.SLOCriteria{Criteria: criteria})
+		passCriteria = append(passCriteria, &result.SLOCriteria{Criteria: criteria})
 	}
 
-	var warningCriteria []*keptnapi.SLOCriteria
+	var warningCriteria result.SLOCriteriaList
 	for _, criteria := range warning {
-		warningCriteria = append(warningCriteria, &keptnapi.SLOCriteria{Criteria: criteria})
+		warningCriteria = append(warningCriteria, &result.SLOCriteria{Criteria: criteria})
 	}
 
 	return sloDefinitionParsingResult{
 		exclude: exclude,
-		sloDefinition: keptnapi.SLO{
+		sloDefinition: result.SLO{
 			SLI:         indicatorName,
 			DisplayName: displayName,
 			Pass:        passCriteria,

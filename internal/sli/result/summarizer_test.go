@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
@@ -38,12 +37,12 @@ var (
 // i.e. successful indicators do not appear, indicators are grouped by message, groups are ordered by the message's first appearance.
 func TestSummarizer_SummaryMessage(t *testing.T) {
 	var results = []SLIWithSLO{
-		NewWarningSLIWithSLO(metricASLO, noDataPointsMessage),
-		NewWarningSLIWithSLO(metricBSLO, tooManyPointsMessage),
-		NewWarningSLIWithSLO(metricCSLO, tooManyPointsMessage),
-		NewSuccessfulSLIWithSLO(metricDSLO, 100),
-		NewWarningSLIWithSLO(metricESLO, tooManyPointsMessage),
-		NewWarningSLIWithSLO(metricFSLO, noDataPointsMessage),
+		newWarningSLIWithSLO(metricASLO, noDataPointsMessage),
+		newWarningSLIWithSLO(metricBSLO, tooManyPointsMessage),
+		newWarningSLIWithSLO(metricCSLO, tooManyPointsMessage),
+		newSuccessfulSLIWithSLO(metricDSLO, 100),
+		newWarningSLIWithSLO(metricESLO, tooManyPointsMessage),
+		newWarningSLIWithSLO(metricFSLO, noDataPointsMessage),
 		NewFailedSLIWithSLO(metricGSLO, errorQueryingAPIMessage),
 	}
 
@@ -70,26 +69,26 @@ func TestSummarizer_OverallResult(t *testing.T) {
 		{
 			name: "pass",
 			results: []SLIWithSLO{
-				NewSuccessfulSLIWithSLO(metricASLO, 100),
-				NewSuccessfulSLIWithSLO(metricBSLO, 100),
-				NewSuccessfulSLIWithSLO(metricCSLO, 100),
+				newSuccessfulSLIWithSLO(metricASLO, 100),
+				newSuccessfulSLIWithSLO(metricBSLO, 100),
+				newSuccessfulSLIWithSLO(metricCSLO, 100),
 			},
 			expectedOverallResult: keptnv2.ResultPass,
 		},
 		{
 			name: "warning has precedence over pass",
 			results: []SLIWithSLO{
-				NewSuccessfulSLIWithSLO(metricASLO, 100),
-				NewWarningSLIWithSLO(metricBSLO, noDataPointsMessage),
-				NewSuccessfulSLIWithSLO(metricCSLO, 100),
+				newSuccessfulSLIWithSLO(metricASLO, 100),
+				newWarningSLIWithSLO(metricBSLO, noDataPointsMessage),
+				newSuccessfulSLIWithSLO(metricCSLO, 100),
 			},
 			expectedOverallResult: keptnv2.ResultWarning,
 		},
 		{
 			name: "failed has precedence",
 			results: []SLIWithSLO{
-				NewSuccessfulSLIWithSLO(metricASLO, 100),
-				NewWarningSLIWithSLO(metricBSLO, noDataPointsMessage),
+				newSuccessfulSLIWithSLO(metricASLO, 100),
+				newWarningSLIWithSLO(metricBSLO, noDataPointsMessage),
 				NewFailedSLIWithSLO(metricCSLO, errorQueryingAPIMessage),
 			},
 			expectedOverallResult: keptnv2.ResultFailed,
@@ -97,16 +96,16 @@ func TestSummarizer_OverallResult(t *testing.T) {
 		{
 			name: "informational warning ignored",
 			results: []SLIWithSLO{
-				NewSuccessfulSLIWithSLO(metricASLO, 100),
-				NewWarningSLIWithSLO(CreateInformationalSLODefinition(metricBName), noDataPointsMessage),
+				newSuccessfulSLIWithSLO(metricASLO, 100),
+				newWarningSLIWithSLO(CreateInformationalSLO(metricBName), noDataPointsMessage),
 			},
 			expectedOverallResult: keptnv2.ResultPass,
 		},
 		{
 			name: "informational failure has precedence",
 			results: []SLIWithSLO{
-				NewSuccessfulSLIWithSLO(metricASLO, 100),
-				NewFailedSLIWithSLO(CreateInformationalSLODefinition(metricBName), errorQueryingAPIMessage),
+				newSuccessfulSLIWithSLO(metricASLO, 100),
+				NewFailedSLIWithSLO(CreateInformationalSLO(metricBName), errorQueryingAPIMessage),
 			},
 			expectedOverallResult: keptnv2.ResultFailed,
 		},
@@ -119,10 +118,10 @@ func TestSummarizer_OverallResult(t *testing.T) {
 	}
 }
 
-func createTestSLO(name string) keptnapi.SLO {
-	return keptnapi.SLO{
+func createTestSLO(name string) SLO {
+	return SLO{
 		SLI:    name,
-		Pass:   []*keptnapi.SLOCriteria{{Criteria: []string{"<=100"}}},
+		Pass:   SLOCriteriaList{{Criteria: []string{"<=100"}}},
 		Weight: 1,
 	}
 }
@@ -213,11 +212,33 @@ pass:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			slo := keptnapi.SLO{}
+			slo := SLO{}
 			err := yaml.Unmarshal([]byte(tt.sloYAML), &slo)
 			assert.NoError(t, err)
-			assert.EqualValues(t, tt.expectedNotInformational, isSLONotInformational(slo))
+			assert.EqualValues(t, tt.expectedNotInformational, slo.IsNotInformational())
 
 		})
 	}
+}
+
+func newSuccessfulSLIWithSLO(sloDefinition SLO, value float64) SLIWithSLO {
+	return SLIWithSLO{
+		sliResult:     newSuccessfulSLIResult(sloDefinition.SLI, value),
+		sloDefinition: sloDefinition,
+	}
+}
+
+func newSuccessfulSLIResult(metric string, value float64) SLIResult {
+	return NewSuccessfulSLIResultWithQuery(metric, value, "")
+}
+
+func newWarningSLIWithSLO(sloDefinition SLO, message string) SLIWithSLO {
+	return SLIWithSLO{
+		sliResult:     newWarningSLIResult(sloDefinition.SLI, message),
+		sloDefinition: sloDefinition,
+	}
+}
+
+func newWarningSLIResult(metric string, message string) SLIResult {
+	return NewWarningSLIResultWithQuery(metric, message, "")
 }

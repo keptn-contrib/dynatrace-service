@@ -4,7 +4,6 @@ import (
 	"sort"
 	"strings"
 
-	keptnapi "github.com/keptn/go-utils/pkg/lib"
 	keptnv2 "github.com/keptn/go-utils/pkg/lib/v0_2_0"
 )
 
@@ -70,7 +69,7 @@ func (s Summarizer) OverallResult() keptnv2.ResultType {
 		case IndicatorResultSuccessful:
 			// this is fine, do nothing
 		case IndicatorResultWarning:
-			if isSLONotInformational(r.SLODefinition()) {
+			if r.SLODefinition().IsNotInformational() {
 				seenNonInformationalWarning = true
 			}
 		case IndicatorResultFailed:
@@ -88,21 +87,4 @@ func (s Summarizer) OverallResult() keptnv2.ResultType {
 
 	// remaining case is pass, i.e. no failure or warning occurred
 	return keptnv2.ResultPass
-}
-
-func isSLONotInformational(slo keptnapi.SLO) bool {
-	return hasActualSLOCriteria(slo.Pass) || hasActualSLOCriteria(slo.Warning)
-}
-
-func hasActualSLOCriteria(sloCriteria []*keptnapi.SLOCriteria) bool {
-	for _, c := range sloCriteria {
-		if c == nil {
-			continue
-		}
-
-		if len(c.Criteria) > 0 {
-			return true
-		}
-	}
-	return false
 }
