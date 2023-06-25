@@ -6,7 +6,7 @@ require (
 	github.com/cloudevents/sdk-go/v2 v2.12.0
 	github.com/go-test/deep v1.1.0
 	github.com/keptn/go-utils v0.19.0
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15
 	gopkg.in/yaml.v2 v2.4.0
