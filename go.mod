@@ -3,7 +3,7 @@ module github.com/keptn-contrib/dynatrace-service
 go 1.18
 
 require (
-	github.com/cloudevents/sdk-go/v2 v2.13.0
+	github.com/cloudevents/sdk-go/v2 v2.14.0
 	github.com/go-test/deep v1.1.0
 	github.com/keptn/go-utils v0.20.1
 	github.com/sirupsen/logrus v1.9.3
