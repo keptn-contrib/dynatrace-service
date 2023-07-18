@@ -10,10 +10,11 @@ jobs:
         with:
           fetch-depth: 0
       - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v2
+        uses: reviewdog/action-golangci-lint@v2.3.3
         with:
           go_version_file: "go.mod"
           tool_name: "github-pr-review"
           github_token: ${{ secrets.GITHUB_TOKEN }}
           fail_on_error: true
           reviewdog_version: v0.14.2
+          golangci_lint_version: v1.53.3
