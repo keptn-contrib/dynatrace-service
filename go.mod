@@ -1,6 +1,6 @@
 module github.com/keptn-contrib/dynatrace-service
 
-go 1.18
+go 1.20
 
 require (
 	github.com/cloudevents/sdk-go/v2 v2.14.0
