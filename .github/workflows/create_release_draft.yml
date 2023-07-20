@@ -21,7 +21,7 @@ jobs:
       BRANCH: ${{ steps.determine_branch.outputs.BRANCH }}
     steps:
       - name: Check out code.
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.5.3
 
       - name: Create downloads folder
         run: mkdir ~/downloads
@@ -71,7 +71,7 @@ jobs:
       REPO_SLUG: "keptn-contrib/dynatrace-service"
     steps:
       - name: Check out code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.5.3
 
       - name: Debug - Output Branch
         run: echo $BRANCH
@@ -89,7 +89,7 @@ jobs:
           echo "::set-output name=RUN_ID::$RUN_ID"
 
       - name: Download all artifacts from last successful build of specified branch
-        uses: dawidd6/action-download-artifact@v2.24.2
+        uses: dawidd6/action-download-artifact@v2.27.0
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           # Required, workflow file name or ID

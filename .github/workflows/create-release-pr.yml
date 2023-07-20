@@ -31,7 +31,7 @@ jobs:
       branch: ${{ steps.current_branch.outputs.branch }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 0
           token: ${{ secrets.KEPTN_BOT_TOKEN }}
@@ -72,7 +72,7 @@ jobs:
           KEPTN_BOT_NAME: ${{ env.KEPTN_BOT_NAME }}
           KEPTN_BOT_EMAIL: ${{ env.KEPTN_BOT_EMAIL }}
         id: release_please
-        uses: google-github-actions/release-please-action@v3.7.1
+        uses: google-github-actions/release-please-action@v3.7.10
         with:
           command: release-pr
           release-type: go
@@ -101,7 +101,7 @@ jobs:
 
       - name: Checkout repo
         if: ${{ !needs.release-please.outputs.release_created }}
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.5.3
         with:
           ref: release-please--branches--${{ needs.prepare.outputs.branch }}--components--dynatrace-service
           fetch-depth: 0
