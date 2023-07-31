@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.27.1](https://github.com/keptn-contrib/dynatrace-service/compare/0.27.0...0.27.1) (2023-07-31)
+
+
+### Bug Fixes
+
+* add override for google.golang.org/protobuf v1.30.0 ([#1016](https://github.com/keptn-contrib/dynatrace-service/issues/1016)) ([8ab4eb9](https://github.com/keptn-contrib/dynatrace-service/commit/8ab4eb9ed29ff871776c42bab71a4fe585527182))
+
 ## [0.27.0](https://github.com/keptn-contrib/dynatrace-service/compare/0.26.0...0.27.0) (2023-02-23)
 
 ### Release validated with
