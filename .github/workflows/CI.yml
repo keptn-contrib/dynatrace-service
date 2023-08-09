@@ -31,7 +31,7 @@ jobs:
   ############################################################################
   unit-tests:
     name: Unit Tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v3.5.3
@@ -44,7 +44,7 @@ jobs:
   verify-next-version:
     needs: prepare_ci_run
     name: Verify next version
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       VERSION: ${{ needs.prepare_ci_run.outputs.VERSION }}
     outputs:
@@ -72,7 +72,7 @@ jobs:
       - prepare_ci_run
       - verify-next-version
     name: Build Helm Charts
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       BRANCH: ${{ needs.prepare_ci_run.outputs.BRANCH }}
       VERSION: ${{ needs.verify-next-version.outputs.NEXT-VERSION }}
@@ -115,7 +115,7 @@ jobs:
       - verify-next-version
       - unit-tests
     name: Docker Build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       BRANCH: ${{ needs.prepare_ci_run.outputs.BRANCH }}
       VERSION: ${{ needs.verify-next-version.outputs.NEXT-VERSION }}
@@ -161,7 +161,7 @@ jobs:
     needs:
       - prepare_ci_run
       - verify-next-version
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Create build config file
         env:

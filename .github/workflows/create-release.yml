@@ -13,7 +13,7 @@ defaults:
 jobs:
   prepare:
     name: Prepare release run
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: startsWith(github.ref, 'refs/heads/release-')
     outputs:
       branch: ${{ steps.current_branch.outputs.branch }}
@@ -37,7 +37,7 @@ jobs:
   release-please:
     needs:
       - prepare
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Release please
     if: startsWith(github.ref, 'refs/heads/release-')
     outputs:
@@ -87,7 +87,7 @@ jobs:
       - release-please
     name: Build Docker Image
     if: ${{ needs.release-please.outputs.release_created }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       VERSION: ${{ needs.release-please.outputs.major }}.${{ needs.release-please.outputs.minor }}.${{ needs.release-please.outputs.patch }}
     steps:
@@ -130,7 +130,7 @@ jobs:
   ############################################################################
   release:
     name: "Release"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - release-please
       - docker_build

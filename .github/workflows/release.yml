@@ -28,7 +28,7 @@ defaults:
 jobs:
   unit-tests:
     name: Unit Tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check out repository
         uses: actions/checkout@v3.5.3
@@ -37,7 +37,7 @@ jobs:
 
   prepare:
     name: Prepare release run
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       next-version: ${{ steps.version_number.outputs.next-version }}
       branch: ${{ steps.current_branch.outputs.branch }}
@@ -120,7 +120,7 @@ jobs:
   docker_build:
     needs: prepare
     name: Build Docker Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       VERSION: ${{ needs.prepare.outputs.next-version }}
     steps:
@@ -161,7 +161,7 @@ jobs:
   ############################################################################
   release:
     name: "Release"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [prepare, docker_build, build-helm-chart]
     steps:
       - name: Checkout repo

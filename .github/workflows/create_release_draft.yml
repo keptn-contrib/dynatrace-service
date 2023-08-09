@@ -16,7 +16,7 @@ defaults:
 jobs:
   prepare-release:
     name: "Prepare release"
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       BRANCH: ${{ steps.determine_branch.outputs.BRANCH }}
     steps:
@@ -65,7 +65,7 @@ jobs:
   publish-draft-release:
     name: Publish Draft release
     needs: prepare-release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       BRANCH: ${{ needs.prepare-release.outputs.BRANCH }}
       REPO_SLUG: "keptn-contrib/dynatrace-service"

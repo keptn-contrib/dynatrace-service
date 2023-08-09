@@ -24,7 +24,7 @@ defaults:
 jobs:
   prepare:
     name: Prepare release run
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: startsWith(github.ref, 'refs/heads/release-')
     outputs:
       next-version: ${{ steps.version_number.outputs.next-version }}
@@ -60,7 +60,7 @@ jobs:
   release-please:
     needs:
       - prepare
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: Release please
     if: startsWith(github.ref, 'refs/heads/release-')
     outputs:
