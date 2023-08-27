@@ -37,7 +37,7 @@ jobs:
       RELEASE_BUILD: ${{ inputs.release }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v3.6.0
 
       # load Image variable from .ci_env
       - name: Load CI Environment from .ci_env
