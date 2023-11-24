@@ -4,6 +4,6 @@ runner:
     errorformat:
       - "%f:%l:%c: %m"
   golangci-lint:
-    cmd: golangci-lint run -E bodyclose,exportloopref,funlen,gocyclo,gosec,nestif,unparam --out-format=line-number --timeout=10m ./...
+    cmd: golangci-lint run -E bodyclose,exportloopref,funlen,gocyclo,gosec,nestif,unparam --out-format=line-number ./...
     errorformat:
       - "%f:%l:%c: %m"

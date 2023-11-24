@@ -18,3 +18,4 @@ jobs:
           fail_on_error: true
           reviewdog_version: v0.14.2
           golangci_lint_version: v1.53.3
+          golangci_lint_flags: "--timeout=10m"
