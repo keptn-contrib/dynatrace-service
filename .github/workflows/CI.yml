@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v4.1.1
       - name: Unit tests
         uses: ./.github/actions/unit-tests
 
@@ -51,7 +51,7 @@ jobs:
       NEXT-VERSION: ${{ steps.verify-next-version.outputs.NEXT-VERSION }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v4.1.1
       - name: Overwrite version variable from prepare_ci_run in case of a release-please-branch
         id: verify-next-version
         run: |
@@ -80,7 +80,7 @@ jobs:
       GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v4.1.1
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
@@ -123,7 +123,7 @@ jobs:
       GIT_SHA: ${{ needs.prepare_ci_run.outputs.GIT_SHA }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v4.1.1
 
       - name: Load CI Environment from .ci_env
         id: load_ci_env
