@@ -11,8 +11,10 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Bug Fixes
 
-* add override for google.golang.org/protobuf v1.30.0 ([#1016](https://github.com/keptn-contrib/dynatrace-service/issues/1016)) ([e2821a2](https://github.com/keptn-contrib/dynatrace-service/commit/e2821a296ee5885fe464851c2ea73939a2b3a611))
 * update golang docker tag to v1.20.11 ([abe89b8](https://github.com/keptn-contrib/dynatrace-service/commit/abe89b864b0412c22d7cde71fa3750aa69661cef))
+
+### Dependencies
+* lots of dependency updates
 
 ## [0.27.1](https://github.com/keptn-contrib/dynatrace-service/compare/0.27.0...0.27.1) (2023-07-31)
 
