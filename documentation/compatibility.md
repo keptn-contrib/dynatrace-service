@@ -15,3 +15,4 @@ With each release, the dynatrace-service is tested and verified to work with a r
 | `0.26.0` | `0.19.3` | `1.256` |
 | `0.27.0` | `1.2.0` | `1.260` |
 | `0.27.1` | `1.4.0` | `1.271` |
+| `0.27.2` | `1.4.4` | `1.279` |

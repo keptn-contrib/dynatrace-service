@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.27.2](https://github.com/keptn-contrib/dynatrace-service/compare/0.27.1...0.27.2) (2023-11-27)
+
+### Release validated with
+ | Dynatrace-service: `0.27.2` | Keptn: `1.4.4` | Dynatrace: `1.279` |
+ |---|---|---|
+
+
+### Bug Fixes
+
+* update golang docker tag to v1.20.11 ([abe89b8](https://github.com/keptn-contrib/dynatrace-service/commit/abe89b864b0412c22d7cde71fa3750aa69661cef))
+
+### Dependencies
+* lots of dependency updates
+
 ## [0.27.1](https://github.com/keptn-contrib/dynatrace-service/compare/0.27.0...0.27.1) (2023-07-31)
 
 ### Release validated with
