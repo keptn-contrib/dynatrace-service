@@ -59,7 +59,7 @@ jobs:
 
       - name: Upload Helm Chart as an artifact
         id: upload_helm_chart
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: installer
           path: installer/*.tgz
