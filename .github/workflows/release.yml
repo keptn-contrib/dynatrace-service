@@ -103,7 +103,7 @@ jobs:
           fi
 
           NEXT_VERSION=$(cat VERSION.txt)
-          echo "::set-output name=next-version::${NEXT_VERSION}"
+          echo "next-version=${NEXT_VERSION}" >> $GITHUB_ENV
           git checkout HEAD -- VERSION.txt
 
           echo "::notice::Next version number: ${NEXT_VERSION}"
@@ -112,7 +112,7 @@ jobs:
         id: current_branch
         run: |
           branch=${GITHUB_REF#refs/heads/}
-          echo "::set-output name=branch::${branch}"
+          echo "branch=${branch}" >> $GITHUB_ENV
 
   ############################################################################
   # Build Docker Image
@@ -281,7 +281,7 @@ jobs:
           fi
 
           TAG="$(git describe --tags --abbrev=0)"
-          echo "::set-output name=tag-name::$TAG"
+          echo "tag-name=$TAG" >> $GITHUB_ENV
 
           echo "Sign off commit"
           git commit --amend --signoff --no-edit

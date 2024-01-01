@@ -86,7 +86,7 @@ jobs:
         id: last_run_id
         run: |
           RUN_ID=$(curl -sLH 'Accept: application/vnd.github.v3+json' -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "api.github.com/repos/$REPO_SLUG/actions/workflows/CI.yml/runs" | jq --arg branch "$BRANCH" -c '[.workflow_runs[] | select( .conclusion == "success" and .head_branch == $branch)][0] | .id')
-          echo "::set-output name=RUN_ID::$RUN_ID"
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
       - name: Download all artifacts from last successful build of specified branch
         uses: dawidd6/action-download-artifact@v2.28.0

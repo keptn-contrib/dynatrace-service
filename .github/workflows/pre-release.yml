@@ -83,14 +83,14 @@ jobs:
           fi
 
           NEXT_VERSION=$(cat VERSION.txt)
-          echo "::set-output name=next-version::${NEXT_VERSION}"
+          echo "next-version=${NEXT_VERSION}" >> $GITHUB_ENV
           git checkout HEAD -- VERSION.txt
 
       - name: Find current branch
         id: current_branch
         run: |
           branch=${GITHUB_REF#refs/heads/}
-          echo "::set-output name=branch::${branch}"
+          echo "branch=${branch}" >> $GITHUB_ENV
 
   ############################################################################
   # Build Docker Image
@@ -203,7 +203,7 @@ jobs:
               --skip.changelog
           fi
 
-          echo "::set-output name=tag-name::$(git describe --tags --abbrev=0)"
+          echo "tag-name=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
 
       # No need for a PR here, because we do not want any changes to be committed. Just push the pre-release tag
       - name: Push Tags
