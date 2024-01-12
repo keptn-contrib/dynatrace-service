@@ -1,5 +1,10 @@
 # Dynatrace-service
 
+## Dynatrace-service has reached end of life on December 22nd, 2023 similar to [Keptn V1](https://github.com/keptn/keptn).
+The Dynatrace [Site Reliability Guardian](https://docs.dynatrace.com/docs/platform-modules/automations/site-reliability-guardian) incorporates the Quality-gates use cases.
+
+---
+
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/keptn-contrib/dynatrace-service)
 ![CI](https://github.com/keptn-contrib/dynatrace-service/workflows/CI/badge.svg?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/keptn-contrib/dynatrace-service)](https://goreportcard.com/report/github.com/keptn-contrib/dynatrace-service)
